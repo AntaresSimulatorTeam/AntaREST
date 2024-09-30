@@ -140,8 +140,4 @@ function DataViewerDialog(props: Props) {
   );
 }
 
-DataViewerDialog.defaultProps = {
-  isMatrix: false,
-};
-
 export default DataViewerDialog;

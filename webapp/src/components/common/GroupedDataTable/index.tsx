@@ -434,7 +434,7 @@ function GroupedDataTable<
         >
           {RA.isFunction(deleteConfirmationMessage)
             ? deleteConfirmationMessage(selectedRows.length)
-            : deleteConfirmationMessage ?? t("dialog.message.confirmDelete")}
+            : (deleteConfirmationMessage ?? t("dialog.message.confirmDelete"))}
         </ConfirmationDialog>
       )}
     </>

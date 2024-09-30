@@ -20,19 +20,11 @@ import { BotDTO } from "../../../../common/types";
 import CreateTokenDialog from "./dialog/CreateTokenDialog";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
 
-/**
- * Types
- */
-
 interface Props {
   setSearchValue: (v: string) => void;
   addToken: (user: BotDTO) => void;
   reloadFetchTokens: () => void;
 }
-
-/**
- * Component
- */
 
 function Header(props: Props) {
   const { setSearchValue, addToken, reloadFetchTokens } = props;

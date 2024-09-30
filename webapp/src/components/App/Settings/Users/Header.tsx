@@ -20,19 +20,11 @@ import CreateUserDialog from "./dialog/CreateUserDialog";
 import { UserDetailsDTO } from "../../../../common/types";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
 
-/**
- * Types
- */
-
 interface Props {
   setSearchValue: (v: string) => void;
   addUser: (user: UserDetailsDTO) => void;
   reloadFetchUsers: () => void;
 }
-
-/**
- * Component
- */
 
 function Header(props: Props) {
   const { setSearchValue, addUser, reloadFetchUsers } = props;
