@@ -12,7 +12,6 @@
 
 import typing as t
 
-
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model

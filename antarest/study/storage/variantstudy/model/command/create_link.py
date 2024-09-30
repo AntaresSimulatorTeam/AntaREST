@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import typing as t
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
@@ -34,17 +35,17 @@ class AreaInfo(BaseModel):
 
 
 class LinkInfoProperties(BaseModel):
-    hurdles_cost: Optional[bool] = False
-    loop_flow: Optional[bool] = False
-    use_phase_shifter: Optional[bool] = False
-    transmission_capacities: Optional[TransmissionCapacity] = TransmissionCapacity.ENABLED
-    asset_type: Optional[AssetType] = AssetType.AC
-    display_comments: Optional[bool] = True
-    colorr: Optional[int] = Field(default=DEFAULT_COLOR, gt=0, lt=255)
-    colorb: Optional[int] = Field(default=DEFAULT_COLOR, gt=0, lt=255)
-    colorg: Optional[int] = Field(default=DEFAULT_COLOR, gt=0, lt=255)
-    link_width: Optional[float] = 1
-    link_style: Optional[LinkStyle] = LinkStyle.PLAIN
+    hurdles_cost: bool = False
+    loop_flow: bool = False
+    use_phase_shifter: bool = False
+    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
+    asset_type: AssetType= AssetType.AC
+    display_comments: bool = True
+    colorr: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
+    colorb: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
+    colorg: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
+    link_width: float = 1
+    link_style: LinkStyle = LinkStyle.PLAIN
 
     class Config:
         alias_generator = to_kebab_case
@@ -52,8 +53,8 @@ class LinkInfoProperties(BaseModel):
 
 
 class LinkInfoProperties820(LinkInfoProperties):
-    filter_synthesis: Optional[str] = None
-    filter_year_by_year: Optional[str] = None
+    filter_synthesis: t.Optional[str] = None
+    filter_year_by_year: t.Optional[str] = None
 
     class Config:
         alias_generator = to_kebab_case
