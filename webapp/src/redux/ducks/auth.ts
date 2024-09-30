@@ -13,7 +13,7 @@
  */
 
 import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
-import jwtDecode, { JwtPayload } from "jwt-decode";
+import { jwtDecode, type JwtPayload } from "jwt-decode";
 import { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";

@@ -12,16 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { Box, BoxProps, Divider } from "@mui/material";
+import { Box, BoxProps, Divider, SxProps, Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { mergeSxProp } from "../../utils/muiUtils";
 
-interface FieldsetProps extends Omit<BoxProps, "component"> {
+interface FieldsetProps {
   legend?: string | React.ReactNode;
   children: React.ReactNode;
   contentProps?: BoxProps;
   fullFieldWidth?: boolean;
   fieldWidth?: number;
+  sx?: SxProps<Theme>;
 }
 
 function Fieldset(props: FieldsetProps) {
@@ -32,12 +33,10 @@ function Fieldset(props: FieldsetProps) {
     contentProps,
     fullFieldWidth = false,
     fieldWidth = 220,
-    ...rest
   } = props;
 
   return (
     <Box
-      {...rest}
       component="fieldset"
       sx={mergeSxProp(
         {

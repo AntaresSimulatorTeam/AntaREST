@@ -19,10 +19,6 @@ import FormDialog, {
 import { GroupDTO, RoleType } from "../../../../../../common/types";
 import UserForm from "./UserForm";
 
-/**
- * Types
- */
-
 export interface UserFormDialogProps extends Omit<FormDialogProps, "children"> {
   defaultValues?: {
     username?: string;
@@ -32,10 +28,6 @@ export interface UserFormDialogProps extends Omit<FormDialogProps, "children"> {
   onlyPermissions?: boolean;
   subtitle?: string;
 }
-
-/**
- * Component
- */
 
 function UserFormDialog(props: UserFormDialogProps) {
   const { defaultValues, onlyPermissions, subtitle, ...dialogProps } = props;
@@ -51,11 +43,5 @@ function UserFormDialog(props: UserFormDialogProps) {
     </FormDialog>
   );
 }
-
-UserFormDialog.defaultProps = {
-  defaultValues: undefined,
-  onlyPermissions: false,
-  subtitle: "",
-};
 
 export default UserFormDialog;
