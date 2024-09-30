@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -152,9 +153,5 @@ function NoteEditorModal(props: Props) {
     </BasicDialog>
   );
 }
-
-NoteEditorModal.defaultProps = {
-  content: undefined,
-};
 
 export default NoteEditorModal;

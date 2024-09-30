@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,53 +14,75 @@
 
 import DataObjectIcon from "@mui/icons-material/DataObject";
 import TextSnippetIcon from "@mui/icons-material/TextSnippet";
+import ImageIcon from "@mui/icons-material/Image";
 import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import { SvgIconComponent } from "@mui/icons-material";
+import * as RA from "ramda-adjunct";
+import type { StudyMetadata } from "../../../../../common/types";
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type FileType = "json" | "file" | "matrix";
+export type TreeFile = string | string[];
 
-export interface File {
-  fileType: FileType;
-  filePath: string;
+export interface TreeFolder {
+  [key: string]: TreeFile | TreeFolder;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type TreeData = Record<string, any> | string;
+export type TreeData = TreeFolder | TreeFile;
+
+export type FileType = "json" | "matrix" | "text" | "image" | "folder";
+
+export interface FileInfo {
+  fileType: FileType;
+  filename: string;
+  filePath: string;
+  treeData: TreeData;
+}
+
+export interface DataCompProps extends FileInfo {
+  studyId: string;
+  canEdit: boolean;
+  setSelectedFile: (file: FileInfo) => void;
+  reloadTreeData: () => void;
+}
 
 ////////////////////////////////////////////////////////////////
-// Utils
+// File Info
 ////////////////////////////////////////////////////////////////
 
-//Maps file types and folder to their corresponding icon components.
-const iconByFileType: Record<FileType | "folder", SvgIconComponent> = {
+// Maps file types to their corresponding icon components.
+const iconByFileType: Record<FileType, SvgIconComponent> = {
   matrix: DatasetIcon,
   json: DataObjectIcon,
+  text: TextSnippetIcon,
+  image: ImageIcon,
   folder: FolderIcon,
-  file: TextSnippetIcon,
 } as const;
 
 /**
- * Gets the icon component for a given file type or folder.
+ * Gets the icon component for a given file type.
  *
- * @param type - The type of the file or "folder".
+ * @param type - The type of the file.
  * @returns The corresponding icon component.
  */
-export const getFileIcon = (type: FileType | "folder"): SvgIconComponent => {
-  return iconByFileType[type] || TextSnippetIcon;
-};
+export function getFileIcon(type: FileType): SvgIconComponent {
+  return iconByFileType[type];
+}
+
+export function isFolder(treeData: TreeData): treeData is TreeFolder {
+  return RA.isPlainObj(treeData);
+}
 
 /**
- * Determines the file type based on the tree data.
+ * Gets the file type based on the tree data.
  *
  * @param treeData - The data of the tree item.
- * @returns The determined file type or "folder".
+ * @returns The corresponding file type.
  */
-export const determineFileType = (treeData: TreeData): FileType | "folder" => {
+export function getFileType(treeData: TreeData): FileType {
   if (typeof treeData === "string") {
     if (
       treeData.startsWith("matrix://") ||
@@ -70,20 +93,29 @@ export const determineFileType = (treeData: TreeData): FileType | "folder" => {
     if (treeData.startsWith("json://") || treeData.endsWith(".json")) {
       return "json";
     }
+    if (treeData.startsWith("file://") && treeData.endsWith(".ico")) {
+      return "image";
+    }
   }
-  return typeof treeData === "object" ? "folder" : "file";
-};
+  return isFolder(treeData) ? "folder" : "text";
+}
+
+////////////////////////////////////////////////////////////////
+// Rights
+////////////////////////////////////////////////////////////////
 
 /**
- * Filters out specific keys from the tree data.
+ * Checks if a study's file can be edited.
  *
- * @param data - The original tree data.
- * @returns The filtered tree data.
+ * @param study  - The study where the file is located.
+ * @param filePath - The path of the file.
+ * @returns True if the file can be edited, false otherwise.
  */
-export const filterTreeData = (data: TreeData): TreeData => {
-  const excludedKeys = new Set(["Desktop", "study", "logs"]);
-
-  return Object.fromEntries(
-    Object.entries(data).filter(([key]) => !excludedKeys.has(key)),
+export function canEditFile(study: StudyMetadata, filePath: string): boolean {
+  return (
+    !study.archived &&
+    (filePath === "user" || filePath.startsWith("user/")) &&
+    // To remove when Xpansion tool configuration will be moved to "input/expansion" directory
+    !(filePath === "user/expansion" || filePath.startsWith("user/expansion/"))
   );
-};
+}

@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -208,13 +209,5 @@ function LogModal(props: Props) {
     </BasicDialog>
   );
 }
-
-LogModal.defaultProps = {
-  content: undefined,
-  jobId: undefined,
-  followLogs: false,
-  loading: false,
-  style: {},
-};
 
 export default LogModal;

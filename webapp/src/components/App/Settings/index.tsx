@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -27,10 +28,6 @@ import {
   isAuthUserInGroupAdmin,
 } from "../../../redux/selectors";
 import { tuple } from "../../../utils/tsUtils";
-
-/**
- * Component
- */
 
 function Settings() {
   const [tabValue, setTabValue] = useState("1");

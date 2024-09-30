@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -21,17 +22,9 @@ import OkDialog, { OkDialogProps } from "../../../../common/dialogs/OkDialog";
 import TokenForm from "./TokenFormDialog/TokenForm";
 import Form from "../../../../common/Form";
 
-/**
- * Types
- */
-
 interface Props extends Omit<OkDialogProps, "title" | "titleIcon"> {
   token: BotDetailsDTO;
 }
-
-/**
- * Component
- */
 
 function TokenInfoDialog(props: Props) {
   const { token, ...dialogProps } = props;

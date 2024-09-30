@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -138,9 +139,5 @@ function DataViewerDialog(props: Props) {
     </OkDialog>
   );
 }
-
-DataViewerDialog.defaultProps = {
-  isMatrix: false,
-};
 
 export default DataViewerDialog;

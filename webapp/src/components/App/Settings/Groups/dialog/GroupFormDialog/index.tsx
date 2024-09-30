@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,10 +18,6 @@ import FormDialog, {
 import { RoleType, UserDTO } from "../../../../../../common/types";
 import GroupForm from "./GroupForm";
 
-/**
- * Types
- */
-
 export interface GroupFormDialogProps
   extends Omit<FormDialogProps, "children"> {
   defaultValues?: {
@@ -28,10 +25,6 @@ export interface GroupFormDialogProps
     permissions?: Array<{ user: UserDTO; type: RoleType }>;
   };
 }
-
-/**
- * Component
- */
 
 function GroupFormDialog(props: GroupFormDialogProps) {
   const { defaultValues, ...dialogProps } = props;
@@ -42,9 +35,5 @@ function GroupFormDialog(props: GroupFormDialogProps) {
     </FormDialog>
   );
 }
-
-GroupFormDialog.defaultProps = {
-  defaultValues: undefined,
-};
 
 export default GroupFormDialog;

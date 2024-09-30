@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,18 +15,10 @@
 import { Box, Divider } from "@mui/material";
 import { PropsWithChildren, ReactNode } from "react";
 
-/**
- * Types
- */
-
 interface Props {
   header?: ReactNode;
   hideHeaderDivider?: boolean;
 }
-
-/**
- * Component
- */
 
 function BasicPage(props: PropsWithChildren<Props>) {
   const { header, hideHeaderDivider, children } = props;
@@ -42,10 +35,5 @@ function BasicPage(props: PropsWithChildren<Props>) {
     </Box>
   );
 }
-
-BasicPage.defaultProps = {
-  header: null,
-  hideHeaderDivider: false,
-};
 
 export default BasicPage;

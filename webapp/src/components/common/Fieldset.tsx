@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -11,16 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { Box, BoxProps, Divider, Typography } from "@mui/material";
+import { Box, BoxProps, Divider, SxProps, Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { mergeSxProp } from "../../utils/muiUtils";
 
-interface FieldsetProps extends Omit<BoxProps, "component"> {
+interface FieldsetProps {
   legend?: string | React.ReactNode;
   children: React.ReactNode;
   contentProps?: BoxProps;
   fullFieldWidth?: boolean;
   fieldWidth?: number;
+  sx?: SxProps<Theme>;
 }
 
 function Fieldset(props: FieldsetProps) {
@@ -31,19 +33,17 @@ function Fieldset(props: FieldsetProps) {
     contentProps,
     fullFieldWidth = false,
     fieldWidth = 220,
-    ...rest
   } = props;
 
   return (
     <Box
-      {...rest}
       component="fieldset"
       sx={mergeSxProp(
         {
           border: "none",
           m: 0,
           p: 0,
-          pb: 5,
+          pb: 4,
           "> .MuiBox-root": {
             display: "flex",
             flexWrap: "wrap",
@@ -52,6 +52,10 @@ function Fieldset(props: FieldsetProps) {
               width: fullFieldWidth ? 1 : fieldWidth,
               m: 0,
             },
+          },
+          // Increase padding from the last child
+          ".Form__Content > &:last-child": {
+            pb: 2,
           },
           // Remove padding from the last child of the dialog content
           ".MuiDialogContent-root .Form__Content > &:last-child": {
@@ -64,19 +68,14 @@ function Fieldset(props: FieldsetProps) {
       {legend && (
         <>
           {RA.isString(legend) ? (
-            <Typography
-              variant="h5"
-              sx={{ fontSize: "1.25rem", fontWeight: 400, lineHeight: 1.334 }}
-            >
-              {legend}
-            </Typography>
+            <Box component="legend">{legend}</Box>
           ) : (
             legend
           )}
           <Divider sx={{ mt: 1 }} />
         </>
       )}
-      <Box {...contentProps} sx={mergeSxProp({ pt: 1 }, contentProps?.sx)}>
+      <Box {...contentProps} sx={mergeSxProp({ pt: 3 }, contentProps?.sx)}>
         {children}
       </Box>
     </Box>

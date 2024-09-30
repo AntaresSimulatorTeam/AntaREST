@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -26,10 +27,6 @@ import { createGroup, createRole } from "../../../../../services/api/user";
 import { SubmitHandlerPlus } from "../../../../common/Form/types";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 
-/**
- * Types
- */
-
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
 interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
@@ -37,10 +34,6 @@ interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
   reloadFetchGroups: VoidFunction;
   closeDialog: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function CreateGroupDialog(props: Props) {
   const { addGroup, reloadFetchGroups, closeDialog, ...dialogProps } = props;

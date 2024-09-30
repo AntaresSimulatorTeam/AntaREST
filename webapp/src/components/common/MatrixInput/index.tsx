@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,13 +18,14 @@ import { useState } from "react";
 import { AxiosError } from "axios";
 import { Typography, Box, Divider } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import GridOffIcon from "@mui/icons-material/GridOff";
 import {
   MatrixEditDTO,
   MatrixStats,
   StudyMetadata,
 } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { getStudyData, importFile } from "../../../services/api/study";
+import { getStudyData } from "../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { editMatrix, getStudyMatrixIndex } from "../../../services/api/matrix";
 import { Root, Content, Header } from "./style";
@@ -34,10 +36,11 @@ import ImportDialog from "../dialogs/ImportDialog";
 import MatrixAssignDialog from "./MatrixAssignDialog";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import SplitButton from "../buttons/SplitButton";
-import DownloadMatrixButton from "../DownloadMatrixButton.tsx";
+import DownloadMatrixButton from "../buttons/DownloadMatrixButton.tsx";
+import { importFile } from "../../../services/api/studies/raw/index.ts";
 
 interface Props {
-  study: StudyMetadata;
+  study: StudyMetadata | StudyMetadata["id"];
   url: string;
   columnsNames?: string[] | readonly string[];
   rowNames?: string[];
@@ -45,6 +48,7 @@ interface Props {
   computStats: MatrixStats;
   fetchFn?: fetchMatrixFn;
   disableEdit?: boolean;
+  disableImport?: boolean;
   enablePercentDisplay?: boolean;
 }
 
@@ -56,7 +60,8 @@ function MatrixInput({
   title,
   computStats,
   fetchFn,
-  disableEdit,
+  disableEdit = false,
+  disableImport = false,
   enablePercentDisplay,
 }: Props) {
   const { enqueueSnackbar } = useSnackbar();
@@ -64,6 +69,7 @@ function MatrixInput({
   const [t] = useTranslation();
   const [openImportDialog, setOpenImportDialog] = useState(false);
   const [openMatrixAsignDialog, setOpenMatrixAsignDialog] = useState(false);
+  const studyId = typeof study === "string" ? study : study.id;
 
   const {
     data: matrixData,
@@ -71,7 +77,7 @@ function MatrixInput({
     reload: reloadMatrix,
   } = usePromiseWithSnackbarError(fetchMatrixData, {
     errorMessage: t("data.error.matrix"),
-    deps: [study.id, url, fetchFn],
+    deps: [studyId, url, fetchFn],
   });
 
   const { data: matrixIndex } = usePromiseWithSnackbarError(
@@ -79,7 +85,7 @@ function MatrixInput({
       if (fetchFn) {
         return matrixData?.index;
       }
-      return getStudyMatrixIndex(study.id, url);
+      return getStudyMatrixIndex(studyId, url);
     },
     {
       errorMessage: t("matrix.error.failedToretrieveIndex"),
@@ -100,8 +106,8 @@ function MatrixInput({
 
   async function fetchMatrixData() {
     const res = fetchFn
-      ? await fetchFn(study.id)
-      : await getStudyData(study.id, url);
+      ? await fetchFn(studyId)
+      : await getStudyData(studyId, url);
     if (typeof res === "string") {
       const fixed = res
         .replace(/NaN/g, '"NaN"')
@@ -120,7 +126,7 @@ function MatrixInput({
       try {
         if (change.length > 0) {
           const sanitizedUrl = url.startsWith("/") ? url.substring(1) : url;
-          await editMatrix(study.id, sanitizedUrl, change);
+          await editMatrix(studyId, sanitizedUrl, change);
           enqueueSnackbar(t("matrix.success.matrixUpdate"), {
             variant: "success",
           });
@@ -132,7 +138,7 @@ function MatrixInput({
   };
 
   const handleImport = async (file: File) => {
-    await importFile(file, study.id, url);
+    await importFile({ file, studyId, path: url });
     reloadMatrix();
   };
 
@@ -155,27 +161,29 @@ function MatrixInput({
             {title || t("xpansion.timeSeries")}
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <SplitButton
-              options={[
-                t("global.import.fromFile"),
-                t("global.import.fromDatabase"),
-              ]}
-              onClick={(_, index) => {
-                if (index === 0) {
-                  setOpenImportDialog(true);
-                } else {
-                  setOpenMatrixAsignDialog(true);
-                }
-              }}
-              size="small"
-              ButtonProps={{
-                startIcon: <FileDownloadIcon />,
-              }}
-            >
-              {t("global.import")}
-            </SplitButton>
+            {!disableImport && (
+              <SplitButton
+                options={[
+                  t("global.import.fromFile"),
+                  t("global.import.fromDatabase"),
+                ]}
+                onClick={(_, index) => {
+                  if (index === 0) {
+                    setOpenImportDialog(true);
+                  } else {
+                    setOpenMatrixAsignDialog(true);
+                  }
+                }}
+                size="small"
+                ButtonProps={{
+                  startIcon: <FileDownloadIcon />,
+                }}
+              >
+                {t("global.import")}
+              </SplitButton>
+            )}
             <DownloadMatrixButton
-              studyId={study.id}
+              studyId={studyId}
               path={url}
               disabled={columnsLength === 0}
             />
@@ -190,13 +198,18 @@ function MatrixInput({
             matrixIndex={matrixIndex}
             columnsNames={columnsNames}
             rowNames={rowNames}
-            readOnly={!!disableEdit}
+            readOnly={disableEdit}
             onUpdate={handleUpdate}
             computStats={computStats}
             isPercentDisplayEnabled={enablePercentDisplay}
           />
         ) : (
-          !isLoading && <EmptyView title={t("matrix.message.matrixEmpty")} />
+          !isLoading && (
+            <EmptyView
+              icon={GridOffIcon}
+              title={t("matrix.message.matrixEmpty")}
+            />
+          )
         )}
       </Content>
       {openImportDialog && (
@@ -211,7 +224,7 @@ function MatrixInput({
       )}
       {openMatrixAsignDialog && (
         <MatrixAssignDialog
-          study={study}
+          studyId={studyId}
           path={url}
           open={openMatrixAsignDialog}
           onClose={() => {

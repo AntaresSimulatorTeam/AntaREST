@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -235,15 +236,5 @@ function FileTable(props: PropType) {
     </Box>
   );
 }
-
-FileTable.defaultProps = {
-  onDelete: undefined,
-  onAssign: undefined,
-  uploadFile: undefined,
-  allowImport: false,
-  allowDelete: false,
-  onFileDownload: undefined,
-  copyId: false,
-};
 
 export default FileTable;

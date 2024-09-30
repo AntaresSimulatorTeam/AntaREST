@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,18 +17,10 @@ import FormDialog, {
 } from "../../../../../common/dialogs/FormDialog";
 import TokenForm from "./TokenForm";
 
-/**
- * Types
- */
-
 export interface TokenFormDialogProps
   extends Omit<FormDialogProps, "children"> {
   onlyPermissions?: boolean;
 }
-
-/**
- * Component
- */
 
 function TokenFormDialog(props: TokenFormDialogProps) {
   const { onlyPermissions, ...dialogProps } = props;
@@ -40,9 +33,5 @@ function TokenFormDialog(props: TokenFormDialogProps) {
     </FormDialog>
   );
 }
-
-TokenFormDialog.defaultProps = {
-  onlyPermissions: false,
-};
 
 export default TokenFormDialog;

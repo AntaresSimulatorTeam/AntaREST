@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -22,7 +23,7 @@ interface PropTypes {
 
 function SimpleLoader(props: PropTypes) {
   const [t] = useTranslation();
-  const { progress, message, color } = props;
+  const { progress, message, color = "rgba(0,0,0,0)" } = props;
   return (
     <Box
       display="flex"
@@ -73,11 +74,5 @@ function SimpleLoader(props: PropTypes) {
     </Box>
   );
 }
-
-SimpleLoader.defaultProps = {
-  progress: undefined,
-  message: undefined,
-  color: "rgba(0,0,0,0)",
-};
 
 export default SimpleLoader;

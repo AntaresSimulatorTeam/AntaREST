@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,19 +20,11 @@ import { BotDTO } from "../../../../common/types";
 import CreateTokenDialog from "./dialog/CreateTokenDialog";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
 
-/**
- * Types
- */
-
 interface Props {
   setSearchValue: (v: string) => void;
   addToken: (user: BotDTO) => void;
   reloadFetchTokens: () => void;
 }
-
-/**
- * Component
- */
 
 function Header(props: Props) {
   const { setSearchValue, addToken, reloadFetchTokens } = props;

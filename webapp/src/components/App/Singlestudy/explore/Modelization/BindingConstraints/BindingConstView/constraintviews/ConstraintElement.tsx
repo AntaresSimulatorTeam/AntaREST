@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -24,11 +25,11 @@ interface ElementProps {
   onToggleType?: () => void;
 }
 
-export default function ConstraintElement({
+function ConstraintElement({
   isLink,
   left,
   right,
-  operator,
+  operator = "x",
   onToggleType,
 }: ElementProps) {
   const { t } = useTranslation();
@@ -52,6 +53,4 @@ export default function ConstraintElement({
   );
 }
 
-ConstraintElement.defaultProps = {
-  operator: "x",
-};
+export default ConstraintElement;

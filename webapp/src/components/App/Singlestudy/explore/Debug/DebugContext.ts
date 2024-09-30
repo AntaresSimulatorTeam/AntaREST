@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -11,18 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { createContext, useContext } from "react";
-import type { File } from "./utils";
+import { createContext } from "react";
+import type { FileInfo } from "./utils";
 import { voidFn } from "../../../../../utils/fnUtils";
 
 const initialDebugContextValue = {
-  onFileSelect: voidFn<[File]>,
+  setSelectedFile: voidFn<[FileInfo]>,
   reloadTreeData: voidFn,
 };
 
 const DebugContext = createContext(initialDebugContextValue);
-
-export const useDebugContext = (): typeof initialDebugContextValue =>
-  useContext(DebugContext);
 
 export default DebugContext;

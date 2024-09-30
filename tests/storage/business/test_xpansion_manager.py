@@ -513,17 +513,6 @@ def test_add_resources(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_list_root_resources(tmp_path: Path) -> None:
-    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
-
-    constraints_file_content = b"0"
-    constraints_file_name = "unknownfile.txt"
-
-    empty_study.tree.save({"user": {"expansion": {constraints_file_name: constraints_file_content}}})
-    assert [constraints_file_name] == xpansion_manager.list_root_files(study)
-
-
-@pytest.mark.unit_test
 def test_get_single_constraints(tmp_path: Path) -> None:
     empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
 

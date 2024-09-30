@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -82,6 +83,13 @@ const theme = createTheme({
       },
     },
     MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#222333",
+        },
+      },
+    },
+    MuiListSubheader: {
       styleOverrides: {
         root: {
           backgroundColor: "#222333",

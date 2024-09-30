@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -11,18 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import FileUploadIcon from "@mui/icons-material/FileUpload";
-import SplitButton from "./buttons/SplitButton.tsx";
-import { downloadMatrix } from "../../services/api/studies/raw/index.ts";
-import { downloadFile } from "../../utils/fileUtils.ts";
-import { useState } from "react";
-import { StudyMetadata } from "../../common/types.ts";
-import useEnqueueErrorSnackbar from "../../hooks/useEnqueueErrorSnackbar.tsx";
+import { downloadMatrix } from "../../../services/api/studies/raw";
+import { downloadFile } from "../../../utils/fileUtils";
+import { StudyMetadata } from "../../../common/types";
 import { useTranslation } from "react-i18next";
+import DownloadButton from "./DownloadButton";
 
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
-  path?: string;
+  path: string;
   disabled?: boolean;
   label?: string;
 }
@@ -37,8 +35,6 @@ type ExportFormat = (typeof EXPORT_OPTIONS)[number]["value"];
 function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   const { t } = useTranslation();
   const { studyId, path, disabled, label = t("global.export") } = props;
-  const [isDownloading, setIsDownloading] = useState(false);
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -49,28 +45,20 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
       return;
     }
 
-    setIsDownloading(true);
-
     const isExcel = format === "xlsx";
 
-    try {
-      const res = await downloadMatrix({
-        studyId,
-        path,
-        format,
-        header: isExcel,
-        index: isExcel,
-      });
+    const res = await downloadMatrix({
+      studyId,
+      path,
+      format,
+      header: isExcel,
+      index: isExcel,
+    });
 
-      downloadFile(
-        res,
-        `matrix_${studyId}_${path.replace("/", "_")}.${format}`,
-      );
-    } catch (err) {
-      enqueueErrorSnackbar(t("global.download.error"), String(err));
-    }
-
-    setIsDownloading(false);
+    return downloadFile(
+      res,
+      `matrix_${studyId}_${path.replace("/", "_")}.${format}`,
+    );
   };
 
   ////////////////////////////////////////////////////////////////
@@ -78,20 +66,13 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitButton
-      variant="contained"
-      options={[...EXPORT_OPTIONS]}
+    <DownloadButton
+      formatOptions={[...EXPORT_OPTIONS]}
       onClick={handleDownload}
-      size="small"
       disabled={!path || disabled}
-      ButtonProps={{
-        startIcon: <FileUploadIcon />,
-        loadingPosition: "start",
-        loading: isDownloading,
-      }}
     >
       {label}
-    </SplitButton>
+    </DownloadButton>
   );
 }
 

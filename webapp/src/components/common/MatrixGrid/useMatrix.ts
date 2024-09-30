@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -21,7 +22,7 @@ import {
   getStudyMatrixIndex,
   updateMatrix,
 } from "../../../services/api/matrix";
-import { getStudyData, importFile } from "../../../services/api/study";
+import { getStudyData } from "../../../services/api/study";
 import {
   EnhancedGridColumn,
   MatrixDataDTO,
@@ -32,6 +33,7 @@ import {
 import { generateDateTime, generateTimeSeriesColumns } from "./utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
+import { importFile } from "../../../services/api/studies/raw";
 
 interface DataState {
   data: number[][];
@@ -176,7 +178,7 @@ export function useMatrix(
 
   const handleImport = async (file: File) => {
     try {
-      await importFile(file, studyId, url);
+      await importFile({ file, studyId, path: url });
       await fetchMatrix();
     } catch (e) {
       enqueueErrorSnackbar(t("matrix.error.import"), e as Error);

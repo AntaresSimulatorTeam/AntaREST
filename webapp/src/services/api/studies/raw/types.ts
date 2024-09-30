@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -11,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { AxiosRequestConfig } from "axios";
 import type { StudyMetadata } from "../../../../common/types";
 
 export interface DownloadMatrixParams {
@@ -19,4 +21,17 @@ export interface DownloadMatrixParams {
   format?: "tsv" | "xlsx";
   header?: boolean;
   index?: boolean;
+}
+
+export interface ImportFileParams {
+  studyId: StudyMetadata["id"];
+  path: string;
+  file: File;
+  createMissing?: boolean;
+  onUploadProgress?: AxiosRequestConfig["onUploadProgress"];
+}
+
+export interface DeleteFileParams {
+  studyId: StudyMetadata["id"];
+  path: string;
 }

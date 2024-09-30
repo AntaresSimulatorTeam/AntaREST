@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -254,10 +255,5 @@ function TokenForm(props: Props) {
     </>
   );
 }
-
-TokenForm.defaultProps = {
-  onlyPermissions: false,
-  readOnly: false,
-};
 
 export default TokenForm;

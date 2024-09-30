@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -26,6 +27,7 @@ import {
   Theme,
 } from "@mui/material";
 import { GenericInfo } from "../../common/types";
+import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
   name: string;
@@ -78,7 +80,7 @@ function SelectMulti(props: Props) {
       .join(", ");
 
   return (
-    <FormControl sx={sx} required={required}>
+    <FormControl sx={mergeSxProp({ m: 1, width: 200 }, sx)} required={required}>
       <InputLabel id={`multiple-checkbox-label-${name}`}>{name}</InputLabel>
       <Select
         labelId={`multiple-checkbox-label-${name}`}
@@ -100,12 +102,5 @@ function SelectMulti(props: Props) {
     </FormControl>
   );
 }
-
-SelectMulti.defaultProps = {
-  sx: { m: 1, width: 200 },
-  placeholder: undefined,
-  tagsMode: undefined,
-  required: false,
-};
 
 export default SelectMulti;

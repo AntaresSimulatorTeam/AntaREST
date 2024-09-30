@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,31 +13,29 @@
  */
 
 import { Box } from "@mui/material";
-import { TreeItem } from "@mui/x-tree-view";
-import { TreeData, determineFileType, getFileIcon } from "../utils";
-import { useDebugContext } from "../DebugContext";
+import { TreeData, getFileType, getFileIcon, isFolder } from "../utils";
+import DebugContext from "../DebugContext";
+import { useContext } from "react";
+import TreeItemEnhanced from "../../../../../common/TreeItemEnhanced";
 
 interface Props {
   name: string;
-  content: TreeData;
   path: string;
+  treeData: TreeData;
 }
 
-function FileTreeItem({ name, content, path }: Props) {
-  const { onFileSelect } = useDebugContext();
-  const filePath = `${path}/${name}`;
-  const fileType = determineFileType(content);
+function FileTreeItem({ name, treeData, path }: Props) {
+  const { setSelectedFile } = useContext(DebugContext);
+  const filePath = path ? `${path}/${name}` : name;
+  const fileType = getFileType(treeData);
   const FileIcon = getFileIcon(fileType);
-  const isFolderEmpty = !Object.keys(content).length;
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleClick = () => {
-    if (fileType !== "folder") {
-      onFileSelect({ fileType, filePath });
-    }
+    setSelectedFile({ fileType, filename: name, filePath, treeData });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -44,33 +43,26 @@ function FileTreeItem({ name, content, path }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TreeItem
-      nodeId={filePath}
+    <TreeItemEnhanced
+      itemId={filePath}
       label={
-        <Box
-          role="button"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            ...(isFolderEmpty && { opacity: 0.5 }),
-          }}
-          onClick={handleClick}
-        >
-          <FileIcon sx={{ width: 20, height: "auto", p: 0.2 }} />
-          <span style={{ marginLeft: 4 }}>{name}</span>
+        <Box sx={{ display: "flex" }}>
+          <FileIcon sx={{ width: 20, height: "auto", p: 0.2, mr: 0.5 }} />
+          {name}
         </Box>
       }
+      onClick={handleClick}
     >
-      {typeof content === "object" &&
-        Object.keys(content).map((childName) => (
+      {isFolder(treeData) &&
+        Object.keys(treeData).map((childName) => (
           <FileTreeItem
             key={childName}
             name={childName}
-            content={content[childName]}
             path={filePath}
+            treeData={treeData[childName]}
           />
         ))}
-    </TreeItem>
+    </TreeItemEnhanced>
   );
 }
 

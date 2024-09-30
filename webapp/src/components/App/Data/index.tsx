@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -187,9 +188,10 @@ function Data() {
                           lineHeight: 1.334,
                         }}
                       >
-                        {`Matrices - ${dataList.find(
-                          (item) => item.id === selectedItem,
-                        )?.name}`}
+                        {`Matrices - ${
+                          dataList.find((item) => item.id === selectedItem)
+                            ?.name
+                        }`}
                       </Typography>
                       <Box>
                         <IconButton>
@@ -236,9 +238,9 @@ function Data() {
                         alignItems: "center",
                       }}
                     >
-                      {`Matrices - ${dataList.find(
-                        (item) => item.id === selectedItem,
-                      )?.name}`}
+                      {`Matrices - ${
+                        dataList.find((item) => item.id === selectedItem)?.name
+                      }`}
                     </Typography>
                   )
                 }

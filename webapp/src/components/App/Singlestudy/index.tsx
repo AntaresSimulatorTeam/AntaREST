@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -207,9 +208,5 @@ function SingleStudy(props: Props) {
     </Box>
   );
 }
-
-SingleStudy.defaultProps = {
-  isExplorer: undefined,
-};
 
 export default SingleStudy;

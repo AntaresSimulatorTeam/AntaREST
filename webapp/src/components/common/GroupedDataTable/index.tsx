@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -433,7 +434,7 @@ function GroupedDataTable<
         >
           {RA.isFunction(deleteConfirmationMessage)
             ? deleteConfirmationMessage(selectedRows.length)
-            : deleteConfirmationMessage ?? t("dialog.message.confirmDelete")}
+            : (deleteConfirmationMessage ?? t("dialog.message.confirmDelete"))}
         </ConfirmationDialog>
       )}
     </>

@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -44,10 +45,6 @@ import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../../services/utils";
 import { isSearchMatching } from "../../../../utils/stringUtils";
 
-/**
- * Types
- */
-
 enum UserActionKind {
   ADD = "ADD",
   EDIT = "EDIT",
@@ -60,10 +57,6 @@ export type UserEdit = Partial<UserDetailsDTO> & { id: UserDetailsDTO["id"] };
 interface UserAction extends Action<string> {
   payload?: UserDetailsDTO["id"] | UserDetailsDTO | UserDetailsDTO[] | UserEdit;
 }
-
-/**
- * Utils
- */
 
 const reducer = produce<UserDetailsDTO[], [UserAction]>((draft, action) => {
   const { payload } = action;
@@ -92,10 +85,6 @@ const reducer = produce<UserDetailsDTO[], [UserAction]>((draft, action) => {
       return payload as UserDetailsDTO[];
   }
 });
-
-/**
- * Component
- */
 
 function Users() {
   const [userToDelete, setUserToDelete] = useState<UserDetailsDTO>();

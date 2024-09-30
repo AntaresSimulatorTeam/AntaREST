@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,10 +16,6 @@ import { SvgIconComponent } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import BasicPage from "./BasicPage";
 
-/**
- * Types
- */
-
 interface Props {
   title: string;
   titleIcon?: SvgIconComponent;
@@ -27,10 +24,6 @@ interface Props {
   hideHeaderDivider?: boolean;
   children?: React.ReactNode;
 }
-
-/**
- * Component
- */
 
 function RootPage(props: Props) {
   const {
@@ -94,12 +87,5 @@ function RootPage(props: Props) {
     </BasicPage>
   );
 }
-
-RootPage.defaultProps = {
-  titleIcon: null,
-  headerTopRight: null,
-  headerBottom: null,
-  hideHeaderDivider: false,
-};
 
 export default RootPage;

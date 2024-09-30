@@ -1,4 +1,5 @@
-/** Copyright (c) 2024, RTE (https://www.rte-france.com)
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,18 +14,19 @@
 
 import {
   FormControl,
+  InputBaseProps,
   InputLabel,
   MenuItem,
   Select,
   SelectChangeEvent,
-  SelectProps,
   SxProps,
   Theme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { GenericInfo } from "../../common/types";
+import { mergeSxProp } from "../../utils/muiUtils";
 
-interface Props extends SelectProps {
+interface Props {
   name: string;
   label?: string;
   list: GenericInfo[];
@@ -36,6 +38,7 @@ interface Props extends SelectProps {
   handleChange?: (key: string, value: string | number) => void;
   required?: boolean;
   disabled?: boolean;
+  size?: InputBaseProps["size"];
 }
 
 function SelectSingle(props: Props) {
@@ -46,7 +49,7 @@ function SelectSingle(props: Props) {
     data,
     setValue,
     sx,
-    variant,
+    variant = "filled",
     optional,
     handleChange,
     required,
@@ -65,7 +68,11 @@ function SelectSingle(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <FormControl variant={variant} sx={sx} required={required}>
+    <FormControl
+      variant={variant}
+      sx={mergeSxProp({ m: 0, width: 200 }, sx)}
+      required={required}
+    >
       <InputLabel id={`single-checkbox-label-${name}`}>{label}</InputLabel>
       <Select
         {...props}
@@ -95,15 +102,5 @@ function SelectSingle(props: Props) {
     </FormControl>
   );
 }
-
-SelectSingle.defaultProps = {
-  sx: { m: 0, width: 200 },
-  variant: "filled",
-  label: undefined,
-  optional: false,
-  setValue: undefined,
-  handleChange: undefined,
-  required: false,
-};
 
 export default SelectSingle;
