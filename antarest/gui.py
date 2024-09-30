@@ -76,9 +76,8 @@ def create_systray_app() -> AntaresSystrayApp:
     # Adding an icon
     icon = QIcon(str(RESOURCE_PATH / "webapp" / "logo16.png"))
     # Adding item on the menu bar
-    tray = QSystemTrayIcon()
+    tray = QSystemTrayIcon(icon, app)
     tray.setToolTip("AntaresWebServer")
-    tray.setIcon(icon)
 
     # Creating the options
     menu = QMenu()
