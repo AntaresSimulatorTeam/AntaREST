@@ -308,7 +308,7 @@ class AggregatorManager:
             # loop over the cluster id to extract the values of the actual columns
             for cluster_id, dummy_component in cluster_dummy_product_cols:
                 for actual_col in actual_cols:
-                    col_values = un_normalized_df[(cluster_id, actual_col, dummy_component)].tolist()  # type: ignore
+                    col_values = un_normalized_df[(cluster_id, actual_col, dummy_component)].tolist()
                     new_obj[actual_col] += col_values
                 new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
                 new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
