@@ -349,8 +349,10 @@ class TestThermal:
         # creating a thermal cluster with a name as a string should not raise an Exception
         res = client.post(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json={"name": 111})
         assert res.status_code == 200, res.json()
-        res = client.request("DELETE", f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=[111])
-        assert res.status_code == 200, res.json()
+        res = client.request(
+            "DELETE", f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=["111"]
+        )
+        assert res.status_code == 204, res.json()
 
         # We can create a thermal cluster with the following properties:
         fr_gas_conventional_props = {
