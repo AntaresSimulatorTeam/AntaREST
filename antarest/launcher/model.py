@@ -139,7 +139,7 @@ class JobResultDTO(BaseModel):
                 exit_code=0,
                 solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
                 owner=UserInfo(id=0o007, name="James BOND"),
-            ).model_dump()
+            ).model_dump(mode="json")
 
 
 class JobLog(Base):  # type: ignore

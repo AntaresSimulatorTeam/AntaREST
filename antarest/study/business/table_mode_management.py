@@ -95,11 +95,11 @@ class TableModeManager:
     def _get_table_data_unsafe(self, study: RawStudy, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
             areas_map = self._area_manager.get_all_area_props(study)
-            data = {area_id: area.model_dump(by_alias=True) for area_id, area in areas_map.items()}
+            data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links_props(study)
             data = {
-                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True)
+                f"{area1_id} / {area2_id}": link.model_dump(mode="json", by_alias=True)
                 for (area1_id, area2_id), link in links_map.items()
             }
         elif table_type == TableModeType.THERMAL:

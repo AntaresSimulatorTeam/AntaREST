@@ -183,7 +183,7 @@ class LauncherService:
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_JOB_COMPLETED if final_status else EventType.STUDY_JOB_STATUS_UPDATE,
-                        payload=job_result.to_dto().model_dump(),
+                        payload=job_result.to_dto().model_dump(mode="json"),
                         permissions=PermissionInfo(public_mode=PublicMode.READ),
                         channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                     )
