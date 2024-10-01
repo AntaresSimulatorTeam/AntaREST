@@ -137,17 +137,18 @@ def wait_for_server_start() -> None:
         time.sleep(1)
 
 
-def notification_popup(message: str) -> None:
+def notification_popup(message: str, threaded: bool = True) -> None:
     if platform.system() == "Windows":
         # noinspection PyPackageRequirements
-        from windows_toasts import Toast, ToastDisplayImage, WindowsToaster  # type: ignore
+        from win10toast import ToastNotifier  # type: ignore
 
-        toaster = WindowsToaster("AntaresWebServer")
-        toast = Toast()
-        toast.text_fields = [message]
-        icon = ToastDisplayImage.fromPath(str(RESOURCE_PATH / "webapp" / "favicon.ico"))
-        toast.AddImage(icon)
-        toaster.show_toast(toast)
+        toaster = ToastNotifier()
+        toaster.show_toast(
+            "AntaresWebServer",
+            message,
+            icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
+            threaded=threaded,
+        )
     else:
         from plyer import notification  # type: ignore
 
@@ -165,7 +166,10 @@ def main() -> None:
 
     arguments = parse_arguments()
     if check_server_started():
-        notification_popup("Antares Web Server already started, you can manage the application within the system tray.")
+        notification_popup(
+            "Antares Web Server already running, you can manage the application within the system tray.", threaded=False
+        )
+        return
     notification_popup("Starting Antares Web Server...")
     systray_app = create_systray_app()
     server = start_server(arguments.config_file)
