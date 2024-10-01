@@ -107,24 +107,29 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
             </Box>
           </CardActions>
           <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <Paper sx={{ p: 2 }}>
+            <Paper
+              sx={{
+                p: 2,
+                whiteSpace: "pre-wrap",
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                maxHeight: "200px",
+                overflow: "auto",
+              }}
+            >
               {axios.isAxiosError(details) ? (
-                <Grid
-                  container
-                  spacing={1}
-                  sx={{ width: "100%", height: "100%", mt: 1 }}
-                >
+                <Grid container spacing={1} sx={{ width: 1, height: 1, mt: 1 }}>
                   <Grid item xs={6}>
-                    <Label>Status :</Label>
+                    <Label>Status: </Label>
                     <Typography>{details.response?.status}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Label>Exception : </Label>
+                    <Label>Exception: </Label>
                     <Typography>{details.response?.data.exception}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Label>Description : </Label>
-                    <Typography sx={{ whiteSpace: "pre-wrap" }}>
+                    <Label>Description: </Label>
+                    <Typography>
                       {details.response?.data.description}
                     </Typography>
                   </Grid>

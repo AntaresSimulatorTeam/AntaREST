@@ -209,8 +209,4 @@ function SingleStudy(props: Props) {
   );
 }
 
-SingleStudy.defaultProps = {
-  isExplorer: undefined,
-};
-
 export default SingleStudy;

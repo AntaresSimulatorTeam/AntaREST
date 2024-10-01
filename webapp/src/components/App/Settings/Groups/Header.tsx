@@ -22,19 +22,11 @@ import { isAuthUserAdmin } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
 
-/**
- * Types
- */
-
 interface Props {
   setSearchValue: (v: string) => void;
   addGroup: (user: GroupDetailsDTO) => void;
   reloadFetchGroups: () => void;
 }
-
-/**
- * Component
- */
 
 function Header(props: Props) {
   const { setSearchValue, addGroup, reloadFetchGroups } = props;

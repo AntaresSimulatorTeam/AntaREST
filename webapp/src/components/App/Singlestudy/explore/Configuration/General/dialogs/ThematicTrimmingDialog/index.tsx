@@ -18,7 +18,7 @@ import {
   AccordionSummary,
   Button,
   Divider,
-  Unstable_Grid2 as Grid,
+  Grid2 as Grid,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import * as R from "ramda";
@@ -166,7 +166,7 @@ function ThematicTrimmingDialog(props: Props) {
             const fields = getFieldLabelsForGroup(api.getValues(), group)
               .filter(([, label]) => isSearchMatching(search, label))
               .map(([name, label]) => (
-                <Grid key={name} xs={4}>
+                <Grid key={name} size={{ xs: 4 }}>
                   <SwitchFE name={name} label={label} control={api.control} />
                 </Grid>
               ));
@@ -186,12 +186,7 @@ function ThematicTrimmingDialog(props: Props) {
                   )}
                 </AccordionSummary>
                 <AccordionDetails>
-                  <Grid
-                    container
-                    disableEqualOverflow
-                    spacing={1}
-                    sx={{ overflow: "auto", p: 1 }}
-                  >
+                  <Grid container spacing={1} sx={{ overflow: "auto", p: 1 }}>
                     {fields}
                   </Grid>
                 </AccordionDetails>

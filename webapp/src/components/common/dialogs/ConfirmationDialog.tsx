@@ -16,10 +16,6 @@ import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
-/**
- * Types
- */
-
 export interface ConfirmationDialogProps
   extends Omit<BasicDialogProps, "actions"> {
   cancelButtonText?: string;
@@ -27,10 +23,6 @@ export interface ConfirmationDialogProps
   onConfirm: VoidFunction;
   onCancel: VoidFunction;
 }
-
-/**
- * Component
- */
 
 function ConfirmationDialog(props: ConfirmationDialogProps) {
   const {
@@ -77,10 +69,5 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
     />
   );
 }
-
-ConfirmationDialog.defaultProps = {
-  cancelButtonText: null,
-  confirmButtonText: null,
-};
 
 export default ConfirmationDialog;

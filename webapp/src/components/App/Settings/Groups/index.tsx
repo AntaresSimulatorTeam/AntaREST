@@ -47,10 +47,6 @@ import { getAuthUser } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { isSearchMatching } from "../../../../utils/stringUtils";
 
-/**
- * Types
- */
-
 enum GroupActionKind {
   ADD = "ADD",
   EDIT = "EDIT",
@@ -69,10 +65,6 @@ interface GroupAction extends Action<string> {
     | GroupDetailsDTO[]
     | GroupEdit;
 }
-
-/**
- * Utils
- */
 
 const reducer = produce<GroupDetailsDTO[], [GroupAction]>((draft, action) => {
   const { payload } = action;
@@ -101,10 +93,6 @@ const reducer = produce<GroupDetailsDTO[], [GroupAction]>((draft, action) => {
       return payload as GroupDetailsDTO[];
   }
 });
-
-/**
- * Component
- */
 
 function Groups() {
   const [groupToDelete, setGroupToDelete] = useState<GroupDetailsDTO>();

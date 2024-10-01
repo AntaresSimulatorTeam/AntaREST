@@ -60,7 +60,7 @@ import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import moment from "moment";
-import DownloadMatrixButton from "../../../../../common/DownloadMatrixButton.tsx";
+import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton.tsx";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
