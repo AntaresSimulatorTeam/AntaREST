@@ -194,8 +194,8 @@ export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
   const initialDate = parseISO(start_date);
 
   return Array.from({ length: steps }, (_, index) => {
-    const currentDate = increment(initialDate, index);
-    return format(currentDate, first_week_size);
+    const date = increment(initialDate, index);
+    return format(date, first_week_size);
   });
 };
 
