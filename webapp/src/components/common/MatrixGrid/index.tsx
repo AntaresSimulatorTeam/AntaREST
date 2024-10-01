@@ -176,6 +176,7 @@ function MatrixGrid({
         rowMarkers="both"
         freezeColumns={1} // Make the first column sticky
         onColumnResize={handleColumnResize}
+        allowedFillDirections="any"
       />
       <div id="portal" />
     </>
