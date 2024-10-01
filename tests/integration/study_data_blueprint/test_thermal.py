@@ -297,22 +297,17 @@ class TestThermal:
     @pytest.mark.parametrize(
         "version", [pytest.param(0, id="No Upgrade"), pytest.param(860, id="v8.6"), pytest.param(870, id="v8.7")]
     )
-    def test_lifecycle(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, admin_access_token: str, version: int
-    ) -> None:
+    def test_lifecycle(self, client: TestClient, user_access_token: str, internal_study_id: str, version: int) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         # =============================
         #  STUDY UPGRADE
         # =============================
 
         if version != 0:
-            res = client.put(
-                f"/v1/studies/{internal_study_id}/upgrade",
-                headers={"Authorization": f"Bearer {admin_access_token}"},
-                params={"target_version": version},
-            )
+            res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": version})
             res.raise_for_status()
             task_id = res.json()
-            task = wait_task_completion(client, admin_access_token, task_id)
+            task = wait_task_completion(client, user_access_token, task_id)
             from antarest.core.tasks.model import TaskStatus
 
             assert task.status == TaskStatus.COMPLETED, task
@@ -347,13 +342,15 @@ class TestThermal:
         # or an invalid name should also raise a validation error.
         attempts = [{}, {"name": ""}, {"name": "!??"}]
         for attempt in attempts:
-            res = client.post(
-                f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-                headers={"Authorization": f"Bearer {user_access_token}"},
-                json=attempt,
-            )
+            res = client.post(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=attempt)
             assert res.status_code == 422, res.json()
             assert res.json()["exception"] in {"ValidationError", "RequestValidationError"}, res.json()
+
+        # creating a thermal cluster with a name as a string should not raise an Exception
+        res = client.post(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json={"name": 111})
+        assert res.status_code == 200, res.json()
+        res = client.request("DELETE", f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=[111])
+        assert res.status_code == 200, res.json()
 
         # We can create a thermal cluster with the following properties:
         fr_gas_conventional_props = {
@@ -371,9 +368,7 @@ class TestThermal:
             "marketBidCost": 181.267,
         }
         res = client.post(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=fr_gas_conventional_props,
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=fr_gas_conventional_props
         )
         assert res.status_code == 200, res.json()
         fr_gas_conventional_id = res.json()["id"]
@@ -395,10 +390,7 @@ class TestThermal:
         assert res.json() == fr_gas_conventional_cfg
 
         # reading the properties of a thermal cluster
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}")
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
@@ -410,17 +402,11 @@ class TestThermal:
         matrix_path = f"input/thermal/prepro/{area_id}/{fr_gas_conventional_id.lower()}/data"
         args = {"target": matrix_path, "matrix": matrix}
         res = client.post(
-            f"/v1/studies/{internal_study_id}/commands",
-            json=[{"action": "replace_matrix", "args": args}],
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            f"/v1/studies/{internal_study_id}/commands", json=[{"action": "replace_matrix", "args": args}]
         )
         assert res.status_code in {200, 201}, res.json()
 
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": matrix_path},
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": matrix_path})
         assert res.status_code == 200
         assert res.json()["data"] == matrix
 
@@ -429,17 +415,13 @@ class TestThermal:
         # ==================================
 
         # Reading the list of thermal clusters
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal")
         assert res.status_code == 200, res.json()
         assert res.json() == EXISTING_CLUSTERS + [fr_gas_conventional_cfg]
 
         # updating properties
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "name": "FR_Gas conventional old 1",
                 "nominalCapacity": 32.1,
@@ -453,10 +435,7 @@ class TestThermal:
         }
         assert res.json() == fr_gas_conventional_cfg
 
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}")
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
@@ -467,7 +446,6 @@ class TestThermal:
         # updating properties
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "marginalCost": 182.456,
                 "startupCost": 6140.8,
@@ -489,24 +467,19 @@ class TestThermal:
         bad_properties = {"unitCount": 0}
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json=bad_properties,
         )
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "RequestValidationError", res.json()
 
         # The thermal cluster properties should not have been updated.
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}")
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
         # Update with a pollutant. Should succeed even with versions prior to v8.6
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={"nox": 10.0},
         )
         assert res.status_code == 200
@@ -514,7 +487,6 @@ class TestThermal:
         # Update with the field `efficiency`. Should succeed even with versions prior to v8.7
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={"efficiency": 97.0},
         )
         assert res.status_code == 200
@@ -526,7 +498,6 @@ class TestThermal:
         new_name = "Duplicate of Fr_Gas_Conventional"
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/thermals/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": new_name},
         )
         assert res.status_code in {200, 201}, res.json()
@@ -544,11 +515,7 @@ class TestThermal:
 
         # asserts the matrix has also been duplicated
         new_cluster_matrix_path = f"input/thermal/prepro/{area_id}/{duplicated_id.lower()}/data"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": new_cluster_matrix_path},
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/raw", params={"path": new_cluster_matrix_path})
         assert res.status_code == 200
         assert res.json()["data"] == matrix
 
@@ -558,8 +525,7 @@ class TestThermal:
 
         # Everything is fine at the beginning
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
         )
         assert res.status_code == 200
         assert res.json() is True
@@ -575,8 +541,7 @@ class TestThermal:
 
         # Validation should fail
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
         )
         assert res.status_code == 422
         obj = res.json()
@@ -594,8 +559,7 @@ class TestThermal:
 
         # Validation should succeed again
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
         )
         assert res.status_code == 200
         assert res.json() is True
@@ -612,8 +576,7 @@ class TestThermal:
 
             # Validation should fail
             res = client.get(
-                f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate",
-                headers={"Authorization": f"Bearer {user_access_token}"},
+                f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
             )
             assert res.status_code == 422
             obj = res.json()
@@ -648,19 +611,12 @@ class TestThermal:
             bc_obj["lessTermMatrix"] = matrix.tolist()
 
         # noinspection SpellCheckingInspection
-        res = client.post(
-            f"/v1/studies/{internal_study_id}/bindingconstraints",
-            json=bc_obj,
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=bc_obj)
         assert res.status_code in {200, 201}, res.json()
 
         # verify that we can't delete the thermal cluster because it is referenced in a binding constraint
         res = client.request(
-            "DELETE",
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[fr_gas_conventional_id],
+            "DELETE", f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=[fr_gas_conventional_id]
         )
         assert res.status_code == 403, res.json()
         description = res.json()["description"]
@@ -668,37 +624,23 @@ class TestThermal:
         assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
         # delete the binding constraint
-        res = client.delete(
-            f"/v1/studies/{internal_study_id}/bindingconstraints/{bc_obj['name']}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.delete(f"/v1/studies/{internal_study_id}/bindingconstraints/{bc_obj['name']}")
         assert res.status_code == 200, res.json()
 
         # Now we can delete the thermal cluster
         res = client.request(
-            "DELETE",
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[fr_gas_conventional_id],
+            "DELETE", f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=[fr_gas_conventional_id]
         )
         assert res.status_code == 204, res.json()
 
         # check that the binding constraint has been deleted
         # noinspection SpellCheckingInspection
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/bindingconstraints",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/bindingconstraints")
         assert res.status_code == 200, res.json()
         assert len(res.json()) == 0
 
         # If the thermal cluster list is empty, the deletion should be a no-op.
-        res = client.request(
-            "DELETE",
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[],
-        )
+        res = client.request("DELETE", f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal", json=[])
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
@@ -709,17 +651,13 @@ class TestThermal:
         res = client.request(
             "DELETE",
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json=[other_cluster_id1, other_cluster_id2],
         )
         assert res.status_code == 204, res.json()
         assert res.text in {"", "null"}  # Old FastAPI versions return 'null'.
 
         # The list of thermal clusters should not contain the deleted ones.
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal")
         assert res.status_code == 200, res.json()
         deleted_clusters = [other_cluster_id1, other_cluster_id2, fr_gas_conventional_id]
         for cluster in res.json():
@@ -734,7 +672,6 @@ class TestThermal:
         res = client.request(
             "DELETE",
             f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json=[fr_gas_conventional_id],
         )
         assert res.status_code == 500, res.json()
@@ -750,10 +687,7 @@ class TestThermal:
         # Check DELETE with the wrong value of `study_id`
         bad_study_id = "bad_study"
         res = client.request(
-            "DELETE",
-            f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[fr_gas_conventional_id],
+            "DELETE", f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal", json=[fr_gas_conventional_id]
         )
         obj = res.json()
         description = obj["description"]
@@ -762,8 +696,7 @@ class TestThermal:
 
         # Check GET with wrong `area_id`
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
+            f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/thermal/{fr_gas_conventional_id}"
         )
         obj = res.json()
         description = obj["description"]
@@ -771,10 +704,7 @@ class TestThermal:
         assert res.status_code == 404, res.json()
 
         # Check GET with wrong `study_id`
-        res = client.get(
-            f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}")
         obj = res.json()
         description = obj["description"]
         assert res.status_code == 404, res.json()
@@ -783,7 +713,6 @@ class TestThermal:
         # Check POST with wrong `study_id`
         res = client.post(
             f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": fr_gas_conventional, "group": "Battery"},
         )
         obj = res.json()
@@ -794,7 +723,6 @@ class TestThermal:
         # Check POST with wrong `area_id`
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "name": fr_gas_conventional,
                 "group": "Oil",
@@ -817,7 +745,6 @@ class TestThermal:
         # Check POST with wrong `group`
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={"name": fr_gas_conventional, "group": "GroupFoo"},
         )
         assert res.status_code == 200, res.json()
@@ -828,7 +755,6 @@ class TestThermal:
         # Check PATCH with the wrong `area_id`
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "group": "Oil",
                 "unitCount": 1,
@@ -850,7 +776,6 @@ class TestThermal:
         bad_cluster_id = "bad_cluster"
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{bad_cluster_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "group": "Oil",
                 "unitCount": 1,
@@ -871,7 +796,6 @@ class TestThermal:
         # Check PATCH with the wrong `study_id`
         res = client.patch(
             f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "group": "Oil",
                 "unitCount": 1,
@@ -891,9 +815,7 @@ class TestThermal:
         # Cannot duplicate a fake cluster
         unknown_id = "unknown"
         res = client.post(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/thermals/{unknown_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"newName": "duplicate"},
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/thermals/{unknown_id}", params={"newName": "duplicate"}
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
@@ -903,7 +825,6 @@ class TestThermal:
         # Cannot duplicate with an existing id
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/thermals/{duplicated_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             params={"newName": new_name.upper()},  # different case but same ID
         )
         assert res.status_code == 409, res.json()
