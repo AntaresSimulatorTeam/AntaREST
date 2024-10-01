@@ -166,7 +166,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         # rename matrices if the operator has changed for version >= 870
         if self.operator and study_data.config.version >= 870:
-            existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
+            existing_operator = BindingConstraintOperator(actual_cfg["operator"])
             new_operator = self.operator
             _update_matrices_names(study_data, self.id, existing_operator, new_operator)
 
@@ -176,7 +176,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
         ]
         study_version = study_data.config.version
-        time_step = self.time_step or BindingConstraintFrequency(actual_cfg.get("type"))
+        time_step = self.time_step or BindingConstraintFrequency(actual_cfg["type"])
         self.validates_and_fills_matrices(
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
