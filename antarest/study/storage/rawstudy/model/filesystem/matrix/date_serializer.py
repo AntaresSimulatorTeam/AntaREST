@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from __future__ import annotations
+
 import re
 from abc import ABC, abstractmethod
 from typing import Hashable, List, Sequence, Tuple, cast
@@ -43,7 +45,7 @@ class IDateMatrixSerializer(ABC):
         self.area = area
 
     @abstractmethod
-    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index[str], pd.DataFrame]:
         """
         Extract date from raw columns inside matrix file
         Args:
@@ -54,7 +56,7 @@ class IDateMatrixSerializer(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def build_date(self, index: pd.Index) -> pd.DataFrame:
+    def build_date(self, index: pd.Index[str]) -> pd.DataFrame:
         """
         Format in antares style date index
         Args:
@@ -78,7 +80,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
     Class implementation for hourly index
     """
 
-    def build_date(self, index: pd.Index) -> pd.DataFrame:
+    def build_date(self, index: pd.Index[str]) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str, str]:
             m, d, h = re.split(r"[\s/]", row)
             return "", 1, d, IDateMatrixSerializer._R_MONTHS[m], h
@@ -97,7 +99,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
 
         return pd.concat([headers, matrix], axis=0)
 
-    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index[str], pd.DataFrame]:
         # Extract left part with date
         df_date = df.iloc[:, 2:5]
         df_date.columns = pd.Index(data=["day", "month", "hour"])
@@ -108,7 +110,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
         to_remove = cast(Sequence[Hashable], df.columns[0:5])
         body = df.drop(to_remove, axis=1)
 
-        return pd.Index(date), body
+        return cast(pd.Index[str], pd.Index(date)), body
 
 
 class DailyMatrixSerializer(IDateMatrixSerializer):
@@ -116,7 +118,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
     Class implementation for daily index
     """
 
-    def build_date(self, index: pd.Index) -> pd.DataFrame:
+    def build_date(self, index: pd.Index[str]) -> pd.DataFrame:
         def _map(row: str) -> Tuple[str, int, str, str]:
             m, d = row.split("/")
             return "", 1, d, IDateMatrixSerializer._R_MONTHS[m]
@@ -135,7 +137,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
 
         return pd.concat([headers, matrix], axis=0)
 
-    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index[str], pd.DataFrame]:
         # Extract left part with date
         df_date = df.iloc[:, 2:4]
         df_date.columns = pd.Index(["day", "month"])
@@ -146,7 +148,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
         to_remove = cast(Sequence[Hashable], df.columns[0:4])
         body = df.drop(to_remove, axis=1)
 
-        return pd.Index(date), body
+        return cast(pd.Index[str], pd.Index(date)), body
 
 
 class WeeklyMatrixSerializer(IDateMatrixSerializer):
@@ -154,7 +156,7 @@ class WeeklyMatrixSerializer(IDateMatrixSerializer):
     Class implementation for weekly index
     """
 
-    def build_date(self, index: pd.Index) -> pd.DataFrame:
+    def build_date(self, index: pd.Index[str]) -> pd.DataFrame:
         matrix = pd.DataFrame({0: [""] * index.size, 1: index.values})
 
         headers = pd.DataFrame(
@@ -167,7 +169,7 @@ class WeeklyMatrixSerializer(IDateMatrixSerializer):
 
         return pd.concat([headers, matrix], axis=0)
 
-    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index[str], pd.DataFrame]:
         # Extract left part with date
         df_date = df.iloc[:, 1:2]
         df_date.columns = pd.Index(["weekly"])
@@ -184,7 +186,7 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
     Class implementation for monthly index
     """
 
-    def build_date(self, index: pd.Index) -> pd.DataFrame:
+    def build_date(self, index: pd.Index[str]) -> pd.DataFrame:
         matrix = pd.DataFrame(
             {
                 0: [""] * index.size,
@@ -203,7 +205,7 @@ class MonthlyMatrixSerializer(IDateMatrixSerializer):
 
         return pd.concat([headers, matrix], axis=0)
 
-    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index[str], pd.DataFrame]:
         # Extract left part with date
         df_date = df.iloc[:, 2:3]
         df_date.columns = pd.Index(["month"])
@@ -222,7 +224,7 @@ class AnnualMatrixSerializer(IDateMatrixSerializer):
     Class implementation for annual index
     """
 
-    def build_date(self, index: pd.Index) -> pd.DataFrame:
+    def build_date(self, index: pd.Index[str]) -> pd.DataFrame:
         return pd.DataFrame(
             [
                 [self.area.upper(), "annual"],
@@ -232,7 +234,7 @@ class AnnualMatrixSerializer(IDateMatrixSerializer):
             ]
         )
 
-    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index, pd.DataFrame]:
+    def extract_date(self, df: pd.DataFrame) -> Tuple[pd.Index[str], pd.DataFrame]:
         # Extract left part with date
         df_date = df.iloc[:, 1:2]
         df_date.columns = pd.Index(["annual"])
