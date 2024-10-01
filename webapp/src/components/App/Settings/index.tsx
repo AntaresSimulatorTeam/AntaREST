@@ -29,10 +29,6 @@ import {
 } from "../../../redux/selectors";
 import { tuple } from "../../../utils/tsUtils";
 
-/**
- * Component
- */
-
 function Settings() {
   const [tabValue, setTabValue] = useState("1");
   const [t] = useTranslation();

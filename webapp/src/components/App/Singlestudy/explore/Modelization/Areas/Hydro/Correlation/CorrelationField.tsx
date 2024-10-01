@@ -20,6 +20,7 @@ import { CorrelationFormFields } from "./utils";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentArea } from "../../../../../../../../redux/selectors";
+import { validateNumber } from "../../../../../../../../utils/validationUtils";
 
 interface Props {
   field: FieldArrayWithId<CorrelationFormFields, "correlation">;
@@ -54,19 +55,10 @@ function CorrelationField({ field, index, label }: Props) {
         <NumberFE
           key={field.id}
           label={t("study.modelization.hydro.correlation.coefficient")}
-          name={`correlation.${index}.coefficient`}
+          name={`correlation.${index}.coefficient` as const}
           size="small"
           control={control}
-          rules={{
-            min: {
-              value: -100,
-              message: t("form.field.minValue", { 0: -100 }),
-            },
-            max: {
-              value: 100,
-              message: t("form.field.maxValue", { 0: 100 }),
-            },
-          }}
+          rules={{ validate: validateNumber({ min: -100, max: 100 }) }}
           disabled={field.areaId === currentArea?.id}
         />
       </Grid>

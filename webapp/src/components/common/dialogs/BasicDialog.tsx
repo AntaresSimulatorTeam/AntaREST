@@ -27,10 +27,6 @@ import { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
 import { mergeSxProp } from "../../../utils/muiUtils";
 
-/**
- * Types
- */
-
 enum Alert {
   success,
   error,
@@ -48,10 +44,6 @@ export interface BasicDialogProps extends Omit<DialogProps, "title"> {
   contentProps?: DialogContentProps;
 }
 
-/**
- * Styled
- */
-
 const AlertBorder = styled("span", {
   shouldForwardProp: (prop: string) => !prop.startsWith("$"),
 })<{ $type: AlertValues }>(({ theme, $type }) => ({
@@ -66,10 +58,6 @@ const AlertBorder = styled("span", {
     [R.equals(Alert.info), () => theme.palette.info.main],
   ])(Alert[$type]),
 }));
-
-/**
- * Component
- */
 
 function BasicDialog(props: BasicDialogProps) {
   const {
@@ -117,13 +105,5 @@ function BasicDialog(props: BasicDialogProps) {
     </Dialog>
   );
 }
-
-BasicDialog.defaultProps = {
-  title: null,
-  titleIcon: null,
-  actions: null,
-  alert: false,
-  contentProps: null,
-};
 
 export default BasicDialog;

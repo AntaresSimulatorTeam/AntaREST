@@ -266,8 +266,4 @@ function UserForm(props: Props) {
   );
 }
 
-UserForm.defaultProps = {
-  onlyPermissions: false,
-};
-
 export default UserForm;

@@ -70,8 +70,4 @@ function AreaPropsView(props: PropsType) {
   );
 }
 
-AreaPropsView.defaultProps = {
-  currentArea: undefined,
-};
-
 export default AreaPropsView;
