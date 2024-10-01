@@ -12,7 +12,7 @@
 
 import logging
 import typing as t
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import numpy as np
@@ -54,19 +54,19 @@ DUMMY_COMPONENT = 2
 logger = logging.getLogger(__name__)
 
 
-class MCRoot(str, Enum):
+class MCRoot(StrEnum):
     MC_IND = "mc-ind"
     MC_ALL = "mc-all"
 
 
-class MCIndAreasQueryFile(str, Enum):
+class MCIndAreasQueryFile(StrEnum):
     VALUES = "values"
     DETAILS = "details"
     DETAILS_ST_STORAGE = "details-STstorage"
     DETAILS_RES = "details-res"
 
 
-class MCAllAreasQueryFile(str, Enum):
+class MCAllAreasQueryFile(StrEnum):
     VALUES = "values"
     DETAILS = "details"
     DETAILS_ST_STORAGE = "details-STstorage"
@@ -74,11 +74,11 @@ class MCAllAreasQueryFile(str, Enum):
     ID = "id"
 
 
-class MCIndLinksQueryFile(str, Enum):
+class MCIndLinksQueryFile(StrEnum):
     VALUES = "values"
 
 
-class MCAllLinksQueryFile(str, Enum):
+class MCAllLinksQueryFile(StrEnum):
     VALUES = "values"
     ID = "id"
 

@@ -33,9 +33,9 @@ class OutputSimulationSet(FolderNode):
         freq: MatrixFrequency
         for freq in MatrixFrequency:
             for output_type in ["id", "values"]:
-                file_name = f"{output_type}-{freq.value}.txt"
+                file_name = f"{output_type}-{freq}.txt"
                 if (self.config.path / file_name).exists():
-                    children[f"{output_type}-{freq.value}"] = AreaOutputSeriesMatrix(
+                    children[f"{output_type}-{freq}"] = AreaOutputSeriesMatrix(
                         self.context,
                         self.config.next_file(file_name),
                         freq,

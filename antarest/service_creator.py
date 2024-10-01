@@ -12,7 +12,7 @@
 
 import logging
 import typing as t
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import redis
@@ -67,7 +67,7 @@ This mapping can be used to instantiate a new session, for example:
 """
 
 
-class Module(str, Enum):
+class Module(StrEnum):
     APP = "app"
     WATCHER = "watcher"
     MATRIX_GC = "matrix_gc"

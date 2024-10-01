@@ -118,7 +118,7 @@ class StudyFilter(BaseModel, frozen=True, extra="forbid"):
     access_permissions: AccessPermissions = AccessPermissions()
 
 
-class StudySortBy(str, enum.Enum):
+class StudySortBy(enum.StrEnum):
     """How to sort the results of studies query results"""
 
     NAME_ASC = "+name"

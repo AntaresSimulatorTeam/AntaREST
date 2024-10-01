@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Awaitable, Callable, List, Optional
 
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from antarest.core.model import PermissionInfo
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     ANY = "_ANY"
     STUDY_CREATED = "STUDY_CREATED"
     STUDY_DELETED = "STUDY_DELETED"

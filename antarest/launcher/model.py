@@ -57,7 +57,7 @@ class LauncherParametersDTO(BaseModel):
         return cls.model_validate(from_json(params))
 
 
-class LogType(str, enum.Enum):
+class LogType(enum.StrEnum):
     STDOUT = "STDOUT"
     STDERR = "STDERR"
 
@@ -79,14 +79,14 @@ class LogType(str, enum.Enum):
             return "out.log"
 
 
-class JobStatus(str, enum.Enum):
+class JobStatus(enum.StrEnum):
     PENDING = "pending"
     FAILED = "failed"
     SUCCESS = "success"
     RUNNING = "running"
 
 
-class JobLogType(str, enum.Enum):
+class JobLogType(enum.StrEnum):
     BEFORE = "BEFORE"
     AFTER = "AFTER"
 
