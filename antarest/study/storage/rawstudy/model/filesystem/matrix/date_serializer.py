@@ -110,7 +110,7 @@ class HourlyMatrixSerializer(IDateMatrixSerializer):
         to_remove = cast(Sequence[Hashable], df.columns[0:5])
         body = df.drop(to_remove, axis=1)
 
-        return cast(pd.Index[str], pd.Index(date)), body
+        return pd.Index(date), body  # type: ignore
 
 
 class DailyMatrixSerializer(IDateMatrixSerializer):
@@ -148,7 +148,7 @@ class DailyMatrixSerializer(IDateMatrixSerializer):
         to_remove = cast(Sequence[Hashable], df.columns[0:4])
         body = df.drop(to_remove, axis=1)
 
-        return cast(pd.Index[str], pd.Index(date)), body
+        return pd.Index(date), body  # type: ignore
 
 
 class WeeklyMatrixSerializer(IDateMatrixSerializer):
