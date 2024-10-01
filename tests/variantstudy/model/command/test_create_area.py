@@ -15,6 +15,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
@@ -23,7 +24,6 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from study.storage.rawstudy.ini_reader import IniReader
 
 
 class TestCreateArea:
