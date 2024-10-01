@@ -23,6 +23,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from study.storage.rawstudy.ini_reader import IniReader
 
 
 class TestCreateArea:
@@ -96,9 +97,9 @@ class TestCreateArea:
 
         # Allocation
         assert (study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini").exists()
-        allocation = configparser.ConfigParser()
-        allocation.read(study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini")
-        assert int(allocation["[allocation"][area_id]) == 1
+        reader = IniReader()
+        allocation = reader.read(study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini")
+        assert int(allocation["[allocation]"][area_id]) == 1
 
         # Capacity
         assert (study_path / "input" / "hydro" / "common" / "capacity" / f"maxpower_{area_id}.txt.link").exists()
