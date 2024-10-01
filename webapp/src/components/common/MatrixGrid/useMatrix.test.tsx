@@ -30,6 +30,7 @@ import { GridCellKind } from "@glideapps/glide-data-grid";
 vi.mock("../../../services/api/matrix");
 vi.mock("../../../services/api/study");
 vi.mock("../../../services/api/studies/raw");
+vi.mock("../../../hooks/usePrompt");
 
 describe("useMatrix", () => {
   const mockStudyId = "study123";
