@@ -14,10 +14,12 @@ import pathlib
 from typing import Any, Dict, Optional
 
 import paramiko
-from pydantic import BaseModel, model_validator
+from pydantic import model_validator
+
+from antarest.core.utils.utils import BaseModelInHouse
 
 
-class SSHConfigDTO(BaseModel):
+class SSHConfigDTO(BaseModelInHouse):
     config_path: pathlib.Path
     username: str
     hostname: str

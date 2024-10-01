@@ -15,13 +15,13 @@ from datetime import timedelta
 from typing import Any, Callable, Coroutine, Dict, Optional, Tuple, Union
 
 from fastapi import Depends
-from pydantic import BaseModel
 from ratelimit.types import Scope  # type: ignore
 from starlette.requests import Request
 
 from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.serialization import from_json
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.fastapi_jwt_auth import AuthJWT
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ class Auth:
         return None
 
 
-class JwtSettings(BaseModel):
+class JwtSettings(BaseModelInHouse):
     authjwt_secret_key: str
     authjwt_token_location: Tuple[str, ...]
     authjwt_access_token_expires: Union[int, timedelta] = Auth.ACCESS_TOKEN_DURATION

@@ -12,13 +12,12 @@
 
 from typing import List, Union
 
-from pydantic import BaseModel
-
 from antarest.core.roles import RoleType
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.login.model import ADMIN_ID, Group, Identity
 
 
-class JWTGroup(BaseModel):
+class JWTGroup(BaseModelInHouse):
     """
     Sub JWT domain with groups data belongs to user
     """
@@ -28,7 +27,7 @@ class JWTGroup(BaseModel):
     role: RoleType
 
 
-class JWTUser(BaseModel):
+class JWTUser(BaseModelInHouse):
     """
     JWT domain with user data.
     """

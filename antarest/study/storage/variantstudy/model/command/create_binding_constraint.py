@@ -15,8 +15,9 @@ from abc import ABCMeta
 from enum import Enum
 
 import numpy as np
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -90,7 +91,7 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 # =================================================================================
 
 
-class BindingConstraintPropertiesBase(BaseModel, extra="forbid", populate_by_name=True):
+class BindingConstraintPropertiesBase(BaseModelInHouse, extra="forbid", populate_by_name=True):
     enabled: bool = True
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
     operator: BindingConstraintOperator = DEFAULT_OPERATOR
@@ -163,7 +164,7 @@ class OptionalProperties(BindingConstraintProperties870):
 
 
 @camel_case_model
-class BindingConstraintMatrices(BaseModel, extra="forbid", populate_by_name=True):
+class BindingConstraintMatrices(BaseModelInHouse, extra="forbid", populate_by_name=True):
     """
     Class used to store the matrices of a binding constraint.
     """

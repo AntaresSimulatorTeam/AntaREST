@@ -18,10 +18,10 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from pydantic import BaseModel
+from antarest.core.utils.utils import BaseModelInHouse
 
 
-class VersionInfoDTO(BaseModel):
+class VersionInfoDTO(BaseModelInHouse):
     name: str = "AntaREST"
     version: str
     gitcommit: str

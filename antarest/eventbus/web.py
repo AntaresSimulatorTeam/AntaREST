@@ -17,7 +17,6 @@ from http import HTTPStatus
 from typing import List, Optional
 
 from fastapi import Depends, HTTPException, Query
-from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.application import AppBuildContext
@@ -27,6 +26,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.serialization import to_json_string
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
 
@@ -38,7 +38,7 @@ class WebsocketMessageAction(str, Enum):
     UNSUBSCRIBE = "UNSUBSCRIBE"
 
 
-class WebsocketMessage(BaseModel):
+class WebsocketMessage(BaseModelInHouse):
     action: WebsocketMessageAction
     payload: str
 

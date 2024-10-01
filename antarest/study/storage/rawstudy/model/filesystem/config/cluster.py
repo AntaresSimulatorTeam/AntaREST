@@ -19,12 +19,14 @@ In the near future, this set of classes may be used for solar, wind and hydro cl
 import functools
 import typing as t
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from antarest.core.utils.utils import BaseModelInHouse
 
 
 @functools.total_ordering
 class ItemProperties(
-    BaseModel,
+    BaseModelInHouse,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,

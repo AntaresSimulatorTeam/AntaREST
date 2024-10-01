@@ -18,13 +18,12 @@ import time
 from pathlib import Path
 from typing import cast
 
-from pydantic import BaseModel
-
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, LocalConfig
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import TaskResult
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.launcher.adapters.log_manager import follow
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
@@ -38,7 +37,7 @@ GENERATE_TIMESERIES_TASK_NAME = "generate-timeseries"
 GENERATE_KIRSHOFF_CONSTRAINTS_TASK_NAME = "generate-kirshoff-constraints"
 
 
-class GenerateTimeseriesTaskArgs(BaseModel):
+class GenerateTimeseriesTaskArgs(BaseModelInHouse):
     study_id: str
     study_path: str
     managed: bool

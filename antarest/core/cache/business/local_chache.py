@@ -15,16 +15,15 @@ import threading
 import time
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
-
 from antarest.core.config import CacheConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import JSON
+from antarest.core.utils.utils import BaseModelInHouse
 
 logger = logging.getLogger(__name__)
 
 
-class LocalCacheElement(BaseModel):
+class LocalCacheElement(BaseModelInHouse):
     timeout: int
     duration: int
     data: JSON

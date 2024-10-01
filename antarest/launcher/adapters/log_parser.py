@@ -14,7 +14,7 @@ import functools
 import re
 import typing as t
 
-from pydantic import BaseModel
+from antarest.core.utils.utils import BaseModelInHouse
 
 _SearchFunc = t.Callable[[str], t.Optional[t.Match[str]]]
 
@@ -63,7 +63,7 @@ _quitting = t.cast(
 )
 
 
-class LaunchProgressDTO(BaseModel):
+class LaunchProgressDTO(BaseModelInHouse):
     """
     Measure the progress of a study simulation.
 

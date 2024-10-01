@@ -10,12 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 
 
-class Model(BaseModel):
+class Model(BaseModelInHouse):
     float_with_default: float = 1
     float_without_default: float
     boolean_with_default: bool = True

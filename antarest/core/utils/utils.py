@@ -26,6 +26,7 @@ from pathlib import Path
 import py7zr
 import redis
 from fastapi import HTTPException
+from pydantic import BaseModel, ConfigDict
 
 from antarest.core.config import RedisConfig
 from antarest.core.exceptions import ShouldNotHappenException
@@ -33,6 +34,10 @@ from antarest.core.exceptions import ShouldNotHappenException
 logger = logging.getLogger(__name__)
 
 UUID_PATTERN = re.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+class BaseModelInHouse(BaseModel):
+    model_config = ConfigDict(coerce_numbers_to_str=True)
 
 
 class DTO:

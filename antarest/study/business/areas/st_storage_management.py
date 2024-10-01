@@ -15,7 +15,7 @@ import operator
 import typing as t
 
 import numpy as np
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import field_validator, model_validator
 from typing_extensions import Literal
 
 from antarest.core.exceptions import (
@@ -28,6 +28,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -117,7 +118,7 @@ class STStorageOutput(STStorage880Config):
 # =============
 
 
-class STStorageMatrix(BaseModel):
+class STStorageMatrix(BaseModelInHouse):
     """
     Short-Term Storage Matrix  Model.
 
@@ -157,7 +158,7 @@ class STStorageMatrix(BaseModel):
 
 
 # noinspection SpellCheckingInspection
-class STStorageMatrices(BaseModel):
+class STStorageMatrices(BaseModelInHouse):
     """
     Short-Term Storage Matrices Validation Model.
 

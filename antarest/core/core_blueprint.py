@@ -13,14 +13,14 @@
 from typing import Any
 
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 from antarest.core.config import Config
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
 
 
-class StatusDTO(BaseModel):
+class StatusDTO(BaseModelInHouse):
     status: str
 
 

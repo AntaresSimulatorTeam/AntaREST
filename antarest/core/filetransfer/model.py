@@ -15,10 +15,10 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import Optional
 
-from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.utils.utils import BaseModelInHouse
 
 
 class FileDownloadNotFound(HTTPException):
@@ -37,7 +37,7 @@ class FileDownloadNotReady(HTTPException):
         )
 
 
-class FileDownloadDTO(BaseModel):
+class FileDownloadDTO(BaseModelInHouse):
     id: str
     name: str
     filename: str
@@ -47,7 +47,7 @@ class FileDownloadDTO(BaseModel):
     error_message: str = ""
 
 
-class FileDownloadTaskDTO(BaseModel):
+class FileDownloadTaskDTO(BaseModelInHouse):
     file: FileDownloadDTO
     task: str
 

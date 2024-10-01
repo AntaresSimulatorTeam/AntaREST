@@ -15,7 +15,7 @@ import logging
 import typing as t
 
 import numpy as np
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -31,6 +31,7 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.utils.string import to_camel_case
+from antarest.core.utils.utils import BaseModelInHouse
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -79,7 +80,7 @@ OPERATOR_CONFLICT_MAP = {
 }
 
 
-class LinkTerm(BaseModel):
+class LinkTerm(BaseModelInHouse):
     """
     DTO for a constraint term on a link between two areas.
 
@@ -98,7 +99,7 @@ class LinkTerm(BaseModel):
         return "%".join(ids)
 
 
-class ClusterTerm(BaseModel):
+class ClusterTerm(BaseModelInHouse):
     """
     DTO for a constraint term on a cluster in an area.
 
@@ -117,7 +118,7 @@ class ClusterTerm(BaseModel):
         return ".".join(ids)
 
 
-class ConstraintTerm(BaseModel):
+class ConstraintTerm(BaseModelInHouse):
     """
     DTO for a constraint term.
 
@@ -147,7 +148,7 @@ class ConstraintTerm(BaseModel):
         return self.data.generate_id()
 
 
-class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
+class ConstraintFilters(BaseModelInHouse, frozen=True, extra="forbid"):
     """
     Binding Constraint Filters gathering the main filtering parameters.
 
