@@ -92,15 +92,12 @@ def create_systray_app() -> AntaresSystrayApp:
     # Adding options to the System Tray
     def handle_action(reason: int) -> None:
         """
-        - shows context menu also on left click
-        - open browser on double click
+        Shows context menu also on left click
         """
         if reason == QSystemTrayIcon.Trigger:  # type: ignore
             menu = tray.contextMenu()
             assert menu is not None
             menu.popup(QCursor.pos())
-        if reason == QSystemTrayIcon.DoubleClick:  # type: ignore
-            open_app()
 
     tray.setContextMenu(menu)
     tray.activated.connect(handle_action)
