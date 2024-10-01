@@ -31,21 +31,17 @@ gunicorn~=20.1.0
 jsonref~=0.2
 PyJWT~=2.9.0
 MarkupSafe~=2.0.1
-numpy~=1.22.1; python_version <= '3.8'
-numpy~=1.26.4; python_version > '3.8'
-pandas~=1.4.0; python_version <= '3.8'
-pandas~=2.2.3; python_version > '3.8'
+numpy~=1.26.4
+pandas~=2.2.3
 paramiko~=2.12.0
 plyer~=2.0.0
 psycopg2-binary~=2.9.9
 py7zr~=0.20.6
 PyQt5~=5.15.6
 python-json-logger~=2.0.7
-PyYAML~=5.4.1; python_version <= '3.9'
-PyYAML~=5.3.1; python_version > '3.9'
+PyYAML~=5.3.1
 redis~=4.1.2
 SQLAlchemy~=1.4.46
-tables==3.6.1; python_version <= '3.8'
-tables==3.9.2; python_version > '3.8'
+tables==3.9.2
 typing_extensions~=4.12.2
 xlsxwriter~=3.2.0
