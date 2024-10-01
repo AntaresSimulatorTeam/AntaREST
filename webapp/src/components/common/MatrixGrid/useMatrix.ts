@@ -45,6 +45,7 @@ import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 import { importFile } from "../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import usePrompt from "../../../hooks/usePrompt";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -83,6 +84,12 @@ export function useMatrix(
     () => getAggregateTypes(aggregatesConfig || []),
     [aggregatesConfig],
   );
+
+  // Display warning prompts to prevent unintended navigation
+  // 1. When the matrix is currently being submitted
+  usePrompt(t("form.submit.inProgress"), isSubmitting);
+  // 2. When there are unsaved changes in the matrix
+  usePrompt(t("form.changeNotSaved"), currentState.pendingUpdates.length > 0);
 
   const fetchMatrix = useCallback(
     async (loadingState = true) => {
