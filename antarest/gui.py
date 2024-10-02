@@ -37,8 +37,6 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def main() -> None:
-    print("Starting main execution...")
-
     multiprocessing.freeze_support()
 
     arguments = parse_arguments()
