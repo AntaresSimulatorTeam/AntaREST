@@ -63,7 +63,7 @@ class ClusterInfoDTO(PatchCluster):
     unitcount: int = 0
     nominalcapacity: float = 0
     group: t.Optional[str] = None
-    min_stable_power: t.Optional[int] = None
+    min_stable_power: t.Optional[float] = None
     min_up_time: t.Optional[int] = None
     min_down_time: t.Optional[int] = None
     spinning: t.Optional[float] = None
