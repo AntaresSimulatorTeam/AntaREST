@@ -396,6 +396,10 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         assert res.json() == fr_gas_conventional_cfg
 
+        # asserts it didn't break the allocation matrix
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/allocation/form")
+        assert res.status_code == 200, res.json()
+
         # ==========================
         #  THERMAL CLUSTER MATRICES
         # ==========================
