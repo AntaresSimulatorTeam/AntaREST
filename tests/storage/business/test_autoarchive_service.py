@@ -96,3 +96,5 @@ def test_auto_archival(tmp_path: Path):
 
     # Check that the variant outputs are deleted for the variant study "e"
     study_service.archive_outputs.assert_called_once_with("e", params=RequestParameters(DEFAULT_ADMIN_USER))
+
+    # Check if variant snapshots with date older than variant_snapshot_lifespan_days argument are cleared

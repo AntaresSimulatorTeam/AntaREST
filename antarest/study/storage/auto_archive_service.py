@@ -48,8 +48,9 @@ class AutoArchiveService(IService):
             study_ids_to_archive = [
                 (study.id, isinstance(study, RawStudy))
                 for study in studies
-                if (study.last_access or study.updated_at) < old_date
-                and (isinstance(study, VariantStudy) or not study.archived)
+                if ((study.last_access or study.updated_at) < old_date)
+                and isinstance(study, VariantStudy)
+                or not study.archived
             ]
         for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
             try:
@@ -84,10 +85,25 @@ class AutoArchiveService(IService):
                     exc_info=e,
                 )
 
+    def _try_clear_snapshot(self) -> None:
+        snapshot_old_time = datetime.datetime.utcnow() - datetime.timedelta(
+            days=self.config.storage.variant_snapshot_lifespan_days
+        )
+        # get variants
+        variants = self.study_service.repository.get_all(
+            study_filter=StudyFilter(variant=True, access_permissions=AccessPermissions(is_admin=True))
+        )
+        # check their date
+        for variant in variants:
+            if (variant.last_access or variant.updated_at) < snapshot_old_time:
+                # clear ones that are too old
+                self.study_service.storage_service.variant_study_service.clear_snapshot(variant.id)
+
     def _loop(self) -> None:
         while True:
             try:
                 self._try_archive_studies()
+                self._try_clear_snapshot()
             except Exception as e:
                 logger.error(
                     "Unexpected error happened when processing auto archive service loop",
