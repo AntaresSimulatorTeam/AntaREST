@@ -15,7 +15,6 @@ import typing as t
 import uuid
 
 import bcrypt
-from pydantic.main import BaseModel
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
@@ -24,6 +23,7 @@ from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
+from antarest.core.serialization import AntaresBaseModel
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -44,58 +44,58 @@ ADMIN_NAME = "admin"
 """Name of the site administrator."""
 
 
-class UserInfo(BaseModel):
+class UserInfo(AntaresBaseModel):
     id: int
     name: str
 
 
-class BotRoleCreateDTO(BaseModel):
+class BotRoleCreateDTO(AntaresBaseModel):
     group: str
     role: int
 
 
-class BotCreateDTO(BaseModel):
+class BotCreateDTO(AntaresBaseModel):
     name: str
     roles: t.List[BotRoleCreateDTO]
     is_author: bool = True
 
 
-class UserCreateDTO(BaseModel):
+class UserCreateDTO(AntaresBaseModel):
     name: str
     password: str
 
 
-class GroupDTO(BaseModel):
+class GroupDTO(AntaresBaseModel):
     id: t.Optional[str] = None
     name: str
 
 
-class RoleCreationDTO(BaseModel):
+class RoleCreationDTO(AntaresBaseModel):
     type: RoleType
     group_id: str
     identity_id: int
 
 
-class RoleDTO(BaseModel):
+class RoleDTO(AntaresBaseModel):
     group_id: t.Optional[str]
     group_name: str
     identity_id: int
     type: RoleType
 
 
-class IdentityDTO(BaseModel):
+class IdentityDTO(AntaresBaseModel):
     id: int
     name: str
     roles: t.List[RoleDTO]
 
 
-class RoleDetailDTO(BaseModel):
+class RoleDetailDTO(AntaresBaseModel):
     group: GroupDTO
     identity: UserInfo
     type: RoleType
 
 
-class BotIdentityDTO(BaseModel):
+class BotIdentityDTO(AntaresBaseModel):
     id: int
     name: str
     isAuthor: bool
@@ -107,7 +107,7 @@ class BotDTO(UserInfo):
     is_author: bool
 
 
-class UserRoleDTO(BaseModel):
+class UserRoleDTO(AntaresBaseModel):
     id: int
     name: str
     role: RoleType
@@ -311,7 +311,7 @@ class Role(Base):  # type: ignore
         )
 
 
-class CredentialsDTO(BaseModel):
+class CredentialsDTO(AntaresBaseModel):
     user: int
     access_token: str
     refresh_token: str

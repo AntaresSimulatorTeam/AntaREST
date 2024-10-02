@@ -16,8 +16,9 @@ from enum import Enum
 
 import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
@@ -92,7 +93,7 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 # =================================================================================
 
 
-class BindingConstraintPropertiesBase(BaseModel, extra="forbid", populate_by_name=True):
+class BindingConstraintPropertiesBase(AntaresBaseModel, extra="forbid", populate_by_name=True):
     enabled: bool = True
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
     operator: BindingConstraintOperator = DEFAULT_OPERATOR
@@ -129,10 +130,9 @@ def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[Bin
     """
     Retrieves the binding constraint configuration class based on the study version.
     """
-    version = study_version
-    if version >= STUDY_VERSION_8_7:
+    if study_version >= STUDY_VERSION_8_7:
         return BindingConstraintProperties870
-    elif version >= STUDY_VERSION_8_3:
+    elif study_version >= STUDY_VERSION_8_3:
         return BindingConstraintProperties830
     else:
         return BindingConstraintPropertiesBase
@@ -165,7 +165,7 @@ class OptionalProperties(BindingConstraintProperties870):
 
 
 @camel_case_model
-class BindingConstraintMatrices(BaseModel, extra="forbid", populate_by_name=True):
+class BindingConstraintMatrices(AntaresBaseModel, extra="forbid", populate_by_name=True):
     """
     Class used to store the matrices of a binding constraint.
     """

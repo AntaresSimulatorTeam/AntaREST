@@ -19,10 +19,11 @@ import typing as t
 import zipfile
 
 from fastapi import HTTPException, UploadFile
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
+from pydantic import Field, ValidationError, field_validator, model_validator
 
 from antarest.core.exceptions import BadZipBinary, ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
@@ -55,7 +56,7 @@ class Solver(EnumIgnoreCase):
     XPRESS = "Xpress"
 
 
-class XpansionSensitivitySettings(BaseModel):
+class XpansionSensitivitySettings(AntaresBaseModel):
     """
     A DTO representing the sensitivity analysis settings used for Xpansion.
 
@@ -76,7 +77,7 @@ class XpansionSensitivitySettings(BaseModel):
         return [] if v is None else v
 
 
-class XpansionSettings(BaseModel, extra="ignore", validate_assignment=True, populate_by_name=True):
+class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=True, populate_by_name=True):
     """
     A data transfer object representing the general settings used for Xpansion.
 
@@ -230,7 +231,7 @@ class UpdateXpansionSettings(XpansionSettings):
     )
 
 
-class XpansionCandidateDTO(BaseModel):
+class XpansionCandidateDTO(AntaresBaseModel):
     # The id of the candidate is irrelevant, so it should stay hidden for the user
     # The names should be the section titles of the file, and the id should be removed
     name: str

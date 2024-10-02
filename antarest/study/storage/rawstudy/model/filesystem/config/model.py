@@ -15,8 +15,9 @@ import typing as t
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from pydantic import BaseModel, Field, field_serializer, field_validator, model_validator
+from pydantic import Field, field_serializer, field_validator, model_validator
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
@@ -50,7 +51,7 @@ class EnrModelling(EnumIgnoreCase):
         return self.value
 
 
-class Link(BaseModel, extra="ignore"):
+class Link(AntaresBaseModel, extra="ignore"):
     """
     Object linked to /input/links/<link>/properties.ini information
 
@@ -75,7 +76,7 @@ class Link(BaseModel, extra="ignore"):
         return values
 
 
-class Area(BaseModel, extra="forbid"):
+class Area(AntaresBaseModel, extra="forbid"):
     """
     Object linked to /input/<area>/optimization.ini information
     """
@@ -90,7 +91,7 @@ class Area(BaseModel, extra="forbid"):
     st_storages: t.List[STStorageConfigType] = []
 
 
-class DistrictSet(BaseModel):
+class DistrictSet(AntaresBaseModel):
     """
     Object linked to /inputs/sets.ini information
     """
@@ -109,7 +110,7 @@ class DistrictSet(BaseModel):
         return self.areas or []
 
 
-class Simulation(BaseModel):
+class Simulation(AntaresBaseModel):
     """
     Object linked to /output/<simulation_name>/about-the-study/** information
     """
@@ -131,7 +132,7 @@ class Simulation(BaseModel):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class BindingConstraintDTO(BaseModel):
+class BindingConstraintDTO(AntaresBaseModel):
     """
     Object linked to `input/bindingconstraints/bindingconstraints.ini` information
 
@@ -303,7 +304,7 @@ def transform_name_to_id(name: str, lower: bool = True) -> str:
     return valid_id.lower() if lower else valid_id
 
 
-class FileStudyTreeConfigDTO(BaseModel):
+class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_path: Path
     path: Path
     study_id: str

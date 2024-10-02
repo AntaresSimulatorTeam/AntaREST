@@ -16,7 +16,7 @@ import typing as t
 
 import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -31,6 +31,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
@@ -80,7 +81,7 @@ OPERATOR_CONFLICT_MAP = {
 }
 
 
-class LinkTerm(BaseModel):
+class LinkTerm(AntaresBaseModel):
     """
     DTO for a constraint term on a link between two areas.
 
@@ -99,7 +100,7 @@ class LinkTerm(BaseModel):
         return "%".join(ids)
 
 
-class ClusterTerm(BaseModel):
+class ClusterTerm(AntaresBaseModel):
     """
     DTO for a constraint term on a cluster in an area.
 
@@ -118,7 +119,7 @@ class ClusterTerm(BaseModel):
         return ".".join(ids)
 
 
-class ConstraintTerm(BaseModel):
+class ConstraintTerm(AntaresBaseModel):
     """
     DTO for a constraint term.
 
@@ -148,7 +149,7 @@ class ConstraintTerm(BaseModel):
         return self.data.generate_id()
 
 
-class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
+class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
     """
     Binding Constraint Filters gathering the main filtering parameters.
 
@@ -494,20 +495,19 @@ class BindingConstraintManager:
             "terms": constraint.get("terms", []),
         }
 
-        version = study_version
-        if version >= STUDY_VERSION_8_3:
+        if study_version >= STUDY_VERSION_8_3:
             _filter_year_by_year = constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year", "")
             _filter_synthesis = constraint.get("filter_synthesis") or constraint.get("filter-synthesis", "")
             constraint_output["filter_year_by_year"] = _filter_year_by_year
             constraint_output["filter_synthesis"] = _filter_synthesis
-        if version >= STUDY_VERSION_8_7:
+        if study_version >= STUDY_VERSION_8_7:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
 
         # Choose the right model according to the version
         adapted_constraint: ConstraintOutput
-        if version >= STUDY_VERSION_8_7:
+        if study_version >= STUDY_VERSION_8_7:
             adapted_constraint = ConstraintOutput870(**constraint_output)
-        elif version >= STUDY_VERSION_8_3:
+        elif study_version >= STUDY_VERSION_8_3:
             adapted_constraint = ConstraintOutput830(**constraint_output)
         else:
             adapted_constraint = ConstraintOutputBase(**constraint_output)
