@@ -13,10 +13,9 @@
 import logging
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
 from antarest.core.utils.utils import StopWatch, unzip
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
@@ -24,7 +23,7 @@ from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 logger = logging.getLogger(__name__)
 
 
-class ArchiveTaskArgs(BaseModel):
+class ArchiveTaskArgs(AntaresBaseModel):
     src: str
     dest: str
     remove_src: bool = False
