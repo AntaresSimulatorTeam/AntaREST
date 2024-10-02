@@ -10,4 +10,4 @@
 #
 # This file is part of the Antares project.
 
-__all__ = "BaseModelInHouse"
+__all__ = "AntaresBaseModel"

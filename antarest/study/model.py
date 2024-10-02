@@ -34,7 +34,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -151,7 +151,7 @@ class StudyContentStatus(enum.Enum):
     ERROR = "ERROR"
 
 
-class CommentsDto(BaseModelInHouse):
+class CommentsDto(AntaresBaseModel):
     comments: str
 
 
@@ -300,7 +300,7 @@ class StudyFolder:
     groups: t.List[Group]
 
 
-class PatchStudy(BaseModelInHouse):
+class PatchStudy(AntaresBaseModel):
     scenario: t.Optional[str] = None
     doc: t.Optional[str] = None
     status: t.Optional[str] = None
@@ -308,12 +308,12 @@ class PatchStudy(BaseModelInHouse):
     tags: t.List[str] = []
 
 
-class PatchArea(BaseModelInHouse):
+class PatchArea(AntaresBaseModel):
     country: t.Optional[str] = None
     tags: t.List[str] = []
 
 
-class PatchCluster(BaseModelInHouse):
+class PatchCluster(AntaresBaseModel):
     type: t.Optional[str] = None
     code_oi: t.Optional[str] = None
 
@@ -323,23 +323,23 @@ class PatchCluster(BaseModelInHouse):
             return "-".join(string.split("_"))
 
 
-class PatchOutputs(BaseModelInHouse):
+class PatchOutputs(AntaresBaseModel):
     reference: t.Optional[str] = None
 
 
-class Patch(BaseModelInHouse):
+class Patch(AntaresBaseModel):
     study: t.Optional[PatchStudy] = None
     areas: t.Optional[t.Dict[str, PatchArea]] = None
     thermal_clusters: t.Optional[t.Dict[str, PatchCluster]] = None
     outputs: t.Optional[PatchOutputs] = None
 
 
-class OwnerInfo(BaseModelInHouse):
+class OwnerInfo(AntaresBaseModel):
     id: t.Optional[int] = None
     name: str
 
 
-class StudyMetadataDTO(BaseModelInHouse):
+class StudyMetadataDTO(AntaresBaseModel):
     id: str
     name: str
     version: int
@@ -365,7 +365,7 @@ class StudyMetadataDTO(BaseModelInHouse):
         return str(val) if val else val  # type: ignore
 
 
-class StudyMetadataPatchDTO(BaseModelInHouse):
+class StudyMetadataPatchDTO(AntaresBaseModel):
     name: t.Optional[str] = None
     author: t.Optional[str] = None
     horizon: t.Optional[str] = None
@@ -388,7 +388,7 @@ class StudyMetadataPatchDTO(BaseModelInHouse):
         return tags
 
 
-class StudySimSettingsDTO(BaseModelInHouse):
+class StudySimSettingsDTO(AntaresBaseModel):
     general: t.Dict[str, t.Any]
     input: t.Dict[str, t.Any]
     output: t.Dict[str, t.Any]
@@ -399,7 +399,7 @@ class StudySimSettingsDTO(BaseModelInHouse):
     playlist: t.Optional[t.List[int]] = None
 
 
-class StudySimResultDTO(BaseModelInHouse):
+class StudySimResultDTO(AntaresBaseModel):
     name: str
     type: str
     settings: StudySimSettingsDTO
@@ -479,7 +479,7 @@ class ExportFormat(str, enum.Enum):
         return mapping[self]
 
 
-class StudyDownloadDTO(BaseModelInHouse):
+class StudyDownloadDTO(AntaresBaseModel):
     """
     DTO used to download outputs
     """
@@ -495,32 +495,32 @@ class StudyDownloadDTO(BaseModelInHouse):
     includeClusters: bool = False
 
 
-class MatrixIndex(BaseModelInHouse):
+class MatrixIndex(AntaresBaseModel):
     start_date: str = ""
     steps: int = 8760
     first_week_size: int = 7
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
-class TimeSerie(BaseModelInHouse):
+class TimeSerie(AntaresBaseModel):
     name: str
     unit: str
     data: t.List[t.Optional[float]] = []
 
 
-class TimeSeriesData(BaseModelInHouse):
+class TimeSeriesData(AntaresBaseModel):
     type: StudyDownloadType
     name: str
     data: t.Dict[str, t.List[TimeSerie]] = {}
 
 
-class MatrixAggregationResultDTO(BaseModelInHouse):
+class MatrixAggregationResultDTO(AntaresBaseModel):
     index: MatrixIndex
     data: t.List[TimeSeriesData]
     warnings: t.List[str]
 
 
-class MatrixAggregationResult(BaseModelInHouse):
+class MatrixAggregationResult(AntaresBaseModel):
     index: MatrixIndex
     data: t.Dict[t.Tuple[StudyDownloadType, str], t.Dict[str, t.List[TimeSerie]]]
     warnings: t.List[str]
@@ -540,6 +540,6 @@ class MatrixAggregationResult(BaseModelInHouse):
         )
 
 
-class ReferenceStudy(BaseModelInHouse):
+class ReferenceStudy(AntaresBaseModel):
     version: str
     template_name: str

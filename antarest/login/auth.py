@@ -20,8 +20,7 @@ from starlette.requests import Request
 
 from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
-from antarest.core.serialization import from_json
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel, from_json
 from antarest.fastapi_jwt_auth import AuthJWT
 
 logger = logging.getLogger(__name__)
@@ -79,7 +78,7 @@ class Auth:
         return None
 
 
-class JwtSettings(BaseModelInHouse):
+class JwtSettings(AntaresBaseModel):
     authjwt_secret_key: str
     authjwt_token_location: Tuple[str, ...]
     authjwt_access_token_expires: Union[int, timedelta] = Auth.ACCESS_TOKEN_DURATION

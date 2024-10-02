@@ -13,7 +13,7 @@
 import enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 if TYPE_CHECKING:
     # These dependencies are only used for type checking with mypy.
@@ -43,7 +43,7 @@ class StudyPermissionType(str, enum.Enum):
     MANAGE_PERMISSIONS = "MANAGE_PERMISSIONS"
 
 
-class PermissionInfo(BaseModelInHouse):
+class PermissionInfo(AntaresBaseModel):
     owner: Optional[int] = None
     groups: List[str] = []
     public_mode: PublicMode = PublicMode.NONE

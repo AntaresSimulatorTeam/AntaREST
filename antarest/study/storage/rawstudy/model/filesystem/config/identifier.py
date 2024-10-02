@@ -16,11 +16,11 @@ from pydantic import Field, model_validator
 
 __all__ = ("IgnoreCaseIdentifier", "LowerCaseIdentifier")
 
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 
 class IgnoreCaseIdentifier(
-    BaseModelInHouse,
+    AntaresBaseModel,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,

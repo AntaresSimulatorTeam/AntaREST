@@ -23,7 +23,7 @@ from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -44,58 +44,58 @@ ADMIN_NAME = "admin"
 """Name of the site administrator."""
 
 
-class UserInfo(BaseModelInHouse):
+class UserInfo(AntaresBaseModel):
     id: int
     name: str
 
 
-class BotRoleCreateDTO(BaseModelInHouse):
+class BotRoleCreateDTO(AntaresBaseModel):
     group: str
     role: int
 
 
-class BotCreateDTO(BaseModelInHouse):
+class BotCreateDTO(AntaresBaseModel):
     name: str
     roles: t.List[BotRoleCreateDTO]
     is_author: bool = True
 
 
-class UserCreateDTO(BaseModelInHouse):
+class UserCreateDTO(AntaresBaseModel):
     name: str
     password: str
 
 
-class GroupDTO(BaseModelInHouse):
+class GroupDTO(AntaresBaseModel):
     id: t.Optional[str] = None
     name: str
 
 
-class RoleCreationDTO(BaseModelInHouse):
+class RoleCreationDTO(AntaresBaseModel):
     type: RoleType
     group_id: str
     identity_id: int
 
 
-class RoleDTO(BaseModelInHouse):
+class RoleDTO(AntaresBaseModel):
     group_id: t.Optional[str]
     group_name: str
     identity_id: int
     type: RoleType
 
 
-class IdentityDTO(BaseModelInHouse):
+class IdentityDTO(AntaresBaseModel):
     id: int
     name: str
     roles: t.List[RoleDTO]
 
 
-class RoleDetailDTO(BaseModelInHouse):
+class RoleDetailDTO(AntaresBaseModel):
     group: GroupDTO
     identity: UserInfo
     type: RoleType
 
 
-class BotIdentityDTO(BaseModelInHouse):
+class BotIdentityDTO(AntaresBaseModel):
     id: int
     name: str
     isAuthor: bool
@@ -107,7 +107,7 @@ class BotDTO(UserInfo):
     is_author: bool
 
 
-class UserRoleDTO(BaseModelInHouse):
+class UserRoleDTO(AntaresBaseModel):
     id: int
     name: str
     role: RoleType
@@ -311,7 +311,7 @@ class Role(Base):  # type: ignore
         )
 
 
-class CredentialsDTO(BaseModelInHouse):
+class CredentialsDTO(AntaresBaseModel):
     user: int
     access_token: str
     refresh_token: str

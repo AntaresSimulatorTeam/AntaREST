@@ -31,8 +31,8 @@ from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
-from antarest.core.utils.utils import BaseModelInHouse
 
 
 class RedirectMiddleware(BaseHTTPMiddleware):
@@ -77,7 +77,7 @@ class RedirectMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class BackEndConfig(BaseModelInHouse):
+class BackEndConfig(AntaresBaseModel):
     """
     Configuration about backend URLs served to the frontend.
     """

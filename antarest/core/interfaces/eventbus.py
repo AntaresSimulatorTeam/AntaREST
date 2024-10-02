@@ -15,7 +15,7 @@ from enum import Enum
 from typing import Any, Awaitable, Callable, List, Optional
 
 from antarest.core.model import PermissionInfo
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 
 class EventType(str, Enum):
@@ -55,7 +55,7 @@ class EventChannelDirectory:
     STUDY_GENERATION = "GENERATION_TASK/"
 
 
-class Event(BaseModelInHouse):
+class Event(AntaresBaseModel):
     type: EventType
     payload: Any
     permissions: PermissionInfo

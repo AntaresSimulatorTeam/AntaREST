@@ -18,7 +18,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, T
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 from antarest.login.model import GroupDTO, Identity, UserInfo
 
 
@@ -58,12 +58,12 @@ class Matrix(Base):  # type: ignore
         return res
 
 
-class MatrixInfoDTO(BaseModelInHouse):
+class MatrixInfoDTO(AntaresBaseModel):
     id: str
     name: str
 
 
-class MatrixDataSetDTO(BaseModelInHouse):
+class MatrixDataSetDTO(AntaresBaseModel):
     id: str
     name: str
     matrices: t.List[MatrixInfoDTO]
@@ -209,7 +209,7 @@ class MatrixDataSet(Base):  # type: ignore
 MatrixData = float
 
 
-class MatrixDTO(BaseModelInHouse):
+class MatrixDTO(AntaresBaseModel):
     width: int
     height: int
     index: t.List[str]
@@ -219,7 +219,7 @@ class MatrixDTO(BaseModelInHouse):
     id: str = ""
 
 
-class MatrixContent(BaseModelInHouse):
+class MatrixContent(AntaresBaseModel):
     """
     Matrix content (Data Frame array)
 
@@ -234,7 +234,7 @@ class MatrixContent(BaseModelInHouse):
     columns: t.List[t.Union[int, str]]
 
 
-class MatrixDataSetUpdateDTO(BaseModelInHouse):
+class MatrixDataSetUpdateDTO(AntaresBaseModel):
     name: str
     groups: t.List[str]
     public: bool

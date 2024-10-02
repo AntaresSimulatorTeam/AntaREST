@@ -16,10 +16,10 @@ from typing import Any, Optional
 from sqlalchemy import Column, Integer, String  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 
-class ConfigDataDTO(BaseModelInHouse):
+class ConfigDataDTO(AntaresBaseModel):
     key: str
     value: Optional[str]
 

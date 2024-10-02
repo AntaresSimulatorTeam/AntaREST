@@ -14,7 +14,7 @@ import functools
 import re
 import typing as t
 
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 _SearchFunc = t.Callable[[str], t.Optional[t.Match[str]]]
 
@@ -63,7 +63,7 @@ _quitting = t.cast(
 )
 
 
-class LaunchProgressDTO(BaseModelInHouse):
+class LaunchProgressDTO(AntaresBaseModel):
     """
     Measure the progress of a study simulation.
 

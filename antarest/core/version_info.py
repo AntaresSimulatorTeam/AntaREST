@@ -18,10 +18,10 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 
-class VersionInfoDTO(BaseModelInHouse):
+class VersionInfoDTO(AntaresBaseModel):
     name: str = "AntaREST"
     version: str
     gitcommit: str

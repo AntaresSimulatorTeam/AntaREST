@@ -18,7 +18,7 @@ from typing import Optional
 from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 
 class FileDownloadNotFound(HTTPException):
@@ -37,7 +37,7 @@ class FileDownloadNotReady(HTTPException):
         )
 
 
-class FileDownloadDTO(BaseModelInHouse):
+class FileDownloadDTO(AntaresBaseModel):
     id: str
     name: str
     filename: str
@@ -47,7 +47,7 @@ class FileDownloadDTO(BaseModelInHouse):
     error_message: str = ""
 
 
-class FileDownloadTaskDTO(BaseModelInHouse):
+class FileDownloadTaskDTO(AntaresBaseModel):
     file: FileDownloadDTO
     task: str
 

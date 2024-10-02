@@ -16,7 +16,8 @@ from pathlib import Path
 
 from pydantic import Field, model_validator
 
-from antarest.core.utils.utils import DTO, BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
+from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 from .binding_constraint import (
@@ -49,7 +50,7 @@ class EnrModelling(EnumIgnoreCase):
         return self.value
 
 
-class Link(BaseModelInHouse, extra="ignore"):
+class Link(AntaresBaseModel, extra="ignore"):
     """
     Object linked to /input/links/<link>/properties.ini information
 
@@ -74,7 +75,7 @@ class Link(BaseModelInHouse, extra="ignore"):
         return values
 
 
-class Area(BaseModelInHouse, extra="forbid"):
+class Area(AntaresBaseModel, extra="forbid"):
     """
     Object linked to /input/<area>/optimization.ini information
     """
@@ -89,7 +90,7 @@ class Area(BaseModelInHouse, extra="forbid"):
     st_storages: t.List[STStorageConfigType] = []
 
 
-class DistrictSet(BaseModelInHouse):
+class DistrictSet(AntaresBaseModel):
     """
     Object linked to /inputs/sets.ini information
     """
@@ -108,7 +109,7 @@ class DistrictSet(BaseModelInHouse):
         return self.areas or []
 
 
-class Simulation(BaseModelInHouse):
+class Simulation(AntaresBaseModel):
     """
     Object linked to /output/<simulation_name>/about-the-study/** information
     """
@@ -130,7 +131,7 @@ class Simulation(BaseModelInHouse):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class BindingConstraintDTO(BaseModelInHouse):
+class BindingConstraintDTO(AntaresBaseModel):
     """
     Object linked to `input/bindingconstraints/bindingconstraints.ini` information
 
@@ -302,7 +303,7 @@ def transform_name_to_id(name: str, lower: bool = True) -> str:
     return valid_id.lower() if lower else valid_id
 
 
-class FileStudyTreeConfigDTO(BaseModelInHouse):
+class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_path: Path
     path: Path
     study_id: str

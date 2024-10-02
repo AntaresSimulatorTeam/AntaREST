@@ -21,12 +21,12 @@ import typing as t
 
 from pydantic import Field
 
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 
 @functools.total_ordering
 class ItemProperties(
-    BaseModelInHouse,
+    AntaresBaseModel,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,

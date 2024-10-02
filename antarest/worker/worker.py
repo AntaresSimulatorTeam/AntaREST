@@ -19,20 +19,20 @@ from typing import Any, Dict, List, Union
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
 from antarest.core.model import PermissionInfo, PublicMode
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
-from antarest.core.utils.utils import BaseModelInHouse
 
 logger = logging.getLogger(__name__)
 
 MAX_WORKERS = 10
 
 
-class WorkerTaskResult(BaseModelInHouse):
+class WorkerTaskResult(AntaresBaseModel):
     task_id: str
     task_result: TaskResult
 
 
-class WorkerTaskCommand(BaseModelInHouse):
+class WorkerTaskCommand(AntaresBaseModel):
     task_id: str
     task_type: str
     task_args: Dict[str, Union[int, float, bool, str]]

@@ -19,7 +19,7 @@ from pydantic import Field
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
@@ -48,7 +48,7 @@ class AreaType(enum.Enum):
     DISTRICT = "DISTRICT"
 
 
-class AreaCreationDTO(BaseModelInHouse):
+class AreaCreationDTO(AntaresBaseModel):
     name: str
     type: AreaType
     metadata: t.Optional[PatchArea] = None
@@ -77,13 +77,13 @@ class AreaInfoDTO(AreaCreationDTO):
     thermals: t.Optional[t.List[ClusterInfoDTO]] = None
 
 
-class LayerInfoDTO(BaseModelInHouse):
+class LayerInfoDTO(AntaresBaseModel):
     id: str
     name: str
     areas: t.List[str]
 
 
-class UpdateAreaUi(BaseModelInHouse, extra="forbid", populate_by_name=True):
+class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
     """
     DTO for updating area UI
 

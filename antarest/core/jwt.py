@@ -13,11 +13,11 @@
 from typing import List, Union
 
 from antarest.core.roles import RoleType
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 from antarest.login.model import ADMIN_ID, Group, Identity
 
 
-class JWTGroup(BaseModelInHouse):
+class JWTGroup(AntaresBaseModel):
     """
     Sub JWT domain with groups data belongs to user
     """
@@ -27,7 +27,7 @@ class JWTGroup(BaseModelInHouse):
     role: RoleType
 
 
-class JWTUser(BaseModelInHouse):
+class JWTUser(AntaresBaseModel):
     """
     JWT domain with user data.
     """

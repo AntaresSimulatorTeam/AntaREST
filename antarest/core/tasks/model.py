@@ -20,7 +20,7 @@ from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -57,30 +57,30 @@ class TaskStatus(Enum):
         ]
 
 
-class TaskResult(BaseModelInHouse, extra="forbid"):
+class TaskResult(AntaresBaseModel, extra="forbid"):
     success: bool
     message: str
     # Can be used to store json serialized result
     return_value: t.Optional[str] = None
 
 
-class TaskLogDTO(BaseModelInHouse, extra="forbid"):
+class TaskLogDTO(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
 
 
-class CustomTaskEventMessages(BaseModelInHouse, extra="forbid"):
+class CustomTaskEventMessages(AntaresBaseModel, extra="forbid"):
     start: str
     running: str
     end: str
 
 
-class TaskEventPayload(BaseModelInHouse, extra="forbid"):
+class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
 
 
-class TaskDTO(BaseModelInHouse, extra="forbid"):
+class TaskDTO(AntaresBaseModel, extra="forbid"):
     id: str
     name: str
     owner: t.Optional[int] = None
@@ -93,7 +93,7 @@ class TaskDTO(BaseModelInHouse, extra="forbid"):
     ref_id: t.Optional[str] = None
 
 
-class TaskListFilter(BaseModelInHouse, extra="forbid"):
+class TaskListFilter(AntaresBaseModel, extra="forbid"):
     status: t.List[TaskStatus] = []
     name: t.Optional[str] = None
     type: t.List[TaskType] = []

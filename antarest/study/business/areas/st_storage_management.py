@@ -28,7 +28,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -118,7 +118,7 @@ class STStorageOutput(STStorage880Config):
 # =============
 
 
-class STStorageMatrix(BaseModelInHouse):
+class STStorageMatrix(AntaresBaseModel):
     """
     Short-Term Storage Matrix  Model.
 
@@ -158,7 +158,7 @@ class STStorageMatrix(BaseModelInHouse):
 
 
 # noinspection SpellCheckingInspection
-class STStorageMatrices(BaseModelInHouse):
+class STStorageMatrices(AntaresBaseModel):
     """
     Short-Term Storage Matrices Validation Model.
 

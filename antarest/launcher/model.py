@@ -19,19 +19,18 @@ from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, St
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.serialization import from_json
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel, from_json
 from antarest.login.model import Identity, UserInfo
 from antarest.study.business.all_optional_meta import camel_case_model
 
 
-class XpansionParametersDTO(BaseModelInHouse):
+class XpansionParametersDTO(AntaresBaseModel):
     output_id: t.Optional[str] = None
     sensitivity_mode: bool = False
     enabled: bool = True
 
 
-class LauncherParametersDTO(BaseModelInHouse):
+class LauncherParametersDTO(AntaresBaseModel):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
@@ -92,7 +91,7 @@ class JobLogType(str, enum.Enum):
     AFTER = "AFTER"
 
 
-class JobResultDTO(BaseModelInHouse):
+class JobResultDTO(AntaresBaseModel):
     """
     A data transfer object (DTO) representing the job result.
 
@@ -233,16 +232,16 @@ class JobResult(Base):  # type: ignore
         )
 
 
-class JobCreationDTO(BaseModelInHouse):
+class JobCreationDTO(AntaresBaseModel):
     job_id: str
 
 
-class LauncherEnginesDTO(BaseModelInHouse):
+class LauncherEnginesDTO(AntaresBaseModel):
     engines: t.List[str]
 
 
 @camel_case_model
-class LauncherLoadDTO(BaseModelInHouse, extra="forbid", validate_assignment=True, populate_by_name=True):
+class LauncherLoadDTO(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 

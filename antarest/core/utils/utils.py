@@ -25,28 +25,12 @@ from pathlib import Path
 
 import py7zr
 from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict
 
 from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
 
 UUID_PATTERN = re.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-
-
-class BaseModelInHouse(BaseModel):
-    """
-    Due to pydantic migration from v1 to v2, we can have this issue:
-
-    class A(BaseModel):
-        a: str
-
-    A(a=2) raises ValidationError as we give an int instead of a str
-
-    To avoid this issue we created our own BaseModel class that inherits from BaseModel and allows such object creation.
-    """
-
-    model_config = ConfigDict(coerce_numbers_to_str=True)
 
 
 class DTO:

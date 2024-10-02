@@ -16,10 +16,10 @@ from typing import Any, Dict, Optional
 import paramiko
 from pydantic import model_validator
 
-from antarest.core.utils.utils import BaseModelInHouse
+from antarest.core.serialization import AntaresBaseModel
 
 
-class SSHConfigDTO(BaseModelInHouse):
+class SSHConfigDTO(AntaresBaseModel):
     config_path: pathlib.Path
     username: str
     hostname: str
