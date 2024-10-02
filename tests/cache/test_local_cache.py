@@ -14,6 +14,8 @@ import time
 from pathlib import Path
 from unittest import mock
 
+from antares.study.version import StudyVersion
+
 from antarest.core.cache.business.local_chache import LocalCache, LocalCacheElement
 from antarest.core.config import CacheConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
@@ -26,7 +28,7 @@ def test_lifecycle():
         study_path=Path("somepath"),
         path=Path("somepath"),
         study_id="",
-        version=-1,
+        version=StudyVersion.parse(0),
         areas={
             "a1": Area(
                 name="a1",

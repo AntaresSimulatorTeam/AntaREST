@@ -12,9 +12,11 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
@@ -110,7 +112,7 @@ class RenewableConfig(RenewableProperties, IgnoreCaseIdentifier):
 RenewableConfigType = RenewableConfig
 
 
-def get_renewable_config_cls(study_version: t.Union[str, int]) -> t.Type[RenewableConfig]:
+def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableConfig]:
     """
     Retrieves the renewable configuration class based on the study version.
 
@@ -120,13 +122,12 @@ def get_renewable_config_cls(study_version: t.Union[str, int]) -> t.Type[Renewab
     Returns:
         The renewable configuration class.
     """
-    version = int(study_version)
-    if version >= 810:
+    if study_version >= STUDY_VERSION_8_1:
         return RenewableConfig
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 
 
-def create_renewable_config(study_version: t.Union[str, int], **kwargs: t.Any) -> RenewableConfigType:
+def create_renewable_config(study_version: StudyVersion, **kwargs: t.Any) -> RenewableConfigType:
     """
     Factory method to create a renewable configuration model.
 

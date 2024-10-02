@@ -744,7 +744,7 @@ class StudyService:
             path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=version or NEW_DEFAULT_STUDY_VERSION,
+            version=version or f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author),
         )
 
@@ -2154,7 +2154,7 @@ class StudyService:
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> t.List[str]:
-        return list(STUDY_REFERENCE_TEMPLATES)
+        return [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
 
     def create_xpansion_configuration(
         self,

@@ -25,13 +25,13 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from fastapi import FastAPI
-from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 
 
@@ -77,7 +77,7 @@ class RedirectMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class BackEndConfig(BaseModel):
+class BackEndConfig(AntaresBaseModel):
     """
     Configuration about backend URLs served to the frontend.
     """

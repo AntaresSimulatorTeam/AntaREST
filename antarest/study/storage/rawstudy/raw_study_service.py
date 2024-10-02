@@ -20,6 +20,8 @@ from threading import Thread
 from uuid import uuid4
 from zipfile import ZipFile
 
+from antares.study.version import StudyVersion
+
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
@@ -202,7 +204,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         path_study.mkdir()
 
         create_new_empty_study(
-            version=metadata.version,
+            version=StudyVersion.parse(metadata.version),
             path_study=path_study,
             path_resources=self.path_resources,
         )
@@ -442,7 +444,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                     study_path=study_path,
                     path=study_path,
                     study_id="",
-                    version=-1,
+                    version=StudyVersion.parse(0),
                 )
                 raw_study = self.study_factory.create_from_config(config)
                 file_metadata = raw_study.get(url=["study", "antares"])

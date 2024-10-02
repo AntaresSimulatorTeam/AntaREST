@@ -15,12 +15,12 @@ import uuid
 from datetime import datetime
 from enum import Enum, StrEnum
 
-from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization import AntaresBaseModel
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -57,30 +57,30 @@ class TaskStatus(Enum):
         ]
 
 
-class TaskResult(BaseModel, extra="forbid"):
+class TaskResult(AntaresBaseModel, extra="forbid"):
     success: bool
     message: str
     # Can be used to store json serialized result
     return_value: t.Optional[str] = None
 
 
-class TaskLogDTO(BaseModel, extra="forbid"):
+class TaskLogDTO(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
 
 
-class CustomTaskEventMessages(BaseModel, extra="forbid"):
+class CustomTaskEventMessages(AntaresBaseModel, extra="forbid"):
     start: str
     running: str
     end: str
 
 
-class TaskEventPayload(BaseModel, extra="forbid"):
+class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
 
 
-class TaskDTO(BaseModel, extra="forbid"):
+class TaskDTO(AntaresBaseModel, extra="forbid"):
     id: str
     name: str
     owner: t.Optional[int] = None
@@ -93,7 +93,7 @@ class TaskDTO(BaseModel, extra="forbid"):
     ref_id: t.Optional[str] = None
 
 
-class TaskListFilter(BaseModel, extra="forbid"):
+class TaskListFilter(AntaresBaseModel, extra="forbid"):
     status: t.List[TaskStatus] = []
     name: t.Optional[str] = None
     type: t.List[TaskType] = []

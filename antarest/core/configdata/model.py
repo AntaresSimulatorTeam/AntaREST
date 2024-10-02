@@ -13,13 +13,13 @@
 from enum import StrEnum
 from typing import Any, Optional
 
-from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization import AntaresBaseModel
 
 
-class ConfigDataDTO(BaseModel):
+class ConfigDataDTO(AntaresBaseModel):
     key: str
     value: Optional[str]
 

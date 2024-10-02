@@ -14,9 +14,8 @@ from abc import ABC, abstractmethod
 from enum import StrEnum
 from typing import Any, Awaitable, Callable, List, Optional
 
-from pydantic import BaseModel
-
 from antarest.core.model import PermissionInfo
+from antarest.core.serialization import AntaresBaseModel
 
 
 class EventType(StrEnum):
@@ -56,7 +55,7 @@ class EventChannelDirectory:
     STUDY_GENERATION = "GENERATION_TASK/"
 
 
-class Event(BaseModel):
+class Event(AntaresBaseModel):
     type: EventType
     payload: Any
     permissions: PermissionInfo

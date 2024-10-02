@@ -14,7 +14,7 @@ import datetime
 import enum
 import typing as t
 
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import NonNegativeInt
 from sqlalchemy import and_, func, not_, or_, sql  # type: ignore
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic  # type: ignore
 
@@ -22,6 +22,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
@@ -47,7 +48,7 @@ def escape_like(string: str, escape_char: str = "\\") -> str:
     return string.replace(escape_char, escape_char * 2).replace("%", escape_char + "%").replace("_", escape_char + "_")
 
 
-class AccessPermissions(BaseModel, frozen=True, extra="forbid"):
+class AccessPermissions(AntaresBaseModel, frozen=True, extra="forbid"):
     """
     This class object is build to pass on the user identity and its associated groups information
     into the listing function get_all below
@@ -84,7 +85,7 @@ class AccessPermissions(BaseModel, frozen=True, extra="forbid"):
             return cls()
 
 
-class StudyFilter(BaseModel, frozen=True, extra="forbid"):
+class StudyFilter(AntaresBaseModel, frozen=True, extra="forbid"):
     """Study filter class gathering the main filtering parameters
 
     Attributes:
@@ -127,7 +128,7 @@ class StudySortBy(enum.StrEnum):
     DATE_DESC = "-date"
 
 
-class StudyPagination(BaseModel, frozen=True, extra="forbid"):
+class StudyPagination(AntaresBaseModel, frozen=True, extra="forbid"):
     """
     Pagination of a studies query results
 
