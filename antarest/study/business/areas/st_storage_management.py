@@ -397,7 +397,8 @@ class STStorageManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_st_storage_config(
-                    StudyVersion.parse(study.version), **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
+                    StudyVersion.parse(study.version),
+                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
                 )
                 path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
                 cmd = UpdateConfig(

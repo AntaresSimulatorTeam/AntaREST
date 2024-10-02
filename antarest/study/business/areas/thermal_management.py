@@ -262,7 +262,8 @@ class ThermalManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_thermal_config(
-                    StudyVersion.parse(study.version), **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
+                    StudyVersion.parse(study.version),
+                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
                 cmd = UpdateConfig(
