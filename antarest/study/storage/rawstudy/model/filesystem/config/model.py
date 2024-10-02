@@ -14,7 +14,8 @@ import re
 import typing as t
 from pathlib import Path
 
-from pydantic import Field, model_validator
+from antares.study.version import StudyVersion
+from pydantic import Field, field_serializer, field_validator, model_validator
 
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import DTO
@@ -163,7 +164,7 @@ class FileStudyTreeConfig(DTO):
         study_path: Path,
         path: Path,
         study_id: str,
-        version: int,
+        version: StudyVersion,
         output_path: t.Optional[Path] = None,
         areas: t.Optional[t.Dict[str, Area]] = None,
         sets: t.Optional[t.Dict[str, DistrictSet]] = None,
@@ -307,7 +308,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_path: Path
     path: Path
     study_id: str
-    version: int
+    version: StudyVersion
     output_path: t.Optional[Path] = None
     areas: t.Dict[str, Area] = dict()
     sets: t.Dict[str, DistrictSet] = dict()
@@ -317,6 +318,14 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     archive_input_series: t.List[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)
     zip_path: t.Optional[Path] = None
+
+    @field_serializer("version")
+    def serialize_version(self, version: StudyVersion) -> int:
+        return version.__int__()
+
+    @field_validator("version", mode="before")
+    def _validate_version(cls, v: t.Any) -> StudyVersion:
+        return StudyVersion.parse(v)
 
     @staticmethod
     def from_build_config(

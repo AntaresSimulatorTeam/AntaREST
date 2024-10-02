@@ -18,7 +18,8 @@ import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from pydantic import field_validator
+from antares.study.version import StudyVersion
+from pydantic import field_serializer, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -44,25 +45,43 @@ if t.TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-STUDY_REFERENCE_TEMPLATES: t.Mapping[str, str] = {
-    "600": "empty_study_613.zip",
-    "610": "empty_study_613.zip",
-    "640": "empty_study_613.zip",
-    "700": "empty_study_700.zip",
-    "710": "empty_study_710.zip",
-    "720": "empty_study_720.zip",
-    "800": "empty_study_803.zip",
-    "810": "empty_study_810.zip",
-    "820": "empty_study_820.zip",
-    "830": "empty_study_830.zip",
-    "840": "empty_study_840.zip",
-    "850": "empty_study_850.zip",
-    "860": "empty_study_860.zip",
-    "870": "empty_study_870.zip",
-    "880": "empty_study_880.zip",
-}
+NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("8.8")
+STUDY_VERSION_6_0 = StudyVersion.parse("6.0")
+STUDY_VERSION_6_1 = StudyVersion.parse("6.1")
+STUDY_VERSION_6_4 = StudyVersion.parse("6.4")
+STUDY_VERSION_6_5 = StudyVersion.parse("6.5")
+STUDY_VERSION_7_0 = StudyVersion.parse("7.0")
+STUDY_VERSION_7_1 = StudyVersion.parse("7.1")
+STUDY_VERSION_7_2 = StudyVersion.parse("7.2")
+STUDY_VERSION_8 = StudyVersion.parse("8.0")
+STUDY_VERSION_8_1 = StudyVersion.parse("8.1")
+STUDY_VERSION_8_2 = StudyVersion.parse("8.2")
+STUDY_VERSION_8_3 = StudyVersion.parse("8.3")
+STUDY_VERSION_8_4 = StudyVersion.parse("8.4")
+STUDY_VERSION_8_5 = StudyVersion.parse("8.5")
+STUDY_VERSION_8_6 = StudyVersion.parse("8.6")
+STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
+STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
+STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 
-NEW_DEFAULT_STUDY_VERSION: str = "880"
+STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
+    STUDY_VERSION_6_0: "empty_study_613.zip",
+    STUDY_VERSION_6_1: "empty_study_613.zip",
+    STUDY_VERSION_6_4: "empty_study_613.zip",
+    STUDY_VERSION_7_0: "empty_study_700.zip",
+    STUDY_VERSION_7_1: "empty_study_710.zip",
+    STUDY_VERSION_7_2: "empty_study_720.zip",
+    STUDY_VERSION_8: "empty_study_803.zip",
+    STUDY_VERSION_8_1: "empty_study_810.zip",
+    STUDY_VERSION_8_2: "empty_study_820.zip",
+    STUDY_VERSION_8_3: "empty_study_830.zip",
+    STUDY_VERSION_8_4: "empty_study_840.zip",
+    STUDY_VERSION_8_5: "empty_study_850.zip",
+    STUDY_VERSION_8_6: "empty_study_860.zip",
+    STUDY_VERSION_8_7: "empty_study_870.zip",
+    STUDY_VERSION_8_8: "empty_study_880.zip",
+}
 
 
 class StudyGroup(Base):  # type:ignore
@@ -342,7 +361,7 @@ class OwnerInfo(AntaresBaseModel):
 class StudyMetadataDTO(AntaresBaseModel):
     id: str
     name: str
-    version: int
+    version: StudyVersion
     created: str
     updated: str
     type: str
@@ -359,10 +378,18 @@ class StudyMetadataDTO(AntaresBaseModel):
     folder: t.Optional[str] = None
     tags: t.List[str] = []
 
+    @field_serializer("version")
+    def serialize_version(self, version: StudyVersion) -> int:
+        return version.__int__()
+
     @field_validator("horizon", mode="before")
     def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
         # horizon can be an int.
         return str(val) if val else val  # type: ignore
+
+    @field_validator("version", mode="before")
+    def _validate_version(cls, v: t.Any) -> StudyVersion:
+        return StudyVersion.parse(v)
 
 
 class StudyMetadataPatchDTO(AntaresBaseModel):

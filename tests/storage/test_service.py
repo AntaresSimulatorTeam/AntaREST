@@ -110,7 +110,7 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
-        version=int(study.version),
+        version=study.version,
         created=str(study.created_at),
         updated=str(study.updated_at),
         workspace=DEFAULT_WORKSPACE_NAME,
