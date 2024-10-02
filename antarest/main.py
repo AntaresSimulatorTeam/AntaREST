@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import argparse
+import asyncio
 import copy
 import logging
 from contextlib import asynccontextmanager
@@ -47,6 +48,7 @@ from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+from antarest.matrixstore.migration_script import migrate_matrixstore
 from antarest.service_creator import SESSION_ARGS, Module, create_services, init_db_engine
 from antarest.singleton_services import start_all_services
 from antarest.study.storage.auto_archive_service import AutoArchiveService
@@ -199,13 +201,20 @@ def fastapi_app(
 
     logger.info("Initiating application")
 
-    @asynccontextmanager
-    async def set_default_executor(app: FastAPI) -> AsyncGenerator[None, None]:
-        import asyncio
+    async def set_default_executor() -> None:
         from concurrent.futures import ThreadPoolExecutor
 
         loop = asyncio.get_running_loop()
         loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+        """
+        Everything before the `yield` will be executed before running the app.
+        Everything after will be executed just before the app shutdowns.
+        """
+        migrate_matrixstore(config.storage.matrixstore.resolve())
+        await set_default_executor()
         yield
 
     application = FastAPI(
@@ -214,7 +223,7 @@ def fastapi_app(
         docs_url=None,
         root_path=config.root_path,
         openapi_tags=tags_metadata,
-        lifespan=set_default_executor,
+        lifespan=lifespan,
         openapi_url=f"{config.api_prefix}/openapi.json",
     )
 

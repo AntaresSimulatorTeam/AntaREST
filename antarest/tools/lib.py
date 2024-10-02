@@ -16,10 +16,10 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Union, cast
 from zipfile import ZipFile
 
-import numpy as np
+import pandas as pd
 from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
@@ -85,9 +85,11 @@ class RemoteVariantGenerator(IVariantGenerator):
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
         for matrix_file in matrices_dir.iterdir():
-            matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
-            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-            matrix_data = matrix.tolist()
+            if matrix_file.stat().st_size == 0:
+                matrix_data: List[List[int]] = [[]]
+            else:
+                matrix = cast(pd.DataFrame, pd.read_hdf(matrix_file))
+                matrix_data = matrix.values.tolist()
             res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
             res.raise_for_status()
             matrix_id = res.json()
@@ -303,7 +305,7 @@ def generate_diff(
     needed_matrices: Set[str] = set()
     for command in diff_commands:
         for matrix in command.get_inner_matrices():
-            needed_matrices.add(f"{matrix}.tsv")
+            needed_matrices.add(f"{matrix}.hdf")
     for matrix_file in os.listdir(matrices_dir):
         if matrix_file not in needed_matrices:
             os.unlink(matrices_dir / matrix_file)
