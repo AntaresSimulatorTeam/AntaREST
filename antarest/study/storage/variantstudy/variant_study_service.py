@@ -1082,7 +1082,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             snapshot_clearing_task_instance,
             task_name,
             task_type=TaskType.SNAPSHOT_CLEARING,
-            ref_id="SNAPSHOT_CLEANING",
+            ref_id=None,
             custom_event_messages=None,
             request_params=params,
         )
