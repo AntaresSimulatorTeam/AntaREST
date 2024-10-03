@@ -99,7 +99,7 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
   return (
     <UsePromiseCond
       response={res}
-      ifResolved={(text) => (
+      ifFulfilled={(text) => (
         <Flex>
           <Menubar>
             <Filename>{filename}</Filename>

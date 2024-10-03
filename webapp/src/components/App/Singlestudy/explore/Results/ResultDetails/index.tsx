@@ -258,7 +258,7 @@ function ResultDetails() {
           <UsePromiseCond
             response={synthesisRes}
             ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-            ifResolved={(matrix) =>
+            ifFulfilled={(matrix) =>
               matrix && (
                 <MatrixGrid
                   data={matrix.data}
@@ -275,7 +275,7 @@ function ResultDetails() {
           <UsePromiseCond
             response={mergeResponses(outputRes, matrixRes)}
             ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-            ifResolved={([, matrix]) =>
+            ifFulfilled={([, matrix]) =>
               matrix && (
                 <MatrixGrid
                   data={matrix.data}

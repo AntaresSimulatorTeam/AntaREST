@@ -20,7 +20,7 @@ import { createStudySynthesis } from "../ducks/studySyntheses";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 import { getStudySynthesis } from "../selectors";
-import { PromiseStatus } from "../../hooks/usePromise";
+import { PromiseStatus, type TPromiseStatus } from "../../hooks/usePromise";
 import { Response } from "../../components/common/utils/UsePromiseCond";
 
 export interface UseStudySynthesisProps<T> {
@@ -39,7 +39,7 @@ export default function useStudySynthesis<T>(
     isSynthesisExist && selector ? selector(state, studyId) : undefined,
   );
   const dispatch = useAppDispatch();
-  const [status, setStatus] = useState(PromiseStatus.Idle);
+  const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Response["error"]>();
 
   useAsync(async () => {
@@ -53,7 +53,7 @@ export default function useStudySynthesis<T>(
         setStatus(PromiseStatus.Rejected);
       }
     } else {
-      setStatus(PromiseStatus.Resolved);
+      setStatus(PromiseStatus.Fulfilled);
     }
   }, [dispatch, isSynthesisExist, studyId]);
 

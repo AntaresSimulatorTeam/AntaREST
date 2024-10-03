@@ -16,18 +16,20 @@ import { useCallback, useEffect, useState } from "react";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { isDependencyList } from "../utils/reactUtils";
 
-export enum PromiseStatus {
-  Idle = "idle",
-  Pending = "pending",
-  Resolved = "resolved",
-  Rejected = "rejected",
-}
+export const PromiseStatus = {
+  Idle: "idle",
+  Pending: "pending",
+  Fulfilled: "fulfilled",
+  Rejected: "rejected",
+} as const;
+
+export type TPromiseStatus = (typeof PromiseStatus)[keyof typeof PromiseStatus];
 
 export interface UsePromiseResponse<T> {
   data: T | undefined;
-  status: PromiseStatus;
+  status: TPromiseStatus;
   isLoading: boolean;
-  isResolved: boolean;
+  isFulfilled: boolean;
   isRejected: boolean;
   error: Error | string | undefined;
   reload: () => void;
@@ -51,7 +53,7 @@ function usePromise<T>(
 ): UsePromiseResponse<T> {
   const { deps = [], resetDataOnReload, resetErrorOnReload } = toParams(params);
   const [data, setData] = useState<T>();
-  const [status, setStatus] = useState(PromiseStatus.Idle);
+  const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Error | string | undefined>();
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
@@ -71,7 +73,7 @@ function usePromise<T>(
       mounted(fn())
         .then((res) => {
           setData(res);
-          setStatus(PromiseStatus.Resolved);
+          setStatus(PromiseStatus.Fulfilled);
         })
         .catch((err) => {
           setError(err);
@@ -87,7 +89,7 @@ function usePromise<T>(
     status,
     isLoading:
       status === PromiseStatus.Idle || status === PromiseStatus.Pending,
-    isResolved: status === PromiseStatus.Resolved,
+    isFulfilled: status === PromiseStatus.Fulfilled,
     isRejected: status === PromiseStatus.Rejected,
     error,
     reload,
