@@ -87,7 +87,7 @@ function LoginWrapper(props: Props) {
       response={res}
       ifPending={() => <AppLoader />}
       ifRejected={() => <GlobalPageLoadingError />}
-      ifResolved={(canDisplayApp) =>
+      ifFulfilled={(canDisplayApp) =>
         canDisplayApp ? (
           children
         ) : (
