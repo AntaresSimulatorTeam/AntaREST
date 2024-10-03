@@ -138,7 +138,7 @@ function JobTableView(props: PropType) {
           <UsePromiseCond
             response={launcherMetrics}
             keepLastResolvedOnReload
-            ifResolved={(data) => (
+            ifFulfilled={(data) => (
               <>
                 <Typography>{t("study.allocatedCpuRate")}</Typography>
                 <LinearProgressWithLabel

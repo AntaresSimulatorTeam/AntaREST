@@ -108,7 +108,7 @@ function ScenarioPlaylistDialog(props: Props) {
     >
       <UsePromiseCond
         response={res}
-        ifResolved={(defaultValues) => (
+        ifFulfilled={(defaultValues) => (
           <>
             <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
               <Button color="secondary" onClick={handleUpdateStatus(R.T)}>

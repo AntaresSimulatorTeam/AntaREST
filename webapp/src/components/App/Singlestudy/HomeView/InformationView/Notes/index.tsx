@@ -40,6 +40,7 @@ import { getAreas, getLinks } from "../../../../../../redux/selectors";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { PromiseStatus } from "../../../../../../hooks/usePromise";
 
 const Root = styled(Box)(() => ({
   flex: "0 0 40%",
@@ -161,7 +162,7 @@ function Notes({ study }: Props) {
 
         <UsePromiseCond
           response={commentRes}
-          ifResolved={() => (
+          ifFulfilled={() => (
             <>
               <EditorContainer>
                 <Editor
@@ -210,7 +211,7 @@ function Notes({ study }: Props) {
             },
             {
               content:
-                synthesisStatus === "resolved" ? (
+                synthesisStatus === PromiseStatus.Fulfilled ? (
                   areas.length
                 ) : (
                   <Skeleton width={100} />
@@ -220,7 +221,7 @@ function Notes({ study }: Props) {
             },
             {
               content:
-                synthesisStatus === "resolved" ? (
+                synthesisStatus === PromiseStatus.Fulfilled ? (
                   links.length
                 ) : (
                   <Skeleton width={100} />

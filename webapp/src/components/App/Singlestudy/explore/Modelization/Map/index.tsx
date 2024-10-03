@@ -178,7 +178,7 @@ function Map() {
   return (
     <UsePromiseCond
       response={mapNodesRes}
-      ifResolved={(mapNodes) => (
+      ifFulfilled={(mapNodes) => (
         <>
           <SplitView id="map" sizes={[10, 90]}>
             <Box>

@@ -164,7 +164,7 @@ function AddConstraintTermDialog({
     >
       <UsePromiseCond
         response={linksAndClusters}
-        ifResolved={(data) => (
+        ifFulfilled={(data) => (
           <AddConstraintTermForm
             options={data}
             constraintTerms={constraintTerms}
