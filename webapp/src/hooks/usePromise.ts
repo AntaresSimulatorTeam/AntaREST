@@ -13,7 +13,6 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { usePromise as usePromiseWrapper } from "react-use";
 import { isDependencyList } from "../utils/reactUtils";
 
 export const PromiseStatus = {
@@ -57,32 +56,28 @@ function usePromise<T>(
   const [error, setError] = useState<Error | string | undefined>();
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
-  const mounted = usePromiseWrapper();
 
-  useEffect(
-    () => {
-      setStatus(PromiseStatus.Pending);
-      // Reset
-      if (resetDataOnReload) {
-        setData(undefined);
-      }
-      if (resetErrorOnReload) {
-        setError(undefined);
-      }
+  useEffect(() => {
+    setStatus(PromiseStatus.Pending);
 
-      mounted(fn())
-        .then((res) => {
-          setData(res);
-          setStatus(PromiseStatus.Fulfilled);
-        })
-        .catch((err) => {
-          setError(err);
-          setStatus(PromiseStatus.Rejected);
-        });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [reloadCount, ...deps],
-  );
+    // Reset
+    if (resetDataOnReload) {
+      setData(undefined);
+    }
+    if (resetErrorOnReload) {
+      setError(undefined);
+    }
+
+    fn()
+      .then((res) => {
+        setData(res);
+        setStatus(PromiseStatus.Fulfilled);
+      })
+      .catch((err) => {
+        setError(err);
+        setStatus(PromiseStatus.Rejected);
+      });
+  }, [reloadCount, ...deps]);
 
   return {
     data,
