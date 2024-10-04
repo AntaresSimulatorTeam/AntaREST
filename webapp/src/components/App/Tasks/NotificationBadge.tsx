@@ -57,7 +57,7 @@ function NotificationBadge(props: Props) {
   );
 
   useEffect(() => {
-    const listener = async (ev: WSMessage) => {
+    const listener = async (ev: WSMessage<TaskEventPayload>) => {
       if (ev.type === WSEvent.DOWNLOAD_CREATED) {
         newNotification("downloads.newDownload");
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
@@ -65,9 +65,8 @@ function NotificationBadge(props: Props) {
       } else if (ev.type === WSEvent.DOWNLOAD_FAILED) {
         newNotification("study.error.exportOutput", "error");
       } else if (ev.type === WSEvent.TASK_ADDED) {
-        const taskId = (ev.payload as TaskEventPayload).id;
         try {
-          const task = await getTask(taskId);
+          const task = await getTask(ev.payload.id);
           if (task.type === "COPY") {
             newNotification("studies.studycopying");
           } else if (task.type === "ARCHIVE") {
@@ -78,6 +77,8 @@ function NotificationBadge(props: Props) {
             newNotification("studies.success.scanFolder");
           } else if (task.type === "UPGRADE_STUDY") {
             newNotification("study.message.upgradeInProgress");
+          } else if (task.type === "THERMAL_CLUSTER_SERIES_GENERATION") {
+            newNotification("tasks.thermalClusterSeriesGeneration");
           }
         } catch (error) {
           logError(error);
