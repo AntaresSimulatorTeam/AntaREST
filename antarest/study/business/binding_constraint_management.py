@@ -843,7 +843,7 @@ class BindingConstraintManager:
             return updated_constraints
 
         # More efficient way of doing things but using less readable commands.
-        study_version = int(study.version)
+        study_version = StudyVersion.parse(study.version)
         commands = []
         command_context = self.storage_service.variant_study_service.command_factory.command_context
 
@@ -869,7 +869,7 @@ class BindingConstraintManager:
                 )
                 commands.extend(replace_matrix_commands)
 
-            if value.operator and study_version >= 870:
+            if value.operator and study_version >= STUDY_VERSION_8_7:
                 # The user changed the operator, we have to rename matrices accordingly
                 existing_operator = BindingConstraintOperator(current_value["operator"])
                 update_matrices_names(file_study, bc_id, existing_operator, value.operator)
@@ -887,13 +887,13 @@ class BindingConstraintManager:
     @staticmethod
     def _generate_replace_matrix_commands(
         bc_id: str,
-        study_version: int,
+        study_version: StudyVersion,
         value: ConstraintInput,
         operator: BindingConstraintOperator,
         command_context: CommandContext,
     ) -> t.List[ICommand]:
         commands: t.List[ICommand] = []
-        if study_version < 870:
+        if study_version < STUDY_VERSION_8_7:
             matrix = {
                 BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
                 BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
