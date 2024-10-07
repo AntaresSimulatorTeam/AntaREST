@@ -42,6 +42,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
+from antarest.login.repository import UserRepository
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
@@ -74,6 +75,10 @@ def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
 @with_db_context
 def test_service(core_config: Config, event_bus: IEventBus) -> None:
     engine = db.session.bind
+
+    user_repo = UserRepository(session=db.session)
+    user_repo.save(User(id=DEFAULT_ADMIN_USER.id))
+
     task_job_repo = TaskJobRepository()
 
     # Prepare a TaskJob in the database
@@ -200,7 +205,7 @@ def test_repository(db_session: Session) -> None:
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db_session.add(RawStudy(id="study_id", name="foo", version="860"))
+    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
     db_session.commit()
 
     # Create a TaskJobService
