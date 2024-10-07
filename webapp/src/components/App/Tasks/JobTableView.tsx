@@ -96,6 +96,7 @@ function JobTableView(props: PropType) {
     TaskType.ARCHIVE,
     TaskType.UNARCHIVE,
     TaskType.UPGRADE_STUDY,
+    TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
     TaskType.SCAN,
   ];
 
