@@ -19,6 +19,25 @@ from tests.integration.prepare_proxy import PreparerProxy
 
 @pytest.mark.unit_test
 class TestLink:
+
+    @pytest.mark.parametrize("study_type", ["raw", "variant"])
+    def test_link_update(self, client: TestClient, user_access_token: str, study_type: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+
+        preparer = PreparerProxy(client, user_access_token)
+        study_id = preparer.create_study("foo", version=820)
+        if study_type == "variant":
+            study_id = preparer.create_variant(study_id, name="Variant 1")
+
+        area1_id = preparer.create_area(study_id, name="Area 1")["id"]
+        area2_id = preparer.create_area(study_id, name="Area 2")["id"]
+        client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "hurdles-cost": True})
+        res = client.put(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "hurdles-cost": False, "colorr": 150, "filter-synthesis": "hourly"})
+
+        assert res.status_code == 200
+        expected = {'area1': 'area 1', 'area2': 'area 2', 'asset-type': 'ac', 'colorb': 112, 'colorg': 112, 'colorr': 150, 'display-comments': True, 'filter-synthesis': 'hourly', 'filter-year-by-year': 'hourly, daily, weekly, monthly, annual', 'hurdles-cost': False, 'link-style': 'plain', 'link-width': 1.0, 'loop-flow': False, 'transmission-capacities': 'enabled', 'use-phase-shifter': False}
+        assert expected == res.json()
+
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_820(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore

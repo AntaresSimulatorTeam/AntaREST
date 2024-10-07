@@ -28,6 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_link import (
 )
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 
 _ALL_LINKS_PATH = "input/links"
 
@@ -114,19 +115,34 @@ class LinkManager:
         return link_data
 
     def update_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
+        self.check_attributes_coherence(int(study.version), link_creation_info)
+
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        existing_link = self.get_one_link(study, link_creation_info.area1, link_creation_info.area2)
+        existing_link = self.get_one_link(study, link_creation_info)
 
+        existing_link = existing_link.model_copy(update=link_creation_info.model_dump(exclude={"area1", "area2"}, exclude_none=True))
+        # create new object
 
+        command = UpdateLink(
+            area1=link_creation_info.area1,
+            area2=link_creation_info.area2,
+            parameters=existing_link.model_dump(exclude={"area1", "area2"}, exclude_none=True, by_alias=True),
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         return existing_link
 
-    def get_one_link(self, study: RawStudy, area1: str, area2: str) -> LinkInfoDTOType:
+    def check_attributes_coherence(self, study_version: int, link_creation_info: LinkInfoDTOType) -> None:
+        if study_version < 820:
+            if link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None:
+                raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
+
+    def get_one_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        area_from, area_to = sorted([area1, area2])
+        area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
         try:
             link_config = file_study.tree.get(["input", "links", area_from, "properties", area_to])
         except KeyError:
@@ -137,8 +153,8 @@ class LinkManager:
 
         link_data: LinkInfoDTOType
         if int(study.version) < 820:
-            return LinkInfoDTOBase(**link_config)
-        return LinkInfoDTO820(**link_config)
+            return LinkInfoDTOBase.model_validate(link_config)
+        return LinkInfoDTO820.model_validate(link_config)
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
