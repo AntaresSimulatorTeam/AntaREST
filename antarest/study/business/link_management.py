@@ -12,8 +12,10 @@
 
 import typing as t
 
+from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
@@ -31,16 +33,23 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 
 _ALL_LINKS_PATH = "input/links"
 
-
 class LinkInfoDTOBase(AreaInfo, LinkInfoProperties):
     pass
 
+class LinkUIDTO(AntaresBaseModel):
+    color: str
+    width: float
+    style: str
 
 class LinkInfoDTO820(AreaInfo, LinkInfoProperties820):
     pass
 
 
 LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
+class LinkInfoDTO(AntaresBaseModel):
+    area1: str
+    area2: str
+    ui: t.Optional[LinkUIDTO] = None
 
 
 @all_optional_model

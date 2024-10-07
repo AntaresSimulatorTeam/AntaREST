@@ -18,7 +18,7 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.utils.string import to_kebab_case
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, LinkStyle, TransmissionCapacity
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -204,7 +204,7 @@ class CreateLink(ICommand):
         self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
         assert type(self.series) is str
-        if version < 820:
+        if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
         else:
             study_data.tree.save(

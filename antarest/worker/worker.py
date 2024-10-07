@@ -16,11 +16,10 @@ from abc import abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel
-
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
 from antarest.core.model import PermissionInfo, PublicMode
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
 
 logger = logging.getLogger(__name__)
@@ -28,12 +27,12 @@ logger = logging.getLogger(__name__)
 MAX_WORKERS = 10
 
 
-class WorkerTaskResult(BaseModel):
+class WorkerTaskResult(AntaresBaseModel):
     task_id: str
     task_result: TaskResult
 
 
-class WorkerTaskCommand(BaseModel):
+class WorkerTaskCommand(AntaresBaseModel):
     task_id: str
     task_type: str
     task_args: Dict[str, Union[int, float, bool, str]]

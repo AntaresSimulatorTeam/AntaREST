@@ -14,6 +14,7 @@ import typing as t
 
 from pydantic import Field
 
+from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -21,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # minimum required version.
-REQUIRED_VERSION = 860
+REQUIRED_VERSION = STUDY_VERSION_8_6
 
 
 class RemoveSTStorage(ICommand):

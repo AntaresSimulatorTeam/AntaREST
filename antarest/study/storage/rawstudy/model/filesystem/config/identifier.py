@@ -12,13 +12,15 @@
 
 import typing as t
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
 
 __all__ = ("IgnoreCaseIdentifier", "LowerCaseIdentifier")
 
+from antarest.core.serialization import AntaresBaseModel
+
 
 class IgnoreCaseIdentifier(
-    BaseModel,
+    AntaresBaseModel,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,
