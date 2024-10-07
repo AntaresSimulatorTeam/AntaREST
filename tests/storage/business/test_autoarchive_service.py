@@ -69,18 +69,6 @@ def test_auto_archival(tmp_path: Path):
                 id="e",
                 updated_at=now - datetime.timedelta(days=61),
             ),
-            VariantStudy(
-                id="f",
-                updated_at=now - datetime.timedelta(days=0),
-            ),
-            VariantStudy(
-                id="g",
-                updated_at=now - datetime.timedelta(days=1),
-            ),
-            VariantStudy(
-                id="h",
-                last_access=now - datetime.timedelta(days=2)
-            )
         ]
     )
     db_session.commit()
@@ -109,7 +97,8 @@ def test_auto_archival(tmp_path: Path):
     # Check that the variant outputs are deleted for the variant study "e"
     study_service.archive_outputs.assert_called_once_with("e", params=RequestParameters(DEFAULT_ADMIN_USER))
 
-    # Test auto snapshot clearing
+    # Check if the `clear_all_snapshots` method was called with default values
     auto_archive_service._try_clear_snapshot()
-
-    # Check if variant snapshots with date older than variant_snapshot_lifespan_days argument are cleared
+    study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
+        datetime.timedelta(hours=24),
+    )

@@ -48,9 +48,8 @@ class AutoArchiveService(IService):
             study_ids_to_archive = [
                 (study.id, isinstance(study, RawStudy))
                 for study in studies
-                if ((study.last_access or study.updated_at) < old_date)
-                and isinstance(study, VariantStudy)
-                or not study.archived
+                if (study.last_access or study.updated_at) < old_date
+                and (isinstance(study, VariantStudy) or not study.archived)
             ]
         for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:
             try:
@@ -87,10 +86,10 @@ class AutoArchiveService(IService):
 
     def _try_clear_snapshot(self) -> None:
         # convert days in hours
-        hours_of_lifespan = hours=self.config.storage.variant_snapshot_lifespan_days * 24
+        hours_of_lifespan = self.config.storage.variant_snapshot_lifespan_days * 24
 
         self.study_service.storage_service.variant_study_service.clear_all_snapshots(
-            hours_of_lifespan
+            datetime.timedelta(hours=hours_of_lifespan)
         )
 
     def _loop(self) -> None:
