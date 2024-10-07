@@ -174,7 +174,7 @@
   "tasks.UNARCHIVE": "Désarchivage",
   "tasks.SCAN": "Scan",
   "tasks.UNKNOWN": "Inconnu",
-  "tasks.thermalClusterSeriesGeneration": "Génération des TS..",
+  "tasks.THERMAL_CLUSTER_SERIES_GENERATION": "Génération des TS",
   "settings.createUser": "Créer un utilisateur",
   "settings.createToken": "Créer un token",
   "settings.createGroup": "Créer un groupe",
