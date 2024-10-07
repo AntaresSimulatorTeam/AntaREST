@@ -371,7 +371,9 @@ def _get_references_by_widths(
     references_by_width: t.Dict[int, t.List[t.Tuple[str, str]]] = {}
     _total = len(bcs)
     for _index, bc in enumerate(bcs):
-        matrices_name = OPERATOR_MATRIX_FILE_MAP[bc.operator] if file_study.config.version >= STUDY_VERSION_8_7 else ["{bc_id}"]
+        matrices_name = (
+            OPERATOR_MATRIX_FILE_MAP[bc.operator] if file_study.config.version >= STUDY_VERSION_8_7 else ["{bc_id}"]
+        )
         for matrix_name in matrices_name:
             matrix_id = matrix_name.format(bc_id=bc.id)
             logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index+1}/{_total}]")
