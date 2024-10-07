@@ -19,7 +19,7 @@ _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
 def _is_sqlite_connection(dbapi_connection: Any) -> bool:
     cls = dbapi_connection.__class__
     full_classe_name = f"{cls.__module__}{cls.__name__}"
-    return "sqlite" in full_classe_name
+    return "sqlite" in full_classe_name.lower()
 
 
 @event.listens_for(Engine, "connect")  # type: ignore
