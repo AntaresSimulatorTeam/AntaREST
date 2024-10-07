@@ -1,7 +1,7 @@
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type, Union
 
-from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine, event  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.engine.url import URL  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
@@ -14,6 +14,24 @@ from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionErro
 
 _Session: Optional[sessionmaker] = None
 _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
+
+
+def _is_sqlite_connection(dbapi_connection: Any) -> bool:
+    cls = dbapi_connection.__class__
+    full_classe_name = f"{cls.__module__}{cls.__name__}"
+    return "sqlite" in full_classe_name
+
+
+@event.listens_for(Engine, "connect")  # type: ignore
+def enable_sqlite_foreign_keys(dbapi_connection: Any, connection_record: Any) -> None:
+    """
+    By default, sqlite does not enforce foreign key constraints,
+    we need to tell it explicitly.
+    """
+    if _is_sqlite_connection(dbapi_connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):
