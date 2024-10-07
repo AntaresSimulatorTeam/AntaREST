@@ -304,11 +304,11 @@ default:
 - **Default value:** 5
 - **Description:** Max auto archival tasks in parallel.
 
-## **snapshot_lifespan**
+## **snapshot_retention_days**
 
 - **Type:** Integer
 - **Default value:** 1
-- **Description:** Snapshots of variant not updated or accessed for **snapshot_lifespan** days will be cleared.
+- **Description:** Snapshots of variant not updated or accessed for **snapshot_retention_days** days will be cleared.
 
 ## **watcher_lock**
 
