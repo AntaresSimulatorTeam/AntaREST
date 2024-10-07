@@ -85,8 +85,8 @@ class AutoArchiveService(IService):
                 )
 
     def _try_clear_snapshot(self) -> None:
-        # convert days in hours
-        hours_of_lifespan = self.config.storage.variant_snapshot_lifespan_days * 24
+        # get retention hours from number of days
+        hours_of_lifespan = self.config.storage.snapshot_lifespan * 24
 
         self.study_service.storage_service.variant_study_service.clear_all_snapshots(
             datetime.timedelta(hours=hours_of_lifespan)
