@@ -17,6 +17,7 @@ from pydantic import Field, ValidationInfo, field_validator
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
@@ -149,7 +150,7 @@ class CreateCluster(ICommand):
                 }
             }
         }
-        if study_data.config.version >= 870:
+        if study_data.config.version >= STUDY_VERSION_8_7:
             new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["CO2Cost"] = null_matrix
             new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["fuelCost"] = null_matrix
         study_data.tree.save(new_cluster_data)

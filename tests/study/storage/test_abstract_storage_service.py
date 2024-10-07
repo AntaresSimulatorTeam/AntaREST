@@ -91,12 +91,7 @@ class TmpCopy(object):
 
     def __eq__(self, other: Path):
         if isinstance(other, Path) and other.name == "tmp_copy":
-            # `is_relative_to` is not available for Python < 3.9
-            try:
-                other.relative_to(self.tmp_path)
-                return True
-            except ValueError:
-                return False
+            return other.is_relative_to(self.tmp_path)
 
     def __ne__(self, other):
         return not self.__eq__(other)

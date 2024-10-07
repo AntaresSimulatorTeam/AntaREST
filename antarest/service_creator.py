@@ -12,7 +12,7 @@
 
 import logging
 import typing as t
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import redis
@@ -25,7 +25,7 @@ from sqlalchemy.pool import NullPool  # type: ignore
 
 from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
-from antarest.core.config import Config
+from antarest.core.config import Config, RedisConfig
 from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -34,7 +34,6 @@ from antarest.core.maintenance.main import build_maintenance_manager
 from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
-from antarest.core.utils.utils import new_redis_instance
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
 from antarest.login.main import build_login
@@ -67,7 +66,7 @@ This mapping can be used to instantiate a new session, for example:
 """
 
 
-class Module(str, Enum):
+class Module(StrEnum):
     APP = "app"
     WATCHER = "watcher"
     MATRIX_GC = "matrix_gc"
@@ -107,6 +106,17 @@ def init_db_engine(
     engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
 
     return engine
+
+
+def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
+    redis_client = redis.Redis(
+        host=config.host,
+        port=config.port,
+        password=config.password,
+        db=0,
+        retry_on_error=[redis.ConnectionError, redis.TimeoutError],  # type: ignore
+    )
+    return redis_client  # type: ignore
 
 
 def create_event_bus(app_ctxt: t.Optional[AppBuildContext], config: Config) -> t.Tuple[IEventBus, t.Optional[redis.Redis]]:  # type: ignore

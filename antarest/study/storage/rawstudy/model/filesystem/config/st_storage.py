@@ -12,9 +12,11 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
@@ -161,7 +163,7 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
 STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
 
 
-def get_st_storage_config_cls(study_version: t.Union[str, int]) -> t.Type[STStorageConfigType]:
+def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageConfigType]:
     """
     Retrieves the short-term storage configuration class based on the study version.
 
@@ -171,15 +173,14 @@ def get_st_storage_config_cls(study_version: t.Union[str, int]) -> t.Type[STStor
     Returns:
         The short-term storage configuration class.
     """
-    version = int(study_version)
-    if version >= 880:
+    if study_version >= STUDY_VERSION_8_8:
         return STStorage880Config
-    elif version >= 860:
+    elif study_version >= STUDY_VERSION_8_6:
         return STStorageConfig
-    raise ValueError(f"Unsupported study version: {version}")
+    raise ValueError(f"Unsupported study version: {study_version}")
 
 
-def create_st_storage_config(study_version: t.Union[str, int], **kwargs: t.Any) -> STStorageConfigType:
+def create_st_storage_config(study_version: StudyVersion, **kwargs: t.Any) -> STStorageConfigType:
     """
     Factory method to create a short-term storage configuration model.
 

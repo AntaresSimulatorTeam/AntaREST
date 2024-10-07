@@ -15,6 +15,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable, Dict, List, NamedTuple, Optional
 
+from antares.study.version import SolverVersion
+
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
@@ -71,7 +73,7 @@ class AbstractLauncher(ABC):
         self,
         study_uuid: str,
         job_id: str,
-        version: str,
+        version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
         params: RequestParameters,
     ) -> None:
@@ -114,6 +116,6 @@ class AbstractLauncher(ABC):
                         channel=EventChannelDirectory.JOB_STATUS + job_id,
                     )
                 )
-                self.cache.put(f"Launch_Progress_{job_id}", launch_progress_dto.model_dump())
+                self.cache.put(f"Launch_Progress_{job_id}", launch_progress_dto.model_dump(mode="json"))
 
         return update_log

@@ -744,7 +744,7 @@ class StudyService:
             path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=version or NEW_DEFAULT_STUDY_VERSION,
+            version=version or f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author),
         )
 
@@ -1331,7 +1331,7 @@ class StudyService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = to_json(matrix.model_dump())
+                json_response = to_json(matrix.model_dump(mode="json"))
                 return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:
@@ -2154,7 +2154,7 @@ class StudyService:
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> t.List[str]:
-        return list(STUDY_REFERENCE_TEMPLATES)
+        return [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
 
     def create_xpansion_configuration(
         self,
@@ -2426,7 +2426,7 @@ class StudyService:
                     src=str(src),
                     dest=str(dest),
                     remove_src=not keep_src_zip,
-                ).model_dump(),
+                ).model_dump(mode="json"),
                 name=task_name,
                 ref_id=study.id,
                 request_params=params,

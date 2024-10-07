@@ -4,7 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
-      - "feature/update-installer"
+      - "bump-python/**"
 
 jobs:
   binary:
@@ -12,7 +12,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: [ windows-latest, ubuntu-20.04, ubuntu-22.04]
+        os: [windows-latest]
 
     steps:
       - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)
@@ -43,7 +43,7 @@ jobs:
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.11
 
       - name: 🐍 Install development dependencies
         run: |

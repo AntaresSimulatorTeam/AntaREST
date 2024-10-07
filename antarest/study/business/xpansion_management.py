@@ -19,10 +19,11 @@ import typing as t
 import zipfile
 
 from fastapi import HTTPException, UploadFile
-from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
+from pydantic import Field, ValidationError, field_validator, model_validator
 
 from antarest.core.exceptions import BadZipBinary, ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
@@ -55,7 +56,7 @@ class Solver(EnumIgnoreCase):
     XPRESS = "Xpress"
 
 
-class XpansionSensitivitySettings(BaseModel):
+class XpansionSensitivitySettings(AntaresBaseModel):
     """
     A DTO representing the sensitivity analysis settings used for Xpansion.
 
@@ -76,7 +77,7 @@ class XpansionSensitivitySettings(BaseModel):
         return [] if v is None else v
 
 
-class XpansionSettings(BaseModel, extra="ignore", validate_assignment=True, populate_by_name=True):
+class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=True, populate_by_name=True):
     """
     A data transfer object representing the general settings used for Xpansion.
 
@@ -230,7 +231,7 @@ class UpdateXpansionSettings(XpansionSettings):
     )
 
 
-class XpansionCandidateDTO(BaseModel):
+class XpansionCandidateDTO(AntaresBaseModel):
     # The id of the candidate is irrelevant, so it should stay hidden for the user
     # The names should be the section titles of the file, and the id should be removed
     name: str
@@ -341,10 +342,12 @@ class XpansionManager:
 
             xpansion_settings = XpansionSettings()
             settings_obj = xpansion_settings.model_dump(
-                by_alias=True, exclude_none=True, exclude={"sensitivity_config"}
+                mode="json", by_alias=True, exclude_none=True, exclude={"sensitivity_config"}
             )
             if xpansion_settings.sensitivity_config:
-                sensitivity_obj = xpansion_settings.sensitivity_config.model_dump(by_alias=True, exclude_none=True)
+                sensitivity_obj = xpansion_settings.sensitivity_config.model_dump(
+                    mode="json", by_alias=True, exclude_none=True
+                )
             else:
                 sensitivity_obj = {}
 
@@ -385,7 +388,7 @@ class XpansionManager:
 
         actual_settings = self.get_xpansion_settings(study)
         settings_fields = new_xpansion_settings.model_dump(
-            by_alias=False, exclude_none=True, exclude={"sensitivity_config"}
+            mode="json", by_alias=False, exclude_none=True, exclude={"sensitivity_config"}
         )
         updated_settings = actual_settings.copy(deep=True, update=settings_fields)
 
@@ -406,11 +409,11 @@ class XpansionManager:
                 msg = f"Additional constraints file '{constraints_file}' does not exist"
                 raise XpansionFileNotFoundError(msg) from None
 
-        config_obj = updated_settings.model_dump(by_alias=True, exclude={"sensitivity_config"})
+        config_obj = updated_settings.model_dump(mode="json", by_alias=True, exclude={"sensitivity_config"})
         file_study.tree.save(config_obj, ["user", "expansion", "settings"])
 
         if new_xpansion_settings.sensitivity_config:
-            sensitivity_obj = new_xpansion_settings.sensitivity_config.model_dump(by_alias=True)
+            sensitivity_obj = new_xpansion_settings.sensitivity_config.model_dump(mode="json", by_alias=True)
             file_study.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
         return self.get_xpansion_settings(study)
@@ -550,7 +553,7 @@ class XpansionManager:
         )  # The primary key is actually the name, the id does not matter and is never checked.
 
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
-        candidates_obj[next_id] = xpansion_candidate.model_dump(by_alias=True, exclude_none=True)
+        candidates_obj[next_id] = xpansion_candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
         candidates_data = {"user": {"expansion": {"candidates": candidates_obj}}}
         file_study.tree.save(candidates_data)
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
@@ -591,7 +594,9 @@ class XpansionManager:
         for candidate_id, candidate in candidates.items():
             if candidate["name"] == candidate_name:
                 logger.info(f"Updating candidate '{candidate_name}' of study '{study.id}'")
-                candidates[candidate_id] = xpansion_candidate_dto.model_dump(by_alias=True, exclude_none=True)
+                candidates[candidate_id] = xpansion_candidate_dto.model_dump(
+                    mode="json", by_alias=True, exclude_none=True
+                )
                 file_study.tree.save(candidates, ["user", "expansion", "candidates"])
                 return
         raise CandidateNotFoundError(f"The candidate '{xpansion_candidate_dto.name}' does not exist")

@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, cast
 from uuid import UUID, uuid4
 
+from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
 from antarest.core.config import Config, Launcher, NbCoresConfig
@@ -183,7 +184,7 @@ class LauncherService:
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_JOB_COMPLETED if final_status else EventType.STUDY_JOB_STATUS_UPDATE,
-                        payload=job_result.to_dto().model_dump(),
+                        payload=job_result.to_dto().model_dump(mode="json"),
                         permissions=PermissionInfo(public_mode=PublicMode.READ),
                         channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                     )
@@ -228,7 +229,7 @@ class LauncherService:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid, params=params)
-        solver_version = study_version or study_info.version
+        solver_version = SolverVersion.parse(study_version or study_info.version)
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -252,7 +253,7 @@ class LauncherService:
         self.launchers[launcher].run_study(
             study_uuid,
             job_uuid,
-            str(solver_version),
+            solver_version,
             launcher_parameters,
             params,
         )
