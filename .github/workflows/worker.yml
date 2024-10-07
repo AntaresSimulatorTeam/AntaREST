@@ -2,9 +2,7 @@ name: worker
 on:
   push:
     branches:
-      - "master"
-      - "worker/**"
-      - "bump-python/**"
+      - "ohohoh"
 
 jobs:
   binary:

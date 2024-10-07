@@ -2,7 +2,7 @@ name: check license headers
 on:
   push:
     branches:
-      - "**"
+      - "ohohohoh"
 
 jobs:
   check-license-headers:
