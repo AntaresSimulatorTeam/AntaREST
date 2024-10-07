@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Type, Union
 from sqlalchemy import create_engine, event  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.engine.url import URL  # type: ignore
+from sqlalchemy.event import listen  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -16,22 +17,18 @@ _Session: Optional[sessionmaker] = None
 _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
 
 
-def _is_sqlite_connection(dbapi_connection: Any) -> bool:
-    cls = dbapi_connection.__class__
-    full_classe_name = f"{cls.__module__}{cls.__name__}"
-    return "sqlite" in full_classe_name.lower()
+def _is_sqlite_engine(engine: Engine) -> bool:
+    return "sqlite" in engine.url.drivername.lower()
 
 
-@event.listens_for(Engine, "connect")  # type: ignore
 def enable_sqlite_foreign_keys(dbapi_connection: Any, connection_record: Any) -> None:
     """
     By default, sqlite does not enforce foreign key constraints,
     we need to tell it explicitly.
     """
-    if _is_sqlite_connection(dbapi_connection):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON;")
-        cursor.close()
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON;")
+    cursor.close()
 
 
 class DBSessionMiddleware(BaseHTTPMiddleware):
@@ -57,6 +54,10 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
             engine = create_engine(db_url, **engine_args)
         else:
             engine = custom_engine
+
+        if _is_sqlite_engine(engine):
+            listen(engine, "connect", enable_sqlite_foreign_keys)
+
         _Session = sessionmaker(bind=engine, **session_args)
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:

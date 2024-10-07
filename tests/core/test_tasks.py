@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -42,7 +42,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
-from antarest.login.repository import UserRepository
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
@@ -73,11 +72,8 @@ def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
 
 
 @with_db_context
-def test_service(core_config: Config, event_bus: IEventBus) -> None:
+def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
     engine = db.session.bind
-
-    user_repo = UserRepository(session=db.session)
-    user_repo.save(User(id=DEFAULT_ADMIN_USER.id))
 
     task_job_repo = TaskJobRepository()
 
@@ -97,7 +93,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
 
     tasks = service.list_tasks(
         TaskListFilter(),
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        request_params=RequestParameters(user=admin_user),
     )
     assert len(tasks) == 1
     assert tasks[0].status == TaskStatus.FAILED
@@ -106,7 +102,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     # Test Case: get task status
     # ==========================
 
-    res = service.status_task("a", RequestParameters(user=DEFAULT_ADMIN_USER))
+    res = service.status_task("a", RequestParameters(user=admin_user))
     assert res is not None
     expected = {
         "completion_date_utc": ANY,
@@ -139,7 +135,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
         None,
         None,
         None,
-        RequestParameters(user=DEFAULT_ADMIN_USER),
+        RequestParameters(user=admin_user),
     )
     service.await_task(failed_id, timeout_sec=2)
 
@@ -167,7 +163,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
         None,
         None,
         None,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        request_params=RequestParameters(user=admin_user),
     )
     service.await_task(ok_id, timeout_sec=2)
 
@@ -281,7 +277,7 @@ def test_repository(db_session: Session) -> None:
 
 
 @with_db_context
-def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
+def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
     # Create a TaskJobService and add tasks
     task_job_repo = TaskJobRepository()
     task_job_repo.save(TaskJob(id="a", name="foo"))
@@ -301,7 +297,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
 
     backend.clear_events()
 
-    service.cancel_task("b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
+    service.cancel_task("b", RequestParameters(user=admin_user), dispatch=True)
 
     collected_events = backend.get_events()
 
@@ -317,7 +313,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
 
     backend.clear_events()
 
-    service.cancel_task("a", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
+    service.cancel_task("a", RequestParameters(user=admin_user), dispatch=True)
 
     collected_events = backend.get_events()
     assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
