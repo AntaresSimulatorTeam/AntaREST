@@ -38,7 +38,14 @@ export const getAllMiscRunningTasks = async (): Promise<TaskDTO[]> => {
       TaskStatus.FAILED,
       TaskStatus.COMPLETED,
     ],
-    type: ["COPY", "ARCHIVE", "UNARCHIVE", "SCAN", "UPGRADE_STUDY"],
+    type: [
+      "COPY",
+      "ARCHIVE",
+      "UNARCHIVE",
+      "SCAN",
+      "UPGRADE_STUDY",
+      "THERMAL_CLUSTER_SERIES_GENERATION",
+    ],
   });
   return res.data;
 };
