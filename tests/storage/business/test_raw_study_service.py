@@ -621,7 +621,7 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
 
     assert raw_study.version == "100"
 
-    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="100")
+    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="42")
 
     file_study_tree = Mock()
     file_study_tree.get.return_value = {"version": 42}

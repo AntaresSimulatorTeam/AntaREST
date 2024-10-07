@@ -13,6 +13,8 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antares.study.version import StudyVersion
+
 from antarest.study.business.thematic_trimming_field_infos import FIELDS_INFO
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
@@ -66,27 +68,27 @@ def test_thematic_trimming_config() -> None:
 
     study.version = config.version = 700
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(int(study.version))
+    fields_info = get_fields_info(StudyVersion.parse(study.version))
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     assert actual == expected
 
     study.version = config.version = 800
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(int(study.version))
+    fields_info = get_fields_info(StudyVersion.parse(study.version))
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     expected.avl_dtg = False
     assert actual == expected
 
     study.version = config.version = 820
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(int(study.version))
+    fields_info = get_fields_info(StudyVersion.parse(study.version))
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     expected.avl_dtg = False
     assert actual == expected
 
     study.version = config.version = 830
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(int(study.version))
+    fields_info = get_fields_info(StudyVersion.parse(study.version))
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     expected.dens = False
     expected.profit_by_plant = False
@@ -94,7 +96,7 @@ def test_thematic_trimming_config() -> None:
 
     study.version = config.version = 840
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(int(study.version))
+    fields_info = get_fields_info(StudyVersion.parse(study.version))
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, False))
     expected.cong_fee_alg = True
     assert actual == expected

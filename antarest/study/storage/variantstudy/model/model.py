@@ -14,9 +14,9 @@ import typing as t
 import uuid
 
 import typing_extensions as te
-from pydantic import BaseModel
 
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.model import StudyMetadataDTO
 
 LegacyDetailsDTO = t.Tuple[str, bool, str]
@@ -45,7 +45,7 @@ class NewDetailsDTO(te.TypedDict):
 DetailsDTO = t.Union[LegacyDetailsDTO, NewDetailsDTO]
 
 
-class GenerationResultInfoDTO(BaseModel):
+class GenerationResultInfoDTO(AntaresBaseModel):
     """
     Result information of a snapshot generation process.
 
@@ -58,7 +58,7 @@ class GenerationResultInfoDTO(BaseModel):
     details: t.MutableSequence[DetailsDTO]
 
 
-class CommandDTO(BaseModel):
+class CommandDTO(AntaresBaseModel):
     """
     This class represents a command.
 
@@ -75,7 +75,7 @@ class CommandDTO(BaseModel):
     version: int = 1
 
 
-class CommandResultDTO(BaseModel):
+class CommandResultDTO(AntaresBaseModel):
     """
     This class represents the result of a command.
 

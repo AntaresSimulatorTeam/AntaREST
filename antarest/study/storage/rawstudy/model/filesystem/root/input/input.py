@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -49,11 +50,14 @@ class Input(FolderNode):
             "wind": InputPreproSeries(self.context, config.next_file("wind"), "wind_"),
         }
 
-        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        study_version = config.version
+        has_renewables = (
+            study_version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        )
         if has_renewables:
             children["renewables"] = ClusteredRenewables(self.context, config.next_file("renewables"))
 
-        if config.version >= 860:
+        if study_version >= STUDY_VERSION_8_6:
             children["st-storage"] = InputSTStorage(self.context, config.next_file("st-storage"))
 
         return children
