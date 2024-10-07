@@ -2,9 +2,7 @@ name: deploy
 on:
   push:
     branches:
-      - "master"
-      - "hotfix/**"
-      - "bump-python/**"
+      - "**"
 
 jobs:
   binary:
