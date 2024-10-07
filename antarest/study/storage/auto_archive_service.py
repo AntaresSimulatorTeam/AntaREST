@@ -86,18 +86,12 @@ class AutoArchiveService(IService):
                 )
 
     def _try_clear_snapshot(self) -> None:
-        snapshot_old_time = datetime.datetime.utcnow() - datetime.timedelta(
-            days=self.config.storage.variant_snapshot_lifespan_days
+        # convert days in hours
+        hours_of_lifespan = hours=self.config.storage.variant_snapshot_lifespan_days * 24
+
+        self.study_service.storage_service.variant_study_service.clear_all_snapshots(
+            hours_of_lifespan
         )
-        # get variants
-        variants = self.study_service.repository.get_all(
-            study_filter=StudyFilter(variant=True, access_permissions=AccessPermissions(is_admin=True))
-        )
-        # check their date
-        for variant in variants:
-            if (variant.last_access or variant.updated_at) < snapshot_old_time:
-                # clear ones that are too old
-                self.study_service.storage_service.variant_study_service.clear_snapshot(variant.id)
 
     def _loop(self) -> None:
         while True:
