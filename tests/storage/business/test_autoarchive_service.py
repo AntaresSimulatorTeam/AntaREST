@@ -69,6 +69,10 @@ def test_auto_archival(tmp_path: Path):
                 id="e",
                 updated_at=now - datetime.timedelta(days=61),
             ),
+            VariantStudy(
+                id="f",
+                updated_at=now - datetime.timedelta(days=1),
+            ),
         ]
     )
     db_session.commit()
@@ -86,19 +90,10 @@ def test_auto_archival(tmp_path: Path):
     # Check that the raw study "d" was about to be archived but failed because the task was already running
     study_service.archive.assert_called_once_with("d", params=RequestParameters(DEFAULT_ADMIN_USER))
 
-    # Check that the snapshot of the variant study "e" is cleared
-    study_service.storage_service.variant_study_service.clear_snapshot.assert_called_once()
-    calls = study_service.storage_service.variant_study_service.clear_snapshot.call_args_list
-    assert len(calls) == 1
-    clear_snapshot_call = calls[0]
-    actual_study = clear_snapshot_call[0][0]
-    assert actual_study.id == "e"
-
     # Check that the variant outputs are deleted for the variant study "e"
     study_service.archive_outputs.assert_called_once_with("e", params=RequestParameters(DEFAULT_ADMIN_USER))
 
     # Check if the `clear_all_snapshots` method was called with default values
-    auto_archive_service._try_clear_snapshot()
     study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
-        datetime.timedelta(hours=24),
+        datetime.timedelta(days=1),
     )

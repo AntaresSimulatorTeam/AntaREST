@@ -38,11 +38,17 @@ class AutoArchiveService(IService):
         self.max_parallel = self.config.storage.auto_archive_max_parallel
 
     def _try_archive_studies(self) -> None:
+        """
+            Archive old studies
+            Clear old variant snapshots
+        """
         old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
             # in this part full `Read` rights over studies are granted to this function
             studies: t.Sequence[Study] = self.study_service.repository.get_all(
-                study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions(is_admin=True))
+                study_filter=StudyFilter(
+                    managed=True,
+                    access_permissions=AccessPermissions(is_admin=True))
             )
             # list of study IDs and boolean indicating if it's a raw study (True) or a variant (False)
             study_ids_to_archive = [
@@ -73,9 +79,6 @@ class AutoArchiveService(IService):
                                 study_id,
                                 params=RequestParameters(DEFAULT_ADMIN_USER),
                             )
-                            self.study_service.storage_service.variant_study_service.clear_snapshot(
-                                self.study_service.get_study(study_id)
-                            )
             except TaskAlreadyRunning:
                 pass
             except Exception as e:
@@ -84,7 +87,6 @@ class AutoArchiveService(IService):
                     exc_info=e,
                 )
 
-    def _try_clear_snapshot(self) -> None:
         self.study_service.storage_service.variant_study_service.clear_all_snapshots(
             datetime.timedelta(days=self.config.storage.snapshot_retention_days)
         )
@@ -93,7 +95,6 @@ class AutoArchiveService(IService):
         while True:
             try:
                 self._try_archive_studies()
-                self._try_clear_snapshot()
             except Exception as e:
                 logger.error(
                     "Unexpected error happened when processing auto archive service loop",

@@ -186,7 +186,7 @@ class StorageConfig:
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
             auto_archive_max_parallel=data.get("auto_archive_max_parallel", defaults.auto_archive_max_parallel),
             snapshot_retention_days=data.get(
-                "snapshot_variant_lifespan_days",
+                "snapshot_retention_days",
                 defaults.snapshot_retention_days,
             ),
         )
