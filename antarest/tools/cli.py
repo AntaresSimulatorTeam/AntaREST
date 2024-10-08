@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from httpx import Client
+from antares.study.version import StudyVersion
 
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION
 from antarest.study.storage.study_upgrader import StudyUpgrader
@@ -81,7 +81,7 @@ def commands() -> None:
     required=False,
     type=str,
     help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
-    default=NEW_DEFAULT_STUDY_VERSION,
+    default=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
 )
 def cli_apply_script(
     input: str,
@@ -102,11 +102,11 @@ def cli_apply_script(
     if host is not None and study_id is None:
         print("--study_id must be set")
         exit(1)
-
+    study_version = StudyVersion.parse(version)
     client = None
     if host:
         client = create_http_client(verify=not no_verify, auth_token=auth_token)
-    res = generate_study(Path(input), study_id, output, host, client, version)
+    res = generate_study(Path(input), study_id, output, host, client, study_version)
     print(res)
 
 
@@ -162,11 +162,11 @@ def cli_generate_script(input: str, output: str) -> None:
     required=False,
     type=str,
     help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
-    default=NEW_DEFAULT_STUDY_VERSION,
+    default=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
 )
 def cli_generate_script_diff(base: str, variant: str, output: str, version: str) -> None:
     """Generate variant script commands from two variant script directories"""
-    generate_diff(Path(base), Path(variant), Path(output), version)
+    generate_diff(Path(base), Path(variant), Path(output), StudyVersion.parse(version))
 
 
 @commands.command("upgrade-study")

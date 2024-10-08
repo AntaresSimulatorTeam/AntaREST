@@ -14,6 +14,7 @@ import typing as t
 
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy

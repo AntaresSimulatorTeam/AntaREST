@@ -13,6 +13,7 @@
 import typing as t
 
 from antarest.core.model import JSON
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
@@ -164,8 +165,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         index, actual_cfg = index_and_cfg
 
+        study_version = study_data.config.version
         # rename matrices if the operator has changed for version >= 870
-        if self.operator and study_data.config.version >= 870:
+        if self.operator and study_version >= STUDY_VERSION_8_7:
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
             new_operator = self.operator
             _update_matrices_names(study_data, self.id, existing_operator, new_operator)
@@ -175,13 +177,12 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
         ]
-        study_version = study_data.config.version
+
         time_step = self.time_step or BindingConstraintFrequency(actual_cfg.get("type"))
         self.validates_and_fills_matrices(
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        study_version = study_data.config.version
         props = create_binding_constraint_config(study_version, **self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 

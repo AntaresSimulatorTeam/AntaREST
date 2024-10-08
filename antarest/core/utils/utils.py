@@ -24,10 +24,8 @@ import zipfile
 from pathlib import Path
 
 import py7zr
-import redis
 from fastapi import HTTPException
 
-from antarest.core.config import RedisConfig
 from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
@@ -129,17 +127,6 @@ def get_local_path() -> Path:
     # https: // pyinstaller.readthedocs.io / en / stable / runtime - information.html
     filepath = Path(__file__).parent.parent.parent.parent
     return filepath
-
-
-def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
-    redis_client = redis.Redis(
-        host=config.host,
-        port=config.port,
-        password=config.password,
-        db=0,
-        retry_on_error=[redis.ConnectionError, redis.TimeoutError],  # type: ignore
-    )
-    return redis_client  # type: ignore
 
 
 class StopWatch:

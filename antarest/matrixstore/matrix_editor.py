@@ -14,10 +14,12 @@ import functools
 import operator
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
+
+from antarest.core.serialization import AntaresBaseModel
 
 
-class MatrixSlice(BaseModel):
+class MatrixSlice(AntaresBaseModel):
     # NOTE: This Markdown documentation is reflected in the Swagger API
     """
     Represents a group of cells in a matrix for updating.
@@ -97,7 +99,7 @@ OPERATIONS = {
 
 
 @functools.total_ordering
-class Operation(BaseModel):
+class Operation(AntaresBaseModel):
     # NOTE: This Markdown documentation is reflected in the Swagger API
     """
     Represents an update operation to be performed on matrix cells.
@@ -140,7 +142,7 @@ class Operation(BaseModel):
         return NotImplemented  # pragma: no cover
 
 
-class MatrixEditInstruction(BaseModel):
+class MatrixEditInstruction(AntaresBaseModel):
     # NOTE: This Markdown documentation is reflected in the Swagger API
     """
     Provides edit instructions to be applied to a matrix.

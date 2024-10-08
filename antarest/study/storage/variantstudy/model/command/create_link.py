@@ -12,12 +12,14 @@
 import typing as t
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from antarest.core.exceptions import LinkValidationError
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, LinkStyle, TransmissionCapacity
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -29,12 +31,12 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 DEFAULT_COLOR = 112
 
 
-class AreaInfo(BaseModel):
+class AreaInfo(AntaresBaseModel):
     area1: str
     area2: str
 
 
-class LinkInfoProperties(BaseModel):
+class LinkInfoProperties(AntaresBaseModel):
     hurdles_cost: bool = False
     loop_flow: bool = False
     use_phase_shifter: bool = False
@@ -204,7 +206,7 @@ class CreateLink(ICommand):
         self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
         assert type(self.series) is str
-        if version < 820:
+        if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
         else:
             study_data.tree.save(

@@ -28,7 +28,6 @@ from antarest.tools.lib import (
     COMMAND_FILE,
     MATRIX_STORE_DIR,
     RemoteVariantGenerator,
-    create_http_client,
     extract_commands,
     generate_diff,
     generate_study,

@@ -16,8 +16,11 @@ List of fields of the Thematic Trimming panel
 
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FormFieldsBaseModel
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6, STUDY_VERSION_8_8
 
 
 @all_optional_model
@@ -184,59 +187,63 @@ FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
     "cong_prob_minus": {"topic": _GENERAL, "path": "CONG. PROB -", "default_value": True},
     "hurdle_cost": {"topic": _GENERAL, "path": "HURDLE COST", "default_value": True},
     # since v8.1
-    "res_generation_by_plant": {"topic": _GENERAL, "path": "RES generation by plant", "default_value": True, "start_version": 810},
-    "misc_dtg_2": {"topic": _GENERAL, "path": "MISC. DTG 2", "default_value": True, "start_version": 810},
-    "misc_dtg_3": {"topic": _GENERAL, "path": "MISC. DTG 3", "default_value": True, "start_version": 810},
-    "misc_dtg_4": {"topic": _GENERAL, "path": "MISC. DTG 4", "default_value": True, "start_version": 810},
-    "wind_offshore": {"topic": _GENERAL, "path": "WIND OFFSHORE", "default_value": True, "start_version": 810},
-    "wind_onshore": {"topic": _GENERAL, "path": "WIND ONSHORE", "default_value": True, "start_version": 810},
-    "solar_concrt": {"topic": _GENERAL, "path": "SOLAR CONCRT.", "default_value": True, "start_version": 810},
-    "solar_pv": {"topic": _GENERAL, "path": "SOLAR PV", "default_value": True, "start_version": 810},
-    "solar_rooft": {"topic": _GENERAL, "path": "SOLAR ROOFT", "default_value": True, "start_version": 810},
-    "renw_1": {"topic": _GENERAL, "path": "RENW. 1", "default_value": True, "start_version": 810},
-    "renw_2": {"topic": _GENERAL, "path": "RENW. 2", "default_value": True, "start_version": 810},
-    "renw_3": {"topic": _GENERAL, "path": "RENW. 3", "default_value": True, "start_version": 810},
-    "renw_4": {"topic": _GENERAL, "path": "RENW. 4", "default_value": True, "start_version": 810},
+    "res_generation_by_plant": {"topic": _GENERAL, "path": "RES generation by plant", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "misc_dtg_2": {"topic": _GENERAL, "path": "MISC. DTG 2", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "misc_dtg_3": {"topic": _GENERAL, "path": "MISC. DTG 3", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "misc_dtg_4": {"topic": _GENERAL, "path": "MISC. DTG 4", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "wind_offshore": {"topic": _GENERAL, "path": "WIND OFFSHORE", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "wind_onshore": {"topic": _GENERAL, "path": "WIND ONSHORE", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "solar_concrt": {"topic": _GENERAL, "path": "SOLAR CONCRT.", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "solar_pv": {"topic": _GENERAL, "path": "SOLAR PV", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "solar_rooft": {"topic": _GENERAL, "path": "SOLAR ROOFT", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "renw_1": {"topic": _GENERAL, "path": "RENW. 1", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "renw_2": {"topic": _GENERAL, "path": "RENW. 2", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "renw_3": {"topic": _GENERAL, "path": "RENW. 3", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "renw_4": {"topic": _GENERAL, "path": "RENW. 4", "default_value": True, "start_version": STUDY_VERSION_8_1},
     # since v8.3
-    "dens": {"topic": _GENERAL, "path": "DENS", "default_value": True, "start_version": 830},
-    "profit_by_plant": {"topic": _GENERAL, "path": "Profit by plant", "default_value": True, "start_version": 830},
+    "dens": {"topic": _GENERAL, "path": "DENS", "default_value": True, "start_version": STUDY_VERSION_8_3},
+    "profit_by_plant": {"topic": _GENERAL, "path": "Profit by plant", "default_value": True, "start_version": STUDY_VERSION_8_3},
     # topic: "Short-Term Storages"
     # since v8.6
-    "sts_inj_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS inj by plant", "default_value": True, "start_version": 860},
-    "sts_withdrawal_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS withdrawal by plant", "default_value": True, "start_version": 860},
-    "sts_lvl_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS lvl by plant", "default_value": True, "start_version": 860},
-    "sts_cashflow_by_cluster": {"topic": _SHORT_TERM_STORAGES, "path": "STS Cashflow By Cluster", "default_value": True, "start_version": 880},
+    "sts_inj_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS inj by plant", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "sts_withdrawal_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS withdrawal by plant", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "sts_lvl_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS lvl by plant", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "sts_cashflow_by_cluster": {"topic": _SHORT_TERM_STORAGES, "path": "STS Cashflow By Cluster", "default_value": True, "start_version": STUDY_VERSION_8_8},
     # topic: "Short-Term Storages - Group"
-    "psp_open_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_injection", "default_value": True, "start_version": 860},
-    "psp_open_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_withdrawal", "default_value": True, "start_version": 860},
-    "psp_open_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_level", "default_value": True, "start_version": 860},
-    "psp_closed_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_injection", "default_value": True, "start_version": 860},
-    "psp_closed_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_withdrawal", "default_value": True, "start_version": 860},
-    "psp_closed_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_level", "default_value": True, "start_version": 860},
-    "pondage_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_injection", "default_value": True, "start_version": 860},
-    "pondage_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_withdrawal", "default_value": True, "start_version": 860},
-    "pondage_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_level", "default_value": True, "start_version": 860},
-    "battery_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_injection", "default_value": True, "start_version": 860},
-    "battery_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_withdrawal", "default_value": True, "start_version": 860},
-    "battery_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_level", "default_value": True, "start_version": 860},
-    "other1_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_injection", "default_value": True, "start_version": 860},
-    "other1_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_withdrawal", "default_value": True, "start_version": 860},
-    "other1_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_level", "default_value": True, "start_version": 860},
-    "other2_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_injection", "default_value": True, "start_version": 860},
-    "other2_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_withdrawal", "default_value": True, "start_version": 860},
-    "other2_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_level", "default_value": True, "start_version": 860},
-    "other3_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_injection", "default_value": True, "start_version": 860},
-    "other3_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_withdrawal", "default_value": True, "start_version": 860},
-    "other3_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_level", "default_value": True, "start_version": 860},
-    "other4_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_injection", "default_value": True, "start_version": 860},
-    "other4_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_withdrawal", "default_value": True, "start_version": 860},
-    "other4_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_level", "default_value": True, "start_version": 860},
-    "other5_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_injection", "default_value": True, "start_version": 860},
-    "other5_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_withdrawal", "default_value": True, "start_version": 860},
-    "other5_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_level", "default_value": True, "start_version": 860},
+    "psp_open_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "psp_open_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "psp_open_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "psp_closed_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "psp_closed_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "psp_closed_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "pondage_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "pondage_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "pondage_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "battery_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "battery_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "battery_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other1_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other1_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other1_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other2_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other2_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other2_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other3_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other3_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other3_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other4_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other4_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other4_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other5_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other5_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "other5_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
     # fmt: on
 }
 
 
-def get_fields_info(study_version: int) -> t.Mapping[str, t.Mapping[str, t.Any]]:
-    return {key: info for key, info in FIELDS_INFO.items() if (info.get("start_version") or 0) <= study_version}
+def get_fields_info(study_version: StudyVersion) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+    return {
+        key: info
+        for key, info in FIELDS_INFO.items()
+        if (info.get("start_version") or StudyVersion.parse(0)) <= study_version
+    }

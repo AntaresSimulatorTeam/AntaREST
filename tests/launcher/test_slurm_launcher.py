@@ -19,6 +19,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, patch
 
 import pytest
+from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters
 from antareslauncher.study_dto import StudyDTO
@@ -308,7 +309,7 @@ def test_run_study(
 
     # When the launcher is called
     study_uuid = str(uuid.uuid4())
-    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), str(version))
+    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), SolverVersion.parse(version))
 
     # Check the results
     assert (
