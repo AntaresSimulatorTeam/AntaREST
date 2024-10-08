@@ -18,6 +18,9 @@ import pytest
 from tests.conftest_db import *
 
 # noinspection PyUnresolvedReferences
+from tests.conftest_instances import *
+
+# noinspection PyUnresolvedReferences
 from tests.conftest_services import *
 
 HERE = Path(__file__).parent.resolve()
