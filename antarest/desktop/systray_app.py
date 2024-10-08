@@ -68,7 +68,7 @@ def setup_exit_application_on_server_end(server: Process, app: QApplication) -> 
 
 def check_server_started() -> bool:
     with contextlib.suppress(httpx.ConnectError):
-        res = httpx.get("http://localhost:8080/health")
+        res = httpx.get("http://localhost:8080/api/health")
         if res.status_code == 200:
             return True
     return False
