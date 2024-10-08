@@ -98,7 +98,7 @@ class TestCreateArea:
         assert (study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini").exists()
         allocation = configparser.ConfigParser()
         allocation.read(study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini")
-        assert int(allocation["[allocation]"][area_id]) == 1
+        assert int(allocation["[allocation"][area_id]) == 1
 
         # Capacity
         assert (study_path / "input" / "hydro" / "common" / "capacity" / f"maxpower_{area_id}.txt.link").exists()
