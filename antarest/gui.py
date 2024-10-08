@@ -10,6 +10,14 @@
 #
 # This file is part of the Antares project.
 
+import os
+import sys
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+
 import contextlib
 import multiprocessing
 import platform
