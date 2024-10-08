@@ -140,8 +140,12 @@ class LinkManager:
 
     def check_attributes_coherence(self, study_version: int, link_creation_info: LinkInfoDTOType) -> None:
         if study_version < 820:
-            if link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None:
-                raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
+            if isinstance(link_creation_info, LinkInfoDTO820):
+                if (
+                    link_creation_info.filter_synthesis is not None
+                    or link_creation_info.filter_year_by_year is not None
+                ):
+                    raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
     def get_one_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
         file_study = self.storage_service.get_storage(study).get_raw(study)
