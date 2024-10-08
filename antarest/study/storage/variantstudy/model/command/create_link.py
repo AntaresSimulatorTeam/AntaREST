@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
+from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import Field, ValidationInfo, field_validator, model_validator
@@ -80,6 +81,15 @@ class LinkInfoProperties820(LinkInfoProperties):
 class LinkProperties(LinkInfoProperties820):
     pass
 
+
+class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
+    # area1: str
+    # area2: str
+    # parameters: Optional[Dict[str, Any]] = None
+    # series: Optional[Union[List[List[MatrixData]], str]] = None
+    # direct: Optional[Union[List[List[MatrixData]], str]] = None
+    # indirect: Optional[Union[List[List[MatrixData]], str]] = None
+    pass
 
 class CreateLink(ICommand):
     """

@@ -121,8 +121,9 @@ class LinkManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         existing_link = self.get_one_link(study, link_creation_info)
 
-        existing_link = existing_link.model_copy(update=link_creation_info.model_dump(exclude={"area1", "area2"}, exclude_none=True))
-        # create new object
+        existing_link = existing_link.model_copy(
+            update=link_creation_info.model_dump(exclude={"area1", "area2"}, exclude_none=True)
+        )
 
         command = UpdateLink(
             area1=link_creation_info.area1,

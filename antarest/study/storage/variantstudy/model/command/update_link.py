@@ -13,9 +13,8 @@ import typing as t
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandOutput, CommandName
-
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple, MATCH_SIGNATURE_SEPARATOR
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -65,7 +64,9 @@ class UpdateLink(ICommand):
         )
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2)
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
+        )
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         pass
