@@ -83,25 +83,6 @@ class LinkProperties(LinkInfoProperties820):
 
 
 class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
-    # area1: str
-    # area2: str
-    # parameters: Optional[Dict[str, Any]] = None
-    # series: Optional[Union[List[List[MatrixData]], str]] = None
-    # direct: Optional[Union[List[List[MatrixData]], str]] = None
-    # indirect: Optional[Union[List[List[MatrixData]], str]] = None
-    pass
-
-class CreateLink(ICommand):
-    """
-    Command used to create a link between two areas.
-    """
-
-    # Overloaded metadata
-    # ===================
-
-    command_name: CommandName = CommandName.CREATE_LINK
-    version: int = 1
-
     # Command parameters
     # ==================
 
@@ -120,10 +101,93 @@ class CreateLink(ICommand):
         return validate_matrix(v, new_values) if v is not None else v
 
     @model_validator(mode="after")
-    def validate_areas(self) -> "CreateLink":
+    def validate_areas(self) -> "AbstractLinkCommand":
         if self.area1 == self.area2:
             raise ValueError("Cannot create link on same node")
         return self
+
+    def to_dto(self) -> CommandDTO:
+        args = {
+            "area1": self.area1,
+            "area2": self.area2,
+            "parameters": self.parameters,
+        }
+        if self.series:
+            args["series"] = strip_matrix_protocol(self.series)
+        if self.direct:
+            args["direct"] = strip_matrix_protocol(self.direct)
+        if self.indirect:
+            args["indirect"] = strip_matrix_protocol(self.indirect)
+        return CommandDTO(
+            action=CommandName.CREATE_LINK.value,
+            args=args,
+        )
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, CreateLink):
+            return False
+        simple_match = self.area1 == other.area1 and self.area2 == other.area2
+        if not equal:
+            return simple_match
+        return (
+            simple_match
+            and self.parameters == other.parameters
+            and self.series == other.series
+            and self.direct == other.direct
+            and self.indirect == other.indirect
+        )
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        other = cast(CreateLink, other)
+        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+
+        commands: List[ICommand] = []
+        area_from, area_to = sorted([self.area1, self.area2])
+        if self.parameters != other.parameters:
+            properties = LinkProperties.model_validate(other.parameters or {})
+            link_property = properties.model_dump(mode="json", by_alias=True, exclude_none=True)
+            commands.append(
+                UpdateConfig(
+                    target=f"input/links/{area_from}/properties/{area_to}",
+                    data=link_property,
+                    command_context=self.command_context,
+                )
+            )
+        if self.series != other.series:
+            commands.append(
+                ReplaceMatrix(
+                    target=f"@links_series/{area_from}/{area_to}",
+                    matrix=strip_matrix_protocol(other.series),
+                    command_context=self.command_context,
+                )
+            )
+        return commands
+
+    def get_inner_matrices(self) -> List[str]:
+        list_matrices = []
+        if self.series:
+            assert_this(isinstance(self.series, str))
+            list_matrices.append(strip_matrix_protocol(self.series))
+        if self.direct:
+            assert_this(isinstance(self.direct, str))
+            list_matrices.append(strip_matrix_protocol(self.direct))
+        if self.indirect:
+            assert_this(isinstance(self.indirect, str))
+            list_matrices.append(strip_matrix_protocol(self.indirect))
+        return list_matrices
+
+
+class CreateLink(AbstractLinkCommand):
+    """
+    Command used to create a link between two areas.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name: CommandName = CommandName.CREATE_LINK
+    version: int = 1
 
     def _create_link_in_config(self, area_from: str, area_to: str, study_data: FileStudyTreeConfig) -> None:
         self.parameters = self.parameters or {}
@@ -276,55 +340,10 @@ class CreateLink(ICommand):
         )
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateLink):
-            return False
-        simple_match = self.area1 == other.area1 and self.area2 == other.area2
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.parameters == other.parameters
-            and self.series == other.series
-            and self.direct == other.direct
-            and self.indirect == other.indirect
-        )
+        return super().match(other, equal)
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        other = cast(CreateLink, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        commands: List[ICommand] = []
-        area_from, area_to = sorted([self.area1, self.area2])
-        if self.parameters != other.parameters:
-            properties = LinkProperties.model_validate(other.parameters or {})
-            link_property = properties.model_dump(mode="json", by_alias=True, exclude_none=True)
-            commands.append(
-                UpdateConfig(
-                    target=f"input/links/{area_from}/properties/{area_to}",
-                    data=link_property,
-                    command_context=self.command_context,
-                )
-            )
-        if self.series != other.series:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"@links_series/{area_from}/{area_to}",
-                    matrix=strip_matrix_protocol(other.series),
-                    command_context=self.command_context,
-                )
-            )
-        return commands
+        return super()._create_diff(other)
 
     def get_inner_matrices(self) -> List[str]:
-        list_matrices = []
-        if self.series:
-            assert_this(isinstance(self.series, str))
-            list_matrices.append(strip_matrix_protocol(self.series))
-        if self.direct:
-            assert_this(isinstance(self.direct, str))
-            list_matrices.append(strip_matrix_protocol(self.direct))
-        if self.indirect:
-            assert_this(isinstance(self.indirect, str))
-            list_matrices.append(strip_matrix_protocol(self.indirect))
-        return list_matrices
+        return super().get_inner_matrices()

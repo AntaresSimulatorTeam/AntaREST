@@ -11,14 +11,17 @@
 # This file is part of the Antares project.
 import typing as t
 
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateLink(ICommand):
+class UpdateLink(AbstractLinkCommand):
     """
     Command used to create a link between two areas.
     """
@@ -28,12 +31,6 @@ class UpdateLink(ICommand):
 
     command_name: CommandName = CommandName.UPDATE_LINK
     version: int = 1
-
-    # Command parameters
-    # ==================
-    area1: str
-    area2: str
-    parameters: t.Optional[t.Dict[str, t.Any]] = None
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         area_from, area_to = sorted([self.area1, self.area2])
@@ -47,9 +44,51 @@ class UpdateLink(ICommand):
         )
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
+        version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
         study_data.tree.save(self.parameters, ["input", "links", area_from, "properties", area_to])
         output, _ = self._apply_config(study_data.config)
+
+        self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
+        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
+        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
+
+        assert type(self.series) is str
+        if version < STUDY_VERSION_8_2:
+            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
+        else:
+            study_data.tree.save(
+                self.series,
+                ["input", "links", area_from, f"{area_to}_parameters"],
+            )
+
+            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
+            if self.direct:
+                assert isinstance(self.direct, str)
+                study_data.tree.save(
+                    self.direct,
+                    [
+                        "input",
+                        "links",
+                        area_from,
+                        "capacities",
+                        f"{area_to}_direct",
+                    ],
+                )
+
+            if self.indirect:
+                assert isinstance(self.indirect, str)
+                study_data.tree.save(
+                    self.indirect,
+                    [
+                        "input",
+                        "links",
+                        area_from,
+                        "capacities",
+                        f"{area_to}_indirect",
+                    ],
+                )
+
         return output
 
     def to_dto(self) -> CommandDTO:
@@ -58,6 +97,12 @@ class UpdateLink(ICommand):
             "area2": self.area2,
             "parameters": self.parameters,
         }
+        if self.series:
+            args["series"] = strip_matrix_protocol(self.series)
+        if self.direct:
+            args["direct"] = strip_matrix_protocol(self.direct)
+        if self.indirect:
+            args["indirect"] = strip_matrix_protocol(self.indirect)
         return CommandDTO(
             action=CommandName.UPDATE_LINK.value,
             args=args,
@@ -69,7 +114,7 @@ class UpdateLink(ICommand):
         )
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        pass
+        return super()._create_diff(other)
 
     def get_inner_matrices(self) -> t.List[str]:
-        pass
+        return super().get_inner_matrices()

@@ -19,7 +19,6 @@ from tests.integration.prepare_proxy import PreparerProxy
 
 @pytest.mark.unit_test
 class TestLink:
-
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_update(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore

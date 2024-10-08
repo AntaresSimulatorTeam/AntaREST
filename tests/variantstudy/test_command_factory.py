@@ -95,6 +95,17 @@ COMMANDS: List[CommandDTO] = [
         ],
     ),
     CommandDTO(
+        action=CommandName.UPDATE_LINK.value,
+        args=[
+            {
+                "area1": "area1",
+                "area2": "area2",
+                "parameters": {},
+                "series": "series",
+            }
+        ],
+    ),
+    CommandDTO(
         action=CommandName.REMOVE_LINK.value,
         args={
             "area1": "area1",
@@ -411,7 +422,7 @@ class TestCommandFactory:
                 f".{name}",
                 package="antarest.study.storage.variantstudy.model.command",
             )
-        abstract_commands = {"AbstractBindingConstraintCommand"}
+        abstract_commands = {"AbstractBindingConstraintCommand", "AbstractLinkCommand"}
         return {cmd.__name__ for cmd in ICommand.__subclasses__() if cmd.__name__ not in abstract_commands}
 
     def test_all_commands_are_tested(self, command_factory: CommandFactory):

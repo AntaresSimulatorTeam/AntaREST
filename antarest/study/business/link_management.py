@@ -128,7 +128,9 @@ class LinkManager:
         command = UpdateLink(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
-            parameters=existing_link.model_dump(exclude={"area1", "area2"}, exclude_none=True, by_alias=True),
+            parameters=existing_link.model_dump(
+                mode="json", exclude={"area1", "area2"}, exclude_none=True, by_alias=True
+            ),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 
