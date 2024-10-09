@@ -63,6 +63,13 @@ def monitor_server_process(server: Process, app: QApplication) -> None:
 
 
 def setup_exit_application_on_server_end(server: Process, app: QApplication) -> None:
+    """
+    Quits this application when the server process ends, for any reason.
+
+    This allows to close the system tray application when the server
+    is shutdown by some external action (server failing to start for example,
+    or killed).
+    """
     Thread(target=monitor_server_process, args=(server, app)).start()
 
 
@@ -135,6 +142,9 @@ def create_systray_app() -> AntaresSystrayApp:
 
 
 def notification_popup(message: str, threaded: bool = True) -> None:
+    """
+    Pos a notification message above system tray.
+    """
     if platform.system() == "Windows":
         # noinspection PyPackageRequirements
         from win10toast import ToastNotifier  # type: ignore

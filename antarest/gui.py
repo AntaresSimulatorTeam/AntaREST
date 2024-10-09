@@ -37,6 +37,15 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def main() -> None:
+    """
+    Entry point for "desktop" version of antares-web.
+
+    This process actually only runs a small app which is accessible
+    in the system tray.
+    It spawns the actual server as a separate process.
+    The systray app allows to shutdown the server, and to open
+    antares webapp in the users's browser.
+    """
     multiprocessing.freeze_support()
 
     arguments = parse_arguments()
