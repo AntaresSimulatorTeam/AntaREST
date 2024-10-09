@@ -9,7 +9,7 @@ min() {
     echo $(( $1 < $2 ? $1 : $2 ))
 }
 
-workers=$(min 30 ${NB_WORKERS_ANTARES:-17}) # default to 17 and max is 30
+workers=$(min 30 ${ANTARES_NB_WORKERS:-$((2*$(nproc) + 1))}) # default (2*nproc + 1) and max is 30
 
 # Check for --no-gunicorn or --multiple-ports argument
 use_gunicorn=true
