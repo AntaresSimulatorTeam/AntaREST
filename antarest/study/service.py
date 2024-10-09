@@ -96,6 +96,9 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
+from antarest.study.interface.cache_study_interface import CacheStudyInterface
+from antarest.study.interface.file_study_interface import FileStudyInterfaceFactory
+from antarest.study.interface.study_interface import StudyInterface
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -1806,7 +1809,13 @@ class StudyService:
     ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.areas.get_all_areas_ui_info(study) if ui else self.areas.get_all_areas(study, area_type)
+        if ui:
+            return self._get_study_interface(uuid).get_all_areas_ui_info()
+        return self.areas.get_all_areas(study, area_type)
+
+    def _get_study_interface(self, study_id: str) -> StudyInterface:
+        delegate = FileStudyInterfaceFactory(self)
+        return CacheStudyInterface(study_id, self.cache_service, delegate)
 
     def get_all_links(
         self,
