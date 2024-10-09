@@ -439,7 +439,7 @@ def create_study_variant_routes(
         """
         retention_hours = datetime.timedelta(hours=hours)
         logger.info(
-            f"Delete all variant snapshots older than {retention_hours} hours.",
+            f"Delete all variant snapshots older than {retention_hours.total_seconds() // 3600} hours.",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
