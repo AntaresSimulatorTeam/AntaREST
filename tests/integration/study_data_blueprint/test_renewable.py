@@ -129,10 +129,11 @@ class TestRenewable:
         )
         assert res.status_code == 200, res.json()
         fr_solar_pv_id = res.json()["id"]
-        assert fr_solar_pv_id == transform_name_to_id(fr_solar_pv, lower=False)
+        assert fr_solar_pv_id == transform_name_to_id(fr_solar_pv)
         # noinspection SpellCheckingInspection
         fr_solar_pv_cfg = {"id": fr_solar_pv_id, **fr_solar_pv_props}
-        assert res.json() == fr_solar_pv_cfg
+        expected_cfg = {**fr_solar_pv_cfg, "name": fr_solar_pv.lower()}
+        assert res.json() == expected_cfg
 
         # reading the properties of a renewable cluster
         res = client.get(
@@ -140,7 +141,7 @@ class TestRenewable:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == fr_solar_pv_cfg
+        assert res.json() == expected_cfg
 
         # =============================
         #  RENEWABLE CLUSTER MATRICES
@@ -174,21 +175,22 @@ class TestRenewable:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == EXISTING_CLUSTERS + [fr_solar_pv_cfg]
+        assert res.json() == EXISTING_CLUSTERS + [expected_cfg]
 
         # updating properties
+        old_name = "fr solar pv old 1"
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
-                "name": "FR Solar pv old 1",
+                "name": old_name,
                 "nominalCapacity": 5132,
             },
         )
         assert res.status_code == 200, res.json()
         fr_solar_pv_cfg = {
             **fr_solar_pv_cfg,
-            "name": "FR Solar pv old 1",
+            "name": old_name,
             "nominalCapacity": 5132,
         }
         assert res.json() == fr_solar_pv_cfg
@@ -254,8 +256,8 @@ class TestRenewable:
         # asserts the config is the same
         assert res.status_code in {200, 201}, res.json()
         duplicated_config = dict(fr_solar_pv_cfg)
-        duplicated_config["name"] = new_name
-        duplicated_id = transform_name_to_id(new_name, lower=False)
+        duplicated_config["name"] = new_name.lower()
+        duplicated_id = transform_name_to_id(new_name)
         duplicated_config["id"] = duplicated_id
         assert res.json() == duplicated_config
 
@@ -580,7 +582,7 @@ class TestRenewable:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name
+        assert cluster_cfg["name"] == new_name.lower()
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties
