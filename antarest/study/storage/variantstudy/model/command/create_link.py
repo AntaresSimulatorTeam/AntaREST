@@ -84,6 +84,8 @@ class LinkProperties(LinkInfoProperties820):
 
 
 class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
+    command_name: CommandName
+
     # Command parameters
     # ==================
 
@@ -120,7 +122,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         if self.indirect:
             args["indirect"] = strip_matrix_protocol(self.indirect)
         return CommandDTO(
-            action=CommandName.CREATE_LINK.value,
+            action=self.command_name.value,
             args=args,
         )
 
@@ -177,6 +179,46 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             assert_this(isinstance(self.indirect, str))
             list_matrices.append(strip_matrix_protocol(self.indirect))
         return list_matrices
+
+    def save_series(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
+        self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
+        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
+        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
+        assert type(self.series) is str
+        if version < STUDY_VERSION_8_2:
+            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
+        else:
+            study_data.tree.save(
+                self.series,
+                ["input", "links", area_from, f"{area_to}_parameters"],
+            )
+
+            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
+            if self.direct:
+                assert isinstance(self.direct, str)
+                study_data.tree.save(
+                    self.direct,
+                    [
+                        "input",
+                        "links",
+                        area_from,
+                        "capacities",
+                        f"{area_to}_direct",
+                    ],
+                )
+
+            if self.indirect:
+                assert isinstance(self.indirect, str)
+                study_data.tree.save(
+                    self.indirect,
+                    [
+                        "input",
+                        "links",
+                        area_from,
+                        "capacities",
+                        f"{area_to}_indirect",
+                    ],
+                )
 
 
 class CreateLink(AbstractLinkCommand):
@@ -278,64 +320,13 @@ class CreateLink(AbstractLinkCommand):
         link_property = properties.model_dump(mode="json", exclude=excludes, by_alias=True, exclude_none=True)
 
         study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
-        self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
-        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
-        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
-        assert type(self.series) is str
-        if version < STUDY_VERSION_8_2:
-            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
-        else:
-            study_data.tree.save(
-                self.series,
-                ["input", "links", area_from, f"{area_to}_parameters"],
-            )
-
-            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
-            if self.direct:
-                assert isinstance(self.direct, str)
-                study_data.tree.save(
-                    self.direct,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_direct",
-                    ],
-                )
-
-            if self.indirect:
-                assert isinstance(self.indirect, str)
-                study_data.tree.save(
-                    self.indirect,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_indirect",
-                    ],
-                )
+        self.save_series(area_from, area_to, study_data, version)
 
         return output
 
     def to_dto(self) -> CommandDTO:
-        args = {
-            "area1": self.area1,
-            "area2": self.area2,
-            "parameters": self.parameters,
-        }
-        if self.series:
-            args["series"] = strip_matrix_protocol(self.series)
-        if self.direct:
-            args["direct"] = strip_matrix_protocol(self.direct)
-        if self.indirect:
-            args["indirect"] = strip_matrix_protocol(self.indirect)
-        return CommandDTO(
-            action=CommandName.CREATE_LINK.value,
-            args=args,
-        )
+        return super().to_dto()
 
     def match_signature(self) -> str:
         return str(

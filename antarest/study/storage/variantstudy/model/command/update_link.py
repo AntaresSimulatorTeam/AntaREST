@@ -46,67 +46,20 @@ class UpdateLink(AbstractLinkCommand):
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
-        study_data.tree.save(self.parameters, ["input", "links", area_from, "properties", area_to])
+
+        current_parameters = study_data.tree.get(["input", "links", area_from, "properties", area_to])
+        current_parameters.update(self.parameters)
+
+        study_data.tree.save(current_parameters, ["input", "links", area_from, "properties", area_to])
+
         output, _ = self._apply_config(study_data.config)
 
-        self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
-        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
-        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
-
-        assert type(self.series) is str
-        if version < STUDY_VERSION_8_2:
-            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
-        else:
-            study_data.tree.save(
-                self.series,
-                ["input", "links", area_from, f"{area_to}_parameters"],
-            )
-
-            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
-            if self.direct:
-                assert isinstance(self.direct, str)
-                study_data.tree.save(
-                    self.direct,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_direct",
-                    ],
-                )
-
-            if self.indirect:
-                assert isinstance(self.indirect, str)
-                study_data.tree.save(
-                    self.indirect,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_indirect",
-                    ],
-                )
+        self.save_series(area_from, area_to, study_data, version)
 
         return output
 
     def to_dto(self) -> CommandDTO:
-        args = {
-            "area1": self.area1,
-            "area2": self.area2,
-            "parameters": self.parameters,
-        }
-        if self.series:
-            args["series"] = strip_matrix_protocol(self.series)
-        if self.direct:
-            args["direct"] = strip_matrix_protocol(self.direct)
-        if self.indirect:
-            args["indirect"] = strip_matrix_protocol(self.indirect)
-        return CommandDTO(
-            action=CommandName.UPDATE_LINK.value,
-            args=args,
-        )
+        return super().to_dto()
 
     def match_signature(self) -> str:
         return str(

@@ -121,21 +121,20 @@ class LinkManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         existing_link = self.get_one_link(study, link_creation_info)
 
-        existing_link = existing_link.model_copy(
-            update=link_creation_info.model_dump(exclude={"area1", "area2"}, exclude_none=True)
-        )
-
         command = UpdateLink(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
-            parameters=existing_link.model_dump(
-                mode="json", exclude={"area1", "area2"}, exclude_none=True, by_alias=True
+            parameters=link_creation_info.model_dump(
+                mode="json", exclude={"area1", "area2"}, exclude_none=True, by_alias=True, exclude_unset=True
             ),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
+        existing_link = existing_link.model_copy(
+            update=link_creation_info.model_dump(exclude={"area1", "area2"}, exclude_none=True)
+        )
         return existing_link
 
     def check_attributes_coherence(self, study_version: int, link_creation_info: LinkInfoDTOType) -> None:
