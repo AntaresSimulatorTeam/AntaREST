@@ -165,12 +165,12 @@ const TIME_FREQUENCY_CONFIG: Record<
   },
   [TimeFrequency.DAILY]: {
     increment: addDays,
-    format: (date: Date) => format(date, "EEE d", { locale: getLocale() }),
+    format: (date: Date) => format(date, "EEE d MMM", { locale: getLocale() }),
   },
   [TimeFrequency.HOURLY]: {
     increment: addHours,
     format: (date: Date) =>
-      format(date, "EEE d HH:mm", { locale: getLocale() }),
+      format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
   },
 };
 
