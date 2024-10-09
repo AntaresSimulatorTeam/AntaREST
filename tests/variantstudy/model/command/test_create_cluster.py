@@ -53,7 +53,7 @@ class TestCreateCluster:
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
-        assert cl.cluster_name == "Cluster1"
+        assert cl.cluster_name == "cluster1"
         assert cl.parameters == {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2}
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
@@ -108,7 +108,7 @@ class TestCreateCluster:
 
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
-        assert str(clusters[cluster_name]["name"]) == cluster_name
+        assert str(clusters[cluster_name]["name"]) == cluster_name.lower()
         assert str(clusters[cluster_name]["group"]) == parameters["group"]
         assert int(clusters[cluster_name]["unitcount"]) == int(parameters["unitcount"])
         assert float(clusters[cluster_name]["nominalcapacity"]) == float(parameters["nominalcapacity"])
@@ -166,8 +166,8 @@ class TestCreateCluster:
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
-                "cluster_name": "Cluster1",
-                "parameters": {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2},
+                "cluster_name": "cluster1",
+                "parameters": {"group": "nuclear", "nominalcapacity": 2400, "unitcount": 2},
                 "prepro": prepro_id,
                 "modulation": modulation_id,
             },

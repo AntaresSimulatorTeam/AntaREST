@@ -53,10 +53,10 @@ class CreateCluster(ICommand):
 
     @field_validator("cluster_name", mode="before")
     def validate_cluster_name(cls, val: str) -> str:
-        valid_name = transform_name_to_id(val, lower=False)
-        if valid_name != val:
+        to_return = transform_name_to_id(val)
+        if not to_return:
             raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-        return val
+        return to_return
 
     @field_validator("prepro", mode="before")
     def validate_prepro(

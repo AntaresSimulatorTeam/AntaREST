@@ -1386,6 +1386,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
     )
     assert res.status_code == 200, res.json()
+    obj["group"] = obj["group"].lower()
     assert res.json() == {"id": "cluster 1", **obj}
 
     # Links

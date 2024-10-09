@@ -383,7 +383,7 @@ class TestTableMode:
                 "enabled": True,
                 "fixedCost": 0,
                 "genTs": "use global",
-                "group": "Other 2",
+                "group": "other 2",
                 "lawForced": "uniform",
                 "lawPlanned": "uniform",
                 "marginalCost": 10,

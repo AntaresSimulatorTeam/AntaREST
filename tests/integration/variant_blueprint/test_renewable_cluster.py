@@ -125,7 +125,7 @@ class TestRenewableCluster:
         expected = {
             "enabled": True,
             "group": "Wind Offshore",
-            "id": "Oleron",
+            "id": "oleron",
             "name": cluster_fr1,
             "nominalCapacity": 2500.0,
             "tsInterpretation": "power-generation",

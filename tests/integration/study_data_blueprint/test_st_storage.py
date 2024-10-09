@@ -148,8 +148,7 @@ class TestSTStorage:
         # We can create a short-term storage with the following properties.
         # Unfilled properties will be set to their default values.
         siemens_properties = {
-            "name": siemens_battery,
-            "group": "Battery",
+            "group": "battery",
             "injectionNominalCapacity": 1450,
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
@@ -157,12 +156,17 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/storages",
             headers=user_headers,
-            json=siemens_properties,
+            json={"name": siemens_battery, **siemens_properties},
         )
         assert res.status_code == 200, res.json()
         siemens_battery_id = res.json()["id"]
         assert siemens_battery_id == transform_name_to_id(siemens_battery)
-        siemens_output = {**default_output, **siemens_properties, "id": siemens_battery_id}
+        siemens_output = {
+            **default_output,
+            **siemens_properties,
+            "id": siemens_battery_id,
+            "name": siemens_battery.lower(),
+        }
         assert res.json() == siemens_output
 
         # reading the properties of a short-term storage
@@ -612,7 +616,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         tesla_battery_id = res.json()["id"]
-        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery, "group": "Battery"}
+        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery.lower(), "group": "Battery"}
         assert res.json() == tesla_output
 
         # Use the Debug mode to make sure that the initialLevel and initialLevelOptim properties
@@ -814,7 +818,7 @@ class TestSTStorage:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name
+        assert cluster_cfg["name"] == new_name.lower()
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties
