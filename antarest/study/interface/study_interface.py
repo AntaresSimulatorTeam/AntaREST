@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 class StudyInterface(ABC):
     """
-    Interface to access and mofify study data
+    Interface to access and mofify study data.
     """
 
     @abstractmethod

@@ -45,6 +45,10 @@ def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str
 
 
 class FileStudyInterface(StudyInterface):
+    """
+    Implementation which fetches and writes study data from file tree representation.
+    """
+
     def __init__(self, file_study: FileStudy):
         self._file_study = file_study
 

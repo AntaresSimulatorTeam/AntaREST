@@ -5,6 +5,14 @@ from antarest.study.interface.study_interface import StudyInterface, StudyInterf
 
 
 class CacheStudyInterface(StudyInterface):
+    """
+    Implementation which preferrably reads from cache,
+    but delegates to a possibly slower implementation if
+    data is not in cache.
+
+    All cache management details are implemented here.
+    """
+
     def __init__(self, study_id: str, cache: ICache, delegate_factory: StudyInterfaceFactory):
         self._study_id = study_id
         self._cache = cache
