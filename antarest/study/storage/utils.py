@@ -290,7 +290,7 @@ def get_start_date(
     target_year = 2018
     while True:
         if leapyear == calendar.isleap(target_year):
-            first_day = datetime(target_year, starting_month_index, 1)
+            first_day = datetime(target_year + (starting_month_index != 1), 1, 1)
             if first_day.weekday() == starting_day_index:
                 break
         target_year += 1
