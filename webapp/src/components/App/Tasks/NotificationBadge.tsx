@@ -78,7 +78,7 @@ function NotificationBadge(props: Props) {
           } else if (task.type === "UPGRADE_STUDY") {
             newNotification("study.message.upgradeInProgress");
           } else if (task.type === "THERMAL_CLUSTER_SERIES_GENERATION") {
-            newNotification("tasks.thermalClusterSeriesGeneration");
+            newNotification("study.message.tsGenerationInProgress");
           }
         } catch (error) {
           logError(error);
