@@ -48,7 +48,7 @@ class UpdateLink(AbstractLinkCommand):
         area_from, area_to = sorted([self.area1, self.area2])
 
         current_parameters = study_data.tree.get(["input", "links", area_from, "properties", area_to])
-        current_parameters.update(self.parameters)
+        current_parameters.update(self.parameters or {})
 
         study_data.tree.save(current_parameters, ["input", "links", area_from, "properties", area_to])
 
