@@ -12,12 +12,13 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
-from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import RawStudy
+from antarest.study.model import STUDY_VERSION_8_2, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
@@ -71,7 +72,7 @@ class LinkManager:
                 link_creation_data.update(link_properties)
 
                 link_data: LinkInfoDTOType
-                if int(study.version) < 820:
+                if StudyVersion.parse(study.version) < STUDY_VERSION_8_2:
                     link_data = LinkInfoDTOBase(**link_creation_data)
                 else:
                     link_data = LinkInfoDTO820(**link_creation_data)
@@ -84,15 +85,14 @@ class LinkManager:
         if link_creation_info.area1 == link_creation_info.area2:
             raise LinkValidationError(f"Cannot create link on same area: {link_creation_info.area1}")
 
-        study_version = int(study.version)
-        if study_version < 820 and isinstance(link_creation_info, LinkInfoDTO820):
+        if StudyVersion.parse(study.version) < STUDY_VERSION_8_2 and isinstance(link_creation_info, LinkInfoDTO820):
             if link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None:
                 raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
         link_info = link_creation_info.model_dump(exclude_none=True, by_alias=True)
 
         link_data: LinkInfoDTOType
-        if study_version < 820:
+        if StudyVersion.parse(study.version) < STUDY_VERSION_8_2:
             link_data = LinkInfoDTOBase(**link_info)
         else:
             link_data = LinkInfoDTO820(**link_info)

@@ -13,6 +13,7 @@ import typing as t
 from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from antares.study.version import StudyVersion
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from antarest.core.exceptions import LinkValidationError
@@ -271,7 +272,9 @@ class CreateLink(AbstractLinkCommand):
         area_to = data["area_to"]
 
         properties = LinkProperties.model_validate(self.parameters or {})
-        excludes = set() if version >= 820 else {"filter_synthesis", "filter_year_by_year"}
+        excludes = (
+            set() if StudyVersion.parse(version) >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
+        )
         link_property = properties.model_dump(mode="json", exclude=excludes, by_alias=True, exclude_none=True)
 
         study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
