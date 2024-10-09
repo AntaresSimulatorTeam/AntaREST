@@ -582,6 +582,7 @@
   "study.success.deleteCluster": "Cluster supprimé avec succès",
   "study.message.upgradeInProgress": "Mise à jour de l'étude en cours",
   "study.message.outputExportInProgress": "Téléchargement des sorties en cours...",
+  "study.message.tsGenerationInProgress": "Génération des TS en cours...",
   "study.question.deleteLink": "Êtes-vous sûr de vouloir supprimer ce lien ?",
   "study.question.deleteArea": "Êtes-vous sûr de vouloir supprimer cette zone ?",
   "study.question.upgrade": "Êtes-vous sûr de vouloir mettre à jour cette étude ?",

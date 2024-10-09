@@ -582,6 +582,7 @@
   "study.success.deleteCluster": "Cluster deleted successfully",
   "study.message.upgradeInProgress": "Running study upgrade",
   "study.message.outputExportInProgress": "Downloading study outputs...",
+  "study.message.tsGenerationInProgress": "TS Generation...",
   "study.question.deleteLink": "Are you sure you want to delete this link?",
   "study.question.deleteArea": "Are you sure you want to delete this area?",
   "study.question.upgrade": "Are you sure you want to upgrade this study?",
