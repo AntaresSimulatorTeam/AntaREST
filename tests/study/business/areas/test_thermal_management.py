@@ -382,7 +382,7 @@ class TestThermalManager:
                 "minStablePower": 0.0,
                 "minUpTime": 15,
                 "mustRun": False,
-                "name": "New Cluster",
+                "name": "new cluster",
                 "nh3": None,
                 "nmvoc": None,
                 "nominalCapacity": 1000.0,
@@ -430,7 +430,7 @@ class TestThermalManager:
             expected = {
                 "id": "2 avail and must 1",
                 "group": ThermalClusterGroup.GAS,
-                "name": "New name",
+                "name": "new name",
                 "enabled": False,
                 "unitCount": 100,
                 "nominalCapacity": 2000.0,

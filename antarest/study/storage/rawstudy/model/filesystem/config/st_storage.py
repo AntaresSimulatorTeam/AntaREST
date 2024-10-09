@@ -34,15 +34,15 @@ class STStorageGroup(EnumIgnoreCase):
         - OTHER1...OTHER5: Represents other energy storage systems.
     """
 
-    PSP_OPEN = "PSP_open"
-    PSP_CLOSED = "PSP_closed"
-    PONDAGE = "Pondage"
-    BATTERY = "Battery"
-    OTHER1 = "Other1"
-    OTHER2 = "Other2"
-    OTHER3 = "Other3"
-    OTHER4 = "Other4"
-    OTHER5 = "Other5"
+    PSP_OPEN = "psp_open"
+    PSP_CLOSED = "psp_closed"
+    PONDAGE = "pondage"
+    BATTERY = "battery"
+    OTHER1 = "other1"
+    OTHER2 = "other2"
+    OTHER3 = "other3"
+    OTHER4 = "other4"
+    OTHER5 = "other5"
 
 
 # noinspection SpellCheckingInspection

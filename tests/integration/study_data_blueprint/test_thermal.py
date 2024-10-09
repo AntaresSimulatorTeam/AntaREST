@@ -918,14 +918,14 @@ class TestThermal:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name
+        assert cluster_cfg["name"] == new_name.lower()
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "Nuclear"
+        assert cluster_cfg["group"] == "nuclear"
         assert cluster_cfg["unitCount"] == 13
         assert cluster_cfg["nominalCapacity"] == 42500
         assert cluster_cfg["marginalCost"] == 0.2

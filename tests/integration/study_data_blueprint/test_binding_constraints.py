@@ -116,7 +116,7 @@ class TestBindingConstraints:
         clusters_list = preparer.get_thermals(study_id, area1_id)
         assert len(clusters_list) == 1
         assert clusters_list[0]["id"] == cluster_id
-        assert clusters_list[0]["name"] == "Cluster 1"
+        assert clusters_list[0]["name"] == "cluster 1"
         assert clusters_list[0]["group"] == "Nuclear"
 
         if study_type == "variant":
