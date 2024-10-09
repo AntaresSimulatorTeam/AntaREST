@@ -289,29 +289,36 @@ def get_start_date(
     starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
-        if leapyear == calendar.isleap(target_year):
-            first_day = datetime(target_year + (starting_month_index != 1), 1, 1)
+        year_to_check_for_leap = target_year + (starting_month_index != 1)
+        if leapyear == calendar.isleap(year_to_check_for_leap):
+            first_day = datetime(year_to_check_for_leap, 1, 1)
             if first_day.weekday() == starting_day_index:
                 break
         target_year += 1
 
     start_offset_days = timedelta(days=(0 if output_id is None else start_offset - 1))
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
-    # base case is DAILY
-    steps = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
-    if level == StudyDownloadLevelDTO.HOURLY:
-        steps = steps * 24
-    elif level == StudyDownloadLevelDTO.ANNUAL:
-        steps = 1
-    elif level == StudyDownloadLevelDTO.WEEKLY:
-        steps = math.ceil(steps / 7)
-    elif level == StudyDownloadLevelDTO.MONTHLY:
-        end_date = start_date + timedelta(days=steps)
-        same_year = end_date.year == start_date.year
-        if same_year:
-            steps = 1 + end_date.month - start_date.month
-        else:
-            steps = (13 - start_date.month) + end_date.month
+
+    def _get_steps(
+        daily_steps: int, temporality: StudyDownloadLevelDTO, begin_date: datetime, is_output: t.Optional[str] = None
+    ) -> int:
+        temporality_mapping = {
+            StudyDownloadLevelDTO.DAILY: daily_steps,
+            StudyDownloadLevelDTO.HOURLY: daily_steps * 24,
+            StudyDownloadLevelDTO.ANNUAL: 1,
+            StudyDownloadLevelDTO.WEEKLY: math.ceil(daily_steps / 7),
+            StudyDownloadLevelDTO.MONTHLY: 12,
+        }
+
+        if temporality == StudyDownloadLevelDTO.MONTHLY and is_output:
+            end_date = begin_date + timedelta(days=daily_steps)
+            same_year = end_date.year == begin_date.year
+            return 1 + end_date.month - begin_date.month if same_year else (13 - begin_date.month) + end_date.month
+
+        return temporality_mapping[temporality]
+
+    days_count = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
+    steps = _get_steps(days_count, level, start_date, output_id)
 
     first_week_day_index = DAY_NAMES.index(first_week_day)
     first_week_offset = 0
