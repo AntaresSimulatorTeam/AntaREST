@@ -289,9 +289,8 @@ def get_start_date(
     starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
-        year_to_check_for_leap = target_year + (starting_month_index != 1)
-        if leapyear == calendar.isleap(year_to_check_for_leap):
-            first_day = datetime(year_to_check_for_leap, 1, 1)
+        if leapyear == calendar.isleap(target_year + (starting_month_index > 2)):
+            first_day = datetime(target_year + (starting_month_index != 1), 1, 1)
             if first_day.weekday() == starting_day_index:
                 break
         target_year += 1
