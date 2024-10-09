@@ -132,7 +132,7 @@ function Matrix({
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
-        isReaOnlyEnabled={isSubmitting || enableReadOnly}
+        isReadOnlyEnabled={isSubmitting || enableReadOnly}
         isPercentDisplayEnabled={enablePercentDisplay}
       />
       {openImportDialog && (
