@@ -16,7 +16,6 @@ services:
       - ./resources/deploy/logs:/logs
       - ./resources/deploy/gunicorn.py:/conf/gunicorn.py
       - ./antares-8.2.2-Ubuntu-20.04/bin:/antares_simulator
-    command: ["./scripts/start.sh", "--no-gunicorn"]
   antares-antarest-watcher:
     image: antarest:latest
     container_name: antarest-watcher
