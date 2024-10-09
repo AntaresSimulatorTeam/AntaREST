@@ -39,7 +39,7 @@ export interface MatrixGridProps {
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
-  isReaOnlyEnabled?: boolean;
+  isReadOnlyEnabled?: boolean;
   isPercentDisplayEnabled?: boolean;
 }
 
@@ -54,7 +54,7 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
-  isReaOnlyEnabled,
+  isReadOnlyEnabled,
   isPercentDisplayEnabled,
 }: MatrixGridProps) {
   const [columns, setColumns] = useState<EnhancedGridColumn[]>(initialColumns);
@@ -66,7 +66,7 @@ function MatrixGrid({
   const { gridToData } = useColumnMapping(columns);
 
   const theme = useMemo(() => {
-    if (isReaOnlyEnabled) {
+    if (isReadOnlyEnabled) {
       return {
         ...darkTheme,
         ...readOnlyDarkTheme,
@@ -74,7 +74,7 @@ function MatrixGrid({
     }
 
     return darkTheme;
-  }, [isReaOnlyEnabled]);
+  }, [isReadOnlyEnabled]);
 
   const getCellContent = useGridCellContent(
     data,
@@ -83,7 +83,7 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
-    isReaOnlyEnabled,
+    isReadOnlyEnabled,
     isPercentDisplayEnabled,
   );
 
@@ -173,10 +173,16 @@ function MatrixGrid({
         getCellsForSelection // Enable copy support
         onPaste
         fillHandle
+        allowedFillDirections="any"
         rowMarkers="both"
         freezeColumns={1} // Make the first column sticky
         onColumnResize={handleColumnResize}
-        allowedFillDirections="any"
+        smoothScrollX
+        smoothScrollY
+        rowHeight={30}
+        verticalBorder={false}
+        overscrollX={100}
+        overscrollY={100}
       />
       <div id="portal" />
     </>
