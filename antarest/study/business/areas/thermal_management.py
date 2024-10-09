@@ -14,6 +14,7 @@ import collections
 import typing as t
 from pathlib import Path
 
+from antares.study.version import StudyVersion
 from pydantic import field_validator
 
 from antarest.core.exceptions import (
@@ -26,7 +27,7 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_7, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
@@ -90,7 +91,7 @@ class ThermalClusterCreation(ThermalClusterInput):
             raise ValueError("name must not be empty")
         return name
 
-    def to_config(self, study_version: t.Union[str, int]) -> ThermalConfigType:
+    def to_config(self, study_version: StudyVersion) -> ThermalConfigType:
         values = self.model_dump(by_alias=False, exclude_none=True)
         return create_thermal_config(study_version=study_version, **values)
 
@@ -118,7 +119,7 @@ class ThermalClusterOutput(Thermal870Config):
 
 
 def create_thermal_output(
-    study_version: t.Union[str, int],
+    study_version: StudyVersion,
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "ThermalClusterOutput":
@@ -172,7 +173,7 @@ class ThermalManager:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise ThermalClusterNotFound(path, cluster_id) from None
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         return create_thermal_output(study_version, cluster_id, cluster)
 
     def get_clusters(
@@ -200,7 +201,7 @@ class ThermalManager:
             clusters = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise ThermalClusterConfigNotFound(path, area_id) from None
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
     def get_all_thermals_props(
@@ -230,7 +231,7 @@ class ThermalManager:
         except KeyError:
             raise ThermalClusterConfigNotFound(path) from None
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterOutput]]
         thermals_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
@@ -259,7 +260,7 @@ class ThermalManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_thermal_config(
-                    study.version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
+                    StudyVersion.parse(study.version), **new_cluster.model_dump(by_alias=False, exclude_none=True)
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
                 cmd = UpdateConfig(
@@ -292,7 +293,7 @@ class ThermalManager:
         """
 
         file_study = self._get_file_study(study)
-        cluster = cluster_data.to_config(study.version)
+        cluster = cluster_data.to_config(StudyVersion.parse(study.version))
         command = self._make_create_cluster_cmd(area_id, cluster)
         execute_or_add_commands(
             study,
@@ -340,7 +341,7 @@ class ThermalManager:
             in the provided cluster_data.
         """
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
@@ -424,7 +425,7 @@ class ThermalManager:
         source_cluster = self.get_cluster(study, area_id, source_id)
         source_cluster.name = new_cluster_name
         creation_form = ThermalClusterCreation(**source_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study.version)
+        new_config = creation_form.to_config(StudyVersion.parse(study.version))
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition
@@ -439,7 +440,7 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
-        if int(study.version) >= 870:
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
             new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
@@ -462,7 +463,7 @@ class ThermalManager:
         lower_cluster_id = cluster_id.lower()
         thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
         series_path = [thermal_cluster_path / "series"]
-        if int(study.version) >= 870:
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 

@@ -233,7 +233,7 @@ class AllocationManager:
         """
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        allocation_cfg = file_study.tree.get("input/hydro/allocation/*".split("/"), depth=2)
+        allocation_cfg = file_study.tree.get(["input", "hydro", "allocation"], depth=3)
 
         if not allocation_cfg:
             areas_ids = {area.id for area in all_areas}

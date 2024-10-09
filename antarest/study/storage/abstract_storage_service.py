@@ -109,7 +109,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         return StudyMetadataDTO(
             id=study.id,
             name=study.name,
-            version=int(study.version),
+            version=study.version,
             created=str(study.created_at),
             updated=str(study.updated_at),
             workspace=study_workspace,

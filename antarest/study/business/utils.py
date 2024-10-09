@@ -12,6 +12,7 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import BaseModel
 
 from antarest.core.exceptions import CommandApplicationError
@@ -84,8 +85,8 @@ class FormFieldsBaseModel(
 class FieldInfo(t.TypedDict, total=False):
     path: str
     default_value: t.Any
-    start_version: t.Optional[int]
-    end_version: t.Optional[int]
+    start_version: t.Optional[StudyVersion]
+    end_version: t.Optional[StudyVersion]
     # Workaround to replace Pydantic computed values which are ignored by FastAPI.
     # TODO: check @computed_field available in Pydantic v2 to remove it
     # (value) -> encoded_value

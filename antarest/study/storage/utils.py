@@ -23,6 +23,8 @@ from pathlib import Path
 from uuid import uuid4
 from zipfile import ZipFile
 
+from antares.study.version import StudyVersion
+
 from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
@@ -161,7 +163,7 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
     )
 
 
-def create_new_empty_study(version: str, path_study: Path, path_resources: Path) -> None:
+def create_new_empty_study(version: StudyVersion, path_study: Path, path_resources: Path) -> None:
     version_template: t.Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
     if version_template is None:
         msg = f"{version} is not a supported version, supported versions are: {list(STUDY_REFERENCE_TEMPLATES.keys())}"
