@@ -89,7 +89,7 @@ function Fields() {
                 control={control}
                 size="small"
                 disabled={isReadyMade}
-                sx={{ width: 80 }}
+                sx={{ width: 110 }}
               />
             </TableCell>
           </TableRow>
