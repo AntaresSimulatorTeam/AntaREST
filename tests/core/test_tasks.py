@@ -42,8 +42,8 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
+from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
-from antarest.utils import SESSION_ARGS
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import with_db_context
 

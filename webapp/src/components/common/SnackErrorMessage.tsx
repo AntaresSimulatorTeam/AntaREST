@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useState, forwardRef, useCallback } from "react";
 import * as React from "react";
 import { useSnackbar, SnackbarContent } from "notistack";
@@ -93,24 +107,29 @@ const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
             </Box>
           </CardActions>
           <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <Paper sx={{ p: 2 }}>
+            <Paper
+              sx={{
+                p: 2,
+                whiteSpace: "pre-wrap",
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                maxHeight: "200px",
+                overflow: "auto",
+              }}
+            >
               {axios.isAxiosError(details) ? (
-                <Grid
-                  container
-                  spacing={1}
-                  sx={{ width: "100%", height: "100%", mt: 1 }}
-                >
+                <Grid container spacing={1} sx={{ width: 1, height: 1, mt: 1 }}>
                   <Grid item xs={6}>
-                    <Label>Status :</Label>
+                    <Label>Status: </Label>
                     <Typography>{details.response?.status}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Label>Exception : </Label>
+                    <Label>Exception: </Label>
                     <Typography>{details.response?.data.exception}</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Label>Description : </Label>
-                    <Typography sx={{ whiteSpace: "pre-wrap" }}>
+                    <Label>Description: </Label>
+                    <Typography>
                       {details.response?.data.description}
                     </Typography>
                   </Grid>

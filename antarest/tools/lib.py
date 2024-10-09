@@ -24,6 +24,7 @@ from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig
+from antarest.core.serialization import from_json, to_json_string
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
 from antarest.matrixstore.repository import MatrixContentRepository
@@ -117,7 +118,7 @@ class RemoteVariantGenerator(IVariantGenerator):
             # This should not happen, but if it does, we return a failed result
             return GenerationResultInfoDTO(success=False, details=[])
 
-        info = json.loads(task_result.result.return_value)
+        info = from_json(task_result.result.return_value)
         return GenerationResultInfoDTO(**info)
 
     def build_url(self, url: str) -> str:
@@ -207,10 +208,7 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
     command_list = extractor.extract(study)
 
     (commands_output_dir / COMMAND_FILE).write_text(
-        json.dumps(
-            [command.model_dump(exclude={"id"}) for command in command_list],
-            indent=2,
-        )
+        to_json_string([command.model_dump(exclude={"id"}) for command in command_list], indent=2)
     )
 
 
@@ -299,10 +297,7 @@ def generate_diff(
     )
 
     (output_dir / COMMAND_FILE).write_text(
-        json.dumps(
-            [command.to_dto().model_dump(exclude={"id"}) for command in diff_commands],
-            indent=2,
-        )
+        to_json_string([command.to_dto().model_dump(exclude={"id"}) for command in diff_commands], indent=2)
     )
 
     needed_matrices: Set[str] = set()

@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { Box, Button, Divider, Typography } from "@mui/material";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
@@ -18,7 +32,7 @@ import UsePromiseCond from "../utils/UsePromiseCond";
 import SplitView from "../SplitView";
 
 interface Props {
-  study: StudyMetadata;
+  studyId: StudyMetadata["id"];
   path: string;
   open: BasicDialogProps["open"];
   onClose: VoidFunction;
@@ -26,7 +40,7 @@ interface Props {
 
 function MatrixAssignDialog(props: Props) {
   const [t] = useTranslation();
-  const { study, path, open, onClose } = props;
+  const { studyId, path, open, onClose } = props;
   const [selectedItem, setSelectedItem] = useState("");
   const [currentMatrix, setCurrentMatrix] = useState<MatrixInfoDTO>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -72,7 +86,7 @@ function MatrixAssignDialog(props: Props) {
 
   const handleAssignation = async (matrixId: string) => {
     try {
-      await appendCommands(study.id, [
+      await appendCommands(studyId, [
         {
           action: CommandEnum.REPLACE_MATRIX,
           args: {

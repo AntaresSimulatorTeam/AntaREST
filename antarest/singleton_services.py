@@ -19,8 +19,7 @@ from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
-from antarest.study.storage.auto_archive_service import AutoArchiveService
-from antarest.utils import (
+from antarest.service_creator import (
     SESSION_ARGS,
     Module,
     create_archive_worker,
@@ -30,6 +29,7 @@ from antarest.utils import (
     create_watcher,
     init_db_engine,
 )
+from antarest.study.storage.auto_archive_service import AutoArchiveService
 
 
 def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IService]:

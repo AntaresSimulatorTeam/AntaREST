@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   Box,
   CircularProgress,
@@ -37,10 +51,6 @@ import TokenInfoDialog from "./dialog/TokenInfoDialog";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { isSearchMatching } from "../../../../utils/stringUtils";
 
-/**
- * Types
- */
-
 interface BotDetailsDtoWithUser extends BotDetailsDTO {
   user: UserDTO;
 }
@@ -54,10 +64,6 @@ enum TokenActionKind {
 interface TokenAction extends Action<string> {
   payload?: BotDTO["id"] | BotDTO | BotDTO[];
 }
-
-/**
- * Utils
- */
 
 const reducer = produce<BotDetailsDtoWithUser[], [TokenAction]>(
   (draft, action) => {
@@ -80,10 +86,6 @@ const reducer = produce<BotDetailsDtoWithUser[], [TokenAction]>(
     }
   },
 );
-
-/**
- * Component
- */
 
 function Tokens() {
   const [tokenToDisplayInfo, setTokenToDisplayInfo] = useState<BotDetailsDTO>();

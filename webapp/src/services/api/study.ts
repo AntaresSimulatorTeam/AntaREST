@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { AxiosRequestConfig } from "axios";
 import { isBoolean, trimCharsStart } from "ramda-adjunct";
 import client from "./client";
@@ -240,37 +254,6 @@ export const importStudy = async (
     },
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
-  return res.data;
-};
-
-export const importFile = async (
-  file: File,
-  study: string,
-  path: string,
-  onProgress?: (progress: number) => void,
-): Promise<string> => {
-  const options: AxiosRequestConfig = {};
-  if (onProgress) {
-    options.onUploadProgress = (progressEvent): void => {
-      const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1),
-      );
-      onProgress(percentCompleted);
-    };
-  }
-  const formData = new FormData();
-  formData.append("file", file);
-  const restconfig = {
-    ...options,
-    headers: {
-      "content-type": "multipart/form-data",
-    },
-  };
-  const res = await client.put(
-    `/v1/studies/${study}/raw?path=${encodeURIComponent(path)}`,
-    formData,
-    restconfig,
-  );
   return res.data;
 };
 

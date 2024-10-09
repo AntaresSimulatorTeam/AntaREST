@@ -22,4 +22,5 @@ jobs:
         run: |
           python license_checker_and_adder.py --path=../antarest/ --action=check-strict
           python license_checker_and_adder.py --path=../tests/  --action=check-strict
+          python license_checker_and_adder.py --path=../webapp/src  --action=check-strict
         working-directory: scripts

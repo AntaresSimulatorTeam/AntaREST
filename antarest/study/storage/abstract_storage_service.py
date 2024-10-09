@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import logging
 import shutil
 import tempfile
@@ -23,6 +22,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
+from antarest.core.serialization import from_json
 from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
@@ -87,8 +87,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         additional_data = study.additional_data or StudyAdditionalData()
 
         try:
-            patch_obj = json.loads(additional_data.patch or "{}")
-            patch = Patch.model_validate(patch_obj)
+            patch = Patch.model_validate(from_json(additional_data.patch or "{}"))
         except ValueError as e:
             # The conversion to JSON and the parsing can fail if the patch is not valid
             logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)

@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { Typography, Grid } from "@mui/material";
 import { FieldArrayWithId } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -6,6 +20,7 @@ import { CorrelationFormFields } from "./utils";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentArea } from "../../../../../../../../redux/selectors";
+import { validateNumber } from "../../../../../../../../utils/validationUtils";
 
 interface Props {
   field: FieldArrayWithId<CorrelationFormFields, "correlation">;
@@ -40,19 +55,10 @@ function CorrelationField({ field, index, label }: Props) {
         <NumberFE
           key={field.id}
           label={t("study.modelization.hydro.correlation.coefficient")}
-          name={`correlation.${index}.coefficient`}
+          name={`correlation.${index}.coefficient` as const}
           size="small"
           control={control}
-          rules={{
-            min: {
-              value: -100,
-              message: t("form.field.minValue", { 0: -100 }),
-            },
-            max: {
-              value: 100,
-              message: t("form.field.maxValue", { 0: 100 }),
-            },
-          }}
+          rules={{ validate: validateNumber({ min: -100, max: 100 }) }}
           disabled={field.areaId === currentArea?.id}
         />
       </Grid>

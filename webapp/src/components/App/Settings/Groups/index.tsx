@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   Box,
   CircularProgress,
@@ -33,10 +47,6 @@ import { getAuthUser } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { isSearchMatching } from "../../../../utils/stringUtils";
 
-/**
- * Types
- */
-
 enum GroupActionKind {
   ADD = "ADD",
   EDIT = "EDIT",
@@ -55,10 +65,6 @@ interface GroupAction extends Action<string> {
     | GroupDetailsDTO[]
     | GroupEdit;
 }
-
-/**
- * Utils
- */
 
 const reducer = produce<GroupDetailsDTO[], [GroupAction]>((draft, action) => {
   const { payload } = action;
@@ -87,10 +93,6 @@ const reducer = produce<GroupDetailsDTO[], [GroupAction]>((draft, action) => {
       return payload as GroupDetailsDTO[];
   }
 });
-
-/**
- * Component
- */
 
 function Groups() {
   const [groupToDelete, setGroupToDelete] = useState<GroupDetailsDTO>();

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import logging
 import typing as t
 
@@ -21,6 +20,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
+from antarest.core.serialization import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.xpansion_management import (
@@ -282,13 +282,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             except (AttributeError, UnicodeDecodeError):
                 pass
 
-        json_response = json.dumps(
-            output,
-            ensure_ascii=False,
-            allow_nan=True,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
+        json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")
 
     @bp.get(
@@ -298,7 +292,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def list_resources(
         uuid: str,
-        resource_type: t.Optional[XpansionResourceFileType] = None,
+        resource_type: XpansionResourceFileType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(
@@ -310,8 +304,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.READ,
             RequestParameters(user=current_user),
         )
-        if resource_type is None:
-            return study_service.xpansion_manager.list_root_files(study)
         return study_service.xpansion_manager.list_resources(study, resource_type)
 
     return bp

@@ -15,6 +15,7 @@ import typing as t
 from pathlib import Path
 
 from antarest.core.model import JSON
+from antarest.core.serialization import from_json, to_json
 from antarest.study.storage.rawstudy.ini_reader import IReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -47,7 +48,7 @@ class JsonReader(IReader):
             raise TypeError(repr(type(path)))
 
         try:
-            return t.cast(JSON, json.loads(content))
+            return t.cast(JSON, from_json(content))
         except json.JSONDecodeError as exc:
             err_msg = f"Failed to parse JSON file '{path}'"
             raise ValueError(err_msg) from exc
@@ -59,8 +60,8 @@ class JsonWriter(IniWriter):
     """
 
     def write(self, data: JSON, path: Path) -> None:
-        with open(path, "w") as fh:
-            json.dump(data, fh)
+        with open(path, "wb") as fh:
+            fh.write(to_json(data))
 
 
 class JsonFileNode(IniFileNode):

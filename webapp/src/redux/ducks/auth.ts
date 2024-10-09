@@ -1,5 +1,19 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
-import jwtDecode, { JwtPayload } from "jwt-decode";
+import { jwtDecode, type JwtPayload } from "jwt-decode";
 import { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
