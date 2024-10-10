@@ -96,9 +96,9 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.interface.cache_study_interface import CacheStudyInterface
-from antarest.study.interface.file_study_interface import FileStudyInterfaceFactory
-from antarest.study.interface.study_interface import StudyInterface
+from antarest.study.dao.cache_study_dao import CacheStudiesDAO
+from antarest.study.dao.file_study_dao import FileStudiesDAO
+from antarest.study.dao.study_dao import StudiesDAO
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -357,6 +357,12 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: t.List[t.Callable[[str], None]] = []
+
+        self.studies_dao = self._create_studies_dao()
+
+    def _create_studies_dao(self) -> StudiesDAO:
+        delegate = FileStudiesDAO(self)
+        return CacheStudiesDAO(self.cache_service, delegate)
 
     def add_on_deletion_callback(self, callback: t.Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -1810,12 +1816,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         if ui:
-            return self._get_study_interface(uuid).get_all_areas_ui_info()
+            return self.studies_dao.get_study(uuid).get_all_areas_ui_info()
         return self.areas.get_all_areas(study, area_type)
-
-    def _get_study_interface(self, study_id: str) -> StudyInterface:
-        delegate = FileStudyInterfaceFactory(self)
-        return CacheStudyInterface(study_id, self.cache_service, delegate)
 
     def get_all_links(
         self,

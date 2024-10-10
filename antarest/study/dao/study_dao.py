@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 
-class StudyInterface(ABC):
+class StudyDAO(ABC):
     """
     Interface to access and mofify study data.
     """
@@ -12,7 +12,7 @@ class StudyInterface(ABC):
         raise NotImplementedError()
 
 
-class StudyInterfaceFactory(ABC):
+class StudiesDAO(ABC):
     @abstractmethod
-    def create(self, study_id: str) -> StudyInterface:
+    def get_study(self, study_id: str) -> StudyDAO:
         raise NotImplementedError()

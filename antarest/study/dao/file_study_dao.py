@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, Sequence
 
-from antarest.study.interface.study_interface import StudyInterface, StudyInterfaceFactory
+from antarest.study.dao.study_dao import StudiesDAO, StudyDAO
 
 if TYPE_CHECKING:
     from antarest.study.service import StudyService
@@ -44,7 +44,7 @@ def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str
     return ui_info_map
 
 
-class FileStudyInterface(StudyInterface):
+class FileStudyDAO(StudyDAO):
     """
     Implementation which fetches and writes study data from file tree representation.
     """
@@ -71,11 +71,11 @@ class FileStudyInterface(StudyInterface):
         return res
 
 
-class FileStudyInterfaceFactory(StudyInterfaceFactory):
+class FileStudiesDAO(StudiesDAO):
     def __init__(self, study_service: "StudyService"):
         self._study_service = study_service
 
-    def create(self, study_id: str) -> StudyInterface:
+    def get_study(self, study_id: str) -> StudyDAO:
         study_metadata = self._study_service.get_study(study_id)
         file_study = self._study_service.storage_service.get_storage(study_metadata).get_raw(study_metadata)
-        return FileStudyInterface(file_study)
+        return FileStudyDAO(file_study)
