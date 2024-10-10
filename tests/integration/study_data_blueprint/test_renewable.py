@@ -131,9 +131,13 @@ class TestRenewable:
         fr_solar_pv_id = res.json()["id"]
         assert fr_solar_pv_id == transform_name_to_id(fr_solar_pv)
         # noinspection SpellCheckingInspection
-        fr_solar_pv_cfg = {"id": fr_solar_pv_id, **fr_solar_pv_props}
-        expected_cfg = {**fr_solar_pv_cfg, "name": fr_solar_pv.lower()}
-        assert res.json() == expected_cfg
+        fr_solar_pv_cfg = {
+            "id": fr_solar_pv_id,
+            **fr_solar_pv_props,
+            "name": fr_solar_pv.lower(),
+            "group": fr_solar_pv_props["group"].lower(),
+        }
+        assert res.json() == fr_solar_pv_cfg
 
         # reading the properties of a renewable cluster
         res = client.get(
@@ -141,7 +145,7 @@ class TestRenewable:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == expected_cfg
+        assert res.json() == fr_solar_pv_cfg
 
         # =============================
         #  RENEWABLE CLUSTER MATRICES
@@ -175,7 +179,7 @@ class TestRenewable:
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == EXISTING_CLUSTERS + [expected_cfg]
+        assert res.json() == EXISTING_CLUSTERS + [fr_solar_pv_cfg]
 
         # updating properties
         old_name = "fr solar pv old 1"
@@ -427,7 +431,7 @@ class TestRenewable:
         assert res.status_code == 200, res.json()
         obj = res.json()
         # If a group is not found, return the default group ("Other RES 1" by default).
-        assert obj["group"] == "Other RES 1"
+        assert obj["group"] == "other res 1"
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
@@ -589,7 +593,7 @@ class TestRenewable:
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "Wind Offshore"
+        assert cluster_cfg["group"] == "wind offshore"
         assert cluster_cfg["unitCount"] == 15
         assert cluster_cfg["nominalCapacity"] == 42500
 
