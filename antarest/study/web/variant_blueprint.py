@@ -13,6 +13,7 @@ import datetime
 import logging
 from typing import List, Optional, Union
 
+import humanize
 from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
@@ -431,15 +432,15 @@ def create_study_variant_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
-        Endpoint that clear `limit` hours old and older variant snapshots.
+        Endpoint that clear snapshots of variant which were updated or accessed `hours` hours ago.
 
-        Args: limit (int, optional): Number of hours to clear. Defaults to 24.
+        Args: hours (int, optional): Number of hours to clear. Defaults to 24.
 
         Returns: ID of the task running the snapshot clearing.
         """
         retention_hours = datetime.timedelta(hours=hours)
         logger.info(
-            f"Delete all variant snapshots older than {retention_hours.total_seconds() // 3600} hours.",
+            f"Delete all variant snapshots older than {humanize.precisedelta(retention_hours)} hours.",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
