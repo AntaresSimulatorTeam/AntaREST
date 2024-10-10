@@ -1073,7 +1073,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if params is None or (params.user and not params.user.is_site_admin() and not params.user.is_admin_token()):
             raise UserHasNotPermissionError()
 
-        task_name = f"Cleaning all snapshot updated or accessed at least {humanize.naturaltime(retention_time)}."
+        task_name = f"Cleaning all snapshot updated or accessed at least {humanize.precisedelta(retention_time)} ago."
 
         snapshot_clearing_task_instance = SnapshotCleanerTask(variant_study_service=self, retention_time=retention_time)
 
@@ -1110,7 +1110,7 @@ class SnapshotCleanerTask:
                         self._variant_study_service.clear_snapshot(variant)
 
     def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
-        msg = f"Start cleaning all snapshots updated or accessed {humanize.naturaltime(self._retention_time)}."
+        msg = f"Start cleaning all snapshots updated or accessed {humanize.precisedelta(self._retention_time)} ago."
         notifier(msg)
         self._clear_all_snapshots()
         msg = "All selected snapshots were successfully cleared."
