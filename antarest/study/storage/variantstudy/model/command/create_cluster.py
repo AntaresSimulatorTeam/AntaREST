@@ -58,6 +58,12 @@ class CreateCluster(ICommand):
             raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return to_return
 
+    @field_validator("parameters", mode="before")
+    def lower_cluster_group(cls, params: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        if "group" in params:
+            params["group"] = params["group"].lower()
+        return params
+
     @field_validator("prepro", mode="before")
     def validate_prepro(
         cls,

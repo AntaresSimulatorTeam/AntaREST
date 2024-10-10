@@ -274,7 +274,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_fr1_id: {
                         "group": "wind offshore",
-                        "name": cluster_fr1,
+                        "name": cluster_fr1.lower(),
                         "nominalcapacity": 2500,
                         "ts-interpretation": "power-generation",
                     },
@@ -284,7 +284,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1,
+                        "name": cluster_it1.lower(),
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
@@ -317,7 +317,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1,
+                        "name": cluster_it1.lower(),
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,

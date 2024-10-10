@@ -906,7 +906,7 @@ class TestSnapshotGenerator:
         config.read(snapshot_dir / "input/thermal/clusters/south/list.ini")
         assert config.sections() == ["gas_cluster"]
         assert config["gas_cluster"] == {  # type: ignore
-            "group": "Gas",
+            "group": "gas",
             "unitcount": "1",
             "nominalcapacity": "500",
             "name": "gas_cluster",
