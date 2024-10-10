@@ -80,16 +80,11 @@ class TestRemoveSTStorage:
                 area_id="dummy",
                 storage_id="?%$$",  # bad name
             )
-        assert ctx.value.errors() == [
-            {
-                "ctx": {"pattern": "[a-z0-9_(),& -]+"},
-                "input": "?%$$",
-                "loc": ("storage_id",),
-                "msg": "String should match pattern '[a-z0-9_(),& -]+'",
-                "type": "string_pattern_mismatch",
-                "url": "https://errors.pydantic.dev/2.8/v/string_pattern_mismatch",
-            }
-        ]
+        assert len(ctx.value.errors()) == 1
+        error = ctx.value.errors()[0]
+        assert error["type"] == "value_error"
+        assert error["loc"] == ("storage_id",)
+        assert error["msg"] == "Value error, Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters"
 
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720

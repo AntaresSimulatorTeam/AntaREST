@@ -12,7 +12,13 @@
 
 import typing as t
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from pydantic import field_validator
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    FileStudyTreeConfig,
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
@@ -35,6 +41,13 @@ class RemoveRenewablesCluster(ICommand):
 
     area_id: str
     cluster_id: str
+
+    @field_validator("cluster_id", mode="before")
+    def validate_cluster_name(cls, val: str) -> str:
+        to_return = transform_name_to_id(val)
+        if not to_return:
+            raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
+        return to_return
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """

@@ -54,7 +54,7 @@ class TestCreateCluster:
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
         assert cl.cluster_name == "cluster1"
-        assert cl.parameters == {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.parameters == {"group": "nuclear", "nominalcapacity": 2400, "unitcount": 2}
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
 
@@ -108,12 +108,13 @@ class TestCreateCluster:
 
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
-        assert str(clusters[cluster_name]["name"]) == cluster_name.lower()
-        assert str(clusters[cluster_name]["group"]) == parameters["group"]
-        assert int(clusters[cluster_name]["unitcount"]) == int(parameters["unitcount"])
-        assert float(clusters[cluster_name]["nominalcapacity"]) == float(parameters["nominalcapacity"])
-        assert float(clusters[cluster_name]["marginal-cost"]) == float(parameters["marginal-cost"])
-        assert float(clusters[cluster_name]["market-bid-cost"]) == float(parameters["market-bid-cost"])
+        section = clusters[cluster_name.lower()]
+        assert str(section["name"]) == cluster_name.lower()
+        assert str(section["group"]) == parameters["group"]
+        assert int(section["unitcount"]) == int(parameters["unitcount"])
+        assert float(section["nominalcapacity"]) == float(parameters["nominalcapacity"])
+        assert float(section["marginal-cost"]) == float(parameters["marginal-cost"])
+        assert float(section["market-bid-cost"]) == float(parameters["market-bid-cost"])
 
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "data.txt.link").exists()
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "modulation.txt.link").exists()

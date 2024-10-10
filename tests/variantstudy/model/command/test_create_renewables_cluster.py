@@ -45,8 +45,8 @@ class TestCreateRenewablesCluster:
 
         # Check the command data
         assert cl.area_id == "foo"
-        assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Solar Thermal", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.cluster_name == "cluster1"
+        assert cl.parameters == {"group": "solar thermal", "nominalcapacity": 2400, "unitcount": 2}
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError, match="cluster_name"):
@@ -84,8 +84,8 @@ class TestCreateRenewablesCluster:
 
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "renewables" / "clusters" / area_id / "list.ini")
-        assert str(clusters[cluster_name]["name"]) == cluster_name
-        assert str(clusters[cluster_name]["ts-interpretation"]) == parameters["ts-interpretation"]
+        assert str(clusters[cluster_name.lower()]["name"]) == cluster_name
+        assert str(clusters[cluster_name.lower()]["ts-interpretation"]) == parameters["ts-interpretation"]
 
         output = CreateRenewablesCluster(
             area_id=area_id,
@@ -135,8 +135,8 @@ class TestCreateRenewablesCluster:
             "action": "create_renewables_cluster",  # "renewables" with a final "s".
             "args": {
                 "area_id": "foo",
-                "cluster_name": "Cluster1",
-                "parameters": {"group": "Solar Thermal", "nominalcapacity": 2400, "unitcount": 2},
+                "cluster_name": "cluster1",
+                "parameters": {"group": "solar thermal", "nominalcapacity": 2400, "unitcount": 2},
             },
             "id": None,
             "version": 1,
