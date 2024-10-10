@@ -388,6 +388,7 @@ class RenewableManager:
         for area_id, update_renewables_by_ids in update_renewables_by_areas.items():
             old_renewables_by_ids = old_renewables_by_areas[area_id]
             for renewable_id, update_cluster in update_renewables_by_ids.items():
+                renewable_id = renewable_id.lower()
                 # Update the renewable cluster properties.
                 old_cluster = old_renewables_by_ids[renewable_id]
                 new_cluster = old_cluster.copy(update=update_cluster.model_dump(by_alias=False, exclude_none=True))
