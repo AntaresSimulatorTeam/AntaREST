@@ -373,7 +373,7 @@ class TestThermalManager:
                 "fixedCost": 0.0,
                 "genTs": LocalTSGenerationBehavior.USE_GLOBAL,
                 "group": ThermalClusterGroup.NUCLEAR,
-                "id": "New Cluster",
+                "id": "new cluster",
                 "lawForced": LawOption.UNIFORM,
                 "lawPlanned": LawOption.UNIFORM,
                 "marginalCost": 0.0,

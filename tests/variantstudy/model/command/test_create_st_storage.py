@@ -311,7 +311,7 @@ class TestCreateSTStorage:
         expected = {
             "storage1": {
                 "efficiency": 0.94,
-                "group": "Battery",
+                "group": "battery",
                 "initiallevel": 0.5,
                 "initialleveloptim": True,
                 "injectionnominalcapacity": 1500,
@@ -366,6 +366,7 @@ class TestCreateSTStorage:
         expected_parameters = PARAMETERS.copy()
         # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
         expected_parameters["initiallevel"] = 0.5
+        expected_parameters["name"] = expected_parameters["name"].lower()
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
@@ -407,7 +408,7 @@ class TestCreateSTStorage:
             area_id=area_id,
             parameters=STStorageConfig(**parameters),
         )
-        light_equal = area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
+        light_equal = area_id == cmd1.area_id and parameters["name"].lower() == cmd1.storage_name
         assert cmd1.match(cmd2, equal=False) == light_equal
         deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
         assert cmd1.match(cmd2, equal=True) == deep_equal

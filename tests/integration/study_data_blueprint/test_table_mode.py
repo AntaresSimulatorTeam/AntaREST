@@ -410,7 +410,7 @@ class TestTableMode:
                 "enabled": True,
                 "fixedCost": 0,
                 "genTs": "use global",
-                "group": "Nuclear",
+                "group": "nuclear",
                 "lawForced": "uniform",
                 "lawPlanned": "uniform",
                 "marginalCost": 20,
