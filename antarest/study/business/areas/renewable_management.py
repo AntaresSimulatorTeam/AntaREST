@@ -114,7 +114,7 @@ def create_renewable_output(
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "RenewableClusterOutput":
-    obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id)
+    obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id.lower())
     kwargs = obj.model_dump(by_alias=False)
     return RenewableClusterOutput(**kwargs)
 

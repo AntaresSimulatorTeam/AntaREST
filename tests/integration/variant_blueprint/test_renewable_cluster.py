@@ -124,7 +124,7 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "Wind Offshore",
+            "group": "wind offshore",
             "id": "oleron",
             "name": cluster_fr1.lower(),
             "nominalCapacity": 2500.0,
@@ -142,7 +142,7 @@ class TestRenewableCluster:
         expected = {
             "enabled": False,
             "group": "solar pv",
-            "id": "la_Rochelle",
+            "id": "la_rochelle",
             "name": cluster_fr2.lower(),
             "nominalCapacity": 3500.0,
             "tsInterpretation": "power-generation",
@@ -228,9 +228,9 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "Wind Offshore",
-            "id": "Ol ron",
-            "name": cluster_it1,
+            "group": "wind offshore",
+            "id": "ol ron",
+            "name": cluster_it1.lower(),
             "nominalCapacity": 1000.0,
             "tsInterpretation": "production-factor",
             "unitCount": 1,
