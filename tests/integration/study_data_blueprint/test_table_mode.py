@@ -611,12 +611,12 @@ class TestTableMode:
             )
             assert res.status_code == 200, res.json()
             expected = {
-                "fr / Dieppe": {"enabled": False, "group": "Wind Offshore", "nominalCapacity": 8, "unitCount": 62},
-                "fr / La Rochelle": {"enabled": True, "group": "Solar PV", "nominalCapacity": 3.1, "unitCount": 2},
-                "fr / Oleron": {"enabled": True, "group": "Wind Offshore", "nominalCapacity": 15, "unitCount": 70},
-                "it / Pouilles": {"enabled": False, "group": "Wind Onshore", "nominalCapacity": 11, "unitCount": 40},
-                "it / Sardaigne": {"enabled": True, "group": "Wind Offshore", "nominalCapacity": 12, "unitCount": 86},
-                "it / Sicile": {"enabled": True, "group": "Solar PV", "nominalCapacity": 1.8, "unitCount": 1},
+                "fr / dieppe": {"enabled": False, "group": "wind offshore", "nominalCapacity": 8, "unitCount": 62},
+                "fr / la rochelle": {"enabled": True, "group": "solar pv", "nominalCapacity": 3.1, "unitCount": 2},
+                "fr / oleron": {"enabled": True, "group": "wind offshore", "nominalCapacity": 15, "unitCount": 70},
+                "it / pouilles": {"enabled": False, "group": "wind onshore", "nominalCapacity": 11, "unitCount": 40},
+                "it / sardaigne": {"enabled": True, "group": "wind offshore", "nominalCapacity": 12, "unitCount": 86},
+                "it / sicile": {"enabled": True, "group": "solar pv", "nominalCapacity": 1.8, "unitCount": 1},
             }
             actual = res.json()
             assert actual == expected
@@ -719,7 +719,7 @@ class TestTableMode:
                     # "name": "Siemens",
                     "efficiency": 1,
                     "enabled": None,
-                    "group": "Battery",
+                    "group": "battery",
                     "initialLevel": 0.5,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1550,
@@ -731,7 +731,7 @@ class TestTableMode:
                     # "name": "Tesla",
                     "efficiency": 0.75,
                     "enabled": None,
-                    "group": "Battery",
+                    "group": "battery",
                     "initialLevel": 0.89,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1200,
@@ -743,7 +743,7 @@ class TestTableMode:
                     # "name": "storage3",
                     "efficiency": 1,
                     "enabled": None,
-                    "group": "Pondage",
+                    "group": "pondage",
                     "initialLevel": 1,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1234,
@@ -755,7 +755,7 @@ class TestTableMode:
                     # "name": "storage4",
                     "efficiency": 1,
                     "enabled": None,
-                    "group": "PSP_open",
+                    "group": "psp_open",
                     "initialLevel": 0.5,
                     "initialLevelOptim": True,
                     "injectionNominalCapacity": 567,
@@ -788,25 +788,25 @@ class TestTableMode:
             assert res.status_code == 200, res.json()
             expected = {
                 "fr / siemens": {
-                    "group": "Battery",
+                    "group": "battery",
                     "injectionNominalCapacity": 1550,
                     "reservoirCapacity": 1500,
                     "withdrawalNominalCapacity": 1550,
                 },
                 "fr / tesla": {
-                    "group": "Battery",
+                    "group": "battery",
                     "injectionNominalCapacity": 1200,
                     "reservoirCapacity": 1200,
                     "withdrawalNominalCapacity": 1200,
                 },
                 "it / storage3": {
-                    "group": "Pondage",
+                    "group": "pondage",
                     "injectionNominalCapacity": 1234,
                     "reservoirCapacity": 1357,
                     "withdrawalNominalCapacity": 1020,
                 },
                 "it / storage4": {
-                    "group": "PSP_open",
+                    "group": "psp_open",
                     "injectionNominalCapacity": 567,
                     "reservoirCapacity": 500,
                     "withdrawalNominalCapacity": 456,
@@ -830,7 +830,7 @@ class TestTableMode:
         )
         assert res.status_code == 200, res.json()
         cluster_id = res.json()["id"]
-        assert cluster_id == "Cluster 1"
+        assert cluster_id == "cluster 1"
 
         # Create Binding Constraints
         res = client.post(

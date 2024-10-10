@@ -1324,7 +1324,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     expected = {
         "enabled": False,
-        "group": "Other RES 1",  # Default group used when not specified.
+        "group": "other res 1",  # Default group used when not specified.
         "id": "cluster renewable 1",
         "name": "cluster renewable 1 renamed",
         "nominalCapacity": 3.0,
