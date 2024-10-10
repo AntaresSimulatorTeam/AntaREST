@@ -238,7 +238,7 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_output = {
             **siemens_output,
-            "name": "New Siemens Battery",
+            "name": "new siemens battery",
             "reservoirCapacity": 2500,
         }
         assert res.json() == siemens_output
@@ -616,7 +616,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         tesla_battery_id = res.json()["id"]
-        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery.lower(), "group": "Battery"}
+        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery.lower(), "group": "battery"}
         assert res.json() == tesla_output
 
         # Use the Debug mode to make sure that the initialLevel and initialLevelOptim properties
@@ -825,7 +825,7 @@ class TestSTStorage:
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/storages/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "Battery"
+        assert cluster_cfg["group"] == "battery"
         assert cluster_cfg["injectionNominalCapacity"] == 4500
         assert cluster_cfg["withdrawalNominalCapacity"] == 4230
         assert cluster_cfg["reservoirCapacity"] == 5600
