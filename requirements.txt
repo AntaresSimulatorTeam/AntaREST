@@ -1,4 +1,4 @@
-Antares-Launcher~=1.3.2
+Antares-Launcher==1.4.2
 antares-study-version==1.0.6
 antares-timeseries-generation~=0.1.5
 
@@ -33,7 +33,7 @@ PyJWT~=2.9.0
 MarkupSafe~=2.0.1
 numpy~=1.22.1
 pandas~=1.4.0
-paramiko~=2.12.0
+paramiko~=3.4.1
 plyer~=2.0.0
 psycopg2-binary==2.9.4
 py7zr~=0.20.6
