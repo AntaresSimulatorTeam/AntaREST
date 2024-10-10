@@ -20,6 +20,7 @@ from antarest.study.business.all_optional_meta import all_optional_model, camel_
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_2, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_link import (
@@ -116,10 +117,9 @@ class LinkManager:
         return link_data
 
     def update_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
-        self.check_attributes_coherence(int(study.version), link_creation_info)
-
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        existing_link = self.get_one_link(study, link_creation_info)
+
+        self.check_attributes_coherence(file_study, int(study.version), link_creation_info)
 
         command = UpdateLink(
             area1=link_creation_info.area1,
@@ -132,12 +132,21 @@ class LinkManager:
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        existing_link = existing_link.model_copy(
-            update=link_creation_info.model_dump(exclude={"area1", "area2"}, exclude_none=True)
-        )
+        existing_link = self.get_one_link(study, link_creation_info)
         return existing_link
 
-    def check_attributes_coherence(self, study_version: int, link_creation_info: LinkInfoDTOType) -> None:
+    def check_attributes_coherence(
+        self, file_study: FileStudy, study_version: int, link_creation_info: LinkInfoDTOType
+    ) -> None:
+        if link_creation_info.area1 == link_creation_info.area2:
+            raise LinkValidationError("Area 1 and Area 2 can not be the same")
+
+        area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
+        try:
+            file_study.tree.get(["input", "links", area_from, "properties", area_to])
+        except KeyError:
+            raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
+
         if study_version < 820:
             if isinstance(link_creation_info, LinkInfoDTO820):
                 if (

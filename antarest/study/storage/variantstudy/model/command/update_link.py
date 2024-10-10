@@ -43,7 +43,7 @@ class UpdateLink(AbstractLinkCommand):
             {"area_from": area_from, "area_to": area_to},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, *a: str) -> CommandOutput:
         version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
 

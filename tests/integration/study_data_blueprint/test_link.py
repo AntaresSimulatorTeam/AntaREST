@@ -62,6 +62,37 @@ class TestLink:
         }
         assert expected == res.json()
 
+        # Test update link same area
+
+        res = client.put(
+            f"/v1/studies/{study_id}/links",
+            json={
+                "area1": area1_id,
+                "area2": area1_id,
+                "hurdles-cost": False,
+            },
+        )
+        assert res.status_code == 422
+        expected = {"description": "Area 1 and Area 2 can not be the same", "exception": "LinkValidationError"}
+        assert expected == res.json()
+
+        # Test update link with non existing area
+
+        res = client.put(
+            f"/v1/studies/{study_id}/links",
+            json={
+                "area1": area1_id,
+                "area2": "id_do_not_exist",
+                "hurdles-cost": False,
+            },
+        )
+        assert res.status_code == 422
+        expected = {
+            "description": "The link area 1 -> id_do_not_exist is not present in the study",
+            "exception": "LinkValidationError",
+        }
+        assert expected == res.json()
+
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_820(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
