@@ -304,7 +304,7 @@ class TestSTStorage:
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
         duplicated_output = dict(siemens_output)
-        duplicated_output["name"] = new_name
+        duplicated_output["name"] = new_name.lower()
         duplicated_id = transform_name_to_id(new_name)
         duplicated_output["id"] = duplicated_id
         assert res.json() == duplicated_output
@@ -389,6 +389,10 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_output = {**default_output, **siemens_properties, "id": siemens_battery_id}
         grand_maison_output = {**default_output, **grand_maison_properties, "id": grand_maison_id}
+        # assert we return name and group as lower values
+        for key in ["name", "group"]:
+            grand_maison_output[key] = grand_maison_properties[key].lower()
+            siemens_output[key] = siemens_properties[key].lower()
         assert res.json() == [duplicated_output, siemens_output, grand_maison_output]
 
         # We can delete the three short-term storages at once.
@@ -627,7 +631,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
-        expected = {**default_config, "name": tesla_battery, "group": "Battery"}
+        expected = {**default_config, "name": tesla_battery.lower(), "group": "battery"}
         assert actual == expected
 
         # We want to make sure that the default properties are applied to a study variant.
@@ -657,7 +661,7 @@ class TestSTStorage:
             "action": "create_st_storage",
             "args": {
                 "area_id": "fr",
-                "parameters": {**default_config, "name": siemens_battery, "group": "Battery"},
+                "parameters": {**default_config, "name": siemens_battery.lower(), "group": "battery"},
                 "pmax_injection": ANY,
                 "pmax_withdrawal": ANY,
                 "lower_rule_curve": ANY,
@@ -732,8 +736,8 @@ class TestSTStorage:
         actual = res.json()
         expected = {
             **default_config,
-            "name": siemens_battery,
-            "group": "Battery",
+            "name": siemens_battery.lower(),
+            "group": "battery",
             "injectionnominalcapacity": 1600,
             "initiallevel": 0.0,
         }
