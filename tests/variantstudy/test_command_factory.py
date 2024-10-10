@@ -299,8 +299,8 @@ COMMANDS: List[CommandDTO] = [
         args={
             "area_id": "area 1",
             "parameters": {
-                "name": "Storage 1",
-                "group": "Battery",
+                "name": "storage 1",
+                "group": "battery",
                 "injectionnominalcapacity": 0,
                 "withdrawalnominalcapacity": 0,
                 "reservoircapacity": 0,
@@ -322,11 +322,11 @@ COMMANDS: List[CommandDTO] = [
                 "area_id": "area 1",
                 "parameters": {
                     "efficiency": 1,
-                    "group": "Battery",
+                    "group": "battery",
                     "initiallevel": 0,
                     "initialleveloptim": False,
                     "injectionnominalcapacity": 0,
-                    "name": "Storage 1",
+                    "name": "storage 1",
                     "reservoircapacity": 0,
                     "withdrawalnominalcapacity": 0,
                 },
@@ -340,11 +340,11 @@ COMMANDS: List[CommandDTO] = [
                 "area_id": "area 1",
                 "parameters": {
                     "efficiency": 0.94,
-                    "group": "Battery",
+                    "group": "battery",
                     "initiallevel": 0,
                     "initialleveloptim": False,
                     "injectionnominalcapacity": 0,
-                    "name": "Storage 2",
+                    "name": "storage 2",
                     "reservoircapacity": 0,
                     "withdrawalnominalcapacity": 0,
                 },
