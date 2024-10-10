@@ -505,7 +505,7 @@ class TestRenewable:
         assert res.status_code == 409, res.json()
         obj = res.json()
         description = obj["description"]
-        assert other_cluster_name.upper() in description
+        assert other_cluster_name.lower() in description
         assert obj["exception"] == "DuplicateRenewableCluster"
 
     @pytest.fixture(name="base_study_id")

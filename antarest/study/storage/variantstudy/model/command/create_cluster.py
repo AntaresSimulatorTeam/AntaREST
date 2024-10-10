@@ -203,7 +203,7 @@ class CreateCluster(ICommand):
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         # Series identifiers are in lower case.
-        series_id = transform_name_to_id(self.cluster_name, lower=True)
+        series_id = transform_name_to_id(self.cluster_name)
         commands: t.List[ICommand] = []
         if self.prepro != other.prepro:
             commands.append(

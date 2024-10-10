@@ -347,7 +347,7 @@ class RenewableManager:
         Raises:
             DuplicateRenewableCluster: If a cluster with the new name already exists in the area.
         """
-        new_id = transform_name_to_id(new_cluster_name, lower=False)
+        new_id = transform_name_to_id(new_cluster_name)
         lower_new_id = new_id.lower()
         if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
             raise DuplicateRenewableCluster(area_id, new_id)

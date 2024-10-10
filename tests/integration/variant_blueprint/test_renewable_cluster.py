@@ -76,7 +76,7 @@ class TestRenewableCluster:
         area_fr_id = transform_name_to_id("FR")
 
         cluster_fr1 = "Oleron"
-        cluster_fr1_id = transform_name_to_id(cluster_fr1, lower=False)
+        cluster_fr1_id = transform_name_to_id(cluster_fr1)
         args = {
             "area_id": area_fr_id,
             "cluster_name": cluster_fr1_id,
@@ -95,7 +95,7 @@ class TestRenewableCluster:
         res.raise_for_status()
 
         cluster_fr2 = "La_Rochelle"
-        cluster_fr2_id = transform_name_to_id(cluster_fr2, lower=False)
+        cluster_fr2_id = transform_name_to_id(cluster_fr2)
         args = {
             "area_id": area_fr_id,
             "cluster_name": cluster_fr2_id,
@@ -201,10 +201,10 @@ class TestRenewableCluster:
         area_it_id = transform_name_to_id("IT")
 
         cluster_it1 = "Oléron"
-        cluster_it1_id = transform_name_to_id(cluster_it1, lower=False)
+        cluster_it1_id = transform_name_to_id(cluster_it1)
         args = {
             "area_id": area_it_id,
-            "cluster_name": cluster_it1_id,
+            "cluster_name": cluster_it1,
             "parameters": {
                 "group": "wind offshore",
                 "name": cluster_it1,

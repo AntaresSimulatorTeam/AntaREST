@@ -839,7 +839,7 @@ class TestThermal:
         assert res.status_code == 409, res.json()
         obj = res.json()
         description = obj["description"]
-        assert new_name.upper() in description
+        assert new_name.lower() in description
         assert obj["exception"] == "DuplicateThermalCluster"
 
     @pytest.fixture(name="base_study_id")
