@@ -291,7 +291,6 @@ class AreaManager:
         """
         self.storage_service = storage_service
         self.patch_service = PatchService(repository=repository)
-        self._cache = storage_service.raw_study_service.cache
 
     # noinspection SpellCheckingInspection
     def get_all_area_props(self, study: RawStudy) -> t.Mapping[str, AreaOutput]:
@@ -471,14 +470,10 @@ class AreaManager:
         Raises:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
         """
-        if from_cache := self._cache.get(f"{study.id}-areas-ui"):
-            return from_cache
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         area_ids = list(file_study.config.areas)
-        res = _get_ui_info_map(file_study, area_ids)
-        self._cache.put(f"{study.id}-areas-ui", res)
-        return res
+        return _get_ui_info_map(file_study, area_ids)
 
     def get_layers(self, study: RawStudy) -> t.List[LayerInfoDTO]:
         storage_service = self.storage_service.get_storage(study)
