@@ -59,9 +59,10 @@ class CreateCluster(ICommand):
         return to_return
 
     @field_validator("parameters", mode="before")
-    def lower_cluster_group(cls, params: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        if "group" in params:
-            params["group"] = params["group"].lower()
+    def lower_cluster_group_and_names(cls, params: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        for key in ["name", "group"]:
+            if key in params:
+                params[key] = params[key].lower()
         return params
 
     @field_validator("prepro", mode="before")
