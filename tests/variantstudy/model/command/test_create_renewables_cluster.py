@@ -84,7 +84,7 @@ class TestCreateRenewablesCluster:
 
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "renewables" / "clusters" / area_id / "list.ini")
-        assert str(clusters[cluster_name.lower()]["name"]) == cluster_name
+        assert str(clusters[cluster_name.lower()]["name"]) == cluster_name.lower()
         assert str(clusters[cluster_name.lower()]["ts-interpretation"]) == parameters["ts-interpretation"]
 
         output = CreateRenewablesCluster(
