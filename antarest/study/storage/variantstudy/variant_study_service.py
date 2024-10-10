@@ -1110,10 +1110,10 @@ class SnapshotCleanerTask:
                         self._variant_study_service.clear_snapshot(variant)
 
     def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
-        msg = f"Start cleaning all snapshots updated or accessed" f" {humanize.naturaltime(self._retention_time)}."
+        msg = f"Start cleaning all snapshots updated or accessed {humanize.naturaltime(self._retention_time)}."
         notifier(msg)
         self._clear_all_snapshots()
-        msg = f"All selected snapshots were successfully cleared."
+        msg = "All selected snapshots were successfully cleared."
         notifier(msg)
         return TaskResult(success=True, message=msg)
 
