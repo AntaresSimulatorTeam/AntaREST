@@ -374,7 +374,7 @@ class TestThermal:
         )
         assert res.status_code == 200, res.json()
         fr_gas_conventional_id = res.json()["id"]
-        assert fr_gas_conventional_id == transform_name_to_id(fr_gas_conventional, lower=False)
+        assert fr_gas_conventional_id == transform_name_to_id(fr_gas_conventional)
         # noinspection SpellCheckingInspection
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_props,
