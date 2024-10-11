@@ -96,7 +96,7 @@ def test_get(tmp_path: Path) -> None:
             areas={},
             outputs={},
             study_id="id",
-            zip_path=zipped_path,
+            archive_path=zipped_path,
         ),
         types=types,
     )
@@ -147,7 +147,7 @@ def test_get_depth(tmp_path: Path) -> None:
             areas={},
             outputs={},
             study_id="id",
-            zip_path=zipped_path,
+            archive_path=zipped_path,
         ),
         types=types,
     )
