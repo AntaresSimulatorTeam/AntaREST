@@ -24,7 +24,9 @@ import zipfile
 from pathlib import Path
 
 import py7zr
+import redis
 from fastapi import HTTPException
+from py7zr import SevenZipFile
 
 from antarest.core.exceptions import ShouldNotHappenException
 
@@ -74,7 +76,7 @@ class BadArchiveContent(Exception):
         super().__init__(message)
 
 
-def extract_zip(stream: t.BinaryIO, target_dir: Path) -> None:
+def extract_archive(stream: t.BinaryIO, target_dir: Path) -> None:
     """
     Extract a ZIP archive to a given destination.
 
@@ -203,20 +205,29 @@ def is_zip(path: Path) -> bool:
     return path.name.endswith(".zip")
 
 
-def extract_file_to_tmp_dir(zip_path: Path, inside_zip_path: Path) -> t.Tuple[Path, t.Any]:
-    str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
+def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.Tuple[Path, t.Any]:
+    str_inside_archive_path = str(inside_archive_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
-        with zipfile.ZipFile(zip_path) as zip_obj:
-            zip_obj.extract(str_inside_zip_path, tmp_dir.name)
+        if archive_path.suffix == ".zip":
+            with zipfile.ZipFile(archive_path) as zip_obj:
+                zip_obj.extract(str_inside_archive_path, tmp_dir.name)
+        elif archive_path.suffix == ".7z":
+            with py7zr.SevenZipFile(archive_path, mode="r") as zip_obj:
+                str_inside_archive_path = (
+                    str_inside_archive_path[1:] if str_inside_archive_path.startswith("/") else str_inside_archive_path
+                )
+                zip_obj.extract(path=tmp_dir.name, targets=[str_inside_archive_path])
+        else:
+            raise ValueError(f"Unsupported archive format for {archive_path}")
     except Exception as e:
         logger.warning(
-            f"Failed to extract {str_inside_zip_path} in zip {zip_path}",
+            f"Failed to extract {str_inside_archive_path} in zip {archive_path}",
             exc_info=e,
         )
         tmp_dir.cleanup()
         raise
-    path = Path(tmp_dir.name) / inside_zip_path
+    path = Path(tmp_dir.name) / str_inside_archive_path
     return path, tmp_dir
 
 
