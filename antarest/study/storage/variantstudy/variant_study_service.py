@@ -20,6 +20,7 @@ from functools import reduce
 from pathlib import Path
 from uuid import uuid4
 
+import humanize
 from fastapi import HTTPException
 from filelock import FileLock
 
@@ -1056,13 +1057,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             return False
 
-    def clear_all_snapshots(self, retention_hours: timedelta, params: t.Optional[RequestParameters] = None) -> str:
+    def clear_all_snapshots(self, retention_time: timedelta, params: t.Optional[RequestParameters] = None) -> str:
         """
         Admin command that clear all variant snapshots older than `retention_hours` (in hours).
         Only available for admin users.
 
         Args:
-            retention_hours: number of retention hours
+            retention_time: number of retention hours
             params: request parameters used to identify the user status
         Returns: None
 
@@ -1072,11 +1073,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if params is None or (params.user and not params.user.is_site_admin() and not params.user.is_admin_token()):
             raise UserHasNotPermissionError()
 
-        task_name = f"Cleaning all snapshot updated or accessed at least {retention_hours} hours ago."
+        task_name = f"Cleaning all snapshot updated or accessed at least {humanize.precisedelta(retention_time)} ago."
 
-        snapshot_clearing_task_instance = SnapshotCleanerTask(
-            variant_study_service=self, retention_hours=retention_hours
-        )
+        snapshot_clearing_task_instance = SnapshotCleanerTask(variant_study_service=self, retention_time=retention_time)
 
         return self.task_service.add_task(
             snapshot_clearing_task_instance,
@@ -1092,10 +1091,10 @@ class SnapshotCleanerTask:
     def __init__(
         self,
         variant_study_service: VariantStudyService,
-        retention_hours: timedelta,
+        retention_time: timedelta,
     ) -> None:
         self._variant_study_service = variant_study_service
-        self._retention_hours = retention_hours
+        self._retention_time = retention_time
 
     def _clear_all_snapshots(self) -> None:
         with db():
@@ -1106,15 +1105,15 @@ class SnapshotCleanerTask:
                 )
             )
             for variant in variant_list:
-                if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_hours:
-                    if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_hours:
+                if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_time:
+                    if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
     def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
-        msg = f"Start cleaning all snapshots updated or accessed {self._retention_hours} hours ago."
+        msg = f"Start cleaning all snapshots updated or accessed {humanize.precisedelta(self._retention_time)} ago."
         notifier(msg)
         self._clear_all_snapshots()
-        msg = f"All selected snapshots were successfully cleared."
+        msg = "All selected snapshots were successfully cleared."
         notifier(msg)
         return TaskResult(success=True, message=msg)
 
