@@ -15,7 +15,8 @@ import logging
 import typing as t
 
 import numpy as np
-from pydantic import BaseModel, Field, field_validator, model_validator
+from antares.study.version import StudyVersion
+from pydantic import Field, field_validator, model_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -30,10 +31,11 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -79,7 +81,7 @@ OPERATOR_CONFLICT_MAP = {
 }
 
 
-class LinkTerm(BaseModel):
+class LinkTerm(AntaresBaseModel):
     """
     DTO for a constraint term on a link between two areas.
 
@@ -98,7 +100,7 @@ class LinkTerm(BaseModel):
         return "%".join(ids)
 
 
-class ClusterTerm(BaseModel):
+class ClusterTerm(AntaresBaseModel):
     """
     DTO for a constraint term on a cluster in an area.
 
@@ -117,7 +119,7 @@ class ClusterTerm(BaseModel):
         return ".".join(ids)
 
 
-class ConstraintTerm(BaseModel):
+class ConstraintTerm(AntaresBaseModel):
     """
     DTO for a constraint term.
 
@@ -147,7 +149,7 @@ class ConstraintTerm(BaseModel):
         return self.data.generate_id()
 
 
-class ConstraintFilters(BaseModel, frozen=True, extra="forbid"):
+class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
     """
     Binding Constraint Filters gathering the main filtering parameters.
 
@@ -461,7 +463,7 @@ class BindingConstraintManager:
                 )
 
     @staticmethod
-    def constraint_model_adapter(constraint: t.Mapping[str, t.Any], version: int) -> ConstraintOutput:
+    def constraint_model_adapter(constraint: t.Mapping[str, t.Any], study_version: StudyVersion) -> ConstraintOutput:
         """
         Adapts a binding constraint configuration to the appropriate model version.
 
@@ -469,7 +471,7 @@ class BindingConstraintManager:
             constraint: A dictionary or model representing the constraint to be adapted.
                 This can either be a dictionary coming from client input or an existing
                 model that needs reformatting.
-            version: An integer indicating the target version of the study configuration. This is used to
+            study_version: A StudyVersion object indicating the target version of the study configuration. This is used to
                 determine which model class to instantiate and which default values to apply.
 
         Returns:
@@ -493,19 +495,19 @@ class BindingConstraintManager:
             "terms": constraint.get("terms", []),
         }
 
-        if version >= 830:
+        if study_version >= STUDY_VERSION_8_3:
             _filter_year_by_year = constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year", "")
             _filter_synthesis = constraint.get("filter_synthesis") or constraint.get("filter-synthesis", "")
             constraint_output["filter_year_by_year"] = _filter_year_by_year
             constraint_output["filter_synthesis"] = _filter_synthesis
-        if version >= 870:
+        if study_version >= STUDY_VERSION_8_7:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
 
         # Choose the right model according to the version
         adapted_constraint: ConstraintOutput
-        if version >= 870:
+        if study_version >= STUDY_VERSION_8_7:
             adapted_constraint = ConstraintOutput870(**constraint_output)
-        elif version >= 830:
+        elif study_version >= STUDY_VERSION_8_3:
             adapted_constraint = ConstraintOutput830(**constraint_output)
         else:
             adapted_constraint = ConstraintOutputBase(**constraint_output)
@@ -556,7 +558,7 @@ class BindingConstraintManager:
         constraints_by_id: t.Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
 
         for constraint in config.values():
-            constraint_config = self.constraint_model_adapter(constraint, int(study.version))
+            constraint_config = self.constraint_model_adapter(constraint, StudyVersion.parse(study.version))
             constraints_by_id[constraint_config.id] = constraint_config
 
         if bc_id not in constraints_by_id:
@@ -580,7 +582,7 @@ class BindingConstraintManager:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        outputs = [self.constraint_model_adapter(c, int(study.version)) for c in config.values()]
+        outputs = [self.constraint_model_adapter(c, StudyVersion.parse(study.version)) for c in config.values()]
         filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
         return filtered_constraints
 
@@ -607,7 +609,7 @@ class BindingConstraintManager:
         grouped_constraints = CaseInsensitiveDict()
 
         for constraint in config.values():
-            constraint_config = self.constraint_model_adapter(constraint, int(study.version))
+            constraint_config = self.constraint_model_adapter(constraint, StudyVersion.parse(study.version))
             constraint_group = getattr(constraint_config, "group", DEFAULT_GROUP)
             grouped_constraints.setdefault(constraint_group, []).append(constraint_config)
 
@@ -703,7 +705,7 @@ class BindingConstraintManager:
         data: ConstraintCreation,
     ) -> ConstraintOutput:
         bc_id = transform_name_to_id(data.name)
-        version = int(study.version)
+        version = StudyVersion.parse(study.version)
 
         if not bc_id:
             raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
@@ -749,7 +751,7 @@ class BindingConstraintManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
 
-        study_version = int(study.version)
+        study_version = StudyVersion.parse(study.version)
         check_attributes_coherence(data, study_version, data.operator or existing_constraint.operator)
 
         upd_constraint = {
@@ -784,9 +786,9 @@ class BindingConstraintManager:
         upd_constraint["type"] = upd_constraint.get("time_step", existing_constraint.time_step)
         upd_constraint["terms"] = data.terms or existing_constraint.terms
         new_fields = ["enabled", "operator", "comments", "terms"]
-        if study_version >= 830:
+        if study_version >= STUDY_VERSION_8_3:
             new_fields.extend(["filter_year_by_year", "filter_synthesis"])
-        if study_version >= 870:
+        if study_version >= STUDY_VERSION_8_7:
             new_fields.append("group")
         for field in new_fields:
             if field not in upd_constraint:
@@ -925,9 +927,9 @@ class BindingConstraintManager:
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    data: ConstraintInput, version: int, args: t.Dict[str, t.Any]
+    data: ConstraintInput, version: StudyVersion, args: t.Dict[str, t.Any]
 ) -> t.Dict[str, t.Any]:
-    if version < 870:
+    if version < STUDY_VERSION_8_7:
         if "values" not in args:
             matrix = {
                 BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
@@ -949,10 +951,10 @@ def _replace_matrices_according_to_frequency_and_version(
 
 def check_attributes_coherence(
     data: t.Union[ConstraintCreation, ConstraintInput],
-    study_version: int,
+    study_version: StudyVersion,
     operator: BindingConstraintOperator,
 ) -> None:
-    if study_version < 870:
+    if study_version < STUDY_VERSION_8_7:
         if data.group:
             raise InvalidFieldForVersionError(
                 f"You cannot specify a group as your study version is older than v8.7: {data.group}"

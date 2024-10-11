@@ -15,6 +15,7 @@ import typing as t
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import MATRIX_PROTOCOL_PREFIX
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -87,7 +88,7 @@ class AliasDecoder:
         data = alias.split("/")
         area_from = data[1]
         area_to = data[2]
-        if study.config.version < 820:
+        if study.config.version < STUDY_VERSION_8_2:
             return f"input/links/{area_from}/{area_to}"
         return f"input/links/{area_from}/{area_to}_parameters"
 

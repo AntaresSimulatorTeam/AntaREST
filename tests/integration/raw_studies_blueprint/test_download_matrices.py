@@ -161,7 +161,7 @@ class TestDownloadMatrices:
         variant_matrix_path = f"input/load/series/load_{area_id}"
 
         raw_start_date = datetime.datetime(2018, 1, 1)
-        variant_start_date = datetime.datetime(2019, 7, 1)
+        variant_start_date = datetime.datetime(2028, 7, 1)
 
         for uuid, path, start_date in [
             (study_820_id, raw_matrix_path, raw_start_date),

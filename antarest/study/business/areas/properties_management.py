@@ -19,7 +19,7 @@ from pydantic import model_validator
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_3, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -113,7 +113,7 @@ FIELDS_INFO: t.Dict[str, FieldInfo] = {
     "adequacy_patch_mode": {
         "path": f"{AREA_PATH}/adequacy_patch/adequacy-patch/adequacy-patch-mode",
         "default_value": AdequacyPatchMode.OUTSIDE.value,
-        "start_version": 830,
+        "start_version": STUDY_VERSION_8_3,
     },
 }
 

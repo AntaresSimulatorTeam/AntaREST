@@ -125,14 +125,20 @@ class TestHydroAllocation:
         area_id: str,
         expected: t.List[t.List[float]],
     ) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         """Check `get_allocation_matrix` end point"""
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix")
         assert res.status_code == http.HTTPStatus.OK, res.json()
         actual = res.json()
         assert actual == expected
+
+        # test get allocation matrix with a study with only one area.
+        client.delete(f"/v1/studies/{internal_study_id}/areas/de")
+        client.delete(f"/v1/studies/{internal_study_id}/areas/es")
+        client.delete(f"/v1/studies/{internal_study_id}/areas/fr")
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix")
+        assert res.status_code == http.HTTPStatus.OK, res.json()
+        assert res.json() == {"index": ["it"], "columns": ["it"], "data": [[1.0]]}
 
     def test_set_allocation_form_values(
         self,
