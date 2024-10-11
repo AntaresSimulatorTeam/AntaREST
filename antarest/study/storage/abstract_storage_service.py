@@ -18,12 +18,14 @@ from abc import ABC
 from pathlib import Path
 from uuid import uuid4
 
+import py7zr
+
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
 from antarest.core.serialization import from_json
-from antarest.core.utils.utils import StopWatch, extract_zip, unzip, zip_dir
+from antarest.core.utils.utils import StopWatch, extract_archive, unzip, zip_dir
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -253,7 +255,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                     path_output = Path(str(path_output) + ".zip")
                     shutil.copyfile(output, path_output)
             else:
-                extract_zip(output, path_output)
+                extract_archive(output, path_output)
 
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
             fix_study_root(path_output)
@@ -278,7 +280,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
     def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
         """
-        Export and compress the study inside a ZIP file.
+        Export and compress the study inside a 7zip file.
 
         Args:
             metadata: Study metadata object.
@@ -286,7 +288,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             outputs: Flag to indicate whether to include the output folder inside the exportation.
 
         Returns:
-            The ZIP file containing the study files compressed inside.
+            The 7zip file containing the study files compressed inside.
         """
         path_study = Path(metadata.path)
         with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
@@ -294,8 +296,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
-            zip_dir(tmp_study_path, target)
-            stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (zipped mode) in {x}s"))
+            with py7zr.SevenZipFile(target, "w") as szf:
+                szf.writeall(tmp_study_path, arcname="")
+            stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (7zip mode) in {x}s"))
         return target
 
     def export_output(self, metadata: T, output_id: str, target: Path) -> None:

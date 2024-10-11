@@ -1210,7 +1210,7 @@ class StudyService:
             self.storage_service.get_storage(study).delete(study)
         else:
             if isinstance(study, RawStudy):
-                os.unlink(self.storage_service.raw_study_service.get_archive_path(study))
+                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 
@@ -2056,7 +2056,7 @@ class StudyService:
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
-            os.unlink(self.storage_service.raw_study_service.get_archive_path(study_to_archive))
+            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
             self.repository.save(study_to_archive)
             self.event_bus.push(
                 Event(
