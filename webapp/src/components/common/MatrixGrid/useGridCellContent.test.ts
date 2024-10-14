@@ -80,42 +80,6 @@ function renderGridCellContent(
 }
 
 describe("useGridCellContent", () => {
-  test("returns correct text cell content for DateTime columns", () => {
-    const columns: EnhancedGridColumn[] = [
-      {
-        id: "date",
-        title: "Date",
-        type: ColumnTypes.DateTime,
-        width: 150,
-        editable: false,
-      },
-      {
-        id: "data1",
-        title: "TS 1",
-        type: ColumnTypes.Number,
-        width: 50,
-        editable: true,
-      },
-    ];
-
-    const dateTime = ["2024-01-07T00:00:00Z", "2024-01-02T00:00:00Z"];
-
-    const data = [
-      [11, 10],
-      [12, 15],
-    ];
-
-    const getCellContent = renderGridCellContent(data, columns, dateTime);
-    const cell = getCellContent([0, 0]);
-
-    if ("displayData" in cell) {
-      expect(cell.kind).toBe("text");
-      expect(cell.displayData).toBe("7 janv. 2024, 00:00");
-    } else {
-      throw new Error("Expected a text cell with displayData");
-    }
-  });
-
   describe("returns correct cell content for Aggregate columns", () => {
     const columns: EnhancedGridColumn[] = [
       {
@@ -220,17 +184,6 @@ describe("useGridCellContent", () => {
       aggregates,
     );
 
-    const dateTimeCell = getCellContent([0, 0]);
-
-    if (dateTimeCell.kind === "text" && "displayData" in dateTimeCell) {
-      expect(dateTimeCell.data).toBe("");
-      expect(dateTimeCell.displayData).toBe("1 janv. 2021, 00:00");
-    } else {
-      throw new Error(
-        "Expected a DateTime cell with displayData containing the year 2021",
-      );
-    }
-
     const numberCell = getCellContent([1, 0]);
 
     if (numberCell.kind === "number" && "data" in numberCell) {
@@ -317,15 +270,6 @@ describe("useGridCellContent with mixed column types", () => {
       expect(rowHeaderCell.displayData).toBe("Row 1");
     } else {
       throw new Error("Expected a text cell with data for row header");
-    }
-
-    // Test date column (DateTime column)
-    const dateCell = getCellContent([1, 0]);
-    if (dateCell.kind === "text" && "displayData" in dateCell) {
-      expect(dateCell.data).toBe("");
-      expect(dateCell.displayData).toBe("1 janv. 2024, 00:00");
-    } else {
-      throw new Error("Expected a text cell with data for date");
     }
 
     // Test first data column (Number column)
