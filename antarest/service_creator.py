@@ -47,7 +47,6 @@ from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
-from antarest.worker.simulator_worker import SimulatorWorker
 from antarest.worker.worker import AbstractWorker
 
 logger = logging.getLogger(__name__)
@@ -72,7 +71,6 @@ class Module(StrEnum):
     MATRIX_GC = "matrix_gc"
     ARCHIVE_WORKER = "archive_worker"
     AUTO_ARCHIVER = "auto_archiver"
-    SIMULATOR_WORKER = "simulator_worker"
 
 
 def init_db_engine(
@@ -219,16 +217,6 @@ def create_archive_worker(
     if not event_bus:
         event_bus, _ = create_event_bus(None, config)
     return ArchiveWorker(event_bus, workspace, local_root, config)
-
-
-def create_simulator_worker(
-    config: Config,
-    matrix_service: MatrixService,
-    event_bus: t.Optional[IEventBus] = None,
-) -> AbstractWorker:
-    if not event_bus:
-        event_bus, _ = create_event_bus(None, config)
-    return SimulatorWorker(event_bus, matrix_service, config)
 
 
 def create_services(
