@@ -216,6 +216,12 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
     coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
 
+    @model_validator(mode="after")
+    def lower_group(self) -> "AbstractBindingConstraintCommand":
+        if self.group:
+            self.group = self.group.lower()
+        return self
+
     def to_dto(self) -> CommandDTO:
         json_command = self.model_dump(mode="json", exclude={"command_context"})
         args = {}

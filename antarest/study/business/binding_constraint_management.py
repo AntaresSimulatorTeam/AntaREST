@@ -501,7 +501,7 @@ class BindingConstraintManager:
             constraint_output["filter_year_by_year"] = _filter_year_by_year
             constraint_output["filter_synthesis"] = _filter_synthesis
         if study_version >= STUDY_VERSION_8_7:
-            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
+            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP).lower()
 
         # Choose the right model according to the version
         adapted_constraint: ConstraintOutput
