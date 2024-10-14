@@ -170,8 +170,8 @@ function MatrixGrid({
         onCellsEdited={handleCellsEdited}
         gridSelection={selection}
         onGridSelectionChange={setSelection}
-        getCellsForSelection // Enable copy support
-        onPaste
+        keybindings={{ paste: false, copy: false }}
+        onPaste={false}
         fillHandle
         allowedFillDirections="any"
         rowMarkers="both"
