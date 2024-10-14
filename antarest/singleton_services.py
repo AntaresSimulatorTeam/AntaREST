@@ -25,7 +25,6 @@ from antarest.service_creator import (
     create_archive_worker,
     create_core_services,
     create_matrix_gc,
-    create_simulator_worker,
     create_watcher,
     init_db_engine,
 )
@@ -71,10 +70,6 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     if Module.ARCHIVE_WORKER in services_list:
         worker = create_archive_worker(config, "test", event_bus=event_bus)
         services[Module.ARCHIVE_WORKER] = worker
-
-    if Module.SIMULATOR_WORKER in services_list:
-        worker = create_simulator_worker(config, matrix_service=matrix_service, event_bus=event_bus)
-        services[Module.SIMULATOR_WORKER] = worker
 
     if Module.AUTO_ARCHIVER in services_list:
         auto_archive_service = AutoArchiveService(study_service, config)
