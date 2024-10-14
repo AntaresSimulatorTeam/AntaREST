@@ -14,7 +14,12 @@ import typing as t
 
 from antares.study.version import StudyVersion
 
-from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields, get_fields_info
+from antarest.study.business.thematic_trimming_field_infos import (
+    ThematicTrimmingFormFieldsType,
+    create_thematic_trimming_config,
+    get_fields_info,
+    get_thematic_trimming_cls,
+)
 from antarest.study.business.utils import GENERAL_DATA_PATH, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -25,7 +30,7 @@ class ThematicTrimmingManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_field_values(self, study: Study) -> ThematicTrimmingFormFields:
+    def get_field_values(self, study: Study) -> ThematicTrimmingFormFieldsType:
         """
         Get Thematic Trimming field values for the webapp form
         """
@@ -44,14 +49,15 @@ class ThematicTrimmingManager:
 
         fields_info = get_fields_info(StudyVersion.parse(study.version))
         fields_values = {name: get_value(info) for name, info in fields_info.items()}
-        return ThematicTrimmingFormFields(**fields_values)
+        return create_thematic_trimming_config(StudyVersion.parse(study.version), **fields_values)
 
-    def set_field_values(self, study: Study, field_values: ThematicTrimmingFormFields) -> None:
+    def set_field_values(self, study: Study, field_values: ThematicTrimmingFormFieldsType) -> None:
         """
         Set Thematic Trimming config from the webapp form
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        field_values_dict = field_values.model_dump()
+        cls = get_thematic_trimming_cls(StudyVersion.parse(study.version))
+        field_values_dict = cls.model_validate(field_values).model_dump()
 
         keys_by_bool: t.Dict[bool, t.List[t.Any]] = {True: [], False: []}
         fields_info = get_fields_info(StudyVersion.parse(study.version))

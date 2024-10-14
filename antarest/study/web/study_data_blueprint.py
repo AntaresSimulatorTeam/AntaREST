@@ -73,7 +73,7 @@ from antarest.study.business.optimization_management import OptimizationFormFiel
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
+from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFieldsType
 from antarest.study.business.timeseries_config_management import TSFormFields
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
@@ -554,13 +554,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Get thematic trimming config",
-        response_model=ThematicTrimmingFormFields,
+        response_model=ThematicTrimmingFormFieldsType,
         response_model_exclude_none=True,
     )
     def get_thematic_trimming(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThematicTrimmingFormFields:
+    ) -> ThematicTrimmingFormFieldsType:
         logger.info(
             f"Fetching thematic trimming config for study {uuid}",
             extra={"user": current_user.id},
@@ -576,7 +576,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def set_thematic_trimming(
         uuid: str,
-        field_values: ThematicTrimmingFormFields,
+        field_values: ThematicTrimmingFormFieldsType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(

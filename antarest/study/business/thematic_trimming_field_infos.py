@@ -20,11 +20,17 @@ from antares.study.version import StudyVersion
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FormFieldsBaseModel
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import (
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_1,
+)
 
 
 @all_optional_model
-class ThematicTrimmingFormFields(FormFieldsBaseModel):
+class ThematicTrimmingFormFieldsBase(FormFieldsBaseModel):
     """
     This class manages the configuration of result filtering in a simulation.
 
@@ -96,6 +102,10 @@ class ThematicTrimmingFormFields(FormFieldsBaseModel):
     # since v8.3
     dens: bool
     profit_by_plant: bool
+
+
+@all_optional_model
+class ThematicTrimmingFormFields860(ThematicTrimmingFormFieldsBase):
     # topic: Short-Term Storages
     # since v8.6
     sts_inj_by_plant: bool
@@ -130,6 +140,34 @@ class ThematicTrimmingFormFields(FormFieldsBaseModel):
     other5_injection: bool
     other5_withdrawal: bool
     other5_level: bool
+
+
+@all_optional_model
+class ThematicTrimmingFormFields910(ThematicTrimmingFormFieldsBase):
+    sts_inj_by_plant: bool
+    sts_withdrawal_by_plant: bool
+    sts_lvl_by_plant: bool
+    sts_cashflow_by_cluster: bool
+    sts_by_group: bool
+
+
+ThematicTrimmingFormFieldsType = t.Union[
+    ThematicTrimmingFormFields910, ThematicTrimmingFormFields860, ThematicTrimmingFormFieldsBase
+]
+
+
+def get_thematic_trimming_cls(study_version: StudyVersion) -> t.Type[ThematicTrimmingFormFieldsType]:
+    if study_version >= STUDY_VERSION_9_1:
+        return ThematicTrimmingFormFields910
+    elif study_version >= STUDY_VERSION_8_6:
+        return ThematicTrimmingFormFields860
+    else:
+        return ThematicTrimmingFormFieldsBase
+
+
+def create_thematic_trimming_config(study_version: StudyVersion, **kwargs: t.Any) -> ThematicTrimmingFormFieldsType:
+    cls = get_thematic_trimming_cls(study_version)
+    return cls.model_validate(kwargs)
 
 
 _GENERAL = "General"
@@ -210,40 +248,50 @@ FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
     "sts_lvl_by_plant": {"topic": _SHORT_TERM_STORAGES, "path": "STS lvl by plant", "default_value": True, "start_version": STUDY_VERSION_8_6},
     "sts_cashflow_by_cluster": {"topic": _SHORT_TERM_STORAGES, "path": "STS Cashflow By Cluster", "default_value": True, "start_version": STUDY_VERSION_8_8},
     # topic: "Short-Term Storages - Group"
-    "psp_open_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "psp_open_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "psp_open_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "psp_closed_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "psp_closed_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "psp_closed_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "pondage_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "pondage_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "pondage_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "battery_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "battery_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "battery_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other1_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other1_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other1_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other2_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other2_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other2_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other3_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other3_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other3_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other4_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other4_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other4_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other5_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other5_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    "other5_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
+    "psp_open_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "psp_open_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "psp_open_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_open_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "psp_closed_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "psp_closed_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "psp_closed_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "PSP_closed_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "pondage_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "pondage_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "pondage_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Pondage_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "battery_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "battery_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "battery_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Battery_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other1_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other1_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other1_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other1_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other2_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other2_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other2_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other2_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other3_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other3_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other3_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other3_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other4_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other4_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other4_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other4_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other5_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_injection", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other5_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
+    "other5_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_level", "default_value": True, "start_version": STUDY_VERSION_8_6, "end_version": STUDY_VERSION_9_1},
     # fmt: on
+    # since v9.1
+    "sts_by_group": {
+        "topic": _SHORT_TERM_STORAGES_GROUP,
+        "path": "STS by group",
+        "default_value": True,
+        "start_version": STUDY_VERSION_9_1,
+    },
 }
 
 
 def get_fields_info(study_version: StudyVersion) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+    highest_version = StudyVersion.parse(10000000)
+    lowest_version = StudyVersion.parse(0)
     return {
         key: info
         for key, info in FIELDS_INFO.items()
-        if (info.get("start_version") or StudyVersion.parse(0)) <= study_version
+        if info.get("start_version", lowest_version) <= study_version
+        and info.get("end_version", highest_version) > study_version
     }

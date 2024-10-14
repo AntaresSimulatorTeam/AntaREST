@@ -16,6 +16,7 @@ from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
@@ -416,9 +417,9 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
     Returns:
         The thermal configuration class.
     """
-    if study_version >= 870:
+    if study_version >= STUDY_VERSION_8_7:
         return Thermal870Config
-    elif study_version == 860:
+    elif study_version == STUDY_VERSION_8_6:
         return Thermal860Config
     else:
         return ThermalConfig
