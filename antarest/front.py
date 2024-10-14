@@ -64,11 +64,8 @@ class RedirectMiddleware(BaseHTTPMiddleware):
         dispatch = self.dispatch if dispatch is None else dispatch
         super().__init__(app, dispatch)
 
-        if protected_roots is None:
-            protected_roots = []
-        if protected_paths is None:
-            protected_paths = []
-        self.protected_paths = protected_paths
+        self.protected_paths = protected_paths or []
+        protected_roots = protected_roots or []
         self.protected_roots = [r.rstrip("/") for r in protected_roots]
 
     def _path_matches_protected_paths(self, path: str) -> bool:
