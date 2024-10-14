@@ -916,7 +916,7 @@ class TestTableMode:
 
         if study_version >= 870:
             expected_binding["binding constraint 1"]["group"] = "default"
-            expected_binding["binding constraint 2"]["group"] = "My BC Group"
+            expected_binding["binding constraint 2"]["group"] = "my bc group"
 
         assert actual == expected_binding
 
