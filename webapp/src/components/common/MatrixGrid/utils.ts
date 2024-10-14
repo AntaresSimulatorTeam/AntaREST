@@ -117,8 +117,17 @@ export function formatNumber(num: number | undefined): string {
   }
 
   const [integerPart, decimalPart] = num.toString().split(".");
-  // Format integer part with thousand separators
-  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+  // Format integer part with thousand separators using a non-regex approach
+  const formattedInteger = integerPart
+    .split("")
+    .reverse()
+    .reduce((acc, digit, index) => {
+      if (index > 0 && index % 3 === 0) {
+        return digit + " " + acc;
+      }
+      return digit + acc;
+    }, "");
 
   // Return formatted number, preserving decimal part if it exists
   return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;

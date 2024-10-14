@@ -171,7 +171,7 @@ function MatrixGrid({
         gridSelection={selection}
         onGridSelectionChange={setSelection}
         keybindings={{ paste: false, copy: false }}
-        onPaste={false}
+        getCellsForSelection // TODO handle large copy/paste using this
         fillHandle
         allowedFillDirections="any"
         rowMarkers="both"
