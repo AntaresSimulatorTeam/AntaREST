@@ -1,4 +1,23 @@
 #!/bin/bash
+#
+# Starter script used in docker image.
+#
+# Usages are:
+#
+# 1. ./start.sh
+#    Starts antares web server with gunicorn.
+#    Number of workers is defined by GUNICORN_WORKERS env variable,
+#    or equal to 2*cpu + 1.
+#
+# 2. ./start.sh <module>
+#    Where module is for example "watcher".
+#    Starts one of the backend services (watcher, garbage collector, ...)
+#
+# 3. ./start.sh --no-gunicorn
+#    Starts multiple workers on different ports. You are expected to
+#    configure some load balancing upstream, in that case.
+#    Number of workers is defined by ANTARES_NB_WORKERS env variable,
+#    or equal to 2*cpu + 1.
 
 set -e
 
