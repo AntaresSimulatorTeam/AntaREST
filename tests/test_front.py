@@ -65,7 +65,9 @@ def redirect_app(app_with_home: FastAPI) -> FastAPI:
     Same as app with redirect middleware
     """
     route_paths = [r.path for r in app_with_home.routes]  # type: ignore
-    app_with_home.add_middleware(RedirectMiddleware, route_paths=route_paths)
+    app_with_home.add_middleware(
+        RedirectMiddleware, protected_roots=["/api", "static"], protected_paths=["/config.json"]
+    )
     return app_with_home
 
 
@@ -106,7 +108,7 @@ def test_frontend_paths(base_back_app, resources_dir: Path) -> None:
     assert front_route_response.status_code == 200
     assert front_route_response.text == "index"
 
-    front_route_response = client.get("/apidocs")
+    front_route_response = client.get("/apidoc")
     assert front_route_response.status_code == 200
     assert front_route_response.text == "index"
 
