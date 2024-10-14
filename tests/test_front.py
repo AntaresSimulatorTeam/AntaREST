@@ -64,7 +64,6 @@ def redirect_app(app_with_home: FastAPI) -> FastAPI:
     """
     Same as app with redirect middleware
     """
-    route_paths = [r.path for r in app_with_home.routes]  # type: ignore
     app_with_home.add_middleware(
         RedirectMiddleware, protected_roots=["/api", "static"], protected_paths=["/config.json"]
     )
