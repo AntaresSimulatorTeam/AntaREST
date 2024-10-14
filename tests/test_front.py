@@ -106,6 +106,10 @@ def test_frontend_paths(base_back_app, resources_dir: Path) -> None:
     assert front_route_response.status_code == 200
     assert front_route_response.text == "index"
 
+    front_route_response = client.get("/apidocs")
+    assert front_route_response.status_code == 200
+    assert front_route_response.text == "index"
+
     front_static_file_response = client.get("/static/front.css")
     assert front_static_file_response.status_code == 200
     assert front_static_file_response.text == "css"
