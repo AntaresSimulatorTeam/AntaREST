@@ -173,6 +173,7 @@ def run_systray_app(config_file: Path) -> None:
         notification_popup(
             "Antares Web Server already running, you can manage the application within the system tray.", threaded=False
         )
+        open_app()
         return
     notification_popup("Starting Antares Web Server...")
     systray_app = create_systray_app()
@@ -180,5 +181,6 @@ def run_systray_app(config_file: Path) -> None:
     setup_exit_application_on_server_end(server, systray_app.app)
     wait_for_server_start()
     notification_popup("Antares Web Server started, you can manage the application within the system tray.")
+    open_app()
     systray_app.app.exec_()
     server.kill()
