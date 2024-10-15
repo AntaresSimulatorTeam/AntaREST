@@ -14,18 +14,18 @@
 
 import {
   EnhancedGridColumn,
-  ColumnTypes,
   TimeSeriesColumnOptions,
   CustomColumnOptions,
   MatrixAggregates,
   AggregateType,
   AggregateConfig,
-  Aggregates,
   DateIncrementFunction,
   FormatFunction,
   TimeFrequency,
   TimeFrequencyType,
   DateTimeMetadataDTO,
+  Aggregate,
+  Column,
 } from "./types";
 import {
   type FirstWeekContainsDate,
@@ -82,7 +82,7 @@ export const darkTheme: Theme = {
 export const readOnlyDarkTheme: Partial<Theme> = {
   bgCell: "#1A1C2A",
   bgCellMedium: "#22243A",
-  textDark: "#A0A0A0",
+  textDark: "#FAF9F6",
   textMedium: "#808080",
   textLight: "#606060",
   accentColor: "#4A4C66",
@@ -118,7 +118,6 @@ export function formatNumber(num: number | undefined): string {
 
   const [integerPart, decimalPart] = num.toString().split(".");
 
-  // Format integer part with thousand separators using a non-regex approach
   const formattedInteger = integerPart
     .split("")
     .reverse()
@@ -152,15 +151,15 @@ const TIME_FREQUENCY_CONFIG: Record<
     format: FormatFunction;
   }
 > = {
-  [TimeFrequency.ANNUAL]: {
+  [TimeFrequency.Annual]: {
     increment: addYears,
     format: () => t("global.time.annual"),
   },
-  [TimeFrequency.MONTHLY]: {
+  [TimeFrequency.Monthly]: {
     increment: addMonths,
     format: (date: Date) => format(date, "MMM", { locale: getLocale() }),
   },
-  [TimeFrequency.WEEKLY]: {
+  [TimeFrequency.Weekly]: {
     increment: addWeeks,
     format: (date: Date, firstWeekSize: number) => {
       const weekStart = startOfWeek(date, { locale: getLocale() });
@@ -172,11 +171,11 @@ const TIME_FREQUENCY_CONFIG: Record<
       });
     },
   },
-  [TimeFrequency.DAILY]: {
+  [TimeFrequency.Daily]: {
     increment: addDays,
     format: (date: Date) => format(date, "EEE d MMM", { locale: getLocale() }),
   },
-  [TimeFrequency.HOURLY]: {
+  [TimeFrequency.Hourly]: {
     increment: addHours,
     format: (date: Date) =>
       format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
@@ -222,12 +221,12 @@ export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
  *
  * @example <caption>Usage within a column definition array</caption>
  * const columns = [
- *   { id: "rowHeaders", title: "", type: ColumnTypes.Text, ... },
- *   { id: "date", title: "Date", type: ColumnTypes.DateTime, ... },
+ *   { id: "rowHeaders", title: "", type: Column.Text, ... },
+ *   { id: "date", title: "Date", type: Column.DateTime, ... },
  *   ...generateTimeSeriesColumns({ count: 60 }),
- *   { id: "min", title: "Min", type: ColumnTypes.Aggregate, ... },
- *   { id: "max", title: "Max", type: ColumnTypes.Aggregate, ... },
- *   { id: "avg", title: "Avg", type: ColumnTypes.Aggregate, ... }
+ *   { id: "min", title: "Min", type: Column.Aggregate, ... },
+ *   { id: "max", title: "Max", type: Column.Aggregate, ... },
+ *   { id: "avg", title: "Avg", type: Column.Aggregate, ... }
  * ];
  */
 export function generateTimeSeriesColumns({
@@ -241,7 +240,7 @@ export function generateTimeSeriesColumns({
   return Array.from({ length: count }, (_, index) => ({
     id: `data${startIndex + index}`,
     title: `${prefix} ${startIndex + index}`,
-    type: ColumnTypes.Number,
+    type: Column.Number,
     style,
     width,
     editable,
@@ -263,7 +262,7 @@ export function generateCustomColumns({
   return titles.map((title, index) => ({
     id: `custom${index + 1}`,
     title,
-    type: ColumnTypes.Number,
+    type: Column.Number,
     style: "normal",
     width,
     editable: true,
@@ -298,16 +297,21 @@ export function generateDataColumns(
   return [];
 }
 
-// TODO add docs + refactor
+/**
+ * Determines the aggregate types based on the provided configuration.
+ *
+ * @param aggregateConfig - The configuration for aggregates.
+ * @returns An array of AggregateType.
+ */
 export function getAggregateTypes(
   aggregateConfig: AggregateConfig,
 ): AggregateType[] {
   if (aggregateConfig === "stats") {
-    return [Aggregates.Avg, Aggregates.Min, Aggregates.Max];
+    return [Aggregate.Avg, Aggregate.Min, Aggregate.Max];
   }
 
   if (aggregateConfig === "all") {
-    return [Aggregates.Min, Aggregates.Max, Aggregates.Avg, Aggregates.Total];
+    return [Aggregate.Min, Aggregate.Max, Aggregate.Avg, Aggregate.Total];
   }
 
   if (Array.isArray(aggregateConfig)) {
@@ -317,6 +321,13 @@ export function getAggregateTypes(
   return [];
 }
 
+/**
+ * Calculates matrix aggregates based on the provided matrix and aggregate types.
+ *
+ * @param matrix - The input matrix of numbers.
+ * @param aggregateTypes - The types of aggregates to calculate.
+ * @returns An object containing the calculated aggregates.
+ */
 export function calculateMatrixAggregates(
   matrix: number[][],
   aggregateTypes: AggregateType[],
@@ -324,39 +335,29 @@ export function calculateMatrixAggregates(
   const aggregates: Partial<MatrixAggregates> = {};
 
   matrix.forEach((row) => {
-    if (aggregateTypes.includes(Aggregates.Min)) {
-      if (!aggregates.min) {
-        aggregates.min = [];
-      }
+    if (aggregateTypes.includes(Aggregate.Min)) {
+      aggregates.min = aggregates.min || [];
       aggregates.min.push(Math.min(...row));
     }
 
-    if (aggregateTypes.includes(Aggregates.Max)) {
-      if (!aggregates.max) {
-        aggregates.max = [];
-      }
+    if (aggregateTypes.includes(Aggregate.Max)) {
+      aggregates.max = aggregates.max || [];
       aggregates.max.push(Math.max(...row));
     }
 
     if (
-      aggregateTypes.includes(Aggregates.Avg) ||
-      aggregateTypes.includes(Aggregates.Total)
+      aggregateTypes.includes(Aggregate.Avg) ||
+      aggregateTypes.includes(Aggregate.Total)
     ) {
-      const sum = row.reduce((sum, num) => sum + num, 0);
+      const sum = row.reduce((acc, num) => acc + num, 0);
 
-      if (aggregateTypes.includes(Aggregates.Avg)) {
-        if (!aggregates.avg) {
-          aggregates.avg = [];
-        }
-
+      if (aggregateTypes.includes(Aggregate.Avg)) {
+        aggregates.avg = aggregates.avg || [];
         aggregates.avg.push(Number((sum / row.length).toFixed()));
       }
 
-      if (aggregateTypes.includes(Aggregates.Total)) {
-        if (!aggregates.total) {
-          aggregates.total = [];
-        }
-
+      if (aggregateTypes.includes(Aggregate.Total)) {
+        aggregates.total = aggregates.total || [];
         aggregates.total.push(Number(sum.toFixed()));
       }
     }
