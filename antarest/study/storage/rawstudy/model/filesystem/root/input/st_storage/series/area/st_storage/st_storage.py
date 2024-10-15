@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -45,4 +46,8 @@ class InputSTStorageAreaStorage(FolderNode):
                 default_empty=series.upper_rule_curve,
             ),
         }
+        if self.config.version >= STUDY_VERSION_9_2:
+            children["cost_injection"] = InputSeriesMatrix(self.context, self.config.next_file("cost-injection.txt"))
+            children["cost_withdrawal"] = InputSeriesMatrix(self.context, self.config.next_file("cost-withdrawal.txt"))
+            children["cost_level"] = InputSeriesMatrix(self.context, self.config.next_file("cost-level.txt"))
         return children

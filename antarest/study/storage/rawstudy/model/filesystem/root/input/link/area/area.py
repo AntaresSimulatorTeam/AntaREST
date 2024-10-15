@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -19,6 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.capacities.capacities import (
     InputLinkAreaCapacities,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.prepro.prepro import InputLinkAreaPrepro
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.properties import InputLinkAreaProperties
 
 
@@ -50,5 +51,6 @@ class InputLinkArea(FolderNode):
             cfg.next_file("properties.ini"),
             area=self.area,
         )
-
+        if cfg.version >= STUDY_VERSION_9_2:
+            children["prepro"] = InputLinkAreaPrepro(ctx, cfg.next_file("prepro"), area=self.area)
         return children
