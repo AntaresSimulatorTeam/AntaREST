@@ -26,13 +26,13 @@ import { getStudyData } from "../../../services/api/study";
 import {
   EnhancedGridColumn,
   MatrixDataDTO,
-  ColumnTypes,
   GridUpdate,
   MatrixUpdateDTO,
   MatrixAggregates,
   AggregateConfig,
-  Aggregates,
-  Operations,
+  Column,
+  Operation,
+  Aggregate,
 } from "./types";
 import {
   aggregatesTheme,
@@ -158,7 +158,7 @@ export function useMatrix(
       baseColumns.push({
         id: "date",
         title: "Date",
-        type: ColumnTypes.DateTime,
+        type: Column.DateTime,
         editable: false,
         themeOverride: { bgCell: "#2D2E40" },
       });
@@ -168,7 +168,7 @@ export function useMatrix(
       baseColumns.unshift({
         id: "rowHeaders",
         title: "",
-        type: ColumnTypes.Text,
+        type: Column.Text,
         editable: false,
       });
     }
@@ -184,10 +184,10 @@ export function useMatrix(
       (aggregateType) => ({
         id: aggregateType,
         title: aggregateType.charAt(0).toUpperCase() + aggregateType.slice(1), // Capitalize first letter
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         editable: false,
         themeOverride:
-          aggregateType === Aggregates.Avg
+          aggregateType === Aggregate.Avg
             ? aggregatesTheme
             : { ...aggregatesTheme, bgCell: "#464770" },
       }),
@@ -218,7 +218,7 @@ export function useMatrix(
             return {
               coordinates: [[col, row]],
               operation: {
-                operation: Operations.Eq,
+                operation: Operation.Eq,
                 value: value.data,
               },
             };

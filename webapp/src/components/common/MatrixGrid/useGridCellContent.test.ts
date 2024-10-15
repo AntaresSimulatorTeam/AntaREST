@@ -14,11 +14,7 @@
 
 import { renderHook } from "@testing-library/react";
 import { useGridCellContent } from "./useGridCellContent";
-import {
-  ColumnTypes,
-  MatrixAggregates,
-  type EnhancedGridColumn,
-} from "./types";
+import { Column, MatrixAggregates, type EnhancedGridColumn } from "./types";
 import { useColumnMapping } from "./useColumnMapping";
 
 // Mocking i18next
@@ -85,7 +81,7 @@ describe("useGridCellContent", () => {
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -136,28 +132,28 @@ describe("useGridCellContent", () => {
       {
         id: "date",
         title: "Date",
-        type: ColumnTypes.DateTime,
+        type: Column.DateTime,
         width: 150,
         editable: false,
       },
       {
         id: "ts1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "ts2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -208,35 +204,35 @@ describe("useGridCellContent with mixed column types", () => {
       {
         id: "rowHeader",
         title: "Row",
-        type: ColumnTypes.Text,
+        type: Column.Text,
         width: 100,
         editable: false,
       },
       {
         id: "date",
         title: "Date",
-        type: ColumnTypes.DateTime,
+        type: Column.DateTime,
         width: 150,
         editable: false,
       },
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -307,21 +303,21 @@ describe("useGridCellContent with mixed column types", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data3",
         title: "TS 3",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -352,7 +348,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -374,7 +370,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -397,7 +393,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -419,7 +415,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -444,14 +440,14 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: false,
       },
@@ -476,7 +472,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -500,14 +496,14 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "large",
         title: "Large",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "small",
         title: "Small",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -539,7 +535,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "negative",
         title: "Negative",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -563,7 +559,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "zero",
         title: "Zero",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },

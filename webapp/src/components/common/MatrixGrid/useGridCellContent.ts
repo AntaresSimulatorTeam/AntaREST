@@ -17,8 +17,8 @@ import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
 import {
   type EnhancedGridColumn,
   type ColumnType,
-  ColumnTypes,
   MatrixAggregates,
+  Column,
 } from "./types";
 import { formatNumber } from "./utils";
 
@@ -37,7 +37,7 @@ type CellContentGenerator = (
  * Each generator function creates the appropriate GridCell based on the column type and data.
  */
 const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
-  [ColumnTypes.Text]: (
+  [Column.Text]: (
     row,
     col,
     column,
@@ -52,14 +52,14 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnTypes.DateTime]: (row, col, column, data, dateTime) => ({
+  [Column.DateTime]: (row, col, column, data, dateTime) => ({
     kind: GridCellKind.Text,
     data: "", // Date/time columns are not editable
     displayData: dateTime?.[row] ?? "",
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnTypes.Number]: (row, col, column, data) => {
+  [Column.Number]: (row, col, column, data) => {
     const value = data?.[row]?.[col];
 
     return {
@@ -72,7 +72,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
       thousandSeparator: " ",
     };
   },
-  [ColumnTypes.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
+  [Column.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
     const value = aggregates?.[column.id as keyof MatrixAggregates]?.[row];
 
     return {
@@ -160,7 +160,7 @@ export function useGridCellContent(
       // accounting for any non-data columns in the grid
       let adjustedCol = col;
 
-      if (column.type === ColumnTypes.Number && gridToData) {
+      if (column.type === Column.Number && gridToData) {
         // Map grid cell to data array index
         const dataCell = gridToData(cell);
 
