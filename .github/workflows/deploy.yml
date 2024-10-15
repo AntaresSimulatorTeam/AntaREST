@@ -4,7 +4,6 @@ on:
     branches:
       - "master"
       - "hotfix/**"
-      - "bump-python/**"
 
 jobs:
   binary:
@@ -12,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: [windows-latest]
+        os: [ windows-latest, ubuntu-20.04, ubuntu-22.04]
 
     steps:
       - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)

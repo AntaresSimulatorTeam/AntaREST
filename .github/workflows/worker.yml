@@ -2,7 +2,8 @@ name: worker
 on:
   push:
     branches:
-      - "ohohoh"
+      - "master"
+      - "worker/**"
 
 jobs:
   binary:
