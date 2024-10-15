@@ -20,7 +20,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_8, Study
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
@@ -134,6 +134,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "initial_reservoir_levels": {
         "path": f"{OTHER_PREFERENCES_PATH}/initial-reservoir-levels",
         "default_value": InitialReservoirLevel.COLD_START.value,
+        "end_version": STUDY_VERSION_9_2,
     },
     "power_fluctuations": {
         "path": f"{OTHER_PREFERENCES_PATH}/power-fluctuations",
@@ -212,6 +213,11 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{SEEDS_PATH}/seed-initial-reservoir-levels",
         "default_value": 10005489,
     },
+    "hydro_pmax_format": {
+        "path": f"{OTHER_PREFERENCES_PATH}/hydro-pmax-format",
+        "default_value": "daily",
+        "start_version": STUDY_VERSION_9_2,
+    },
 }
 
 
@@ -230,14 +236,19 @@ class AdvancedParamsManager:
         seeds = general_data.get("seeds - Mersenne Twister", {})
 
         def get_value(field_info: FieldInfo) -> Any:
+            start_version = field_info.get("start_version", 0)
+            end_version = field_info.get("end_version", 100000)
+            is_in_version = file_study.config.version >= start_version and file_study.config.version < end_version
+            if not is_in_version:
+                return None
             path = field_info["path"]
-            target_name = path.split("/")[-1]
             if ADVANCED_PARAMS_PATH in path:
                 parent = advanced_params
             elif OTHER_PREFERENCES_PATH in path:
                 parent = other_preferences
             else:
                 parent = seeds
+            target_name = path.split("/")[-1]
             return parent.get(target_name, field_info["default_value"])
 
         return AdvancedParamsFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})

@@ -17,7 +17,7 @@ from pydantic.types import StrictBool, confloat, conint
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_5, Study
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_5, STUDY_VERSION_9_2, Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
@@ -63,6 +63,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{ADEQUACY_PATCH_PATH}/set-to-null-ntc-between-physical-out-for-first-step",
         "default_value": True,
         "start_version": STUDY_VERSION_8_3,
+        "end_version": STUDY_VERSION_9_2,
     },
     "price_taking_order": {
         "path": f"{ADEQUACY_PATCH_PATH}/price-taking-order",
@@ -111,9 +112,10 @@ class AdequacyPatchManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
-            start_version = field_info.get("start_version", -1)
+            start_version = field_info.get("start_version", 0)
+            end_version = field_info.get("end_version", 100000)
             target_name = path.split("/")[-1]
-            is_in_version = file_study.config.version >= start_version
+            is_in_version = file_study.config.version >= start_version and file_study.config.version < end_version
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 

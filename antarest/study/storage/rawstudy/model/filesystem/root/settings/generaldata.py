@@ -24,6 +24,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_4,
     STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
 )
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
@@ -166,6 +167,15 @@ class GeneralData(IniFileNode):
 
         if study_version >= STUDY_VERSION_8_6:
             types["adequacy patch"]["enable-first-step "] = bool
+
+        if study_version >= STUDY_VERSION_9_2:
+            adequacy = types["adequacy patch"]
+            adequacy.pop("enable-first-step", None)
+            adequacy.pop("set-to-null-ntc-between-physical-out-for-first-step", None)
+            other_preferences = types["other preferences"]
+            other_preferences.pop("initial-reservoir-levels", None)
+            other_preferences["hydro-pmax-format"] = str
+            types["general"]["nbtimeserieslinks"] = float
 
         IniFileNode.__init__(
             self,
