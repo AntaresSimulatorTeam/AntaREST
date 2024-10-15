@@ -645,6 +645,7 @@ class TestTableMode:
                 "efficiency",
                 "initialLevel",
                 "initialLevelOptim",
+                "efficiencyWithdrawal",  # since v9.2
             }
 
             # Prepare data for short-term storage tests
@@ -702,6 +703,8 @@ class TestTableMode:
             _it_storage3_values = {"group": "Pondage"}
             if study_version >= 880:
                 _it_storage3_values["enabled"] = False
+            if study_version >= 920:
+                _it_storage3_values["efficiencyWithdrawal"] = 0.66
 
             res = client.put(
                 f"/v1/studies/{internal_study_id}/table-mode/st-storages",
@@ -725,6 +728,7 @@ class TestTableMode:
                     "injectionNominalCapacity": 1550,
                     "reservoirCapacity": 1500,
                     "withdrawalNominalCapacity": 1550,
+                    "efficiencyWithdrawal": None,
                 },
                 "fr / tesla": {
                     # "id": "tesla",
@@ -737,6 +741,7 @@ class TestTableMode:
                     "injectionNominalCapacity": 1200,
                     "reservoirCapacity": 1200,
                     "withdrawalNominalCapacity": 1200,
+                    "efficiencyWithdrawal": None,
                 },
                 "it / storage3": {
                     # "id": "storage3",
@@ -749,6 +754,7 @@ class TestTableMode:
                     "injectionNominalCapacity": 1234,
                     "reservoirCapacity": 1357,
                     "withdrawalNominalCapacity": 1020,
+                    "efficiencyWithdrawal": None,
                 },
                 "it / storage4": {
                     # "id": "storage4",
@@ -761,6 +767,7 @@ class TestTableMode:
                     "injectionNominalCapacity": 567,
                     "reservoirCapacity": 500,
                     "withdrawalNominalCapacity": 456,
+                    "efficiencyWithdrawal": None,
                 },
             }
 
@@ -768,6 +775,10 @@ class TestTableMode:
                 for key in expected:
                     expected[key]["enabled"] = True
                 expected["it / storage3"]["enabled"] = False
+            if study_version >= 920:
+                for key in expected:
+                    expected[key]["efficiencyWithdrawal"] = 1
+                expected["it / storage3"]["efficiencyWithdrawal"] = 0.66
 
             assert actual == expected
 

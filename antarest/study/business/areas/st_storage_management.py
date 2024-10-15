@@ -35,8 +35,8 @@ from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Config,
-    STStorage880Properties,
+    STStorage920Config,
+    STStorage920Properties,
     STStorageConfigType,
     STStorageGroup,
     create_st_storage_config,
@@ -51,7 +51,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 
 @all_optional_model
 @camel_case_model
-class STStorageInput(STStorage880Properties):
+class STStorageInput(STStorage920Properties):
     """
     Model representing the form used to EDIT an existing short-term storage.
     """
@@ -94,7 +94,7 @@ class STStorageCreation(STStorageInput):
 
 @all_optional_model
 @camel_case_model
-class STStorageOutput(STStorage880Config):
+class STStorageOutput(STStorage920Config):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
@@ -303,7 +303,7 @@ class STStorageManager:
     def _make_create_cluster_cmd(self, area_id: str, cluster: STStorageConfigType) -> CreateSTStorage:
         command = CreateSTStorage(
             area_id=area_id,
-            parameters=cluster,
+            parameters=cluster.model_dump(mode="json", by_alias=True, exclude_none=True),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
         return command

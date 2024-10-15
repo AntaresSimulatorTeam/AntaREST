@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import copy
 import typing as t
 
 import numpy as np
@@ -18,8 +18,12 @@ from pydantic import Field, ValidationInfo, model_validator
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfigType
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    FileStudyTreeConfig,
+    transform_name_to_id,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -58,7 +62,7 @@ class CreateSTStorage(ICommand):
     # ==================
 
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
-    parameters: STStorageConfigType
+    parameters: t.Dict[str, t.Any]
     pmax_injection: t.Optional[t.Union[MatrixType, str]] = Field(
         default=None,
         description="Charge capacity (modulation)",
@@ -83,12 +87,21 @@ class CreateSTStorage(ICommand):
     @property
     def storage_id(self) -> str:
         """The normalized version of the storage's name used as the ID."""
-        return self.parameters.id
+        return str(self.parameters["id"])
 
     @property
     def storage_name(self) -> str:
         """The label representing the name of the storage for the user."""
-        return self.parameters.name
+        return str(self.parameters["name"])
+
+    @model_validator(mode="after")
+    def validate_id(self) -> "CreateSTStorage":
+        storage_name = self.parameters["name"]
+        storage_id = transform_name_to_id(storage_name)
+        if not storage_id:
+            raise ValueError(f"Invalid name '{storage_name}'.")
+        self.parameters["id"] = storage_id
+        return self
 
     @staticmethod
     def validate_field(
@@ -204,7 +217,7 @@ class CreateSTStorage(ICommand):
             )
 
         # Create a new short-term storage and add it to the area
-        area.st_storages.append(self.parameters)
+        area.st_storages.append(create_st_storage_config(study_data.version, **self.parameters))
 
         return (
             CommandOutput(
@@ -227,23 +240,24 @@ class CreateSTStorage(ICommand):
             The output of the command execution.
         """
         output, _ = self._apply_config(study_data.config)
-        if not output.status:
-            return output
+        if output.status:
+            # Fill-in the "list.ini" file with the parameters.
+            # On creation, it's better to write all the parameters in the file.
+            config = study_data.tree.get(["input", "st-storage", "clusters", self.area_id, "list"])
+            storage_config = create_st_storage_config(study_data.config.version, **self.parameters)
+            config[self.storage_id] = storage_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
-        # Fill-in the "list.ini" file with the parameters.
-        # On creation, it's better to write all the parameters in the file.
-        config = study_data.tree.get(["input", "st-storage", "clusters", self.area_id, "list"])
-        config[self.storage_id] = self.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
-
-        new_data: JSON = {
-            "input": {
-                "st-storage": {
-                    "clusters": {self.area_id: {"list": config}},
-                    "series": {self.area_id: {self.storage_id: {attr: getattr(self, attr) for attr in _MATRIX_NAMES}}},
+            new_data: JSON = {
+                "input": {
+                    "st-storage": {
+                        "clusters": {self.area_id: {"list": config}},
+                        "series": {
+                            self.area_id: {self.storage_id: {attr: getattr(self, attr) for attr in _MATRIX_NAMES}}
+                        },
+                    }
                 }
             }
-        }
-        study_data.tree.save(new_data)
+            study_data.tree.save(new_data)
 
         return output
 
@@ -255,7 +269,8 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        parameters = self.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
+        parameters = copy.deepcopy(self.parameters)
+        del parameters["id"]
         return CommandDTO(
             action=self.command_name.value,
             args={
@@ -320,11 +335,12 @@ class CreateSTStorage(ICommand):
             if getattr(self, attr) != getattr(other, attr)
         ]
         if self.parameters != other.parameters:
-            data: t.Dict[str, t.Any] = other.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
+            args = copy.deepcopy(other.parameters)
+            del args["id"]
             commands.append(
                 UpdateConfig(
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
-                    data=data,
+                    data=args,
                     command_context=self.command_context,
                 )
             )

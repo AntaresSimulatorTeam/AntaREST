@@ -16,7 +16,7 @@ from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
@@ -114,6 +114,16 @@ class STStorage880Properties(STStorageProperties):
     enabled: bool = Field(default=True, description="Activity status")
 
 
+class STStorage920Properties(STStorage880Properties):
+    """
+    Short term storage configuration model for v9.2 study.
+    """
+
+    # Group can now take any value
+    group: str = Field("other 1")  # type: ignore
+    efficiency_withdrawal: float = Field(1, ge=0, le=1, alias="efficiencywithdrawal")
+
+
 # noinspection SpellCheckingInspection
 class STStorageConfig(STStorageProperties, LowerCaseIdentifier):
     """
@@ -158,9 +168,15 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
     """
 
 
-# NOTE: In the following Union, it is important to place the older version first,
-# because otherwise, creating a short term storage always creates a v8.8 one.
-STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
+class STStorage920Config(STStorage920Properties, LowerCaseIdentifier):
+    """
+    Short Term Storage properties for study in version 9.2 or above.
+    """
+
+
+# todo: The v9.2 has the field group as a string, so the pydantic validation for this union can choose the v9.2 config.
+# We'll have to implement a nice way to handle this in another PR
+STStorageConfigType = t.Union[STStorageConfig, STStorage880Config, STStorage920Config]
 
 
 def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageConfigType]:
@@ -173,7 +189,9 @@ def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageCo
     Returns:
         The short-term storage configuration class.
     """
-    if study_version >= STUDY_VERSION_8_8:
+    if study_version >= STUDY_VERSION_9_2:
+        return STStorage920Config
+    elif study_version >= STUDY_VERSION_8_8:
         return STStorage880Config
     elif study_version >= STUDY_VERSION_8_6:
         return STStorageConfig

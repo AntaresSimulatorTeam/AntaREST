@@ -198,16 +198,16 @@ class TestVariantStudyService:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="fr",
-            parameters=STStorageConfig(
-                id="",  # will be calculated ;-)
-                name="Storage1",
-                group=STStorageGroup.BATTERY,
-                injection_nominal_capacity=1500,
-                withdrawal_nominal_capacity=1500,
-                reservoir_capacity=20000,
-                efficiency=0.94,
-                initial_level_optim=True,
-            ),
+            parameters={
+                "id": "",  # will be calculated ;-)
+                "name": "Storage1",
+                "group": STStorageGroup.BATTERY,
+                "injection_nominal_capacity": 1500,
+                "withdrawal_nominal_capacity": 1500,
+                "reservoir_capacity": 20000,
+                "efficiency": 0.94,
+                "initial_level_optim": True,
+            },
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
         )
