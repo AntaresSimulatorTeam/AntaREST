@@ -165,6 +165,7 @@ class TestSTStorageManager:
                     "efficiency": 0.94,
                     "initialLevel": 0.5,
                     "initialLevelOptim": True,
+                    "efficiencyWithdrawal": None,
                 },
                 {
                     "id": "storage2",
@@ -177,6 +178,7 @@ class TestSTStorageManager:
                     "efficiency": 0.78,
                     "initialLevel": 0.5,
                     "initialLevelOptim": False,
+                    "efficiencyWithdrawal": None,
                 },
                 {
                     "id": "storage3",
@@ -189,6 +191,7 @@ class TestSTStorageManager:
                     "efficiency": 0.72,
                     "initialLevel": 1.0,
                     "initialLevelOptim": False,
+                    "efficiencyWithdrawal": None,
                 },
             ],
         }
@@ -268,6 +271,7 @@ class TestSTStorageManager:
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
                 "enabled": None,
+                "efficiencyWithdrawal": None,
             },
             {
                 "efficiency": 0.78,
@@ -280,6 +284,7 @@ class TestSTStorageManager:
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
                 "enabled": None,
+                "efficiencyWithdrawal": None,
             },
             {
                 "efficiency": 0.72,
@@ -292,6 +297,7 @@ class TestSTStorageManager:
                 "reservoirCapacity": 21000.0,
                 "withdrawalNominalCapacity": 1500.0,
                 "enabled": None,
+                "efficiencyWithdrawal": None,
             },
         ]
         assert actual == expected
@@ -379,6 +385,7 @@ class TestSTStorageManager:
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
             "enabled": None,
+            "efficiencyWithdrawal": None,
         }
         assert actual == expected
 
