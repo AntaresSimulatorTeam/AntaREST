@@ -81,6 +81,7 @@ STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
     STUDY_VERSION_8_6: "empty_study_860.zip",
     STUDY_VERSION_8_7: "empty_study_870.zip",
     STUDY_VERSION_8_8: "empty_study_880.zip",
+    STUDY_VERSION_9_2: "empty_study_920.zip",
 }
 
 
