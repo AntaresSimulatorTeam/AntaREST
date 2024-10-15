@@ -100,6 +100,7 @@ class AdvancedParamsFormFields(FormFieldsBaseModel):
     seed_thermal_costs: StrictInt
     seed_hydro_costs: StrictInt
     seed_initial_reservoir_levels: StrictInt
+    hydro_pmax_format: str
 
     @field_validator("accuracy_on_correlation")
     def check_accuracy_on_correlation(cls, v: str) -> str:
