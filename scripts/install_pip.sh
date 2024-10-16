@@ -2,5 +2,5 @@
 
 set -e
 
-python3 -m venv /debug_env
-source /debug_env/bin/activate
+python3 -m venv venv_test
+source venv_test/bin/activate
