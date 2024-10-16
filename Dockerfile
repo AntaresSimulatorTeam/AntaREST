@@ -16,6 +16,6 @@ COPY ./scripts /scripts
 COPY ./alembic /alembic
 COPY ./alembic.ini /alembic.ini
 
-RUN python3 -m pip install --upgrade pip && python3 -m pip install -r /conf/requirements.txt
+RUN ./scripts/install_pip.sh
 
 ENTRYPOINT ["./scripts/start.sh"]
