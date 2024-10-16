@@ -18,8 +18,8 @@ COPY ./alembic.ini /alembic.ini
 
 RUN chmod +x /scripts/install-debug.sh && ./scripts/install-debug.sh
 
-RUN python3.11 -m pip install --upgrade --force-reinstall pip
+RUN python3.11 -m pip3 install --upgrade --force-reinstall pip
 
-RUN python3.11 -m pip install -r /conf/requirements.txt
+RUN python3.11 -m pip3 install -r /conf/requirements.txt
 
 ENTRYPOINT ["./scripts/start.sh"]
