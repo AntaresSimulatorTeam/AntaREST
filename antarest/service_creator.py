@@ -105,7 +105,7 @@ def init_db_engine(
         if config.db.pool_use_lifo:
             extra["pool_use_lifo"] = config.db.pool_use_lifo
 
-    engine = create_engine(config.db.db_url, echo=True, connect_args=connect_args, **extra)
+    engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
 
     return engine
 
