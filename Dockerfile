@@ -18,4 +18,6 @@ COPY ./alembic.ini /alembic.ini
 
 RUN chmod 777 /scripts/install-debug.sh && ./scripts/install-debug.sh
 
+RUN pip3 install --upgrade --force-reinstall pip && pip3 install -r /conf/requirements.txt
+
 ENTRYPOINT ["./scripts/start.sh"]
