@@ -20,6 +20,7 @@ from pathlib import Path
 from time import sleep, time
 from typing import List, Optional
 
+from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 from filelock import FileLock
 
 from antarest.core.config import Config
@@ -130,6 +131,10 @@ class Watcher(IService):
         try:
             if (path / "AW_NO_SCAN").exists():
                 logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
+                return []
+
+            if is_temporary_upgrade_dir(path):
+                logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
                 return []
 
             if (path / "study.antares").exists():
