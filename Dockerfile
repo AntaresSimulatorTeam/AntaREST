@@ -16,7 +16,7 @@ COPY ./scripts /scripts
 COPY ./alembic /alembic
 COPY ./alembic.ini /alembic.ini
 
-RUN ./scripts/install_pip.sh
+RUN ./scripts/install-debug.sh
 
 RUN pip install --upgrade pip && pip install -r /conf/requirements.txt
 
