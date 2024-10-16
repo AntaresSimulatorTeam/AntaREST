@@ -44,7 +44,9 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
+from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.web.explorer_blueprint import create_explorer_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.simulator_worker import SimulatorWorker
@@ -103,7 +105,7 @@ def init_db_engine(
         if config.db.pool_use_lifo:
             extra["pool_use_lifo"] = config.db.pool_use_lifo
 
-    engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
+    engine = create_engine(config.db.db_url, echo=True, connect_args=connect_args, **extra)
 
     return engine
 
@@ -127,9 +129,15 @@ def create_event_bus(app_ctxt: t.Optional[AppBuildContext], config: Config) -> t
     )
 
 
-def create_core_services(
-    app_ctxt: t.Optional[AppBuildContext], config: Config
-) -> t.Tuple[ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService,]:
+def create_core_services(app_ctxt: t.Optional[AppBuildContext], config: Config) -> t.Tuple[
+    ICache,
+    IEventBus,
+    ITaskService,
+    FileTransferManager,
+    LoginService,
+    MatrixService,
+    StudyService,
+]:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
     filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
@@ -187,6 +195,14 @@ def create_watcher(
         app_ctxt.api_root.include_router(create_watcher_routes(watcher=watcher, config=config))
 
     return watcher
+
+
+def create_explorer(config: Config, app_ctxt: t.Optional[AppBuildContext]) -> t.Any:
+    explorer = Explorer(config=config)
+    if app_ctxt:
+        app_ctxt.api_root.include_router(create_explorer_routes(config=config, explorer=explorer))
+
+    return explorer
 
 
 def create_matrix_gc(
@@ -260,6 +276,9 @@ def create_services(
 
     watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=study_service)
     services["watcher"] = watcher
+
+    explorer_service = create_explorer(config=config, app_ctxt=app_ctxt)
+    services["explorer"] = explorer_service
 
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = create_matrix_gc(
