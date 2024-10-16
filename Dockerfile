@@ -16,7 +16,7 @@ COPY ./scripts /scripts
 COPY ./alembic /alembic
 COPY ./alembic.ini /alembic.ini
 
-RUN chmod 777 /scripts/install-debug.sh && ./scripts/install-debug.sh
+RUN chmod +x /scripts/install-debug.sh && ./scripts/install-debug.sh
 
 RUN pip install --upgrade --force-reinstall pip && pip install -r /conf/requirements.txt
 
