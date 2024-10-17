@@ -12,7 +12,7 @@
 
 import dataclasses
 import logging
-from enum import Enum
+from enum import StrEnum
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -32,7 +32,7 @@ from antarest.login.auth import Auth
 logger = logging.getLogger(__name__)
 
 
-class WebsocketMessageAction(str, Enum):
+class WebsocketMessageAction(StrEnum):
     SUBSCRIBE = "SUBSCRIBE"
     UNSUBSCRIBE = "UNSUBSCRIBE"
 

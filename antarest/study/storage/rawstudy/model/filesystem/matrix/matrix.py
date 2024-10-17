@@ -12,7 +12,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
@@ -27,7 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 logger = logging.getLogger(__name__)
 
 
-class MatrixFrequency(str, Enum):
+class MatrixFrequency(StrEnum):
     """
     An enumeration of matrix frequencies.
 

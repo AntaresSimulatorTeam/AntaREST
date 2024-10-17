@@ -37,7 +37,7 @@ Ruleset: te.TypeAlias = t.MutableMapping[str, t.Any]
 Rulesets: te.TypeAlias = t.MutableMapping[str, Ruleset]
 
 
-class ScenarioType(str, enum.Enum):
+class ScenarioType(enum.StrEnum):
     """
     Scenario type
 
