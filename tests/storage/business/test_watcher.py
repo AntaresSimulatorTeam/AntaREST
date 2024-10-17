@@ -137,6 +137,11 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
     upgrade_folder.mkdir(parents=True)
     (upgrade_folder / "study.antares").touch()
 
+    # create a temporary ts gen folder
+    ts_gen_folder = default / "folder/~ts_gen_folder.study.thermal_timeseries_gen.tmp"
+    ts_gen_folder.mkdir(parents=True)
+    (ts_gen_folder / "study.antares").touch()
+
     # study to be skipped because we check only the `default directory`
     diese = tmp_path / "diese"
     diese.mkdir()
@@ -172,8 +177,9 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
         assert groups[0].name == "toto"
         assert call.args[1] == tmp_path / "test"
 
-    # verify that `upgrade_folder` has been skipped
+    # verify that `upgrade_folder` and `ts_gen_folder`  have been skipped
     assert f"Upgrade temporary folder found. Will skip further scan of folder {upgrade_folder}" in caplog.text
+    assert f"TS generation temporary folder found. Will skip further scan of folder {ts_gen_folder}" in caplog.text
 
 
 def process(x: int) -> bool:
