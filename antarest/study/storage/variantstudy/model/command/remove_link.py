@@ -45,7 +45,7 @@ class RemoveLink(ICommand):
     def _validate_id(cls, area: str) -> str:
         if isinstance(area, str):
             # Area IDs must be in lowercase and not empty.
-            area_id = transform_name_to_id(area, lower=True)
+            area_id = transform_name_to_id(area)
             if area_id:
                 return area_id
             # Valid characters are `[a-zA-Z0-9_(),& -]` (including space).

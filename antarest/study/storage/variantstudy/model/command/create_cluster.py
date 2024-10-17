@@ -53,10 +53,17 @@ class CreateCluster(ICommand):
 
     @field_validator("cluster_name", mode="before")
     def validate_cluster_name(cls, val: str) -> str:
-        valid_name = transform_name_to_id(val, lower=False)
-        if valid_name != val:
+        to_return = transform_name_to_id(val)
+        if not to_return:
             raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-        return val
+        return to_return
+
+    @field_validator("parameters", mode="before")
+    def lower_cluster_group_and_names(cls, params: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        for key in ["name", "group"]:
+            if key in params:
+                params[key] = params[key].lower()
+        return params
 
     @field_validator("prepro", mode="before")
     def validate_prepro(
@@ -197,7 +204,7 @@ class CreateCluster(ICommand):
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         # Series identifiers are in lower case.
-        series_id = transform_name_to_id(self.cluster_name, lower=True)
+        series_id = transform_name_to_id(self.cluster_name)
         commands: t.List[ICommand] = []
         if self.prepro != other.prepro:
             commands.append(
