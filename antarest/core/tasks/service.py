@@ -69,6 +69,7 @@ class ITaskService(ABC):
         name: t.Optional[str],
         task_type: t.Optional[TaskType],
         ref_id: t.Optional[str],
+        progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
@@ -193,7 +194,7 @@ class TaskJobService(ITaskService):
             logger.warning(f"Failed to find configured remote worker for task queue {task_queue}")
             return None
 
-        task = self._create_task(name, task_type, ref_id, request_params)
+        task = self._create_task(name, task_type, ref_id, None, request_params)
         self._launch_task(
             self._create_worker_task(str(task.id), task_queue, task_args),
             task,
@@ -208,10 +209,11 @@ class TaskJobService(ITaskService):
         name: t.Optional[str],
         task_type: t.Optional[TaskType],
         ref_id: t.Optional[str],
+        progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
-        task = self._create_task(name, task_type, ref_id, request_params)
+        task = self._create_task(name, task_type, ref_id, progress, request_params)
         self._launch_task(action, task, custom_event_messages, request_params)
         return str(task.id)
 
@@ -220,6 +222,7 @@ class TaskJobService(ITaskService):
         name: t.Optional[str],
         task_type: t.Optional[TaskType],
         ref_id: t.Optional[str],
+        progress: t.Optional[int],
         request_params: RequestParameters,
     ) -> TaskJob:
         if not request_params.user:
@@ -231,6 +234,7 @@ class TaskJobService(ITaskService):
                 owner_id=request_params.user.impersonator,
                 type=task_type,
                 ref_id=ref_id,
+                progress=progress,
             )
         )
 
@@ -437,3 +441,11 @@ class TaskJobService(ITaskService):
                     channel=EventChannelDirectory.TASK + task_id,
                 )
             )
+
+    def get_task_progress(self, task_id: str, params: RequestParameters) -> t.Optional[int]:
+        task = self.repo.get_or_raise(task_id)
+        user = params.user
+        if user and (user.is_site_admin() or user.is_admin_token() or task.owner_id == user.impersonator):
+            return task.progress
+        else:
+            raise UserHasNotPermissionError()
