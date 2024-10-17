@@ -22,7 +22,7 @@ class Explorer:
     def list_dir(
         self,
         workspace_name: str,
-        workspace_directory_path: Optional[str] = None,
+        workspace_directory_path: str,
     ) -> List[NonStudyFolder]:
         """
         return a list of all directories under workspace_directory_path, that aren't studies.
