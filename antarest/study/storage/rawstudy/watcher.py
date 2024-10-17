@@ -34,6 +34,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
 from antarest.study.service import StudyService
+from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import is_ts_gen_tmp_dir
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,10 @@ class Watcher(IService):
 
             if is_temporary_upgrade_dir(path):
                 logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
+                return []
+
+            if is_ts_gen_tmp_dir(path):
+                logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
                 return []
 
             if (path / "study.antares").exists():
