@@ -297,7 +297,7 @@ function EditionView(props: Props) {
 
   const fetchTask = useCallback(async () => {
     if (generationStatus && generationTaskId) {
-      const tmpTask = await getTask(generationTaskId);
+      const tmpTask = await getTask({ id: generationTaskId });
       if (isTaskFinal(tmpTask)) {
         setGenerationStatus(false);
         setGenerationTaskId(undefined);
@@ -343,7 +343,7 @@ function EditionView(props: Props) {
         if (task.logs === undefined || task.logs.length === 0) {
           if (!isFinal) {
             currentIndex = 0;
-          } else if (task.status !== TaskStatus.COMPLETED) {
+          } else if (task.status !== TaskStatus.completed) {
             debouncedFailureNotification();
           }
         } else {

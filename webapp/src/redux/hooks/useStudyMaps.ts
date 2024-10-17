@@ -25,7 +25,10 @@ import {
 } from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
 import { Response } from "../../components/common/utils/UsePromiseCond";
-import usePromise, { PromiseStatus } from "../../hooks/usePromise";
+import usePromise, {
+  PromiseStatus,
+  type TPromiseStatus,
+} from "../../hooks/usePromise";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];
@@ -36,7 +39,7 @@ export default function useStudyMaps<T>({
   studyId,
   selector,
 }: Props<T>): Response<T> {
-  const [status, setStatus] = useState(PromiseStatus.Idle);
+  const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Response["error"]>();
   const dispatch = useAppDispatch();
   const synthesis = useStudySynthesis({ studyId });
@@ -51,7 +54,7 @@ export default function useStudyMaps<T>({
       return;
     }
 
-    if (synthesis.status !== PromiseStatus.Resolved) {
+    if (synthesis.status !== PromiseStatus.Fulfilled) {
       setStatus(PromiseStatus.Pending);
       return;
     }
@@ -74,7 +77,7 @@ export default function useStudyMaps<T>({
         ]);
       }
 
-      setStatus(PromiseStatus.Resolved);
+      setStatus(PromiseStatus.Fulfilled);
     } catch (err) {
       setError(err as Error);
       setStatus(PromiseStatus.Rejected);

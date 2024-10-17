@@ -123,7 +123,7 @@ function MatrixAssignDialog(props: Props) {
     >
       <UsePromiseCond
         response={resList}
-        ifResolved={(dataset) =>
+        ifFulfilled={(dataset) =>
           dataset && (
             <SplitView id="matrix-assign" sizes={[20, 80]}>
               <DataPropsView
@@ -161,7 +161,7 @@ function MatrixAssignDialog(props: Props) {
                 )}
                 <UsePromiseCond
                   response={resMatrix}
-                  ifResolved={(matrix) =>
+                  ifFulfilled={(matrix) =>
                     matrix && (
                       <>
                         <Box

@@ -20,7 +20,12 @@ import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
-import { TaskEventPayload, WSEvent, WSMessage } from "../../../common/types";
+import {
+  TaskEventPayload,
+  TaskType,
+  WSEvent,
+  WSMessage,
+} from "../../../common/types";
 import { getTask } from "../../../services/api/tasks";
 import { addWsMessageListener } from "../../../services/webSockets";
 import {
@@ -57,7 +62,7 @@ function NotificationBadge(props: Props) {
   );
 
   useEffect(() => {
-    const listener = async (ev: WSMessage) => {
+    const listener = async (ev: WSMessage<TaskEventPayload>) => {
       if (ev.type === WSEvent.DOWNLOAD_CREATED) {
         newNotification("downloads.newDownload");
       } else if (ev.type === WSEvent.DOWNLOAD_READY) {
@@ -65,19 +70,20 @@ function NotificationBadge(props: Props) {
       } else if (ev.type === WSEvent.DOWNLOAD_FAILED) {
         newNotification("study.error.exportOutput", "error");
       } else if (ev.type === WSEvent.TASK_ADDED) {
-        const taskId = (ev.payload as TaskEventPayload).id;
         try {
-          const task = await getTask(taskId);
-          if (task.type === "COPY") {
+          const task = await getTask({ id: ev.payload.id });
+          if (task.type === TaskType.copy) {
             newNotification("studies.studycopying");
-          } else if (task.type === "ARCHIVE") {
+          } else if (task.type === TaskType.archive) {
             newNotification("studies.studyarchiving");
-          } else if (task.type === "UNARCHIVE") {
+          } else if (task.type === TaskType.unarchive) {
             newNotification("studies.studyunarchiving");
-          } else if (task.type === "SCAN") {
+          } else if (task.type === TaskType.scan) {
             newNotification("studies.success.scanFolder");
-          } else if (task.type === "UPGRADE_STUDY") {
+          } else if (task.type === TaskType.upgradeStudy) {
             newNotification("study.message.upgradeInProgress");
+          } else if (task.type === TaskType.thermalClusterSeriesGeneration) {
+            newNotification("study.message.tsGenerationInProgress");
           }
         } catch (error) {
           logError(error);

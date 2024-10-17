@@ -284,7 +284,7 @@ function ResultDetails() {
               ifPending={() => (
                 <Skeleton sx={{ height: 1, transform: "none" }} />
               )}
-              ifResolved={(matrix) =>
+              ifFulfilled={(matrix) =>
                 matrix && (
                   <EditableMatrix
                     matrix={matrix}
@@ -412,7 +412,7 @@ function ResultDetails() {
                 ifPending={() => (
                   <Skeleton sx={{ height: 1, transform: "none" }} />
                 )}
-                ifResolved={([, matrix]) =>
+                ifFulfilled={([, matrix]) =>
                   matrix && (
                     <EditableMatrix
                       matrix={matrix}
