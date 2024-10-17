@@ -293,6 +293,12 @@ class TestTableMode:
                 "usePhaseShifter": False,
             },
         }
+        # removes filter fields for study version prior to v8.2
+        if study_version < 820:
+            for key in expected_links:
+                del expected_links[key]["filterSynthesis"]
+                del expected_links[key]["filterYearByYear"]
+
         # asserts actual equals expected without the non-updated link.
         actual = res.json()
         expected_result = copy.deepcopy(expected_links)
