@@ -133,7 +133,7 @@ class Watcher(IService):
                 logger.debug(f"Study {path.name} found in {workspace}")
                 return [StudyFolder(path, workspace, groups)]
 
-            if max_depth is not None and max_depth == 0:
+            if max_depth is not None and max_depth <= 0:
                 logger.info(f"Scan was configured to not go any deeper")
                 return []
 
@@ -141,14 +141,14 @@ class Watcher(IService):
                 folders: List[StudyFolder] = list()
                 if path.is_dir():
                     for child in path.iterdir():
+                        if max_depth is not None:
+                            max_depth = max_depth - 1
                         try:
                             if (
                                 (child.is_dir())
                                 and any([re.search(regex, child.name) for regex in filter_in])
                                 and not any([re.search(regex, child.name) for regex in filter_out])
                             ):
-                                if max_depth is not None:
-                                    max_depth = max_depth - 1
                                 folders = folders + self._rec_scan(
                                     child, workspace, groups, filter_in, filter_out, max_depth
                                 )
