@@ -166,6 +166,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
         None,
         None,
         None,
+        None,
         request_params=RequestParameters(user=admin_user),
     )
     service.await_task(ok_id, timeout_sec=2)
