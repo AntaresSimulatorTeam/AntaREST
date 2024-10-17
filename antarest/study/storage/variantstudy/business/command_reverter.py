@@ -95,6 +95,10 @@ class CommandReverter:
         ]
 
     @staticmethod
+    def _revert_update_link(base_command: CreateLink, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for UpdateLink is not available")
+
+    @staticmethod
     def _revert_remove_link(base_command: RemoveLink, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
         raise NotImplementedError("The revert function for RemoveLink is not available")
 
