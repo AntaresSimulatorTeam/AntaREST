@@ -33,7 +33,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def _update_matrices_names(
+def update_matrices_names(
     file_study: FileStudy,
     bc_id: str,
     existing_operator: BindingConstraintOperator,
@@ -170,7 +170,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         if self.operator and study_version >= STUDY_VERSION_8_7:
             existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
             new_operator = self.operator
-            _update_matrices_names(study_data, self.id, existing_operator, new_operator)
+            update_matrices_names(study_data, self.id, existing_operator, new_operator)
 
         self._apply_config(study_data.config)
 
