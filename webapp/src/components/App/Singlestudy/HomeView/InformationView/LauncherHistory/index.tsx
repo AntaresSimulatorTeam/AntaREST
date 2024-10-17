@@ -38,7 +38,7 @@ import {
 } from "../../../../../../services/webSockets";
 import JobStepper from "./JobStepper";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getProgress } from "../../../../../../services/api/tasks";
+import { getJobProgress } from "../../../../../../services/api/launcher";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -118,7 +118,7 @@ function LauncherHistory(props: Props) {
               .filter((o) => o.status === "running")
               .map(async (item) => ({
                 id: item.id,
-                progress: await getProgress(item.id),
+                progress: await getJobProgress({ id: item.id }),
               })),
           );
 

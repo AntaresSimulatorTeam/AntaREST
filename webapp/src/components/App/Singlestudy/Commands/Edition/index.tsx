@@ -51,7 +51,6 @@ import {
   WSMessage,
   CommandResultDTO,
   TaskEventPayload,
-  TaskStatus,
 } from "../../../../../common/types";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
@@ -66,6 +65,7 @@ import {
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
 import EmptyView from "../../../../common/page/SimpleContent";
+import { TaskStatus } from "../../../../../services/api/tasks/constants";
 
 const logError = debug("antares:variantedition:error");
 
@@ -297,7 +297,7 @@ function EditionView(props: Props) {
 
   const fetchTask = useCallback(async () => {
     if (generationStatus && generationTaskId) {
-      const tmpTask = await getTask(generationTaskId);
+      const tmpTask = await getTask({ id: generationTaskId });
       if (isTaskFinal(tmpTask)) {
         setGenerationStatus(false);
         setGenerationTaskId(undefined);
@@ -343,7 +343,7 @@ function EditionView(props: Props) {
         if (task.logs === undefined || task.logs.length === 0) {
           if (!isFinal) {
             currentIndex = 0;
-          } else if (task.status !== TaskStatus.COMPLETED) {
+          } else if (task.status !== TaskStatus.Completed) {
             debouncedFailureNotification();
           }
         } else {
