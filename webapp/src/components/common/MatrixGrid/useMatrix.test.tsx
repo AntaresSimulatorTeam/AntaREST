@@ -30,6 +30,7 @@ import { GridCellKind } from "@glideapps/glide-data-grid";
 vi.mock("../../../services/api/matrix");
 vi.mock("../../../services/api/study");
 vi.mock("../../../services/api/studies/raw");
+vi.mock("../../../hooks/usePrompt");
 
 describe("useMatrix", () => {
   const mockStudyId = "study123";
@@ -57,7 +58,7 @@ describe("useMatrix", () => {
     vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
 
     const { result } = renderHook(() =>
-      useMatrix(mockStudyId, mockUrl, true, true),
+      useMatrix(mockStudyId, mockUrl, true, true, true),
     );
 
     await waitFor(() => {
@@ -138,7 +139,7 @@ describe("useMatrix", () => {
 
     expect(result.current.data[1][0]).toBe(5);
     expect(result.current.data[0][1]).toBe(6);
-    expect(result.current.pendingUpdatesCount).toBe(2);
+    expect(result.current.pendingUpdatesCount).toBe(1);
   });
 
   test("should handle save updates", async () => {

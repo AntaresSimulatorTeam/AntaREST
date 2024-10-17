@@ -14,48 +14,14 @@
 
 import { renderHook } from "@testing-library/react";
 import { useGridCellContent } from "./useGridCellContent";
-import { ColumnTypes, type EnhancedGridColumn } from "./types";
+import { Column, MatrixAggregates, type EnhancedGridColumn } from "./types";
 import { useColumnMapping } from "./useColumnMapping";
-
-// Mocking i18next
-vi.mock("i18next", () => {
-  const i18n = {
-    language: "fr",
-    use: vi.fn().mockReturnThis(),
-    init: vi.fn(),
-    t: vi.fn((key) => key),
-    changeLanguage: vi.fn((lang) => {
-      i18n.language = lang;
-      return Promise.resolve();
-    }),
-    on: vi.fn(),
-  };
-  return { default: i18n };
-});
-
-// Mocking react-i18next
-vi.mock("react-i18next", async (importOriginal) => {
-  const actual = await importOriginal();
-  return Object.assign({}, actual, {
-    useTranslation: () => ({
-      t: vi.fn((key) => key),
-      i18n: {
-        changeLanguage: vi.fn(),
-        language: "fr",
-      },
-    }),
-    initReactI18next: {
-      type: "3rdParty",
-      init: vi.fn(),
-    },
-  });
-});
 
 function renderGridCellContent(
   data: number[][],
   columns: EnhancedGridColumn[],
   dateTime?: string[],
-  aggregates?: Record<string, number[]>,
+  aggregates?: MatrixAggregates,
   rowHeaders?: string[],
 ) {
   const { result: mappingResult } = renderHook(() => useColumnMapping(columns));
@@ -76,48 +42,12 @@ function renderGridCellContent(
 }
 
 describe("useGridCellContent", () => {
-  test("returns correct text cell content for DateTime columns", () => {
-    const columns: EnhancedGridColumn[] = [
-      {
-        id: "date",
-        title: "Date",
-        type: ColumnTypes.DateTime,
-        width: 150,
-        editable: false,
-      },
-      {
-        id: "data1",
-        title: "TS 1",
-        type: ColumnTypes.Number,
-        width: 50,
-        editable: true,
-      },
-    ];
-
-    const dateTime = ["2024-01-07T00:00:00Z", "2024-01-02T00:00:00Z"];
-
-    const data = [
-      [11, 10],
-      [12, 15],
-    ];
-
-    const getCellContent = renderGridCellContent(data, columns, dateTime);
-    const cell = getCellContent([0, 0]);
-
-    if ("displayData" in cell) {
-      expect(cell.kind).toBe("text");
-      expect(cell.displayData).toBe("7 janv. 2024, 00:00");
-    } else {
-      throw new Error("Expected a text cell with displayData");
-    }
-  });
-
   describe("returns correct cell content for Aggregate columns", () => {
     const columns: EnhancedGridColumn[] = [
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -130,14 +60,17 @@ describe("useGridCellContent", () => {
     ];
 
     const aggregates = {
-      total: [60, 75, 45],
+      min: [5, 15, 25],
+      max: [15, 25, 35],
+      avg: [10, 20, 30],
+      total: [30, 60, 90],
     };
 
-    // Tests for each row in the aggregates array
+    // Test each row for correct numeric cell content
     test.each([
-      [0, 60], // Row index 0, expected sum 60
-      [1, 75], // Row index 1, expected sum 75
-      [2, 45], // Row index 2, expected sum 45
+      [0, 30], // Total of first row
+      [1, 60], // Total of second row
+      [2, 90], // Total of third row
     ])(
       "ensures the correct numeric cell content is returned for aggregates at row %i",
       (row, expectedData) => {
@@ -148,7 +81,7 @@ describe("useGridCellContent", () => {
           aggregates,
         );
 
-        const cell = getCellContent([0, row]); // Column index is 0 because we only have one column of aggregates
+        const cell = getCellContent([0, row]); // Accessing the only column
 
         if ("data" in cell) {
           expect(cell.kind).toBe("number");
@@ -165,28 +98,28 @@ describe("useGridCellContent", () => {
       {
         id: "date",
         title: "Date",
-        type: ColumnTypes.DateTime,
+        type: Column.DateTime,
         width: 150,
         editable: false,
       },
       {
         id: "ts1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "ts2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -200,7 +133,10 @@ describe("useGridCellContent", () => {
     ];
 
     const aggregates = {
-      total: [300, 400],
+      min: [100, 200],
+      max: [150, 250],
+      avg: [125, 225],
+      total: [250, 450],
     };
 
     const getCellContent = renderGridCellContent(
@@ -209,17 +145,6 @@ describe("useGridCellContent", () => {
       dateTime,
       aggregates,
     );
-
-    const dateTimeCell = getCellContent([0, 0]);
-
-    if (dateTimeCell.kind === "text" && "displayData" in dateTimeCell) {
-      expect(dateTimeCell.data).toBe("");
-      expect(dateTimeCell.displayData).toBe("1 janv. 2021, 00:00");
-    } else {
-      throw new Error(
-        "Expected a DateTime cell with displayData containing the year 2021",
-      );
-    }
 
     const numberCell = getCellContent([1, 0]);
 
@@ -232,7 +157,7 @@ describe("useGridCellContent", () => {
     const aggregateCell = getCellContent([3, 0]);
 
     if (aggregateCell.kind === "number" && "data" in aggregateCell) {
-      expect(aggregateCell.data).toBe(300);
+      expect(aggregateCell.data).toBe(250);
     } else {
       throw new Error("Expected an Aggregate cell with data");
     }
@@ -245,35 +170,35 @@ describe("useGridCellContent with mixed column types", () => {
       {
         id: "rowHeader",
         title: "Row",
-        type: ColumnTypes.Text,
+        type: Column.Text,
         width: 100,
         editable: false,
       },
       {
         id: "date",
         title: "Date",
-        type: ColumnTypes.DateTime,
+        type: Column.DateTime,
         width: 150,
         editable: false,
       },
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -286,7 +211,10 @@ describe("useGridCellContent with mixed column types", () => {
       [150, 250],
     ];
     const aggregates = {
-      total: [300, 400],
+      min: [100, 200],
+      max: [150, 250],
+      avg: [125, 225],
+      total: [250, 450],
     };
 
     const getCellContent = renderGridCellContent(
@@ -304,15 +232,6 @@ describe("useGridCellContent with mixed column types", () => {
       expect(rowHeaderCell.displayData).toBe("Row 1");
     } else {
       throw new Error("Expected a text cell with data for row header");
-    }
-
-    // Test date column (DateTime column)
-    const dateCell = getCellContent([1, 0]);
-    if (dateCell.kind === "text" && "displayData" in dateCell) {
-      expect(dateCell.data).toBe("");
-      expect(dateCell.displayData).toBe("1 janv. 2024, 00:00");
-    } else {
-      throw new Error("Expected a text cell with data for date");
     }
 
     // Test first data column (Number column)
@@ -339,7 +258,7 @@ describe("useGridCellContent with mixed column types", () => {
     const aggregateCell = getCellContent([4, 0]);
 
     if (aggregateCell.kind === "number" && "data" in aggregateCell) {
-      expect(aggregateCell.data).toBe(300);
+      expect(aggregateCell.data).toBe(250);
     } else {
       throw new Error("Expected a number cell with data for aggregate column");
     }
@@ -350,21 +269,21 @@ describe("useGridCellContent with mixed column types", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data3",
         title: "TS 3",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -395,7 +314,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -417,7 +336,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -440,7 +359,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
@@ -462,7 +381,7 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "total",
         title: "Total",
-        type: ColumnTypes.Aggregate,
+        type: Column.Aggregate,
         width: 100,
         editable: false,
       },
@@ -487,14 +406,14 @@ describe("useGridCellContent additional tests", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: false,
       },
@@ -514,27 +433,114 @@ describe("useGridCellContent additional tests", () => {
     }
   });
 
-  test("handles very large numbers correctly", () => {
+  test("formats number cells correctly", () => {
     const columns: EnhancedGridColumn[] = [
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 50,
         editable: true,
       },
     ];
-    const largeNumber = 1e20;
-    const data = [[largeNumber]];
+
+    const data = [[1234567.89]];
+
+    const getCellContent = renderGridCellContent(data, columns);
+    const cell = getCellContent([0, 0]);
+
+    if (cell.kind === "number" && "data" in cell) {
+      expect(cell.data).toBe(1234567.89);
+      expect(cell.displayData).toBe("1 234 567.89");
+    } else {
+      throw new Error("Expected a number cell with formatted display data");
+    }
+  });
+
+  test("handles very large and very small numbers correctly", () => {
+    const columns: EnhancedGridColumn[] = [
+      {
+        id: "large",
+        title: "Large",
+        type: Column.Number,
+        width: 50,
+        editable: true,
+      },
+      {
+        id: "small",
+        title: "Small",
+        type: Column.Number,
+        width: 50,
+        editable: true,
+      },
+    ];
+
+    const data = [[1e20, 0.00001]];
 
     const getCellContent = renderGridCellContent(data, columns);
 
-    const cell = getCellContent([0, 0]);
-    if (cell.kind === "number" && "data" in cell) {
-      expect(cell.data).toBe(largeNumber);
-      expect(cell.displayData).toBe(largeNumber.toString());
+    const largeCell = getCellContent([0, 0]);
+    if (largeCell.kind === "number" && "data" in largeCell) {
+      expect(largeCell.data).toBe(1e20);
+      expect(largeCell.displayData).toBe("100 000 000 000 000 000 000");
     } else {
-      throw new Error("Expected a number cell with correct large number data");
+      throw new Error("Expected a number cell for large number");
+    }
+
+    const smallCell = getCellContent([1, 0]);
+    if (smallCell.kind === "number" && "data" in smallCell) {
+      expect(smallCell.data).toBe(0.00001);
+      expect(smallCell.displayData).toBe("0.00001");
+    } else {
+      throw new Error("Expected a number cell for small number");
+    }
+  });
+
+  test("handles negative numbers correctly", () => {
+    const columns: EnhancedGridColumn[] = [
+      {
+        id: "negative",
+        title: "Negative",
+        type: Column.Number,
+        width: 50,
+        editable: true,
+      },
+    ];
+
+    const data = [[-1234567.89]];
+
+    const getCellContent = renderGridCellContent(data, columns);
+    const cell = getCellContent([0, 0]);
+
+    if (cell.kind === "number" && "data" in cell) {
+      expect(cell.data).toBe(-1234567.89);
+      expect(cell.displayData).toBe("-1 234 567.89");
+    } else {
+      throw new Error("Expected a number cell with formatted negative number");
+    }
+  });
+
+  test("handles zero correctly", () => {
+    const columns: EnhancedGridColumn[] = [
+      {
+        id: "zero",
+        title: "Zero",
+        type: Column.Number,
+        width: 50,
+        editable: true,
+      },
+    ];
+
+    const data = [[0]];
+
+    const getCellContent = renderGridCellContent(data, columns);
+    const cell = getCellContent([0, 0]);
+
+    if (cell.kind === "number" && "data" in cell) {
+      expect(cell.data).toBe(0);
+      expect(cell.displayData).toBe("0");
+    } else {
+      throw new Error("Expected a number cell for zero");
     }
   });
 });

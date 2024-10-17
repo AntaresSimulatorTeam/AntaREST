@@ -18,12 +18,13 @@ import DataEditor, {
   EditableGridCell,
   EditListItem,
   GridCellKind,
+  GridColumn,
   GridSelection,
   Item,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "./useGridCellContent";
 import { useMemo, useState } from "react";
-import { EnhancedGridColumn, GridUpdate } from "./types";
+import { EnhancedGridColumn, GridUpdate, MatrixAggregates } from "./types";
 import { darkTheme, readOnlyDarkTheme } from "./utils";
 import { useColumnMapping } from "./useColumnMapping";
 
@@ -32,19 +33,20 @@ export interface MatrixGridProps {
   rows: number;
   columns: EnhancedGridColumn[];
   dateTime?: string[];
-  aggregates?: Record<string, number[]>;
+  aggregates?: Partial<MatrixAggregates>;
   rowHeaders?: string[];
   width?: string;
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
-  readOnly?: boolean;
+  isReadOnlyEnabled?: boolean;
+  isPercentDisplayEnabled?: boolean;
 }
 
 function MatrixGrid({
   data,
   rows,
-  columns,
+  columns: initialColumns,
   dateTime,
   aggregates,
   rowHeaders,
@@ -52,8 +54,10 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
-  readOnly = false,
+  isReadOnlyEnabled,
+  isPercentDisplayEnabled,
 }: MatrixGridProps) {
+  const [columns, setColumns] = useState<EnhancedGridColumn[]>(initialColumns);
   const [selection, setSelection] = useState<GridSelection>({
     columns: CompactSelection.empty(),
     rows: CompactSelection.empty(),
@@ -62,7 +66,7 @@ function MatrixGrid({
   const { gridToData } = useColumnMapping(columns);
 
   const theme = useMemo(() => {
-    if (readOnly) {
+    if (isReadOnlyEnabled) {
       return {
         ...darkTheme,
         ...readOnlyDarkTheme,
@@ -70,7 +74,7 @@ function MatrixGrid({
     }
 
     return darkTheme;
-  }, [readOnly]);
+  }, [isReadOnlyEnabled]);
 
   const getCellContent = useGridCellContent(
     data,
@@ -79,12 +83,26 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
-    readOnly,
+    isReadOnlyEnabled,
+    isPercentDisplayEnabled,
   );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+
+  const handleColumnResize = (
+    column: GridColumn,
+    newSize: number,
+    colIndex: number,
+    newSizeWithGrow: number,
+  ) => {
+    const newColumns = columns.map((col, index) =>
+      index === colIndex ? { ...col, width: newSize } : col,
+    );
+
+    setColumns(newColumns);
+  };
 
   const handleCellEdited = (coordinates: Item, value: EditableGridCell) => {
     if (value.kind !== GridCellKind.Number) {
@@ -152,10 +170,19 @@ function MatrixGrid({
         onCellsEdited={handleCellsEdited}
         gridSelection={selection}
         onGridSelectionChange={setSelection}
-        getCellsForSelection // Enable copy support
-        onPaste
+        keybindings={{ paste: false, copy: false }}
+        getCellsForSelection // TODO handle large copy/paste using this
         fillHandle
+        allowedFillDirections="any"
         rowMarkers="both"
+        freezeColumns={1} // Make the first column sticky
+        onColumnResize={handleColumnResize}
+        smoothScrollX
+        smoothScrollY
+        rowHeight={30}
+        verticalBorder={false}
+        overscrollX={100}
+        overscrollY={100}
       />
       <div id="portal" />
     </>

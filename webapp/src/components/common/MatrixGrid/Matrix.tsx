@@ -23,19 +23,37 @@ import { StudyMetadata } from "../../../common/types";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./style";
 import MatrixActions from "./MatrixActions";
 import EmptyView from "../page/SimpleContent";
+import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import { AggregateConfig } from "./types";
 
 interface MatrixProps {
   url: string;
   title?: string;
+  customRowHeaders?: string[];
+  enableDateTimeColumn?: boolean;
   enableTimeSeriesColumns?: boolean;
-  enableAggregateColumns?: boolean;
+  aggregateColumns?: AggregateConfig;
+  enableRowHeaders?: boolean;
+  enablePercentDisplay?: boolean;
+  enableReadOnly?: boolean;
+  customColumns?: string[] | readonly string[];
+  colWidth?: number;
+  fetchMatrixData?: fetchMatrixFn;
 }
 
 function Matrix({
   url,
   title = "global.timeSeries",
+  customRowHeaders = [],
+  enableDateTimeColumn = true,
   enableTimeSeriesColumns = true,
-  enableAggregateColumns = false,
+  aggregateColumns = false,
+  enableRowHeaders = customRowHeaders.length > 0,
+  enablePercentDisplay = false,
+  enableReadOnly = false,
+  customColumns,
+  colWidth,
+  fetchMatrixData,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -43,6 +61,7 @@ function Matrix({
 
   const {
     data,
+    aggregates,
     error,
     isLoading,
     isSubmitting,
@@ -57,7 +76,17 @@ function Matrix({
     redo,
     canUndo,
     canRedo,
-  } = useMatrix(study.id, url, enableTimeSeriesColumns, enableAggregateColumns);
+  } = useMatrix(
+    study.id,
+    url,
+    enableDateTimeColumn,
+    enableTimeSeriesColumns,
+    enableRowHeaders,
+    aggregateColumns,
+    customColumns,
+    colWidth,
+    fetchMatrixData,
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -68,7 +97,7 @@ function Matrix({
   }
 
   if (error) {
-    return <EmptyView title={error.toString()} />;
+    return <EmptyView title={error.message} />;
   }
 
   if (!data || data.length === 0) {
@@ -96,12 +125,15 @@ function Matrix({
       <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
       <MatrixGrid
         data={data}
+        aggregates={aggregates}
         columns={columns}
         rows={data.length}
+        rowHeaders={customRowHeaders}
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
-        readOnly={isSubmitting}
+        isReadOnlyEnabled={isSubmitting || enableReadOnly}
+        isPercentDisplayEnabled={enablePercentDisplay}
       />
       {openImportDialog && (
         <ImportDialog
