@@ -44,7 +44,7 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> List[str]:
-        if self.config.zip_path:
+        if self.config.archive_path:
             path, tmp_dir = self._extract_file_to_tmp_dir()
             lines = path.read_text().split("\n")
             tmp_dir.cleanup()

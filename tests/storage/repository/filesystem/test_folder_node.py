@@ -31,7 +31,7 @@ from tests.storage.repository.filesystem.utils import CheckSubNode, TestMiddleNo
 def build_tree() -> INode[t.Any, t.Any, t.Any]:
     config = Mock()
     config.path.exist.return_value = True
-    config.zip_path = None
+    config.archive_path = None
     return TestMiddleNode(
         context=Mock(),
         config=config,

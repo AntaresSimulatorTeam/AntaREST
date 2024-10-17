@@ -79,7 +79,7 @@ def fix_study_root(study_path: Path) -> None:
         study_path: the study initial root path
     """
     # TODO: what if it is a zipped output ?
-    if study_path.suffix == ".zip":
+    if study_path.suffix in {".zip", ".7z"}:
         return None
 
     if not study_path.is_dir():
