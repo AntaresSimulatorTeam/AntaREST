@@ -17,6 +17,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock
 
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
@@ -119,6 +120,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
         },
         "status": TaskStatus.FAILED,
         "type": None,
+        "progress": None,
     }
     assert res.model_dump() == expected
 
@@ -132,6 +134,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     failed_id = service.add_task(
         action_fail,
         "failed action",
+        None,
         None,
         None,
         None,
@@ -375,3 +378,64 @@ def test_cancel_orphan_tasks(
             assert updated_task_job.result_status == result_status
             assert updated_task_job.result_msg == result_msg
             assert (datetime.datetime.utcnow() - updated_task_job.completion_date).seconds <= max_diff_seconds
+
+
+def test_get_progress(db_session: Session, admin_user: JWTUser, core_config: Config, event_bus: IEventBus) -> None:
+    # Prepare two users in the database
+    user1_id = 9
+    db_session.add(User(id=user1_id, name="John"))
+    user2_id = 10
+    db_session.add(User(id=user2_id, name="Jane"))
+    db_session.commit()
+
+    # Create a RawStudy in the database
+    study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
+    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db_session.commit()
+
+    # Create a TaskJobService
+    task_job_repo = TaskJobRepository(db_session)
+
+    # User 1 launches a ts generation
+    first_task = TaskJob(
+        name="ts_gen_1",
+        owner_id=user1_id,
+        type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
+        ref_id=study_id,
+        progress=40,
+    )
+    first_task = task_job_repo.save(first_task)
+    assert first_task.progress == 40
+    assert first_task.ref_id == study_id
+
+    # User 2 launches another generation
+    second_task = TaskJob(
+        name="ts_gen_2", owner_id=user2_id, ref_id=study_id, type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION
+    )
+    second_task = task_job_repo.save(second_task)
+    assert second_task.progress is None
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+
+    # Asserts the progress cannot be fetched by users that didn't launch it
+    user_2 = JWTUser(id=user2_id, type="user", impersonator=user2_id)
+    for user in [None, user_2]:
+        with pytest.raises(UserHasNotPermissionError):
+            service.get_task_progress(first_task.id, RequestParameters(user))
+
+    # Asserts admin and user_1 can fetch the first_task progress
+    user_1 = JWTUser(id=user1_id, type="user", impersonator=user1_id)
+    for user in [user_1, admin_user]:
+        progress = service.get_task_progress(first_task.id, RequestParameters(user))
+        assert progress == 40
+
+    # Asserts admin and user_2 can fetch the second_task progress
+    for user in [user_2, admin_user]:
+        progress = service.get_task_progress(second_task.id, RequestParameters(user))
+        assert progress is None
+
+    # Asserts fetching with a wrong id raises an Exception
+    wrong_id = "foo_bar"
+    with pytest.raises(HTTPException, match=f"Task {wrong_id} not found"):
+        service.get_task_progress(wrong_id, RequestParameters(user))

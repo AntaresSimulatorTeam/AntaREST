@@ -1401,6 +1401,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
         f"Unarchive output {study_name}/{output_id} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1532,6 +1533,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         f"Unarchive output {study_name}/{output_id} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1686,6 +1688,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         f"Upgrade study my_study ({study_id}) to version 800",
         task_type=TaskType.UPGRADE_STUDY,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )

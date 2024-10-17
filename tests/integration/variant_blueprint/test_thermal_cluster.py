@@ -155,4 +155,5 @@ class TestThermalCluster:
             },
             "status": TaskStatus.COMPLETED,
             "type": "VARIANT_GENERATION",
+            "progress": None,
         }

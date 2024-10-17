@@ -292,6 +292,7 @@ class SimpleSyncTaskService(ITaskService):
         name: Optional[str],
         task_type: Optional[TaskType],
         ref_id: Optional[str],
+        progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
