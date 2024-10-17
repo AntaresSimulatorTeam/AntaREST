@@ -1,4 +1,5 @@
 name: worker
+
 on:
   push:
     branches:
@@ -8,7 +9,6 @@ on:
 jobs:
   binary:
     runs-on: windows-latest
-
     steps:
       - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)
         uses: actions/checkout@v4
