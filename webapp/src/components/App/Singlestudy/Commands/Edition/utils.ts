@@ -95,7 +95,7 @@ export const exportJson = (json: object, filename: string): void => {
 };
 
 export const isTaskFinal = (task: TaskDTO): boolean =>
-  !(task.status === TaskStatus.PENDING || task.status === TaskStatus.RUNNING);
+  !(task.status === TaskStatus.pending || task.status === TaskStatus.running);
 
 export const updateCommandResults = (
   studyId: string,

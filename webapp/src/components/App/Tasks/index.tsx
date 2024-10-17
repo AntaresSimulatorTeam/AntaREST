@@ -70,12 +70,9 @@ import {
   TaskStatus,
   LaunchJobsProgress,
   LaunchJobProgressDTO,
+  TaskView,
 } from "../../../common/types";
-import {
-  getAllMiscRunningTasks,
-  getProgress,
-  getTask,
-} from "../../../services/api/tasks";
+import { getTask, getTasks } from "../../../services/api/tasks";
 import LaunchJobLogView from "./LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { getStudies } from "../../../redux/selectors";
@@ -83,6 +80,7 @@ import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
+import { getJobProgress } from "../../../services/api/launcher";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -113,9 +111,27 @@ function JobsListing() {
       }
       const allJobs = await getStudyJobs(undefined, true, fetchOnlyLatest);
       setJobs(allJobs);
+
       const dlList = await getDownloadsList();
       setDownloads(dlList);
-      const allTasks = await getAllMiscRunningTasks();
+
+      const allTasks = await getTasks({
+        status: [
+          TaskStatus.running,
+          TaskStatus.pending,
+          TaskStatus.failed,
+          TaskStatus.completed,
+        ],
+        type: [
+          TaskType.copy,
+          TaskType.archive,
+          TaskType.unarchive,
+          TaskType.upgradeStudy,
+          TaskType.thermalClusterSeriesGeneration,
+          TaskType.scan,
+        ],
+      });
+
       const dateThreshold = moment().subtract(1, "m");
       setTasks(
         allTasks.filter(
@@ -131,7 +147,7 @@ function JobsListing() {
           .filter((o) => o.status === "running")
           .map(async (item) => ({
             id: item.id,
-            progress: await getProgress(item.id),
+            progress: await getJobProgress({ id: item.id }),
           })),
       );
 
@@ -223,7 +239,7 @@ function JobsListing() {
         const taskId = (ev.payload as TaskEventPayload).id;
         if (tasks?.find((task) => task.id === taskId)) {
           try {
-            const updatedTask = await getTask(taskId);
+            const updatedTask = await getTask({ id: taskId });
             setTasks(
               tasks
                 .filter((task) => task.id !== updatedTask.id)
@@ -297,7 +313,7 @@ function JobsListing() {
     init();
   }, []);
 
-  const jobsMemo = useMemo(
+  const jobsMemo = useMemo<TaskView[]>(
     () =>
       jobs.map((job) => ({
         id: job.id,
@@ -402,13 +418,13 @@ function JobsListing() {
           </Box>
         ),
         date: job.completionDate || job.creationDate,
-        type: TaskType.LAUNCH,
+        type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
       })),
     [jobs, studyJobsProgress],
   );
 
-  const downloadsMemo = useMemo(
+  const downloadsMemo = useMemo<TaskView[]>(
     () =>
       downloads.map((download) => ({
         id: download.id,
@@ -468,13 +484,13 @@ function JobsListing() {
         date: moment(download.expirationDate)
           .subtract(1, "days")
           .format("YYYY-MM-DD HH:mm:ss"),
-        type: TaskType.DOWNLOAD,
+        type: "DOWNLOAD",
         status: !download.ready && !download.failed ? "running" : "",
       })),
     [downloads],
   );
 
-  const tasksMemo = useMemo(
+  const tasksMemo = useMemo<TaskView[]>(
     () =>
       tasks.map((task) => ({
         id: task.id,
@@ -549,13 +565,13 @@ function JobsListing() {
           </Box>
         ),
         date: task.completion_date_utc || task.creation_date_utc,
-        type: task.type || TaskType.UNKNOWN,
-        status: task.status === TaskStatus.RUNNING ? "running" : "",
+        type: task.type || "UNKNOWN",
+        status: task.status === TaskStatus.running ? "running" : "",
       })),
     [tasks],
   );
 
-  const content = jobsMemo.concat(downloadsMemo.concat(tasksMemo));
+  const content = [...jobsMemo, ...downloadsMemo, ...tasksMemo];
 
   ////////////////////////////////////////////////////////////////
   // JSX
