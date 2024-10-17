@@ -208,8 +208,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         link_creation_info: LinkInfoDTOType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
+        area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
         logger.info(
-            f"Updating link for study {uuid}",
+            f"Updating link {area_from} -> {area_to} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)

@@ -184,7 +184,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
         self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
         self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
-        assert type(self.series) is str
+        assert isinstance(self.series, str)
         if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
         else:

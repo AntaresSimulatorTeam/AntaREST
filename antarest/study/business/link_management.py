@@ -119,7 +119,7 @@ class LinkManager:
     def update_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        self.check_attributes_coherence(file_study, int(study.version), link_creation_info)
+        self.check_attributes_coherence(file_study, StudyVersion.parse(study.version), link_creation_info)
 
         command = UpdateLink(
             area1=link_creation_info.area1,
@@ -136,7 +136,7 @@ class LinkManager:
         return existing_link
 
     def check_attributes_coherence(
-        self, file_study: FileStudy, study_version: int, link_creation_info: LinkInfoDTOType
+        self, file_study: FileStudy, study_version: StudyVersion, link_creation_info: LinkInfoDTOType
     ) -> None:
         if link_creation_info.area1 == link_creation_info.area2:
             raise LinkValidationError("Area 1 and Area 2 can not be the same")
@@ -147,7 +147,7 @@ class LinkManager:
         except KeyError:
             raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
 
-        if study_version < 820:
+        if study_version < STUDY_VERSION_8_2:
             if isinstance(link_creation_info, LinkInfoDTO820):
                 if (
                     link_creation_info.filter_synthesis is not None

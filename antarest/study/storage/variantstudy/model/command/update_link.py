@@ -23,7 +23,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class UpdateLink(AbstractLinkCommand):
     """
-    Command used to create a link between two areas.
+    Command used to update a link between two areas.
     """
 
     # Overloaded metadata
