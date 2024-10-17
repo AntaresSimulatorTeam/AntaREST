@@ -40,12 +40,27 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
-import { TaskView, TaskType } from "../../../common/types";
+import { TaskView } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { getLauncherMetrics } from "../../../services/api/study";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import { useInterval } from "react-use";
+import { TaskType } from "../../../services/api/tasks/constants";
+
+const FILTER_LIST: Array<TaskView["type"]> = [
+  "DOWNLOAD",
+  "LAUNCH",
+  TaskType.Copy,
+  TaskType.Archive,
+  TaskType.Unarchive,
+  TaskType.UpgradeStudy,
+  TaskType.ThermalClusterSeriesGeneration,
+  TaskType.Scan,
+  "UNKNOWN",
+];
+
+type FilterListType = (typeof FILTER_LIST)[number];
 
 interface PropType {
   content: TaskView[];
@@ -56,7 +71,7 @@ function JobTableView(props: PropType) {
   const { content, refresh } = props;
   const [t] = useTranslation();
   const [sorted, setSorted] = useState<string>();
-  const [type, setType] = useState<string>("all");
+  const [filterType, setFilterType] = useState<FilterListType | "">("");
   const [filterRunningStatus, setFilterRunningStatus] =
     useState<boolean>(false);
   const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
@@ -72,33 +87,21 @@ function JobTableView(props: PropType) {
       if (filterRunningStatus) {
         filteredContent = filteredContent.filter((o) => o.status === "running");
       }
-      if (type !== "all") {
-        filteredContent = filteredContent.filter((o) => o.type === type);
+      if (filterType) {
+        filteredContent = filteredContent.filter((o) => o.type === filterType);
       }
       return filteredContent;
     },
-    [type, filterRunningStatus],
+    [filterType, filterRunningStatus],
   );
 
   const handleChange = (event: SelectChangeEvent) => {
-    setType(event.target.value as string);
+    setFilterType(event.target.value as FilterListType | "");
   };
 
   const handleFilterStatusChange = () => {
     setFilterRunningStatus(!filterRunningStatus);
   };
-
-  const filterList = [
-    "all",
-    TaskType.DOWNLOAD,
-    TaskType.LAUNCH,
-    TaskType.COPY,
-    TaskType.ARCHIVE,
-    TaskType.UNARCHIVE,
-    TaskType.UPGRADE_STUDY,
-    TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
-    TaskType.SCAN,
-  ];
 
   useEffect(() => {
     setCurrentContent(applyFilter(content));
@@ -192,13 +195,16 @@ function JobTableView(props: PropType) {
             <Select
               labelId="jobsView-select-outlined-label"
               id="jobsView-select-outlined"
-              value={type}
+              value={filterType}
               onChange={handleChange}
               label={t("tasks.typeFilter")}
             >
-              {filterList.map((item) => (
+              <MenuItem value="">
+                <em>{t("global.none")}</em>
+              </MenuItem>
+              {FILTER_LIST.map((item) => (
                 <MenuItem value={item} key={item}>
-                  {t(`tasks.${item}`)}
+                  {t(`tasks.type.${item}`)}
                 </MenuItem>
               ))}
             </Select>
@@ -273,7 +279,9 @@ function JobTableView(props: PropType) {
                   <TableCell component="th" scope="row">
                     {row.name}
                   </TableCell>
-                  <TableCell align="right">{t(`tasks.${row.type}`)}</TableCell>
+                  <TableCell align="right">
+                    {t(`tasks.type.${row.type}`)}
+                  </TableCell>
                   <TableCell align="right">{row.dateView}</TableCell>
                   <TableCell align="right">{row.action}</TableCell>
                 </TableRow>

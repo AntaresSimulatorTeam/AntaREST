@@ -30,6 +30,7 @@ import {
 import { getTaskNotificationsCount } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { TaskType } from "../../../services/api/tasks/constants";
 
 const logError = debug("antares:downloadbadge:error");
 
@@ -66,18 +67,18 @@ function NotificationBadge(props: Props) {
         newNotification("study.error.exportOutput", "error");
       } else if (ev.type === WSEvent.TASK_ADDED) {
         try {
-          const task = await getTask(ev.payload.id);
-          if (task.type === "COPY") {
+          const task = await getTask({ id: ev.payload.id });
+          if (task.type === TaskType.Copy) {
             newNotification("studies.studycopying");
-          } else if (task.type === "ARCHIVE") {
+          } else if (task.type === TaskType.Archive) {
             newNotification("studies.studyarchiving");
-          } else if (task.type === "UNARCHIVE") {
+          } else if (task.type === TaskType.Unarchive) {
             newNotification("studies.studyunarchiving");
-          } else if (task.type === "SCAN") {
+          } else if (task.type === TaskType.Scan) {
             newNotification("studies.success.scanFolder");
-          } else if (task.type === "UPGRADE_STUDY") {
+          } else if (task.type === TaskType.UpgradeStudy) {
             newNotification("study.message.upgradeInProgress");
-          } else if (task.type === "THERMAL_CLUSTER_SERIES_GENERATION") {
+          } else if (task.type === TaskType.ThermalClusterSeriesGeneration) {
             newNotification("study.message.tsGenerationInProgress");
           }
         } catch (error) {

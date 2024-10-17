@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ReactNode } from "react";
+import type { TTaskType } from "../services/api/tasks/types";
 
 export type IdType = number | string;
 
@@ -349,60 +349,13 @@ export interface WSLogMessage {
   study_id: string;
 }
 
-export type Components = Record<string, () => ReactNode>;
+export type Components = Record<string, () => React.ReactNode>;
 
 export interface CommandResultDTO {
   study_id: string;
   id: string;
   success: boolean;
   message: string;
-}
-
-export interface TaskResult {
-  success: boolean;
-  message: string;
-  return_value?: string;
-}
-
-export interface TaskLogDTO {
-  id: string;
-  message: string;
-}
-
-export enum TaskStatus {
-  PENDING = 1,
-  RUNNING = 2,
-  COMPLETED = 3,
-  FAILED = 4,
-  TIMEOUT = 5,
-  CANCELLED = 6,
-}
-
-export enum TaskType {
-  LAUNCH = "LAUNCH",
-  EXPORT = "EXPORT",
-  VARIANT_GENERATION = "VARIANT_GENERATION",
-  COPY = "COPY",
-  ARCHIVE = "ARCHIVE",
-  UNARCHIVE = "UNARCHIVE",
-  DOWNLOAD = "DOWNLOAD",
-  SCAN = "SCAN",
-  UPGRADE_STUDY = "UPGRADE_STUDY",
-  THERMAL_CLUSTER_SERIES_GENERATION = "THERMAL_CLUSTER_SERIES_GENERATION",
-  UNKNOWN = "UNKNOWN",
-}
-
-export interface TaskDTO extends IdentityDTO<string> {
-  id: string;
-  name: string;
-  owner?: number;
-  status: TaskStatus;
-  creation_date_utc: string;
-  completion_date_utc?: string;
-  result?: TaskResult;
-  logs?: TaskLogDTO[];
-  type?: TaskType;
-  ref_id?: string;
 }
 
 export interface TaskEventPayload {
@@ -653,11 +606,11 @@ export interface AreaInfoDTO extends AreaCreationDTO {
 
 export interface TaskView {
   id: string;
-  name: ReactNode;
-  dateView: ReactNode;
-  action: ReactNode;
+  name: React.ReactNode;
+  dateView: React.ReactNode;
+  action: React.ReactNode;
   date: string;
-  type: TaskType;
+  type: TTaskType | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
 }
 
