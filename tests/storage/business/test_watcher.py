@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import logging
 import os
+import typing as t
 from multiprocessing import Pool
 from pathlib import Path
 from unittest.mock import Mock
@@ -112,7 +113,7 @@ def test_scan(tmp_path: Path):
 
 
 @pytest.mark.unit_test
-def test_partial_scan(tmp_path: Path):
+def test_partial_scan(tmp_path: Path, caplog: t.Any):
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
@@ -124,12 +125,24 @@ def test_partial_scan(tmp_path: Path):
 
     clean_files()
 
+    # study to be scanned
     default = tmp_path / "test"
     default.mkdir()
     a = default / "studyA"
     a.mkdir()
     (a / "study.antares").touch()
 
+    # create a temporary upgrade folder
+    upgrade_folder = default / "folder/~upgrade_folder.study.upgrade.tmp"
+    upgrade_folder.mkdir(parents=True)
+    (upgrade_folder / "study.antares").touch()
+
+    # create a temporary ts gen folder
+    ts_gen_folder = default / "folder/~ts_gen_folder.study.thermal_timeseries_gen.tmp"
+    ts_gen_folder.mkdir(parents=True)
+    (ts_gen_folder / "study.antares").touch()
+
+    # study to be skipped because we check only the `default directory`
     diese = tmp_path / "diese"
     diese.mkdir()
     c = diese / "folder/studyC"
@@ -142,18 +155,31 @@ def test_partial_scan(tmp_path: Path):
     with pytest.raises(CannotScanInternalWorkspace):
         watcher.scan(workspace_name="default", workspace_directory_path=default)
 
-    watcher.scan(workspace_name="test", workspace_directory_path=default)
+    with caplog.at_level(level=logging.INFO, logger="antarest.study.storage.rawstudy.watcher"):
+        # scan the `default` directory
+        watcher.scan(workspace_name="test", workspace_directory_path=default)
 
-    assert service.sync_studies_on_disk.call_count == 1
-    call = service.sync_studies_on_disk.call_args_list[0]
-    assert len(call.args[0]) == 1
-    assert call.args[0][0].path == a
-    assert call.args[0][0].workspace == "test"
-    groups = call.args[0][0].groups
-    assert len(groups) == 1
-    assert groups[0].id == "toto"
-    assert groups[0].name == "toto"
-    assert call.args[1] == tmp_path / "test"
+        # verify that only one study has been scanned
+        assert service.sync_studies_on_disk.call_count == 1
+
+        # verify that the scan process has been called with the correct arguments
+        call = service.sync_studies_on_disk.call_args_list[0]
+
+        # verify that only one study has been scanned
+        assert len(call.args[0]) == 1
+
+        # verify that folder `a` has been processed correctly
+        assert call.args[0][0].path == a
+        assert call.args[0][0].workspace == "test"
+        groups = call.args[0][0].groups
+        assert len(groups) == 1
+        assert groups[0].id == "toto"
+        assert groups[0].name == "toto"
+        assert call.args[1] == tmp_path / "test"
+
+    # verify that `upgrade_folder` and `ts_gen_folder`  have been skipped
+    assert f"Upgrade temporary folder found. Will skip further scan of folder {upgrade_folder}" in caplog.text
+    assert f"TS generation temporary folder found. Will skip further scan of folder {ts_gen_folder}" in caplog.text
 
 
 def process(x: int) -> bool:

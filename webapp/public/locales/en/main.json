@@ -142,6 +142,7 @@
   "form.field.specialChars": "Special characters allowed: {{0}}",
   "form.field.specialCharsNotAllowed": "Special characters are not allowed",
   "form.field.spacesNotAllowed": "Spaces are not allowed",
+  "form.field.duplicateNotAllowed": "Duplicates are not allowed",
   "form.field.requireLowercase": "Must contain at least one lowercase letter.",
   "form.field.requireUppercase": "Must contain at least one uppercase letter.",
   "form.field.requireDigit": "Must contain at least one digit.",
