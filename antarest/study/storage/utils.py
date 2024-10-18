@@ -25,6 +25,7 @@ from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 
+from antarest.core.config import Config, WorkspaceConfig
 from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
@@ -46,6 +47,7 @@ from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.storage.rawstudy.watcher_errors import WorkspaceNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -390,3 +392,48 @@ def export_study_flat(
         study.tree.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study '{study_dir}' denormalized in {duration}s")
+
+
+def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
+    """
+    Check if the provided folder path is safe to prevent path traversal attack.
+
+    Args:
+        workspace: The workspace name.
+        folder: The folder path.
+
+    Returns:
+        `True` if the folder path is safe, `False` otherwise.
+    """
+    requested_path = workspace.path / folder
+    safe_dir = os.path.realpath(workspace.path)
+    real_requested_path = os.path.realpath(requested_path)  # resolve symbolic links like ~ , .. and .
+    common_prefix = os.path.commonprefix(
+        (os.path.realpath(real_requested_path), safe_dir)
+    )  # get the common prefix of the two paths
+    return common_prefix == safe_dir  # if requested path isn't in workspace, then common prefix is different
+
+
+def is_study_folder(path: Path) -> bool:
+    return path.is_dir() and (path / "study.antares").exists()
+
+
+def get_workspace_from_config(config: Config, workspace_name: str, default_allowed: bool = False) -> WorkspaceConfig:
+    if not workspace_name:
+        raise ValueError("workspace_name must be specified")
+    if not default_allowed and workspace_name == DEFAULT_WORKSPACE_NAME:
+        raise ValueError("Default workspace is not allowed")
+    try:
+        return config.storage.workspaces[workspace_name]
+    except KeyError:
+        logger.error(f"Workspace {workspace_name} not found")
+        raise WorkspaceNotFound(f"Workspace {workspace_name} not found")
+
+
+def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
+    if not is_folder_safe(workspace, folder):
+        raise ValueError(f"Invalid path for folder: {folder}")
+    folder_path = workspace.path / folder
+    if not folder_path.is_dir():
+        raise ValueError("Provided path is not dir")
+    return folder_path

@@ -22,6 +22,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.model import NonStudyFolder
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,7 @@ def create_watcher_routes(
     )
     def scan_dir(
         path: str,
+        recursive: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         params = RequestParameters(user=current_user)
@@ -82,6 +84,6 @@ def create_watcher_routes(
             )
             relative_path = None
             workspace = None
-        return watcher.oneshot_scan(params=params, workspace=workspace, path=relative_path)
+        return watcher.oneshot_scan(params=params, recursive=recursive, workspace=workspace, path=relative_path)
 
     return bp

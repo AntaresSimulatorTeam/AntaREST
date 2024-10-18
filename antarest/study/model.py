@@ -319,6 +319,17 @@ class StudyFolder:
     groups: t.List[Group]
 
 
+class NonStudyFolder(AntaresBaseModel):
+    """
+    DTO used by watcher list the directories that aren't studies directory, this will be usefull for the front
+    so the user can navigate in the hierarchy
+    """
+
+    path: str
+    workspace: str
+    name: str
+
+
 class PatchStudy(AntaresBaseModel):
     scenario: t.Optional[str] = None
     doc: t.Optional[str] = None
