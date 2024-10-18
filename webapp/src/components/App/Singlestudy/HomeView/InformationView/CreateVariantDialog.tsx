@@ -24,7 +24,7 @@ import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
 import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import { SubmitHandlerPlus } from "../../../../common/Form/types";
-import { validateString } from "../../../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   parentId: string;

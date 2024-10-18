@@ -23,7 +23,7 @@ import { useFormContextPlus } from "../../../../../../common/Form";
 import { STORAGE_GROUPS, Storage } from "./utils";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../../common/types";
-import { validateNumber } from "../../../../../../../utils/validationUtils";
+import { validateNumber } from "@/utils/validation/number";
 
 function Fields() {
   const [t] = useTranslation();
