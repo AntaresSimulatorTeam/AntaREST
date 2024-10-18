@@ -142,6 +142,7 @@
   "form.field.specialChars": "Caractères spéciaux autorisés: {{0}}",
   "form.field.specialCharsNotAllowed": "Les caractères spéciaux ne sont pas autorisés",
   "form.field.spacesNotAllowed": "Les espaces ne sont pas autorisés",
+  "form.field.duplicateNotAllowed": "Les doublons ne sont pas autorisés",
   "form.field.requireLowercase": "Doit contenir au moins une lettre minuscule.",
   "form.field.requireUppercase": "Doit contenir au moins une lettre majuscule.",
   "form.field.requireDigit": "Doit contenir au moins un chiffre.",

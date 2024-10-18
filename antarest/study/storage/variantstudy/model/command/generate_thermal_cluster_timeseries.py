@@ -36,6 +36,20 @@ logger = logging.getLogger(__name__)
 MODULATION_CAPACITY_COLUMN = 2
 FO_RATE_COLUMN = 2
 PO_RATE_COLUMN = 3
+TS_GEN_PREFIX = "~"
+TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
+
+
+def is_ts_gen_tmp_dir(path: Path) -> bool:
+    """
+    Check if a path is a temporary directory used for thermal timeseries generation
+    Args:
+        path: the path to check
+
+    Returns:
+        True if the path is a temporary directory used for thermal timeseries generation
+    """
+    return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
 class GenerateThermalClusterTimeSeries(ICommand):
@@ -51,9 +65,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     def _apply(self, study_data: FileStudy) -> CommandOutput:
         study_path = study_data.config.study_path
-        with tempfile.TemporaryDirectory(
-            suffix=".thermal_timeseries_gen.tmp", prefix="~", dir=study_path.parent
-        ) as path:
+        with tempfile.TemporaryDirectory(suffix=TS_GEN_SUFFIX, prefix=TS_GEN_PREFIX, dir=study_path.parent) as path:
             tmp_dir = Path(path)
             try:
                 shutil.copytree(study_path / "input" / "thermal" / "series", tmp_dir, dirs_exist_ok=True)
