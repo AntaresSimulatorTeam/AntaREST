@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import copy
 import re
 
 import numpy as np
@@ -311,11 +311,11 @@ class TestCreateSTStorage:
         expected = {
             "storage1": {
                 "efficiency": 0.94,
-                "group": "Battery",
+                "group": "battery",
                 "initiallevel": 0.5,
                 "initialleveloptim": True,
                 "injectionnominalcapacity": 1500,
-                "name": "Storage1",
+                "name": "storage1",
                 "reservoircapacity": 20000,
                 "withdrawalnominalcapacity": 1500,
             }
@@ -366,6 +366,8 @@ class TestCreateSTStorage:
         expected_parameters = PARAMETERS.copy()
         # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
         expected_parameters["initiallevel"] = 0.5
+        expected_parameters["name"] = expected_parameters["name"].lower()
+        expected_parameters["group"] = expected_parameters["group"].lower()
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
@@ -407,7 +409,7 @@ class TestCreateSTStorage:
             area_id=area_id,
             parameters=STStorageConfig(**parameters),
         )
-        light_equal = area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
+        light_equal = area_id == cmd1.area_id and parameters["name"].lower() == cmd1.storage_name
         assert cmd1.match(cmd2, equal=False) == light_equal
         deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
         assert cmd1.match(cmd2, equal=True) == deep_equal
@@ -438,6 +440,9 @@ class TestCreateSTStorage:
             inflows=inflows.tolist(),  # type: ignore
         )
         actual = cmd.create_diff(other)
+        expected_params = copy.deepcopy(OTHER_PARAMETERS)
+        expected_params["name"] = expected_params["name"].lower()
+        expected_params["group"] = expected_params["group"].lower()
         expected = [
             ReplaceMatrix(
                 command_context=command_context,
@@ -452,7 +457,7 @@ class TestCreateSTStorage:
             UpdateConfig(
                 command_context=command_context,
                 target="input/st-storage/clusters/area_fr/list/storage1",
-                data=OTHER_PARAMETERS,
+                data=expected_params,
             ),
         ]
         assert actual == expected

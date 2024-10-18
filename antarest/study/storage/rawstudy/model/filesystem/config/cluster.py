@@ -19,7 +19,7 @@ In the near future, this set of classes may be used for solar, wind and hydro cl
 import functools
 import typing as t
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from antarest.core.serialization import AntaresBaseModel
 
@@ -50,6 +50,10 @@ class ItemProperties(
     group: str = Field(default="", description="Cluster group")
 
     name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
+
+    @field_validator("name", mode="before")
+    def _validate_name(cls, name: str) -> str:
+        return str(name).lower()
 
     def __lt__(self, other: t.Any) -> bool:
         """
