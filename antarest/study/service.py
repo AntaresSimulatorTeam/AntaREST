@@ -196,9 +196,9 @@ class ThermalClusterTimeSeriesGeneratorTask:
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(study, file_study, [command], self.storage_service)
+            listener = self.TsGenerationListener(**{"event_bus": self.event_bus, "study_id": self._study_id})
+            execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
             if isinstance(file_study, VariantStudy):
-                listener = self.TsGenerationListener(**{"event_bus": self.event_bus, "study_id": self._study_id})
                 print(listener)
                 # 0- Instancier un listener
                 # 1- Lancer une tâche de génération de variant en passant le listener !!!!
