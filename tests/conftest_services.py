@@ -63,6 +63,8 @@ __all__ = (
     "study_storage_service_fixture",
 )
 
+from study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+
 
 class SynchTaskService(ITaskService):
     def __init__(self) -> None:
@@ -87,6 +89,7 @@ class SynchTaskService(ITaskService):
         ref_id: t.Optional[str],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
+        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         self._task_result = action(lambda message: None)
         return str(uuid.uuid4())
