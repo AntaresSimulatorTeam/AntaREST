@@ -146,11 +146,11 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 logger = logging.getLogger(__name__)
 

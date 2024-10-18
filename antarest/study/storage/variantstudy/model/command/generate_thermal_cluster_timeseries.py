@@ -28,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         return CommandOutput(status=True, message="Nothing to do"), {}
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         study_path = study_data.config.study_path
         with tempfile.TemporaryDirectory(suffix=TS_GEN_SUFFIX, prefix=TS_GEN_PREFIX, dir=study_path.parent) as path:
             tmp_dir = Path(path)
