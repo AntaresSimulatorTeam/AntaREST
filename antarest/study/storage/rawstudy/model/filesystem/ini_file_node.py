@@ -105,9 +105,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
         kwargs = self._get_filtering_kwargs(url)
 
-        if self.config.zip_path:
-            with zipfile.ZipFile(self.config.zip_path, mode="r") as zipped_folder:
-                inside_zip_path = self.config.path.relative_to(self.config.zip_path.with_suffix("")).as_posix()
+        if self.config.archive_path:
+            with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
+                inside_zip_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
                 with io.TextIOWrapper(zipped_folder.open(inside_zip_path)) as f:
                     data = self.reader.read(f, **kwargs)
         else:

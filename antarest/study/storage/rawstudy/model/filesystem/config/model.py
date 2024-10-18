@@ -174,7 +174,7 @@ class FileStudyTreeConfig(DTO):
         archive_input_series: t.Optional[t.List[str]] = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
         cache: t.Optional[t.Dict[str, t.List[str]]] = None,
-        zip_path: t.Optional[Path] = None,
+        archive_path: t.Optional[Path] = None,
     ):
         self.study_path = study_path
         self.path = path
@@ -189,13 +189,13 @@ class FileStudyTreeConfig(DTO):
         self.archive_input_series = archive_input_series or []
         self.enr_modelling = enr_modelling
         self.cache = cache or {}
-        self.zip_path = zip_path
+        self.archive_path = archive_path
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
-            zip_path: t.Optional[Path] = self.path / f"{name}.zip"
+            archive_path: t.Optional[Path] = self.path / f"{name}.zip"
         else:
-            zip_path = self.zip_path
+            archive_path = self.archive_path
 
         return FileStudyTreeConfig(
             study_path=self.study_path,
@@ -211,7 +211,7 @@ class FileStudyTreeConfig(DTO):
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
             cache=self.cache,
-            zip_path=zip_path,
+            archive_path=archive_path,
         )
 
     def at_file(self, filepath: Path) -> "FileStudyTreeConfig":
@@ -317,7 +317,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     store_new_set: bool = False
     archive_input_series: t.List[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)
-    zip_path: t.Optional[Path] = None
+    archive_path: t.Optional[Path] = None
 
     @field_serializer("version")
     def serialize_version(self, version: StudyVersion) -> int:
@@ -344,7 +344,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             store_new_set=config.store_new_set,
             archive_input_series=config.archive_input_series,
             enr_modelling=config.enr_modelling,
-            zip_path=config.zip_path,
+            archive_path=config.archive_path,
         )
 
     def to_build_config(self) -> FileStudyTreeConfig:
@@ -361,5 +361,5 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
-            zip_path=self.zip_path,
+            archive_path=self.archive_path,
         )

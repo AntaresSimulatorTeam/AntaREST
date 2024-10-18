@@ -17,7 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
 
 
-def test(tmp_path: Path):
+def test_unarchived(tmp_path: Path):
     file = tmp_path / "list.txt"
     content = """
 FR
