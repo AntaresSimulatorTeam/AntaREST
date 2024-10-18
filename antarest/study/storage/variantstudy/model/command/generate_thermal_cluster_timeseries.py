@@ -70,7 +70,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
             tmp_dir = Path(path)
             try:
                 shutil.copytree(study_path / "input" / "thermal" / "series", tmp_dir, dirs_exist_ok=True)
-                self._build_timeseries(study_data, tmp_dir)
+                self._build_timeseries(study_data, tmp_dir, listener)
             except Exception as e:
                 logger.error(f"Unhandled exception when trying to generate thermal timeseries: {e}", exc_info=True)
                 raise
@@ -78,7 +78,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 self._replace_safely_original_files(study_path, tmp_dir)
                 return CommandOutput(status=True, message="All time series were generated successfully")
 
-    def _build_timeseries(self, study_data: FileStudy, tmp_path: Path) -> None:
+    def _build_timeseries(
+        self, study_data: FileStudy, tmp_path: Path, listener: t.Optional[ICommandListener] = None
+    ) -> None:
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
         general_data = study_data.tree.get(["settings", "generaldata"], depth=3)
@@ -87,17 +89,21 @@ class GenerateThermalClusterTimeSeries(ICommand):
         # 2 - Build the generator
         rng = MersenneTwisterRNG(seed=thermal_seed)
         generator = ThermalDataGenerator(rng=rng, days=365)
-        # 3- Loop through areas in alphabetical order
+        # 3- Do a first loop to know how many operations will be performed
+        total_generations = sum(len(area.thermals) for area in study_data.config.areas.values())
+        # 4- Loop through areas in alphabetical order
         areas: t.Dict[str, Area] = study_data.config.areas
         sorted_areas = {k: areas[k] for k in sorted(areas)}
+        generation_performed = 0
         for area_id, area in sorted_areas.items():
-            # 4- Loop through thermal clusters in alphabetical order
+            # 5- Loop through thermal clusters in alphabetical order
             sorted_thermals = sorted(area.thermals, key=lambda x: x.id)
             for thermal in sorted_thermals:
-                # 5 - Filters out clusters with no generation
+                # 6 - Filters out clusters with no generation
                 if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
+                    generation_performed += 1
                     continue
-                # 6- Build the cluster
+                # 7- Build the cluster
                 url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
                 matrix = study_data.tree.get_node(url)
                 matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
@@ -124,13 +130,17 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     npo_min=npo_min,
                     npo_max=npo_max,
                 )
-                # 7- Generate the time-series
+                # 8- Generate the time-series
                 results = generator.generate_time_series(cluster, nb_years)
                 generated_matrix = results.available_power
-                # 8- Write the matrix inside the input folder.
+                # 9- Write the matrix inside the input folder.
                 df = pd.DataFrame(data=generated_matrix, dtype=int)
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
                 dump_dataframe(df, target_path, None)
+                # 10- Notify the progress to the notifier
+                if listener:
+                    progress = int(100 * generation_performed / total_generations)
+                    listener.notify_progress(progress)
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={})
