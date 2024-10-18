@@ -659,3 +659,5 @@ export interface TaskView {
   type: TaskType;
   status: string;
 }
+
+export type ValidationReturn = string | true;
