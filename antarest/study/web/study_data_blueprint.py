@@ -68,7 +68,7 @@ from antarest.study.business.correlation_management import (
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.business.link_management import LinkInfoDTOType
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -147,11 +147,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Get all links",
-        response_model=t.List[LinkInfoDTO],
+        response_model=t.List[LinkInfoDTOType],
     )
     def get_links(
         uuid: str,
-        with_ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(
@@ -159,7 +158,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        areas_list = study_service.get_all_links(uuid, with_ui, params)
+        areas_list = study_service.get_all_links(uuid, params)
         return areas_list
 
     @bp.post(
@@ -184,11 +183,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Create a link",
-        response_model=LinkInfoDTO,
+        response_model=LinkInfoDTOType,
     )
     def create_link(
         uuid: str,
-        link_creation_info: LinkInfoDTO,
+        link_creation_info: LinkInfoDTOType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(
@@ -197,6 +196,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         return study_service.create_link(uuid, link_creation_info, params)
+
+    @bp.put(
+        "/studies/{uuid}/links",
+        tags=[APITag.study_data],
+        summary="Update a link",
+        response_model=LinkInfoDTOType,
+    )
+    def update_link(
+        uuid: str,
+        link_creation_info: LinkInfoDTOType,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
+        logger.info(
+            f"Updating link {area_from} -> {area_to} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.update_link(uuid, link_creation_info, params)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/ui",
