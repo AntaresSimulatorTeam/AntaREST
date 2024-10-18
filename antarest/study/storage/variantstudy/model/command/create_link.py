@@ -31,6 +31,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 DEFAULT_COLOR = 112
+MATRIX_ATTRIBUTES = ["series", "direct", "indirect"]
 
 
 class AreaInfo(AntaresBaseModel):
@@ -115,12 +116,10 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             "area2": self.area2,
             "parameters": self.parameters,
         }
-        if self.series:
-            args["series"] = strip_matrix_protocol(self.series)
-        if self.direct:
-            args["direct"] = strip_matrix_protocol(self.direct)
-        if self.indirect:
-            args["indirect"] = strip_matrix_protocol(self.indirect)
+        for attr in MATRIX_ATTRIBUTES:
+            value = getattr(self, attr, None)
+            if value:
+                args[attr] = strip_matrix_protocol(value)
         return CommandDTO(
             action=self.command_name.value,
             args=args,
@@ -169,15 +168,11 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
 
     def get_inner_matrices(self) -> List[str]:
         list_matrices = []
-        if self.series:
-            assert_this(isinstance(self.series, str))
-            list_matrices.append(strip_matrix_protocol(self.series))
-        if self.direct:
-            assert_this(isinstance(self.direct, str))
-            list_matrices.append(strip_matrix_protocol(self.direct))
-        if self.indirect:
-            assert_this(isinstance(self.indirect, str))
-            list_matrices.append(strip_matrix_protocol(self.indirect))
+        for attr in MATRIX_ATTRIBUTES:
+            value = getattr(self, attr, None)
+            if value:
+                assert_this(isinstance(value, str))
+                list_matrices.append(strip_matrix_protocol(value))
         return list_matrices
 
     def save_series(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
