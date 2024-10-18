@@ -150,6 +150,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
+from study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 logger = logging.getLogger(__name__)
 
@@ -195,15 +196,19 @@ class ThermalClusterTimeSeriesGeneratorTask:
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            # todo: This code needs to be adapted for variants and also for the listener
-            # todo: Ici j'instancie un listener.
-            # todo: Il faut que je le passe dans le execute_or_add command je pense.
-            # todo: En le mettant optionnel pour pas changer partout.
-            # todo: puis check si c'est un variant
-            # todo: si oui: aller prendre le code du variant_snapshot_generator et le faire là
-            # todo: tout en passant le listener :).
-            # todo: pareil le apply il faut changer toutes les signatures.
             execute_or_add_commands(study, file_study, [command], self.storage_service)
+            if isinstance(file_study, VariantStudy):
+                print("todo")
+                # 0- Instancier un listener
+                # 1- Lancer une tâche de génération de variant en passant le listener !!!!
+                # 2- Attendre la fin de la tâche
+                # todo: Ici j'instancie un listener.
+                # todo: Il faut que je le passe dans le execute_or_add command je pense.
+                # todo: En le mettant optionnel pour pas changer partout.
+                # todo: puis check si c'est un variant
+                # todo: si oui: aller prendre le code du variant_snapshot_generator et le faire là
+                # todo: tout en passant le listener :).
+                # todo: pareil le apply il faut changer toutes les signatures.
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
@@ -222,6 +227,13 @@ class ThermalClusterTimeSeriesGeneratorTask:
 
     # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
     __call__ = run_task
+
+
+    class TsGenerationListener(ICommandListener):
+        event_bus: IEventBus
+
+        def notify_progress(self, progress: int) -> None:
+            pass
 
 
 class StudyUpgraderTask:
