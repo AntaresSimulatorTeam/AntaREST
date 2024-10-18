@@ -17,13 +17,13 @@ from abc import ABC, abstractmethod
 
 import typing_extensions as te
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antarest.core.serialization import AntaresBaseModel
 
 if t.TYPE_CHECKING:  # False at runtime, for mypy
     from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor

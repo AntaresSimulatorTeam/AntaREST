@@ -48,7 +48,7 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -150,7 +150,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,8 @@ class ThermalClusterTimeSeriesGeneratorTask:
             file_study = self.storage_service.get_storage(study).get_raw(study)
             execute_or_add_commands(study, file_study, [command], self.storage_service)
             if isinstance(file_study, VariantStudy):
-                print("todo")
+                listener = self.TsGenerationListener(**{"event_bus": self.event_bus, "study_id": self._study_id})
+                print(listener)
                 # 0- Instancier un listener
                 # 1- Lancer une tâche de génération de variant en passant le listener !!!!
                 # 2- Attendre la fin de la tâche
@@ -228,12 +229,22 @@ class ThermalClusterTimeSeriesGeneratorTask:
     # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
     __call__ = run_task
 
-
     class TsGenerationListener(ICommandListener):
         event_bus: IEventBus
+        study_id: str
 
         def notify_progress(self, progress: int) -> None:
-            pass
+            self.event_bus.push(
+                Event(
+                    type=EventType.TS_GENERATION_PROGRESS,
+                    payload={
+                        "study_id": self.study_id,
+                        "progress": progress,
+                    },
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                    channel=EventChannelDirectory.TASK + self.study_id,
+                )
+            )
 
 
 class StudyUpgraderTask:
