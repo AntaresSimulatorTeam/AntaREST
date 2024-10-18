@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
 
 interface StringValidationOptions {
@@ -48,7 +49,7 @@ interface StringValidationOptions {
 export function validateString(
   value: string,
   options?: StringValidationOptions,
-): string | true {
+): ValidationReturn {
   const {
     existingValues = [],
     excludedValues = [],
@@ -122,7 +123,7 @@ export function validateString(
  * @param password - The password to validate.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
-export function validatePassword(password: string): string | true {
+export function validatePassword(password: string): ValidationReturn {
   const trimmedPassword = password.trim();
 
   if (!trimmedPassword) {

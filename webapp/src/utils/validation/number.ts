@@ -12,9 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
-
-type ValidationResponse = string | true;
 
 interface NumberValidationOptions {
   min?: number;
@@ -44,16 +43,16 @@ interface NumberValidationOptions {
 export function validateNumber(
   value: number,
   options?: NumberValidationOptions,
-): ValidationResponse;
+): ValidationReturn;
 
 export function validateNumber(
   options?: NumberValidationOptions,
-): (value: number) => ValidationResponse;
+): (value: number) => ValidationReturn;
 
 export function validateNumber(
   valueOrOpts?: number | NumberValidationOptions,
   options: NumberValidationOptions = {},
-): ValidationResponse | ((value: number) => ValidationResponse) {
+): ValidationReturn | ((value: number) => ValidationReturn) {
   if (typeof valueOrOpts !== "number") {
     return (v: number) => validateNumber(v, valueOrOpts);
   }

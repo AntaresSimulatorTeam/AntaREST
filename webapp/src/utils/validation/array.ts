@@ -12,10 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
 import * as R from "ramda";
-
-type ValidationResponse = string | true;
 
 interface ArrayValidationOptions {
   allowEmpty?: boolean;
@@ -45,16 +44,16 @@ interface ArrayValidationOptions {
 export function validateArray<T>(
   value: T[],
   options?: ArrayValidationOptions,
-): ValidationResponse;
+): ValidationReturn;
 
 export function validateArray<T>(
   options?: ArrayValidationOptions,
-): (value: T[]) => ValidationResponse;
+): (value: T[]) => ValidationReturn;
 
 export function validateArray<T>(
   valueOrOpts?: T[] | ArrayValidationOptions,
   options: ArrayValidationOptions = {},
-): ValidationResponse | ((value: T[]) => ValidationResponse) {
+): ValidationReturn | ((value: T[]) => ValidationReturn) {
   if (!Array.isArray(valueOrOpts)) {
     return (v: T[]) => validateArray(v, valueOrOpts);
   }
