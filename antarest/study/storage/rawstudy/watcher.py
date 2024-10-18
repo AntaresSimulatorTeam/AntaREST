@@ -35,6 +35,7 @@ from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import is_ts_gen_tmp_dir
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +187,7 @@ class Watcher(IService):
         """
 
         # noinspection PyUnusedLocal
-        def scan_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def scan_task(notifier: TaskUpdateNotifier, listener: Optional[ICommandListener]) -> TaskResult:
             self.scan(workspace, path)
             return TaskResult(success=True, message="Scan completed")
 

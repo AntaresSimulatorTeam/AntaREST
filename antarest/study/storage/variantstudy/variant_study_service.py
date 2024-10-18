@@ -612,7 +612,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             # db context, so we need to fetch the id attribute before
             study_id = metadata.id
 
-            def callback(notifier: TaskUpdateNotifier) -> TaskResult:
+            def callback(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
                 generator = SnapshotGenerator(
                     cache=self.cache,
                     raw_study_service=self.raw_study_service,
@@ -1112,7 +1112,7 @@ class SnapshotCleanerTask:
                     if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
         msg = f"Start cleaning all snapshots updated or accessed {humanize.precisedelta(self._retention_time)} ago."
         notifier(msg)
         self._clear_all_snapshots()

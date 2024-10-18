@@ -49,6 +49,7 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -513,7 +514,7 @@ class MatrixService(ISimpleMatrixService):
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 self.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
                 self.file_transfer_manager.set_ready(export_id)

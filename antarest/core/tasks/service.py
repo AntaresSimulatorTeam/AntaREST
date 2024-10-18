@@ -139,7 +139,7 @@ class TaskJobService(ITaskService):
         task_id: str,
         task_type: str,
         task_args: t.Dict[str, t.Union[int, float, bool, str]],
-    ) -> t.Callable[[TaskUpdateNotifier], TaskResult]:
+    ) -> t.Callable[[TaskUpdateNotifier, t.Optional[ICommandListener]], TaskResult]:
         task_result_wrapper: t.List[TaskResult] = []
 
         def _create_awaiter(
@@ -153,7 +153,7 @@ class TaskJobService(ITaskService):
             return _await_task_end
 
         # noinspection PyUnusedLocal
-        def _send_worker_task(logger_: TaskUpdateNotifier) -> TaskResult:
+        def _send_worker_task(logger_: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             listener_id = self.event_bus.add_listener(
                 _create_awaiter(task_result_wrapper),
                 [EventType.WORKER_TASK_ENDED],
