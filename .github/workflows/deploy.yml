@@ -1,9 +1,9 @@
 name: deploy
+
 on:
   push:
     branches:
       - "master"
-      - "hotfix/**"
 
 jobs:
   binary:
@@ -12,7 +12,6 @@ jobs:
       max-parallel: 3
       matrix:
         os: [ windows-latest, ubuntu-20.04, ubuntu-22.04]
-
     steps:
       - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)
         uses: actions/checkout@v4
