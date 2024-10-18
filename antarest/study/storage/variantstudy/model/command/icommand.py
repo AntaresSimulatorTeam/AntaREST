@@ -97,6 +97,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
 
         Args:
             study_data: The study data to be applied.
+            listener: Can be used by the command to notify anyone giving one.
 
         Returns:
             The output of the command execution.
