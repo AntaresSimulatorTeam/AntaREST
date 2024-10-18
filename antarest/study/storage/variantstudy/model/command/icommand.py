@@ -102,7 +102,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
             The output of the command execution.
         """
         try:
-            return self._apply(study_data)
+            return self._apply(study_data, listener)
         except Exception as e:
             logger.warning(
                 f"Failed to execute variant command {self.command_name}",
