@@ -18,9 +18,9 @@ import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
 import { SubmitHandlerPlus } from "../Form/types";
 import SelectFE from "../fieldEditors/SelectFE";
-import { validateString } from "../../../utils/validationUtils";
 import type { TRow } from "./types";
 import { useTranslation } from "react-i18next";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;

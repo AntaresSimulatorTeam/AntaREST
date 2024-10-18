@@ -31,7 +31,7 @@ import {
   updateStudyMapLayer,
 } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import { validateString } from "../../../../../../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;

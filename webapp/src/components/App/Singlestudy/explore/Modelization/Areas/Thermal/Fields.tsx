@@ -30,7 +30,7 @@ import {
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
 } from "./utils";
-import { validateNumber } from "../../../../../../../utils/validationUtils";
+import { validateNumber } from "@/utils/validation/number";
 
 function Fields() {
   const [t] = useTranslation();

@@ -26,7 +26,7 @@ import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
-import { validateString } from "../../../../../../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;

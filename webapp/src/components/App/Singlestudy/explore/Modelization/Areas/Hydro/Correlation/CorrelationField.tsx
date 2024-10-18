@@ -20,7 +20,7 @@ import { CorrelationFormFields } from "./utils";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentArea } from "../../../../../../../../redux/selectors";
-import { validateNumber } from "../../../../../../../../utils/validationUtils";
+import { validateNumber } from "@/utils/validation/number";
 
 interface Props {
   field: FieldArrayWithId<CorrelationFormFields, "correlation">;

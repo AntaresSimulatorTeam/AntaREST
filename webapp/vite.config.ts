@@ -14,6 +14,7 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import path from "path";
 
 const SERVER_URL = "http://localhost:8080";
 
@@ -28,6 +29,11 @@ export default defineConfig(({ mode }) => {
     define: {
       // Not working in dev without `JSON.stringify`
       __BUILD_TIMESTAMP__: JSON.stringify(Date.now()),
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"), // Relative imports from the src directory
+      },
     },
     esbuild: {
       // Remove logs safely when building production bundle

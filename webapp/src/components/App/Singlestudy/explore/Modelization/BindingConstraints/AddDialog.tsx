@@ -32,10 +32,10 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import { StudyMetadata } from "../../../../../../common/types";
-import { validateString } from "../../../../../../utils/validationUtils";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { useOutletContext } from "react-router";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;

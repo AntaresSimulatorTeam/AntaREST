@@ -26,7 +26,7 @@ import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
-import { validateString } from "../../../../../../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;
