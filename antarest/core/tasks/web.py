@@ -13,7 +13,7 @@
 import concurrent.futures
 import http
 import logging
-from typing import Any
+import typing as t
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -47,7 +47,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     def list_tasks(
         filter: TaskListFilter,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         request_params = RequestParameters(user=current_user)
         return service.list_tasks(filter, request_params)
 
@@ -99,8 +99,23 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     def cancel_task(
         task_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> t.Any:
         request_params = RequestParameters(user=current_user)
         return service.cancel_task(task_id, request_params, dispatch=True)
+
+    @bp.get(
+        "/tasks/{task_id}/progress",
+        tags=[APITag.tasks],
+        summary="Retrieve task progress from task id",
+        response_model=t.Optional[int],
+    )
+    def get_progress(task_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> t.Optional[int]:
+        sanitized_task_id = sanitize_uuid(task_id)
+        logger.info(
+            f"Fetching task progress of task {sanitized_task_id}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return service.get_task_progress(sanitized_task_id, params)
 
     return bp

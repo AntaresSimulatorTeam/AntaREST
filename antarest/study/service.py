@@ -991,6 +991,7 @@ class StudyService:
                 f"Study {src_study.name} ({src_uuid}) copy",
                 task_type=TaskType.COPY,
                 ref_id=src_study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -1056,6 +1057,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1129,6 +1131,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1300,6 +1303,7 @@ class StudyService:
                 export_name,
                 task_type=TaskType.EXPORT,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -2013,6 +2017,7 @@ class StudyService:
             f"Study {study.name} archiving",
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2059,6 +2064,7 @@ class StudyService:
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2362,6 +2368,7 @@ class StudyService:
             task_name,
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2438,6 +2445,7 @@ class StudyService:
                 task_name,
                 task_type=TaskType.UNARCHIVE,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -2469,6 +2477,7 @@ class StudyService:
             task_name,
             task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
             ref_id=study.id,
+            progress=0,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2528,6 +2537,7 @@ class StudyService:
             task_name,
             task_type=TaskType.UPGRADE_STUDY,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )

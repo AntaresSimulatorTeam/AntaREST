@@ -639,6 +639,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 name=f"Generation of {metadata.id} study",
                 task_type=TaskType.VARIANT_GENERATION,
                 ref_id=study_id,
+                progress=None,
                 custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
                 request_params=RequestParameters(DEFAULT_ADMIN_USER),
             )
@@ -1082,6 +1083,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             task_name,
             task_type=TaskType.SNAPSHOT_CLEARING,
             ref_id=None,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )

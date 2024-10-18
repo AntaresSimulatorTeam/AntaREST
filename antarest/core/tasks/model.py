@@ -91,6 +91,7 @@ class TaskDTO(AntaresBaseModel, extra="forbid"):
     logs: t.Optional[t.List[TaskLogDTO]] = None
     type: t.Optional[str] = None
     ref_id: t.Optional[str] = None
+    progress: t.Optional[int] = None
 
 
 class TaskListFilter(AntaresBaseModel, extra="forbid"):
@@ -143,6 +144,7 @@ class TaskJob(Base):  # type: ignore
     result: t.Optional[str] = Column(String(), nullable=True, default=None)
     result_status: t.Optional[bool] = Column(Boolean(), nullable=True, default=None)
     type: t.Optional[str] = Column(String(), nullable=True, default=None, index=True)
+    progress: t.Optional[int] = Column(Integer(), nullable=True, default=None)
     owner_id: int = Column(
         Integer(),
         ForeignKey("identities.id", name="fk_taskjob_identity_id", ondelete="SET NULL"),
@@ -191,6 +193,7 @@ class TaskJob(Base):  # type: ignore
             logs=sorted([log.to_dto() for log in self.logs], key=lambda log: log.id) if with_logs else None,
             type=self.type,
             ref_id=self.ref_id,
+            progress=self.progress,
         )
 
     def __eq__(self, other: t.Any) -> bool:
