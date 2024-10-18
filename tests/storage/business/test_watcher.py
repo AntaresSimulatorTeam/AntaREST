@@ -12,19 +12,32 @@
 import logging
 import os
 import typing as t
+from datetime import datetime, timedelta
 from multiprocessing import Pool
 from pathlib import Path
+from unittest import mock
 from unittest.mock import Mock
 
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import CannotScanInternalWorkspace
+from antarest.core.interfaces.cache import ICache
+from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.login.model import GroupDTO
+from antarest.login.service import LoginService
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, OwnerInfo, Study, StudyMetadataDTO
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.storage.conftest import SimpleSyncTaskService
 
 
@@ -55,6 +68,54 @@ def clean_files() -> None:
     lock = f"{Watcher.LOCK.absolute()}.lock"
     if os.path.exists(lock):
         os.remove(lock)
+
+
+def build_study_service(
+    raw_study_service: RawStudyService,
+    repository: StudyMetadataRepository,
+    config: Config,
+    user_service: LoginService = Mock(spec=LoginService),
+    cache_service: ICache = Mock(spec=ICache),
+    variant_study_service: VariantStudyService = Mock(spec=VariantStudyService),
+    task_service: ITaskService = Mock(spec=ITaskService),
+) -> StudyService:
+    return StudyService(
+        raw_study_service=raw_study_service,
+        variant_study_service=variant_study_service,
+        user_service=user_service,
+        repository=repository,
+        event_bus=Mock(),
+        task_service=task_service,
+        file_transfer_manager=Mock(),
+        cache_service=cache_service,
+        config=config,
+    )
+
+
+def study_to_dto(study: Study) -> StudyMetadataDTO:
+    return StudyMetadataDTO(
+        id=study.id,
+        name=study.name,
+        version=study.version,
+        created=str(study.created_at),
+        updated=str(study.updated_at),
+        workspace=DEFAULT_WORKSPACE_NAME,
+        managed=True,
+        type=study.type,
+        archived=study.archived if study.archived is not None else False,
+        owner=(
+            OwnerInfo(id=study.owner.id, name=study.owner.name)
+            if study.owner is not None
+            else OwnerInfo(name="Unknown")
+        ),
+        groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
+        public_mode=study.public_mode or PublicMode.NONE,
+        horizon=study.additional_data.horizon,
+        scenario=None,
+        status=None,
+        doc=None,
+        folder=None,
+    )
 
 
 @pytest.mark.unit_test
@@ -110,6 +171,96 @@ def test_scan(tmp_path: Path):
     assert groups[0].id == "tata"
     assert groups[0].name == "tata"
     assert call.args[1] is None
+
+
+@pytest.mark.unit_test
+def test_scan_recursive_false(tmp_path: Path, db_session: Session):
+    # Base.metadata.create_all(db_session)
+
+    def count_studies():
+        return db_session.execute("SELECT COUNT(*) FROM study").scalar()
+
+    clean_files()
+
+    """
+    Create this 
+    tmp_path
+    ├── default
+    │   └── studyA
+    │       └── study.antares
+    └── diese
+        └── folder
+            ├── studyC
+            │   └── study.antares
+            ├── trash
+            │   └── trash
+            ├── another_folder
+            │   ├── AW_NO_SCAN
+            │   └── study.antares
+            └── subfolder
+                └── studyG
+                    └── study.antares   
+    """
+    default = tmp_path / "default"
+    default.mkdir()
+    a = default / "studyA"
+    a.mkdir()
+    (a / "study.antares").touch()
+
+    diese = tmp_path / "diese"
+    diese.mkdir()
+    c = diese / "folder/studyC"
+    c.mkdir(parents=True)
+    (c / "study.antares").touch()
+
+    d = diese / "folder/trash"
+    d.mkdir(parents=True)
+    (d / "trash").touch()
+
+    # e = diese / "folder/to_skip_folder"
+    # e.mkdir(parents=True)
+    # (e / "study.antares").touch()
+    db_session.commit()
+    f = diese / "folder/another_folder"
+    f.mkdir(parents=True)
+    (f / "AW_NO_SCAN").touch()
+    (f / "study.antares").touch()
+    g = diese / "folder/subfolder/studyG"
+    g.mkdir(parents=True)
+    (g / "study.antares").touch()
+    db_session.commit()
+    raw_study_service = Mock(spec=RawStudyService)
+    raw_study_service.get_study_information.side_effect = study_to_dto
+    repository = StudyMetadataRepository(session=db_session, cache_service=Mock(spec=ICache))
+    repository.delete = Mock()
+    config = build_config(tmp_path)
+    service = build_study_service(raw_study_service, repository, config)
+    watcher = Watcher(config, service, task_service=SimpleSyncTaskService())
+
+    assert count_studies() == 0
+
+    watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder")
+    assert count_studies() == 1
+
+    db_session.commit()
+
+    watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
+    assert count_studies() == 2
+
+    os.remove(g / "study.antares")
+    watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder")
+    assert count_studies() == 2
+
+    assert repository.delete.call_count == 0
+    watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
+    assert repository.delete.call_count == 0
+
+    in_3_days = datetime.utcnow() + timedelta(days=3)
+    # Get the current time and add 3 days to it
+    with mock.patch("antarest.study.service.datetime") as mock_datetime:
+        mock_datetime.utcnow.return_value = in_3_days
+        watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
+        assert repository.delete.call_count == 1
 
 
 @pytest.mark.unit_test
