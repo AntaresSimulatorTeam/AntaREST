@@ -17,7 +17,7 @@ import { FieldArrayWithId } from "react-hook-form";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { AllocationFormFields } from "./utils";
-import { validateNumber } from "../../../../../../../../utils/validationUtils";
+import { validateNumber } from "@/utils/validation/number";
 
 interface Props {
   field: FieldArrayWithId<AllocationFormFields, "allocation">;

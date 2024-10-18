@@ -37,7 +37,7 @@ import Fieldset from "../../common/Fieldset";
 import { SubmitHandlerPlus } from "../../common/Form/types";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { updateStudy } from "../../../redux/ducks/studies";
-import { validateString } from "../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 const logErr = debug("antares:createstudyform:error");
 
