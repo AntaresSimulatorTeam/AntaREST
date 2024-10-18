@@ -50,7 +50,7 @@ def test_export_file(tmp_path: Path):
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize("outputs", [True, False])
-def test_export_file(tmp_path: Path, outputs: bool):
+def test_export_archived_study(tmp_path: Path, outputs: bool):
     root = tmp_path / "folder"
     root.mkdir()
     (root / "test").mkdir()
