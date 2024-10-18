@@ -42,6 +42,7 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
@@ -62,8 +63,6 @@ __all__ = (
     "variant_study_service_fixture",
     "study_storage_service_fixture",
 )
-
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 
 class SynchTaskService(ITaskService):
@@ -91,7 +90,7 @@ class SynchTaskService(ITaskService):
         request_params: RequestParameters,
         listener: t.Optional[ICommandListener] = None,
     ) -> str:
-        self._task_result = action(lambda message: None)
+        self._task_result = action(lambda message: None, None)
         return str(uuid.uuid4())
 
     def status_task(

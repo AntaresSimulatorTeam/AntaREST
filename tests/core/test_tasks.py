@@ -44,6 +44,7 @@ from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import with_db_context
 
@@ -126,7 +127,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     # ================================================
 
     # noinspection PyUnusedLocal
-    def action_fail(update_msg: t.Callable[[str], None]) -> TaskResult:
+    def action_fail(update_msg: t.Callable[[str], None], notifier: t.Optional[ICommandListener] = None) -> TaskResult:
         raise Exception("this action failed")
 
     failed_id = service.add_task(
@@ -152,7 +153,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     # Test Case: add a task that succeeds and wait for it
     # ===================================================
 
-    def action_ok(update_msg: t.Callable[[str], None]) -> TaskResult:
+    def action_ok(update_msg: t.Callable[[str], None], notifier: t.Optional[ICommandListener] = None) -> TaskResult:
         update_msg("start")
         update_msg("end")
         return TaskResult(success=True, message="OK")

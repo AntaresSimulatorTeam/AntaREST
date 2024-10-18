@@ -297,7 +297,7 @@ class SimpleSyncTaskService(ITaskService):
         request_params: RequestParameters,
         listener: Optional[ICommandListener] = None,
     ) -> str:
-        action(lambda message: None)
+        action(lambda message: None, None)
         return str(uuid.uuid4())
 
     def status_task(
