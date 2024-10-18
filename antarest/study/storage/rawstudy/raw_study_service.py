@@ -329,10 +329,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         try:
             extract_archive(stream, study_path)
             fix_study_root(study_path)
-            self.update_from_raw_meta(
-                metadata,
-                study_path=study_path,
-            )
+            self.update_from_raw_meta(metadata, study_path=study_path)
 
         except Exception:
             shutil.rmtree(study_path)
