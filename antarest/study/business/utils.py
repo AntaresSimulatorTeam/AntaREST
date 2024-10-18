@@ -13,7 +13,6 @@
 import typing as t
 
 from antares.study.version import StudyVersion
-from pydantic import BaseModel
 
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -25,6 +24,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.core.serialization import AntaresBaseModel
 
 # noinspection SpellCheckingInspection
 GENERAL_DATA_PATH = "settings/generaldata"
@@ -72,7 +72,7 @@ def execute_or_add_commands(
 
 @camel_case_model
 class FormFieldsBaseModel(
-    BaseModel,
+    AntaresBaseModel,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,

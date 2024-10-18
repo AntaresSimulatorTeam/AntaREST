@@ -195,6 +195,14 @@ class ThermalClusterTimeSeriesGeneratorTask:
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
+            # todo: This code needs to be adapted for variants and also for the listener
+            # todo: Ici j'instancie un listener.
+            # todo: Il faut que je le passe dans le execute_or_add command je pense.
+            # todo: En le mettant optionnel pour pas changer partout.
+            # todo: puis check si c'est un variant
+            # todo: si oui: aller prendre le code du variant_snapshot_generator et le faire là
+            # todo: tout en passant le listener :).
+            # todo: pareil le apply il faut changer toutes les signatures.
             execute_or_add_commands(study, file_study, [command], self.storage_service)
             self.event_bus.push(
                 Event(
