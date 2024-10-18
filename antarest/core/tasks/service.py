@@ -44,7 +44,7 @@ from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 logger = logging.getLogger(__name__)
 
 TaskUpdateNotifier = t.Callable[[str], None]
-Task = t.Callable[[TaskUpdateNotifier], TaskResult]
+Task = t.Callable[[TaskUpdateNotifier, t.Optional[ICommandListener]], TaskResult]
 
 DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
 """Default timeout for `await_task` in seconds."""
