@@ -199,17 +199,14 @@ class ThermalClusterTimeSeriesGeneratorTask:
             listener = self.TsGenerationListener(**{"event_bus": self.event_bus, "study_id": self._study_id})
             execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
             if isinstance(file_study, VariantStudy):
-                print(listener)
-                # 0- Instancier un listener
-                # 1- Lancer une tâche de génération de variant en passant le listener !!!!
-                # 2- Attendre la fin de la tâche
-                # todo: Ici j'instancie un listener.
-                # todo: Il faut que je le passe dans le execute_or_add command je pense.
-                # todo: En le mettant optionnel pour pas changer partout.
-                # todo: puis check si c'est un variant
-                # todo: si oui: aller prendre le code du variant_snapshot_generator et le faire là
-                # todo: tout en passant le listener :).
-                # todo: pareil le apply il faut changer toutes les signatures.
+                variant_service = self.storage_service.variant_study_service
+                task_service = variant_service.task_service
+                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                task_service.await_task(generation_task_id)
+                result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
+                if not result.result or not result.result.success:
+                    raise ValueError(f"Failed to generate variant study {self._study_id}")
+                # todo: we should give the listener to the task inside generate_task
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,

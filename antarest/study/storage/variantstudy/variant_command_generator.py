@@ -22,12 +22,13 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, 
 from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO, NewDetailsDTO
 
 logger = logging.getLogger(__name__)
 
-APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy]], CommandOutput]
+APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]], CommandOutput]
 
 
 class CmdNotifier:
@@ -51,6 +52,7 @@ class VariantCommandGenerator:
         applier: APPLY_CALLBACK,
         metadata: Optional[VariantStudy] = None,
         notifier: Optional[Callable[[int, bool, str], None]] = None,
+        listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
         # Apply commands
@@ -69,7 +71,7 @@ class VariantCommandGenerator:
         # Store all the outputs
         for index, cmd in enumerate(all_commands, 1):
             try:
-                output = applier(cmd, data)
+                output = applier(cmd, data, listener)
             except Exception as e:
                 # Unhandled exception
                 output = CommandOutput(
@@ -116,6 +118,7 @@ class VariantCommandGenerator:
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
         notifier: Optional[Callable[[int, bool, str], None]] = None,
+        listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # Build file study
         logger.info("Building study tree")
@@ -126,7 +129,7 @@ class VariantCommandGenerator:
         results = VariantCommandGenerator._generate(
             commands,
             study,
-            lambda command, data: command.apply(cast(FileStudy, data)),
+            lambda command, data: command.apply(cast(FileStudy, data), listener),
             metadata,
             notifier,
         )

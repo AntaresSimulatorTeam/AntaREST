@@ -31,6 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, 
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -71,6 +72,7 @@ class SnapshotGenerator:
         denormalize: bool = True,
         from_scratch: bool = False,
         notifier: TaskUpdateNotifier = noop_notifier,
+        listener: t.Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -100,7 +102,7 @@ class SnapshotGenerator:
                 self._export_ref_study(snapshot_dir, ref_study)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(snapshot_dir, variant_study, cmd_blocks)
+            results = self._apply_commands(snapshot_dir, variant_study, cmd_blocks, listener)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
             file_study = self.study_factory.create_from_fs(
@@ -174,6 +176,7 @@ class SnapshotGenerator:
         snapshot_dir: Path,
         variant_study: VariantStudy,
         cmd_blocks: t.Sequence[CommandBlock],
+        listener: t.Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         generator = VariantCommandGenerator(self.study_factory)
@@ -183,6 +186,7 @@ class SnapshotGenerator:
             variant_study,
             delete_on_failure=False,  # Not needed, because we are using a temporary directory
             notifier=None,
+            listener=listener,
         )
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
