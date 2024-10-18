@@ -14,7 +14,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -129,7 +129,7 @@ class VariantCommandGenerator:
         results = VariantCommandGenerator._generate(
             commands,
             study,
-            lambda command, data: command.apply(cast(FileStudy, data), listener),
+            lambda command, data, listener: command.apply(cast(FileStudy, data), listener),
             metadata,
             notifier,
         )
@@ -149,7 +149,7 @@ class VariantCommandGenerator:
         results = VariantCommandGenerator._generate(
             commands,
             config,
-            lambda command, data: command.apply_config(cast(FileStudyTreeConfig, data)),
+            lambda command, data, listener: command.apply_config(cast(FileStudyTreeConfig, data)),
             metadata,
             notifier,
         )

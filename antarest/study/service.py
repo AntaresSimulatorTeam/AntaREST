@@ -189,21 +189,20 @@ class ThermalClusterTimeSeriesGeneratorTask:
         self.storage_service = storage_service
         self.event_bus = event_bus
 
-    def _generate_timeseries(self) -> None:
+    def _generate_timeseries(self, listener: ICommandListener) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         command = GenerateThermalClusterTimeSeries(command_context=command_context)
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            listener = self.TsGenerationListener(**{"event_bus": self.event_bus, "study_id": self._study_id})
             execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
 
             if isinstance(file_study, VariantStudy):
                 # In this case we only added the command to the list.
                 # It means the generation will really be executed in the next snapshot generation.
                 # We don't want this, we want this task to generate the matrices no matter the study.
-                # Therefore we have to launch a variant generation task inside the timeseries generation one.
+                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
                 variant_service = self.storage_service.variant_study_service
                 task_service = variant_service.task_service
                 generation_task_id = variant_service.generate_task(study, True, False, listener)
@@ -220,10 +219,10 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 )
             )
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: TaskUpdateNotifier, listener: ICommandListener) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
         notifier(msg)
-        self._generate_timeseries()
+        self._generate_timeseries(listener)
         msg = f"Successfully generated thermal timeseries for study '{self._study_id}'"
         notifier(msg)
         return TaskResult(success=True, message=msg)
@@ -233,18 +232,17 @@ class ThermalClusterTimeSeriesGeneratorTask:
 
     class TsGenerationListener(ICommandListener):
         event_bus: IEventBus
-        study_id: str
 
         def notify_progress(self, progress: int) -> None:
             self.event_bus.push(
                 Event(
                     type=EventType.TS_GENERATION_PROGRESS,
                     payload={
-                        "study_id": self.study_id,
+                        "task_id": self.task_id,
                         "progress": progress,
                     },
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
-                    channel=EventChannelDirectory.TASK + self.study_id,
+                    channel=EventChannelDirectory.TASK + self.task_id,
                 )
             )
 
@@ -2497,6 +2495,9 @@ class StudyService:
             event_bus=self.event_bus,
         )
 
+        args = {"event_bus": self.event_bus, "task_id": ""}
+        listener = thermal_cluster_timeseries_generation_task.TsGenerationListener(**args)
+
         return self.task_service.add_task(
             thermal_cluster_timeseries_generation_task,
             task_name,
@@ -2504,6 +2505,7 @@ class StudyService:
             ref_id=study.id,
             custom_event_messages=None,
             request_params=params,
+            listener=listener,
         )
 
     def upgrade_study(
