@@ -138,6 +138,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
                 dump_dataframe(df, target_path, None)
                 # 10- Notify the progress to the notifier
+                generation_performed += 1
                 if listener:
                     progress = int(100 * generation_performed / total_generations)
                     listener.notify_progress(progress)
