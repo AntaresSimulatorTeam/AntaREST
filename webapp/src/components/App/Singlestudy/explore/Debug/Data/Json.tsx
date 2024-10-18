@@ -78,7 +78,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   return (
     <UsePromiseCond
       response={res}
-      ifResolved={(json) => (
+      ifFulfilled={(json) => (
         <Flex>
           <Menubar>
             <Filename>{filename}</Filename>

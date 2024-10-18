@@ -13,6 +13,7 @@
  */
 
 import { ReactNode } from "react";
+import { O } from "ts-toolbelt";
 
 export type IdType = number | string;
 
@@ -358,49 +359,46 @@ export interface CommandResultDTO {
   message: string;
 }
 
-export interface TaskResult {
-  success: boolean;
-  message: string;
-  return_value?: string;
-}
+export const TaskStatus = {
+  pending: 1,
+  running: 2,
+  completed: 3,
+  failed: 4,
+  timeout: 5,
+  cancelled: 6,
+} as const;
 
-export interface TaskLogDTO {
-  id: string;
-  message: string;
-}
+export type TTaskStatus = O.UnionOf<typeof TaskStatus>;
 
-export enum TaskStatus {
-  PENDING = 1,
-  RUNNING = 2,
-  COMPLETED = 3,
-  FAILED = 4,
-  TIMEOUT = 5,
-  CANCELLED = 6,
-}
+export const TaskType = {
+  export: "EXPORT",
+  variantGeneration: "VARIANT_GENERATION",
+  copy: "COPY",
+  archive: "ARCHIVE",
+  unarchive: "UNARCHIVE",
+  scan: "SCAN",
+  upgradeStudy: "UPGRADE_STUDY",
+  thermalClusterSeriesGeneration: "THERMAL_CLUSTER_SERIES_GENERATION",
+  snapshotClearing: "SNAPSHOT_CLEARING",
+} as const;
 
-export enum TaskType {
-  LAUNCH = "LAUNCH",
-  EXPORT = "EXPORT",
-  VARIANT_GENERATION = "VARIANT_GENERATION",
-  COPY = "COPY",
-  ARCHIVE = "ARCHIVE",
-  UNARCHIVE = "UNARCHIVE",
-  DOWNLOAD = "DOWNLOAD",
-  SCAN = "SCAN",
-  UPGRADE_STUDY = "UPGRADE_STUDY",
-  UNKNOWN = "UNKNOWN",
-}
+export type TTaskType = O.UnionOf<typeof TaskType>;
 
 export interface TaskDTO extends IdentityDTO<string> {
-  id: string;
-  name: string;
   owner?: number;
-  status: TaskStatus;
+  status: TTaskStatus;
   creation_date_utc: string;
   completion_date_utc?: string;
-  result?: TaskResult;
-  logs?: TaskLogDTO[];
-  type?: TaskType;
+  result?: {
+    success: boolean;
+    message: string;
+    return_value?: string;
+  };
+  logs?: Array<{
+    id: string;
+    message: string;
+  }>;
+  type?: TTaskType;
   ref_id?: string;
 }
 
@@ -656,7 +654,7 @@ export interface TaskView {
   dateView: ReactNode;
   action: ReactNode;
   date: string;
-  type: TaskType;
+  type: TTaskType | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
 }
 

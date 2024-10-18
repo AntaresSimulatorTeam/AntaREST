@@ -82,7 +82,7 @@ function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
   return (
     <UsePromiseCond
       response={res}
-      ifResolved={(data) =>
+      ifFulfilled={(data) =>
         filteredColumns.length > 0 ? (
           <TableForm
             defaultValues={data}
