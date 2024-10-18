@@ -9,3 +9,20 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
+from abc import ABC, abstractmethod
+
+from antarest.core.serialization import AntaresBaseModel
+
+
+class ICommandListener(ABC, AntaresBaseModel, extra="forbid"):
+    """
+    Interface for all listeners that can be given inside the `apply` method of a command.
+    """
+
+    @abstractmethod
+    def notify_progress(self, progress: int) -> None:
+        """
+        Given a command progression, notifies the information.
+        """
+        raise NotImplementedError()
