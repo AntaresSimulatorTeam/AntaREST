@@ -13,13 +13,6 @@
  */
 
 import { t } from "i18next";
-import * as R from "ramda";
-
-type ValidationResult = string | true;
-
-////////////////////////////////////////////////////////////////
-// String
-////////////////////////////////////////////////////////////////
 
 interface StringValidationOptions {
   existingValues?: string[];
@@ -55,7 +48,7 @@ interface StringValidationOptions {
 export function validateString(
   value: string,
   options?: StringValidationOptions,
-): ValidationResult {
+): string | true {
   const {
     existingValues = [],
     excludedValues = [],
@@ -129,7 +122,7 @@ export function validateString(
  * @param password - The password to validate.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
-export function validatePassword(password: string): ValidationResult {
+export function validatePassword(password: string): string | true {
   const trimmedPassword = password.trim();
 
   if (!trimmedPassword) {
@@ -162,143 +155,6 @@ export function validatePassword(password: string): ValidationResult {
 
   return true;
 }
-
-////////////////////////////////////////////////////////////////
-// Number
-////////////////////////////////////////////////////////////////
-
-interface NumberValidationOptions {
-  min?: number;
-  max?: number;
-  integer?: boolean;
-}
-
-/**
- * Validates a number against specified numerical limits.
- *
- * @example
- * validateNumber(5, { min: 0, max: 10 }); // true
- * validateNumber(9, { min: 10, max: 20 }); // Error message
- *
- *
- * @example <caption>With currying.</caption>
- * const fn = validateNumber({ min: 0, max: 10 });
- * fn(5); // true
- * fn(11); // Error message
- *
- * @param value - The number to validate.
- * @param [options] - Configuration options for validation.
- * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value.
- * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value.
- * @returns True if validation is successful, or a localized error message if it fails.
- */
-export function validateNumber(
-  value: number,
-  options?: NumberValidationOptions,
-): ValidationResult;
-
-export function validateNumber(
-  options?: NumberValidationOptions,
-): (value: number) => ValidationResult;
-
-export function validateNumber(
-  valueOrOpts?: number | NumberValidationOptions,
-  options: NumberValidationOptions = {},
-): ValidationResult | ((value: number) => ValidationResult) {
-  if (typeof valueOrOpts !== "number") {
-    return (v: number) => validateNumber(v, valueOrOpts);
-  }
-
-  const value = valueOrOpts;
-
-  if (!isFinite(value)) {
-    return t("form.field.invalidNumber", { value });
-  }
-
-  const {
-    min = Number.MIN_SAFE_INTEGER,
-    max = Number.MAX_SAFE_INTEGER,
-    integer = false,
-  } = options;
-
-  if (integer && !Number.isInteger(valueOrOpts)) {
-    return t("form.field.mustBeInteger");
-  }
-
-  if (value < min) {
-    return t("form.field.minValue", { 0: min });
-  }
-
-  if (value > max) {
-    return t("form.field.maxValue", { 0: max });
-  }
-
-  return true;
-}
-
-////////////////////////////////////////////////////////////////
-// Array
-////////////////////////////////////////////////////////////////
-
-interface ArrayValidationOptions {
-  allowEmpty?: boolean;
-  allowDuplicate?: boolean;
-}
-
-/**
- * Validates an array against specified criteria.
- * This function checks for duplicate values in the array.
- *
- * @example
- * validateArray([1, 2, 3], { allowDuplicate: false }); // true
- * validateArray([1, 1, 2, 3], { allowDuplicate: false }); // Error message
- *
- *
- * @example <caption>With currying.</caption>
- * const fn = validateArray({ allowDuplicate: false });
- * fn([1, 2, 3]); // true
- * fn([1, 1, 2, 3]); // Error message
- *
- * @param value - The array to validate.
- * @param [options] - Configuration options for validation.
- * @param [options.allowEmpty=false] - Sets whether empty array is allowed or not.
- * @param [options.allowDuplicate=false] - Sets whether duplicate values are allowed or not.
- * @returns True if validation is successful, or a localized error message if it fails.
- */
-export function validateArray<T>(
-  value: T[],
-  options?: ArrayValidationOptions,
-): ValidationResult;
-
-export function validateArray<T>(
-  options?: ArrayValidationOptions,
-): (value: T[]) => ValidationResult;
-
-export function validateArray<T>(
-  valueOrOpts?: T[] | ArrayValidationOptions,
-  options: ArrayValidationOptions = {},
-): ValidationResult | ((value: T[]) => ValidationResult) {
-  if (!Array.isArray(valueOrOpts)) {
-    return (v: T[]) => validateArray(v, valueOrOpts);
-  }
-
-  const value = valueOrOpts;
-  const { allowEmpty, allowDuplicate } = options;
-
-  if (!value.length && !allowEmpty) {
-    return t("form.field.required");
-  }
-
-  if (!allowDuplicate && R.uniq(value).length !== value.length) {
-    return t("form.field.duplicateNotAllowed");
-  }
-
-  return true;
-}
-
-////////////////////////////////////////////////////////////////
-// Utils
-////////////////////////////////////////////////////////////////
 
 // Escape special characters in specialChars
 function escapeSpecialChars(chars: string) {
