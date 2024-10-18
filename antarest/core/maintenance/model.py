@@ -10,10 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from enum import Enum
+from enum import StrEnum
 
 
-class MaintenanceMode(str, Enum):
+class MaintenanceMode(StrEnum):
     NORMAL_MODE = "NORMAL"
     MAINTENANCE_MODE = "MAINTENANCE"
 

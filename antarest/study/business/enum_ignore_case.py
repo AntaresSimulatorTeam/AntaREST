@@ -14,7 +14,7 @@ import enum
 import typing
 
 
-class EnumIgnoreCase(str, enum.Enum):
+class EnumIgnoreCase(enum.StrEnum):
     """
     Case-insensitive enum base class
 

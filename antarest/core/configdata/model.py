@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Optional
 
 from sqlalchemy import Column, Integer, String  # type: ignore
@@ -43,6 +43,6 @@ class ConfigData(Base):  # type: ignore
 
 
 # APP MAIN CONFIG KEYS
-class ConfigDataAppKeys(str, Enum):
+class ConfigDataAppKeys(StrEnum):
     MAINTENANCE_MODE = "MAINTENANCE_MODE"
     MESSAGE_INFO = "MESSAGE_INFO"

@@ -13,7 +13,7 @@
 import multiprocessing
 import tempfile
 from dataclasses import asdict, dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -25,7 +25,7 @@ from antarest.core.roles import RoleType
 DEFAULT_WORKSPACE_NAME = "default"
 
 
-class Launcher(str, Enum):
+class Launcher(StrEnum):
     SLURM = "slurm"
     LOCAL = "local"
     DEFAULT = "default"
