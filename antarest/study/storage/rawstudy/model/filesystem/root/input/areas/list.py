@@ -10,14 +10,17 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
+import typing as t
 
+from antarest.study.storage.rawstudy.model.filesystem.config.files import extract_lines_from_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
+AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
-class InputAreasList(INode[List[str], List[str], List[str]]):
+
+class InputAreasList(INode[t.List[str], t.List[str], t.List[str]]):
     def normalize(self) -> None:
         pass  # no external store in this node
 
@@ -30,42 +33,40 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
 
     def get_node(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> INode[List[str], List[str], List[str]]:
+    ) -> INode[t.List[str], t.List[str], t.List[str]]:
         return self
 
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> List[str]:
+    ) -> t.List[str]:
         if self.config.archive_path:
-            path, tmp_dir = self._extract_file_to_tmp_dir()
-            lines = path.read_text().split("\n")
-            tmp_dir.cleanup()
+            lines = extract_lines_from_archive(self.config.archive_path, AREAS_LIST_RELATIVE_PATH)
         else:
             lines = self.config.path.read_text().split("\n")
         return [l.strip() for l in lines if l.strip()]
 
-    def save(self, data: List[str], url: Optional[List[str]] = None) -> None:
+    def save(self, data: t.List[str], url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self.config.path.write_text("\n".join(data))
 
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         if self.config.path.exists():
             self.config.path.unlink()
 
     def check_errors(
         self,
-        data: List[str],
-        url: Optional[List[str]] = None,
+        data: t.List[str],
+        url: t.Optional[t.List[str]] = None,
         raising: bool = False,
-    ) -> List[str]:
+    ) -> t.List[str]:
         errors = []
         if any(a not in data for a in [area.name for area in self.config.areas.values()]):
             errors.append(f"list.txt should have {self.config.area_names()} nodes but given {data}")
