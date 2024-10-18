@@ -18,7 +18,7 @@ import Fieldset from "../Fieldset";
 import FormDialog from "../dialogs/FormDialog";
 import { SubmitHandlerPlus } from "../Form/types";
 import StringFE from "../fieldEditors/StringFE";
-import { validateString } from "../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;

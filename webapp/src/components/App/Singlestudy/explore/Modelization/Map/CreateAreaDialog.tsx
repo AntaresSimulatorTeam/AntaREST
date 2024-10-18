@@ -19,8 +19,8 @@ import StringFE from "../../../../../common/fieldEditors/StringFE";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";
-import { validateString } from "../../../../../../utils/validationUtils";
 import Fieldset from "../../../../../common/Fieldset";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   studyId: string;
