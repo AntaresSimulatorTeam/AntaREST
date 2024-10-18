@@ -38,12 +38,13 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
 
 TaskUpdateNotifier = t.Callable[[str], None]
-Task = t.Callable[[TaskUpdateNotifier], TaskResult]
+Task = t.Callable[[TaskUpdateNotifier, t.Optional[ICommandListener]], TaskResult]
 
 DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
 """Default timeout for `await_task` in seconds."""
@@ -71,6 +72,7 @@ class ITaskService(ABC):
         ref_id: t.Optional[str],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
+        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         raise NotImplementedError()
 
@@ -137,7 +139,7 @@ class TaskJobService(ITaskService):
         task_id: str,
         task_type: str,
         task_args: t.Dict[str, t.Union[int, float, bool, str]],
-    ) -> t.Callable[[TaskUpdateNotifier], TaskResult]:
+    ) -> t.Callable[[TaskUpdateNotifier, t.Optional[ICommandListener]], TaskResult]:
         task_result_wrapper: t.List[TaskResult] = []
 
         def _create_awaiter(
@@ -151,7 +153,7 @@ class TaskJobService(ITaskService):
             return _await_task_end
 
         # noinspection PyUnusedLocal
-        def _send_worker_task(logger_: TaskUpdateNotifier) -> TaskResult:
+        def _send_worker_task(logger_: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             listener_id = self.event_bus.add_listener(
                 _create_awaiter(task_result_wrapper),
                 [EventType.WORKER_TASK_ENDED],
@@ -210,9 +212,12 @@ class TaskJobService(ITaskService):
         ref_id: t.Optional[str],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
+        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         task = self._create_task(name, task_type, ref_id, request_params)
-        self._launch_task(action, task, custom_event_messages, request_params)
+        if listener:
+            listener.set_task_id(task.id)
+        self._launch_task(action, task, custom_event_messages, request_params, listener)
         return str(task.id)
 
     def _create_task(
@@ -240,6 +245,7 @@ class TaskJobService(ITaskService):
         task: TaskJob,
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
+        listener: t.Optional[ICommandListener] = None,
     ) -> None:
         if not request_params.user:
             raise MustBeAuthenticatedError()
@@ -256,7 +262,7 @@ class TaskJobService(ITaskService):
                 permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages)
+        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages, listener)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> t.Callable[[Event], t.Awaitable[None]]:
@@ -350,6 +356,7 @@ class TaskJobService(ITaskService):
         callback: Task,
         task_id: str,
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
+        listener: t.Optional[ICommandListener] = None,
     ) -> None:
         # attention: this function is executed in a thread, not in the main process
 
@@ -376,7 +383,7 @@ class TaskJobService(ITaskService):
         try:
             with db():
                 # We must use the DB session attached to the current thread
-                result = callback(TaskJobLogRecorder(task_id, session=db.session))
+                result = callback(TaskJobLogRecorder(task_id, session=db.session), listener)
 
             status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
             logger.info(f"Task {task_id} ended with status {status}")
