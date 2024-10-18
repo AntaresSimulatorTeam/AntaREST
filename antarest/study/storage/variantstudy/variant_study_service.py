@@ -60,6 +60,7 @@ from antarest.study.storage.utils import assert_permission, export_study_flat, i
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -586,6 +587,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata: VariantStudy,
         denormalize: bool = False,
         from_scratch: bool = False,
+        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
@@ -625,6 +627,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     denormalize=denormalize,
                     from_scratch=from_scratch,
                     notifier=notifier,
+                    listener=listener,
                 )
                 return TaskResult(
                     success=generate_result.success,
