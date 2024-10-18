@@ -1,15 +1,21 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import logging
-from typing import List, Optional
+from typing import List
 
 from antarest.core.config import Config
-from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolder
-from antarest.study.storage.utils import (
-    get_folder_from_workspace,
-    get_workspace_from_config,
-    is_folder_safe,
-    is_study_folder,
-)
+from antarest.study.storage.utils import get_folder_from_workspace, get_workspace_from_config, is_study_folder
 
 logger = logging.getLogger(__name__)
 
