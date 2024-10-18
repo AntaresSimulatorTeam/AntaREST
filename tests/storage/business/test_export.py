@@ -43,8 +43,8 @@ def test_export_file(tmp_path: Path):
     study_service.export_file.return_value = b"Hello"
 
     # Test good study
-    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME)
-    export_path = tmp_path / "export.zip"
+    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
+    export_path = tmp_path / "export.7z"
     study_service.export_study(md, export_path)
 
 
