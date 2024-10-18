@@ -16,7 +16,6 @@ import uuid
 from abc import ABC, abstractmethod
 
 import typing_extensions as te
-from pydantic import BaseModel
 
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -24,6 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from antarest.core.serialization import AntaresBaseModel
 
 if t.TYPE_CHECKING:  # False at runtime, for mypy
     from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 OutputTuple: te.TypeAlias = t.Tuple[CommandOutput, t.Dict[str, t.Any]]
 
 
-class ICommand(ABC, BaseModel, extra="forbid", arbitrary_types_allowed=True):
+class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
     """
     Interface for all commands that can be applied to a study.
 
