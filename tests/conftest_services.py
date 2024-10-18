@@ -63,7 +63,7 @@ __all__ = (
     "study_storage_service_fixture",
 )
 
-from study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 
 class SynchTaskService(ITaskService):
