@@ -39,6 +39,7 @@ interface MatrixProps {
   customColumns?: string[] | readonly string[];
   colWidth?: number;
   fetchMatrixData?: fetchMatrixFn;
+  isImportDisabled?: boolean;
 }
 
 function Matrix({
@@ -54,6 +55,7 @@ function Matrix({
   customColumns,
   colWidth,
   fetchMatrixData,
+  isImportDisabled = false,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -120,6 +122,7 @@ function Matrix({
           redo={redo}
           canUndo={canUndo}
           canRedo={canRedo}
+          isImportDisabled={isImportDisabled}
         />
       </MatrixHeader>
       <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
