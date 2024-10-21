@@ -23,12 +23,9 @@ from pathlib import Path
 import py7zr
 from antares.study.version import StudyVersion
 
-import py7zr
-
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json
 from antarest.core.utils.archives import (
-    ArchiveFormat,
     extract_lines_from_archive,
     is_archive_format,
     read_file_from_archive,
