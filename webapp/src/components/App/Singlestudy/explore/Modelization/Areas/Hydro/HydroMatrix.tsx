@@ -40,8 +40,8 @@ function HydroMatrix({ type }: Props) {
         customRowHeaders={hydroMatrix.rowHeaders}
         aggregateColumns={hydroMatrix.aggregates}
         enableDateTimeColumn={hydroMatrix.enableDateTimeColumn}
-        enableReadOnly={hydroMatrix.enableReadOnly}
-        enablePercentDisplay={hydroMatrix.enablePercentDisplay}
+        readOnly={hydroMatrix.readOnly}
+        showPercent={hydroMatrix.showPercent}
         fetchMatrixData={hydroMatrix.fetchFn}
       />
     </Box>

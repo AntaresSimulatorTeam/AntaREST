@@ -266,7 +266,7 @@ function ResultDetails() {
                   columns={generateCustomColumns({
                     titles: matrix.columns,
                   })}
-                  isReadOnlyEnabled
+                  isReadOnly
                 />
               )
             }
@@ -292,7 +292,7 @@ function ResultDetails() {
                     }),
                   ]}
                   dateTime={dateTime}
-                  isReadOnlyEnabled
+                  isReadOnly
                 />
               )
             }

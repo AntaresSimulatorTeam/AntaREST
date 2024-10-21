@@ -33,9 +33,9 @@ interface MatrixProps {
   enableDateTimeColumn?: boolean;
   enableTimeSeriesColumns?: boolean;
   aggregateColumns?: AggregateConfig;
-  enableRowHeaders?: boolean;
-  enablePercentDisplay?: boolean;
-  enableReadOnly?: boolean;
+  rowHeaders?: boolean;
+  showPercent?: boolean;
+  readOnly?: boolean;
   customColumns?: string[] | readonly string[];
   colWidth?: number;
   fetchMatrixData?: fetchMatrixFn;
@@ -48,9 +48,9 @@ function Matrix({
   enableDateTimeColumn = true,
   enableTimeSeriesColumns = true,
   aggregateColumns = false,
-  enableRowHeaders = customRowHeaders.length > 0,
-  enablePercentDisplay = false,
-  enableReadOnly = false,
+  rowHeaders = customRowHeaders.length > 0,
+  showPercent = false,
+  readOnly = false,
   customColumns,
   colWidth,
   fetchMatrixData,
@@ -81,7 +81,7 @@ function Matrix({
     url,
     enableDateTimeColumn,
     enableTimeSeriesColumns,
-    enableRowHeaders,
+    rowHeaders,
     aggregateColumns,
     customColumns,
     colWidth,
@@ -132,8 +132,8 @@ function Matrix({
         dateTime={dateTime}
         onCellEdit={handleCellEdit}
         onMultipleCellsEdit={handleMultipleCellsEdit}
-        isReadOnlyEnabled={isSubmitting || enableReadOnly}
-        isPercentDisplayEnabled={enablePercentDisplay}
+        isReadOnly={isSubmitting || readOnly}
+        isPercentDisplayEnabled={showPercent}
       />
       {openImportDialog && (
         <ImportDialog

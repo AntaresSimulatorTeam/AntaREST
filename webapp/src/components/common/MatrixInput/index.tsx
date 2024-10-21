@@ -49,7 +49,7 @@ interface Props {
   fetchFn?: fetchMatrixFn;
   disableEdit?: boolean;
   disableImport?: boolean;
-  enablePercentDisplay?: boolean;
+  showPercent?: boolean;
 }
 
 function MatrixInput({
@@ -62,7 +62,7 @@ function MatrixInput({
   fetchFn,
   disableEdit = false,
   disableImport = false,
-  enablePercentDisplay,
+  showPercent,
 }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -201,7 +201,7 @@ function MatrixInput({
             readOnly={disableEdit}
             onUpdate={handleUpdate}
             computStats={computStats}
-            isPercentDisplayEnabled={enablePercentDisplay}
+            isPercentDisplayEnabled={showPercent}
           />
         ) : (
           !isLoading && (

@@ -39,7 +39,7 @@ export interface MatrixGridProps {
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
-  isReadOnlyEnabled?: boolean;
+  isReadOnly?: boolean;
   isPercentDisplayEnabled?: boolean;
 }
 
@@ -54,7 +54,7 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
-  isReadOnlyEnabled,
+  isReadOnly,
   isPercentDisplayEnabled,
 }: MatrixGridProps) {
   const [columns, setColumns] = useState<EnhancedGridColumn[]>(initialColumns);
@@ -66,7 +66,7 @@ function MatrixGrid({
   const { gridToData } = useColumnMapping(columns);
 
   const theme = useMemo(() => {
-    if (isReadOnlyEnabled) {
+    if (isReadOnly) {
       return {
         ...darkTheme,
         ...readOnlyDarkTheme,
@@ -74,7 +74,7 @@ function MatrixGrid({
     }
 
     return darkTheme;
-  }, [isReadOnlyEnabled]);
+  }, [isReadOnly]);
 
   const getCellContent = useGridCellContent(
     data,
@@ -83,7 +83,7 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
-    isReadOnlyEnabled,
+    isReadOnly,
     isPercentDisplayEnabled,
   );
 

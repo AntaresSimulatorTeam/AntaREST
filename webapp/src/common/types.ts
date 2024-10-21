@@ -661,3 +661,24 @@ export interface TaskView {
 }
 
 export type ValidationReturn = string | true;
+
+export interface MatrixConfig {
+  url: string;
+  titleKey: string;
+  columnsNames?: string[];
+}
+
+export interface SplitMatrixContent {
+  type: "split";
+  matrices: [MatrixConfig, MatrixConfig];
+}
+
+export interface SingleMatrixContent {
+  type: "single";
+  matrix: MatrixConfig;
+}
+
+export interface MatrixItem {
+  titleKey: string;
+  content: SplitMatrixContent | SingleMatrixContent;
+}
