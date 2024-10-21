@@ -218,9 +218,9 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
     d.mkdir(parents=True)
     (d / "trash").touch()
 
-    # e = diese / "folder/to_skip_folder"
-    # e.mkdir(parents=True)
-    # (e / "study.antares").touch()
+    e = diese / "folder/to_skip_folder"
+    e.mkdir(parents=True)
+    (e / "study.antares").touch()
 
     f = diese / "folder/another_folder"
     f.mkdir(parents=True)
