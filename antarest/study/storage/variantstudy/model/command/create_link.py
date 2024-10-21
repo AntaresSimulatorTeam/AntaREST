@@ -14,7 +14,7 @@ from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from antares.study.version import StudyVersion
-from pydantic import Field, ValidationInfo, field_validator, model_validator, ConfigDict
+from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel

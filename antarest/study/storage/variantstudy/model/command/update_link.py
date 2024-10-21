@@ -49,7 +49,9 @@ class UpdateLink(AbstractLinkCommand):
         area_from, area_to = sorted([self.area1, self.area2])
 
         try:
-            properties = LinkProperties.model_validate(self.parameters or {}).model_dump(exclude_unset=True, by_alias=True)
+            properties = LinkProperties.model_validate(self.parameters or {}).model_dump(
+                exclude_unset=True, by_alias=True
+            )
         except ValidationError:
             raise LinkValidationError("One or more fields are forbidden")
 

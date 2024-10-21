@@ -103,16 +103,16 @@ class TestLink:
                         "args": {
                             "area1": area1_id,
                             "area2": area2_id,
-                            "parameters": {
-                                "hurdles-cost": False,
-                                "wrong": "parameter"
-                            },
+                            "parameters": {"hurdles-cost": False, "wrong": "parameter"},
                         },
                     }
                 ],
             )
             assert res.status_code == 500
-            expected = {'description': 'Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 422: One or more fields are forbidden', 'exception': 'CommandApplicationError'}
+            expected = {
+                "description": "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 422: One or more fields are forbidden",
+                "exception": "CommandApplicationError",
+            }
             assert expected == res.json()
 
         # Test update link variant returns only modified values
