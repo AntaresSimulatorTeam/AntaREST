@@ -93,6 +93,47 @@ class TestLink:
         }
         assert expected == res.json()
 
+        # Test update link fails when given wrong parameters
+        if study_type == "raw":
+            res = client.post(
+                f"/v1/studies/{study_id}/commands",
+                json=[
+                    {
+                        "action": "update_link",
+                        "args": {
+                            "area1": area1_id,
+                            "area2": area2_id,
+                            "parameters": {
+                                "hurdles-cost": False,
+                                "wrong": "parameter"
+                            },
+                        },
+                    }
+                ],
+            )
+            assert res.status_code == 500
+            expected = {'description': 'Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 422: One or more fields are forbidden', 'exception': 'CommandApplicationError'}
+            assert expected == res.json()
+
+        # Test update link variant returns only modified values
+
+        if study_type == "variant":
+            res = client.put(
+                f"/v1/studies/{study_id}/links",
+                json={
+                    "area1": area1_id,
+                    "area2": area2_id,
+                    "hurdles-cost": False,
+                },
+            )
+            assert res.status_code == 200
+
+            res = client.get(f"/v1/studies/{study_id}/commands")
+            commands = res.json()
+            command_args = commands[-1]["args"]
+            assert command_args["parameters"]["hurdles-cost"] == False
+            assert "loop-flow" not in command_args["parameters"]
+
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_820(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore

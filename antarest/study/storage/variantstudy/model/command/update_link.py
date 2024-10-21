@@ -11,12 +11,13 @@
 # This file is part of the Antares project.
 import typing as t
 
-from antarest.study.model import STUDY_VERSION_8_2
+from pydantic import ValidationError
+
+from antarest.core.exceptions import LinkValidationError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
+from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand, LinkProperties
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -47,14 +48,21 @@ class UpdateLink(AbstractLinkCommand):
         version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
 
+        try:
+            properties = LinkProperties.model_validate(self.parameters or {}).model_dump(exclude_unset=True, by_alias=True)
+        except ValidationError:
+            raise LinkValidationError("One or more fields are forbidden")
+
         current_parameters = study_data.tree.get(["input", "links", area_from, "properties", area_to])
-        current_parameters.update(self.parameters or {})
+
+        current_parameters.update(properties or {})
 
         study_data.tree.save(current_parameters, ["input", "links", area_from, "properties", area_to])
 
         output, _ = self._apply_config(study_data.config)
 
-        self.save_series(area_from, area_to, study_data, version)
+        if any([self.series, self.direct, self.indirect]):
+            self.save_series(area_from, area_to, study_data, version)
 
         return output
 

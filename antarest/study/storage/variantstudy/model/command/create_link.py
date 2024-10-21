@@ -14,7 +14,7 @@ from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from antares.study.version import StudyVersion
-from pydantic import Field, ValidationInfo, field_validator, model_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator, ConfigDict
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
@@ -81,7 +81,7 @@ class LinkInfoProperties820(LinkInfoProperties):
 
 
 class LinkProperties(LinkInfoProperties820):
-    pass
+    model_config = ConfigDict(extra="forbid")
 
 
 class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
