@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { MatrixStats, MatrixType } from "../../../../../../../common/types";
+import {
+  MatrixDataDTO,
+  AggregateConfig,
+} from "../../../../../../common/MatrixGrid/types";
 import { SplitViewProps } from "../../../../../../common/SplitView";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";

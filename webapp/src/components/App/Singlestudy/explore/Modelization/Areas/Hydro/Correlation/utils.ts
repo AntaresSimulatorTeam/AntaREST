@@ -12,11 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
-  StudyMetadata,
-  Area,
-  MatrixType,
-} from "../../../../../../../../common/types";
+import { StudyMetadata, Area } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
 import { MatrixDataDTO } from "../../../../../../../common/MatrixGrid/types";
 import { AreaCoefficientItem } from "../utils";

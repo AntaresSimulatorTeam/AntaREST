@@ -27,10 +27,10 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Matrix from "./Matrix";
 import { Box, Button } from "@mui/material";
 import { Dataset } from "@mui/icons-material";
 import { validateString } from "@/utils/validation/string";
+import ConstraintMatrix from "./Matrix";
 
 interface Props {
   study: StudyMetadata;

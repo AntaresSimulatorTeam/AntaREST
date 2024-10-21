@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
 import Matrix from "../../../../../common/MatrixGrid/Matrix";

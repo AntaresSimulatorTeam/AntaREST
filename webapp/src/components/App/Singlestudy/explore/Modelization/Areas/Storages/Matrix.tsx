@@ -12,8 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import * as React from "react";
-import * as R from "ramda";
+import { useMemo, useState } from "react";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
