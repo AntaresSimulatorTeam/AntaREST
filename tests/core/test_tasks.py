@@ -390,7 +390,6 @@ def test_cancel_orphan_tasks(
 def test_ts_generation_task(
     tmp_path: Path,
     core_config: Config,
-    event_bus: IEventBus,
     admin_user: JWTUser,
     raw_study_service: RawStudyService,
     db_session: Session,
@@ -398,6 +397,8 @@ def test_ts_generation_task(
     # =======================
     #  SET UP
     # =======================
+
+    event_bus = EventBusService(LocalEventBus())
 
     # Create a TaskJobService and add tasks
     task_job_repo = TaskJobRepository(db_session)
@@ -424,9 +425,9 @@ def test_ts_generation_task(
         owner=regular_user,
         path=str(raw_study_path),
     )
-
-    study_metadata_repository = StudyMetadataRepository(Mock(), db_session)
-    study_metadata_repository.save(raw_study)
+    study_metadata_repository = StudyMetadataRepository(Mock(), None)
+    db_session.add(raw_study)
+    db_session.commit()
 
     # Set up the Raw Study
     raw_study_service.create(raw_study)
@@ -513,15 +514,27 @@ nominalcapacity = 14.0
         request_params=RequestParameters(DEFAULT_ADMIN_USER),
         listener=listener,
     )
-    tasks = task_job_repo.list(filter=TaskListFilter(), user=DEFAULT_ADMIN_USER.id)
+
+    # Await task
+    study_service.task_service.await_task(task_id, 2)
+    tasks = study_service.task_service.list_tasks(TaskListFilter(), RequestParameters(DEFAULT_ADMIN_USER))
     assert len(tasks) == 1
     task = tasks[0]
     assert task.ref_id == raw_study.id
     assert task.id == task_id
     assert task.name == "test_generation"
+    assert task.status == TaskStatus.COMPLETED
 
-    # todo: test event_bus; should contain the 2 events on Progress + 2 about running tasks.
+    # Check eventbus
     events = backend.get_events()
-    assert len(events) == 2
-    print(events[0])
-    print(events[1])
+    assert len(events) == 6
+    assert events[0].type == EventType.TASK_ADDED
+    assert events[1].type == EventType.TASK_RUNNING
+
+    assert events[2].type == EventType.TS_GENERATION_PROGRESS
+    assert events[2].payload == {"task_id": task_id, "progress": 50}
+    assert events[3].type == EventType.TS_GENERATION_PROGRESS
+    assert events[3].payload == {"task_id": task_id, "progress": 100}
+
+    assert events[4].type == EventType.STUDY_EDITED
+    assert events[5].type == EventType.TASK_COMPLETED
