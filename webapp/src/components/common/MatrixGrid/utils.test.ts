@@ -16,7 +16,7 @@ import {
   MatrixIndex,
   StudyOutputDownloadLevelDTO,
 } from "../../../common/types";
-import { ColumnTypes } from "./types";
+import { Column } from "./types";
 import {
   calculateMatrixAggregates,
   formatNumber,
@@ -49,21 +49,21 @@ describe("generateTimeSeriesColumns", () => {
       {
         id: "data1",
         title: "TS 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         style: "normal",
         editable: true,
       },
       {
         id: "data2",
         title: "TS 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         style: "normal",
         editable: true,
       },
       {
         id: "data3",
         title: "TS 3",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         style: "normal",
         editable: true,
       },
@@ -81,14 +81,14 @@ describe("generateTimeSeriesColumns", () => {
       {
         id: "data10",
         title: "Data 10",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         style: "normal",
         editable: false,
       },
       {
         id: "data11",
         title: "Data 11",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         style: "normal",
         editable: false,
       },
@@ -110,7 +110,7 @@ describe("generateTimeSeriesColumns", () => {
   test("maintains consistent type and style", () => {
     const result = generateTimeSeriesColumns({ count: 1000 });
     result.forEach((column) => {
-      expect(column.type).toBe(ColumnTypes.Number);
+      expect(column.type).toBe(Column.Number);
       expect(column.style).toBe("normal");
     });
   });

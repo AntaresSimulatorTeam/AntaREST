@@ -17,8 +17,8 @@ import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
 import {
   type EnhancedGridColumn,
   type ColumnType,
-  ColumnTypes,
   MatrixAggregates,
+  Column,
 } from "./types";
 import { formatNumber } from "./utils";
 
@@ -37,7 +37,7 @@ type CellContentGenerator = (
  * Each generator function creates the appropriate GridCell based on the column type and data.
  */
 const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
-  [ColumnTypes.Text]: (
+  [Column.Text]: (
     row,
     col,
     column,
@@ -52,14 +52,14 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnTypes.DateTime]: (row, col, column, data, dateTime) => ({
+  [Column.DateTime]: (row, col, column, data, dateTime) => ({
     kind: GridCellKind.Text,
     data: "", // Date/time columns are not editable
     displayData: dateTime?.[row] ?? "",
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnTypes.Number]: (row, col, column, data) => {
+  [Column.Number]: (row, col, column, data) => {
     const value = data?.[row]?.[col];
 
     return {
@@ -72,7 +72,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
       thousandSeparator: " ",
     };
   },
-  [ColumnTypes.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
+  [Column.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
     const value = aggregates?.[column.id as keyof MatrixAggregates]?.[row];
 
     return {
@@ -109,7 +109,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
  * @param dateTime - Optional array of date-time strings for date columns.
  * @param aggregates - Optional object mapping column IDs to arrays of aggregated values.
  * @param rowHeaders - Optional array of row header labels.
- * @param isReadOnlyEnabled - Whether the grid is read-only (default is false).
+ * @param isReadOnly - Whether the grid is read-only (default is false).
  * @param isPercentDisplayEnabled - Whether to display number values as percentages (default is false).
  * @returns A function that accepts a grid item and returns the configured grid cell content.
  */
@@ -120,7 +120,7 @@ export function useGridCellContent(
   dateTime?: string[],
   aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
-  isReadOnlyEnabled = false,
+  isReadOnly = false,
   isPercentDisplayEnabled = false,
 ): (cell: Item) => GridCell {
   const columnMap = useMemo(() => {
@@ -160,7 +160,7 @@ export function useGridCellContent(
       // accounting for any non-data columns in the grid
       let adjustedCol = col;
 
-      if (column.type === ColumnTypes.Number && gridToData) {
+      if (column.type === Column.Number && gridToData) {
         // Map grid cell to data array index
         const dataCell = gridToData(cell);
 
@@ -185,12 +185,12 @@ export function useGridCellContent(
           ...gridCell,
           displayData: `${gridCell.data}%`,
           // If ReadOnly is enabled, we don't want to allow overlay
-          allowOverlay: !isReadOnlyEnabled,
+          allowOverlay: !isReadOnly,
         };
       }
 
       // Prevent updates for read-only grids
-      if (isReadOnlyEnabled) {
+      if (isReadOnly) {
         return {
           ...gridCell,
           allowOverlay: false,
@@ -206,7 +206,7 @@ export function useGridCellContent(
       dateTime,
       aggregates,
       rowHeaders,
-      isReadOnlyEnabled,
+      isReadOnly,
       isPercentDisplayEnabled,
     ],
   );

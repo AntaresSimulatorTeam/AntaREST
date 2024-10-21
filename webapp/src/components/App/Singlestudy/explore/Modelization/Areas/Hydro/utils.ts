@@ -54,8 +54,8 @@ export interface HydroMatrixProps {
   fetchFn?: fetchMatrixFn;
   aggregates?: AggregateConfig;
   enableDateTimeColumn?: boolean;
-  enableReadOnly?: boolean;
-  enablePercentDisplay?: boolean;
+  readOnly?: boolean;
+  showPercent?: boolean;
 }
 
 type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
@@ -132,7 +132,7 @@ export const MATRICES: Matrices = {
     columns: generateColumns("%"),
     rowHeaders: ["Generating Power", "Pumping Power"],
     enableDateTimeColumn: false,
-    enablePercentDisplay: true,
+    showPercent: true,
   },
   [HydroMatrix.EnergyCredits]: {
     title: "Standard Credits",
@@ -148,7 +148,7 @@ export const MATRICES: Matrices = {
     title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     columns: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
-    enablePercentDisplay: true,
+    showPercent: true,
   },
   [HydroMatrix.WaterValues]: {
     title: "Water Values",
@@ -204,16 +204,16 @@ export const MATRICES: Matrices = {
     url: "",
     fetchFn: getAllocationMatrix,
     enableDateTimeColumn: false,
-    enableReadOnly: true,
-    enablePercentDisplay: true,
+    readOnly: true,
+    showPercent: true,
   },
   [HydroMatrix.Correlation]: {
     title: "Correlation",
     url: "",
     fetchFn: getCorrelationMatrix,
     enableDateTimeColumn: false,
-    enableReadOnly: true,
-    enablePercentDisplay: true,
+    readOnly: true,
+    showPercent: true,
   },
 };
 

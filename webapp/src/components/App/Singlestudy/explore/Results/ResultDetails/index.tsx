@@ -58,7 +58,7 @@ import {
   generateCustomColumns,
   generateDateTime,
 } from "../../../../../common/MatrixGrid/utils.ts";
-import { ColumnTypes } from "../../../../../common/MatrixGrid/types.ts";
+import { Column } from "../../../../../common/MatrixGrid/types.ts";
 import SplitView from "../../../../../common/SplitView/index.tsx";
 import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";
@@ -266,7 +266,7 @@ function ResultDetails() {
                   columns={generateCustomColumns({
                     titles: matrix.columns,
                   })}
-                  isReadOnlyEnabled
+                  isReadOnly
                 />
               )
             }
@@ -284,7 +284,7 @@ function ResultDetails() {
                     {
                       id: "date",
                       title: "Date",
-                      type: ColumnTypes.DateTime,
+                      type: Column.DateTime,
                       editable: false,
                     },
                     ...generateCustomColumns({
@@ -292,7 +292,7 @@ function ResultDetails() {
                     }),
                   ]}
                   dateTime={dateTime}
-                  isReadOnlyEnabled
+                  isReadOnly
                 />
               )
             }

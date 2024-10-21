@@ -45,10 +45,10 @@ function ResultFilters({
 }: Props) {
   const { t } = useTranslation();
 
-  const controls = [
+  const filters = [
     {
       label: `${t("study.results.mc")}:`,
-      control: (
+      field: (
         <>
           <BooleanFE
             value={year <= 0}
@@ -80,7 +80,7 @@ function ResultFilters({
     },
     {
       label: `${t("study.results.display")}:`,
-      control: (
+      field: (
         <SelectFE
           value={dataType}
           options={[
@@ -100,7 +100,7 @@ function ResultFilters({
     },
     {
       label: `${t("study.results.temporality")}:`,
-      control: (
+      field: (
         <SelectFE
           value={timestep}
           options={[
@@ -135,7 +135,7 @@ function ResultFilters({
         py: 1,
       }}
     >
-      {controls.map(({ label, control }) => (
+      {filters.map(({ label, field }) => (
         <Box
           key={label}
           sx={{
@@ -146,7 +146,7 @@ function ResultFilters({
           <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
             {label}
           </Box>
-          {control}
+          {field}
         </Box>
       ))}
       <DownloadMatrixButton studyId={studyId} path={path} />

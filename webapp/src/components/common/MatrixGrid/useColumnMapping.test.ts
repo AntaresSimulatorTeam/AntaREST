@@ -15,42 +15,42 @@
 import { renderHook } from "@testing-library/react";
 import { describe, test, expect } from "vitest";
 import { useColumnMapping } from "./useColumnMapping";
-import { EnhancedGridColumn, ColumnTypes } from "./types";
+import { EnhancedGridColumn, Column } from "./types";
 
 describe("useColumnMapping", () => {
   const testColumns: EnhancedGridColumn[] = [
     {
       id: "text",
       title: "Text",
-      type: ColumnTypes.Text,
+      type: Column.Text,
       width: 100,
       editable: false,
     },
     {
       id: "date",
       title: "Date",
-      type: ColumnTypes.DateTime,
+      type: Column.DateTime,
       width: 100,
       editable: false,
     },
     {
       id: "num1",
       title: "Number 1",
-      type: ColumnTypes.Number,
+      type: Column.Number,
       width: 100,
       editable: true,
     },
     {
       id: "num2",
       title: "Number 2",
-      type: ColumnTypes.Number,
+      type: Column.Number,
       width: 100,
       editable: true,
     },
     {
       id: "agg",
       title: "Aggregate",
-      type: ColumnTypes.Aggregate,
+      type: Column.Aggregate,
       width: 100,
       editable: false,
     },
@@ -90,14 +90,14 @@ describe("useColumnMapping", () => {
       {
         id: "text",
         title: "Text",
-        type: ColumnTypes.Text,
+        type: Column.Text,
         width: 100,
         editable: false,
       },
       {
         id: "date",
         title: "Date",
-        type: ColumnTypes.DateTime,
+        type: Column.DateTime,
         width: 100,
         editable: false,
       },
@@ -113,14 +113,14 @@ describe("useColumnMapping", () => {
       {
         id: "num1",
         title: "Number 1",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 100,
         editable: true,
       },
       {
         id: "num2",
         title: "Number 2",
-        type: ColumnTypes.Number,
+        type: Column.Number,
         width: 100,
         editable: true,
       },

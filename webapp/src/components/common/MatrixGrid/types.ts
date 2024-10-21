@@ -22,16 +22,14 @@ import {
 // Enums
 ////////////////////////////////////////////////////////////////
 
-// TODO update enums to be singular
-
-export const ColumnTypes = {
+export const Column = {
   DateTime: "datetime",
   Number: "number",
   Text: "text",
   Aggregate: "aggregate",
 } as const;
 
-export const Operations = {
+export const Operation = {
   Add: "+",
   Sub: "-",
   Mul: "*",
@@ -41,7 +39,7 @@ export const Operations = {
 } as const;
 
 // !NOTE: Keep lowercase to match Glide Data Grid column ids
-export const Aggregates = {
+export const Aggregate = {
   Min: "min",
   Max: "max",
   Avg: "avg",
@@ -49,12 +47,11 @@ export const Aggregates = {
 } as const;
 
 export const TimeFrequency = {
-  // TODO update old enum occurrences
-  ANNUAL: "annual",
-  MONTHLY: "monthly",
-  WEEKLY: "weekly",
-  DAILY: "daily",
-  HOURLY: "hourly",
+  Annual: "annual",
+  Monthly: "monthly",
+  Weekly: "weekly",
+  Daily: "daily",
+  Hourly: "hourly",
 } as const;
 
 ////////////////////////////////////////////////////////////////
@@ -62,10 +59,9 @@ export const TimeFrequency = {
 ////////////////////////////////////////////////////////////////
 
 // Derived types
-export type ColumnType = (typeof ColumnTypes)[keyof typeof ColumnTypes];
-// TODO add sufix Type
-export type Operation = (typeof Operations)[keyof typeof Operations];
-export type AggregateType = (typeof Aggregates)[keyof typeof Aggregates];
+export type ColumnType = (typeof Column)[keyof typeof Column];
+export type OperationType = (typeof Operation)[keyof typeof Operation];
+export type AggregateType = (typeof Aggregate)[keyof typeof Aggregate];
 export type TimeFrequencyType =
   (typeof TimeFrequency)[keyof typeof TimeFrequency];
 
@@ -127,7 +123,7 @@ export interface GridUpdate {
 
 // Shape of updates to be sent to the API
 export interface MatrixUpdate {
-  operation: Operation;
+  operation: OperationType;
   value: number;
 }
 

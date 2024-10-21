@@ -16,7 +16,7 @@ import { render } from "@testing-library/react";
 import MatrixGrid, { MatrixGridProps } from ".";
 import Box from "@mui/material/Box";
 import { mockGetBoundingClientRect } from "../../../tests/mocks/mockGetBoundingClientRect";
-import { type EnhancedGridColumn, ColumnTypes } from "./types";
+import { type EnhancedGridColumn, Column } from "./types";
 import { mockHTMLCanvasElement } from "../../../tests/mocks/mockHTMLCanvasElement";
 
 beforeEach(() => {
@@ -67,7 +67,7 @@ describe("MatrixGrid rendering", () => {
         id: "col1",
         title: "Column 1",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 0,
       },
@@ -75,7 +75,7 @@ describe("MatrixGrid rendering", () => {
         id: "col2",
         title: "Column 2",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 1,
       },
@@ -83,7 +83,7 @@ describe("MatrixGrid rendering", () => {
         id: "col3",
         title: "Column 3",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 2,
       },
@@ -118,7 +118,7 @@ describe("MatrixGrid rendering", () => {
         id: "col1",
         title: "Column 1",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 0,
       },
@@ -126,7 +126,7 @@ describe("MatrixGrid rendering", () => {
         id: "col2",
         title: "Column 2",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 1,
       },
@@ -134,7 +134,7 @@ describe("MatrixGrid rendering", () => {
         id: "col3",
         title: "Column 3",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 2,
       },
@@ -171,7 +171,7 @@ describe("MatrixGrid rendering", () => {
         id: "col1",
         title: "Column 1",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 0,
       },
@@ -179,7 +179,7 @@ describe("MatrixGrid rendering", () => {
         id: "col2",
         title: "Column 2",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 1,
       },
@@ -187,7 +187,7 @@ describe("MatrixGrid rendering", () => {
         id: "col3",
         title: "Column 3",
         width: 100,
-        type: ColumnTypes.Number,
+        type: Column.Number,
         editable: true,
         order: 2,
       },

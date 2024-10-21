@@ -17,7 +17,10 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
+import {
+  type MatrixItem,
+  type StudyMetadata,
+} from "../../../../../../../common/types";
 import { Storage } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
 import Matrix from "../../../../../../common/MatrixGrid/Matrix";
@@ -26,26 +29,6 @@ interface Props {
   study: StudyMetadata;
   areaId: StudyMetadata["id"];
   storageId: Storage["id"];
-}
-
-interface MatrixConfig {
-  url: string;
-  titleKey: string;
-}
-
-interface SplitMatrixContent {
-  type: "split";
-  matrices: [MatrixConfig, MatrixConfig];
-}
-
-interface SingleMatrixContent {
-  type: "single";
-  matrix: MatrixConfig;
-}
-
-interface MatrixItem {
-  titleKey: string;
-  content: SplitMatrixContent | SingleMatrixContent;
 }
 
 function StorageMatrices({ areaId, storageId }: Props) {
