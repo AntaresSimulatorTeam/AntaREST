@@ -24,7 +24,6 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 import py7zr
-
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
