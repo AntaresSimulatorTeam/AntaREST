@@ -843,6 +843,8 @@ class StudyService:
         Args:
             folders: list of studies currently present on folder
             directory: directory of studies that will be watched
+            recursive: if false, the delta will apply only to the studies in directory, otherwise
+                it will apply to directory ot any subdirectory
 
         Returns:
 

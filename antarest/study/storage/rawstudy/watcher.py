@@ -183,6 +183,7 @@ class Watcher(IService):
             params: user parameters
             workspace: workspace to scan
             path: relative path to folder to scan
+            recursive: if true, scan recursively all subfolders otherwise only the first level
         """
 
         # noinspection PyUnusedLocal
@@ -208,6 +209,9 @@ class Watcher(IService):
     ) -> None:
         """
         Scan recursively list of studies present on disk. Send updated list to study service.
+
+        Args:
+            recursive: if true, scan recursively all subfolders otherwise only the first level
         Returns:
 
         """
