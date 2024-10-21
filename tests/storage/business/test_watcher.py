@@ -183,7 +183,8 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
     clean_files()
 
     """
-    Create this 
+    Create this hierarchy
+
     tmp_path
     ├── default
     │   └── studyA
@@ -220,7 +221,7 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
     # e = diese / "folder/to_skip_folder"
     # e.mkdir(parents=True)
     # (e / "study.antares").touch()
-    db_session.commit()
+
     f = diese / "folder/another_folder"
     f.mkdir(parents=True)
     (f / "AW_NO_SCAN").touch()
@@ -228,7 +229,7 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
     g = diese / "folder/subfolder/studyG"
     g.mkdir(parents=True)
     (g / "study.antares").touch()
-    db_session.commit()
+
     raw_study_service = Mock(spec=RawStudyService)
     raw_study_service.get_study_information.side_effect = study_to_dto
     repository = StudyMetadataRepository(session=db_session, cache_service=Mock(spec=ICache))
@@ -237,26 +238,29 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
     service = build_study_service(raw_study_service, repository, config)
     watcher = Watcher(config, service, task_service=SimpleSyncTaskService())
 
+    # at the beginning, no study in the database
     assert count_studies() == 0
 
+    # only the studyA should be scanned, as the recursive flag is set to False
     watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder")
     assert count_studies() == 1
 
-    db_session.commit()
-
+    # Now studyC should be scanned, as we scan folder/subfolder which contains studyG
     watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
     assert count_studies() == 2
 
+    # Even if we deleted stydu G, the scan shoudl not delete, as we are not scanning the folder containing it
     os.remove(g / "study.antares")
     watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder")
     assert count_studies() == 2
-
     assert repository.delete.call_count == 0
+
+    # Now we scan the folder containing studyG, it should be marked for deletion but not deleted yet
     watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
     assert repository.delete.call_count == 0
 
+    # We simulate three days went by, now a delete should be triggered
     in_3_days = datetime.utcnow() + timedelta(days=3)
-    # Get the current time and add 3 days to it
     with mock.patch("antarest.study.service.datetime") as mock_datetime:
         mock_datetime.utcnow.return_value = in_3_days
         watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder/subfolder")
