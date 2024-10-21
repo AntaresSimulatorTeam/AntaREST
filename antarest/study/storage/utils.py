@@ -26,7 +26,7 @@ from zipfile import ZipFile
 from antares.study.version import StudyVersion
 
 from antarest.core.config import Config, WorkspaceConfig
-from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
+from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion, WorkspaceNotFound
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -47,7 +47,6 @@ from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.rawstudy.watcher_errors import WorkspaceNotFound
 
 logger = logging.getLogger(__name__)
 
