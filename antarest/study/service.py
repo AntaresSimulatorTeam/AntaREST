@@ -192,7 +192,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
     def _generate_timeseries(self, listener: t.Optional[ICommandListener]) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries(command_context=command_context)
+        command = GenerateThermalClusterTimeSeries.model_construct(command_context=command_context)
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)

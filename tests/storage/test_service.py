@@ -28,7 +28,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -92,13 +92,14 @@ def build_study_service(
     cache_service: ICache = Mock(spec=ICache),
     variant_study_service: VariantStudyService = Mock(spec=VariantStudyService),
     task_service: ITaskService = Mock(spec=ITaskService),
+    event_bus: IEventBus = Mock(spec=IEventBus),
 ) -> StudyService:
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
         user_service=user_service,
         repository=repository,
-        event_bus=Mock(),
+        event_bus=event_bus,
         task_service=task_service,
         file_transfer_manager=Mock(),
         cache_service=cache_service,

@@ -16,6 +16,8 @@ import typing as t
 from pathlib import Path
 from unittest.mock import ANY, Mock
 
+import numpy as np
+import pandas as pd
 import pytest
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
@@ -23,7 +25,7 @@ from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import EventType, IEventBus
-from antarest.core.jwt import JWTUser
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -46,6 +48,13 @@ from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
+from storage.test_service import build_study_service
+from study.repository import StudyMetadataRepository
+from study.service import ThermalClusterTimeSeriesGeneratorTask
+from study.storage.rawstudy.raw_study_service import RawStudyService
+from study.storage.variantstudy.command_factory import CommandFactory
+from study.storage.variantstudy.model.command_context import CommandContext
+from study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import with_db_context
 
 
@@ -376,3 +385,143 @@ def test_cancel_orphan_tasks(
             assert updated_task_job.result_status == result_status
             assert updated_task_job.result_msg == result_msg
             assert (datetime.datetime.utcnow() - updated_task_job.completion_date).seconds <= max_diff_seconds
+
+
+def test_ts_generation_task(
+    tmp_path: Path,
+    core_config: Config,
+    event_bus: IEventBus,
+    admin_user: JWTUser,
+    raw_study_service: RawStudyService,
+    db_session: Session,
+) -> None:
+    # =======================
+    #  SET UP
+    # =======================
+
+    # Create a TaskJobService and add tasks
+    task_job_repo = TaskJobRepository(db_session)
+
+    # Create a TaskJobService
+    task_job_service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+
+    # Create a raw study
+    raw_study_path = tmp_path / "study"
+
+    regular_user = User(id=99, name="regular")
+    db_session.add(regular_user)
+    db_session.commit()
+
+    raw_study = RawStudy(
+        id="my_raw_study",
+        name="my_raw_study",
+        version="860",
+        author="John Smith",
+        created_at=datetime.datetime(2023, 7, 15, 16, 45),
+        updated_at=datetime.datetime(2023, 7, 19, 8, 15),
+        last_access=datetime.datetime.utcnow(),
+        public_mode=PublicMode.FULL,
+        owner=regular_user,
+        path=str(raw_study_path),
+    )
+
+    study_metadata_repository = StudyMetadataRepository(Mock(), db_session)
+    study_metadata_repository.save(raw_study)
+
+    # Set up the Raw Study
+    raw_study_service.create(raw_study)
+    # Create an area
+    areas_path = raw_study_path / "input" / "areas"
+    areas_path.mkdir(parents=True, exist_ok=True)
+    (areas_path / "fr").mkdir(parents=True, exist_ok=True)
+    (areas_path / "list.txt").touch(exist_ok=True)
+    with open(areas_path / "list.txt", mode="w") as f:
+        f.writelines(["fr"])
+    # Create 2 thermal clusters
+    thermal_path = raw_study_path / "input" / "thermal"
+    thermal_path.mkdir(parents=True, exist_ok=True)
+    fr_path = thermal_path / "clusters" / "fr"
+    (fr_path).mkdir(parents=True, exist_ok=True)
+    (fr_path / "list.ini").touch(exist_ok=True)
+    content = """
+    [th_1]
+name = th_1
+nominalcapacity = 14.0
+
+[th_2]
+name = th_2
+nominalcapacity = 14.0
+"""
+    (fr_path / "list.ini").write_text(content)
+    # Create matrix files
+    for th_name in ["th_1", "th_2"]:
+        prepro_folder = thermal_path / "prepro" / "fr" / th_name
+        prepro_folder.mkdir(parents=True, exist_ok=True)
+        # Modulation
+        modulation_df = pd.DataFrame(data=np.ones((8760, 3)))
+        modulation_df.to_csv(prepro_folder / "modulation.txt", sep="\t", header=False, index=False)
+        (prepro_folder / "data.txt").touch()
+        # Data
+        data_df = pd.DataFrame(data=np.zeros((365, 6)))
+        data_df[0] = [1] * 365
+        data_df[1] = [1] * 365
+        data_df.to_csv(prepro_folder / "data.txt", sep="\t", header=False, index=False)
+        # Series
+        series_path = thermal_path / "series" / "fr" / th_name
+        series_path.mkdir(parents=True, exist_ok=True)
+        (series_path / "series.txt").touch()
+
+    # Set up the mocks
+    variant_study_service = Mock(spec=VariantStudyService)
+    command_factory = Mock(spec=CommandFactory)
+    variant_study_service.command_factory = command_factory
+    command_factory.command_context = Mock(spec=CommandContext)
+    config = Mock(spec=Config)
+
+    study_service = build_study_service(
+        raw_study_service,
+        study_metadata_repository,
+        config,
+        task_service=task_job_service,
+        event_bus=event_bus,
+        variant_study_service=variant_study_service,
+    )
+
+    backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
+    backend.clear_events()
+
+    # =======================
+    #  TEST CASE
+    # =======================
+
+    task = ThermalClusterTimeSeriesGeneratorTask(
+        raw_study.id,
+        repository=study_service.repository,
+        storage_service=study_service.storage_service,
+        event_bus=study_service.event_bus,
+    )
+
+    args = {"event_bus": study_service.event_bus, "task_id": ""}
+    listener = task.TsGenerationListener(**args)
+
+    task_id = study_service.task_service.add_task(
+        task,
+        "test_generation",
+        task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
+        ref_id=raw_study.id,
+        custom_event_messages=None,
+        request_params=RequestParameters(DEFAULT_ADMIN_USER),
+        listener=listener,
+    )
+    tasks = task_job_repo.list(filter=TaskListFilter(), user=DEFAULT_ADMIN_USER.id)
+    assert len(tasks) == 1
+    task = tasks[0]
+    assert task.ref_id == raw_study.id
+    assert task.id == task_id
+    assert task.name == "test_generation"
+
+    # todo: test event_bus; should contain the 2 events on Progress + 2 about running tasks.
+    events = backend.get_events()
+    assert len(events) == 2
+    print(events[0])
+    print(events[1])
