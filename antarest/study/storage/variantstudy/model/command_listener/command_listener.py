@@ -15,10 +15,14 @@ from abc import ABC, abstractmethod
 from antarest.core.serialization import AntaresBaseModel
 
 
-class ICommandListener(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
+class ICommandListener(ABC, AntaresBaseModel):
     """
     Interface for all listeners that can be given inside the `apply` method of a command.
     """
+
+    class Config:
+        extra = "forbid"
+        arbitrary_types_allowed = True
 
     _task_id: str
 
