@@ -24,7 +24,7 @@ class ICommandListener(ABC, AntaresBaseModel):
         extra = "forbid"
         arbitrary_types_allowed = True
 
-    _task_id: str
+    task_id: str
 
     @abstractmethod
     def notify_progress(self, progress: int) -> None:
@@ -34,8 +34,4 @@ class ICommandListener(ABC, AntaresBaseModel):
         raise NotImplementedError()
 
     def set_task_id(self, task_id: str) -> None:
-        self._task_id = task_id
-
-    @property
-    def task_id(self) -> str:
-        return self._task_id
+        self.task_id = task_id
