@@ -20,7 +20,7 @@ class ICommandListener(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_al
     Interface for all listeners that can be given inside the `apply` method of a command.
     """
 
-    task_id: str
+    _task_id: str
 
     @abstractmethod
     def notify_progress(self, progress: int) -> None:
@@ -30,4 +30,8 @@ class ICommandListener(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_al
         raise NotImplementedError()
 
     def set_task_id(self, task_id: str) -> None:
-        self.task_id = task_id
+        self._task_id = task_id
+
+    @property
+    def task_id(self) -> str:
+        return self._task_id
