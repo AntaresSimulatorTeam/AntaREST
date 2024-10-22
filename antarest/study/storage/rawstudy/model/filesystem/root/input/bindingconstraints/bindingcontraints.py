@@ -43,6 +43,11 @@ class BindingConstraints(FolderNode):
 
     def build(self) -> TREE:
         cfg = self.config
+        frequency_mapping = {
+            BindingConstraintFrequency.HOURLY: MatrixFrequency.HOURLY,
+            BindingConstraintFrequency.DAILY: MatrixFrequency.DAILY,
+            BindingConstraintFrequency.WEEKLY: MatrixFrequency.DAILY,
+        }
         if cfg.version < 870:
             default_matrices = {
                 BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
@@ -53,7 +58,7 @@ class BindingConstraints(FolderNode):
                 binding.id: InputSeriesMatrix(
                     self.context,
                     self.config.next_file(f"{binding.id}.txt"),
-                    freq=MatrixFrequency(binding.time_step),
+                    freq=frequency_mapping[binding.time_step],
                     nb_columns=3,
                     default_empty=default_matrices[binding.time_step],
                 )
@@ -73,7 +78,7 @@ class BindingConstraints(FolderNode):
                     children[matrix_id] = InputSeriesMatrix(
                         self.context,
                         self.config.next_file(f"{matrix_id}.txt"),
-                        freq=MatrixFrequency(binding.time_step),
+                        freq=frequency_mapping[binding.time_step],
                         nb_columns=1 if term in ["lt", "gt"] else None,
                         default_empty=default_matrices[binding.time_step],
                     )
