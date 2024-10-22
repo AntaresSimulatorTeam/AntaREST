@@ -384,7 +384,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         remove_from_cache(self.cache, study.id)
 
     def archive(self, study: RawStudy) -> Path:
-        archive_path = self.create_archive_path(study)
+        archive_path = self.infer_archive_path(study)
         new_study_path = self.export_study(study, archive_path)
         shutil.rmtree(study.path)
         remove_from_cache(cache=self.cache, root_id=study.id)
@@ -422,7 +422,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 return path
         raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
 
-    def create_archive_path(self, study: RawStudy) -> Path:
+    def infer_archive_path(self, study: RawStudy) -> Path:
         """
         Create archive path of a study.
 
