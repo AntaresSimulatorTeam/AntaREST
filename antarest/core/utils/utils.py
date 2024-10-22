@@ -24,9 +24,7 @@ import zipfile
 from pathlib import Path
 
 import py7zr
-import redis
 from fastapi import HTTPException
-from py7zr import SevenZipFile
 
 from antarest.core.exceptions import ShouldNotHappenException
 
