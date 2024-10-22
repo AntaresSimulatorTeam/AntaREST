@@ -1,2 +1,4 @@
 -r requirements-test.txt
+
+# PyQt is used for the systray app of desktop version
 PyQt5~=5.15.6
