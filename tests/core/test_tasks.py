@@ -46,16 +46,16 @@ from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-from storage.test_service import build_study_service
-from study.repository import StudyMetadataRepository
-from study.service import ThermalClusterTimeSeriesGeneratorTask
-from study.storage.rawstudy.raw_study_service import RawStudyService
-from study.storage.variantstudy.command_factory import CommandFactory
-from study.storage.variantstudy.model.command_context import CommandContext
-from study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import with_db_context
+from tests.storage.test_service import build_study_service
 
 
 @pytest.fixture(name="db_engine", autouse=True)
