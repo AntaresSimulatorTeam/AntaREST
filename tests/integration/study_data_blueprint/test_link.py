@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from sys import stderr
 
 import pytest
 from starlette.testclient import TestClient
@@ -110,7 +111,7 @@ class TestLink:
             )
             assert res.status_code == 500
             expected = {
-                "description": "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 422: One or more fields are forbidden",
+                "description": "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 1 validation error for LinkProperties\nwrong\n  Extra inputs are not permitted [type=extra_forbidden, input_value='parameter', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.8/v/extra_forbidden",
                 "exception": "CommandApplicationError",
             }
             assert expected == res.json()
@@ -131,8 +132,7 @@ class TestLink:
             res = client.get(f"/v1/studies/{study_id}/commands")
             commands = res.json()
             command_args = commands[-1]["args"]
-            assert command_args["parameters"]["hurdles-cost"] == False
-            assert "loop-flow" not in command_args["parameters"]
+            assert command_args["parameters"] == {"hurdles-cost": False}
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_820(self, client: TestClient, user_access_token: str, study_type: str) -> None:

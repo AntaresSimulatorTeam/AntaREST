@@ -117,8 +117,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             "parameters": self.parameters,
         }
         for attr in MATRIX_ATTRIBUTES:
-            value = getattr(self, attr, None)
-            if value:
+            if value := getattr(self, attr, None):
                 args[attr] = strip_matrix_protocol(value)
         return CommandDTO(
             action=self.command_name.value,
@@ -169,16 +168,13 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
     def get_inner_matrices(self) -> List[str]:
         list_matrices = []
         for attr in MATRIX_ATTRIBUTES:
-            value = getattr(self, attr, None)
-            if value:
+            if value := getattr(self, attr, None):
                 assert_this(isinstance(value, str))
                 list_matrices.append(strip_matrix_protocol(value))
         return list_matrices
 
     def save_series(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
         self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
-        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
-        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
         assert isinstance(self.series, str)
         if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
@@ -187,33 +183,39 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
                 self.series,
                 ["input", "links", area_from, f"{area_to}_parameters"],
             )
-
             study_data.tree.save({}, ["input", "links", area_from, "capacities"])
-            if self.direct:
-                assert isinstance(self.direct, str)
-                study_data.tree.save(
-                    self.direct,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_direct",
-                    ],
-                )
 
-            if self.indirect:
-                assert isinstance(self.indirect, str)
-                study_data.tree.save(
-                    self.indirect,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_indirect",
-                    ],
-                )
+    def save_direct(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
+        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
+        assert isinstance(self.direct, str)
+        if version >= STUDY_VERSION_8_2:
+            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
+            study_data.tree.save(
+                self.direct,
+                [
+                    "input",
+                    "links",
+                    area_from,
+                    "capacities",
+                    f"{area_to}_direct",
+                ],
+            )
+
+    def save_indirect(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
+        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
+        assert isinstance(self.indirect, str)
+        if version >= STUDY_VERSION_8_2:
+            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
+            study_data.tree.save(
+                self.indirect,
+                [
+                    "input",
+                    "links",
+                    area_from,
+                    "capacities",
+                    f"{area_to}_indirect",
+                ],
+            )
 
 
 class CreateLink(AbstractLinkCommand):
@@ -317,6 +319,8 @@ class CreateLink(AbstractLinkCommand):
         study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
 
         self.save_series(area_from, area_to, study_data, version)
+        self.save_direct(area_from, area_to, study_data, version)
+        self.save_indirect(area_from, area_to, study_data, version)
 
         return output
 

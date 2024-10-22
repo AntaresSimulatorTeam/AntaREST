@@ -48,23 +48,24 @@ class UpdateLink(AbstractLinkCommand):
         version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
 
-        try:
-            properties = LinkProperties.model_validate(self.parameters or {}).model_dump(
-                exclude_unset=True, by_alias=True
-            )
-        except ValidationError:
-            raise LinkValidationError("One or more fields are forbidden")
+        properties = LinkProperties.model_validate(self.parameters or {}).model_dump(exclude_unset=True, by_alias=True)
 
         current_parameters = study_data.tree.get(["input", "links", area_from, "properties", area_to])
 
-        current_parameters.update(properties or {})
+        current_parameters.update(properties)
 
         study_data.tree.save(current_parameters, ["input", "links", area_from, "properties", area_to])
 
         output, _ = self._apply_config(study_data.config)
 
-        if any([self.series, self.direct, self.indirect]):
+        if self.series:
             self.save_series(area_from, area_to, study_data, version)
+
+        if self.direct:
+            self.save_direct_series(area_from, area_to, study_data, version)
+
+        if self.indirect:
+            self.save_indirect_series(area_from, area_to, study_data, version)
 
         return output
 
