@@ -26,7 +26,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import extract_archive
+from antarest.core.utils.archives import extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService

@@ -17,7 +17,8 @@ from pathlib import Path
 import py7zr
 import pytest
 
-from antarest.core.utils.utils import BadArchiveContent, extract_archive
+from antarest.core.exceptions import BadArchiveContent
+from antarest.core.utils.archives import extract_archive
 
 
 class TestExtractZip:

@@ -17,7 +17,8 @@ from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
-from antarest.core.utils.utils import StopWatch, unzip
+from antarest.core.utils.archives import unzip
+from antarest.core.utils.utils import StopWatch
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 
 logger = logging.getLogger(__name__)

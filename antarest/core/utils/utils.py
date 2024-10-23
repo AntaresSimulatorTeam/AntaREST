@@ -14,16 +14,11 @@ import base64
 import glob
 import http
 import logging
-import os
 import re
-import shutil
-import tempfile
 import time
 import typing as t
-import zipfile
 from pathlib import Path
 
-import py7zr
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -63,49 +58,6 @@ def sanitize_uuid(uuid: str) -> str:
 
 def sanitize_string(string: str) -> str:
     return str(glob.escape(string))
-
-
-class BadArchiveContent(Exception):
-    """
-    Exception raised when the archive file is corrupted (or unknown).
-    """
-
-    def __init__(self, message: str = "Unsupported archive format") -> None:
-        super().__init__(message)
-
-
-def extract_archive(stream: t.BinaryIO, target_dir: Path) -> None:
-    """
-    Extract a ZIP archive to a given destination.
-
-    Args:
-        stream: The stream containing the archive.
-        target_dir: The directory where to extract the archive.
-
-    Raises:
-        BadArchiveContent: If the archive is corrupted or in an unknown format.
-    """
-
-    # Read the first few bytes to identify the file format
-    file_format = stream.read(4)
-    stream.seek(0)
-
-    if file_format[:4] == b"PK\x03\x04":
-        try:
-            with zipfile.ZipFile(stream) as zf:
-                zf.extractall(path=target_dir)
-        except zipfile.BadZipFile as error:
-            raise BadArchiveContent("Unsupported ZIP format") from error
-
-    elif file_format[:2] == b"7z":
-        try:
-            with py7zr.SevenZipFile(stream, "r") as zf:
-                zf.extractall(target_dir)
-        except py7zr.exceptions.Bad7zFile as error:
-            raise BadArchiveContent("Unsupported 7z format") from error
-
-    else:
-        raise BadArchiveContent
 
 
 def get_default_config_path() -> t.Optional[Path]:
@@ -179,68 +131,6 @@ def concat_files_to_str(files: t.List[Path]) -> str:
             for line in infile:
                 concat_str += line
     return concat_str
-
-
-def zip_dir(dir_path: Path, zip_path: Path, remove_source_dir: bool = False) -> None:
-    with zipfile.ZipFile(zip_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
-        len_dir_path = len(str(dir_path))
-        for root, _, files in os.walk(dir_path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zipf.write(file_path, file_path[len_dir_path:])
-    if remove_source_dir:
-        shutil.rmtree(dir_path)
-
-
-def unzip(dir_path: Path, zip_path: Path, remove_source_zip: bool = False) -> None:
-    with zipfile.ZipFile(zip_path, mode="r") as zipf:
-        zipf.extractall(dir_path)
-    if remove_source_zip:
-        zip_path.unlink()
-
-
-def is_zip(path: Path) -> bool:
-    return path.name.endswith(".zip")
-
-
-def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.Tuple[Path, t.Any]:
-    str_inside_archive_path = str(inside_archive_path).replace("\\", "/")
-    tmp_dir = tempfile.TemporaryDirectory()
-    try:
-        if archive_path.suffix == ".zip":
-            with zipfile.ZipFile(archive_path) as zip_obj:
-                zip_obj.extract(str_inside_archive_path, tmp_dir.name)
-        elif archive_path.suffix == ".7z":
-            with py7zr.SevenZipFile(archive_path, mode="r") as szf:
-                szf.extract(path=tmp_dir.name, targets=[str_inside_archive_path])
-        else:
-            raise ValueError(f"Unsupported archive format for {archive_path}")
-    except Exception as e:
-        logger.warning(
-            f"Failed to extract {str_inside_archive_path} in archive {archive_path}",
-            exc_info=e,
-        )
-        tmp_dir.cleanup()
-        raise
-    path = Path(tmp_dir.name) / str_inside_archive_path
-    return path, tmp_dir
-
-
-def read_in_zip(
-    zip_path: Path,
-    inside_zip_path: Path,
-    read: t.Callable[[t.Optional[Path]], None],
-) -> None:
-    tmp_dir = None
-    try:
-        path, tmp_dir = extract_file_to_tmp_dir(zip_path, inside_zip_path)
-        read(path)
-    except KeyError:
-        logger.warning(f"{inside_zip_path} not found in {zip_path}")
-        read(None)
-    finally:
-        if tmp_dir is not None:
-            tmp_dir.cleanup()
 
 
 def suppress_exception(

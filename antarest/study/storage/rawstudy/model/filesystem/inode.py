@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from antarest.core.exceptions import ShouldNotHappenException, WritingInsideZippedFileException
-from antarest.core.utils.utils import extract_file_to_tmp_dir
+from antarest.core.utils.archives import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
 G = TypeVar("G")

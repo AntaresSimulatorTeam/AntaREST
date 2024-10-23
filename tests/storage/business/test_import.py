@@ -18,8 +18,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.exceptions import StudyValidationError
-from antarest.core.utils.utils import BadArchiveContent
+from antarest.core.exceptions import BadArchiveContent, StudyValidationError
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
