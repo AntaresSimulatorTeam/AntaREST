@@ -655,7 +655,7 @@ class BadEditInstructionException(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class CannotScanInternalWorkspace(HTTPException):
+class CannotAcessInternalWorkspace(HTTPException):
     def __init__(self) -> None:
         super().__init__(
             HTTPStatus.BAD_REQUEST,

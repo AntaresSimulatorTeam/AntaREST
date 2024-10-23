@@ -20,7 +20,7 @@ from pydantic import DirectoryPath
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.login.auth import Auth
-from antarest.study.model import NonStudyFolder
+from antarest.study.model import NonStudyFolder, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
 
@@ -39,7 +39,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",
-        summary="Launch list sub dir in selected directory",
+        summary="For a fiven directory, list sub directories that arend't studies",
         response_model=List[NonStudyFolder],
     )
     def list_dir(
@@ -63,12 +63,12 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     @bp.get(
         "/explorer/_list_workspaces",
-        summary="Launch list sub dir in selected directory",
+        summary="List all workspaces",
         response_model=List[str],
     )
     def list_workspaces(
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[str]:
+    ) -> List[WorkspaceMetadata]:
         """
         Endpoint to list workspaces
         Args:
@@ -78,7 +78,6 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
             List of workspace
 
         """
-        l = explorer.list_workspaces()
-        return l
+        return explorer.list_workspaces()
 
     return bp

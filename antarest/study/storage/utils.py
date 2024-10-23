@@ -27,7 +27,12 @@ from antares.study.version import StudyVersion
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 
 from antarest.core.config import Config, WorkspaceConfig
-from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion, WorkspaceNotFound
+from antarest.core.exceptions import (
+    CannotAcessInternalWorkspace,
+    StudyValidationError,
+    UnsupportedStudyVersion,
+    WorkspaceNotFound,
+)
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -432,10 +437,8 @@ def is_aw_no_scan(path: Path) -> bool:
 
 
 def get_workspace_from_config(config: Config, workspace_name: str, default_allowed: bool = False) -> WorkspaceConfig:
-    if not workspace_name:
-        raise ValueError("workspace_name must be specified")
     if not default_allowed and workspace_name == DEFAULT_WORKSPACE_NAME:
-        raise ValueError("Default workspace is not allowed")
+        raise CannotAcessInternalWorkspace()
     try:
         return config.storage.workspaces[workspace_name]
     except KeyError:
@@ -448,7 +451,7 @@ def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
         raise ValueError(f"Invalid path for folder: {folder}")
     folder_path = workspace.path / folder
     if not folder_path.is_dir():
-        raise ValueError("Provided path is not dir")
+        raise ValueError(f"Provided path is not dir: {folder}")
     return folder_path
 
 

@@ -14,7 +14,7 @@ import logging
 from typing import List
 
 from antarest.core.config import Config
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolder
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolder, WorkspaceMetadata
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
@@ -47,12 +47,12 @@ class Explorer:
 
     def list_workspaces(
         self,
-    ) -> List[str]:
+    ) -> List[WorkspaceMetadata]:
         """
         Return the list of all configured workspace name, except the default one.
         """
         return [
-            workspace_name
+            WorkspaceMetadata(name=workspace_name)
             for workspace_name in self.config.storage.workspaces.keys()
             if workspace_name != DEFAULT_WORKSPACE_NAME
         ]
