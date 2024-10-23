@@ -428,6 +428,7 @@ def is_aw_no_scan(path: Path) -> bool:
     if (path / "AW_NO_SCAN").exists():
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
+    return False
 
 
 def get_workspace_from_config(config: Config, workspace_name: str, default_allowed: bool = False) -> WorkspaceConfig:
