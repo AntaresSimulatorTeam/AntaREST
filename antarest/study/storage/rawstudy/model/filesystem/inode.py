@@ -150,7 +150,7 @@ class INode(ABC, Generic[G, S, V]):
         """
         if self.config.archive_path is None:
             raise ShouldNotHappenException()
-        inside_archive_path = str(self.config.path)[len(str(self.config.archive_path)[:-4]) + 1 :]
+        inside_archive_path = self.config.path.relative_to(self.config.archive_path.parent / self.config.study_id)
         if self.config.archive_path:
             return extract_file_to_tmp_dir(self.config.archive_path, Path(inside_archive_path))
         else:
