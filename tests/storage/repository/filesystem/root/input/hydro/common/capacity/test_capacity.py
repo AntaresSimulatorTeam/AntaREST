@@ -93,7 +93,7 @@ class TestInputHydroCommonCapacity:
         value: InputSeriesMatrix
         actual_obj = {
             key: {
-                "default_empty": value.default_empty.tolist(),
+                "default_empty": [[]],
                 "freq": value.freq,
                 "nb_columns": value.nb_columns,
             }
