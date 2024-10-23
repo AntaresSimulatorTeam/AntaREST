@@ -15,7 +15,12 @@ from typing import List
 
 from antarest.core.config import Config
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolder
-from antarest.study.storage.utils import get_folder_from_workspace, get_workspace_from_config, is_study_folder
+from antarest.study.storage.utils import (
+    get_folder_from_workspace,
+    get_workspace_from_config,
+    is_study_folder,
+    should_ignore_folder_for_scan,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +41,7 @@ class Explorer:
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         directories = []
         for child in directory_path.iterdir():
-            if child.is_dir() and not is_study_folder(child):
+            if child.is_dir() and not is_study_folder(child) and not should_ignore_folder_for_scan(child):
                 directories.append(NonStudyFolder(path=str(child), workspace=workspace_name, name=child.name))
         return directories
 
