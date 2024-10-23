@@ -20,9 +20,8 @@ import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
-import { TaskEventPayload, WSEvent, WSMessage } from "../../../common/types";
 import { getTask } from "../../../services/api/tasks";
-import { addWsMessageListener } from "../../../services/webSockets";
+import { addWsEventListener } from "../../../services/webSocket/ws";
 import {
   incrementTaskNotifications,
   resetTaskNotifications,
@@ -31,6 +30,8 @@ import { getTaskNotificationsCount } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { TaskType } from "../../../services/api/tasks/constants";
+import { WsEventType } from "@/services/webSocket/constants";
+import { WsEvent } from "@/services/webSocket/types";
 
 const logError = debug("antares:downloadbadge:error");
 
@@ -58,14 +59,14 @@ function NotificationBadge(props: Props) {
   );
 
   useEffect(() => {
-    const listener = async (ev: WSMessage<TaskEventPayload>) => {
-      if (ev.type === WSEvent.DOWNLOAD_CREATED) {
+    const listener = async (ev: WsEvent) => {
+      if (ev.type === WsEventType.DownloadCreated) {
         newNotification("downloads.newDownload");
-      } else if (ev.type === WSEvent.DOWNLOAD_READY) {
+      } else if (ev.type === WsEventType.DownloadReady) {
         newNotification("downloads.downloadReady");
-      } else if (ev.type === WSEvent.DOWNLOAD_FAILED) {
+      } else if (ev.type === WsEventType.DownloadFailed) {
         newNotification("study.error.exportOutput", "error");
-      } else if (ev.type === WSEvent.TASK_ADDED) {
+      } else if (ev.type === WsEventType.TaskAdded) {
         try {
           const task = await getTask({ id: ev.payload.id });
           if (task.type === TaskType.Copy) {
@@ -87,7 +88,7 @@ function NotificationBadge(props: Props) {
       }
     };
 
-    return addWsMessageListener(listener);
+    return addWsEventListener(listener);
   }, [newNotification]);
 
   useEffect(() => {
