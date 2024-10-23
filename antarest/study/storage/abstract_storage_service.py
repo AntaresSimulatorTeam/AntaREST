@@ -25,7 +25,8 @@ from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
 from antarest.core.serialization import from_json
-from antarest.core.utils.utils import StopWatch, extract_archive, unzip, zip_dir
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
+from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
@@ -296,6 +297,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
+            archive_dir(tmp_study_path, target, archive_format=ArchiveFormat.SEVEN_ZIP)
             with py7zr.SevenZipFile(target, "w") as szf:
                 szf.writeall(tmp_study_path, arcname="")
             stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (7zip mode) in {x}s"))
@@ -322,7 +324,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             raise StudyOutputNotFoundError()
         stopwatch = StopWatch()
         if not path_output_zip.exists():
-            zip_dir(path_output, target)
+            archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
         stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {metadata.path} exported in {x}s"))
 
     def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
@@ -335,10 +337,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
     def archive_study_output(self, study: T, output_id: str) -> bool:
         try:
-            zip_dir(
+            archive_dir(
                 Path(study.path) / "output" / output_id,
                 Path(study.path) / "output" / f"{output_id}.zip",
                 remove_source_dir=True,
+                archive_format=ArchiveFormat.ZIP,
             )
             remove_from_cache(self.cache, study.id)
             return True
