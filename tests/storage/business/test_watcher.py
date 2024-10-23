@@ -175,10 +175,9 @@ def test_scan(tmp_path: Path):
 
 @pytest.mark.unit_test
 def test_scan_recursive_false(tmp_path: Path, db_session: Session):
-    # Base.metadata.create_all(db_session)
 
     def count_studies():
-        return db_session.execute("SELECT COUNT(*) FROM study").scalar()
+        return db_session.query(Study).count()
 
     clean_files()
 
