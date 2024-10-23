@@ -48,10 +48,7 @@ import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups, getUsers } from "../../../../../../services/api/user";
 import { UserFormDialogProps } from ".";
 import { UseFormReturnPlus } from "../../../../../common/Form/types";
-import {
-  validatePassword,
-  validateString,
-} from "../../../../../../utils/validationUtils";
+import { validatePassword, validateString } from "@/utils/validation/string";
 
 interface Props extends UseFormReturnPlus {
   onlyPermissions?: UserFormDialogProps["onlyPermissions"];

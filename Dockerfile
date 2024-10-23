@@ -16,6 +16,6 @@ COPY ./scripts /scripts
 COPY ./alembic /alembic
 COPY ./alembic.ini /alembic.ini
 
-RUN pip3 install --upgrade pip && pip3 install -r /conf/requirements.txt --no-cache-dir
+RUN pip3 install --no-cache-dir --upgrade pip && pip3 install --no-cache-dir -r /conf/requirements.txt
 
 ENTRYPOINT ["./scripts/start.sh"]

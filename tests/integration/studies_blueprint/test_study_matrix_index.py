@@ -28,7 +28,7 @@ class TestStudyMatrixIndex:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        user_access_token = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Check the matrix index for Thermal clusters
         # ===========================================
@@ -36,7 +36,6 @@ class TestStudyMatrixIndex:
         # Check the Common matrix index
         res = client.get(
             f"/v1/studies/{internal_study_id}/matrixindex",
-            headers=user_access_token,
             params={"path": "input/thermal/prepro/fr/01_solar/modulation"},
         )
         assert res.status_code == 200, res.json()
@@ -52,9 +51,7 @@ class TestStudyMatrixIndex:
 
         # Check the TS Generator matrix index
         res = client.get(
-            f"/v1/studies/{internal_study_id}/matrixindex",
-            headers=user_access_token,
-            params={"path": "input/thermal/prepro/fr/01_solar/data"},
+            f"/v1/studies/{internal_study_id}/matrixindex", params={"path": "input/thermal/prepro/fr/01_solar/data"}
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -69,9 +66,7 @@ class TestStudyMatrixIndex:
 
         # Check the time series
         res = client.get(
-            f"/v1/studies/{internal_study_id}/matrixindex",
-            headers=user_access_token,
-            params={"path": "input/thermal/series/fr/01_solar/series"},
+            f"/v1/studies/{internal_study_id}/matrixindex", params={"path": "input/thermal/series/fr/01_solar/series"}
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -87,7 +82,7 @@ class TestStudyMatrixIndex:
         # Check the default matrix index
         # ==============================
 
-        res = client.get(f"/v1/studies/{internal_study_id}/matrixindex", headers=user_access_token)
+        res = client.get(f"/v1/studies/{internal_study_id}/matrixindex")
         assert res.status_code == 200
         actual = res.json()
         expected = {
@@ -103,10 +98,25 @@ class TestStudyMatrixIndex:
 
         res = client.get(
             f"/v1/studies/{internal_study_id}/matrixindex",
-            headers=user_access_token,
             params={"path": "output/20201014-1427eco/economy/mc-all/areas/es/details-daily"},
         )
         assert res.status_code == 200
         actual = res.json()
         expected = {"first_week_size": 7, "start_date": "2018-01-01 00:00:00", "steps": 7, "level": "daily"}
+        assert actual == expected
+
+        # Check the matrix index for a weekly binding constraint
+        # =========================================================================
+
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/bindingconstraints", json={"name": "bc_1", "timeStep": "weekly"}
+        )
+        res.raise_for_status()
+
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/matrixindex", params={"path": "input/bindingconstraints/bc_1"}
+        )
+        assert res.status_code == 200
+        actual = res.json()
+        expected = {"first_week_size": 7, "start_date": "2018-01-01 00:00:00", "steps": 365, "level": "daily"}
         assert actual == expected

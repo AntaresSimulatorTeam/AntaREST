@@ -1,4 +1,5 @@
 -r requirements-test.txt
+-r requirements-desktop.txt
 # Version of Black should match the versions set in `.github/workflows/main.yml`
 black~=23.7.0
 isort~=5.12.0
