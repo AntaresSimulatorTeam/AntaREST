@@ -19,16 +19,9 @@ from pydantic import DirectoryPath
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import RequestParameters
-from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import NonStudyFolder
 from antarest.study.storage.explorer_service import Explorer
-
-
-class BadPathFormatError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:

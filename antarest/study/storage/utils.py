@@ -51,8 +51,6 @@ from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
 
-UPGRADE_TEMPORARY_DIR_SUFFIX = ".upgrade.tmp"
-UPGRADE_TEMPORARY_DIR_PREFIX = "~"
 
 TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
