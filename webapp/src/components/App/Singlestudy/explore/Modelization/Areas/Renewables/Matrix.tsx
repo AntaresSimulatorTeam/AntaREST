@@ -25,6 +25,7 @@ function RenewablesMatrix({ areaId, clusterId }: Props) {
     <Matrix
       url={`input/renewables/series/${areaId}/${clusterId}/series`}
       title="study.modelization.clusters.matrix.timeSeries"
+      aggregateColumns="stats"
     />
   );
 }

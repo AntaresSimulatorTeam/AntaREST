@@ -58,6 +58,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
     {
       url: `input/thermal/series/${areaId}/${clusterId}/series`,
       titleKey: "availability",
+      aggregates: "stats" as const, // avg, min, max
     },
     {
       url: `input/thermal/series/${areaId}/${clusterId}/fuelCost`,
@@ -107,13 +108,14 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
       </Tabs>
       <Box sx={{ width: 1, height: 1 }}>
         {filteredMatrices.map(
-          ({ url, titleKey, columns }) =>
+          ({ url, titleKey, columns, aggregates }) =>
             value === titleKey && (
               <Matrix
                 key={titleKey}
                 url={url}
                 title={t(`study.modelization.clusters.matrix.${titleKey}`)}
                 customColumns={columns}
+                aggregateColumns={aggregates}
               />
             ),
         )}
