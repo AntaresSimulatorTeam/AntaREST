@@ -21,7 +21,7 @@ from antarest.core.exceptions import BadArchiveContent
 from antarest.core.utils.archives import extract_archive
 
 
-class TestExtractZip:
+class TestExtractArchive:
     """
     Test the `extract_zip` function.
     """
