@@ -65,7 +65,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: formatNumber(value), // Format thousands and decimal separator
+      displayData: formatNumber({ value, maxDecimals: 6 }),
       readonly: !column.editable,
       allowOverlay: true,
       decimalSeparator: ".",
@@ -78,7 +78,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: formatNumber(value ?? 0), // Format thousands and decimal separator
+      displayData: formatNumber({ value, maxDecimals: 3 }),
       readonly: !column.editable,
       allowOverlay: false,
       decimalSeparator: ".",

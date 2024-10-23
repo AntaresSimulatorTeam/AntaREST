@@ -26,6 +26,7 @@ import {
   DateTimeMetadataDTO,
   Aggregate,
   Column,
+  FormatNumberOptions,
 } from "./types";
 import {
   type FirstWeekContainsDate,
@@ -106,17 +107,38 @@ export const aggregatesTheme: Partial<Theme> = {
 ////////////////////////////////////////////////////////////////
 
 /**
- * Formats a number by adding spaces as thousand separators.
+ * Formats a number by adding thousand separators.
  *
- * @param num - The number to format.
+ * This function is particularly useful for displaying load factors,
+ * which are numbers between 0 and 1. For load factors, a maximum of
+ * 6 decimal places should be displayed. For statistics, a maximum of
+ * 3 decimal places is recommended.
+ *
+ * @param options - The options for formatting the number.
+ * @param options.value - The number to format.
+ * @param options.maxDecimals - The maximum number of decimal places to keep.
  * @returns The formatted number as a string.
  */
-export function formatNumber(num: number | undefined): string {
-  if (num === undefined) {
+export function formatNumber({
+  value,
+  maxDecimals = 0,
+}: FormatNumberOptions): string {
+  if (value === undefined) {
     return "";
   }
 
-  const [integerPart, decimalPart] = num.toString().split(".");
+  // Determine if we need to apply maxDecimals
+  const shouldFormatDecimals =
+    value % 1 !== 0 &&
+    maxDecimals > 0 &&
+    value.toString().split(".")[1].length > maxDecimals;
+
+  // Use toFixed only if we need to control decimals
+  const formattedValue = shouldFormatDecimals
+    ? value.toFixed(maxDecimals)
+    : value.toString();
+
+  const [integerPart, decimalPart] = formattedValue.split(".");
 
   const formattedInteger = integerPart
     .split("")
@@ -128,7 +150,6 @@ export function formatNumber(num: number | undefined): string {
       return digit + acc;
     }, "");
 
-  // Return formatted number, preserving decimal part if it exists
   return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
 
