@@ -16,7 +16,6 @@ import Matrix from "../../../../../common/MatrixGrid/Matrix";
 import type { DataCompProps } from "../utils";
 
 function DebugMatrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
-  console.log("canEdit", canEdit);
   return <Matrix title={filename} url={filePath} isImportDisabled={!canEdit} />;
 }
 

@@ -102,7 +102,7 @@ function Matrix({
     return <EmptyView title={error.message} />;
   }
 
-  if (!data || data.length === 0) {
+  if (!data[0]?.length) {
     return <EmptyView title={t("matrix.message.matrixEmpty")} />;
   }
 
