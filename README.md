@@ -23,7 +23,6 @@ Install back-end dependencies
 
 ```shell script
 python -m pip install --upgrade pip
-pip install pydantic --no-binary pydantic
 pip install -r requirements.txt  # use requirements-dev.txt if building a single binary with pyinstaller 
 ```
 
