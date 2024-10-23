@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import MatrixGrid, { MatrixGridProps } from ".";
 import Box from "@mui/material/Box";
 import { mockGetBoundingClientRect } from "../../../tests/mocks/mockGetBoundingClientRect";
 import { type EnhancedGridColumn, Column } from "./types";
 import { mockHTMLCanvasElement } from "../../../tests/mocks/mockHTMLCanvasElement";
+import SplitView from "../SplitView";
 
 beforeEach(() => {
   mockHTMLCanvasElement();
@@ -69,7 +70,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 0,
       },
       {
         id: "col2",
@@ -77,7 +77,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 1,
       },
       {
         id: "col3",
@@ -85,7 +84,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 2,
       },
     ];
 
@@ -120,7 +118,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 0,
       },
       {
         id: "col2",
@@ -128,7 +125,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 1,
       },
       {
         id: "col3",
@@ -136,7 +132,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 2,
       },
     ];
 
@@ -173,7 +168,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 0,
       },
       {
         id: "col2",
@@ -181,7 +175,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 1,
       },
       {
         id: "col3",
@@ -189,7 +182,6 @@ describe("MatrixGrid rendering", () => {
         width: 100,
         type: Column.Number,
         editable: true,
-        order: 2,
       },
     ];
 
@@ -230,5 +222,86 @@ describe("MatrixGrid rendering", () => {
     } else {
       throw new Error("Expected an HTMLElement but received a different node.");
     }
+  });
+
+  describe("MatrixGrid rendering", () => {
+    describe("MatrixGrid portal management", () => {
+      test("should handle portal in split view", () => {
+        const data = [
+          [1, 2],
+          [4, 5],
+        ];
+
+        const columns: EnhancedGridColumn[] = [
+          {
+            id: "col1",
+            title: "Column 1",
+            width: 100,
+            type: Column.Number,
+            editable: true,
+          },
+          {
+            id: "col2",
+            title: "Column 2",
+            width: 100,
+            type: Column.Number,
+            editable: true,
+          },
+        ];
+
+        const { container } = render(
+          <Box style={{ width: "900px", height: "500px" }}>
+            <SplitView id="test-split-view" sizes={[50, 50]}>
+              <Box sx={{ px: 2 }}>
+                <MatrixGrid
+                  data={data}
+                  rows={2}
+                  columns={columns}
+                  width="100%"
+                  height="100%"
+                />
+              </Box>
+              <Box sx={{ px: 2 }}>
+                <MatrixGrid
+                  data={data}
+                  rows={2}
+                  columns={columns}
+                  width="100%"
+                  height="100%"
+                />
+              </Box>
+            </SplitView>
+          </Box>,
+        );
+
+        const matrices = container.querySelectorAll(".matrix-container");
+
+        matrices.forEach((matrix, index) => {
+          console.log(`Matrix ${index} classes:`, matrix.className, matrix);
+        });
+
+        expect(matrices.length).toBe(2);
+
+        if (matrices.length === 2) {
+          act(() => {
+            matrices[0].dispatchEvent(
+              new Event("mouseenter", { bubbles: true }),
+            );
+          });
+
+          act(() => {
+            matrices[1].dispatchEvent(
+              new Event("mouseenter", { bubbles: true }),
+            );
+          });
+
+          act(() => {
+            matrices[1].dispatchEvent(
+              new Event("mouseleave", { bubbles: true }),
+            );
+          });
+        }
+      });
+    });
   });
 });

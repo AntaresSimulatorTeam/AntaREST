@@ -27,6 +27,7 @@ import { useMemo, useState } from "react";
 import { EnhancedGridColumn, GridUpdate, MatrixAggregates } from "./types";
 import { darkTheme, readOnlyDarkTheme } from "./utils";
 import { useColumnMapping } from "./useColumnMapping";
+import { useMatrixPortal } from "./useMatrixPortal";
 
 export interface MatrixGridProps {
   data: number[][];
@@ -64,6 +65,15 @@ function MatrixGrid({
   });
 
   const { gridToData } = useColumnMapping(columns);
+
+  // Due to a current limitation of Glide Data Grid, only one id="portal" is active on the DOM
+  // This is an issue on splited matrices, the second matrix does not have an id="portal"
+  // Causing the overlay editor to not behave correctly on click
+  // This hook manage portal creation and cleanup for matrices in split views
+  // TODO: add a prop to detect matrices in split views and enable this conditionnaly
+  // !Workaround: a proper solution should be replacing this in the future
+  const { containerRef, handleMouseEnter, handleMouseLeave } =
+    useMatrixPortal();
 
   const theme = useMemo(() => {
     if (isReadOnly) {
@@ -159,32 +169,40 @@ function MatrixGrid({
 
   return (
     <>
-      <DataEditor
-        theme={theme}
-        width={width}
-        height={height}
-        rows={rows}
-        columns={columns}
-        getCellContent={getCellContent}
-        onCellEdited={handleCellEdited}
-        onCellsEdited={handleCellsEdited}
-        gridSelection={selection}
-        onGridSelectionChange={setSelection}
-        keybindings={{ paste: false, copy: false }}
-        getCellsForSelection // TODO handle large copy/paste using this
-        fillHandle
-        allowedFillDirections="any"
-        rowMarkers="both"
-        freezeColumns={1} // Make the first column sticky
-        onColumnResize={handleColumnResize}
-        smoothScrollX
-        smoothScrollY
-        rowHeight={30}
-        verticalBorder={false}
-        overscrollX={100}
-        overscrollY={100}
-      />
-      <div id="portal" />
+      <div
+        ref={containerRef}
+        className="matrix-container"
+        style={{ width, height }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <DataEditor
+          theme={theme}
+          width={width}
+          height={height}
+          rows={rows}
+          columns={columns}
+          getCellContent={getCellContent}
+          onCellEdited={handleCellEdited}
+          onCellsEdited={handleCellsEdited}
+          gridSelection={selection}
+          onGridSelectionChange={setSelection}
+          keybindings={{ paste: false, copy: false }}
+          getCellsForSelection // TODO handle large copy/paste using this
+          fillHandle
+          allowedFillDirections="any"
+          rowMarkers="both"
+          freezeColumns={1} // Make the first column sticky
+          onColumnResize={handleColumnResize}
+          smoothScrollX
+          smoothScrollY
+          rowHeight={30}
+          verticalBorder={false}
+          overscrollX={100}
+          overscrollY={100}
+          cellActivationBehavior="single-click"
+        />
+      </div>
     </>
   );
 }
