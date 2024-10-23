@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import logging
 import os
 import shutil
@@ -136,3 +135,36 @@ def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.
         raise
     path = Path(tmp_dir.name) / str_inside_archive_path
     return path, tmp_dir
+
+
+def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
+    """
+    Extract text lines from various types of files.
+
+    Args:
+        root: 7zip or ZIP file containing the study.
+        posix_path: Relative path to the file to extract.
+
+    Returns:
+        list of lines
+    """
+    if root.suffix.lower() == ".zip":
+        with zipfile.ZipFile(root) as zf:
+            try:
+                with zf.open(posix_path) as f:
+                    text = f.read().decode("utf-8")
+                    return text.splitlines(keepends=False)
+            except KeyError:
+                # File not found in the ZIP archive
+                return []
+    elif root.suffix.lower() == ".7z":
+        with py7zr.SevenZipFile(root, mode="r") as z:
+            try:
+                data = z.read([posix_path])
+                text = data[posix_path].read().decode("utf-8")
+                return text.splitlines(keepends=False)
+            except KeyError:
+                # File not found in the 7z archive
+                return []
+    else:
+        raise ValueError(f"Unsupported file type: {root}")

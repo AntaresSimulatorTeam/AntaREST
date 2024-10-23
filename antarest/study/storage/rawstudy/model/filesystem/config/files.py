@@ -22,10 +22,10 @@ from pathlib import Path
 
 import py7zr
 from antares.study.version import StudyVersion
-from py7zr import SevenZipFile
 
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json
+from antarest.core.utils.archives import extract_lines_from_archive
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -65,39 +65,6 @@ class FileType(Enum):
     TXT = "txt"
     SIMPLE_INI = "simple_ini"
     MULTI_INI = "multi_ini"
-
-
-def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
-    """
-    Extract text lines from various types of files.
-
-    Args:
-        root: 7zip or ZIP file containing the study.
-        posix_path: Relative path to the file to extract.
-
-    Returns:
-        list of lines
-    """
-    if root.suffix.lower() == ".zip":
-        with zipfile.ZipFile(root) as zf:
-            try:
-                with zf.open(posix_path) as f:
-                    text = f.read().decode("utf-8")
-                    return text.splitlines(keepends=False)
-            except KeyError:
-                # File not found in the ZIP archive
-                return []
-    elif root.suffix.lower() == ".7z":
-        with py7zr.SevenZipFile(root, mode="r") as z:
-            try:
-                data = z.read([posix_path])
-                text = data[posix_path].read().decode("utf-8")
-                return text.splitlines(keepends=False)
-            except KeyError:
-                # File not found in the 7z archive
-                return []
-    else:
-        raise ValueError(f"Unsupported file type: {root}")
 
 
 def extract_data_from_archive(

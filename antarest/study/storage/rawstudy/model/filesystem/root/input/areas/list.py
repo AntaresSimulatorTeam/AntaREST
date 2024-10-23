@@ -12,7 +12,7 @@
 
 import typing as t
 
-from antarest.study.storage.rawstudy.model.filesystem.config.files import extract_lines_from_archive
+from antarest.core.utils.archives import extract_lines_from_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
