@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import logging
 from http import HTTPStatus
 from http.client import HTTPException
 from typing import Any, List
@@ -25,8 +24,6 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import NonStudyFolder
 from antarest.study.storage.explorer_service import Explorer
-
-logger = logging.getLogger(__name__)
 
 
 class BadPathFormatError(HTTPException):
