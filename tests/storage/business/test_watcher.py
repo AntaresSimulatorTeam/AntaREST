@@ -175,7 +175,6 @@ def test_scan(tmp_path: Path):
 
 @pytest.mark.unit_test
 def test_scan_recursive_false(tmp_path: Path, db_session: Session):
-
     def count_studies():
         return db_session.query(Study).count()
 
