@@ -310,7 +310,7 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
     with pytest.raises(CannotScanInternalWorkspace):
         watcher.scan(workspace_name="default", workspace_directory_path=default)
 
-    with caplog.at_level(level=logging.INFO, logger="antarest.study.storage.rawstudy.watcher"):
+    with caplog.at_level(level=logging.INFO, logger="antarest.study.storage.utils"):
         # scan the `default` directory
         watcher.scan(workspace_name="test", workspace_directory_path=default)
 

@@ -24,6 +24,7 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
+from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 
 from antarest.core.config import Config, WorkspaceConfig
 from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion, WorkspaceNotFound
@@ -49,6 +50,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
+
+UPGRADE_TEMPORARY_DIR_SUFFIX = ".upgrade.tmp"
+UPGRADE_TEMPORARY_DIR_PREFIX = "~"
+
+TS_GEN_PREFIX = "~"
+TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
 
 
 # noinspection SpellCheckingInspection
@@ -407,6 +414,7 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
     requested_path = workspace.path / folder
     safe_dir = os.path.realpath(workspace.path)
     real_requested_path = os.path.realpath(requested_path)  # resolve symbolic links like ~ , .. and .
+
     common_prefix = os.path.commonprefix(
         (os.path.realpath(real_requested_path), safe_dir)
     )  # get the common prefix of the two paths
@@ -414,7 +422,14 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
 
 
 def is_study_folder(path: Path) -> bool:
+    path.relative_to
     return path.is_dir() and (path / "study.antares").exists()
+
+
+def is_aw_no_scan(path: Path) -> bool:
+    if (path / "AW_NO_SCAN").exists():
+        logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
+        return True
 
 
 def get_workspace_from_config(config: Config, workspace_name: str, default_allowed: bool = False) -> WorkspaceConfig:
@@ -436,3 +451,31 @@ def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
     if not folder_path.is_dir():
         raise ValueError("Provided path is not dir")
     return folder_path
+
+
+def is_ts_gen_tmp_dir(path: Path) -> bool:
+    """
+    Check if a path is a temporary directory used for thermal timeseries generation
+    Args:
+        path: the path to check
+
+    Returns:
+        True if the path is a temporary directory used for thermal timeseries generation
+    """
+    return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
+
+
+def should_ignore_folder_for_scan(path: Path) -> bool:
+    if is_aw_no_scan(path):
+        logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
+        return True
+
+    if is_temporary_upgrade_dir(path):
+        logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
+        return True
+
+    if is_ts_gen_tmp_dir(path):
+        logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
+        return True
+
+    return False
