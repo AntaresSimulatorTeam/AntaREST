@@ -46,26 +46,26 @@ import {
   getStudyTask,
   exportCommandsMatrices,
 } from "../../../../../services/api/variant";
-import {
-  WSEvent,
-  WSMessage,
-  CommandResultDTO,
-  TaskEventPayload,
-} from "../../../../../common/types";
+import { CommandResultDTO } from "../../../../../common/types";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import {
-  addWsMessageListener,
-  sendWsSubscribeMessage,
-  WsChannel,
-} from "../../../../../services/webSockets";
+  addWsEventListener,
+  subscribeWsChannels,
+} from "../../../../../services/webSocket/ws";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
 import EmptyView from "../../../../common/page/SimpleContent";
 import { TaskStatus } from "../../../../../services/api/tasks/constants";
+import type {
+  TaskEventPayload,
+  TWsEventType,
+  WsEvent,
+} from "@/services/webSocket/types";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 const logError = debug("antares:variantedition:error");
 
@@ -250,7 +250,7 @@ function EditionView(props: Props) {
   );
 
   const listen = useCallback(
-    (ev: WSMessage) => {
+    (ev: WsEvent) => {
       const taskStart = (taskPayload: TaskEventPayload) => {
         if (taskPayload.message === studyId) {
           if (commands.length > 0) {
@@ -260,10 +260,10 @@ function EditionView(props: Props) {
         }
       };
 
-      const taskEnd = (taskPayload: TaskEventPayload, event: WSEvent) => {
+      const taskEnd = (taskPayload: TaskEventPayload, event: TWsEventType) => {
         if (taskPayload.message === studyId) {
           setCurrentCommandGenerationIndex(-1);
-          if (event === WSEvent.TASK_COMPLETED) {
+          if (event === WsEventType.TaskCompleted) {
             enqueueSnackbar(t("variants.taskCompleted"), {
               variant: "success",
             });
@@ -278,15 +278,15 @@ function EditionView(props: Props) {
       };
 
       switch (ev.type) {
-        case WSEvent.STUDY_VARIANT_GENERATION_COMMAND_RESULT:
-          doUpdateCommandResults([ev.payload as CommandResultDTO]);
+        case WsEventType.StudyVariantGenerationCommandResult:
+          doUpdateCommandResults([ev.payload]);
           break;
-        case WSEvent.TASK_ADDED:
-          taskStart(ev.payload as TaskEventPayload);
+        case WsEventType.TaskAdded:
+          taskStart(ev.payload);
           break;
-        case WSEvent.TASK_COMPLETED:
-        case WSEvent.TASK_FAILED:
-          taskEnd(ev.payload as TaskEventPayload, ev.type);
+        case WsEventType.TaskCompleted:
+        case WsEventType.TaskFailed:
+          taskEnd(ev.payload, ev.type);
           break;
         default:
           break;
@@ -321,7 +321,7 @@ function EditionView(props: Props) {
 
   useEffect(() => {
     const commandGenerationChannel = WsChannel.StudyGeneration + studyId;
-    const unsubscribe = sendWsSubscribeMessage(commandGenerationChannel);
+    const unsubscribe = subscribeWsChannels(commandGenerationChannel);
 
     const init = async () => {
       let items: CommandItem[] = [];
@@ -380,14 +380,14 @@ function EditionView(props: Props) {
   ]);
 
   useEffect(() => {
-    return addWsMessageListener(listen);
+    return addWsEventListener(listen);
   }, [listen]);
 
   useEffect(() => {
     if (generationTaskId) {
       // TODO Maybe WsChannel.StudyGeneration?
       const taskChannel = WsChannel.Task + generationTaskId;
-      const unsubscribe = sendWsSubscribeMessage(taskChannel);
+      const unsubscribe = subscribeWsChannels(taskChannel);
 
       if (taskTimeoutId.current) {
         clearTimeout(taskTimeoutId.current);

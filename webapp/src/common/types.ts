@@ -30,12 +30,6 @@ export interface GenericInfo {
   name: string;
 }
 
-export interface StudySummary {
-  id: string;
-  name: string;
-  workspace: string;
-}
-
 export interface SynthesisSummary {
   study_id: string;
 }
@@ -314,52 +308,12 @@ export interface CommandDTO {
   args: object;
 }
 
-export enum WSEvent {
-  STUDY_CREATED = "STUDY_CREATED",
-  STUDY_DELETED = "STUDY_DELETED",
-  STUDY_EDITED = "STUDY_EDITED",
-  STUDY_DATA_EDITED = "STUDY_DATA_EDITED",
-  STUDY_JOB_STARTED = "STUDY_JOB_STARTED",
-  STUDY_JOB_LOG_UPDATE = "STUDY_JOB_LOG_UPDATE",
-  STUDY_JOB_COMPLETED = "STUDY_JOB_COMPLETED",
-  STUDY_JOB_STATUS_UPDATE = "STUDY_JOB_STATUS_UPDATE",
-  STUDY_VARIANT_GENERATION_COMMAND_RESULT = "STUDY_VARIANT_GENERATION_COMMAND_RESULT",
-  TASK_ADDED = "TASK_ADDED",
-  TASK_RUNNING = "TASK_RUNNING",
-  TASK_COMPLETED = "TASK_COMPLETED",
-  TASK_FAILED = "TASK_FAILED",
-  DOWNLOAD_CREATED = "DOWNLOAD_CREATED",
-  DOWNLOAD_READY = "DOWNLOAD_READY",
-  DOWNLOAD_EXPIRED = "DOWNLOAD_EXPIRED",
-  DOWNLOAD_FAILED = "DOWNLOAD_FAILED",
-  MESSAGE_INFO = "MESSAGE_INFO",
-  MAINTENANCE_MODE = "MAINTENANCE_MODE",
-  LAUNCH_PROGRESS = "LAUNCH_PROGRESS",
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface WSMessage<T = any> {
-  type: string;
-  payload: T;
-}
-
-export interface WSLogMessage {
-  log: string;
-  job_id: string;
-  study_id: string;
-}
-
 export type Components = Record<string, () => React.ReactNode>;
 
 export interface CommandResultDTO {
   study_id: string;
   id: string;
   success: boolean;
-  message: string;
-}
-
-export interface TaskEventPayload {
-  id: string;
   message: string;
 }
 

@@ -41,10 +41,9 @@ import SimpleLoader from "../../common/loaders/SimpleLoader";
 import DownloadLink from "../../common/DownloadLink";
 import LogModal from "../../common/LogModal";
 import {
-  addWsMessageListener,
-  sendWsSubscribeMessage,
-  WsChannel,
-} from "../../../services/webSockets";
+  addWsEventListener,
+  subscribeWsChannels,
+} from "../../../services/webSocket/ws";
 import JobTableView from "./JobTableView";
 import { convertUTCToLocalTime } from "../../../services/utils/index";
 import {
@@ -56,19 +55,10 @@ import {
   convertFileDownloadDTO,
   FileDownload,
   getDownloadUrl,
-  FileDownloadDTO,
   getDownloadsList,
 } from "../../../services/api/downloads";
 import { fetchStudies } from "../../../redux/ducks/studies";
-import {
-  LaunchJob,
-  TaskEventPayload,
-  WSEvent,
-  WSMessage,
-  LaunchJobsProgress,
-  LaunchJobProgressDTO,
-  TaskView,
-} from "../../../common/types";
+import { LaunchJob, LaunchJobsProgress, TaskView } from "../../../common/types";
 import { getTask, getTasks } from "../../../services/api/tasks";
 import LaunchJobLogView from "./LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -80,6 +70,8 @@ import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import { getJobProgress } from "../../../services/api/launcher";
 import type { TaskDTO } from "../../../services/api/tasks/types";
 import { TaskStatus, TaskType } from "../../../services/api/tasks/constants";
+import { WsEvent } from "@/services/webSocket/types";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -230,12 +222,12 @@ function JobsListing() {
   };
 
   useEffect(() => {
-    const listener = async (ev: WSMessage) => {
+    const listener = async (ev: WsEvent) => {
       if (
-        ev.type === WSEvent.TASK_COMPLETED ||
-        ev.type === WSEvent.TASK_FAILED
+        ev.type === WsEventType.TaskCompleted ||
+        ev.type === WsEventType.TaskFailed
       ) {
-        const taskId = (ev.payload as TaskEventPayload).id;
+        const taskId = ev.payload.id;
         if (tasks?.find((task) => task.id === taskId)) {
           try {
             const updatedTask = await getTask({ id: taskId });
@@ -248,44 +240,32 @@ function JobsListing() {
             logError(error);
           }
         }
-      } else if (ev.type === WSEvent.DOWNLOAD_CREATED) {
+      } else if (ev.type === WsEventType.DownloadCreated) {
         setDownloads(
-          (downloads || []).concat([
-            convertFileDownloadDTO(ev.payload as FileDownloadDTO),
-          ]),
-        );
-      } else if (ev.type === WSEvent.DOWNLOAD_READY) {
-        setDownloads(
-          (downloads || []).map((d) => {
-            const fileDownload = ev.payload as FileDownloadDTO;
-            if (d.id === fileDownload.id) {
-              return convertFileDownloadDTO(fileDownload);
-            }
-            return d;
-          }),
+          (downloads || []).concat([convertFileDownloadDTO(ev.payload)]),
         );
       } else if (
-        ev.type === WSEvent.DOWNLOAD_READY ||
-        ev.type === WSEvent.DOWNLOAD_FAILED
+        ev.type === WsEventType.DownloadReady ||
+        ev.type === WsEventType.DownloadFailed
       ) {
         setDownloads(
           (downloads || []).map((d) => {
-            const fileDownload = ev.payload as FileDownloadDTO;
+            const fileDownload = ev.payload;
             if (d.id === fileDownload.id) {
               return convertFileDownloadDTO(fileDownload);
             }
             return d;
           }),
         );
-      } else if (ev.type === WSEvent.DOWNLOAD_EXPIRED) {
+      } else if (ev.type === WsEventType.DownloadExpired) {
         setDownloads(
           (downloads || []).filter((d) => {
-            const fileDownload = ev.payload as FileDownloadDTO;
+            const fileDownload = ev.payload;
             return d.id !== fileDownload.id;
           }),
         );
-      } else if (ev.type === WSEvent.LAUNCH_PROGRESS) {
-        const message = ev.payload as LaunchJobProgressDTO;
+      } else if (ev.type === WsEventType.LaunchProgress) {
+        const message = ev.payload;
         setStudyJobsProgress((studyJobsProgress) => ({
           ...studyJobsProgress,
           [message.id]: message.progress,
@@ -293,19 +273,19 @@ function JobsListing() {
       }
     };
 
-    return addWsMessageListener(listener);
+    return addWsEventListener(listener);
   }, [downloads, tasks, setTasks]);
 
   useEffect(() => {
     if (tasks) {
       const channels = tasks.map((task) => WsChannel.Task + task.id);
-      return sendWsSubscribeMessage(channels);
+      return subscribeWsChannels(channels);
     }
   }, [tasks]);
 
   useEffect(() => {
     const channels = jobs.map((job) => WsChannel.JobStatus + job.id);
-    return sendWsSubscribeMessage(channels);
+    return subscribeWsChannels(channels);
   }, [jobs]);
 
   useEffect(() => {
