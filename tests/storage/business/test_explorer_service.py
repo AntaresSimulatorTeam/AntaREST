@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolder
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolder, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
 
@@ -116,4 +116,4 @@ def test_list_workspaces(tmp_path: Path):
     explorer = Explorer(config)
 
     result = explorer.list_workspaces()
-    assert result == ["diese", "test"]
+    assert result == [WorkspaceMetadata(name="diese"), WorkspaceMetadata(name="test")]

@@ -330,6 +330,14 @@ class NonStudyFolder(AntaresBaseModel):
     name: str
 
 
+class WorkspaceMetadata(AntaresBaseModel):
+    """
+    DTO used by the explorer to list all workspaces
+    """
+
+    name: str
+
+
 class PatchStudy(AntaresBaseModel):
     scenario: t.Optional[str] = None
     doc: t.Optional[str] = None
