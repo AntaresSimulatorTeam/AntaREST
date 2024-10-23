@@ -246,6 +246,7 @@ function reactHookFormSupport<TValue>(
                 helperText={error?.message}
                 disabled={
                   (control._formState.isSubmitting && !isAutoSubmitEnabled) ||
+                  fieldProps.disabled ||
                   feProps.disabled
                 }
               />
