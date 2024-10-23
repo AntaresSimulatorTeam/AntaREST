@@ -321,7 +321,7 @@ class StudyFolder:
 
 class NonStudyFolder(AntaresBaseModel):
     """
-    DTO used by watcher list the directories that aren't studies directory, this will be usefull for the front
+    DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
     so the user can navigate in the hierarchy
     """
 
