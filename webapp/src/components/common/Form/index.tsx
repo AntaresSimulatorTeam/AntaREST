@@ -170,12 +170,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const { getValues, setValue, setError, handleSubmit, formState, reset } =
     formApi;
+
   // * /!\ `formState` is a proxy
-  const { isSubmitting, isSubmitSuccessful, isDirty, dirtyFields, errors } =
-    formState;
+  const {
+    isSubmitting,
+    isSubmitSuccessful,
+    isDirty,
+    disabled: isDisabled,
+    dirtyFields,
+    errors,
+  } = formState;
+
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
-  const isSubmitAllowed = (isDirty || allowSubmitOnPristine) && !isSubmitting;
+  const isSubmitAllowed =
+    (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
   const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
   const showFooter = showSubmitButton || enableUndoRedo || rootError;
