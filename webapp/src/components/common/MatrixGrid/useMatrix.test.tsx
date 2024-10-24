@@ -27,48 +27,34 @@ import {
 import { GridUpdate, MatrixDataDTO } from "./types";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
+// Mock external dependencies
 vi.mock("../../../services/api/matrix");
 vi.mock("../../../services/api/study");
 vi.mock("../../../services/api/studies/raw");
 vi.mock("../../../hooks/usePrompt");
 
 describe("useMatrix", () => {
-  const mockStudyId = "study123";
-  const mockUrl = "https://studies/study123/matrix";
-
-  const mockMatrixData: MatrixDataDTO = {
-    data: [
-      [1, 2],
-      [3, 4],
-    ],
-    columns: [0, 1],
-    index: [0, 1],
+  // Test constants and fixtures
+  const DATA = {
+    studyId: "study123",
+    url: "https://studies/study123/matrix",
+    matrixData: {
+      data: [
+        [1, 2],
+        [3, 4],
+      ],
+      columns: [0, 1],
+      index: [0, 1],
+    } as MatrixDataDTO,
+    matrixIndex: {
+      start_date: "2023-01-01",
+      steps: 2,
+      first_week_size: 7,
+      level: StudyOutputDownloadLevelDTO.DAILY,
+    } as MatrixIndex,
   };
 
-  const mockMatrixIndex: MatrixIndex = {
-    start_date: "2023-01-01",
-    steps: 2,
-    first_week_size: 7,
-    level: StudyOutputDownloadLevelDTO.DAILY,
-  };
-
-  // Helper function to set up the hook and wait for initial loading
-  const setupHook = async () => {
-    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
-
-    const { result } = renderHook(() =>
-      useMatrix(mockStudyId, mockUrl, true, true, true),
-    );
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    return result;
-  };
-
-  // Helper function to create a grid update object
+  // Helper functions
   const createGridUpdate = (
     row: number,
     col: number,
@@ -83,221 +69,174 @@ describe("useMatrix", () => {
     },
   });
 
+  interface SetupOptions {
+    mockData?: MatrixDataDTO;
+    mockIndex?: MatrixIndex;
+  }
+
+  const setupHook = async ({
+    mockData = DATA.matrixData,
+    mockIndex = DATA.matrixIndex,
+  }: SetupOptions = {}) => {
+    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockData);
+    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockIndex);
+
+    const hook = renderHook(() =>
+      useMatrix(DATA.studyId, DATA.url, true, true, true),
+    );
+
+    await waitFor(() => {
+      expect(hook.result.current.isLoading).toBe(false);
+    });
+
+    return hook;
+  };
+
+  const performEdit = async (
+    hook: Awaited<ReturnType<typeof setupHook>>,
+    updates: GridUpdate | GridUpdate[],
+  ) => {
+    act(() => {
+      if (Array.isArray(updates)) {
+        hook.result.current.handleMultipleCellsEdit(updates);
+      } else {
+        hook.result.current.handleCellEdit(updates);
+      }
+    });
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  test("should fetch matrix data and index on mount", async () => {
-    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
+  describe("Initialization", () => {
+    test("should fetch and initialize matrix data", async () => {
+      const hook = await setupHook();
 
-    const result = await setupHook();
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.data).toEqual(mockMatrixData.data);
-    expect(result.current.columns.length).toBeGreaterThan(0);
-    expect(result.current.dateTime.length).toBeGreaterThan(0);
-  });
-
-  test("should handle cell edit", async () => {
-    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
-
-    const result = await setupHook();
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    act(() => {
-      result.current.handleCellEdit(createGridUpdate(0, 1, 5));
-    });
-
-    expect(result.current.data[1][0]).toBe(5);
-    expect(result.current.pendingUpdatesCount).toBe(1);
-  });
-
-  test("should handle multiple cells edit", async () => {
-    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
-
-    const result = await setupHook();
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    act(() => {
-      result.current.handleMultipleCellsEdit([
-        createGridUpdate(0, 1, 5),
-        createGridUpdate(1, 0, 6),
-      ]);
-    });
-
-    expect(result.current.data[1][0]).toBe(5);
-    expect(result.current.data[0][1]).toBe(6);
-    expect(result.current.pendingUpdatesCount).toBe(1);
-  });
-
-  test("should handle save updates", async () => {
-    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
-    vi.mocked(apiMatrix.updateMatrix).mockResolvedValue(undefined);
-
-    const result = await setupHook();
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    act(() => {
-      result.current.handleCellEdit(createGridUpdate(0, 1, 5));
-    });
-
-    await act(async () => {
-      await result.current.handleSaveUpdates();
-    });
-
-    const expectedEdit: MatrixEditDTO = {
-      coordinates: [[1, 0]],
-      operation: {
-        operation: Operator.EQ,
-        value: 5,
-      },
-    };
-
-    expect(apiMatrix.updateMatrix).toHaveBeenCalledWith(mockStudyId, mockUrl, [
-      expectedEdit,
-    ]);
-    expect(result.current.pendingUpdatesCount).toBe(0);
-  });
-
-  test("should handle file import", async () => {
-    const mockFile = new File([""], "test.csv", { type: "text/csv" });
-    vi.mocked(rawStudy.importFile).mockResolvedValue();
-    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockMatrixIndex);
-
-    const result = await setupHook();
-
-    await act(async () => {
-      await result.current.handleImport(mockFile);
-    });
-
-    expect(rawStudy.importFile).toHaveBeenCalledWith({
-      file: mockFile,
-      studyId: mockStudyId,
-      path: mockUrl,
+      expect(hook.result.current.data).toEqual(DATA.matrixData.data);
+      expect(hook.result.current.columns.length).toBeGreaterThan(0);
+      expect(hook.result.current.dateTime.length).toBeGreaterThan(0);
+      expect(hook.result.current.isLoading).toBe(false);
     });
   });
 
-  describe("Undo and Redo functionality", () => {
-    test("should have correct initial undo/redo states", async () => {
-      vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-      vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(
-        mockMatrixIndex,
+  describe("Edit operations", () => {
+    test("should handle single cell edit", async () => {
+      const hook = await setupHook();
+      const update = createGridUpdate(0, 1, 5);
+
+      await performEdit(hook, update);
+
+      expect(hook.result.current.data[1][0]).toBe(5);
+      expect(hook.result.current.pendingUpdatesCount).toBe(1);
+    });
+
+    test("should handle multiple cell edits", async () => {
+      const hook = await setupHook();
+      const updates = [createGridUpdate(0, 1, 5), createGridUpdate(1, 0, 6)];
+
+      await performEdit(hook, updates);
+
+      expect(hook.result.current.data[1][0]).toBe(5);
+      expect(hook.result.current.data[0][1]).toBe(6);
+      expect(hook.result.current.pendingUpdatesCount).toBe(1);
+    });
+
+    test("should save updates correctly", async () => {
+      vi.mocked(apiMatrix.updateMatrix).mockResolvedValue(undefined);
+      const hook = await setupHook();
+
+      await performEdit(hook, createGridUpdate(0, 1, 5));
+
+      await act(async () => {
+        await hook.result.current.handleSaveUpdates();
+      });
+
+      const expectedEdit: MatrixEditDTO = {
+        coordinates: [[1, 0]],
+        operation: { operation: Operator.EQ, value: 5 },
+      };
+
+      expect(apiMatrix.updateMatrix).toHaveBeenCalledWith(
+        DATA.studyId,
+        DATA.url,
+        [expectedEdit],
       );
+      expect(hook.result.current.pendingUpdatesCount).toBe(0);
+    });
+  });
 
-      const result = await setupHook();
+  describe("File operations", () => {
+    test("should handle file import", async () => {
+      const mockFile = new File([""], "test.csv", { type: "text/csv" });
+      vi.mocked(rawStudy.importFile).mockResolvedValue();
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+      const hook = await setupHook();
+
+      await act(async () => {
+        await hook.result.current.handleImport(mockFile);
       });
 
-      expect(result.current.canUndo).toBe(false);
-      expect(result.current.canRedo).toBe(false);
+      expect(rawStudy.importFile).toHaveBeenCalledWith({
+        file: mockFile,
+        studyId: DATA.studyId,
+        path: DATA.url,
+      });
+    });
+  });
+
+  describe("Undo/Redo functionality", () => {
+    test("should initialize with correct undo/redo states", async () => {
+      const hook = await setupHook();
+
+      expect(hook.result.current.canUndo).toBe(false);
+      expect(hook.result.current.canRedo).toBe(false);
     });
 
-    test("should update canUndo and canRedo states correctly after edits", async () => {
-      vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-      vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(
-        mockMatrixIndex,
-      );
+    test("should update states after edit operations", async () => {
+      const hook = await setupHook();
+      const update = createGridUpdate(0, 1, 5);
 
-      const result = await setupHook();
+      // Initial edit
+      await performEdit(hook, update);
+      expect(hook.result.current.canUndo).toBe(true);
+      expect(hook.result.current.canRedo).toBe(false);
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
+      // Undo
+      act(() => hook.result.current.undo());
+      expect(hook.result.current.canUndo).toBe(false);
+      expect(hook.result.current.canRedo).toBe(true);
 
-      act(() => {
-        result.current.handleCellEdit(createGridUpdate(0, 1, 5));
-      });
-
-      expect(result.current.canUndo).toBe(true);
-      expect(result.current.canRedo).toBe(false);
-
-      act(() => {
-        result.current.undo();
-      });
-
-      expect(result.current.canUndo).toBe(false);
-      expect(result.current.canRedo).toBe(true);
-
-      act(() => {
-        result.current.redo();
-      });
-
-      expect(result.current.canUndo).toBe(true);
-      expect(result.current.canRedo).toBe(false);
+      // Redo
+      act(() => hook.result.current.redo());
+      expect(hook.result.current.canUndo).toBe(true);
+      expect(hook.result.current.canRedo).toBe(false);
     });
 
-    test("should reset redo state after a new edit", async () => {
-      vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-      vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(
-        mockMatrixIndex,
-      );
+    test("should clear redo history after new edit", async () => {
+      const hook = await setupHook();
 
-      const result = await setupHook();
+      // Create edit history
+      await performEdit(hook, createGridUpdate(0, 1, 5));
+      act(() => hook.result.current.undo());
+      expect(hook.result.current.canRedo).toBe(true);
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      act(() => {
-        result.current.handleCellEdit(createGridUpdate(0, 1, 5));
-      });
-
-      act(() => {
-        result.current.undo();
-      });
-
-      expect(result.current.canRedo).toBe(true);
-
-      act(() => {
-        result.current.handleCellEdit(createGridUpdate(1, 0, 6));
-      });
-
-      expect(result.current.canUndo).toBe(true);
-      expect(result.current.canRedo).toBe(false);
+      // New edit should clear redo history
+      await performEdit(hook, createGridUpdate(1, 0, 6));
+      expect(hook.result.current.canUndo).toBe(true);
+      expect(hook.result.current.canRedo).toBe(false);
     });
 
-    test("should handle undo to initial state", async () => {
-      vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockMatrixData);
-      vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(
-        mockMatrixIndex,
-      );
+    test("should restore initial state after full undo", async () => {
+      const hook = await setupHook();
+      const initialData = [...DATA.matrixData.data];
 
-      const result = await setupHook();
+      await performEdit(hook, createGridUpdate(0, 1, 5));
+      act(() => hook.result.current.undo());
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      act(() => {
-        result.current.handleCellEdit(createGridUpdate(0, 1, 5));
-      });
-
-      act(() => {
-        result.current.undo();
-      });
-
-      expect(result.current.data).toEqual(mockMatrixData.data);
-      expect(result.current.canUndo).toBe(false);
-      expect(result.current.canRedo).toBe(true);
+      expect(hook.result.current.data).toEqual(initialData);
+      expect(hook.result.current.canUndo).toBe(false);
+      expect(hook.result.current.canRedo).toBe(true);
     });
   });
 });
