@@ -425,7 +425,6 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
 
 
 def is_study_folder(path: Path) -> bool:
-    path.relative_to
     return path.is_dir() and (path / "study.antares").exists()
 
 
