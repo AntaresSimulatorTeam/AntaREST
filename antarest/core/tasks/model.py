@@ -78,6 +78,7 @@ class CustomTaskEventMessages(AntaresBaseModel, extra="forbid"):
 class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
+    type: TaskType
 
 
 class TaskDTO(AntaresBaseModel, extra="forbid"):

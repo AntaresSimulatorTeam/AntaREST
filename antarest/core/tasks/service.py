@@ -258,11 +258,12 @@ class TaskJobService(ITaskService):
                     message=custom_event_messages.start
                     if custom_event_messages is not None
                     else f"Task {task.id} added",
+                    type=task.type,
                 ).model_dump(),
                 permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages, listener)
+        future = self.threadpool.submit(self._run_task, action, task, custom_event_messages, listener)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> t.Callable[[Event], t.Awaitable[None]]:
@@ -354,7 +355,7 @@ class TaskJobService(ITaskService):
     def _run_task(
         self,
         callback: Task,
-        task_id: str,
+        task: TaskJob,
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
         listener: t.Optional[ICommandListener] = None,
     ) -> None:
@@ -364,34 +365,35 @@ class TaskJobService(ITaskService):
             Event(
                 type=EventType.TASK_RUNNING,
                 payload=TaskEventPayload(
-                    id=task_id,
+                    id=task.id,
                     message=custom_event_messages.running
                     if custom_event_messages is not None
-                    else f"Task {task_id} is running",
+                    else f"Task {task.id} is running",
+                    type=task.type,
                 ).model_dump(),
                 permissions=PermissionInfo(public_mode=PublicMode.READ),
-                channel=EventChannelDirectory.TASK + task_id,
+                channel=EventChannelDirectory.TASK + task.id,
             )
         )
 
-        logger.info(f"Starting task {task_id}")
+        logger.info(f"Starting task {task.id}")
         with db():
-            db.session.query(TaskJob).filter(TaskJob.id == task_id).update({TaskJob.status: TaskStatus.RUNNING.value})
+            db.session.query(TaskJob).filter(TaskJob.id == task.id).update({TaskJob.status: TaskStatus.RUNNING.value})
             db.session.commit()
-        logger.info(f"Task {task_id} set to RUNNING")
+        logger.info(f"Task {task.id} set to RUNNING")
 
         try:
             with db():
                 # We must use the DB session attached to the current thread
-                result = callback(TaskJobLogRecorder(task_id, session=db.session), listener)
+                result = callback(TaskJobLogRecorder(task.id, session=db.session), listener)
 
             status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
-            logger.info(f"Task {task_id} ended with status {status}")
+            logger.info(f"Task {task.id} ended with status {status}")
 
             with db():
                 # Do not use the `timezone.utc` timezone to preserve a naive datetime.
                 completion_date = datetime.datetime.utcnow() if status.is_final() else None
-                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                db.session.query(TaskJob).filter(TaskJob.id == task.id).update(
                     {
                         TaskJob.status: status.value,
                         TaskJob.result_msg: result.message,
@@ -408,24 +410,25 @@ class TaskJobService(ITaskService):
                 Event(
                     type=event_type,
                     payload=TaskEventPayload(
-                        id=task_id,
+                        id=task.id,
                         message=(
                             custom_event_messages.end
                             if custom_event_messages is not None
-                            else f"Task {task_id} {event_msg}"
+                            else f"Task {task.id} {event_msg}"
                         ),
+                        type=task.type,
                     ).model_dump(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
-                    channel=EventChannelDirectory.TASK + task_id,
+                    channel=EventChannelDirectory.TASK + task.id,
                 )
             )
         except Exception as exc:
-            err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
+            err_msg = f"Task {task.id} failed: Unhandled exception {exc}"
             logger.error(err_msg, exc_info=exc)
 
             with db():
                 result_msg = f"{err_msg}\nSee the logs for detailed information and the error traceback."
-                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                db.session.query(TaskJob).filter(TaskJob.id == task.id).update(
                     {
                         TaskJob.status: TaskStatus.FAILED.value,
                         TaskJob.result_msg: result_msg,
@@ -439,8 +442,8 @@ class TaskJobService(ITaskService):
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_FAILED,
-                    payload=TaskEventPayload(id=task_id, message=message).model_dump(),
+                    payload=TaskEventPayload(id=task.id, message=message, type=task.type).model_dump(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
-                    channel=EventChannelDirectory.TASK + task_id,
+                    channel=EventChannelDirectory.TASK + task.id,
                 )
             )
