@@ -37,6 +37,9 @@ from antarest.core.exceptions import (
     FileDeletionNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
+    OutputAlreadyArchived,
+    OutputAlreadyUnarchived,
+    OutputNotFound,
     ReferencedObjectDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -137,7 +140,13 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
-from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission,
+    get_start_date,
+    is_managed,
+    is_output_archived,
+    remove_from_cache,
+)
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
@@ -993,6 +1002,7 @@ class StudyService:
                 f"Study {src_study.name} ({src_uuid}) copy",
                 task_type=TaskType.COPY,
                 ref_id=src_study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -1058,6 +1068,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1131,6 +1142,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1302,6 +1314,7 @@ class StudyService:
                 export_name,
                 task_type=TaskType.EXPORT,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -2015,6 +2028,7 @@ class StudyService:
             f"Study {study.name} archiving",
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2061,6 +2075,7 @@ class StudyService:
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2324,6 +2339,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
+        output_path = Path(study.path) / "output" / output_id
+        if is_output_archived(output_path):
+            raise OutputAlreadyArchived(output_id)
+        if not output_path.exists():
+            raise OutputNotFound(output_id)
+
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
         task_name = archive_task_names[0]
 
@@ -2364,6 +2385,7 @@ class StudyService:
             task_name,
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2380,6 +2402,12 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
+
+        output_path = Path(study.path) / "output" / output_id
+        if not is_output_archived(output_path):
+            if not output_path.exists():
+                raise OutputNotFound(output_id)
+            raise OutputAlreadyUnarchived(output_id)
 
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
         task_name = archive_task_names[1]
@@ -2440,6 +2468,7 @@ class StudyService:
                 task_name,
                 task_type=TaskType.UNARCHIVE,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -2471,6 +2500,7 @@ class StudyService:
             task_name,
             task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
             ref_id=study.id,
+            progress=0,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2530,6 +2560,7 @@ class StudyService:
             task_name,
             task_type=TaskType.UPGRADE_STUDY,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
