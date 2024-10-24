@@ -613,6 +613,7 @@ class LauncherService:
                 export_name,
                 task_type=TaskType.EXPORT,
                 ref_id=None,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )

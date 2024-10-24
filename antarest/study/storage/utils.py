@@ -116,10 +116,16 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
+def is_output_archived(path_output: Path) -> bool:
+    # Returns True it the given path is archived or if adding a suffix to the path points to an existing path
+    suffixes = [".zip"]
+    return path_output.suffix in suffixes or any(path_output.with_suffix(suffix).exists() for suffix in suffixes)
+
+
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
-    is_output_archived = path_output.suffix == ".zip"
-    if is_output_archived:
+    archived = is_output_archived(path_output)
+    if archived:
         temp_dir = tempfile.TemporaryDirectory()
         s = StopWatch()
         with ZipFile(path_output, "r") as zip_obj:
@@ -140,7 +146,7 @@ def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = No
     if new_suffix_name:
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
-        if not is_output_archived:
+        if not archived:
             ini_writer = IniWriter()
             ini_writer.write(info_antares_output, path_output / "info.antares-output")
         else:

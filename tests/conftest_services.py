@@ -86,6 +86,7 @@ class SynchTaskService(ITaskService):
         name: t.Optional[str],
         task_type: t.Optional[TaskType],
         ref_id: t.Optional[str],
+        progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
         listener: t.Optional[ICommandListener] = None,
