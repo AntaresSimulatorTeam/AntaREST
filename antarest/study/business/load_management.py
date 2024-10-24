@@ -15,13 +15,9 @@ from antarest.study.model import MatrixFormat, Study
 from antarest.study.storage.storage_service import StudyStorageService
 
 
-class LoadOutput:
-    pass
-
-
 class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_load_matrix(self, study: Study, area_id: str, matrix_format: t.Optional[MatrixFormat]) -> LoadOutput:
-        return LoadOutput()
+    def get_load_matrix(self, study: Study, area_id: str, matrix_format: t.Optional[MatrixFormat]) -> None:
+        pass
