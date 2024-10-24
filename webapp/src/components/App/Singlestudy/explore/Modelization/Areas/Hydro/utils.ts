@@ -205,7 +205,6 @@ export const MATRICES: Matrices = {
     fetchFn: getAllocationMatrix,
     enableDateTimeColumn: false,
     readOnly: true,
-    showPercent: true,
   },
   [HydroMatrix.Correlation]: {
     title: "Correlation",
@@ -213,7 +212,6 @@ export const MATRICES: Matrices = {
     fetchFn: getCorrelationMatrix,
     enableDateTimeColumn: false,
     readOnly: true,
-    showPercent: true,
   },
 };
 
