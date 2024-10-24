@@ -417,7 +417,9 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
     requested_path = workspace.path / folder
     safe_dir = os.path.realpath(workspace.path)
     real_requested_path = os.path.realpath(requested_path)  # resolve symbolic links like ~ , .. and .
-
+    # we check if real_requested_path starts with safe_dir,
+    # if not, it means that the requested path is outside the workspace
+    # todo : replace by is_relative_to when we switch to python 3.11
     common_prefix = os.path.commonprefix(
         (os.path.realpath(real_requested_path), safe_dir)
     )  # get the common prefix of the two paths
