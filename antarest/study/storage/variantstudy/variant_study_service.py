@@ -431,6 +431,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             raw_study_accepted=True,
         )
         children = self.repository.get_children(parent_id=parent_id)
+        # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
         if not bottom_first:
             fun(study)
         for child in children:
@@ -438,8 +439,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if bottom_first:
             fun(study)
 
-    def get_variants_parents(self, id: str, params: RequestParameters) -> t.List[StudyMetadataDTO]:
-        output_list: t.List[StudyMetadataDTO] = self._get_variants_parents(id, params)
+    def get_variants_parents(self, study_id: str, params: RequestParameters) -> t.List[StudyMetadataDTO]:
+        output_list: t.List[StudyMetadataDTO] = self._get_variants_parents(study_id, params)
         if output_list:
             output_list = output_list[1:]
         return output_list
@@ -639,6 +640,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 name=f"Generation of {metadata.id} study",
                 task_type=TaskType.VARIANT_GENERATION,
                 ref_id=study_id,
+                progress=None,
                 custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
                 request_params=RequestParameters(DEFAULT_ADMIN_USER),
             )
@@ -1082,6 +1084,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             task_name,
             task_type=TaskType.SNAPSHOT_CLEARING,
             ref_id=None,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )

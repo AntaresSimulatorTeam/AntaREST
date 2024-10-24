@@ -16,7 +16,8 @@ from pathlib import Path
 import pytest
 
 from antarest.core.exceptions import ShouldNotHappenException
-from antarest.core.utils.utils import concat_files, concat_files_to_str, read_in_zip, retry, suppress_exception
+from antarest.core.utils.archives import read_in_zip
+from antarest.core.utils.utils import concat_files, concat_files_to_str, retry, suppress_exception
 
 
 def test_retry() -> None:

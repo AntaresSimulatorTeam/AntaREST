@@ -16,6 +16,7 @@ from zipfile import ZipFile
 
 import pytest
 from checksumdir import dirhash
+from py7zr import SevenZipFile
 
 from antarest.core.config import Config, StorageConfig
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
@@ -42,14 +43,14 @@ def test_export_file(tmp_path: Path):
     study_service.export_file.return_value = b"Hello"
 
     # Test good study
-    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME)
-    export_path = tmp_path / "export.zip"
+    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
+    export_path = tmp_path / "export.7z"
     study_service.export_study(md, export_path)
 
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize("outputs", [True, False])
-def test_export_file(tmp_path: Path, outputs: bool):
+def test_export_archived_study(tmp_path: Path, outputs: bool):
     root = tmp_path / "folder"
     root.mkdir()
     (root / "test").mkdir()
@@ -58,7 +59,7 @@ def test_export_file(tmp_path: Path, outputs: bool):
     (root / "output/results1").mkdir(parents=True)
     (root / "output/results1/file.txt").write_text("42")
 
-    export_path = tmp_path / "study.zip"
+    export_path = tmp_path / "study.7z"
 
     study_factory = Mock()
     study_service = RawStudyService(
@@ -74,10 +75,11 @@ def test_export_file(tmp_path: Path, outputs: bool):
     study_factory.create_from_fs.return_value = study_tree
 
     study_service.export_study(study, export_path, outputs=outputs)
-    with ZipFile(export_path) as zipf:
-        assert "file.txt" in zipf.namelist()
-        assert "test/file.txt" in zipf.namelist()
-        assert ("output/results1/file.txt" in zipf.namelist()) == outputs
+    with SevenZipFile(export_path) as szf:
+        szf_files = set(szf.getnames())
+        assert "file.txt" in szf_files
+        assert "test/file.txt" in szf_files
+        assert ("output/results1/file.txt" in szf_files) == outputs
 
 
 @pytest.mark.unit_test

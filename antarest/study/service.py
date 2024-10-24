@@ -37,6 +37,9 @@ from antarest.core.exceptions import (
     FileDeletionNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
+    OutputAlreadyArchived,
+    OutputAlreadyUnarchived,
+    OutputNotFound,
     ReferencedObjectDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -55,6 +58,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
@@ -136,7 +140,13 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
-from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission,
+    get_start_date,
+    is_managed,
+    is_output_archived,
+    remove_from_cache,
+)
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
@@ -159,7 +169,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 def get_disk_usage(path: t.Union[str, Path]) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
-    if path.suffix.lower() in {".zip", ".7z"}:
+    if is_archive_format(path.suffix.lower()):
         return os.path.getsize(path)
     total_size = 0
     with os.scandir(path) as it:
@@ -991,6 +1001,7 @@ class StudyService:
                 f"Study {src_study.name} ({src_uuid}) copy",
                 task_type=TaskType.COPY,
                 ref_id=src_study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -1036,7 +1047,7 @@ class StudyService:
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}.zip", export_name, params.user
+            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name, params.user
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -1056,6 +1067,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1100,7 +1112,7 @@ class StudyService:
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
         export_name = f"Study output {study.name}/{output_uuid} export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{study_uuid}-{output_uuid}.zip",
+            f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}",
             export_name,
             params.user,
         )
@@ -1129,6 +1141,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1198,7 +1211,7 @@ class StudyService:
             self.storage_service.get_storage(study).delete(study)
         else:
             if isinstance(study, RawStudy):
-                os.unlink(self.storage_service.raw_study_service.get_archive_path(study))
+                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 
@@ -1300,6 +1313,7 @@ class StudyService:
                 export_name,
                 task_type=TaskType.EXPORT,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -1456,7 +1470,7 @@ class StudyService:
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info("output added to study %s by user %s", uuid, params.get_user_id())
 
-        if output_id and isinstance(output, Path) and output.suffix == ".zip" and auto_unzip:
+        if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
             self.unarchive_output(uuid, output_id, not is_managed(study), params)
 
         return output_id
@@ -2012,6 +2026,7 @@ class StudyService:
             f"Study {study.name} archiving",
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2041,7 +2056,7 @@ class StudyService:
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
-            os.unlink(self.storage_service.raw_study_service.get_archive_path(study_to_archive))
+            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
             self.repository.save(study_to_archive)
             self.event_bus.push(
                 Event(
@@ -2058,6 +2073,7 @@ class StudyService:
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2321,6 +2337,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
+        output_path = Path(study.path) / "output" / output_id
+        if is_output_archived(output_path):
+            raise OutputAlreadyArchived(output_id)
+        if not output_path.exists():
+            raise OutputNotFound(output_id)
+
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
         task_name = archive_task_names[0]
 
@@ -2361,6 +2383,7 @@ class StudyService:
             task_name,
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2377,6 +2400,12 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
+
+        output_path = Path(study.path) / "output" / output_id
+        if not is_output_archived(output_path):
+            if not output_path.exists():
+                raise OutputNotFound(output_id)
+            raise OutputAlreadyUnarchived(output_id)
 
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
         task_name = archive_task_names[1]
@@ -2417,7 +2446,7 @@ class StudyService:
         workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         if workspace != DEFAULT_WORKSPACE_NAME:
             dest = Path(study.path) / "output" / output_id
-            src = Path(study.path) / "output" / f"{output_id}.zip"
+            src = Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}"
             task_id = self.task_service.add_worker_task(
                 TaskType.UNARCHIVE,
                 f"unarchive_{workspace}",
@@ -2437,6 +2466,7 @@ class StudyService:
                 task_name,
                 task_type=TaskType.UNARCHIVE,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -2468,6 +2498,7 @@ class StudyService:
             task_name,
             task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
             ref_id=study.id,
+            progress=0,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2527,6 +2558,7 @@ class StudyService:
             task_name,
             task_type=TaskType.UPGRADE_STUDY,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
