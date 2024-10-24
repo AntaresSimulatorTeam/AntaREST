@@ -263,7 +263,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
             fix_study_root(path_output)
             output_full_name = extract_output_name(path_output, output_name)
-            extension = f"{ArchiveFormat.ZIP}" if is_zipped else ""
+            extension = f"{ArchiveFormat.SEVEN_ZIP}" if is_archived else ""
             path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
 
             data = self.get(metadata, f"output/{output_full_name}", 1, use_cache=False)
