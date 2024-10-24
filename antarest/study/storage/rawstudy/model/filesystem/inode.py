@@ -152,7 +152,7 @@ class INode(ABC, Generic[G, S, V]):
             raise ShouldNotHappenException()
         inside_archive_path = self.config.path.relative_to(self.config.archive_path.parent / self.config.study_id)
         if self.config.archive_path:
-            return extract_file_to_tmp_dir(self.config.archive_path, Path(inside_archive_path))
+            return extract_file_to_tmp_dir(self.config.archive_path, inside_archive_path)
         else:
             raise ShouldNotHappenException()
 
