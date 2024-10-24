@@ -1486,8 +1486,58 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     ]
 
 
-def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # =============================
+    # OUTPUT PART
+    # =============================
+
+    res = client.get(f"/v1/studies/{internal_study_id}/outputs")
+    outputs = res.json()
+    fake_output = "fake_output"
+    unarchived_outputs = [output["name"] for output in outputs if not output["archived"]]
+    usual_output = unarchived_outputs[0]
+
+    # Archive
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{fake_output}/_archive")
+    assert res.json()["exception"] == "OutputNotFound"
+    assert res.json()["description"] == f"Output '{fake_output}' not found"
+    assert res.status_code == 404
+
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_archive")
+    assert res.status_code == 200
+    task_id = res.json()
+    wait_for(
+        lambda: client.get(
+            f"/v1/tasks/{task_id}",
+        ).json()["status"]
+        == 3
+    )
+
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_archive")
+    assert res.json()["exception"] == "OutputAlreadyArchived"
+    assert res.json()["description"] == f"Output '{usual_output}' is already archived"
+    assert res.status_code == 417
+
+    # Unarchive
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{fake_output}/_unarchive")
+    assert res.json()["exception"] == "OutputNotFound"
+    assert res.json()["description"] == f"Output '{fake_output}' not found"
+    assert res.status_code == 404
+
+    unarchived_output = unarchived_outputs[1]
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{unarchived_output}/_unarchive")
+    assert res.json()["exception"] == "OutputAlreadyUnarchived"
+    assert res.json()["description"] == f"Output '{unarchived_output}' is already unarchived"
+    assert res.status_code == 417
+
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_unarchive")
+    assert res.status_code == 200
+
+    # =============================
+    #  STUDY PART
+    # =============================
 
     study_res = client.post("/v1/studies?name=foo")
     study_id = study_res.json()

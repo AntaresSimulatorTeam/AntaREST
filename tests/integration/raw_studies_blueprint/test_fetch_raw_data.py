@@ -224,7 +224,7 @@ class TestFetchRawData:
             headers=headers,
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == {"index": [0], "columns": [], "data": []}
+        assert res.json() == {"index": [], "columns": [], "data": []}
 
         # Some files can be corrupted
         user_folder_dir = study_dir.joinpath("user/bad")

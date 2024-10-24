@@ -414,6 +414,26 @@ class OutputNotFound(HTTPException):
         return self.detail
 
 
+class OutputAlreadyArchived(HTTPException):
+    """
+    Exception raised when a user wants to archive an output which is already archived.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' is already archived"
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
+
+
+class OutputAlreadyUnarchived(HTTPException):
+    """
+    Exception raised when a user wants to unarchive an output which is already unarchived.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' is already unarchived"
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
+
+
 class OutputSubFolderNotFound(HTTPException):
     """
     Exception raised when an output sub folders do not exist
