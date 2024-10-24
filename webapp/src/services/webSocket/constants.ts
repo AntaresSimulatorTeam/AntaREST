@@ -37,10 +37,11 @@ export const WsEventType = {
   DownloadFailed: "DOWNLOAD_FAILED",
   MessageInfo: "MESSAGE_INFO",
   MaintenanceMode: "MAINTENANCE_MODE",
-  LaunchProgress: "LAUNCH_PROGRESS",
   WorkerTask: "WORKER_TASK",
   WorkerTaskStarted: "WORKER_TASK_STARTED",
   WorkerTaskEnded: "WORKER_TASK_ENDED",
+  LaunchProgress: "LAUNCH_PROGRESS",
+  TsGenerationProgress: "TS_GENERATION_PROGRESS",
 } as const;
 
 export const WsChannel = {

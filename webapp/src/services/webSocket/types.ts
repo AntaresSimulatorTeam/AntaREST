@@ -22,6 +22,7 @@ import type {
 import { WsEventType } from "./constants";
 import { O } from "ts-toolbelt";
 import { FileDownloadDTO } from "../api/downloads";
+import { TaskDTO, TTaskType } from "../api/tasks/types";
 
 /**
  * Copyright (c) 2024, RTE (https://www.rte-france.com)
@@ -60,6 +61,11 @@ export interface TaskEventPayload {
   message: string;
   type: TTaskType;
   study_id?: StudyMetadata["id"];
+}
+
+export interface TsGenerationProgressPayload {
+  task_id: TaskDTO["id"];
+  progress: number;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -119,6 +125,10 @@ export type WsEvent =
         | typeof WsEventType.DownloadFailed
         | typeof WsEventType.DownloadExpired;
       payload: FileDownloadDTO;
+    }
+  | {
+      type: typeof WsEventType.TsGenerationProgress;
+      payload: TsGenerationProgressPayload;
     };
 
 export type WsEventListener = (message: WsEvent) => void;
