@@ -575,6 +575,7 @@ nominalcapacity = 14.0
         "test_generation",
         task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
         ref_id=raw_study.id,
+        progress=0,
         custom_event_messages=None,
         request_params=RequestParameters(DEFAULT_ADMIN_USER),
         listener=listener,
@@ -589,6 +590,7 @@ nominalcapacity = 14.0
     assert task.id == task_id
     assert task.name == "test_generation"
     assert task.status == TaskStatus.COMPLETED
+    assert task.progress == 100
 
     # Check eventbus
     events = backend.get_events()

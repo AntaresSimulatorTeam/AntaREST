@@ -56,7 +56,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json
-from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
+from antarest.core.tasks.model import TaskJob, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
@@ -243,6 +243,10 @@ class ThermalClusterTimeSeriesGeneratorTask:
         event_bus: IEventBus
 
         def notify_progress(self, progress: int) -> None:
+            with db():
+                db.session.query(TaskJob).filter(TaskJob.id == self.task_id).update({TaskJob.progress: progress})
+                db.session.commit()
+
             self.event_bus.push(
                 Event(
                     type=EventType.TS_GENERATION_PROGRESS,
