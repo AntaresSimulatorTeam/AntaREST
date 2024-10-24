@@ -48,10 +48,17 @@ class CreateRenewablesCluster(ICommand):
 
     @field_validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
-        valid_name = transform_name_to_id(val, lower=False)
-        if valid_name != val:
-            raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-        return val
+        to_return = transform_name_to_id(val)
+        if not to_return:
+            raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
+        return to_return
+
+    @field_validator("parameters", mode="before")
+    def lower_cluster_group_and_names(cls, params: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        for key in ["name", "group"]:
+            if key in params:
+                params[key] = params[key].lower()
+        return params
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:

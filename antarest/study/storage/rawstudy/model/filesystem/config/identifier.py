@@ -45,7 +45,7 @@ class IgnoreCaseIdentifier(
         # Avoid circular imports
         from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
-        return transform_name_to_id(name, lower=False)
+        return transform_name_to_id(name)
 
     @model_validator(mode="before")
     def validate_id(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
@@ -97,4 +97,4 @@ class LowerCaseIdentifier(IgnoreCaseIdentifier):
         # Avoid circular imports
         from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
-        return transform_name_to_id(name, lower=True)
+        return transform_name_to_id(name)

@@ -44,15 +44,15 @@ class RenewableClusterGroup(EnumIgnoreCase):
     If not specified, the renewable cluster will be part of the group "Other RES 1".
     """
 
-    THERMAL_SOLAR = "Solar Thermal"
-    PV_SOLAR = "Solar PV"
-    ROOFTOP_SOLAR = "Solar Rooftop"
-    WIND_ON_SHORE = "Wind Onshore"
-    WIND_OFF_SHORE = "Wind Offshore"
-    OTHER1 = "Other RES 1"
-    OTHER2 = "Other RES 2"
-    OTHER3 = "Other RES 3"
-    OTHER4 = "Other RES 4"
+    THERMAL_SOLAR = "solar thermal"
+    PV_SOLAR = "solar pv"
+    ROOFTOP_SOLAR = "solar rooftop"
+    WIND_ON_SHORE = "wind onshore"
+    WIND_OFF_SHORE = "wind offshore"
+    OTHER1 = "other res 1"
+    OTHER2 = "other res 2"
+    OTHER3 = "other res 3"
+    OTHER4 = "other res 4"
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"

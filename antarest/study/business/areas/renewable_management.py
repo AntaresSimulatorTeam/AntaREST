@@ -114,7 +114,7 @@ def create_renewable_output(
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "RenewableClusterOutput":
-    obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id)
+    obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id.lower())
     kwargs = obj.model_dump(by_alias=False)
     return RenewableClusterOutput(**kwargs)
 
@@ -347,9 +347,8 @@ class RenewableManager:
         Raises:
             DuplicateRenewableCluster: If a cluster with the new name already exists in the area.
         """
-        new_id = transform_name_to_id(new_cluster_name, lower=False)
-        lower_new_id = new_id.lower()
-        if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
+        new_id = transform_name_to_id(new_cluster_name)
+        if any(new_id == cluster.id for cluster in self.get_clusters(study, area_id)):
             raise DuplicateRenewableCluster(area_id, new_id)
 
         # Cluster duplication
@@ -362,7 +361,7 @@ class RenewableManager:
         # Matrix edition
         lower_source_id = source_id.lower()
         source_path = f"input/renewables/series/{area_id}/{lower_source_id}/series"
-        new_path = f"input/renewables/series/{area_id}/{lower_new_id}/series"
+        new_path = f"input/renewables/series/{area_id}/{new_id}/series"
 
         # Prepare and execute commands
         storage_service = self.storage_service.get_storage(study)
@@ -388,6 +387,7 @@ class RenewableManager:
         for area_id, update_renewables_by_ids in update_renewables_by_areas.items():
             old_renewables_by_ids = old_renewables_by_areas[area_id]
             for renewable_id, update_cluster in update_renewables_by_ids.items():
+                renewable_id = renewable_id.lower()
                 # Update the renewable cluster properties.
                 old_cluster = old_renewables_by_ids[renewable_id]
                 new_cluster = old_cluster.copy(update=update_cluster.model_dump(by_alias=False, exclude_none=True))

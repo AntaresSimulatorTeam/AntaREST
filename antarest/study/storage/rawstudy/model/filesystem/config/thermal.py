@@ -58,16 +58,16 @@ class ThermalClusterGroup(EnumIgnoreCase):
     The group `OTHER1` is used by default.
     """
 
-    NUCLEAR = "Nuclear"
-    LIGNITE = "Lignite"
-    HARD_COAL = "Hard Coal"
-    GAS = "Gas"
-    OIL = "Oil"
-    MIXED_FUEL = "Mixed Fuel"
-    OTHER1 = "Other 1"
-    OTHER2 = "Other 2"
-    OTHER3 = "Other 3"
-    OTHER4 = "Other 4"
+    NUCLEAR = "nuclear"
+    LIGNITE = "lignite"
+    HARD_COAL = "hard coal"
+    GAS = "gas"
+    OIL = "oil"
+    MIXED_FUEL = "mixed fuel"
+    OTHER1 = "other 1"
+    OTHER2 = "other 2"
+    OTHER3 = "other 3"
+    OTHER4 = "other 4"
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
