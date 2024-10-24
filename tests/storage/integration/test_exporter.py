@@ -94,20 +94,20 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
         return fh.read()
 
 
-def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path) -> None:
+def test_exporter_file(tmp_path: Path, sta_mini_seven_zip_path: Path) -> None:
     data = assert_url_content(
         url=f"/v1/studies/{UUID}/export",
         tmp_dir=tmp_path,
-        sta_mini_zip_path=sta_mini_zip_path,
+        sta_mini_zip_path=sta_mini_seven_zip_path,
     )
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
-def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path) -> None:
+def test_exporter_file_no_output(tmp_path: Path, sta_mini_seven_zip_path: Path) -> None:
     data = assert_url_content(
         url=f"/v1/studies/{UUID}/export?no-output",
         tmp_dir=tmp_path,
-        sta_mini_zip_path=sta_mini_zip_path,
+        sta_mini_zip_path=sta_mini_seven_zip_path,
     )
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
