@@ -298,8 +298,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, target, archive_format=ArchiveFormat.SEVEN_ZIP)
-            with py7zr.SevenZipFile(target, "w") as szf:
-                szf.writeall(tmp_study_path, arcname="")
             stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (7zip mode) in {x}s"))
         return target
 
