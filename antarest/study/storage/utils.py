@@ -28,7 +28,7 @@ from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 
 from antarest.core.config import Config, WorkspaceConfig
 from antarest.core.exceptions import (
-    CannotAcessInternalWorkspace,
+    CannotAccessInternalWorkspace,
     StudyValidationError,
     UnsupportedStudyVersion,
     WorkspaceNotFound,
@@ -434,7 +434,7 @@ def is_aw_no_scan(path: Path) -> bool:
 
 def get_workspace_from_config(config: Config, workspace_name: str, default_allowed: bool = False) -> WorkspaceConfig:
     if not default_allowed and workspace_name == DEFAULT_WORKSPACE_NAME:
-        raise CannotAcessInternalWorkspace()
+        raise CannotAccessInternalWorkspace()
     try:
         return config.storage.workspaces[workspace_name]
     except KeyError:
