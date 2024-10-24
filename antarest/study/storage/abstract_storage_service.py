@@ -248,12 +248,12 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         stopwatch = StopWatch()
         try:
             if isinstance(output, Path):
-                if output != path_output and output.suffix != ".zip":
+                if output != path_output and output.suffix != ArchiveFormat.ZIP:
                     shutil.copytree(output, path_output / "imported")
-                elif output.suffix == ".zip":
+                elif output.suffix == ArchiveFormat.ZIP:
                     is_zipped = True
                     path_output.rmdir()
-                    path_output = Path(str(path_output) + ".zip")
+                    path_output = Path(str(path_output) + f"{ArchiveFormat.ZIP}")
                     shutil.copyfile(output, path_output)
             else:
                 extract_archive(output, path_output)
@@ -261,7 +261,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
             fix_study_root(path_output)
             output_full_name = extract_output_name(path_output, output_name)
-            extension = ".zip" if is_zipped else ""
+            extension = f"{ArchiveFormat.ZIP}" if is_zipped else ""
             path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
 
             data = self.get(metadata, f"output/{output_full_name}", 1, use_cache=False)
@@ -274,7 +274,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
             if is_zipped:
-                Path(str(path_output) + ".zip").unlink(missing_ok=True)
+                Path(str(path_output) + f"{ArchiveFormat.ZIP}").unlink(missing_ok=True)
             output_full_name = None
 
         return output_full_name
@@ -314,7 +314,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         logger.info(f"Exporting output {output_id} from study {metadata.id}")
 
         path_output = Path(metadata.path) / "output" / output_id
-        path_output_zip = Path(metadata.path) / "output" / f"{output_id}.zip"
+        path_output_zip = Path(metadata.path) / "output" / f"{output_id}.{ArchiveFormat.ZIP}"
 
         if path_output_zip.exists():
             shutil.copyfile(path_output_zip, target)
@@ -339,7 +339,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         try:
             archive_dir(
                 Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}.zip",
+                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
                 remove_source_dir=True,
                 archive_format=ArchiveFormat.ZIP,
             )
@@ -353,10 +353,15 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             return False
 
     def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
+        if not (Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}").exists():
+            logger.warning(
+                f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
+            )
+            return False
         try:
             unzip(
                 Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}.zip",
+                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
                 remove_source_zip=not keep_src_zip,
             )
             remove_from_cache(self.cache, study.id)

@@ -26,7 +26,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.archives import extract_archive
+from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
@@ -384,7 +384,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         remove_from_cache(self.cache, study.id)
 
     def archive(self, study: RawStudy) -> Path:
-        archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}.7z")
+        archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
         new_study_path = self.export_study(study, archive_path)
         shutil.rmtree(study.path)
         remove_from_cache(cache=self.cache, root_id=study.id)
@@ -416,7 +416,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             The full path of the archive file (zip or 7z).
         """
         archive_dir: Path = self.config.storage.archive_dir
-        for suffix in [".zip", ".7z"]:
+        for suffix in list(ArchiveFormat):
             path = archive_dir.joinpath(f"{study.id}{suffix}")
             if path.is_file():
                 return path

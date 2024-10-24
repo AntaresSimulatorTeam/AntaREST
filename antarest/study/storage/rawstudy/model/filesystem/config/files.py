@@ -25,7 +25,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json
-from antarest.core.utils.archives import extract_lines_from_archive
+from antarest.core.utils.archives import ArchiveFormat, extract_lines_from_archive, is_archive_format
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -93,7 +93,7 @@ def extract_data_from_archive(
             except KeyError:
                 # File not found in the ZIP archive
                 return {}
-    elif root.suffix.lower() == ".7z":
+    elif root.suffix.lower() == ArchiveFormat.SEVEN_ZIP:
         with py7zr.SevenZipFile(root, mode="r") as z:
             try:
                 data = z.read([posix_path])
@@ -119,7 +119,7 @@ def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None)
     Returns:
         An instance of `FileStudyTreeConfig` filled with the study data.
     """
-    is_archive = study_path.suffix.lower() in {".zip", ".7z"}
+    is_archive = is_archive_format(study_path.suffix.lower())
 
     # Study directory to use if the study is compressed
     study_dir = study_path.with_suffix("") if is_archive else study_path
@@ -164,7 +164,7 @@ def _extract_data_from_file(
         - SIMPLE_INI or MULTI_INI: dictionary of keys/values
     """
 
-    is_archive: bool = root.suffix.lower() in {".zip", ".7z"}
+    is_archive: bool = is_archive_format(root.suffix.lower())
     posix_path: str = inside_root_path.as_posix()
     output_data_path = root / inside_root_path
 

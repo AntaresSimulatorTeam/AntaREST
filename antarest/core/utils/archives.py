@@ -30,6 +30,10 @@ class ArchiveFormat(str, Enum):
     SEVEN_ZIP = ".7z"
 
 
+def is_archive_format(suffix: str) -> bool:
+    return suffix in {ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP}
+
+
 def archive_dir(
     src_dir_path: Path,
     target_archive_path: Path,
@@ -118,10 +122,10 @@ def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.
     str_inside_archive_path = str(inside_archive_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
-        if archive_path.suffix == ".zip":
+        if archive_path.suffix == ArchiveFormat.ZIP:
             with zipfile.ZipFile(archive_path) as zip_obj:
                 zip_obj.extract(str_inside_archive_path, tmp_dir.name)
-        elif archive_path.suffix == ".7z":
+        elif archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
             with py7zr.SevenZipFile(archive_path, mode="r") as szf:
                 szf.extract(path=tmp_dir.name, targets=[str_inside_archive_path])
         else:
@@ -148,7 +152,7 @@ def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
     Returns:
         list of lines
     """
-    if root.suffix.lower() == ".zip":
+    if root.suffix.lower() == ArchiveFormat.ZIP:
         with zipfile.ZipFile(root) as zf:
             try:
                 with zf.open(posix_path) as f:
@@ -157,7 +161,7 @@ def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
             except KeyError:
                 # File not found in the ZIP archive
                 return []
-    elif root.suffix.lower() == ".7z":
+    elif root.suffix.lower() == ArchiveFormat.SEVEN_ZIP:
         with py7zr.SevenZipFile(root, mode="r") as z:
             try:
                 data = z.read([posix_path])
