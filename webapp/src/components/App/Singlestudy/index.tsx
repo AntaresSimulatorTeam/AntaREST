@@ -19,13 +19,7 @@ import { Box, Divider } from "@mui/material";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import {
-  StudyMetadata,
-  StudySummary,
-  VariantTree,
-  WSEvent,
-  WSMessage,
-} from "../../../common/types";
+import { StudyMetadata, VariantTree } from "../../../common/types";
 import { getStudyMetadata } from "../../../services/api/study";
 import NavHeader from "./NavHeader";
 import {
@@ -40,9 +34,11 @@ import {
 } from "../../../redux/ducks/studies";
 import { findNodeInTree } from "../../../services/utils";
 import CommandDrawer from "./Commands";
-import { addWsMessageListener } from "../../../services/webSockets";
+import { addWsEventListener } from "../../../services/webSocket/ws";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
+import { WsEvent } from "@/services/webSocket/types";
+import { WsEventType } from "@/services/webSocket/constants";
 
 const logError = debug("antares:singlestudy:error");
 
@@ -111,11 +107,10 @@ function SingleStudy(props: Props) {
   }, [studyId]);
 
   const listener = useCallback(
-    async (ev: WSMessage) => {
-      const studySummary = ev.payload as StudySummary;
+    (ev: WsEvent) => {
       switch (ev.type) {
-        case WSEvent.STUDY_EDITED:
-          if (studySummary.id === studyId) {
+        case WsEventType.StudyEdited:
+          if (ev.payload.id === studyId) {
             updateStudyData();
           }
           break;
@@ -151,7 +146,7 @@ function SingleStudy(props: Props) {
   }, [study]);
 
   useEffect(() => {
-    return addWsMessageListener(listener);
+    return addWsEventListener(listener);
   }, [listener]);
 
   if (study === undefined) {

@@ -19,10 +19,10 @@ import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
 import { isUserExpired } from "../../services/utils";
 import {
-  closeWebSocket,
-  initWebSocket,
-  reloadWebSocket,
-} from "../../services/webSockets";
+  closeWs,
+  initWs,
+  reloadWs,
+} from "../../services/webSocket/ws";
 import { getAuthUser } from "../selectors";
 import { AppAsyncThunkConfig } from "../store";
 import { createThunk, makeActionName } from "../utils";
@@ -50,7 +50,7 @@ const n = makeActionName("auth");
 
 export const logout = createThunk(n("LOGOUT"), () => {
   clientApi.setAuth(null);
-  closeWebSocket();
+  closeWs();
 });
 
 export const refresh = createAsyncThunk<
@@ -76,7 +76,7 @@ export const refresh = createAsyncThunk<
       };
 
       clientApi.setAuth(tokens.access_token);
-      reloadWebSocket(dispatch, userUpdated);
+      reloadWs(dispatch, userUpdated);
 
       return userUpdated;
     } catch (err) {
@@ -121,7 +121,7 @@ export const login = createAsyncThunk<
     }
   }
 
-  initWebSocket(dispatch, user);
+  initWs(dispatch, user);
   clientApi.initAxiosInterceptors();
 
   return user;

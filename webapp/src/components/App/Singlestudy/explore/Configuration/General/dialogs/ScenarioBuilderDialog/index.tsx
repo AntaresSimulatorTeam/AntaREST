@@ -95,7 +95,9 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
           >
             <UsePromiseCond
               response={config}
-              ifResolved={(data) => <EnhancedTable type={type} config={data} />}
+              ifFulfilled={(data) => (
+                <EnhancedTable type={type} config={data} />
+              )}
               ifPending={() => (
                 <Skeleton sx={{ height: 1, transform: "none" }} />
               )}

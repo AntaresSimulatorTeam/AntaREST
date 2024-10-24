@@ -14,51 +14,34 @@
 
 import debug from "debug";
 import * as RA from "ramda-adjunct";
-import {
-  GenericInfo,
-  LaunchJobDTO,
-  StudySummary,
-  UserInfo,
-  WSEvent,
-  WSMessage,
-} from "../common/types";
-import { getConfig } from "./config";
-import { isStringEmpty, isUserExpired } from "./utils";
-import { AppDispatch } from "../redux/store";
-import { refresh as refreshUser } from "../redux/ducks/auth";
-import { deleteStudy, setStudy } from "../redux/ducks/studies";
+import { LaunchJobDTO, UserInfo } from "../../common/types";
+import { getConfig } from "../config";
+import { isStringEmpty, isUserExpired } from "../utils";
+import { AppDispatch } from "../../redux/store";
+import { refresh as refreshUser } from "../../redux/ducks/auth";
+import { deleteStudy, setStudy } from "../../redux/ducks/studies";
 import {
   setMaintenanceMode,
   setMessageInfo,
   setWebSocketConnected,
-} from "../redux/ducks/ui";
-import { refreshStudySynthesis } from "../redux/ducks/studySyntheses";
+} from "../../redux/ducks/ui";
+import { refreshStudySynthesis } from "../../redux/ducks/studySyntheses";
+import type { WsEvent, WsEventListener } from "./types";
+import { WsChannel, WsEventType } from "./constants";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
 
 const RECONNECTION_DEFAULT_DELAY = 3000;
 
-type MessageListener = (message: WSMessage) => void;
-
 let webSocket: WebSocket | null;
-let messageListeners = [] as MessageListener[];
-let channelSubscriptions = [] as string[];
+let eventListeners: WsEventListener[] = [];
+let channelSubscriptions: string[] = [];
 let reconnectTimerId: NodeJS.Timeout | null = null;
-
-export enum WsChannel {
-  JobStatus = "JOB_STATUS/",
-  JobLogs = "JOB_LOGS/",
-  Task = "TASK/",
-  StudyGeneration = "GENERATION_TASK/",
-}
 
 let globalListenerAdded = false;
 
-export function initWebSocket(
-  dispatch: AppDispatch,
-  user?: UserInfo,
-): WebSocket {
+export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
   if (webSocket) {
     logInfo("Websocket exists, skipping reconnection");
     return webSocket;
@@ -71,7 +54,7 @@ export function initWebSocket(
   );
 
   if (!globalListenerAdded) {
-    messageListeners.push(
+    eventListeners.push(
       makeStudyListener(dispatch),
       makeStudyJobStatusListener(dispatch),
       makeMaintenanceListener(dispatch),
@@ -81,9 +64,9 @@ export function initWebSocket(
   }
 
   webSocket.onmessage = (event: MessageEvent): void => {
-    const message = JSON.parse(event.data) as WSMessage;
+    const message = JSON.parse(event.data) as WsEvent;
     logInfo("WebSocket message received", message);
-    messageListeners.forEach((listener) => listener(message));
+    eventListeners.forEach((listener) => listener(message));
   };
 
   webSocket.onerror = (event): void => {
@@ -116,7 +99,7 @@ export function initWebSocket(
               reconnect();
             });
         } else {
-          reloadWebSocket(dispatch, user);
+          reloadWs(dispatch, user);
         }
       }, RECONNECTION_DEFAULT_DELAY);
     }
@@ -127,11 +110,11 @@ export function initWebSocket(
   return webSocket;
 }
 
-export function addWsMessageListener(listener: MessageListener): VoidFunction {
-  messageListeners.push(listener);
+export function addWsEventListener(listener: WsEventListener): VoidFunction {
+  eventListeners.push(listener);
   // Remove listener callback
   return () => {
-    messageListeners = messageListeners.filter((l) => l !== listener);
+    eventListeners = eventListeners.filter((l) => l !== listener);
   };
 }
 
@@ -165,7 +148,7 @@ export function sendWsSubscribeMessage(
   };
 }
 
-export function closeWebSocket(clean = true): void {
+export function closeWs(clean = true): void {
   if (!webSocket) {
     return;
   }
@@ -184,18 +167,15 @@ export function closeWebSocket(clean = true): void {
   webSocket = null;
 
   if (clean) {
-    messageListeners = [];
+    eventListeners = [];
     channelSubscriptions = [];
     globalListenerAdded = false;
   }
 }
 
-export function reloadWebSocket(
-  dispatch: AppDispatch,
-  user?: UserInfo,
-): WebSocket {
-  closeWebSocket(false);
-  return initWebSocket(dispatch, user);
+export function reloadWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
+  closeWs(false);
+  return initWs(dispatch, user);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -203,60 +183,58 @@ export function reloadWebSocket(
 ////////////////////////////////////////////////////////////////
 
 function makeStudyListener(dispatch: AppDispatch) {
-  return function listener(e: WSMessage<StudySummary>): void {
+  return function listener(e: WsEvent): void {
     switch (e.type) {
-      case WSEvent.STUDY_CREATED:
-      case WSEvent.STUDY_EDITED:
-        dispatch(setStudy(e));
+      case WsEventType.StudyCreated:
+      case WsEventType.StudyEdited:
+        dispatch(setStudy(e.payload));
         break;
-      case WSEvent.STUDY_DELETED:
-        dispatch(deleteStudy(e));
+      case WsEventType.StudyDeleted:
+        dispatch(deleteStudy(e.payload));
         break;
     }
   };
 }
 
-function makeStudyJobStatusListener(dispatch: AppDispatch): MessageListener {
+function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
   const unsubscribeById: Record<LaunchJobDTO["id"], VoidFunction> = {};
 
-  return function listener(e: WSMessage<LaunchJobDTO>): void {
+  return function listener(e: WsEvent): void {
     switch (e.type) {
-      case WSEvent.STUDY_JOB_STARTED: {
+      case WsEventType.StudyJobStarted: {
         const unsubscribe = sendWsSubscribeMessage(
           WsChannel.JobStatus + e.payload.id,
         );
         unsubscribeById[e.payload.id] = unsubscribe;
         break;
       }
-      case WSEvent.STUDY_JOB_COMPLETED:
+      case WsEventType.StudyJobCompleted:
         unsubscribeById[e.payload.id]?.();
-        dispatch(refreshStudySynthesis(e));
+        dispatch(refreshStudySynthesis(e.payload));
         break;
     }
   };
 }
 
 function makeStudyDataListener(dispatch: AppDispatch) {
-  return function listener(e: WSMessage<GenericInfo>): void {
+  return function listener(e: WsEvent): void {
     switch (e.type) {
-      case WSEvent.STUDY_DATA_EDITED:
-        dispatch(refreshStudySynthesis(e));
+      case WsEventType.StudyDataEdited:
+        dispatch(refreshStudySynthesis(e.payload));
         break;
     }
   };
 }
 
 function makeMaintenanceListener(dispatch: AppDispatch) {
-  return function listener(e: WSMessage): void {
+  return function listener(e: WsEvent): void {
     switch (e.type) {
-      case WSEvent.MAINTENANCE_MODE:
-        dispatch(setMaintenanceMode(e.payload as boolean));
+      case WsEventType.MaintenanceMode:
+        dispatch(setMaintenanceMode(e.payload));
         break;
-      case WSEvent.MESSAGE_INFO:
+      case WsEventType.MessageInfo:
         dispatch(
-          setMessageInfo(
-            isStringEmpty(e.payload as string) ? "" : (e.payload as string),
-          ),
+          setMessageInfo(isStringEmpty(e.payload) ? "" : (e.payload as string)),
         );
         break;
     }

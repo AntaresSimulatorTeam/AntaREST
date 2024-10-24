@@ -17,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -39,7 +40,7 @@ class UpdatePlaylist(ICommand):
     weights: Optional[Dict[int, float]] = None
     reverse: bool = False
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         FileStudyHelpers.set_playlist(
             study_data,
             self.items or [],

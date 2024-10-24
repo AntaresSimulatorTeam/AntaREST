@@ -48,7 +48,7 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import CacheConstants, ICache
-from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -146,6 +146,7 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -188,14 +189,28 @@ class ThermalClusterTimeSeriesGeneratorTask:
         self.storage_service = storage_service
         self.event_bus = event_bus
 
-    def _generate_timeseries(self) -> None:
+    def _generate_timeseries(self, listener: t.Optional[ICommandListener]) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries(command_context=command_context)
+        command = GenerateThermalClusterTimeSeries.model_construct(command_context=command_context)
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(study, file_study, [command], self.storage_service)
+            execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
+
+            if isinstance(file_study, VariantStudy):
+                # In this case we only added the command to the list.
+                # It means the generation will really be executed in the next snapshot generation.
+                # We don't want this, we want this task to generate the matrices no matter the study.
+                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
+                variant_service = self.storage_service.variant_study_service
+                task_service = variant_service.task_service
+                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                task_service.await_task(generation_task_id)
+                result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
+                if not result.result or not result.result.success:
+                    raise ValueError(f"Failed to generate variant study {self._study_id}")
+
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
@@ -204,16 +219,32 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 )
             )
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
         notifier(msg)
-        self._generate_timeseries()
+        self._generate_timeseries(listener)
         msg = f"Successfully generated thermal timeseries for study '{self._study_id}'"
         notifier(msg)
         return TaskResult(success=True, message=msg)
 
     # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
     __call__ = run_task
+
+    class TsGenerationListener(ICommandListener):
+        event_bus: IEventBus
+
+        def notify_progress(self, progress: int) -> None:
+            self.event_bus.push(
+                Event(
+                    type=EventType.TS_GENERATION_PROGRESS,
+                    payload={
+                        "task_id": self.task_id,
+                        "progress": progress,
+                    },
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                    channel=EventChannelDirectory.TASK + self.task_id,
+                )
+            )
 
 
 class StudyUpgraderTask:
@@ -275,7 +306,7 @@ class StudyUpgraderTask:
                     file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                     file_study.tree.normalize()
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
         """
         Run the study upgrade task.
 
@@ -956,7 +987,7 @@ class StudyService:
         assert_permission(params.user, src_study, StudyPermissionType.READ)
         self._assert_study_unarchived(src_study)
 
-        def copy_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def copy_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study,
@@ -995,7 +1026,7 @@ class StudyService:
                 request_params=params,
             )
         else:
-            res = copy_task(noop_notifier)
+            res = copy_task(noop_notifier, None)
             task_or_study_id = res.return_value or ""
 
         return task_or_study_id
@@ -1041,7 +1072,7 @@ class StudyService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
                 self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
@@ -1107,7 +1138,7 @@ class StudyService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 target_study = self.get_study(study_uuid)
                 self.storage_service.get_storage(target_study).export_output(
@@ -1270,7 +1301,7 @@ class StudyService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(_notifier: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
                 try:
                     _study = self.get_study(study_id)
                     _stopwatch = StopWatch()
@@ -1994,7 +2025,7 @@ class StudyService:
         ):
             raise TaskAlreadyRunning()
 
-        def archive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def archive_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.archive(study_to_archive)
             study_to_archive.archived = True
@@ -2037,7 +2068,7 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
 
-        def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def unarchive_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
@@ -2338,9 +2369,7 @@ class StudyService:
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
 
-        def archive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def archive_output_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()
@@ -2393,9 +2422,7 @@ class StudyService:
         if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
             raise TaskAlreadyRunning()
 
-        def unarchive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def unarchive_output_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()
@@ -2464,6 +2491,9 @@ class StudyService:
             event_bus=self.event_bus,
         )
 
+        args = {"event_bus": self.event_bus, "task_id": ""}
+        listener = thermal_cluster_timeseries_generation_task.TsGenerationListener(**args)
+
         return self.task_service.add_task(
             thermal_cluster_timeseries_generation_task,
             task_name,
@@ -2471,6 +2501,7 @@ class StudyService:
             ref_id=study.id,
             custom_event_messages=None,
             request_params=params,
+            listener=listener,
         )
 
     def upgrade_study(

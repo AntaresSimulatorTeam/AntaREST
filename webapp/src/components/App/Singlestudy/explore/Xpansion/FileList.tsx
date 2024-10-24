@@ -133,7 +133,7 @@ function FileList(props: PropTypes) {
     <>
       <UsePromiseCond
         response={res}
-        ifResolved={(data) => (
+        ifFulfilled={(data) => (
           <Box sx={{ width: "100%", height: "100%", p: 2 }}>
             <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
               <FileTable
