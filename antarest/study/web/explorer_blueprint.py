@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import logging
 from typing import List
 
 from fastapi import APIRouter, Depends
@@ -19,6 +20,9 @@ from antarest.core.jwt import JWTUser
 from antarest.login.auth import Auth
 from antarest.study.model import NonStudyFolder, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
@@ -54,14 +58,13 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
             List of sub directories
 
         """
-
-        l = explorer.list_dir(workspace, path)
-        return l
+        logger.info(f"Listing directory {path} in workspace {workspace}")
+        return explorer.list_dir(workspace, path)
 
     @bp.get(
         "/explorer/_list_workspaces",
         summary="List all workspaces",
-        response_model=List[str],
+        response_model=List[WorkspaceMetadata],
     )
     def list_workspaces(
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -75,6 +78,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
             List of workspace
 
         """
+        logger.info("Listing workspaces")
         return explorer.list_workspaces()
 
     return bp
