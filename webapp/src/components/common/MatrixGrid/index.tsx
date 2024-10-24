@@ -200,7 +200,7 @@ function MatrixGrid({
           verticalBorder={false}
           overscrollX={100}
           overscrollY={100}
-          cellActivationBehavior="single-click"
+          cellActivationBehavior="second-click"
         />
       </div>
     </>

@@ -91,57 +91,48 @@ export function useMatrix(
   // 2. When there are unsaved changes in the matrix
   usePrompt(t("form.changeNotSaved"), currentState.pendingUpdates.length > 0);
 
-  const fetchMatrix = useCallback(
-    async (loadingState = true) => {
-      // !NOTE This is a temporary solution to ensure the matrix is up to date
-      // TODO: Remove this once the matrix API is updated to return the correct data
-      if (loadingState) {
-        setIsLoading(true);
-      }
+  const fetchMatrix = async (loadingState = true) => {
+    // !NOTE This is a temporary solution to ensure the matrix is up to date
+    // TODO: Remove this once the matrix API is updated to return the correct data
+    if (loadingState) {
+      setIsLoading(true);
+    }
 
-      try {
-        const [matrix, index] = await Promise.all([
-          fetchMatrixData
-            ? // If a custom fetch function is provided, use it
-              fetchMatrixData(studyId)
-            : getStudyData<MatrixDataDTO>(studyId, url, 1),
-          getStudyMatrixIndex(studyId, url),
-        ]);
+    try {
+      const [matrix, index] = await Promise.all([
+        fetchMatrixData
+          ? // If a custom fetch function is provided, use it
+            fetchMatrixData(studyId)
+          : getStudyData<MatrixDataDTO>(studyId, url, 1),
+        getStudyMatrixIndex(studyId, url),
+      ]);
 
-        setState({
-          data: matrix.data,
-          aggregates: calculateMatrixAggregates(matrix.data, aggregateTypes),
-          pendingUpdates: [],
-          updateCount: 0,
-        });
-        setColumnCount(matrix.columns.length);
-        setIndex(index);
-        setIsLoading(false);
+      setState({
+        data: matrix.data,
+        aggregates: calculateMatrixAggregates(matrix.data, aggregateTypes),
+        pendingUpdates: [],
+        updateCount: 0,
+      });
+      setColumnCount(matrix.columns.length);
+      setIndex(index);
+      setIsLoading(false);
 
-        return {
-          matrix,
-          index,
-        };
-      } catch (error) {
-        setError(new Error(t("data.error.matrix")));
-        enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [
-      aggregateTypes,
-      enqueueErrorSnackbar,
-      fetchMatrixData,
-      setState,
-      studyId,
-      url,
-    ],
-  );
+      return {
+        matrix,
+        index,
+      };
+    } catch (error) {
+      setError(new Error(t("data.error.matrix")));
+      enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchMatrix();
-  }, [fetchMatrix]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studyId, url, aggregateTypes, fetchMatrixData]);
 
   const dateTime = useMemo(() => {
     return index ? generateDateTime(index) : [];
