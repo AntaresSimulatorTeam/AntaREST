@@ -49,7 +49,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.utils.string import to_camel_case
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
 from tests.integration.utils import wait_task_completion
 

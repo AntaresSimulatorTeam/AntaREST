@@ -120,7 +120,7 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
 
 
 class BindingConstraintProperties870(BindingConstraintProperties830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
 BindingConstraintProperties = t.Union[
@@ -219,8 +219,6 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     """
 
     coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
-
-    group: LowerCaseStr
 
     def to_dto(self) -> CommandDTO:
         json_command = self.model_dump(mode="json", exclude={"command_context"})

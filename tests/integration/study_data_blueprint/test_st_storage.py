@@ -21,7 +21,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.areas.st_storage_management import create_storage_output
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from tests.integration.utils import wait_task_completion
 
