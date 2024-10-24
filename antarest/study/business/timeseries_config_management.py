@@ -133,7 +133,7 @@ class TimeSeriesConfigManager:
         field_values: TSFormFieldsForType,
     ) -> None:
         commands: t.List[UpdateConfig] = []
-        values = field_values.model_dump()
+        values = field_values.model_dump(mode="json")
 
         for field, path in PATH_BY_TS_STR_FIELD.items():
             field_val = values[field]

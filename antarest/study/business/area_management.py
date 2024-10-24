@@ -229,11 +229,11 @@ class AreaOutput(_BaseAreaDTO):
         obj = {
             "average_unsupplied_energy_cost": average_unsupplied_energy_cost,
             "average_spilled_energy_cost": average_spilled_energy_cost,
-            **area_folder.optimization.filtering.model_dump(by_alias=False),
-            **area_folder.optimization.nodal_optimization.model_dump(by_alias=False),
+            **area_folder.optimization.filtering.model_dump(mode="json", by_alias=False),
+            **area_folder.optimization.nodal_optimization.model_dump(mode="json", by_alias=False),
             # adequacy_patch is only available if study version >= 830.
             **(
-                area_folder.adequacy_patch.adequacy_patch.model_dump(by_alias=False)
+                area_folder.adequacy_patch.adequacy_patch.model_dump(mode="json", by_alias=False)
                 if area_folder.adequacy_patch
                 else {}
             ),
@@ -363,7 +363,7 @@ class AreaManager:
         for area_id, update_area in update_areas_by_ids.items():
             # Update the area properties.
             old_area = old_areas_by_ids[area_id]
-            new_area = old_area.copy(update=update_area.model_dump(by_alias=False, exclude_none=True))
+            new_area = old_area.copy(update=update_area.model_dump(mode="json", by_alias=False, exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
             # Convert the DTO to a configuration object and update the configuration file.

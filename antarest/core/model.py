@@ -24,7 +24,7 @@ ELEMENT = Union[str, int, float, bool, bytes]
 SUB_JSON = Union[ELEMENT, JSON, List[Any], None]
 
 
-class PublicMode(str, enum.Enum):
+class PublicMode(enum.StrEnum):
     NONE = "NONE"
     READ = "READ"
     EXECUTE = "EXECUTE"
@@ -32,7 +32,7 @@ class PublicMode(str, enum.Enum):
     FULL = "FULL"
 
 
-class StudyPermissionType(str, enum.Enum):
+class StudyPermissionType(enum.StrEnum):
     """
     User permission belongs to Study
     """

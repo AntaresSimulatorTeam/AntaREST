@@ -4,16 +4,16 @@
 black~=23.7.0
 isort~=5.12.0
 mypy~=1.11.1
-pyinstaller==5.6.2
-pyinstaller-hooks-contrib==2024.6
+pyinstaller==6.10.0
+pyinstaller-hooks-contrib==2024.8
 
 # Extra requirements installed by `mypy --install-types`.
 # IMPORTANT: Make sure the versions of these typing libraries match the versions
 # of the corresponding implementation libraries used in production (in `requirements.txt`).
 
-pandas-stubs~=1.4.0
+pandas-stubs~=2.2.2
 types-paramiko~=3.4.0
-types-psycopg2~=2.9.4
+types-psycopg2~=2.9.9
 types-redis~=4.1.2
 types-requests~=2.27.1
 types-PyYAML~=5.4.1
