@@ -25,13 +25,6 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import fix_study_root
 
 
-def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
-    service = Mock()
-    service.get_workspace_path.return_value = workspace
-    service.get_study_path.return_value = workspace / uuid
-    return service
-
-
 @pytest.mark.unit_test
 def test_import_study(tmp_path: Path) -> None:
     name = "my-study"
