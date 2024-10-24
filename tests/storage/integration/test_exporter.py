@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
 
+import py7zr
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -35,11 +36,17 @@ from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskServ
 from tests.storage.integration.conftest import UUID
 
 
-def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> bytes:
+def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> bytes:
     path_studies = tmp_dir / "studies"
 
-    with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
-        zip_output.extractall(path=path_studies)
+    if sta_mini_archive_path.suffix == ".zip":
+        with zipfile.ZipFile(sta_mini_archive_path) as zip_output:
+            zip_output.extractall(path=path_studies)
+    elif sta_mini_archive_path.suffix == ".7z":
+        with py7zr.SevenZipFile(sta_mini_archive_path, "r") as szf:
+            szf.extractall(path=path_studies / "STA-mini")
+    else:
+        raise ValueError(f"Unsupported archive format {sta_mini_archive_path.suffix}")
 
     config = Config(
         resources_path=Path(),
@@ -94,20 +101,30 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_zip_path: Path) -> byte
         return fh.read()
 
 
-def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path) -> None:
+def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_zip_path: Path) -> None:
+    # test with zip file
     data = assert_url_content(
-        url=f"/v1/studies/{UUID}/export",
-        tmp_dir=tmp_path,
-        sta_mini_zip_path=sta_mini_zip_path,
+        url=f"/v1/studies/{UUID}/export", tmp_dir=tmp_path, sta_mini_archive_path=sta_mini_zip_path
+    )
+    assert data and b"<!DOCTYPE HTML PUBLIC" not in data
+
+    # test with 7zip file
+    data = assert_url_content(
+        url=f"/v1/studies/{UUID}/export", tmp_dir=tmp_path, sta_mini_archive_path=sta_mini_seven_zip_path
     )
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
-def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path) -> None:
+def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_zip_path: Path) -> None:
+    # test with zip file
     data = assert_url_content(
-        url=f"/v1/studies/{UUID}/export?no-output",
-        tmp_dir=tmp_path,
-        sta_mini_zip_path=sta_mini_zip_path,
+        url=f"/v1/studies/{UUID}/export?no-output", tmp_dir=tmp_path, sta_mini_archive_path=sta_mini_zip_path
+    )
+    assert data and b"<!DOCTYPE HTML PUBLIC" not in data
+
+    # test with 7zip file
+    data = assert_url_content(
+        url=f"/v1/studies/{UUID}/export?no-output", tmp_dir=tmp_path, sta_mini_archive_path=sta_mini_seven_zip_path
     )
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 

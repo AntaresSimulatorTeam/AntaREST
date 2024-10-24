@@ -31,6 +31,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -79,7 +80,7 @@ def fix_study_root(study_path: Path) -> None:
         study_path: the study initial root path
     """
     # TODO: what if it is a zipped output ?
-    if study_path.suffix == ".zip":
+    if is_archive_format(study_path.suffix):
         return None
 
     if not study_path.is_dir():
@@ -116,10 +117,16 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
+def is_output_archived(path_output: Path) -> bool:
+    # Returns True it the given path is archived or if adding a suffix to the path points to an existing path
+    suffixes = [".zip"]
+    return path_output.suffix in suffixes or any(path_output.with_suffix(suffix).exists() for suffix in suffixes)
+
+
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
-    is_output_archived = path_output.suffix == ".zip"
-    if is_output_archived:
+    archived = is_output_archived(path_output)
+    if archived:
         temp_dir = tempfile.TemporaryDirectory()
         s = StopWatch()
         with ZipFile(path_output, "r") as zip_obj:
@@ -140,7 +147,7 @@ def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = No
     if new_suffix_name:
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
-        if not is_output_archived:
+        if not archived:
             ini_writer = IniWriter()
             ini_writer.write(info_antares_output, path_output / "info.antares-output")
         else:

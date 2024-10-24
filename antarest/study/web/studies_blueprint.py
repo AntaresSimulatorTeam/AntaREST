@@ -22,13 +22,13 @@ from markupsafe import escape
 from pydantic import NonNegativeInt
 
 from antarest.core.config import Config
-from antarest.core.exceptions import BadZipBinary
+from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.utils.utils import BadArchiveContent, sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
