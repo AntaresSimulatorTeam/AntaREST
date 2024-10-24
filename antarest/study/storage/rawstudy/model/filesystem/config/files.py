@@ -25,7 +25,12 @@ from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json
-from antarest.core.utils.archives import ArchiveFormat, extract_lines_from_archive, is_archive_format
+from antarest.core.utils.archives import (
+    ArchiveFormat,
+    extract_lines_from_archive,
+    is_archive_format,
+    read_file_from_archive,
+)
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -84,26 +89,12 @@ def extract_data_from_archive(
         The content of the file, processed according to its type:
         - SIMPLE_INI or MULTI_INI: dictionary of keys/values
     """
-    if root.suffix.lower() == ".zip":
-        with zipfile.ZipFile(root) as zf:
-            try:
-                with zf.open(posix_path) as f:
-                    buffer = io.StringIO(f.read().decode("utf-8"))
-                    return reader.read(buffer)
-            except KeyError:
-                # File not found in the ZIP archive
-                return {}
-    elif root.suffix.lower() == ArchiveFormat.SEVEN_ZIP:
-        with py7zr.SevenZipFile(root, mode="r") as z:
-            try:
-                data = z.read([posix_path])
-                buffer = io.StringIO(data[posix_path].read().decode("utf-8"))
-                return reader.read(buffer)
-            except KeyError:
-                # File not found in the 7z archive
-                return {}
-    else:
-        raise ValueError(f"Unsupported file type: {root}")
+    try:
+        file_text = read_file_from_archive(root, posix_path)
+        buffer = io.StringIO(file_text)
+        return reader.read(buffer)
+    except KeyError:  # File not found in the archive
+        return {}
 
 
 def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None) -> "FileStudyTreeConfig":

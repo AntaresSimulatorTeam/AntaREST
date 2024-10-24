@@ -40,6 +40,10 @@ def archive_dir(
     remove_source_dir: bool = False,
     archive_format: ArchiveFormat = ArchiveFormat.SEVEN_ZIP,
 ) -> None:
+    if target_archive_path.suffix != archive_format:
+        raise ShouldNotHappenException(
+            f"Non matching archive format {archive_format} and target archive suffix {target_archive_path.suffix}"
+        )
     if archive_format == ArchiveFormat.SEVEN_ZIP:
         with py7zr.SevenZipFile(target_archive_path, mode="w") as szf:
             szf.writeall(src_dir_path)
@@ -141,6 +145,30 @@ def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.
     return path, tmp_dir
 
 
+def read_file_from_archive(archive_path: Path, posix_path: str) -> str:
+    """
+    Read a file from an archive.
+
+    Args:
+        archive_path: the path to the archive file.
+        posix_path: path to the file inside the archive.
+
+    Returns:
+        The content of the file as a string.
+    """
+
+    if archive_path.suffix == ArchiveFormat.ZIP:
+        with zipfile.ZipFile(archive_path) as zip_obj:
+            with zip_obj.open(posix_path) as f:
+                return f.read().decode("utf-8")
+    elif archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
+        with py7zr.SevenZipFile(archive_path, mode="r") as szf:
+            file_text: str = szf.read([posix_path])[posix_path].read().decode("utf-8")
+            return file_text
+    else:
+        raise ValueError(f"Unsupported {archive_path.suffix} archive format for {archive_path}")
+
+
 def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
     """
     Extract text lines from various types of files.
@@ -152,23 +180,9 @@ def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
     Returns:
         list of lines
     """
-    if root.suffix.lower() == ArchiveFormat.ZIP:
-        with zipfile.ZipFile(root) as zf:
-            try:
-                with zf.open(posix_path) as f:
-                    text = f.read().decode("utf-8")
-                    return text.splitlines(keepends=False)
-            except KeyError:
-                # File not found in the ZIP archive
-                return []
-    elif root.suffix.lower() == ArchiveFormat.SEVEN_ZIP:
-        with py7zr.SevenZipFile(root, mode="r") as z:
-            try:
-                data = z.read([posix_path])
-                text = data[posix_path].read().decode("utf-8")
-                return text.splitlines(keepends=False)
-            except KeyError:
-                # File not found in the 7z archive
-                return []
-    else:
-        raise ValueError(f"Unsupported file type: {root}")
+    try:
+        text = read_file_from_archive(root, posix_path)
+        return text.splitlines(keepends=False)
+    # File not found in the archive
+    except KeyError:
+        return []
