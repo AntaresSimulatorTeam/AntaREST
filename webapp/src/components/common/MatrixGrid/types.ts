@@ -90,6 +90,11 @@ export interface CustomColumnOptions {
   width?: number;
 }
 
+export interface FormatNumberOptions {
+  value?: number;
+  maxDecimals?: number;
+}
+
 export interface EnhancedGridColumn extends BaseGridColumn {
   id: string;
   width?: number;

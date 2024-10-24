@@ -310,22 +310,6 @@ describe("calculateMatrixAggregates", () => {
   });
 });
 
-describe("formatNumber", () => {
-  test("formats numbers correctly", () => {
-    expect(formatNumber(1234567.89)).toBe("1 234 567.89");
-    expect(formatNumber(1000000)).toBe("1 000 000");
-    expect(formatNumber(1234.5678)).toBe("1 234.5678");
-    expect(formatNumber(undefined)).toBe("");
-  });
-
-  test("handles edge cases", () => {
-    expect(formatNumber(0)).toBe("0");
-    expect(formatNumber(-1234567.89)).toBe("-1 234 567.89");
-    expect(formatNumber(0.00001)).toBe("0.00001");
-    expect(formatNumber(1e20)).toBe("100 000 000 000 000 000 000");
-  });
-});
-
 describe("generateCustomColumns", () => {
   it("should generate custom columns with correct properties", () => {
     const titles = ["Custom 1", "Custom 2", "Custom 3"];
@@ -457,31 +441,53 @@ describe("calculateMatrixAggregates", () => {
 });
 
 describe("formatNumber", () => {
-  it("should format integer numbers correctly", () => {
-    expect(formatNumber(1234567)).toBe("1 234 567");
-    expect(formatNumber(1000000)).toBe("1 000 000");
-    expect(formatNumber(1)).toBe("1");
+  test("should format integer numbers correctly", () => {
+    expect(formatNumber({ value: 1234567 })).toBe("1 234 567");
+    expect(formatNumber({ value: 1000000 })).toBe("1 000 000");
+    expect(formatNumber({ value: 1 })).toBe("1");
   });
 
-  it("should format decimal numbers correctly", () => {
-    expect(formatNumber(1234.56)).toBe("1 234.56");
-    expect(formatNumber(1000000.123)).toBe("1 000 000.123");
+  test("should format decimal numbers correctly", () => {
+    expect(formatNumber({ value: 1234.56, maxDecimals: 2 })).toBe("1 234.56");
+    expect(formatNumber({ value: 1000000.123, maxDecimals: 3 })).toBe(
+      "1 000 000.123",
+    );
   });
 
-  it("should handle negative numbers", () => {
-    expect(formatNumber(-1234567)).toBe("-1 234 567");
-    expect(formatNumber(-1234.56)).toBe("-1 234.56");
+  test("should format load factors correctly with 6 decimal places", () => {
+    expect(formatNumber({ value: 0.123456, maxDecimals: 6 })).toBe("0.123456");
+    expect(formatNumber({ value: 0.999999, maxDecimals: 6 })).toBe("0.999999");
+    expect(formatNumber({ value: 0.000001, maxDecimals: 6 })).toBe("0.000001");
   });
 
-  it("should handle zero", () => {
-    expect(formatNumber(0)).toBe("0");
+  test("should format statistics correctly with 3 decimal places", () => {
+    expect(formatNumber({ value: 1.23456, maxDecimals: 3 })).toBe("1.235"); // rounding
+    expect(formatNumber({ value: 0.001234, maxDecimals: 3 })).toBe("0.001");
+    expect(formatNumber({ value: 0.1234567, maxDecimals: 3 })).toBe("0.123"); // truncation
   });
 
-  it("should handle undefined", () => {
-    expect(formatNumber(undefined)).toBe("");
+  test("should handle negative numbers", () => {
+    expect(formatNumber({ value: -1234567 })).toBe("-1 234 567");
+    expect(formatNumber({ value: -1234.56, maxDecimals: 2 })).toBe("-1 234.56");
   });
 
-  it("should handle large numbers", () => {
-    expect(formatNumber(1e15)).toBe("1 000 000 000 000 000");
+  test("should handle zero", () => {
+    expect(formatNumber({ value: 0 })).toBe("0");
+  });
+
+  test("should handle undefined", () => {
+    expect(formatNumber({ value: undefined, maxDecimals: 3 })).toBe("");
+  });
+
+  test("should handle large numbers", () => {
+    expect(formatNumber({ value: 1e15 })).toBe("1 000 000 000 000 000");
+  });
+
+  test("should handle edge cases", () => {
+    expect(formatNumber({ value: 0, maxDecimals: 2 })).toBe("0");
+    expect(formatNumber({ value: -0.123456, maxDecimals: 6 })).toBe(
+      "-0.123456",
+    );
+    expect(formatNumber({ value: 1e20 })).toBe("100 000 000 000 000 000 000");
   });
 });
