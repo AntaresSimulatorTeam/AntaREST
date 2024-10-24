@@ -39,26 +39,25 @@ export function useMatrixPortal() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Only one portal can exist at a time due to Glide Data Grid's limitations
-    const activateMatrix = () => {
-      // Create new portal for the active matrix
-      if (containerRef.current && isActive) {
-        const newPortal = document.createElement("div");
-        newPortal.id = "portal";
-        // newPortal.style = "position: fixed; left: 0; top: 0; z-index: 9999;";
-        containerRef.current.appendChild(newPortal);
-      }
-    };
+    let portal = document.getElementById("portal");
 
-    activateMatrix();
+    if (!portal) {
+      portal = document.createElement("div");
+      portal.id = "portal";
+      portal.style.position = "fixed";
+      portal.style.left = "0";
+      portal.style.top = "0";
+      portal.style.zIndex = "9999";
+      portal.style.display = "none";
+      document.body.appendChild(portal);
+    }
 
-    // Cleanup portal when matrix becomes inactive or unmounts
-    return () => {
-      if (!isActive) {
-        const portal = document.getElementById("portal");
-        portal?.remove();
-      }
-    };
+    // Update visibility based on active state
+    if (containerRef.current && isActive) {
+      portal.style.display = "block";
+    } else {
+      portal.style.display = "none";
+    }
   }, [isActive]);
 
   const handleMouseEnter = () => {

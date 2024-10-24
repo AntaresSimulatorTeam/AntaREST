@@ -12,13 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { act, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import MatrixGrid, { MatrixGridProps } from ".";
 import Box from "@mui/material/Box";
 import { mockGetBoundingClientRect } from "../../../tests/mocks/mockGetBoundingClientRect";
 import { type EnhancedGridColumn, Column } from "./types";
 import { mockHTMLCanvasElement } from "../../../tests/mocks/mockHTMLCanvasElement";
 import SplitView from "../SplitView";
+import userEvent from "@testing-library/user-event";
 
 beforeEach(() => {
   mockHTMLCanvasElement();
@@ -224,84 +225,193 @@ describe("MatrixGrid rendering", () => {
     }
   });
 
-  describe("MatrixGrid rendering", () => {
-    describe("MatrixGrid portal management", () => {
-      test("should handle portal in split view", () => {
-        const data = [
-          [1, 2],
-          [4, 5],
-        ];
+  describe("MatrixGrid portal management", () => {
+    const sampleData = [
+      [1, 2],
+      [4, 5],
+    ];
 
-        const columns: EnhancedGridColumn[] = [
-          {
-            id: "col1",
-            title: "Column 1",
-            width: 100,
-            type: Column.Number,
-            editable: true,
-          },
-          {
-            id: "col2",
-            title: "Column 2",
-            width: 100,
-            type: Column.Number,
-            editable: true,
-          },
-        ];
+    const sampleColumns: EnhancedGridColumn[] = [
+      {
+        id: "col1",
+        title: "Column 1",
+        width: 100,
+        type: Column.Number,
+        editable: true,
+      },
+      {
+        id: "col2",
+        title: "Column 2",
+        width: 100,
+        type: Column.Number,
+        editable: true,
+      },
+    ];
 
-        const { container } = render(
-          <Box style={{ width: "900px", height: "500px" }}>
-            <SplitView id="test-split-view" sizes={[50, 50]}>
-              <Box sx={{ px: 2 }}>
-                <MatrixGrid
-                  data={data}
-                  rows={2}
-                  columns={columns}
-                  width="100%"
-                  height="100%"
-                />
-              </Box>
-              <Box sx={{ px: 2 }}>
-                <MatrixGrid
-                  data={data}
-                  rows={2}
-                  columns={columns}
-                  width="100%"
-                  height="100%"
-                />
-              </Box>
-            </SplitView>
-          </Box>,
-        );
+    test("should create portal when MatrixGrid mounts", () => {
+      render(
+        <MatrixGrid
+          data={sampleData}
+          rows={2}
+          columns={sampleColumns}
+          width="100%"
+          height="100%"
+        />,
+      );
 
-        const matrices = container.querySelectorAll(".matrix-container");
+      const portal = document.getElementById("portal");
+      expect(portal).toBeInTheDocument();
+      expect(portal?.style.display).toBe("none");
+    });
 
-        matrices.forEach((matrix, index) => {
-          console.log(`Matrix ${index} classes:`, matrix.className, matrix);
-        });
+    test("should show/hide portal on mouse enter/leave", async () => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <MatrixGrid
+          data={sampleData}
+          rows={2}
+          columns={sampleColumns}
+          width="100%"
+          height="100%"
+        />,
+      );
 
-        expect(matrices.length).toBe(2);
+      const matrix = container.querySelector(".matrix-container");
+      expect(matrix).toBeInTheDocument();
 
-        if (matrices.length === 2) {
-          act(() => {
-            matrices[0].dispatchEvent(
-              new Event("mouseenter", { bubbles: true }),
-            );
-          });
+      // Mouse enter
+      await user.hover(matrix!);
+      const portalAfterEnter = document.getElementById("portal");
+      expect(portalAfterEnter?.style.display).toBe("block");
 
-          act(() => {
-            matrices[1].dispatchEvent(
-              new Event("mouseenter", { bubbles: true }),
-            );
-          });
+      // Mouse leave
+      await user.unhover(matrix!);
+      const portalAfterLeave = document.getElementById("portal");
+      expect(portalAfterLeave?.style.display).toBe("none");
+    });
 
-          act(() => {
-            matrices[1].dispatchEvent(
-              new Event("mouseleave", { bubbles: true }),
-            );
-          });
-        }
-      });
+    test("should handle portal in split view with multiple matrices", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <Box style={{ width: "900px", height: "500px" }}>
+          <SplitView id="test-split-view" sizes={[50, 50]}>
+            <Box sx={{ px: 2 }}>
+              <MatrixGrid
+                data={sampleData}
+                rows={2}
+                columns={sampleColumns}
+                width="100%"
+                height="100%"
+              />
+            </Box>
+            <Box sx={{ px: 2 }}>
+              <MatrixGrid
+                data={sampleData}
+                rows={2}
+                columns={sampleColumns}
+                width="100%"
+                height="100%"
+              />
+            </Box>
+          </SplitView>
+        </Box>,
+      );
+
+      const matrices = document.querySelectorAll(".matrix-container");
+      expect(matrices.length).toBe(2);
+
+      // Test first matrix
+      await user.hover(matrices[0]);
+      expect(document.getElementById("portal")?.style.display).toBe("block");
+
+      // Test second matrix while first is still hovered
+      await user.hover(matrices[1]);
+      expect(document.getElementById("portal")?.style.display).toBe("block");
+
+      // Leave second matrix
+      await user.unhover(matrices[1]);
+      const portalAfterSecondLeave = document.getElementById("portal");
+      expect(portalAfterSecondLeave?.style.display).toBe("none");
+    });
+
+    test("should maintain portal when switching between matrices", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <Box style={{ width: "900px", height: "500px" }}>
+          <SplitView id="test-split-view" sizes={[50, 50]}>
+            <Box sx={{ px: 2 }}>
+              <MatrixGrid
+                data={sampleData}
+                rows={2}
+                columns={sampleColumns}
+                width="100%"
+                height="100%"
+              />
+            </Box>
+            <Box sx={{ px: 2 }}>
+              <MatrixGrid
+                data={sampleData}
+                rows={2}
+                columns={sampleColumns}
+                width="100%"
+                height="100%"
+              />
+            </Box>
+          </SplitView>
+        </Box>,
+      );
+
+      const matrices = document.querySelectorAll(".matrix-container");
+
+      // Rapid switching between matrices
+      await user.hover(matrices[0]);
+      expect(document.getElementById("portal")?.style.display).toBe("block");
+
+      await user.hover(matrices[1]);
+      expect(document.getElementById("portal")?.style.display).toBe("block");
+
+      await user.hover(matrices[0]);
+      expect(document.getElementById("portal")?.style.display).toBe("block");
+
+      // Final cleanup
+      await user.unhover(matrices[0]);
+      expect(document.getElementById("portal")?.style.display).toBe("none");
+    });
+
+    test("should handle unmounting matrices in split view", () => {
+      const { unmount } = render(
+        <Box style={{ width: "900px", height: "500px" }}>
+          <SplitView id="test-split-view" sizes={[50, 50]}>
+            <Box sx={{ px: 2 }}>
+              <MatrixGrid
+                data={sampleData}
+                rows={2}
+                columns={sampleColumns}
+                width="100%"
+                height="100%"
+              />
+            </Box>
+            <Box sx={{ px: 2 }}>
+              <MatrixGrid
+                data={sampleData}
+                rows={2}
+                columns={sampleColumns}
+                width="100%"
+                height="100%"
+              />
+            </Box>
+          </SplitView>
+        </Box>,
+      );
+
+      const portal = document.getElementById("portal");
+      expect(portal).toBeInTheDocument();
+
+      unmount();
+      expect(document.getElementById("portal")).toBeInTheDocument();
+      expect(document.getElementById("portal")?.style.display).toBe("none");
     });
   });
 });
