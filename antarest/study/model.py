@@ -506,6 +506,11 @@ class ExportFormat(enum.StrEnum):
         return mapping[self]
 
 
+class MatrixFormat(str, enum.Enum):  # Todo set new StrEnum when we upgrade to python 3.11
+    JSON = "json"
+    ARROW = "arrow"
+
+
 class StudyDownloadDTO(AntaresBaseModel):
     """
     DTO used to download outputs
