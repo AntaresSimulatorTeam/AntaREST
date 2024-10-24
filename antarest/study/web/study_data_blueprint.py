@@ -75,7 +75,7 @@ from antarest.study.business.scenario_builder_management import Rulesets, Scenar
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TSFormFields
-from antarest.study.model import PatchArea, PatchCluster
+from antarest.study.model import MatrixFormat, PatchArea, PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -523,6 +523,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.hydro_manager.update_inflow_structure(study, area_id, values)
+
+    @bp.get(
+        "/{uuid}/{area_id}/load/series",
+        tags=[APITag.study_data],
+        summary="Get load series data",
+        response_model=None,
+    )
+    def get_load_series(
+        uuid: str,
+        area_id: str,
+        matrix_format: t.Optional[MatrixFormat] = None,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> None:
+        logger.info(
+            msg=f"Getting load series data for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        return study_service.load_manager.get_load_matrix(study, area_id, matrix_format)
 
     @bp.put(
         "/studies/{uuid}/matrix",
