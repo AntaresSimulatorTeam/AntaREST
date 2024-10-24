@@ -417,8 +417,7 @@ class ThermalManager:
             ClusterAlreadyExists: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_cluster_name)
-        lower_new_id = new_id.lower()
-        if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
+        if any(new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
             raise DuplicateThermalCluster(area_id, new_id)
 
         # Cluster duplication
@@ -436,15 +435,15 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_source_id}/data",
         ]
         new_paths = [
-            f"input/thermal/series/{area_id}/{lower_new_id}/series",
-            f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
-            f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
+            f"input/thermal/series/{area_id}/{new_id}/series",
+            f"input/thermal/prepro/{area_id}/{new_id}/modulation",
+            f"input/thermal/prepro/{area_id}/{new_id}/data",
         ]
         if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
-            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
-            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
+            new_paths.append(f"input/thermal/series/{area_id}/{new_id}/CO2Cost")
+            new_paths.append(f"input/thermal/series/{area_id}/{new_id}/fuelCost")
 
         # Prepare and execute commands
         commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]

@@ -52,7 +52,7 @@ class ItemProperties(
     name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
 
     @field_validator("name", mode="before")
-    def _validate_name(cls, name: str) -> str:
+    def _validate_name(cls, name: t.Any) -> str:
         return str(name).lower()
 
     def __lt__(self, other: t.Any) -> bool:

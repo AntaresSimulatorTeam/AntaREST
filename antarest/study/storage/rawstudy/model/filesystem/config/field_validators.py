@@ -12,6 +12,8 @@
 
 import typing as t
 
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
 
 
@@ -87,3 +89,10 @@ def validate_color_rgb(v: t.Any) -> str:
         raise TypeError(f"Invalid type for 'color_rgb': {type(v)}")
 
     return f"#{r:02X}{g:02X}{b:02X}"
+
+
+def validate_id_against_name(name: str) -> str:
+    to_return = transform_name_to_id(name)
+    if not to_return:
+        raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
+    return to_return

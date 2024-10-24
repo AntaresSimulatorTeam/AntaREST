@@ -17,7 +17,7 @@ from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
@@ -330,7 +330,7 @@ class Thermal870Properties(Thermal860Properties):
     )
 
 
-class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
+class ThermalConfig(ThermalProperties, LowerCaseIdentifier):
     """
     Thermal properties with section ID.
 
@@ -351,7 +351,7 @@ class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
     AttributeError: 'ThermalConfig' object has no attribute 'nh3'"""
 
 
-class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
+class Thermal860Config(Thermal860Properties, LowerCaseIdentifier):
     """
     Thermal properties for study in version 860
 
@@ -373,7 +373,7 @@ class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
 
 
-class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
+class Thermal870Config(Thermal870Properties, LowerCaseIdentifier):
     """
     Thermal properties for study in version 8.7 or above.
 

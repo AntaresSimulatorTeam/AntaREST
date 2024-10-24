@@ -18,7 +18,7 @@ from pydantic import Field
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 
 
 class TimeSeriesInterpretation(EnumIgnoreCase):
@@ -91,7 +91,7 @@ class RenewableProperties(ClusterProperties):
     )
 
 
-class RenewableConfig(RenewableProperties, IgnoreCaseIdentifier):
+class RenewableConfig(RenewableProperties, LowerCaseIdentifier):
     """
     Configuration of a renewable cluster.
 

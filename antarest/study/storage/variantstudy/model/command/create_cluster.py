@@ -29,6 +29,7 @@ from antarest.study.storage.variantstudy.business.utils import strip_matrix_prot
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from study.storage.rawstudy.model.filesystem.config.field_validators import validate_id_against_name
 
 
 class CreateCluster(ICommand):
@@ -53,10 +54,7 @@ class CreateCluster(ICommand):
 
     @field_validator("cluster_name", mode="before")
     def validate_cluster_name(cls, val: str) -> str:
-        to_return = transform_name_to_id(val)
-        if not to_return:
-            raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-        return to_return
+        return validate_id_against_name(val)
 
     @field_validator("parameters", mode="before")
     def lower_cluster_group_and_names(cls, params: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:

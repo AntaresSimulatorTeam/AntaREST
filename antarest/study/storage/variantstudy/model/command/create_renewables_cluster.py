@@ -15,12 +15,8 @@ import typing as t
 from pydantic import field_validator
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    EnrModelling,
-    FileStudyTreeConfig,
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_id_against_name
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import create_renewable_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -48,10 +44,7 @@ class CreateRenewablesCluster(ICommand):
 
     @field_validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
-        to_return = transform_name_to_id(val)
-        if not to_return:
-            raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-        return to_return
+        return validate_id_against_name(val)
 
     @field_validator("parameters", mode="before")
     def lower_cluster_group_and_names(cls, params: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:

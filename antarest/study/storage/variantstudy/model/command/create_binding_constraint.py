@@ -18,6 +18,7 @@ import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import Field, field_validator, model_validator
 
+from antarest.core.model import LowerCaseStr
 from antarest.core.serialization import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
@@ -216,11 +217,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
     coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
 
-    @model_validator(mode="after")
-    def lower_group(self) -> "AbstractBindingConstraintCommand":
-        if self.group:
-            self.group = self.group.lower()
-        return self
+    group: LowerCaseStr
 
     def to_dto(self) -> CommandDTO:
         json_command = self.model_dump(mode="json", exclude={"command_context"})
