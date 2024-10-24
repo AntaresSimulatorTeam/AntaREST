@@ -10,9 +10,11 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+
+import pytest
+
 from antarest.core.config import WorkspaceConfig
 from antarest.study.storage.utils import is_folder_safe
-import pytest
 
 
 @pytest.fixture
