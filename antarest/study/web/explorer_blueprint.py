@@ -10,12 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from http import HTTPStatus
-from http.client import HTTPException
-from typing import Any, List
+from typing import List
 
 from fastapi import APIRouter, Depends
-from pydantic import DirectoryPath
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
