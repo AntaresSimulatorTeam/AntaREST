@@ -38,16 +38,16 @@ def archive_dir(
     src_dir_path: Path,
     target_archive_path: Path,
     remove_source_dir: bool = False,
-    archive_format: ArchiveFormat = ArchiveFormat.SEVEN_ZIP,
+    archive_format: t.Optional[ArchiveFormat] = None,
 ) -> None:
-    if target_archive_path.suffix != archive_format:
+    if archive_format is not None and target_archive_path.suffix != archive_format:
         raise ShouldNotHappenException(
             f"Non matching archive format {archive_format} and target archive suffix {target_archive_path.suffix}"
         )
-    if archive_format == ArchiveFormat.SEVEN_ZIP:
+    if target_archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
         with py7zr.SevenZipFile(target_archive_path, mode="w") as szf:
             szf.writeall(src_dir_path, arcname="")
-    elif archive_format == ArchiveFormat.ZIP:
+    elif target_archive_path.suffix == ArchiveFormat.ZIP:
         with zipfile.ZipFile(target_archive_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
             len_dir_path = len(str(src_dir_path))
             for root, _, files in os.walk(src_dir_path):
@@ -55,7 +55,7 @@ def archive_dir(
                     file_path = os.path.join(root, file)
                     zipf.write(file_path, file_path[len_dir_path:])
     else:
-        raise ShouldNotHappenException(f"Unsupported archive format {archive_format}")
+        raise ShouldNotHappenException(f"Unsupported archive format {target_archive_path.suffix}")
     if remove_source_dir:
         shutil.rmtree(src_dir_path)
 

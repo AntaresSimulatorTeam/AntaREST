@@ -297,8 +297,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
-            archive_dir(tmp_study_path, target, archive_format=ArchiveFormat.SEVEN_ZIP)
-            stopwatch.log_elapsed(lambda x: logger.info(f"Study {path_study} exported (7zip mode) in {x}s"))
+            archive_dir(tmp_study_path, target)
+            stopwatch.log_elapsed(
+                lambda x: logger.info(f"Study {path_study} exported ({target.suffix} format) in {x}s")
+            )
         return target
 
     def export_output(self, metadata: T, output_id: str, target: Path) -> None:
