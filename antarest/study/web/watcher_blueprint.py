@@ -13,7 +13,7 @@
 import logging
 from http import HTTPStatus
 from http.client import HTTPException
-from typing import Any, List
+from typing import List
 
 from fastapi import APIRouter, Depends
 
@@ -22,7 +22,6 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.model import NonStudyFolder
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
