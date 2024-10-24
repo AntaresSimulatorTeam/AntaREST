@@ -13,132 +13,138 @@
  */
 
 import { renderHook } from "@testing-library/react";
-import { describe, test, expect } from "vitest";
 import { useColumnMapping } from "./useColumnMapping";
 import { EnhancedGridColumn, Column } from "./types";
+import type { ColumnType } from "./types";
+import { Item } from "@glideapps/glide-data-grid";
 
 describe("useColumnMapping", () => {
-  const testColumns: EnhancedGridColumn[] = [
-    {
-      id: "text",
-      title: "Text",
-      type: Column.Text,
-      width: 100,
-      editable: false,
-    },
-    {
-      id: "date",
-      title: "Date",
-      type: Column.DateTime,
-      width: 100,
-      editable: false,
-    },
-    {
-      id: "num1",
-      title: "Number 1",
-      type: Column.Number,
-      width: 100,
-      editable: true,
-    },
-    {
-      id: "num2",
-      title: "Number 2",
-      type: Column.Number,
-      width: 100,
-      editable: true,
-    },
-    {
-      id: "agg",
-      title: "Aggregate",
-      type: Column.Aggregate,
-      width: 100,
-      editable: false,
-    },
-  ];
-
-  test("should create gridToData and dataToGrid functions", () => {
-    const { result } = renderHook(() => useColumnMapping(testColumns));
-    expect(result.current.gridToData).toBeDefined();
-    expect(result.current.dataToGrid).toBeDefined();
+  // Test data factories
+  const createColumn = (
+    id: string,
+    type: ColumnType,
+    editable = false,
+  ): EnhancedGridColumn => ({
+    id,
+    title: id.charAt(0).toUpperCase() + id.slice(1),
+    type,
+    width: 100,
+    editable,
   });
 
-  describe("gridToData", () => {
-    test("should return null for non-data columns", () => {
-      const { result } = renderHook(() => useColumnMapping(testColumns));
-      expect(result.current.gridToData([0, 0])).toBeNull(); // Text column
-      expect(result.current.gridToData([1, 0])).toBeNull(); // DateTime column
-      expect(result.current.gridToData([4, 0])).toBeNull(); // Aggregate column
+  const createNumericColumn = (id: string) =>
+    createColumn(id, Column.Number, true);
+
+  const COLUMNS = {
+    mixed: [
+      createColumn("text", Column.Text),
+      createColumn("date", Column.DateTime),
+      createNumericColumn("num1"),
+      createNumericColumn("num2"),
+      createColumn("agg", Column.Aggregate),
+    ],
+    nonData: [
+      createColumn("text", Column.Text),
+      createColumn("date", Column.DateTime),
+    ],
+    dataOnly: [createNumericColumn("num1"), createNumericColumn("num2")],
+  };
+
+  // Helper function to create properly typed coordinates
+  const createCoordinate = (col: number, row: number): Item =>
+    [col, row] as Item;
+
+  // Helper function to render the hook
+  const renderColumnMapping = (columns: EnhancedGridColumn[]) =>
+    renderHook(() => useColumnMapping(columns));
+
+  describe("hook initialization", () => {
+    test("should create mapping functions", () => {
+      const { result } = renderColumnMapping(COLUMNS.mixed);
+
+      expect(result.current.gridToData).toBeInstanceOf(Function);
+      expect(result.current.dataToGrid).toBeInstanceOf(Function);
     });
 
-    test("should map grid coordinates to data coordinates for data columns", () => {
-      const { result } = renderHook(() => useColumnMapping(testColumns));
-      expect(result.current.gridToData([2, 0])).toEqual([0, 0]); // First Number column
-      expect(result.current.gridToData([3, 1])).toEqual([1, 1]); // Second Number column
+    test("should memoize the result", () => {
+      const { result, rerender } = renderHook(
+        (props) => useColumnMapping(props.columns),
+        { initialProps: { columns: COLUMNS.mixed } },
+      );
+
+      const initialResult = result.current;
+      rerender({ columns: COLUMNS.mixed });
+      expect(result.current).toBe(initialResult);
     });
   });
 
-  describe("dataToGrid", () => {
+  describe("gridToData mapping", () => {
+    describe("with mixed columns", () => {
+      test("should return null for non-data columns", () => {
+        const { result } = renderColumnMapping(COLUMNS.mixed);
+
+        const nonDataCoordinates: Item[] = [
+          createCoordinate(0, 0), // Text column
+          createCoordinate(1, 0), // DateTime column
+          createCoordinate(4, 0), // Aggregate column
+        ];
+
+        nonDataCoordinates.forEach((coord) => {
+          expect(result.current.gridToData(coord)).toBeNull();
+        });
+      });
+
+      test("should map data columns correctly", () => {
+        const { result } = renderColumnMapping(COLUMNS.mixed);
+
+        const mappings = [
+          { grid: createCoordinate(2, 0), expected: createCoordinate(0, 0) }, // First Number column
+          { grid: createCoordinate(3, 1), expected: createCoordinate(1, 1) }, // Second Number column
+        ];
+
+        mappings.forEach(({ grid, expected }) => {
+          expect(result.current.gridToData(grid)).toEqual(expected);
+        });
+      });
+    });
+
+    describe("with specific column configurations", () => {
+      test("should handle non-data columns only", () => {
+        const { result } = renderColumnMapping(COLUMNS.nonData);
+        const coord = createCoordinate(0, 0);
+
+        expect(result.current.gridToData(coord)).toBeNull();
+        expect(result.current.gridToData(createCoordinate(1, 0))).toBeNull();
+        expect(result.current.dataToGrid(coord)).toEqual([undefined, 0]);
+      });
+
+      test("should handle data columns only", () => {
+        const { result } = renderColumnMapping(COLUMNS.dataOnly);
+
+        const mappings = [
+          { grid: createCoordinate(0, 0), data: createCoordinate(0, 0) },
+          { grid: createCoordinate(1, 1), data: createCoordinate(1, 1) },
+        ];
+
+        mappings.forEach(({ grid, data }) => {
+          expect(result.current.gridToData(grid)).toEqual(data);
+          expect(result.current.dataToGrid(data)).toEqual(grid);
+        });
+      });
+    });
+  });
+
+  describe("dataToGrid mapping", () => {
     test("should map data coordinates to grid coordinates", () => {
-      const { result } = renderHook(() => useColumnMapping(testColumns));
-      expect(result.current.dataToGrid([0, 0])).toEqual([2, 0]); // First data column
-      expect(result.current.dataToGrid([1, 1])).toEqual([3, 1]); // Second data column
+      const { result } = renderColumnMapping(COLUMNS.mixed);
+      const mappings = [
+        { data: createCoordinate(0, 0), expected: createCoordinate(2, 0) }, // First data column
+        { data: createCoordinate(1, 1), expected: createCoordinate(3, 1) }, // Second data column
+      ];
+
+      mappings.forEach(({ data, expected }) => {
+        expect(result.current.dataToGrid(data)).toEqual(expected);
+      });
     });
-  });
-
-  test("should handle columns with only non-data types", () => {
-    const nonDataColumns: EnhancedGridColumn[] = [
-      {
-        id: "text",
-        title: "Text",
-        type: Column.Text,
-        width: 100,
-        editable: false,
-      },
-      {
-        id: "date",
-        title: "Date",
-        type: Column.DateTime,
-        width: 100,
-        editable: false,
-      },
-    ];
-    const { result } = renderHook(() => useColumnMapping(nonDataColumns));
-    expect(result.current.gridToData([0, 0])).toBeNull();
-    expect(result.current.gridToData([1, 0])).toBeNull();
-    expect(result.current.dataToGrid([0, 0])).toEqual([undefined, 0]); // No data columns, so this should return an invalid grid coordinate
-  });
-
-  test("should handle columns with only data types", () => {
-    const dataOnlyColumns: EnhancedGridColumn[] = [
-      {
-        id: "num1",
-        title: "Number 1",
-        type: Column.Number,
-        width: 100,
-        editable: true,
-      },
-      {
-        id: "num2",
-        title: "Number 2",
-        type: Column.Number,
-        width: 100,
-        editable: true,
-      },
-    ];
-    const { result } = renderHook(() => useColumnMapping(dataOnlyColumns));
-    expect(result.current.gridToData([0, 0])).toEqual([0, 0]);
-    expect(result.current.gridToData([1, 1])).toEqual([1, 1]);
-    expect(result.current.dataToGrid([0, 0])).toEqual([0, 0]);
-    expect(result.current.dataToGrid([1, 1])).toEqual([1, 1]);
-  });
-
-  test("should memoize the result", () => {
-    const { result, rerender } = renderHook(
-      (props) => useColumnMapping(props.columns),
-      { initialProps: { columns: testColumns } },
-    );
-    const initialResult = result.current;
-    rerender({ columns: testColumns });
-    expect(result.current).toBe(initialResult);
   });
 });

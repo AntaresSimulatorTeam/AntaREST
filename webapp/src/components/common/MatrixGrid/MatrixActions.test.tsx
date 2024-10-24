@@ -13,8 +13,8 @@
  */
 
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MatrixActions from "./MatrixActions";
 
 vi.mock("../buttons/SplitButton", () => ({
@@ -54,111 +54,127 @@ describe("MatrixActions", () => {
     canRedo: true,
   };
 
+  type RenderOptions = Partial<typeof defaultProps>;
+
+  const renderMatrixActions = (props: RenderOptions = {}) => {
+    return render(<MatrixActions {...defaultProps} {...props} />);
+  };
+
+  const getButton = (label: string) => {
+    const element = screen.getByText(label);
+    const button = element.closest("button");
+
+    if (!button) {
+      throw new Error(`Button with label "${label}" not found`);
+    }
+
+    return button;
+  };
+
+  const getActionButton = (label: string) => {
+    const element = screen.getByLabelText(label);
+    const button = element.querySelector("button");
+
+    if (!button) {
+      throw new Error(`Action button "${label}" not found`);
+    }
+
+    return button;
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("renders all buttons and controls", () => {
-    render(<MatrixActions {...defaultProps} />);
+  describe("rendering", () => {
+    test("renders all buttons and controls", () => {
+      renderMatrixActions();
 
-    expect(screen.getByLabelText("global.undo")).toBeDefined();
-    expect(screen.getByLabelText("global.redo")).toBeDefined();
-    expect(screen.getByText("(0)")).toBeDefined();
-    expect(screen.getByText("global.import")).toBeDefined();
-    expect(screen.getByText("global.export")).toBeDefined();
+      expect(screen.getByLabelText("global.undo")).toBeInTheDocument();
+      expect(screen.getByLabelText("global.redo")).toBeInTheDocument();
+      expect(screen.getByText("(0)")).toBeInTheDocument();
+      expect(screen.getByText("global.import")).toBeInTheDocument();
+      expect(screen.getByText("global.export")).toBeInTheDocument();
+    });
   });
 
-  it("disables undo button when canUndo is false", () => {
-    render(<MatrixActions {...defaultProps} canUndo={false} />);
-    expect(
-      screen.getByLabelText("global.undo").querySelector("button"),
-    ).toBeDisabled();
+  describe("undo/redo functionality", () => {
+    test("manages undo button state correctly", () => {
+      const { rerender } = renderMatrixActions();
+      expect(getActionButton("global.undo")).not.toBeDisabled();
+
+      rerender(<MatrixActions {...defaultProps} canUndo={false} />);
+      expect(getActionButton("global.undo")).toBeDisabled();
+    });
+
+    test("manages redo button state correctly", () => {
+      const { rerender } = renderMatrixActions();
+      expect(getActionButton("global.redo")).not.toBeDisabled();
+
+      rerender(<MatrixActions {...defaultProps} canRedo={false} />);
+      expect(getActionButton("global.redo")).toBeDisabled();
+    });
+
+    test("handles undo/redo button clicks", async () => {
+      const user = userEvent.setup();
+      renderMatrixActions();
+
+      await user.click(getActionButton("global.undo"));
+      expect(defaultProps.undo).toHaveBeenCalledTimes(1);
+
+      await user.click(getActionButton("global.redo"));
+      expect(defaultProps.redo).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it("disables redo button when canRedo is false", () => {
-    render(<MatrixActions {...defaultProps} canRedo={false} />);
-    expect(
-      screen.getByLabelText("global.redo").querySelector("button"),
-    ).toBeDisabled();
+  describe("save functionality", () => {
+    test("manages save button state based on pending updates", () => {
+      const { rerender } = renderMatrixActions();
+      expect(getButton("(0)")).toBeDisabled();
+
+      rerender(<MatrixActions {...defaultProps} pendingUpdatesCount={1} />);
+      expect(getButton("(1)")).not.toBeDisabled();
+    });
+
+    test("handles save button click", async () => {
+      const user = userEvent.setup();
+      renderMatrixActions({ pendingUpdatesCount: 1 });
+
+      await user.click(getButton("(1)"));
+      expect(defaultProps.onSave).toHaveBeenCalledTimes(1);
+    });
+
+    test("disables save button during submission", () => {
+      renderMatrixActions({
+        isSubmitting: true,
+        pendingUpdatesCount: 1,
+      });
+      expect(getButton("(1)")).toBeDisabled();
+    });
   });
 
-  it("calls undo function when undo button is clicked", () => {
-    render(<MatrixActions {...defaultProps} />);
-    const undoButton = screen
-      .getByLabelText("global.undo")
-      .querySelector("button");
-    if (undoButton) {
-      fireEvent.click(undoButton);
-      expect(defaultProps.undo).toHaveBeenCalled();
-    } else {
-      throw new Error("Undo button not found");
-    }
-  });
+  describe("import/export functionality", () => {
+    test("handles import button click", async () => {
+      const user = userEvent.setup();
+      renderMatrixActions();
 
-  it("calls redo function when redo button is clicked", () => {
-    render(<MatrixActions {...defaultProps} />);
-    const redoButton = screen
-      .getByLabelText("global.redo")
-      .querySelector("button");
-    if (redoButton) {
-      fireEvent.click(redoButton);
-      expect(defaultProps.redo).toHaveBeenCalled();
-    } else {
-      throw new Error("Redo button not found");
-    }
-  });
+      await user.click(getButton("global.import"));
+      expect(defaultProps.onImport).toHaveBeenCalledTimes(1);
+    });
 
-  it("disables save button when pendingUpdatesCount is 0", () => {
-    render(<MatrixActions {...defaultProps} />);
-    expect(screen.getByText("(0)").closest("button")).toBeDisabled();
-  });
+    test("manages button states during submission", () => {
+      renderMatrixActions({ isSubmitting: true });
 
-  it("enables save button when pendingUpdatesCount is greater than 0", () => {
-    render(<MatrixActions {...defaultProps} pendingUpdatesCount={1} />);
-    expect(screen.getByText("(1)").closest("button")).not.toBeDisabled();
-  });
+      expect(getButton("global.import")).toBeDisabled();
+      expect(getButton("global.export")).toBeDisabled();
+    });
 
-  it("calls onSave function when save button is clicked", () => {
-    render(<MatrixActions {...defaultProps} pendingUpdatesCount={1} />);
-    const saveButton = screen.getByText("(1)").closest("button");
-    if (saveButton) {
-      fireEvent.click(saveButton);
-      expect(defaultProps.onSave).toHaveBeenCalled();
-    } else {
-      throw new Error("Save button not found");
-    }
-  });
+    test("manages export button state based on disabled prop", () => {
+      const { rerender } = renderMatrixActions();
+      expect(getButton("global.export")).not.toBeDisabled();
 
-  it("shows loading state on save button when isSubmitting is true", () => {
-    render(
-      <MatrixActions
-        {...defaultProps}
-        isSubmitting={true}
-        pendingUpdatesCount={1}
-      />,
-    );
-    expect(screen.getByText("(1)").closest("button")).toBeDisabled();
-  });
-
-  it("calls onImport function when import button is clicked", () => {
-    render(<MatrixActions {...defaultProps} />);
-    fireEvent.click(screen.getByText("global.import"));
-    expect(defaultProps.onImport).toHaveBeenCalled();
-  });
-
-  it("disables import button when isSubmitting is true", () => {
-    render(<MatrixActions {...defaultProps} isSubmitting={true} />);
-    expect(screen.getByText("global.import")).toBeDisabled();
-  });
-
-  it("passes correct props to DownloadMatrixButton", () => {
-    const { rerender } = render(<MatrixActions {...defaultProps} />);
-    expect(screen.getByText("global.export")).not.toBeDisabled();
-
-    rerender(<MatrixActions {...defaultProps} disabled={true} />);
-    expect(screen.getByText("global.export")).toBeDisabled();
-
-    rerender(<MatrixActions {...defaultProps} isSubmitting={true} />);
-    expect(screen.getByText("global.export")).toBeDisabled();
+      rerender(<MatrixActions {...defaultProps} disabled={true} />);
+      expect(getButton("global.export")).toBeDisabled();
+    });
   });
 });

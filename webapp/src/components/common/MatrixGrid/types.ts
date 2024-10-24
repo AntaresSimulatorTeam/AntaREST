@@ -17,6 +17,7 @@ import {
   EditableGridCell,
   Item,
 } from "@glideapps/glide-data-grid";
+import { MatrixGridProps } from ".";
 
 ////////////////////////////////////////////////////////////////
 // Enums
@@ -136,4 +137,12 @@ export interface MatrixUpdate {
 export interface MatrixUpdateDTO {
   coordinates: number[][]; // Array of [col, row] pairs
   operation: MatrixUpdate;
+}
+
+export interface RenderMatrixOptions {
+  width?: string;
+  height?: string;
+  data?: MatrixGridProps["data"];
+  columns?: EnhancedGridColumn[];
+  rows?: number;
 }
