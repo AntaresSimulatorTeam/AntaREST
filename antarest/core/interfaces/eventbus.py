@@ -137,6 +137,9 @@ class IEventBus(ABC):
 
 
 class DummyEventBusService(IEventBus):
+    def __init__(self) -> None:
+        self.events: List[Event] = []
+
     def queue(self, event: Event, queue: str) -> None:
         # Noop
         pass
@@ -150,7 +153,7 @@ class DummyEventBusService(IEventBus):
 
     def push(self, event: Event) -> None:
         # Noop
-        pass
+        self.events.append(event)
 
     def add_listener(
         self,
