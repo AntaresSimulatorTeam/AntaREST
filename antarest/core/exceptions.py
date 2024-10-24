@@ -655,7 +655,7 @@ class BadEditInstructionException(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class CannotScanInternalWorkspace(HTTPException):
+class CannotAccessInternalWorkspace(HTTPException):
     def __init__(self) -> None:
         super().__init__(
             HTTPStatus.BAD_REQUEST,
@@ -666,3 +666,12 @@ class CannotScanInternalWorkspace(HTTPException):
 class ChildNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class WorkspaceNotFound(HTTPException):
+    """
+    This will be raised when we try to load a worskpace that does not exist
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
