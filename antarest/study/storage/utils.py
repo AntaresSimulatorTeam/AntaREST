@@ -152,7 +152,7 @@ def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = No
     if new_suffix_name:
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
-        if not archived:
+        if not is_output_archived:
             ini_writer = IniWriter()
             ini_writer.write(info_antares_output, path_output / info_filename)
         else:
