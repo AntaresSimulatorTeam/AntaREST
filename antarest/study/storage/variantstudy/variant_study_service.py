@@ -60,6 +60,7 @@ from antarest.study.storage.utils import assert_permission, export_study_flat, i
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -586,6 +587,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata: VariantStudy,
         denormalize: bool = False,
         from_scratch: bool = False,
+        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
@@ -610,7 +612,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             # db context, so we need to fetch the id attribute before
             study_id = metadata.id
 
-            def callback(notifier: TaskUpdateNotifier) -> TaskResult:
+            def callback(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
                 generator = SnapshotGenerator(
                     cache=self.cache,
                     raw_study_service=self.raw_study_service,
@@ -625,6 +627,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     denormalize=denormalize,
                     from_scratch=from_scratch,
                     notifier=notifier,
+                    listener=listener,
                 )
                 return TaskResult(
                     success=generate_result.success,
@@ -1111,7 +1114,7 @@ class SnapshotCleanerTask:
                     if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
         msg = f"Start cleaning all snapshots updated or accessed {humanize.precisedelta(self._retention_time)} ago."
         notifier(msg)
         self._clear_all_snapshots()

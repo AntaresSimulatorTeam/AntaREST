@@ -56,6 +56,7 @@ from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 logger = logging.getLogger(__name__)
 
@@ -597,7 +598,7 @@ class LauncherService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(_: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_: TaskUpdateNotifier, listener: Optional[ICommandListener]) -> TaskResult:
                 try:
                     #
                     zip_dir(output_path, export_path)

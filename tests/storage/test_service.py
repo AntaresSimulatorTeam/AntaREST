@@ -28,7 +28,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -92,13 +92,14 @@ def build_study_service(
     cache_service: ICache = Mock(spec=ICache),
     variant_study_service: VariantStudyService = Mock(spec=VariantStudyService),
     task_service: ITaskService = Mock(spec=ITaskService),
+    event_bus: IEventBus = Mock(spec=IEventBus),
 ) -> StudyService:
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
         user_service=user_service,
         repository=repository,
-        event_bus=Mock(),
+        event_bus=event_bus,
         task_service=task_service,
         file_transfer_manager=Mock(),
         cache_service=cache_service,
@@ -1825,7 +1826,7 @@ def test_upgrade_study__raw_study__nominal(
     # The task is called with a `TaskUpdateNotifier` a parameter.
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
-    actual = task(notifier)
+    actual = task(notifier, None)
 
     upgrade_study_mock.assert_called_once_with()
 
@@ -1913,7 +1914,7 @@ def test_upgrade_study__variant_study__nominal(
     # The task is called with a `TaskUpdateNotifier` a parameter.
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
-    actual = task(notifier)
+    actual = task(notifier, None)
 
     # The `upgrade_study()` function is not called for a variant study.
     upgrade_study_mock.assert_not_called()
@@ -2004,7 +2005,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
     with pytest.raises(MissingSectionHeaderError, match="File contains no section headers"):
-        task(notifier)
+        task(notifier, None)
 
     # The study must not be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)

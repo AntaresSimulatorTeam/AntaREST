@@ -25,6 +25,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # noinspection SpellCheckingInspection
@@ -214,7 +215,7 @@ class CreateSTStorage(ICommand):
             {"storage_id": self.storage_id},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
