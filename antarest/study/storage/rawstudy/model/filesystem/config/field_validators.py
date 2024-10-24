@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import re
 import typing as t
-
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
 
@@ -89,6 +87,26 @@ def validate_color_rgb(v: t.Any) -> str:
         raise TypeError(f"Invalid type for 'color_rgb': {type(v)}")
 
     return f"#{r:02X}{g:02X}{b:02X}"
+
+
+# Invalid chars was taken from Antares Simulator (C++).
+_sub_invalid_chars = re.compile(r"[^a-zA-Z0-9_(),& -]+").sub
+
+
+def transform_name_to_id(name: str, lower: bool = True) -> str:
+    """
+    Transform a name into an identifier by replacing consecutive
+    invalid characters by a single white space, and then whitespaces
+    are striped from both ends.
+
+    Valid characters are `[a-zA-Z0-9_(),& -]` (including space).
+
+    Args:
+        name: The name to convert.
+        lower: The flag used to turn the identifier in lower case.
+    """
+    valid_id = _sub_invalid_chars(" ", name).strip()
+    return valid_id.lower() if lower else valid_id
 
 
 def validate_id_against_name(name: str) -> str:
