@@ -13,6 +13,9 @@
 import os
 import sys
 
+# The Pyinstaller version we use has a known issue on windows and to fix it we need to implement this workaround.
+# See issue description and workaround on pyinstaller website:
+# https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html#sys-stdin-sys-stdout-and-sys-stderr-in-noconsole-windowed-applications-windows-only
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
 if sys.stderr is None:
