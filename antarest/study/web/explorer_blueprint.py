@@ -21,7 +21,6 @@ from antarest.login.auth import Auth
 from antarest.study.model import NonStudyFolder, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
-
 logger = logging.getLogger(__name__)
 
 
