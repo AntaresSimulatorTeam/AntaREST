@@ -134,7 +134,7 @@ class Watcher(IService):
                 return [StudyFolder(path, workspace, groups)]
 
             if max_depth is not None and max_depth <= 0:
-                logger.info(f"Scan was configured to not go any deeper")
+                logger.info(f"Scan was configured to not go any deeper, max _depth : {max_depth}")
                 return []
 
             else:
