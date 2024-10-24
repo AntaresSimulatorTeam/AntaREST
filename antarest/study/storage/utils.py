@@ -23,6 +23,7 @@ from pathlib import Path
 from uuid import uuid4
 from zipfile import ZipFile
 
+import py7zr
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import StudyValidationError, UnsupportedStudyVersion
@@ -79,12 +80,12 @@ def fix_study_root(study_path: Path) -> None:
     Args:
         study_path: the study initial root path
     """
-    # TODO: what if it is a zipped output ?
-    if is_archive_format(study_path.suffix):
+    # TODO: what if it is a archived output ?
+    if study_path.suffix in {".zip", ".7z"}:
         return None
 
     if not study_path.is_dir():
-        raise StudyValidationError("Not a directory: '{study_path}'")
+        raise StudyValidationError(f"Not a directory: '{study_path}'")
 
     root_path = study_path
     contents = os.listdir(root_path)
@@ -125,18 +126,22 @@ def is_output_archived(path_output: Path) -> bool:
 
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
-    archived = is_output_archived(path_output)
-    if archived:
-        temp_dir = tempfile.TemporaryDirectory()
-        s = StopWatch()
-        with ZipFile(path_output, "r") as zip_obj:
-            zip_obj.extract("info.antares-output", temp_dir.name)
-            info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
-        s.log_elapsed(lambda x: logger.info(f"info.antares_output has been read in {x}s"))
-        temp_dir.cleanup()
+    is_output_archived = path_output.suffix in {".zip", ".7z"}
+    info_filename = "info.antares-output"
+    if is_output_archived:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            s = StopWatch()
+            if path_output.suffix == ".zip":
+                with ZipFile(path_output, mode="r") as zip_obj:
+                    zip_obj.extract(info_filename, temp_dir)
+            else:
+                with py7zr.SevenZipFile(path_output, mode="r") as archive:
+                    archive.extract(targets=[info_filename], path=temp_dir)
+            info_antares_output = ini_reader.read(Path(temp_dir) / info_filename)
+            s.log_elapsed(lambda x: logger.info(f"'{info_filename}' has been read in {x}s"))
 
     else:
-        info_antares_output = ini_reader.read(path_output / "info.antares-output")
+        info_antares_output = ini_reader.read(path_output / info_filename)
 
     general_info = info_antares_output["general"]
 
@@ -147,9 +152,9 @@ def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = No
     if new_suffix_name:
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
-        if not archived:
+        if not is_output_archived:
             ini_writer = IniWriter()
-            ini_writer.write(info_antares_output, path_output / "info.antares-output")
+            ini_writer.write(info_antares_output, path_output / info_filename)
         else:
             logger.warning("Could not rewrite the new name inside the output: the output is archived")
 
