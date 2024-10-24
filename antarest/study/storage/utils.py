@@ -31,6 +31,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -79,7 +80,7 @@ def fix_study_root(study_path: Path) -> None:
         study_path: the study initial root path
     """
     # TODO: what if it is a zipped output ?
-    if study_path.suffix == ".zip":
+    if is_archive_format(study_path.suffix):
         return None
 
     if not study_path.is_dir():
