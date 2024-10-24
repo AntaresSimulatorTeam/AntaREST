@@ -46,7 +46,7 @@ def archive_dir(
         )
     if archive_format == ArchiveFormat.SEVEN_ZIP:
         with py7zr.SevenZipFile(target_archive_path, mode="w") as szf:
-            szf.writeall(src_dir_path)
+            szf.writeall(src_dir_path, arcname="")
     elif archive_format == ArchiveFormat.ZIP:
         with zipfile.ZipFile(target_archive_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
             len_dir_path = len(str(src_dir_path))
