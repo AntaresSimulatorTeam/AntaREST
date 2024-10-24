@@ -66,6 +66,43 @@ class TransmissionCapacity(EnumIgnoreCase):
     ENABLED = "enabled"
 
 
+class LinkStyle(EnumIgnoreCase):
+    """
+    Enum representing the style of a link in a network visualization.
+
+    Attributes:
+        DOT: Represents a dotted line style.
+        PLAIN: Represents a solid line style.
+        DASH: Represents a dashed line style.
+        DOT_DASH: Represents a line style with alternating dots and dashes.
+    """
+
+    DOT = "dot"
+    PLAIN = "plain"
+    DASH = "dash"
+    DOT_DASH = "dotdash"
+    OTHER = "other"
+
+
+class FilterOption(EnumIgnoreCase):
+    """
+    Enum representing the time filter options for data visualization or analysis in Antares Web.
+
+    Attributes:
+        HOURLY: Represents filtering data by the hour.
+        DAILY: Represents filtering data by the day.
+        WEEKLY: Represents filtering data by the week.
+        MONTHLY: Represents filtering data by the month.
+        ANNUAL: Represents filtering data by the year.
+    """
+
+    HOURLY = "hourly"
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    ANNUAL = "annual"
+
+
 class LinkProperties(IniProperties):
     """
     Configuration read from a section in the `input/links/<area1>/properties.ini` file.
@@ -159,11 +196,12 @@ class LinkProperties(IniProperties):
         return validate_colors(values)
 
     # noinspection SpellCheckingInspection
-    def to_config(self) -> t.Dict[str, t.Any]:
+    def to_ini(self, version: int) -> t.Dict[str, t.Any]:
         """
         Convert the object to a dictionary for writing to a configuration file.
         """
-        obj = dict(super().to_config())
+        excludes = set() if version >= 820 else {"filter_synthesis", "filter_year_by_year"}
+        obj = self.model_dump(mode="json", exclude_none=True, by_alias=True, exclude=excludes)
         color_rgb = obj.pop("colorRgb", "#707070")
         return {
             "colorr": int(color_rgb[1:3], 16),

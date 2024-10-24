@@ -85,7 +85,7 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.link_management import LinkInfoDTO, LinkManager
+from antarest.study.business.link_management import LinkInfoDTOType, LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
@@ -1825,12 +1825,11 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-        with_ui: bool,
         params: RequestParameters,
-    ) -> t.List[LinkInfoDTO]:
+    ) -> t.List[LinkInfoDTOType]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.links.get_all_links(study, with_ui)
+        return self.links.get_all_links(study)
 
     def create_area(
         self,
@@ -1854,9 +1853,9 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkInfoDTO,
+        link_creation_dto: LinkInfoDTOType,
         params: RequestParameters,
-    ) -> LinkInfoDTO:
+    ) -> LinkInfoDTOType:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
@@ -1869,6 +1868,25 @@ class StudyService:
             )
         )
         return new_link
+
+    def update_link(
+        self,
+        uuid: str,
+        link_update_dto: LinkInfoDTOType,
+        params: RequestParameters,
+    ) -> LinkInfoDTOType:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        updated_link = self.links.update_link(study, link_update_dto)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
+        return updated_link
 
     def update_area(
         self,
