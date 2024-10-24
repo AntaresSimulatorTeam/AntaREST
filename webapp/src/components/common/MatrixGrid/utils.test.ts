@@ -12,179 +12,339 @@
  * This file is part of the Antares project.
  */
 
+import { Aggregate, Column, TimeFrequency } from "./types";
 import {
-  MatrixIndex,
-  StudyOutputDownloadLevelDTO,
-} from "../../../common/types";
-import { ColumnTypes } from "./types";
-import { generateDateTime, generateTimeSeriesColumns } from "./utils";
+  calculateMatrixAggregates,
+  formatNumber,
+  generateCustomColumns,
+  generateDateTime,
+  generateTimeSeriesColumns,
+  getAggregateTypes,
+} from "./utils";
 
-describe("generateDateTime", () => {
-  test("generates correct number of dates", () => {
-    const metadata: MatrixIndex = {
-      start_date: "2023-01-01T00:00:00Z",
-      steps: 5,
-      first_week_size: 7,
-      level: StudyOutputDownloadLevelDTO.DAILY,
-    };
-    const result = generateDateTime(metadata);
-    expect(result).toHaveLength(5);
-  });
-
-  test.each([
-    {
-      level: "hourly",
-      start: "2023-01-01T00:00:00Z",
-      expected: [
-        "2023-01-01T00:00:00.000Z",
-        "2023-01-01T01:00:00.000Z",
-        "2023-01-01T02:00:00.000Z",
-      ],
-    },
-    {
-      level: "daily",
-      start: "2023-01-01T00:00:00Z",
-      expected: [
-        "2023-01-01T00:00:00.000Z",
-        "2023-01-02T00:00:00.000Z",
-        "2023-01-03T00:00:00.000Z",
-      ],
-    },
-    {
-      level: "weekly",
-      start: "2023-01-01T00:00:00Z",
-      expected: [
-        "2023-01-01T00:00:00.000Z",
-        "2023-01-08T00:00:00.000Z",
-        "2023-01-15T00:00:00.000Z",
-      ],
-    },
-    {
-      level: "monthly",
-      start: "2023-01-15T00:00:00Z",
-      expected: [
-        "2023-01-15T00:00:00.000Z",
-        "2023-02-15T00:00:00.000Z",
-        "2023-03-15T00:00:00.000Z",
-      ],
-    },
-    {
-      level: "annual",
-      start: "2020-02-29T00:00:00Z",
-      expected: ["2020-02-29T00:00:00.000Z", "2021-02-28T00:00:00.000Z"],
-    },
-  ] as const)(
-    "generates correct dates for $level level",
-    ({ level, start, expected }) => {
-      const metadata: MatrixIndex = {
-        start_date: start,
-        steps: expected.length,
-        first_week_size: 7,
-        level: level as MatrixIndex["level"],
-      };
-
-      const result = generateDateTime(metadata);
-
-      expect(result).toEqual(expected);
-    },
-  );
-
-  test("handles edge cases", () => {
-    const metadata: MatrixIndex = {
-      start_date: "2023-12-31T23:59:59Z",
-      steps: 2,
-      first_week_size: 7,
-      level: StudyOutputDownloadLevelDTO.HOURLY,
-    };
-    const result = generateDateTime(metadata);
-    expect(result).toEqual([
-      "2023-12-31T23:59:59.000Z",
-      "2024-01-01T00:59:59.000Z",
-    ]);
-  });
+// Mock date-fns for consistent date formatting
+vi.mock("date-fns", async () => {
+  const actual = (await vi.importActual(
+    "date-fns",
+  )) as typeof import("date-fns");
+  return {
+    ...actual,
+    format: vi.fn((date: Date, formatString: string) => {
+      if (formatString.includes("ww")) {
+        const weekNumber = actual.getWeek(date);
+        return `W ${weekNumber.toString().padStart(2, "0")}`;
+      }
+      return actual.format(date, formatString);
+    }),
+  };
 });
 
-describe("generateTimeSeriesColumns", () => {
-  test("generates correct number of columns", () => {
-    const result = generateTimeSeriesColumns({ count: 5 });
-    expect(result).toHaveLength(5);
+describe("Matrix Utils", () => {
+  // Test data and helpers
+  const TEST_DATA = {
+    dateConfig: {
+      start_date: "2023-01-01 00:00:00",
+      steps: 3,
+      first_week_size: 7,
+    },
+    matrix: [
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9],
+    ],
+  };
+
+  beforeAll(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2023-01-01 00:00:00"));
   });
 
-  test("generates columns with default options", () => {
-    const result = generateTimeSeriesColumns({ count: 3 });
-    expect(result).toEqual([
+  describe("DateTime Generation", () => {
+    const dateTimeTestCases = [
       {
-        id: "data1",
-        title: "TS 1",
-        type: ColumnTypes.Number,
-        style: "normal",
-        width: 50,
-        editable: true,
+        name: "annual format",
+        config: { ...TEST_DATA.dateConfig, level: TimeFrequency.Annual },
+        expected: [
+          "global.time.annual",
+          "global.time.annual",
+          "global.time.annual",
+        ],
       },
       {
-        id: "data2",
-        title: "TS 2",
-        type: ColumnTypes.Number,
-        style: "normal",
-        width: 50,
-        editable: true,
+        name: "monthly format",
+        config: { ...TEST_DATA.dateConfig, level: TimeFrequency.Monthly },
+        expected: ["Jan", "Feb", "Mar"],
       },
       {
-        id: "data3",
-        title: "TS 3",
-        type: ColumnTypes.Number,
-        style: "normal",
-        width: 50,
-        editable: true,
+        name: "weekly format",
+        config: {
+          ...TEST_DATA.dateConfig,
+          level: TimeFrequency.Weekly,
+          first_week_size: 1,
+        },
+        expected: ["W 01", "W 02", "W 03"],
       },
-    ]);
+      {
+        name: "daily format",
+        config: { ...TEST_DATA.dateConfig, level: TimeFrequency.Daily },
+        expected: ["Sun 1 Jan", "Mon 2 Jan", "Tue 3 Jan"],
+      },
+      {
+        name: "hourly format",
+        config: {
+          start_date: "2039-07-01 00:00:00",
+          steps: 3,
+          first_week_size: 7,
+          level: TimeFrequency.Hourly,
+        },
+        expected: ["Fri 1 Jul 00:00", "Fri 1 Jul 01:00", "Fri 1 Jul 02:00"],
+      },
+    ];
+
+    test.each(dateTimeTestCases)(
+      "generates correct $name",
+      ({ config, expected }) => {
+        const result = generateDateTime(config);
+        expect(result).toEqual(expected);
+      },
+    );
   });
 
-  test("generates columns with custom options", () => {
-    const result = generateTimeSeriesColumns({
-      count: 2,
-      startIndex: 10,
-      prefix: "Data",
-      width: 80,
-      editable: false,
+  describe("Time Series Column Generation", () => {
+    const columnTestCases = [
+      {
+        name: "default options",
+        input: { count: 3 },
+        expectedLength: 3,
+        validate: (result: ReturnType<typeof generateTimeSeriesColumns>) => {
+          expect(result[0]).toEqual({
+            id: "data1",
+            title: "TS 1",
+            type: Column.Number,
+            style: "normal",
+            editable: true,
+          });
+        },
+      },
+      {
+        name: "custom options",
+        input: { count: 2, startIndex: 10, prefix: "Data", editable: false },
+        expectedLength: 2,
+        validate: (result: ReturnType<typeof generateTimeSeriesColumns>) => {
+          expect(result[0]).toEqual({
+            id: "data10",
+            title: "Data 10",
+            type: Column.Number,
+            style: "normal",
+            editable: false,
+          });
+        },
+      },
+      {
+        name: "zero count",
+        input: { count: 0 },
+        expectedLength: 0,
+        validate: (result: ReturnType<typeof generateTimeSeriesColumns>) => {
+          expect(result).toEqual([]);
+        },
+      },
+      {
+        name: "large count",
+        input: { count: 1000 },
+        expectedLength: 1000,
+        validate: (result: ReturnType<typeof generateTimeSeriesColumns>) => {
+          expect(result[999].id).toBe("data1000");
+          expect(result[999].title).toBe("TS 1000");
+        },
+      },
+    ];
+
+    test.each(columnTestCases)(
+      "handles $name correctly",
+      ({ input, expectedLength, validate }) => {
+        const result = generateTimeSeriesColumns(input);
+        expect(result).toHaveLength(expectedLength);
+        validate(result);
+      },
+    );
+  });
+
+  describe("Matrix Aggregates Calculation", () => {
+    const aggregateTestCases = [
+      {
+        name: "simple matrix with all aggregates",
+        matrix: TEST_DATA.matrix,
+        aggregates: "all" as const,
+        expected: {
+          min: [1, 4, 7],
+          max: [3, 6, 9],
+          avg: [2, 5, 8],
+          total: [6, 15, 24],
+        },
+      },
+      {
+        name: "decimal numbers",
+        matrix: [
+          [1.1, 2.2, 3.3],
+          [4.4, 5.5, 6.6],
+        ],
+        aggregates: "all" as const,
+        expected: {
+          min: [1.1, 4.4],
+          max: [3.3, 6.6],
+          avg: [2, 6],
+          total: [7, 17],
+        },
+      },
+      {
+        name: "negative numbers",
+        matrix: [
+          [-1, -2, -3],
+          [-4, 0, 4],
+        ],
+        aggregates: "all" as const,
+        expected: {
+          min: [-3, -4],
+          max: [-1, 4],
+          avg: [-2, 0],
+          total: [-6, 0],
+        },
+      },
+    ];
+
+    test.each(aggregateTestCases)(
+      "calculates $name correctly",
+      ({ matrix, aggregates, expected }) => {
+        const aggregatesTypes = getAggregateTypes(aggregates);
+        const result = calculateMatrixAggregates(matrix, aggregatesTypes);
+        expect(result).toEqual(expected);
+      },
+    );
+  });
+
+  describe("Number Formatting", () => {
+    interface FormatTestCase {
+      description: string;
+      value: number | undefined;
+      maxDecimals?: number;
+      expected: string;
+    }
+
+    const formatTestCases: Array<{ name: string; cases: FormatTestCase[] }> = [
+      {
+        name: "integer numbers",
+        cases: [
+          {
+            description: "formats large number",
+            value: 1234567,
+            expected: "1 234 567",
+          },
+          {
+            description: "formats million",
+            value: 1000000,
+            expected: "1 000 000",
+          },
+          { description: "formats single digit", value: 1, expected: "1" },
+        ],
+      },
+      {
+        name: "decimal numbers",
+        cases: [
+          {
+            description: "formats with 2 decimals",
+            value: 1234.56,
+            maxDecimals: 2,
+            expected: "1 234.56",
+          },
+          {
+            description: "formats with 3 decimals",
+            value: 1000000.123,
+            maxDecimals: 3,
+            expected: "1 000 000.123",
+          },
+        ],
+      },
+      {
+        name: "special cases",
+        cases: [
+          {
+            description: "handles undefined",
+            value: undefined,
+            maxDecimals: 3,
+            expected: "",
+          },
+          { description: "handles zero", value: 0, expected: "0" },
+          {
+            description: "handles negative",
+            value: -1234567,
+            expected: "-1 234 567",
+          },
+          {
+            description: "handles very large number",
+            value: 1e20,
+            expected: "100 000 000 000 000 000 000",
+          },
+        ],
+      },
+    ];
+
+    describe.each(formatTestCases)("$name", ({ cases }) => {
+      test.each(cases)("$description", ({ value, maxDecimals, expected }) => {
+        expect(formatNumber({ value, maxDecimals })).toBe(expected);
+      });
     });
-    expect(result).toEqual([
-      {
-        id: "data10",
-        title: "Data 10",
-        type: ColumnTypes.Number,
-        style: "normal",
-        width: 80,
-        editable: false,
-      },
-      {
-        id: "data11",
-        title: "Data 11",
-        type: ColumnTypes.Number,
-        style: "normal",
-        width: 80,
-        editable: false,
-      },
-    ]);
   });
 
-  test("handles zero count", () => {
-    const result = generateTimeSeriesColumns({ count: 0 });
-    expect(result).toEqual([]);
-  });
+  describe("Custom Column Generation", () => {
+    test("generates columns with correct properties", () => {
+      const titles = ["Custom 1", "Custom 2", "Custom 3"];
+      const width = 100;
 
-  test("handles large count", () => {
-    const result = generateTimeSeriesColumns({ count: 1000 });
-    expect(result).toHaveLength(1000);
-    expect(result[999].id).toBe("data1000");
-    expect(result[999].title).toBe("TS 1000");
-  });
+      const result = generateCustomColumns({ titles, width });
+      expect(result).toHaveLength(3);
 
-  test("maintains consistent type and style", () => {
-    const result = generateTimeSeriesColumns({ count: 1000 });
-    result.forEach((column) => {
-      expect(column.type).toBe(ColumnTypes.Number);
-      expect(column.style).toBe("normal");
+      result.forEach((column, index) => {
+        expect(column).toEqual({
+          id: `custom${index + 1}`,
+          title: titles[index],
+          type: Column.Number,
+          style: "normal",
+          width,
+          editable: true,
+        });
+      });
     });
+  });
+
+  describe("Aggregate Type Configuration", () => {
+    const aggregateConfigCases = [
+      {
+        name: "stats configuration",
+        aggregates: "stats" as const,
+        expected: [Aggregate.Avg, Aggregate.Min, Aggregate.Max],
+      },
+      {
+        name: "all configuration",
+        aggregates: "all" as const,
+        expected: [
+          Aggregate.Min,
+          Aggregate.Max,
+          Aggregate.Avg,
+          Aggregate.Total,
+        ],
+      },
+      {
+        name: "custom configuration",
+        aggregates: [Aggregate.Min, Aggregate.Max],
+        expected: [Aggregate.Min, Aggregate.Max],
+      },
+    ];
+
+    test.each(aggregateConfigCases)(
+      "handles $name correctly",
+      ({ aggregates, expected }) => {
+        expect(getAggregateTypes(aggregates)).toEqual(expected);
+      },
+    );
   });
 });

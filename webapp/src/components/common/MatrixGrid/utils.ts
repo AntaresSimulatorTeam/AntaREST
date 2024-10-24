@@ -12,15 +12,38 @@
  * This file is part of the Antares project.
  */
 
-import moment from "moment";
 import {
-  DateIncrementStrategy,
   EnhancedGridColumn,
-  ColumnTypes,
+  TimeSeriesColumnOptions,
+  CustomColumnOptions,
+  MatrixAggregates,
+  AggregateType,
+  AggregateConfig,
+  DateIncrementFunction,
+  FormatFunction,
+  TimeFrequency,
+  TimeFrequencyType,
+  DateTimeMetadataDTO,
+  Aggregate,
+  Column,
+  FormatNumberOptions,
 } from "./types";
+import {
+  type FirstWeekContainsDate,
+  parseISO,
+  addHours,
+  addDays,
+  addWeeks,
+  addMonths,
+  addYears,
+  format,
+  startOfWeek,
+  Locale,
+} from "date-fns";
+import { fr, enUS } from "date-fns/locale";
 import { getCurrentLanguage } from "../../../utils/i18nUtils";
 import { Theme } from "@glideapps/glide-data-grid";
-import { MatrixIndex } from "../../../common/types";
+import { t } from "i18next";
 
 export const darkTheme: Theme = {
   accentColor: "rgba(255, 184, 0, 0.9)",
@@ -60,7 +83,7 @@ export const darkTheme: Theme = {
 export const readOnlyDarkTheme: Partial<Theme> = {
   bgCell: "#1A1C2A",
   bgCellMedium: "#22243A",
-  textDark: "#A0A0A0",
+  textDark: "#FAF9F6",
   textMedium: "#808080",
   textLight: "#606060",
   accentColor: "#4A4C66",
@@ -69,24 +92,14 @@ export const readOnlyDarkTheme: Partial<Theme> = {
   drilldownBorder: "rgba(255, 255, 255, 0.2)",
 };
 
-const dateIncrementStrategies: Record<
-  MatrixIndex["level"],
-  DateIncrementStrategy
-> = {
-  hourly: (date, step) => date.clone().add(step, "hours"),
-  daily: (date, step) => date.clone().add(step, "days"),
-  weekly: (date, step) => date.clone().add(step, "weeks"),
-  monthly: (date, step) => date.clone().add(step, "months"),
-  annual: (date, step) => date.clone().add(step, "years"),
-};
-
-const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-  timeZone: "UTC", // Ensures consistent UTC-based time representation
+export const aggregatesTheme: Partial<Theme> = {
+  bgCell: "#3D3E5F",
+  bgCellMedium: "#383A5C",
+  textDark: "#FFFFFF",
+  fontFamily: "Inter, sans-serif",
+  baseFontStyle: "bold 13px",
+  editorFontSize: "13px",
+  headerFontStyle: "bold 11px",
 };
 
 ////////////////////////////////////////////////////////////////
@@ -94,77 +107,126 @@ const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
 ////////////////////////////////////////////////////////////////
 
 /**
- * Formats a date and time string using predefined locale and format options.
+ * Formats a number by adding thousand separators.
  *
- * This function takes a date/time string, creates a Date object from it,
- * and then formats it according to the specified options. The formatting
- * is done using the French locale as the primary choice, falling back to
- * English if French is not available.
+ * This function is particularly useful for displaying load factors,
+ * which are numbers between 0 and 1. For load factors, a maximum of
+ * 6 decimal places should be displayed. For statistics, a maximum of
+ * 3 decimal places is recommended.
  *
- * Important: This function will always return the time in UTC, regardless
- * of the system's local time zone. This behavior is controlled by the
- * 'timeZone' option in dateTimeFormatOptions.
- *
- * @param dateTime - The date/time string to format. This should be an ISO 8601 string (e.g., "2024-01-01T00:00:00Z").
- * @returns The formatted date/time string in the format specified by dateTimeFormatOptions, always in UTC.
- *
- * @example <caption>returns "1 janv. 2024, 00:00" (French locale)</caption>
- * formatDateTime("2024-01-01T00:00:00Z")
- *
- * @example <caption>returns "Jan 1, 2024, 12:00 AM" (English locale)</caption>
- * formatDateTime("2024-01-01T00:00:00Z")
+ * @param options - The options for formatting the number.
+ * @param options.value - The number to format.
+ * @param options.maxDecimals - The maximum number of decimal places to keep.
+ * @returns The formatted number as a string.
  */
-export function formatDateTime(dateTime: string): string {
-  const date = moment.utc(dateTime);
-  const currentLocale = getCurrentLanguage();
-  const locales = [currentLocale, "en-US"];
+export function formatNumber({
+  value,
+  maxDecimals = 0,
+}: FormatNumberOptions): string {
+  if (value === undefined) {
+    return "";
+  }
 
-  return date.toDate().toLocaleString(locales, dateTimeFormatOptions);
+  // Determine if we need to apply maxDecimals
+  const shouldFormatDecimals =
+    value % 1 !== 0 &&
+    maxDecimals > 0 &&
+    value.toString().split(".")[1].length > maxDecimals;
+
+  // Use toFixed only if we need to control decimals
+  const formattedValue = shouldFormatDecimals
+    ? value.toFixed(maxDecimals)
+    : value.toString();
+
+  const [integerPart, decimalPart] = formattedValue.split(".");
+
+  const formattedInteger = integerPart
+    .split("")
+    .reverse()
+    .reduce((acc, digit, index) => {
+      if (index > 0 && index % 3 === 0) {
+        return digit + " " + acc;
+      }
+      return digit + acc;
+    }, "");
+
+  return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+}
+
+function getLocale(): Locale {
+  const lang = getCurrentLanguage();
+  return lang && lang.startsWith("fr") ? fr : enUS;
 }
 
 /**
- * Generates an array of date-time strings based on the provided time metadata.
+ * Configuration object for different time frequencies
  *
- * This function creates a series of date-time strings, starting from the given start date
- * and incrementing based on the specified level (hourly, daily, weekly, monthly, or yearly).
- * It uses the Moment.js library for date manipulation and the ISO 8601 format for date-time strings.
- *
- * @param timeMetadata - The time metadata object.
- * @param timeMetadata.start_date - The starting date-time in ISO 8601 format (e.g., "2023-01-01T00:00:00Z").
- * @param timeMetadata.steps - The number of date-time strings to generate.
- * @param timeMetadata.level - The increment level for date-time generation.
- *
- * @returns An array of ISO 8601 formatted date-time strings.
- *
- * @example
- * const result = generateDateTime({
- *   start_date: "2023-01-01T00:00:00Z",
- *   steps: 3,
- *   level: "daily"
- * });
- *
- *  Returns: [
- *    "2023-01-01T00:00:00.000Z",
- *    "2023-01-02T00:00:00.000Z",
- *    "2023-01-03T00:00:00.000Z"
- *  ]
- *
- * @see {@link MatrixIndex} for the structure of the timeMetadata object.
- * @see {@link DateIncrementStrategy} for the date increment strategy type.
+ * This object defines how to increment and format dates for various time frequencies.
+ * The WEEKLY frequency is of particular interest as it implements custom week starts
+ * and handles ISO week numbering.
  */
-export function generateDateTime({
-  // eslint-disable-next-line camelcase
-  start_date,
-  steps,
-  level,
-}: MatrixIndex): string[] {
-  const startDate = moment.utc(start_date, "YYYY-MM-DD HH:mm:ss");
-  const incrementStrategy = dateIncrementStrategies[level];
+const TIME_FREQUENCY_CONFIG: Record<
+  TimeFrequencyType,
+  {
+    increment: DateIncrementFunction;
+    format: FormatFunction;
+  }
+> = {
+  [TimeFrequency.Annual]: {
+    increment: addYears,
+    format: () => t("global.time.annual"),
+  },
+  [TimeFrequency.Monthly]: {
+    increment: addMonths,
+    format: (date: Date) => format(date, "MMM", { locale: getLocale() }),
+  },
+  [TimeFrequency.Weekly]: {
+    increment: addWeeks,
+    format: (date: Date, firstWeekSize: number) => {
+      const weekStart = startOfWeek(date, { locale: getLocale() });
 
-  return Array.from({ length: steps }, (_, i) =>
-    incrementStrategy(startDate, i).toISOString(),
-  );
-}
+      return format(weekStart, `'${t("global.time.weekShort")}' ww`, {
+        locale: getLocale(),
+        weekStartsOn: firstWeekSize === 1 ? 0 : 1,
+        firstWeekContainsDate: firstWeekSize as FirstWeekContainsDate,
+      });
+    },
+  },
+  [TimeFrequency.Daily]: {
+    increment: addDays,
+    format: (date: Date) => format(date, "EEE d MMM", { locale: getLocale() }),
+  },
+  [TimeFrequency.Hourly]: {
+    increment: addHours,
+    format: (date: Date) =>
+      format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
+  },
+};
+
+/**
+ * Generates an array of formatted date/time strings based on the provided configuration
+ *
+ * This function handles various time frequencies, with special attention to weekly formatting.
+ * For weekly frequency, it respects custom week starts while maintaining ISO week numbering.
+ *
+ * @param config - Configuration object for date/time generation
+ * @param config.start_date - The starting date for generation
+ * @param config.steps - Number of increments to generate
+ * @param config.first_week_size - Defines the number of days for the first the week (from 1 to 7)
+ * @param config.level - The time frequency level (ANNUAL, MONTHLY, WEEKLY, DAILY, HOURLY)
+ * @returns An array of formatted date/time strings
+ */
+export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
+  // eslint-disable-next-line camelcase
+  const { start_date, steps, first_week_size, level } = config;
+  const { increment, format } = TIME_FREQUENCY_CONFIG[level];
+  const initialDate = parseISO(start_date);
+
+  return Array.from({ length: steps }, (_, index) => {
+    const date = increment(initialDate, index);
+    return format(date, first_week_size);
+  });
+};
 
 /**
  * Generates an array of EnhancedGridColumn objects representing time series data columns.
@@ -180,35 +242,147 @@ export function generateDateTime({
  *
  * @example <caption>Usage within a column definition array</caption>
  * const columns = [
- *   { id: "rowHeaders", title: "", type: ColumnTypes.Text, ... },
- *   { id: "date", title: "Date", type: ColumnTypes.DateTime, ... },
+ *   { id: "rowHeaders", title: "", type: Column.Text, ... },
+ *   { id: "date", title: "Date", type: Column.DateTime, ... },
  *   ...generateTimeSeriesColumns({ count: 60 }),
- *   { id: "min", title: "Min", type: ColumnTypes.Aggregate, ... },
- *   { id: "max", title: "Max", type: ColumnTypes.Aggregate, ... },
- *   { id: "avg", title: "Avg", type: ColumnTypes.Aggregate, ... }
+ *   { id: "min", title: "Min", type: Column.Aggregate, ... },
+ *   { id: "max", title: "Max", type: Column.Aggregate, ... },
+ *   { id: "avg", title: "Avg", type: Column.Aggregate, ... }
  * ];
  */
 export function generateTimeSeriesColumns({
   count,
   startIndex = 1,
   prefix = "TS",
-  width = 50,
+  width,
   editable = true,
   style = "normal",
-}: {
-  count: number;
-  startIndex?: number;
-  prefix?: string;
-  width?: number;
-  editable?: boolean;
-  style?: "normal" | "highlight";
-}): EnhancedGridColumn[] {
+}: TimeSeriesColumnOptions): EnhancedGridColumn[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `data${startIndex + index}`,
     title: `${prefix} ${startIndex + index}`,
-    type: ColumnTypes.Number,
-    style: style,
-    width: width,
-    editable: editable,
+    type: Column.Number,
+    style,
+    width,
+    editable,
   }));
+}
+
+/**
+ * Generates custom columns for a matrix grid.
+ *
+ * @param customColumns - An array of strings representing the custom column titles.
+ * @param customColumns.titles - The titles of the custom columns.
+ * @param customColumns.width - The width of each custom column.
+ * @returns An array of EnhancedGridColumn objects representing the generated custom columns.
+ */
+export function generateCustomColumns({
+  titles,
+  width,
+}: CustomColumnOptions): EnhancedGridColumn[] {
+  return titles.map((title, index) => ({
+    id: `custom${index + 1}`,
+    title,
+    type: Column.Number,
+    style: "normal",
+    width,
+    editable: true,
+  }));
+}
+
+/**
+ * Generates an array of data columns for a matrix grid.
+ *
+ * @param enableTimeSeriesColumns - A boolean indicating whether to enable time series columns.
+ * @param columnCount - The number of columns to generate.
+ * @param customColumns - An optional array of custom column titles.
+ * @param colWidth - The width of each column.
+ * @returns An array of EnhancedGridColumn objects representing the generated data columns.
+ */
+export function generateDataColumns(
+  enableTimeSeriesColumns: boolean,
+  columnCount: number,
+  customColumns?: string[] | readonly string[],
+  colWidth?: number,
+): EnhancedGridColumn[] {
+  // If custom columns are provided, use them
+  if (customColumns) {
+    return generateCustomColumns({ titles: customColumns, width: colWidth });
+  }
+
+  // Else, generate time series columns if enabled
+  if (enableTimeSeriesColumns) {
+    return generateTimeSeriesColumns({ count: columnCount });
+  }
+
+  return [];
+}
+
+/**
+ * Determines the aggregate types based on the provided configuration.
+ *
+ * @param aggregateConfig - The configuration for aggregates.
+ * @returns An array of AggregateType.
+ */
+export function getAggregateTypes(
+  aggregateConfig: AggregateConfig,
+): AggregateType[] {
+  if (aggregateConfig === "stats") {
+    return [Aggregate.Avg, Aggregate.Min, Aggregate.Max];
+  }
+
+  if (aggregateConfig === "all") {
+    return [Aggregate.Min, Aggregate.Max, Aggregate.Avg, Aggregate.Total];
+  }
+
+  if (Array.isArray(aggregateConfig)) {
+    return aggregateConfig;
+  }
+
+  return [];
+}
+
+/**
+ * Calculates matrix aggregates based on the provided matrix and aggregate types.
+ *
+ * @param matrix - The input matrix of numbers.
+ * @param aggregateTypes - The types of aggregates to calculate.
+ * @returns An object containing the calculated aggregates.
+ */
+export function calculateMatrixAggregates(
+  matrix: number[][],
+  aggregateTypes: AggregateType[],
+): Partial<MatrixAggregates> {
+  const aggregates: Partial<MatrixAggregates> = {};
+
+  matrix.forEach((row) => {
+    if (aggregateTypes.includes(Aggregate.Min)) {
+      aggregates.min = aggregates.min || [];
+      aggregates.min.push(Math.min(...row));
+    }
+
+    if (aggregateTypes.includes(Aggregate.Max)) {
+      aggregates.max = aggregates.max || [];
+      aggregates.max.push(Math.max(...row));
+    }
+
+    if (
+      aggregateTypes.includes(Aggregate.Avg) ||
+      aggregateTypes.includes(Aggregate.Total)
+    ) {
+      const sum = row.reduce((acc, num) => acc + num, 0);
+
+      if (aggregateTypes.includes(Aggregate.Avg)) {
+        aggregates.avg = aggregates.avg || [];
+        aggregates.avg.push(Number((sum / row.length).toFixed()));
+      }
+
+      if (aggregateTypes.includes(Aggregate.Total)) {
+        aggregates.total = aggregates.total || [];
+        aggregates.total.push(Number(sum.toFixed()));
+      }
+    }
+  });
+
+  return aggregates;
 }

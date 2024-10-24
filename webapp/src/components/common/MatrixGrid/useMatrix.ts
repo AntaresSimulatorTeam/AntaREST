@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import { MatrixIndex, Operator } from "../../../common/types";
+import { MatrixIndex } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import {
   getStudyMatrixIndex,
@@ -26,25 +26,44 @@ import { getStudyData } from "../../../services/api/study";
 import {
   EnhancedGridColumn,
   MatrixDataDTO,
-  ColumnTypes,
   GridUpdate,
   MatrixUpdateDTO,
+  MatrixAggregates,
+  AggregateConfig,
+  Column,
+  Operation,
+  Aggregate,
 } from "./types";
-import { generateDateTime, generateTimeSeriesColumns } from "./utils";
+import {
+  aggregatesTheme,
+  calculateMatrixAggregates,
+  generateDataColumns,
+  generateDateTime,
+  getAggregateTypes,
+} from "./utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 import { importFile } from "../../../services/api/studies/raw";
+import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import usePrompt from "../../../hooks/usePrompt";
 
 interface DataState {
-  data: number[][];
+  data: MatrixDataDTO["data"];
+  aggregates: Partial<MatrixAggregates>;
   pendingUpdates: MatrixUpdateDTO[];
+  updateCount: number;
 }
 
 export function useMatrix(
   studyId: string,
   url: string,
+  enableDateTimeColumn: boolean,
   enableTimeSeriesColumns: boolean,
-  enableAggregateColumns: boolean,
+  enableRowHeaders?: boolean,
+  aggregatesConfig?: AggregateConfig,
+  customColumns?: string[] | readonly string[],
+  colWidth?: number,
+  fetchMatrixData?: fetchMatrixFn,
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [columnCount, setColumnCount] = useState(0);
@@ -53,86 +72,128 @@ export function useMatrix(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
   const [{ present: currentState }, { set: setState, undo, redo, canRedo }] =
-    useUndo<DataState>({ data: [], pendingUpdates: [] });
+    useUndo<DataState>({
+      data: [],
+      aggregates: { min: [], max: [], avg: [], total: [] },
+      pendingUpdates: [],
+      updateCount: 0,
+    });
 
-  const fetchMatrix = useCallback(async () => {
-    setIsLoading(true);
+  // Determine the aggregate types to display in the matrix
+  const aggregateTypes = useMemo(
+    () => getAggregateTypes(aggregatesConfig || []),
+    [aggregatesConfig],
+  );
+
+  // Display warning prompts to prevent unintended navigation
+  // 1. When the matrix is currently being submitted
+  usePrompt(t("form.submit.inProgress"), isSubmitting);
+  // 2. When there are unsaved changes in the matrix
+  usePrompt(t("form.changeNotSaved"), currentState.pendingUpdates.length > 0);
+
+  const fetchMatrix = async (loadingState = true) => {
+    // !NOTE This is a temporary solution to ensure the matrix is up to date
+    // TODO: Remove this once the matrix API is updated to return the correct data
+    if (loadingState) {
+      setIsLoading(true);
+    }
+
     try {
       const [matrix, index] = await Promise.all([
-        getStudyData<MatrixDataDTO>(studyId, url),
+        fetchMatrixData
+          ? // If a custom fetch function is provided, use it
+            fetchMatrixData(studyId)
+          : getStudyData<MatrixDataDTO>(studyId, url, 1),
         getStudyMatrixIndex(studyId, url),
       ]);
 
-      setState({ data: matrix.data, pendingUpdates: [] });
+      setState({
+        data: matrix.data,
+        aggregates: calculateMatrixAggregates(matrix.data, aggregateTypes),
+        pendingUpdates: [],
+        updateCount: 0,
+      });
       setColumnCount(matrix.columns.length);
       setIndex(index);
       setIsLoading(false);
+
+      return {
+        matrix,
+        index,
+      };
     } catch (error) {
       setError(new Error(t("data.error.matrix")));
       enqueueErrorSnackbar(t("data.error.matrix"), error as AxiosError);
     } finally {
       setIsLoading(false);
     }
-  }, [enqueueErrorSnackbar, setState, studyId, url]);
+  };
 
   useEffect(() => {
     fetchMatrix();
-  }, [fetchMatrix]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studyId, url, aggregateTypes, fetchMatrixData]);
 
   const dateTime = useMemo(() => {
     return index ? generateDateTime(index) : [];
   }, [index]);
 
-  const columns: EnhancedGridColumn[] = useMemo(() => {
+  const columns = useMemo(() => {
     if (!currentState.data) {
       return [];
     }
 
-    const baseColumns = [
-      {
+    const baseColumns: EnhancedGridColumn[] = [];
+
+    if (enableDateTimeColumn) {
+      baseColumns.push({
         id: "date",
         title: "Date",
-        type: ColumnTypes.DateTime,
+        type: Column.DateTime,
         editable: false,
-      },
-    ];
+        themeOverride: { bgCell: "#2D2E40" },
+      });
+    }
 
-    const dataColumns = enableTimeSeriesColumns
-      ? generateTimeSeriesColumns({ count: columnCount })
-      : [];
+    if (enableRowHeaders) {
+      baseColumns.unshift({
+        id: "rowHeaders",
+        title: "",
+        type: Column.Text,
+        editable: false,
+      });
+    }
 
-    const aggregateColumns = enableAggregateColumns
-      ? [
-          {
-            id: "min",
-            title: "Min",
-            type: ColumnTypes.Aggregate,
-            width: 50,
-            editable: false,
-          },
-          {
-            id: "max",
-            title: "Max",
-            type: ColumnTypes.Aggregate,
-            width: 50,
-            editable: false,
-          },
-          {
-            id: "avg",
-            title: "Avg",
-            type: ColumnTypes.Aggregate,
-            width: 50,
-            editable: false,
-          },
-        ]
-      : [];
+    const dataColumns = generateDataColumns(
+      enableTimeSeriesColumns,
+      columnCount,
+      customColumns,
+      colWidth,
+    );
 
-    return [...baseColumns, ...dataColumns, ...aggregateColumns];
+    const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map(
+      (aggregateType) => ({
+        id: aggregateType,
+        title: aggregateType.charAt(0).toUpperCase() + aggregateType.slice(1), // Capitalize first letter
+        type: Column.Aggregate,
+        editable: false,
+        themeOverride:
+          aggregateType === Aggregate.Avg
+            ? aggregatesTheme
+            : { ...aggregatesTheme, bgCell: "#464770" },
+      }),
+    );
+
+    return [...baseColumns, ...dataColumns, ...aggregatesColumns];
   }, [
     currentState.data,
+    enableDateTimeColumn,
+    enableRowHeaders,
     enableTimeSeriesColumns,
     columnCount,
-    enableAggregateColumns,
+    customColumns,
+    colWidth,
+    aggregateTypes,
   ]);
 
   // Apply updates to the matrix data and store them in the pending updates list
@@ -142,13 +203,13 @@ export function useMatrix(
 
       const newUpdates: MatrixUpdateDTO[] = updates
         .map(({ coordinates: [row, col], value }) => {
-          if (value.kind === GridCellKind.Number && value.data) {
+          if (value.kind === GridCellKind.Number && value.data !== undefined) {
             updatedData[col][row] = value.data;
 
             return {
               coordinates: [[col, row]],
               operation: {
-                operation: Operator.EQ,
+                operation: Operation.Eq,
                 value: value.data,
               },
             };
@@ -160,12 +221,26 @@ export function useMatrix(
           (update): update is NonNullable<typeof update> => update !== null,
         );
 
+      // Recalculate aggregates with the updated data
+      const newAggregates = calculateMatrixAggregates(
+        updatedData,
+        aggregateTypes,
+      );
+
       setState({
         data: updatedData,
+        aggregates: newAggregates,
         pendingUpdates: [...currentState.pendingUpdates, ...newUpdates],
+        updateCount: currentState.updateCount + 1 || 1,
       });
     },
-    [currentState, setState],
+    [
+      currentState.data,
+      currentState.pendingUpdates,
+      currentState.updateCount,
+      aggregateTypes,
+      setState,
+    ],
   );
 
   const handleCellEdit = function (update: GridUpdate) {
@@ -191,12 +266,23 @@ export function useMatrix(
     }
 
     setIsSubmitting(true);
+
     try {
       await updateMatrix(studyId, url, currentState.pendingUpdates);
-      setState({ data: currentState.data, pendingUpdates: [] });
+
+      setState({
+        ...currentState,
+        pendingUpdates: [],
+        updateCount: 0,
+      });
+
       enqueueSnackbar(t("matrix.success.matrixUpdate"), {
         variant: "success",
       });
+
+      // !NOTE This is a temporary solution to ensure the matrix is up to date
+      // TODO: Remove this once the matrix API is updated to return the correct data
+      await fetchMatrix(false);
     } catch (error) {
       setError(new Error(t("matrix.error.matrixUpdate")));
       enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), error as AxiosError);
@@ -220,6 +306,7 @@ export function useMatrix(
 
   return {
     data: currentState.data,
+    aggregates: currentState.aggregates,
     error,
     isLoading,
     isSubmitting,
@@ -229,7 +316,7 @@ export function useMatrix(
     handleMultipleCellsEdit,
     handleImport,
     handleSaveUpdates,
-    pendingUpdatesCount: currentState.pendingUpdates.length,
+    pendingUpdatesCount: currentState.updateCount,
     undo: handleUndo,
     redo: handleRedo,
     canUndo: canUndoChanges,
