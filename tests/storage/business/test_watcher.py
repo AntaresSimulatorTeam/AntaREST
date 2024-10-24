@@ -117,68 +117,8 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
     )
 
 
-@pytest.mark.unit_test
-def test_scan(tmp_path: Path):
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
-    clean_files()
-
-    default = tmp_path / "default"
-    default.mkdir()
-    a = default / "studyA"
-    a.mkdir()
-    (a / "study.antares").touch()
-
-    diese = tmp_path / "diese"
-    diese.mkdir()
-    c = diese / "folder/studyC"
-    c.mkdir(parents=True)
-    (c / "study.antares").touch()
-
-    d = diese / "folder/trash"
-    d.mkdir(parents=True)
-    (d / "trash").touch()
-
-    e = diese / "folder/to_skip_folder"
-    e.mkdir(parents=True)
-    (e / "study.antares").touch()
-
-    f = diese / "folder/another_folder"
-    f.mkdir(parents=True)
-    (f / "AW_NO_SCAN").touch()
-    (f / "study.antares").touch()
-
-    service = Mock()
-    watcher = Watcher(build_config(tmp_path), service, task_service=SimpleSyncTaskService())
-
-    watcher.scan()
-
-    assert service.sync_studies_on_disk.call_count == 1
-    call = service.sync_studies_on_disk.call_args_list[0]
-    assert len(call.args[0]) == 1
-    assert call.args[0][0].path == c
-    assert call.args[0][0].workspace == "diese"
-    groups = call.args[0][0].groups
-    assert len(groups) == 1
-    assert groups[0].id == "tata"
-    assert groups[0].name == "tata"
-    assert call.args[1] is None
-
-
-@pytest.mark.unit_test
-def test_scan_recursive_false(tmp_path: Path, db_session: Session):
-    def count_studies():
-        return db_session.query(Study).count()
-
-    clean_files()
-
+@pytest.fixture
+def study_tree(tmp_path: Path) -> Path:
     """
     Create this hierarchy
 
@@ -197,8 +137,9 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
             │   └── study.antares
             └── subfolder
                 └── studyG
-                    └── study.antares   
+                    └── study.antares
     """
+
     default = tmp_path / "default"
     default.mkdir()
     a = default / "studyA"
@@ -215,15 +156,52 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
     d.mkdir(parents=True)
     (d / "trash").touch()
 
-    e = diese / "folder/to_skip_folder"
-    e.mkdir(parents=True)
-    (e / "study.antares").touch()
-
     f = diese / "folder/another_folder"
     f.mkdir(parents=True)
     (f / "AW_NO_SCAN").touch()
     (f / "study.antares").touch()
-    g = diese / "folder/subfolder/studyG"
+
+    return tmp_path
+
+
+@pytest.mark.unit_test
+def test_scan(study_tree: Path):
+    clean_files()
+
+    engine = create_engine("sqlite:///:memory:", echo=False)
+    Base.metadata.create_all(engine)
+    # noinspection SpellCheckingInspection
+    DBSessionMiddleware(
+        None,
+        custom_engine=engine,
+        session_args={"autocommit": False, "autoflush": False},
+    )
+
+    service = Mock()
+    watcher = Watcher(build_config(study_tree), service, task_service=SimpleSyncTaskService())
+
+    watcher.scan()
+
+    assert service.sync_studies_on_disk.call_count == 1
+    call = service.sync_studies_on_disk.call_args_list[0]
+    assert len(call.args[0]) == 1
+    assert call.args[0][0].path == study_tree / "diese/folder/studyC"
+    assert call.args[0][0].workspace == "diese"
+    groups = call.args[0][0].groups
+    assert len(groups) == 1
+    assert groups[0].id == "tata"
+    assert groups[0].name == "tata"
+    assert call.args[1] is None
+
+
+@pytest.mark.unit_test
+def test_scan_recursive_false(study_tree: Path, db_session: Session):
+    def count_studies():
+        return db_session.query(Study).count()
+
+    clean_files()
+
+    g = study_tree / "diese/folder/subfolder/studyG"
     g.mkdir(parents=True)
     (g / "study.antares").touch()
 
@@ -231,7 +209,7 @@ def test_scan_recursive_false(tmp_path: Path, db_session: Session):
     raw_study_service.get_study_information.side_effect = study_to_dto
     repository = StudyMetadataRepository(session=db_session, cache_service=Mock(spec=ICache))
     repository.delete = Mock()
-    config = build_config(tmp_path)
+    config = build_config(study_tree)
     service = build_study_service(raw_study_service, repository, config)
     watcher = Watcher(config, service, task_service=SimpleSyncTaskService())
 
