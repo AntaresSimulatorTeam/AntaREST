@@ -23,7 +23,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import CannotAcessInternalWorkspace
+from antarest.core.exceptions import CannotAccessInternalWorkspace
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
@@ -282,7 +282,7 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
     service = Mock()
     watcher = Watcher(build_config(tmp_path), service, task_service=SimpleSyncTaskService())
 
-    with pytest.raises(CannotAcessInternalWorkspace):
+    with pytest.raises(CannotAccessInternalWorkspace):
         watcher.scan(workspace_name="default", workspace_directory_path=default)
 
     with caplog.at_level(level=logging.INFO, logger="antarest.study.storage.utils"):
