@@ -195,6 +195,7 @@ class Watcher(IService):
             name=f"Scanning {workspace}/{path}",
             task_type=TaskType.SCAN,
             ref_id=None,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
