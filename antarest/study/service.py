@@ -58,6 +58,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
@@ -169,7 +170,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 def get_disk_usage(path: t.Union[str, Path]) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
-    if path.suffix.lower() in {".zip", ".7z"}:
+    if is_archive_format(path.suffix.lower()):
         return os.path.getsize(path)
     total_size = 0
     with os.scandir(path) as it:
@@ -1048,7 +1049,7 @@ class StudyService:
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}.zip", export_name, params.user
+            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name, params.user
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -1113,7 +1114,7 @@ class StudyService:
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
         export_name = f"Study output {study.name}/{output_uuid} export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{study_uuid}-{output_uuid}.zip",
+            f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}",
             export_name,
             params.user,
         )
@@ -1212,7 +1213,7 @@ class StudyService:
             self.storage_service.get_storage(study).delete(study)
         else:
             if isinstance(study, RawStudy):
-                os.unlink(self.storage_service.raw_study_service.get_archive_path(study))
+                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 
@@ -1471,7 +1472,7 @@ class StudyService:
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info("output added to study %s by user %s", uuid, params.get_user_id())
 
-        if output_id and isinstance(output, Path) and output.suffix == ".zip" and auto_unzip:
+        if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
             self.unarchive_output(uuid, output_id, not is_managed(study), params)
 
         return output_id
@@ -2058,7 +2059,7 @@ class StudyService:
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
-            os.unlink(self.storage_service.raw_study_service.get_archive_path(study_to_archive))
+            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
             self.repository.save(study_to_archive)
             self.event_bus.push(
                 Event(
@@ -2448,7 +2449,7 @@ class StudyService:
         workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         if workspace != DEFAULT_WORKSPACE_NAME:
             dest = Path(study.path) / "output" / output_id
-            src = Path(study.path) / "output" / f"{output_id}.zip"
+            src = Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}"
             task_id = self.task_service.add_worker_task(
                 TaskType.UNARCHIVE,
                 f"unarchive_{workspace}",
