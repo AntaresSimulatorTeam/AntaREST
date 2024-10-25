@@ -983,5 +983,5 @@
   "store_new_set": true,
   "archive_input_series": [],
   "enr_modelling": "aggregated",
-  "zip_path": null
+  "archive_path": null
 }

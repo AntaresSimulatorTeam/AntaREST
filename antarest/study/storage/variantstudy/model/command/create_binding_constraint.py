@@ -503,6 +503,9 @@ def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set
 
     NOTE: this update can be very long if the scenario builder configuration is large.
     """
+    if not removed_groups:
+        return
+
     rulesets = study_data.tree.get(["settings", "scenariobuilder"])
 
     for ruleset in rulesets.values():

@@ -254,7 +254,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {fred_credentials["refresh_token"]}'},
     )
     fred_credentials = res.json()
-    res = client.post(
+    client.post(
         f"/v1/studies?name=bar&groups={group_id}",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
@@ -1555,7 +1555,7 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
 
     res = client.get(f"/v1/studies/{study_id}")
     assert res.json()["archived"]
-    assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
     res = client.put(f"/v1/studies/{study_id}/unarchive")
 
@@ -1564,12 +1564,12 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
         lambda: client.get(
             f"/v1/tasks/{task_id}",
         ).json()["status"]
-        == 3
+        == 3,
     )
 
     res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
-    assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert not (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:

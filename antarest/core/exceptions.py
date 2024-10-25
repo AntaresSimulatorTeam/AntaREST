@@ -666,3 +666,12 @@ class CannotScanInternalWorkspace(HTTPException):
 class ChildNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class BadArchiveContent(Exception):
+    """
+    Exception raised when the archive file is corrupted (or unknown).
+    """
+
+    def __init__(self, message: str = "Unsupported archive format") -> None:
+        super().__init__(message)
