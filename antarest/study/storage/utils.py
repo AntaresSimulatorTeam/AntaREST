@@ -29,6 +29,7 @@ from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 from antarest.core.config import Config, WorkspaceConfig
 from antarest.core.exceptions import (
     CannotAccessInternalWorkspace,
+    FolderNotFoundInWorkspace,
     StudyValidationError,
     UnsupportedStudyVersion,
     WorkspaceNotFound,
@@ -444,10 +445,10 @@ def get_workspace_from_config(config: Config, workspace_name: str, default_allow
 
 def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
     if not is_folder_safe(workspace, folder):
-        raise ValueError(f"Invalid path for folder: {folder}")
+        raise FolderNotFoundInWorkspace(f"Invalid path for folder: {folder} in workspace {workspace}")
     folder_path = workspace.path / folder
     if not folder_path.is_dir():
-        raise ValueError(f"Provided path is not dir: {folder}")
+        raise FolderNotFoundInWorkspace(f"Provided path is not dir: {folder} in workspace {workspace}")
     return folder_path
 
 
