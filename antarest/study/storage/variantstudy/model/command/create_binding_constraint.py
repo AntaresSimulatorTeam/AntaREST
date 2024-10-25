@@ -373,8 +373,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             old_groups = old_groups or set()
             new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
             removed_groups = old_groups - new_groups
-            if removed_groups:
-                remove_bc_from_scenario_builder(study_data, removed_groups)
+            remove_bc_from_scenario_builder(study_data, removed_groups)
 
         if self.values:
             if not isinstance(self.values, str):  # pragma: no cover
@@ -500,6 +499,9 @@ def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set
 
     NOTE: this update can be very long if the scenario builder configuration is large.
     """
+    if not removed_groups:
+        return
+
     rulesets = study_data.tree.get(["settings", "scenariobuilder"])
 
     for ruleset in rulesets.values():

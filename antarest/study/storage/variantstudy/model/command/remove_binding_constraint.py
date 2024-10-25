@@ -71,8 +71,7 @@ class RemoveBindingConstraint(ICommand):
             old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
             new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in new_binding_constraints.values()}
             removed_groups = old_groups - new_groups
-            if removed_groups:
-                remove_bc_from_scenario_builder(study_data, removed_groups)
+            remove_bc_from_scenario_builder(study_data, removed_groups)
 
         return self._apply_config(study_data.config)[0]
 

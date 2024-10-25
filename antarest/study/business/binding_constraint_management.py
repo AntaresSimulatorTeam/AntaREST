@@ -396,6 +396,40 @@ def _get_references_by_widths(
     return references_by_width
 
 
+def _generate_replace_matrix_commands(
+    bc_id: str,
+    study_version: StudyVersion,
+    value: ConstraintInput,
+    operator: BindingConstraintOperator,
+    command_context: CommandContext,
+) -> t.List[ICommand]:
+    commands: t.List[ICommand] = []
+    if study_version < STUDY_VERSION_8_7:
+        matrix = {
+            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
+            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
+            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
+        }[value.time_step].tolist()
+        command = ReplaceMatrix(
+            target=f"input/bindingconstraints/{bc_id}", matrix=matrix, command_context=command_context
+        )
+        commands.append(command)
+    else:
+        matrix = {
+            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
+            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
+            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
+        }[value.time_step].tolist()
+        matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[operator]
+        for matrix_name in matrices_to_replace:
+            matrix_id = matrix_name.format(bc_id=bc_id)
+            command = ReplaceMatrix(
+                target=f"input/bindingconstraints/{matrix_id}", matrix=matrix, command_context=command_context
+            )
+            commands.append(command)
+    return commands
+
+
 def _validate_binding_constraints(file_study: FileStudy, bcs: t.Sequence[ConstraintOutput]) -> bool:
     """
     Validates the binding constraints within a group.
@@ -866,7 +900,7 @@ class BindingConstraintManager:
 
             if value.time_step and value.time_step != BindingConstraintFrequency(current_value["type"]):
                 # The user changed the time step, we need to update the matrix accordingly
-                replace_matrix_commands = self._generate_replace_matrix_commands(
+                replace_matrix_commands = _generate_replace_matrix_commands(
                     bc_id, study_version, value, output.operator, command_context
                 )
                 commands.extend(replace_matrix_commands)
@@ -885,40 +919,6 @@ class BindingConstraintManager:
         commands.append(command)
         execute_or_add_commands(study, file_study, commands, self.storage_service)
         return updated_constraints
-
-    @staticmethod
-    def _generate_replace_matrix_commands(
-        bc_id: str,
-        study_version: StudyVersion,
-        value: ConstraintInput,
-        operator: BindingConstraintOperator,
-        command_context: CommandContext,
-    ) -> t.List[ICommand]:
-        commands: t.List[ICommand] = []
-        if study_version < STUDY_VERSION_8_7:
-            matrix = {
-                BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
-                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
-                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
-            }[value.time_step].tolist()
-            command = ReplaceMatrix(
-                target=f"input/bindingconstraints/{bc_id}", matrix=matrix, command_context=command_context
-            )
-            commands.append(command)
-        else:
-            matrix = {
-                BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
-                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
-                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
-            }[value.time_step].tolist()
-            matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[operator]
-            for matrix_name in matrices_to_replace:
-                matrix_id = matrix_name.format(bc_id=bc_id)
-                command = ReplaceMatrix(
-                    target=f"input/bindingconstraints/{matrix_id}", matrix=matrix, command_context=command_context
-                )
-                commands.append(command)
-        return commands
 
     def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
         """
