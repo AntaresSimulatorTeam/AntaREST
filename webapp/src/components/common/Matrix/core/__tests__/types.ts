@@ -12,11 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import Matrix from "../../../../../common/Matrix";
-import type { DataCompProps } from "../utils";
-
-function DebugMatrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
-  return <Matrix title={filename} url={filePath} isImportDisabled={!canEdit} />;
+export interface FormatTestCase {
+  description: string;
+  value: number | undefined;
+  maxDecimals?: number;
+  expected: string;
 }
-
-export default DebugMatrix;

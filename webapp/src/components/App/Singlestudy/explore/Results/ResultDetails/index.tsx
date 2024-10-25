@@ -53,12 +53,12 @@ import UsePromiseCond, {
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import ButtonBack from "../../../../../common/ButtonBack";
-import MatrixGrid from "../../../../../common/MatrixGrid/index.tsx";
+import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index.tsx";
 import {
   generateCustomColumns,
   generateDateTime,
-} from "../../../../../common/MatrixGrid/utils.ts";
-import { Column } from "../../../../../common/MatrixGrid/types.ts";
+} from "../../../../../common/Matrix/core/utils.ts";
+import { Column } from "@/components/common/Matrix/core/constants.ts";
 import SplitView from "../../../../../common/SplitView/index.tsx";
 import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";

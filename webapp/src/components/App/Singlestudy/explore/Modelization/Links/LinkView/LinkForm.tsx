@@ -27,7 +27,7 @@ import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";
 import { useFormContextPlus } from "../../../../../../common/Form";
-import Matrix from "../../../../../../common/MatrixGrid/Matrix";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   link: LinkElement;

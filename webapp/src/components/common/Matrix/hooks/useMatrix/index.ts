@@ -16,13 +16,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import { MatrixIndex } from "../../../common/types";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { MatrixIndex } from "../../../../../common/types";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   getStudyMatrixIndex,
   updateMatrix,
-} from "../../../services/api/matrix";
-import { getStudyData } from "../../../services/api/study";
+} from "../../../../../services/api/matrix";
+import { getStudyData } from "../../../../../services/api/study";
 import {
   EnhancedGridColumn,
   MatrixDataDTO,
@@ -30,22 +30,20 @@ import {
   MatrixUpdateDTO,
   MatrixAggregates,
   AggregateConfig,
-  Column,
-  Operation,
-  Aggregate,
-} from "./types";
+} from "../../core/types";
 import {
-  aggregatesTheme,
   calculateMatrixAggregates,
   generateDataColumns,
   generateDateTime,
   getAggregateTypes,
-} from "./utils";
+} from "../../core/utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
-import { importFile } from "../../../services/api/studies/raw";
-import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import usePrompt from "../../../hooks/usePrompt";
+import { importFile } from "../../../../../services/api/studies/raw";
+import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import usePrompt from "../../../../../hooks/usePrompt";
+import { Aggregate, Column, Operation } from "../../core/constants";
+import { aggregatesTheme } from "../../components/MatrixGrid/styles";
 
 interface DataState {
   data: MatrixDataDTO["data"];

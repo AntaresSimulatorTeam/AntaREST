@@ -13,7 +13,7 @@
  */
 
 import { Cluster } from "../../../../../../../common/types";
-import Matrix from "../../../../../../common/MatrixGrid/Matrix";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   areaId: string;

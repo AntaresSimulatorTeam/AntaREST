@@ -19,7 +19,7 @@ import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
 import { Cluster, StudyMetadata } from "../../../../../../../common/types";
 import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "./utils";
-import Matrix from "../../../../../../common/MatrixGrid/Matrix";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   study: StudyMetadata;

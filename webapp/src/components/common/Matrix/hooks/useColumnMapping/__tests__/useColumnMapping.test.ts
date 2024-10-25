@@ -13,51 +13,12 @@
  */
 
 import { renderHook } from "@testing-library/react";
-import { useColumnMapping } from "./useColumnMapping";
-import { EnhancedGridColumn, Column } from "./types";
-import type { ColumnType } from "./types";
+import { useColumnMapping } from "..";
 import { Item } from "@glideapps/glide-data-grid";
+import { createCoordinate, renderColumnMapping } from "./utils";
+import { COLUMNS } from "./fixtures";
 
 describe("useColumnMapping", () => {
-  // Test data factories
-  const createColumn = (
-    id: string,
-    type: ColumnType,
-    editable = false,
-  ): EnhancedGridColumn => ({
-    id,
-    title: id.charAt(0).toUpperCase() + id.slice(1),
-    type,
-    width: 100,
-    editable,
-  });
-
-  const createNumericColumn = (id: string) =>
-    createColumn(id, Column.Number, true);
-
-  const COLUMNS = {
-    mixed: [
-      createColumn("text", Column.Text),
-      createColumn("date", Column.DateTime),
-      createNumericColumn("num1"),
-      createNumericColumn("num2"),
-      createColumn("agg", Column.Aggregate),
-    ],
-    nonData: [
-      createColumn("text", Column.Text),
-      createColumn("date", Column.DateTime),
-    ],
-    dataOnly: [createNumericColumn("num1"), createNumericColumn("num2")],
-  };
-
-  // Helper function to create properly typed coordinates
-  const createCoordinate = (col: number, row: number): Item =>
-    [col, row] as Item;
-
-  // Helper function to render the hook
-  const renderColumnMapping = (columns: EnhancedGridColumn[]) =>
-    renderHook(() => useColumnMapping(columns));
-
   describe("hook initialization", () => {
     test("should create mapping functions", () => {
       const { result } = renderColumnMapping(COLUMNS.mixed);

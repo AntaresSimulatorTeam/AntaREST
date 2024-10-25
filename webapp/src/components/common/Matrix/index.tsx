@@ -13,18 +13,18 @@
  */
 
 import { Divider, Skeleton } from "@mui/material";
-import MatrixGrid from ".";
-import { useMatrix } from "./useMatrix";
+import MatrixGrid from "./components/MatrixGrid";
+import { useMatrix } from "./hooks/useMatrix";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ImportDialog from "../dialogs/ImportDialog";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../common/types";
-import { MatrixContainer, MatrixHeader, MatrixTitle } from "./style";
-import MatrixActions from "./MatrixActions";
+import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
+import MatrixActions from "./components/MatrixActions";
 import EmptyView from "../page/SimpleContent";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { AggregateConfig } from "./types";
+import { AggregateConfig } from "./core/types";
 
 interface MatrixProps {
   url: string;

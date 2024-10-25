@@ -15,7 +15,7 @@
 import {
   MatrixDataDTO,
   AggregateConfig,
-} from "../../../../../../common/MatrixGrid/types";
+} from "../../../../../../common/Matrix/core/types";
 import { SplitViewProps } from "../../../../../../common/SplitView";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";

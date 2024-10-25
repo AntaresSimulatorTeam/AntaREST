@@ -15,11 +15,20 @@
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Box from "@mui/material/Box";
-import MatrixGrid from ".";
-import SplitView from "../SplitView";
-import { type EnhancedGridColumn, Column, RenderMatrixOptions } from "./types";
-import { mockGetBoundingClientRect } from "../../../tests/mocks/mockGetBoundingClientRect";
-import { mockHTMLCanvasElement } from "../../../tests/mocks/mockHTMLCanvasElement";
+import MatrixGrid, { MatrixGridProps } from ".";
+import SplitView from "../../../SplitView";
+import type { EnhancedGridColumn } from "../../core/types";
+import { mockGetBoundingClientRect } from "../../../../../tests/mocks/mockGetBoundingClientRect";
+import { mockHTMLCanvasElement } from "../../../../../tests/mocks/mockHTMLCanvasElement";
+import { Column } from "../../core/constants";
+
+interface RenderMatrixOptions {
+  width?: string;
+  height?: string;
+  data?: MatrixGridProps["data"];
+  columns?: EnhancedGridColumn[];
+  rows?: number;
+}
 
 const setupMocks = () => {
   mockHTMLCanvasElement();

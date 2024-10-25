@@ -19,7 +19,7 @@ import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
 import { MatrixItem, StudyMetadata } from "../../../../../../../common/types";
 import SplitView from "../../../../../../common/SplitView";
-import Matrix from "../../../../../../common/MatrixGrid/Matrix";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   study: StudyMetadata;

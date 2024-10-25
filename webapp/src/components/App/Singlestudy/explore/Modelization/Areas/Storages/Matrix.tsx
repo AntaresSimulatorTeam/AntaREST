@@ -23,7 +23,7 @@ import {
 } from "../../../../../../../common/types";
 import { Storage } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
-import Matrix from "../../../../../../common/MatrixGrid/Matrix";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   study: StudyMetadata;

@@ -20,7 +20,7 @@ import { Box, Button } from "@mui/material";
 import BasicDialog, {
   BasicDialogProps,
 } from "../../../../../../common/dialogs/BasicDialog";
-import Matrix from "../../../../../../common/MatrixGrid/Matrix";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   study: StudyMetadata;

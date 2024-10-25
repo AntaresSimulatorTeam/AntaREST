@@ -17,47 +17,7 @@ import {
   EditableGridCell,
   Item,
 } from "@glideapps/glide-data-grid";
-import { MatrixGridProps } from ".";
-
-////////////////////////////////////////////////////////////////
-// Enums
-////////////////////////////////////////////////////////////////
-
-export const Column = {
-  DateTime: "datetime",
-  Number: "number",
-  Text: "text",
-  Aggregate: "aggregate",
-} as const;
-
-export const Operation = {
-  Add: "+",
-  Sub: "-",
-  Mul: "*",
-  Div: "/",
-  Abs: "ABS",
-  Eq: "=",
-} as const;
-
-// !NOTE: Keep lowercase to match Glide Data Grid column ids
-export const Aggregate = {
-  Min: "min",
-  Max: "max",
-  Avg: "avg",
-  Total: "total",
-} as const;
-
-export const TimeFrequency = {
-  Annual: "annual",
-  Monthly: "monthly",
-  Weekly: "weekly",
-  Daily: "daily",
-  Hourly: "hourly",
-} as const;
-
-////////////////////////////////////////////////////////////////
-// Types
-////////////////////////////////////////////////////////////////
+import { Aggregate, Column, Operation, TimeFrequency } from "./constants";
 
 // Derived types
 export type ColumnType = (typeof Column)[keyof typeof Column];
@@ -137,12 +97,4 @@ export interface MatrixUpdate {
 export interface MatrixUpdateDTO {
   coordinates: number[][]; // Array of [col, row] pairs
   operation: MatrixUpdate;
-}
-
-export interface RenderMatrixOptions {
-  width?: string;
-  height?: string;
-  data?: MatrixGridProps["data"];
-  columns?: EnhancedGridColumn[];
-  rows?: number;
 }

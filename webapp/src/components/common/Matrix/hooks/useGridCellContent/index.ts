@@ -18,19 +18,10 @@ import {
   type EnhancedGridColumn,
   type ColumnType,
   MatrixAggregates,
-  Column,
-} from "./types";
-import { formatNumber } from "./utils";
-
-type CellContentGenerator = (
-  row: number,
-  col: number,
-  column: EnhancedGridColumn,
-  data: number[][],
-  dateTime?: string[],
-  aggregates?: Partial<MatrixAggregates>,
-  rowHeaders?: string[],
-) => GridCell;
+} from "../../core/types";
+import { formatNumber } from "../../core/utils";
+import { Column } from "../../core/constants";
+import { type CellContentGenerator } from "./types";
 
 /**
  * Map of cell content generators for each column type.

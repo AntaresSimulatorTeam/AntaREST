@@ -13,98 +13,19 @@
  */
 
 import {
-  EnhancedGridColumn,
-  TimeSeriesColumnOptions,
-  CustomColumnOptions,
-  MatrixAggregates,
-  AggregateType,
-  AggregateConfig,
-  DateIncrementFunction,
-  FormatFunction,
-  TimeFrequency,
-  TimeFrequencyType,
-  DateTimeMetadataDTO,
-  Aggregate,
-  Column,
-  FormatNumberOptions,
-} from "./types";
-import {
-  type FirstWeekContainsDate,
-  parseISO,
-  addHours,
-  addDays,
-  addWeeks,
-  addMonths,
-  addYears,
-  format,
-  startOfWeek,
-  Locale,
-} from "date-fns";
+  type EnhancedGridColumn,
+  type TimeSeriesColumnOptions,
+  type CustomColumnOptions,
+  type MatrixAggregates,
+  type AggregateType,
+  type AggregateConfig,
+  type DateTimeMetadataDTO,
+  type FormatNumberOptions,
+} from "../core/types";
+import { parseISO, Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
-import { getCurrentLanguage } from "../../../utils/i18nUtils";
-import { Theme } from "@glideapps/glide-data-grid";
-import { t } from "i18next";
-
-export const darkTheme: Theme = {
-  accentColor: "rgba(255, 184, 0, 0.9)",
-  accentLight: "rgba(255, 184, 0, 0.2)",
-  accentFg: "#FFFFFF",
-  textDark: "#FFFFFF",
-  textMedium: "#C1C3D9",
-  textLight: "#A1A5B9",
-  textBubble: "#FFFFFF",
-  bgIconHeader: "#1E1F2E",
-  fgIconHeader: "#FFFFFF",
-  textHeader: "#FFFFFF",
-  textGroupHeader: "#C1C3D9",
-  bgCell: "#262737", // main background color
-  bgCellMedium: "#2E2F42",
-  bgHeader: "#1E1F2E",
-  bgHeaderHasFocus: "#2E2F42",
-  bgHeaderHovered: "#333447",
-  bgBubble: "#333447",
-  bgBubbleSelected: "#3C3E57",
-  bgSearchResult: "#6366F133",
-  borderColor: "rgba(255, 255, 255, 0.12)",
-  drilldownBorder: "rgba(255, 255, 255, 0.35)",
-  linkColor: "#818CF8",
-  headerFontStyle: "bold 11px",
-  baseFontStyle: "13px",
-  fontFamily: "Inter, sans-serif",
-  editorFontSize: "13px",
-  lineHeight: 1.5,
-  textHeaderSelected: "#FFFFFF",
-  cellHorizontalPadding: 8,
-  cellVerticalPadding: 5,
-  headerIconSize: 16,
-  markerFontStyle: "normal",
-};
-
-export const readOnlyDarkTheme: Partial<Theme> = {
-  bgCell: "#1A1C2A",
-  bgCellMedium: "#22243A",
-  textDark: "#FAF9F6",
-  textMedium: "#808080",
-  textLight: "#606060",
-  accentColor: "#4A4C66",
-  accentLight: "rgba(74, 76, 102, 0.2)",
-  borderColor: "rgba(255, 255, 255, 0.08)",
-  drilldownBorder: "rgba(255, 255, 255, 0.2)",
-};
-
-export const aggregatesTheme: Partial<Theme> = {
-  bgCell: "#3D3E5F",
-  bgCellMedium: "#383A5C",
-  textDark: "#FFFFFF",
-  fontFamily: "Inter, sans-serif",
-  baseFontStyle: "bold 13px",
-  editorFontSize: "13px",
-  headerFontStyle: "bold 11px",
-};
-
-////////////////////////////////////////////////////////////////
-// Functions
-////////////////////////////////////////////////////////////////
+import { getCurrentLanguage } from "@/utils/i18nUtils";
+import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
 
 /**
  * Formats a number by adding thousand separators.
@@ -153,55 +74,16 @@ export function formatNumber({
   return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
 
-function getLocale(): Locale {
+/**
+ * Retrieves the current locale based on the user's language setting.
+ *
+ * @returns  Returns either the French (fr) or English US (enUS) locale object
+ * depending on whether the current language starts with "fr"
+ */
+export function getLocale(): Locale {
   const lang = getCurrentLanguage();
   return lang && lang.startsWith("fr") ? fr : enUS;
 }
-
-/**
- * Configuration object for different time frequencies
- *
- * This object defines how to increment and format dates for various time frequencies.
- * The WEEKLY frequency is of particular interest as it implements custom week starts
- * and handles ISO week numbering.
- */
-const TIME_FREQUENCY_CONFIG: Record<
-  TimeFrequencyType,
-  {
-    increment: DateIncrementFunction;
-    format: FormatFunction;
-  }
-> = {
-  [TimeFrequency.Annual]: {
-    increment: addYears,
-    format: () => t("global.time.annual"),
-  },
-  [TimeFrequency.Monthly]: {
-    increment: addMonths,
-    format: (date: Date) => format(date, "MMM", { locale: getLocale() }),
-  },
-  [TimeFrequency.Weekly]: {
-    increment: addWeeks,
-    format: (date: Date, firstWeekSize: number) => {
-      const weekStart = startOfWeek(date, { locale: getLocale() });
-
-      return format(weekStart, `'${t("global.time.weekShort")}' ww`, {
-        locale: getLocale(),
-        weekStartsOn: firstWeekSize === 1 ? 0 : 1,
-        firstWeekContainsDate: firstWeekSize as FirstWeekContainsDate,
-      });
-    },
-  },
-  [TimeFrequency.Daily]: {
-    increment: addDays,
-    format: (date: Date) => format(date, "EEE d MMM", { locale: getLocale() }),
-  },
-  [TimeFrequency.Hourly]: {
-    increment: addHours,
-    format: (date: Date) =>
-      format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
-  },
-};
 
 /**
  * Generates an array of formatted date/time strings based on the provided configuration

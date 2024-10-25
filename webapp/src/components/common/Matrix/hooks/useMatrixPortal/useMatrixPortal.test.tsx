@@ -12,17 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useMatrixPortal } from "./useMatrixPortal";
+import { useMatrixPortal } from "../useMatrixPortal";
 
-// Test component without ref
 function NonRefComponent() {
   return <div data-testid="non-ref-container">Test Container</div>;
 }
 
-// Test component with ref
 function TestComponent() {
   const { containerRef, handleMouseEnter, handleMouseLeave } =
     useMatrixPortal();
@@ -40,21 +37,21 @@ function TestComponent() {
 
 describe("useMatrixPortal", () => {
   beforeEach(() => {
-    cleanup(); // Clean up after each test
+    cleanup();
     const existingPortal = document.getElementById("portal");
     if (existingPortal) {
       existingPortal.remove();
     }
   });
 
-  it("should create hidden portal initially", () => {
+  test("should create hidden portal initially", () => {
     render(<TestComponent />);
     const portal = document.getElementById("portal");
     expect(portal).toBeInTheDocument();
     expect(portal?.style.display).toBe("none");
   });
 
-  it("should show portal with correct styles when mouse enters", async () => {
+  test("should show portal with correct styles when mouse enters", async () => {
     const user = userEvent.setup();
     render(<TestComponent />);
 
@@ -70,7 +67,7 @@ describe("useMatrixPortal", () => {
     expect(portal?.style.zIndex).toBe("9999");
   });
 
-  it("should hide portal when mouse leaves", async () => {
+  test("should hide portal when mouse leaves", async () => {
     const user = userEvent.setup();
     render(<TestComponent />);
 
@@ -85,7 +82,7 @@ describe("useMatrixPortal", () => {
     expect(document.getElementById("portal")?.style.display).toBe("none");
   });
 
-  it("should keep portal hidden if containerRef is null", async () => {
+  test("should keep portal hidden if containerRef is null", async () => {
     const user = userEvent.setup();
 
     // First render test component to create portal
@@ -104,7 +101,7 @@ describe("useMatrixPortal", () => {
     expect(portal?.style.display).toBe("none");
   });
 
-  it("should handle multiple mouse enter/leave cycles", async () => {
+  test("should handle multiple mouse enter/leave cycles", async () => {
     const user = userEvent.setup();
     render(<TestComponent />);
 
@@ -126,7 +123,7 @@ describe("useMatrixPortal", () => {
     expect(portal?.style.display).toBe("none");
   });
 
-  it("should handle rapid mouse events", async () => {
+  test("should handle rapid mouse events", async () => {
     const user = userEvent.setup();
     render(<TestComponent />);
 
@@ -141,7 +138,7 @@ describe("useMatrixPortal", () => {
     expect(portal?.style.display).toBe("block");
   });
 
-  it("should maintain portal existence across multiple component instances", () => {
+  test("should maintain portal existence across multiple component instances", () => {
     // Render first instance
     const { unmount } = render(<TestComponent />);
     expect(document.getElementById("portal")).toBeInTheDocument();

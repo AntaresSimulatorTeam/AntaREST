@@ -14,7 +14,7 @@
 
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import Matrix from "../../../../../common/MatrixGrid/Matrix";
+import Matrix from "../../../../../common/Matrix";
 
 function Load() {
   const currentArea = useAppSelector(getCurrentAreaId);

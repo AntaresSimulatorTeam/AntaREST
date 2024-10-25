@@ -22,12 +22,16 @@ import DataEditor, {
   GridSelection,
   Item,
 } from "@glideapps/glide-data-grid";
-import { useGridCellContent } from "./useGridCellContent";
+import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useMemo, useState } from "react";
-import { EnhancedGridColumn, GridUpdate, MatrixAggregates } from "./types";
-import { darkTheme, readOnlyDarkTheme } from "./utils";
-import { useColumnMapping } from "./useColumnMapping";
-import { useMatrixPortal } from "./useMatrixPortal";
+import {
+  type EnhancedGridColumn,
+  type GridUpdate,
+  type MatrixAggregates,
+} from "../../core/types";
+import { useColumnMapping } from "../../hooks/useColumnMapping";
+import { useMatrixPortal } from "../../hooks/useMatrixPortal";
+import { darkTheme, readOnlyDarkTheme } from "./styles";
 
 export interface MatrixGridProps {
   data: number[][];

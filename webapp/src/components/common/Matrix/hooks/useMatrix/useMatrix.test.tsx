@@ -13,98 +13,95 @@
  */
 
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { vi, describe, expect, beforeEach } from "vitest";
-import { useMatrix } from "./useMatrix";
-import * as apiMatrix from "../../../services/api/matrix";
-import * as apiStudy from "../../../services/api/study";
-import * as rawStudy from "../../../services/api/studies/raw";
+import { useMatrix } from "../useMatrix";
+import * as apiMatrix from "@/services/api/matrix";
+import * as apiStudy from "@/services/api/study";
+import * as rawStudy from "@/services/api/studies/raw";
 import {
   MatrixEditDTO,
   MatrixIndex,
   Operator,
   StudyOutputDownloadLevelDTO,
-} from "../../../common/types";
-import { GridUpdate, MatrixDataDTO } from "./types";
+} from "@/common/types";
+import { GridUpdate, MatrixDataDTO } from "../../core/types";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
-// Mock external dependencies
-vi.mock("../../../services/api/matrix");
-vi.mock("../../../services/api/study");
-vi.mock("../../../services/api/studies/raw");
-vi.mock("../../../hooks/usePrompt");
+vi.mock("@/services/api/matrix");
+vi.mock("@/services/api/study");
+vi.mock("@/services/api/studies/raw");
+vi.mock("@/hooks/usePrompt");
 
-describe("useMatrix", () => {
-  // Test constants and fixtures
-  const DATA = {
-    studyId: "study123",
-    url: "https://studies/study123/matrix",
-    matrixData: {
-      data: [
-        [1, 2],
-        [3, 4],
-      ],
-      columns: [0, 1],
-      index: [0, 1],
-    } as MatrixDataDTO,
-    matrixIndex: {
-      start_date: "2023-01-01",
-      steps: 2,
-      first_week_size: 7,
-      level: StudyOutputDownloadLevelDTO.DAILY,
-    } as MatrixIndex,
-  };
+// TODO: refactor fixtures, utils functions, and types in dedicated files
+const DATA = {
+  studyId: "study123",
+  url: "https://studies/study123/matrix",
+  matrixData: {
+    data: [
+      [1, 2],
+      [3, 4],
+    ],
+    columns: [0, 1],
+    index: [0, 1],
+  } as MatrixDataDTO,
+  matrixIndex: {
+    start_date: "2023-01-01",
+    steps: 2,
+    first_week_size: 7,
+    level: StudyOutputDownloadLevelDTO.DAILY,
+  } as MatrixIndex,
+};
 
-  // Helper functions
-  const createGridUpdate = (
-    row: number,
-    col: number,
-    value: number,
-  ): GridUpdate => ({
-    coordinates: [row, col],
-    value: {
-      kind: GridCellKind.Number,
-      data: value,
-      displayData: value.toString(),
-      allowOverlay: true,
-    },
+const createGridUpdate = (
+  row: number,
+  col: number,
+  value: number,
+): GridUpdate => ({
+  coordinates: [row, col],
+  value: {
+    kind: GridCellKind.Number,
+    data: value,
+    displayData: value.toString(),
+    allowOverlay: true,
+  },
+});
+
+interface SetupOptions {
+  mockData?: MatrixDataDTO;
+  mockIndex?: MatrixIndex;
+}
+
+const setupHook = async ({
+  mockData = DATA.matrixData,
+  mockIndex = DATA.matrixIndex,
+}: SetupOptions = {}) => {
+  vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockData);
+  vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockIndex);
+
+  const hook = renderHook(() =>
+    useMatrix(DATA.studyId, DATA.url, true, true, true),
+  );
+
+  await waitFor(() => {
+    expect(hook.result.current.isLoading).toBe(false);
   });
 
-  interface SetupOptions {
-    mockData?: MatrixDataDTO;
-    mockIndex?: MatrixIndex;
-  }
+  return hook;
+};
 
-  const setupHook = async ({
-    mockData = DATA.matrixData,
-    mockIndex = DATA.matrixIndex,
-  }: SetupOptions = {}) => {
-    vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockData);
-    vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockIndex);
+const performEdit = async (
+  hook: Awaited<ReturnType<typeof setupHook>>,
+  updates: GridUpdate | GridUpdate[],
+) => {
+  act(() => {
+    if (Array.isArray(updates)) {
+      hook.result.current.handleMultipleCellsEdit(updates);
+    } else {
+      hook.result.current.handleCellEdit(updates);
+    }
+  });
+};
 
-    const hook = renderHook(() =>
-      useMatrix(DATA.studyId, DATA.url, true, true, true),
-    );
-
-    await waitFor(() => {
-      expect(hook.result.current.isLoading).toBe(false);
-    });
-
-    return hook;
-  };
-
-  const performEdit = async (
-    hook: Awaited<ReturnType<typeof setupHook>>,
-    updates: GridUpdate | GridUpdate[],
-  ) => {
-    act(() => {
-      if (Array.isArray(updates)) {
-        hook.result.current.handleMultipleCellsEdit(updates);
-      } else {
-        hook.result.current.handleCellEdit(updates);
-      }
-    });
-  };
-
+describe("useMatrix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
