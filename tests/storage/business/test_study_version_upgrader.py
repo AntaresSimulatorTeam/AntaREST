@@ -227,6 +227,12 @@ def assert_inputs_are_updated(tmp_path: Path, old_area_values: dict, old_binding
 
     # tests 8.1 upgrade
     assert_folder_is_created(input_path / "renewables")
+    thermal_cluster_dir = input_path / "thermal" / "clusters"
+    for area in thermal_cluster_dir.iterdir():
+        ini_path = thermal_cluster_dir / area / "list.ini"
+        sections = IniReader().read(ini_path)
+        for section in sections.values():
+            assert section["group"].lower() != "other"
 
     # tests 8.2 upgrade
     links = glob.glob(str(tmp_path / "input" / "links" / "*"))
