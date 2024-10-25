@@ -168,15 +168,6 @@ def study_tree(tmp_path: Path) -> Path:
 def test_scan(study_tree: Path):
     clean_files()
 
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-
     service = Mock()
     watcher = Watcher(build_config(study_tree), service, task_service=SimpleSyncTaskService())
 

@@ -39,7 +39,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",
-        summary="For a fiven directory, list sub directories that arend't studies",
+        summary="For a given directory, list sub directories that aren't studies",
         response_model=List[NonStudyFolder],
     )
     def list_dir(
