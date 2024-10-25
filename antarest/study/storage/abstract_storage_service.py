@@ -14,6 +14,7 @@ import logging
 import shutil
 import tempfile
 import typing as t
+import zipfile
 from abc import ABC
 from pathlib import Path
 from uuid import uuid4
@@ -43,7 +44,6 @@ from antarest.study.model import (
 )
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
@@ -186,10 +186,10 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         results: t.List[StudySimResultDTO] = []
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
-            for output in study_data.config.outputs:
-                output_data: Simulation = study_data.config.outputs[output]
+            for output, output_data in study_data.config.outputs.items():
                 try:
-                    file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
+                    output_file = output_data.get_file()
+                    file_metadata = FileStudyHelpers.get_config(study_data, output_file)
                     settings = StudySimSettingsDTO(
                         general=file_metadata["general"],
                         input=file_metadata["input"],
@@ -203,7 +203,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
                     results.append(
                         StudySimResultDTO(
-                            name=output_data.get_file(),
+                            name=output_file,
                             type=output_data.mode,
                             settings=settings,
                             completionDate="",
@@ -244,24 +244,26 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study_id = metadata.id
         path_output.mkdir(parents=True)
         output_full_name: t.Optional[str]
-        is_zipped = False
+        is_archived = False
+        extension = ""
         stopwatch = StopWatch()
         try:
             if isinstance(output, Path):
-                if output != path_output and output.suffix != ArchiveFormat.ZIP:
+                if output != path_output and output.suffix not in {".zip", ".7z"}:
                     shutil.copytree(output, path_output / "imported")
-                elif output.suffix == ArchiveFormat.ZIP:
-                    is_zipped = True
+                elif output.suffix in {".zip", ".7z"}:
+                    is_archived = True
                     path_output.rmdir()
-                    path_output = Path(str(path_output) + f"{ArchiveFormat.ZIP}")
+                    path_output = path_output.with_suffix(output.suffix)
                     shutil.copyfile(output, path_output)
+                    extension = output.suffix
             else:
                 extract_archive(output, path_output)
 
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
             fix_study_root(path_output)
             output_full_name = extract_output_name(path_output, output_name)
-            extension = f"{ArchiveFormat.ZIP}" if is_zipped else ""
+            extension = f"{ArchiveFormat.SEVEN_ZIP}" if is_archived else ""
             path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
 
             data = self.get(metadata, f"output/{output_full_name}", 1, use_cache=False)
@@ -273,8 +275,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
             shutil.rmtree(path_output, ignore_errors=True)
-            if is_zipped:
-                Path(str(path_output) + f"{ArchiveFormat.ZIP}").unlink(missing_ok=True)
+            if is_archived:
+                path_output.with_suffix(extension).unlink(missing_ok=True)
             output_full_name = None
 
         return output_full_name
@@ -335,40 +337,46 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
         return study_additional_data
 
-    def archive_study_output(self, study: T, output_id: str) -> bool:
-        try:
-            archive_dir(
-                Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
-                remove_source_dir=True,
-                archive_format=ArchiveFormat.ZIP,
-            )
-            remove_from_cache(self.cache, study.id)
-            return True
-        except Exception as e:
-            logger.warning(
-                f"Failed to archive study {study.name} output {output_id}",
-                exc_info=e,
-            )
-            return False
+    def archive_study_output(self, study: T, output_id: str) -> None:
+        study_path = Path(study.path)
+        output_dir = study_path / "output" / output_id
+        if not output_dir.exists():
+            _err_msg = f"Output '{output_id}' not found in study '{study.name}'"
+            actual_files = [p.relative_to(study_path) for p in study_path.glob("output/*") if p.is_dir()]
+            logger.error(f"{_err_msg}. Found folders: {', '.join([str(file) for file in actual_files])}")
+            raise FileNotFoundError(_err_msg)
 
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
-        if not (Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}").exists():
-            logger.warning(
-                f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
-            )
-            return False
-        try:
-            unzip(
-                Path(study.path) / "output" / output_id,
-                Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}",
-                remove_source_zip=not keep_src_zip,
-            )
-            remove_from_cache(self.cache, study.id)
-            return True
-        except Exception as e:
-            logger.warning(
-                f"Failed to unarchive study {study.name} output {output_id}",
-                exc_info=e,
-            )
-            return False
+        archive_path = study_path / "output" / f"{output_id}.7z"
+        with py7zr.SevenZipFile(archive_path, "w") as szf:
+            szf.writeall(output_dir, arcname=".")
+
+        shutil.rmtree(output_dir)
+        remove_from_cache(self.cache, study.id)
+
+    def unarchive_study_output(self, study: T, output_id: str, keep_src_archive: bool) -> None:
+        # Search for an output archive file in the study path
+        study_path = Path(study.path)
+        locations = [
+            study_path / "output" / f"{output_id}.7z",
+            study_path / "output" / f"{output_id}.zip",
+        ]
+        archive_path = next(iter(path for path in locations if path.exists()), None)
+        if archive_path is None:
+            _err_msg = f"Archive for study '{study.name}' output '{output_id}' not found"
+            actual_files = [p.relative_to(study_path) for p in study_path.glob("output/*") if p.is_file()]
+            logger.error(f"{_err_msg}. Found files: {', '.join([str(file) for file in actual_files])}")
+            raise FileNotFoundError(_err_msg)
+
+        if archive_path.suffix == ".7z":
+            with py7zr.SevenZipFile(archive_path, mode="r") as szf:
+                szf.extractall(study_path / "output" / output_id)
+        elif archive_path.suffix == ".zip":
+            with zipfile.ZipFile(archive_path, mode="r") as zipf:
+                zipf.extractall(study_path / "output" / output_id)
+        else:
+            raise NotImplementedError(f"Unsupported archive format {archive_path.suffix}")
+
+        if not keep_src_archive:
+            archive_path.unlink()
+
+        remove_from_cache(self.cache, study.id)

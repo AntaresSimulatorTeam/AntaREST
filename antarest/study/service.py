@@ -58,7 +58,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
-from antarest.core.utils.archives import ArchiveFormat, is_archive_format
+from antarest.core.utils.archives import ArchiveFormat, is_archive_format, is_output_archived
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
@@ -140,13 +140,7 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
-from antarest.study.storage.utils import (
-    assert_permission,
-    get_start_date,
-    is_managed,
-    is_output_archived,
-    remove_from_cache,
-)
+from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
@@ -2360,24 +2354,22 @@ class StudyService:
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
 
-        def archive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def archive_output_task(_: TaskUpdateNotifier) -> TaskResult:
             try:
-                study = self.get_study(study_id)
-                stopwatch = StopWatch()
-                self.storage_service.get_storage(study).archive_study_output(study, output_id)
-                stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
+                _study = self.get_study(study_id)
+                _stopwatch = StopWatch()
+                self.storage_service.get_storage(_study).archive_study_output(_study, output_id)
+                _stopwatch.log_elapsed(
+                    lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s")
+                )
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
                 )
             except Exception as e:
-                logger.warning(
-                    f"Could not archive the output {study_id}/{output_id}",
-                    exc_info=e,
-                )
-                raise e
+                _err_msg = f"Could not archive the output {study_id}/{output_id}"
+                logger.warning(_err_msg, exc_info=e)
+                return TaskResult(success=False, message=f"Unhandled exception: {_err_msg}: {e}")
 
         task_id = self.task_service.add_task(
             archive_output_task,
@@ -2422,14 +2414,12 @@ class StudyService:
         if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
             raise TaskAlreadyRunning()
 
-        def unarchive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def unarchive_output_task(_: TaskUpdateNotifier) -> TaskResult:
             try:
-                study = self.get_study(study_id)
-                stopwatch = StopWatch()
-                self.storage_service.get_storage(study).unarchive_study_output(study, output_id, keep_src_zip)
-                stopwatch.log_elapsed(
+                _study = self.get_study(study_id)
+                _stopwatch = StopWatch()
+                self.storage_service.get_storage(_study).unarchive_study_output(_study, output_id, keep_src_zip)
+                _stopwatch.log_elapsed(
                     lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
                 )
                 return TaskResult(
@@ -2437,11 +2427,9 @@ class StudyService:
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
                 )
             except Exception as e:
-                logger.warning(
-                    f"Could not unarchive the output {study_id}/{output_id}",
-                    exc_info=e,
-                )
-                raise e
+                _err_msg = f"Could not unarchive the output {study_id}/{output_id}"
+                logger.warning(_err_msg, exc_info=e)
+                return TaskResult(success=False, message=f"Unhandled exception: {_err_msg}: {e}")
 
         task_id: t.Optional[str] = None
         workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
