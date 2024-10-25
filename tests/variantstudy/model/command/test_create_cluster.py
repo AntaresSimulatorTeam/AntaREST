@@ -27,6 +27,7 @@ from antarest.study.storage.variantstudy.model.command.remove_cluster import Rem
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties
 
 GEN = np.random.default_rng(1000)
 
@@ -91,14 +92,20 @@ class TestCreateCluster:
 
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
-        command = CreateCluster(
-            area_id=area_id,
-            cluster_name=cluster_name,
-            parameters=parameters,
-            prepro=prepro,
-            modulation=modulation,
-            command_context=command_context,
-        )
+        args = {
+            "area_id": area_id,
+            "cluster_name": cluster_name,
+            "parameters": parameters,
+            "prepro": prepro,
+            "modulation": modulation,
+            "command_context": command_context,
+        }
+
+        with pytest.raises(ValidationError, match="group"):
+            CreateCluster(**args)
+
+        parameters["group"] = "nuclear"
+        command = CreateCluster(**args)
 
         output = command.apply(empty_study)
         assert output.status is True
@@ -165,13 +172,14 @@ class TestCreateCluster:
         )
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
+        del parameters["id"]
         dto = command.to_dto()
         assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
                 "cluster_name": "cluster1",
-                "parameters": parameters,
+                "parameters": Thermal870Properties.model_validate(parameters).model_dump(mode="json", by_alias=True),
                 "prepro": prepro_id,
                 "modulation": modulation_id,
             },
@@ -276,7 +284,9 @@ def test_create_diff(command_context: CommandContext):
         ),
         UpdateConfig(
             target="input/thermal/clusters/foo/list/foo",
-            data={"nominalcapacity": "2400"},
+            data=Thermal870Properties.model_validate({"name": "foo", "nominalcapacity": "2400"}).model_dump(
+                mode="json", by_alias=True
+            ),
             command_context=command_context,
         ),
     ]

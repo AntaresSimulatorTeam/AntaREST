@@ -13,7 +13,7 @@
 import typing as t
 
 from antares.study.version import StudyVersion
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
@@ -80,11 +80,9 @@ class ThermalClusterGroup(EnumIgnoreCase):
         if isinstance(value, str):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
-            if any(value.upper() == group.value.upper() for group in cls):
+            if any(value.lower() == group.value for group in cls):
                 return t.cast(ThermalClusterGroup, super()._missing_(value))
-            # If a group is not found, return the default group ('OTHER1' by default).
-            # Note that 'OTHER' is an alias for 'OTHER1'.
-            return cls.OTHER1
+            raise ValidationError(f"Unknown group: {value}")
         return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
 
 
