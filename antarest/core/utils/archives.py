@@ -34,6 +34,12 @@ def is_archive_format(suffix: str) -> bool:
     return suffix in {ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP}
 
 
+def is_output_archived(path_output: Path) -> bool:
+    # Returns True it the given path is archived or if adding a suffix to the path points to an existing path
+    suffixes = [".zip", ".7z"]
+    return path_output.suffix in suffixes or any(path_output.with_suffix(suffix).exists() for suffix in suffixes)
+
+
 def archive_dir(
     src_dir_path: Path,
     target_archive_path: Path,
