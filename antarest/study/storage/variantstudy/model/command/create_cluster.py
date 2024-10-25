@@ -56,7 +56,7 @@ class CreateCluster(ICommand):
     modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
 
     @model_validator(mode="before")
-    def check_slice_coordinates(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         # Validate name
         values["cluster_name"] = validate_id_against_name(values["cluster_name"])
         values["parameters"]["name"] = values["cluster_name"]
