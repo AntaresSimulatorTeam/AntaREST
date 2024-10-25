@@ -18,7 +18,6 @@ from datetime import datetime
 from pathlib import Path
 from threading import Thread
 from uuid import uuid4
-from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 
@@ -27,7 +26,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import extract_zip
+from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
@@ -75,14 +74,17 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         )
         self.cleanup_thread.start()
 
-    def update_from_raw_meta(self, metadata: RawStudy, fallback_on_default: t.Optional[bool] = False) -> None:
+    def update_from_raw_meta(
+        self, metadata: RawStudy, fallback_on_default: t.Optional[bool] = False, study_path: t.Optional[Path] = None
+    ) -> None:
         """
         Update metadata from study raw metadata
         Args:
             metadata: study
             fallback_on_default: use default values in case of failure
+            study_path: optional study path
         """
-        path = self.get_study_path(metadata)
+        path = study_path or self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(path, study_id="")
         try:
             raw_meta = study.tree.get(["study", "antares"])
@@ -142,21 +144,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
     def exists(self, study: RawStudy) -> bool:
         """
-        Check study exist.
+        Check if the study exists in the filesystem.
+
         Args:
-            study: study
+            study: The study to check.
 
         Returns: true if study presents in disk, false else.
-
         """
-        path = self.get_study_path(study)
-
         if study.archived:
-            path = self.get_archive_path(study)
-            zf = ZipFile(path, "r")
-            return str("study.antares") in zf.namelist()
+            archive_path = self.find_archive_path(study)
+            return archive_path.is_file()
 
-        return (path / "study.antares").is_file()
+        path = self.get_study_path(study)
+        return path.joinpath("study.antares").is_file()
 
     def get_raw(
         self,
@@ -323,19 +323,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        path_study = Path(metadata.path)
-        path_study.mkdir()
+        study_path = Path(metadata.path)
+        study_path.mkdir()
 
         try:
-            extract_zip(stream, path_study)
-            fix_study_root(path_study)
-            self.update_from_raw_meta(metadata)
+            extract_archive(stream, study_path)
+            fix_study_root(study_path)
+            self.update_from_raw_meta(metadata, study_path=study_path)
 
         except Exception:
-            shutil.rmtree(path_study)
+            shutil.rmtree(study_path)
             raise
 
-        metadata.path = str(path_study)
+        metadata.path = str(study_path)
         return metadata
 
     def export_study_flat(
@@ -384,7 +384,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         remove_from_cache(self.cache, study.id)
 
     def archive(self, study: RawStudy) -> Path:
-        archive_path = self.get_archive_path(study)
+        archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
         new_study_path = self.export_study(study, archive_path)
         shutil.rmtree(study.path)
         remove_from_cache(cache=self.cache, root_id=study.id)
@@ -402,11 +402,25 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        with open(self.get_archive_path(study), mode="rb") as fh:
+        with open(self.find_archive_path(study), mode="rb") as fh:
             self.import_study(study, fh)
 
-    def get_archive_path(self, study: RawStudy) -> Path:
-        return Path(self.config.storage.archive_dir / f"{study.id}.zip")
+    def find_archive_path(self, study: RawStudy) -> Path:
+        """
+        Fetch for archive path of a study if it exists else raise an incorrectly archived study.
+
+        Args:
+            study: The study to get the archive path for.
+
+        Returns:
+            The full path of the archive file (zip or 7z).
+        """
+        archive_dir: Path = self.config.storage.archive_dir
+        for suffix in list(ArchiveFormat):
+            path = archive_dir.joinpath(f"{study.id}{suffix}")
+            if path.is_file():
+                return path
+        raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
 
     def get_study_path(self, metadata: Study) -> Path:
         """
@@ -418,7 +432,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         """
         if metadata.archived:
-            return self.get_archive_path(metadata)
+            return self.find_archive_path(metadata)
         return Path(metadata.path)
 
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:

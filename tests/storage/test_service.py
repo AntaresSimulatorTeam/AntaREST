@@ -1569,7 +1569,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
 
     output_config = Mock(get_file=Mock(return_value="output_id"), archived=False)
 
-    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, zip_path=None)
+    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, archive_path=None)
     file_study_config.outputs = {"output_id": output_config}
 
     context = Mock()
