@@ -32,7 +32,6 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -116,50 +115,6 @@ def find_single_output_path(all_output_path: Path) -> Path:
             return all_output_path / children[0]
         return find_single_output_path(all_output_path / children[0])
     return all_output_path
-
-
-def is_output_archived(path_output: Path) -> bool:
-    # Returns True it the given path is archived or if adding a suffix to the path points to an existing path
-    suffixes = [".zip"]
-    return path_output.suffix in suffixes or any(path_output.with_suffix(suffix).exists() for suffix in suffixes)
-
-
-def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
-    ini_reader = IniReader()
-    is_output_archived = path_output.suffix in {".zip", ".7z"}
-    info_filename = "info.antares-output"
-    if is_output_archived:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            s = StopWatch()
-            if path_output.suffix == ".zip":
-                with ZipFile(path_output, mode="r") as zip_obj:
-                    zip_obj.extract(info_filename, temp_dir)
-            else:
-                with py7zr.SevenZipFile(path_output, mode="r") as archive:
-                    archive.extract(targets=[info_filename], path=temp_dir)
-            info_antares_output = ini_reader.read(Path(temp_dir) / info_filename)
-            s.log_elapsed(lambda x: logger.info(f"'{info_filename}' has been read in {x}s"))
-
-    else:
-        info_antares_output = ini_reader.read(path_output / info_filename)
-
-    general_info = info_antares_output["general"]
-
-    date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime("%Y%m%d-%H%M")
-
-    mode = "eco" if general_info["mode"] == "Economy" else "adq"
-    suffix_name = general_info["name"] or ""
-    if new_suffix_name:
-        suffix_name = new_suffix_name
-        general_info["name"] = suffix_name
-        if not is_output_archived:
-            ini_writer = IniWriter()
-            ini_writer.write(info_antares_output, path_output / info_filename)
-        else:
-            logger.warning("Could not rewrite the new name inside the output: the output is archived")
-
-    name = f"-{suffix_name}" if suffix_name else ""
-    return f"{date}{mode}{name}"
 
 
 def is_managed(study: Study) -> bool:
@@ -395,3 +350,41 @@ def export_study_flat(
         study.tree.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)
         logger.info(f"Study '{study_dir}' denormalized in {duration}s")
+
+
+def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
+    ini_reader = IniReader()
+    is_output_archived = path_output.suffix in {".zip", ".7z"}
+    info_filename = "info.antares-output"
+    if is_output_archived:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            s = StopWatch()
+            if path_output.suffix == ".zip":
+                with ZipFile(path_output, mode="r") as zip_obj:
+                    zip_obj.extract(info_filename, temp_dir)
+            else:
+                with py7zr.SevenZipFile(path_output, mode="r") as archive:
+                    archive.extract(targets=[info_filename], path=temp_dir)
+            info_antares_output = ini_reader.read(Path(temp_dir) / info_filename)
+            s.log_elapsed(lambda x: logger.info(f"'{info_filename}' has been read in {x}s"))
+
+    else:
+        info_antares_output = ini_reader.read(path_output / info_filename)
+
+    general_info = info_antares_output["general"]
+
+    date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime("%Y%m%d-%H%M")
+
+    mode = "eco" if general_info["mode"] == "Economy" else "adq"
+    suffix_name = general_info["name"] or ""
+    if new_suffix_name:
+        suffix_name = new_suffix_name
+        general_info["name"] = suffix_name
+        if not is_output_archived:
+            ini_writer = IniWriter()
+            ini_writer.write(info_antares_output, path_output / info_filename)
+        else:
+            logger.warning("Could not rewrite the new name inside the output: the output is archived")
+
+    name = f"-{suffix_name}" if suffix_name else ""
+    return f"{date}{mode}{name}"
