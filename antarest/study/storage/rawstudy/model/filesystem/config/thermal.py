@@ -424,6 +424,15 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
         return ThermalConfig
 
 
+def get_fields_to_exclude(study_version: StudyVersion) -> t.Set[str]:
+    if study_version >= 870:
+        return set()
+    fields_870 = set(Thermal870Config.model_fields.keys())
+    if study_version == 860:
+        return fields_870 - set(Thermal860Config.model_fields.keys())
+    return fields_870 - set(ThermalConfig.model_fields.keys())
+
+
 def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:
     """
     Factory method to create a thermal configuration model.

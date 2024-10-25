@@ -54,12 +54,14 @@ class TestCreateCluster:
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
         assert cl.cluster_name == "cluster1"
-        assert cl.parameters == {"group": "nuclear", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.parameters.group == "nuclear"
+        assert cl.parameters.nominal_capacity == 2400
+        assert cl.parameters.unit_count == 2
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
 
     def test_validate_cluster_name(self, command_context: CommandContext):
-        with pytest.raises(ValidationError, match="cluster_name"):
+        with pytest.raises(ValidationError, match="Cluster name"):
             CreateCluster(area_id="fr", cluster_name="%", command_context=command_context, parameters={})
 
     def test_validate_prepro(self, command_context: CommandContext):
@@ -80,7 +82,7 @@ class TestCreateCluster:
         CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
 
         parameters = {
-            "group": "Other",
+            "group": "RAGDOL",
             "unitcount": "1",
             "nominalcapacity": "1000000",
             "marginal-cost": "30",
@@ -152,10 +154,11 @@ class TestCreateCluster:
     def test_to_dto(self, command_context: CommandContext):
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
+        parameters = {"group": "Nuclear", "unitcount": 2, "nominalcapacity": 2400}
         command = CreateCluster(
             area_id="foo",
             cluster_name="Cluster1",
-            parameters={"group": "Nuclear", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=parameters,
             command_context=command_context,
             prepro=prepro,
             modulation=modulation,
@@ -168,7 +171,7 @@ class TestCreateCluster:
             "args": {
                 "area_id": "foo",
                 "cluster_name": "cluster1",
-                "parameters": {"group": "nuclear", "nominalcapacity": 2400, "unitcount": 2},
+                "parameters": parameters,
                 "prepro": prepro_id,
                 "modulation": modulation_id,
             },

@@ -310,7 +310,7 @@ class ThermalManager:
         args = {
             "area_id": area_id,
             "cluster_name": cluster.id,
-            "parameters": cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
+            "parameters": cluster,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
         command = CreateCluster.model_validate(args)
