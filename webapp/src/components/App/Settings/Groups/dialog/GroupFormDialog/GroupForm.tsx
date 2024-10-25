@@ -49,7 +49,7 @@ import { getGroups, getUsers } from "../../../../../../services/api/user";
 import { getAuthUser } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { UseFormReturnPlus } from "../../../../../common/Form/types";
-import { validateString } from "../../../../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 function GroupForm(props: UseFormReturnPlus) {
   const {

@@ -23,8 +23,9 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import { getTableColumnsForType, type TableTemplate } from "../utils";
 import { TABLE_MODE_TYPES } from "../../../../../../services/api/studies/tableMode/constants";
-import { validateString } from "../../../../../../utils/validationUtils";
 import { useMemo } from "react";
+import { validateArray } from "@/utils/validation/array";
+import { validateString } from "@/utils/validation/string";
 
 export interface TableTemplateFormDialogProps
   extends Pick<
@@ -102,7 +103,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             getOptionLabel={startCase}
             name="columns"
             control={control}
-            rules={{ required: true }}
+            rules={{ validate: validateArray() }}
           />
         </Box>
       )}

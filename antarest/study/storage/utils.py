@@ -31,6 +31,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -79,7 +80,7 @@ def fix_study_root(study_path: Path) -> None:
         study_path: the study initial root path
     """
     # TODO: what if it is a zipped output ?
-    if study_path.suffix == ".zip":
+    if is_archive_format(study_path.suffix):
         return None
 
     if not study_path.is_dir():
@@ -116,10 +117,16 @@ def find_single_output_path(all_output_path: Path) -> Path:
     return all_output_path
 
 
+def is_output_archived(path_output: Path) -> bool:
+    # Returns True it the given path is archived or if adding a suffix to the path points to an existing path
+    suffixes = [".zip"]
+    return path_output.suffix in suffixes or any(path_output.with_suffix(suffix).exists() for suffix in suffixes)
+
+
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:
     ini_reader = IniReader()
-    is_output_archived = path_output.suffix == ".zip"
-    if is_output_archived:
+    archived = is_output_archived(path_output)
+    if archived:
         temp_dir = tempfile.TemporaryDirectory()
         s = StopWatch()
         with ZipFile(path_output, "r") as zip_obj:
@@ -140,7 +147,7 @@ def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = No
     if new_suffix_name:
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
-        if not is_output_archived:
+        if not archived:
             ini_writer = IniWriter()
             ini_writer.write(info_antares_output, path_output / "info.antares-output")
         else:
@@ -289,29 +296,35 @@ def get_start_date(
     starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
-        if leapyear == calendar.isleap(target_year):
-            first_day = datetime(target_year, starting_month_index, 1)
+        if leapyear == calendar.isleap(target_year + (starting_month_index > 2)):
+            first_day = datetime(target_year + (starting_month_index != 1), 1, 1)
             if first_day.weekday() == starting_day_index:
                 break
         target_year += 1
 
     start_offset_days = timedelta(days=(0 if output_id is None else start_offset - 1))
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
-    # base case is DAILY
-    steps = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
-    if level == StudyDownloadLevelDTO.HOURLY:
-        steps = steps * 24
-    elif level == StudyDownloadLevelDTO.ANNUAL:
-        steps = 1
-    elif level == StudyDownloadLevelDTO.WEEKLY:
-        steps = math.ceil(steps / 7)
-    elif level == StudyDownloadLevelDTO.MONTHLY:
-        end_date = start_date + timedelta(days=steps)
-        same_year = end_date.year == start_date.year
-        if same_year:
-            steps = 1 + end_date.month - start_date.month
-        else:
-            steps = (13 - start_date.month) + end_date.month
+
+    def _get_steps(
+        daily_steps: int, temporality: StudyDownloadLevelDTO, begin_date: datetime, is_output: t.Optional[str] = None
+    ) -> int:
+        temporality_mapping = {
+            StudyDownloadLevelDTO.DAILY: daily_steps,
+            StudyDownloadLevelDTO.HOURLY: daily_steps * 24,
+            StudyDownloadLevelDTO.ANNUAL: 1,
+            StudyDownloadLevelDTO.WEEKLY: math.ceil(daily_steps / 7),
+            StudyDownloadLevelDTO.MONTHLY: 12,
+        }
+
+        if temporality == StudyDownloadLevelDTO.MONTHLY and is_output:
+            end_date = begin_date + timedelta(days=daily_steps)
+            same_year = end_date.year == begin_date.year
+            return 1 + end_date.month - begin_date.month if same_year else (13 - begin_date.month) + end_date.month
+
+        return temporality_mapping[temporality]
+
+    days_count = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
+    steps = _get_steps(days_count, level, start_date, output_id)
 
     first_week_day_index = DAY_NAMES.index(first_week_day)
     first_week_offset = 0

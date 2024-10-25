@@ -84,7 +84,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         Raises:
             DenormalizationException: if the original matrix retrieval fails.
         """
-        if self.get_link_path().exists() or self.config.zip_path:
+        if self.get_link_path().exists() or self.config.archive_path:
             return
 
         matrix = self.parse()

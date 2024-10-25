@@ -10,24 +10,24 @@
 #
 # This file is part of the Antares project.
 
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
-from sqlalchemy import create_engine
 
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.dbmodel import Base
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.model import MatrixDataSet, MatrixDataSetRelation
+from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
 
@@ -116,17 +116,13 @@ def test_get_matrices_used_in_raw_studies(
 @pytest.mark.unit_test
 def test_get_matrices_used_in_variant_studies(
     matrix_garbage_collector: MatrixGarbageCollector,
+    variant_study_repository: VariantStudyRepository,
 ):
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
     with db():
         study_id = "study_id"
+
+        variant_study_repository.save(VariantStudy(id=study_id))
+
         # TODO: add series to the command blocks
         command_block1 = CommandBlock(
             study_id=study_id,
@@ -173,38 +169,24 @@ def test_get_matrices_used_in_variant_studies(
 @pytest.mark.unit_test
 def test_get_matrices_used_in_dataset(
     matrix_garbage_collector: MatrixGarbageCollector,
+    matrix_service: MatrixService,
+    admin_user: JWTUser,
 ):
     matrix_garbage_collector.dataset_repository = MatrixDataSetRepository()
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    # noinspection SpellCheckingInspection
-    DBSessionMiddleware(
-        None,
-        custom_engine=engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
 
-    dataset = MatrixDataSet(
-        name="name",
-        public=True,
-        owner_id="owner_id",
-        groups=[],
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
-    )
-    matrix_relation1 = MatrixDataSetRelation(name="matrix_name1")
-    matrix_relation1.matrix_id = "matrix_id1"
-    dataset.matrices.append(matrix_relation1)
-    matrix_relation2 = MatrixDataSetRelation(name="matrix_name2")
-    matrix_relation2.matrix_id = "matrix_id2"
-    dataset.matrices.append(matrix_relation2)
     with db():
-        db.session.add(dataset)
-        db.session.commit()
+        matrix1_id = matrix_service.create(np.ones((1, 1)))
+        matrix2_id = matrix_service.create(np.ones((2, 1)))
+        dataset = matrix_service.create_dataset(
+            dataset_info=MatrixDataSetUpdateDTO(name="name", groups=[], public=True),
+            matrices=[MatrixInfoDTO(id=matrix1_id, name="matrix_1"), MatrixInfoDTO(id=matrix2_id, name="matrix_2")],
+            params=RequestParameters(admin_user),
+        )
+
         matrices = matrix_garbage_collector._get_datasets_matrices()
         assert len(matrices) == 2
-        assert "matrix_id1" in matrices
-        assert "matrix_id2" in matrices
+        assert matrix1_id in matrices
+        assert matrix2_id in matrices
 
 
 @pytest.mark.unit_test

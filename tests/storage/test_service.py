@@ -1377,6 +1377,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
     output_id = "some-output"
     service.task_service.add_worker_task.return_value = None  # type: ignore
     service.task_service.list_tasks.return_value = []  # type: ignore
+    (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
     service.unarchive_output(
         study_id,
         output_id,
@@ -1401,6 +1402,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
         f"Unarchive output {study_name}/{output_id} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1432,13 +1434,16 @@ def test_archive_output_locks(tmp_path: Path) -> None:
 
     service.task_service.reset_mock()
 
-    output_id = "some-output"
+    output_zipped = "some-output_zipped"
+    output_unzipped = "some-output_unzipped"
     service.task_service.add_worker_task.return_value = None  # type: ignore
+    (tmp_path / "output" / output_unzipped).mkdir(parents=True)
+    (tmp_path / "output" / f"{output_zipped}.zip").touch()
     service.task_service.list_tasks.side_effect = [
         [
             TaskDTO(
                 id="1",
-                name=f"Archive output {study_id}/{output_id}",
+                name=f"Archive output {study_id}/{output_zipped}",
                 status=TaskStatus.PENDING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.ARCHIVE,
@@ -1448,7 +1453,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+                name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
                 status=TaskStatus.PENDING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.UNARCHIVE,
@@ -1458,7 +1463,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Archive output {study_id}/{output_id}",
+                name=f"Archive output {study_id}/{output_unzipped}",
                 status=TaskStatus.PENDING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.ARCHIVE,
@@ -1468,7 +1473,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+                name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
                 status=TaskStatus.RUNNING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.UNARCHIVE,
@@ -1481,7 +1486,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     with pytest.raises(TaskAlreadyRunning):
         service.unarchive_output(
             study_id,
-            output_id,
+            output_zipped,
             keep_src_zip=True,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
@@ -1489,7 +1494,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     with pytest.raises(TaskAlreadyRunning):
         service.unarchive_output(
             study_id,
-            output_id,
+            output_zipped,
             keep_src_zip=True,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
@@ -1497,20 +1502,20 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     with pytest.raises(TaskAlreadyRunning):
         service.archive_output(
             study_id,
-            output_id,
+            output_unzipped,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     with pytest.raises(TaskAlreadyRunning):
         service.archive_output(
             study_id,
-            output_id,
+            output_unzipped,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     service.unarchive_output(
         study_id,
-        output_id,
+        output_zipped,
         keep_src_zip=True,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1519,19 +1524,20 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_id}.zip"),
-            dest=str(tmp_path / "output" / output_id),
+            src=str(tmp_path / "output" / f"{output_zipped}.zip"),
+            dest=str(tmp_path / "output" / output_zipped),
             remove_src=False,
         ).model_dump(),
-        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+        name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         ref_id=study_id,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.task_service.add_task.assert_called_once_with(
         ANY,
-        f"Unarchive output {study_name}/{output_id} ({study_id})",
+        f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1563,7 +1569,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
 
     output_config = Mock(get_file=Mock(return_value="output_id"), archived=False)
 
-    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, zip_path=None)
+    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, archive_path=None)
     file_study_config.outputs = {"output_id": output_config}
 
     context = Mock()
@@ -1686,6 +1692,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         f"Upgrade study my_study ({study_id}) to version 800",
         task_type=TaskType.UPGRADE_STUDY,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )

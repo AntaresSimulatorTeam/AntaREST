@@ -23,7 +23,7 @@ import client from "./client";
 export const createXpansionConfiguration = async (
   uuid: string,
 ): Promise<void> => {
-  const res = await client.post(`/v1//studies/${uuid}/extensions/xpansion`);
+  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion`);
   return res.data;
 };
 

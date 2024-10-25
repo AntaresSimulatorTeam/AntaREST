@@ -22,7 +22,7 @@ import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import { AdequacyPatchFormFields, PRICE_TAKING_ORDER_OPTIONS } from "./utils";
 import { StudyMetadata } from "../../../../../../common/types";
-import { validateNumber } from "../../../../../../utils/validationUtils";
+import { validateNumber } from "@/utils/validation/number";
 
 function Fields() {
   const { t } = useTranslation();

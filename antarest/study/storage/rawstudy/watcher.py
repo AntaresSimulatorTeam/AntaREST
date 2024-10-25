@@ -20,6 +20,7 @@ from pathlib import Path
 from time import sleep, time
 from typing import List, Optional
 
+from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 from filelock import FileLock
 
 from antarest.core.config import Config
@@ -33,6 +34,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
 from antarest.study.service import StudyService
+from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import is_ts_gen_tmp_dir
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +134,14 @@ class Watcher(IService):
                 logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
                 return []
 
+            if is_temporary_upgrade_dir(path):
+                logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
+                return []
+
+            if is_ts_gen_tmp_dir(path):
+                logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
+                return []
+
             if (path / "study.antares").exists():
                 logger.debug(f"Study {path.name} found in {workspace}")
                 return [StudyFolder(path, workspace, groups)]
@@ -185,6 +195,7 @@ class Watcher(IService):
             name=f"Scanning {workspace}/{path}",
             task_type=TaskType.SCAN,
             ref_id=None,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )

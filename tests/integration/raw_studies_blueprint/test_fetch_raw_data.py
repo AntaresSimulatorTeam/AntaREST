@@ -25,6 +25,7 @@ from starlette.testclient import TestClient
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
+from tests.integration.utils import wait_for
 
 
 @pytest.mark.integration_test
@@ -224,7 +225,7 @@ class TestFetchRawData:
             headers=headers,
         )
         assert res.status_code == 200, res.json()
-        assert res.json() == {"index": [0], "columns": [], "data": []}
+        assert res.json() == {"index": [], "columns": [], "data": []}
 
         # Some files can be corrupted
         user_folder_dir = study_dir.joinpath("user/bad")
@@ -327,3 +328,53 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
     assert res.status_code == 403
     assert res.json()["exception"] == "FileDeletionNotAllowed"
     assert "the given path doesn't exist" in res.json()["description"]
+
+
+def test_retrieve_from_archive(client: TestClient, user_access_token: str) -> None:
+    # client headers
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # create a new study
+    res = client.post("/v1/studies?name=MyStudy")
+    assert res.status_code == 201
+
+    # get the study id
+    study_id = res.json()
+
+    # add a new area to the study
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
+        json={
+            "name": "area 1",
+            "type": "AREA",
+            "metadata": {"country": "FR", "tags": ["a"]},
+        },
+    )
+    assert res.status_code == 200, res.json()
+
+    # archive the study
+    res = client.put(f"/v1/studies/{study_id}/archive")
+    assert res.status_code == 200
+    task_id = res.json()
+    wait_for(
+        lambda: client.get(
+            f"/v1/tasks/{task_id}",
+        ).json()["status"]
+        == 3
+    )
+
+    # retrieve a `Desktop.ini` file from inside the archive
+    rel_path = "Desktop"
+    res = client.get(
+        f"/v1/studies/{study_id}/raw",
+        params={"path": rel_path, "formatted": True},
+    )
+    assert res.status_code == 200
+
+    # retrieve a `study.antares` file from inside the archive
+    rel_path = "study"
+    res = client.get(
+        f"/v1/studies/{study_id}/raw",
+        params={"path": rel_path, "formatted": True},
+    )
+    assert res.status_code == 200

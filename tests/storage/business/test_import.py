@@ -16,21 +16,14 @@ import shutil
 from pathlib import Path
 from unittest.mock import Mock
 
+import py7zr
 import pytest
 
-from antarest.core.exceptions import StudyValidationError
-from antarest.core.utils.utils import BadArchiveContent
+from antarest.core.exceptions import BadArchiveContent, StudyValidationError
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import fix_study_root
-
-
-def build_storage_service(workspace: Path, uuid: str) -> RawStudyService:
-    service = Mock()
-    service.get_workspace_path.return_value = workspace
-    service.get_study_path.return_value = workspace / uuid
-    return service
 
 
 @pytest.mark.unit_test
@@ -57,7 +50,9 @@ def test_import_study(tmp_path: Path) -> None:
     study_service.get = Mock()
     study_service.get_study_path = Mock()
     study_service.get.return_value = data
-    study_service.get_study_path.return_value = tmp_path / "other-study"
+
+    # first test importing a study for an archived study with `.zip` format
+    study_service.get_study_path.return_value = tmp_path / "other-study-zip"
 
     filepath_zip = shutil.make_archive(str(study_path.absolute()), "zip", study_path)
     shutil.rmtree(study_path)
@@ -65,19 +60,48 @@ def test_import_study(tmp_path: Path) -> None:
     path_zip = Path(filepath_zip)
 
     md = RawStudy(
-        id="other-study",
+        id="other-study-zip",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=tmp_path / "other-study",
+        path=tmp_path / "other-study-zip",
         additional_data=StudyAdditionalData(),
         groups=["fake_group_1", "fake_group_2"],
     )
     with path_zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)
-        assert md.path == f"{tmp_path}{os.sep}other-study"
+        assert md.path == f"{tmp_path}{os.sep}other-study-zip"
     # assert that importing file into a created study does not alter its group
     assert md.groups == ["fake_group_1", "fake_group_2"]
 
-    shutil.rmtree(tmp_path / "other-study")
+    shutil.rmtree(tmp_path / "other-study-zip")
+
+    # second test for an archived study with a `.7z` format
+    study_service.get_study_path.return_value = tmp_path / "other-study-7zip"
+
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    filepath_7zip = study_path.parent / f"{study_path.name}.7z"
+    with py7zr.SevenZipFile(filepath_7zip, "w") as archive:
+        archive.writeall(study_path, arcname="")
+
+    shutil.rmtree(study_path)
+
+    md = RawStudy(
+        id="other-study-7zip",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=tmp_path / "other-study-7zip",
+        additional_data=StudyAdditionalData(),
+        groups=["fake_group_1", "fake_group_2"],
+    )
+    with filepath_7zip.open("rb") as input_file:
+        md = study_service.import_study(md, input_file)
+        assert md.path == f"{tmp_path}{os.sep}other-study-7zip"
+    # assert that importing file into a created study does not alter its group
+    assert md.groups == ["fake_group_1", "fake_group_2"]
+
+    shutil.rmtree(tmp_path / "other-study-7zip")
+
+    # test for an unsupported archive format
     with pytest.raises(BadArchiveContent, match="Unsupported archive format"):
         study_service.import_study(md, io.BytesIO(b""))
 
