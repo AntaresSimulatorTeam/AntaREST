@@ -52,6 +52,16 @@ class LawOption(EnumIgnoreCase):
         return f"{self.__class__.__name__}.{self.name}"
 
 
+class ThermalClusterGroupLegacy(EnumIgnoreCase):
+    NUCLEAR = "Nuclear"
+    LIGNITE = "Lignite"
+    HARD_COAL = "Hard Coal"
+    GAS = "Gas"
+    OIL = "Oil"
+    MIXED_FUEL = "Mixed Fuel"
+    OTHER = "Other"
+
+
 class ThermalClusterGroup(EnumIgnoreCase):
     """
     Thermal cluster groups.
@@ -72,21 +82,6 @@ class ThermalClusterGroup(EnumIgnoreCase):
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
-    @classmethod
-    def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
-        """
-        Retrieves the default group or the matched group when an unknown value is encountered.
-        """
-        if isinstance(value, str):
-            # Check if any group value matches the input value ignoring case sensitivity.
-            # noinspection PyUnresolvedReferences
-            if any(value.upper() == group.value.upper() for group in cls):
-                return t.cast(ThermalClusterGroup, super()._missing_(value))
-            # If a group is not found, return the default group ('OTHER1' by default).
-            # Note that 'OTHER' is an alias for 'OTHER1'.
-            return cls.OTHER1
-        return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
-
 
 class ThermalCostGeneration(EnumIgnoreCase):
     """
@@ -104,8 +99,8 @@ class ThermalProperties(ClusterProperties):
     This model describes the configuration parameters for a thermal cluster.
     """
 
-    group: ThermalClusterGroup = Field(
-        default=ThermalClusterGroup.OTHER1,
+    group: ThermalClusterGroupLegacy = Field(
+        default=ThermalClusterGroupLegacy.OTHER,
         description="Thermal Cluster Group",
         title="Thermal Cluster Group",
     )
@@ -222,7 +217,19 @@ class ThermalProperties(ClusterProperties):
     )
 
 
-class Thermal860Properties(ThermalProperties):
+class Thermal810Properties(ThermalProperties):
+    """
+    Thermal cluster configuration model for 810 study.
+    """
+
+    group: ThermalClusterGroup = Field(
+        default=ThermalClusterGroup.OTHER1,
+        description="Thermal Cluster Group",
+        title="Thermal Cluster Group",
+    )
+
+
+class Thermal860Properties(Thermal810Properties):
     """
     Thermal cluster configuration model for 860 study.
     """
@@ -351,6 +358,12 @@ class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
     AttributeError: 'ThermalConfig' object has no attribute 'nh3'"""
 
 
+class Thermal810Config(Thermal810Properties, IgnoreCaseIdentifier):
+    """
+    Thermal properties for study in version 810
+    """
+
+
 class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
     Thermal properties for study in version 860
@@ -403,7 +416,7 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
 
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
-ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
+ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, Thermal810Config, ThermalConfig]
 
 
 def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
@@ -420,6 +433,8 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
         return Thermal870Config
     elif study_version == 860:
         return Thermal860Config
+    elif study_version >= 810:
+        return Thermal810Config
     else:
         return ThermalConfig
 
