@@ -194,14 +194,17 @@ class CreateLink(ICommand):
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
+
+        properties: LinkInfoProperties
+        if StudyVersion.parse(version) >= STUDY_VERSION_8_2:
+            properties = LinkInfoProperties820.model_validate(self.parameters or {})
+        else:
+            properties = LinkInfoProperties.model_validate(self.parameters or {})
+
+        link_property = properties.model_dump(mode="json", exclude={"area1", "area2"}, by_alias=True, exclude_none=True)
+
         area_from = data["area_from"]
         area_to = data["area_to"]
-
-        properties = LinkProperties.model_validate(self.parameters or {})
-        excludes = (
-            set() if StudyVersion.parse(version) >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
-        )
-        link_property = properties.model_dump(mode="json", exclude=excludes, by_alias=True, exclude_none=True)
 
         study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
         self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))

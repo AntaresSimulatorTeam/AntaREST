@@ -13,9 +13,11 @@
 import typing as t
 
 from antares.study.version import StudyVersion
+from pydantic import BaseModel
 
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
+from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_2, RawStudy
@@ -35,14 +37,18 @@ _ALL_LINKS_PATH = "input/links"
 
 
 class LinkInfoDTOBase(AreaInfo, LinkInfoProperties):
-    pass
+    class Config:
+        alias_generator = to_camel_case
+        populate_by_name = True
 
 
 class LinkInfoDTO820(AreaInfo, LinkInfoProperties820):
-    pass
+    class Config:
+        alias_generator = to_camel_case
+        populate_by_name = True
 
 
-LinkInfoDTOType = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
+LinkInfoDTO = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
 
 
 @all_optional_model
@@ -57,30 +63,31 @@ class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(self, study: RawStudy) -> t.List[LinkInfoDTOType]:
+    def get_all_links(self, study: RawStudy) -> t.List[LinkInfoDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        result: t.List[LinkInfoDTOType] = []
+        result: t.List[LinkInfoDTO] = []
 
         for area_id, area in file_study.config.areas.items():
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
 
             for link in area.links:
-                link_properties = links_config[link]
+                link_tree_config: t.Dict[str, t.Any] = links_config[link]
+                link_tree_config.update({"area1": area_id, "area2": link})
 
-                link_creation_data: t.Dict[str, t.Any] = {"area1": area_id, "area2": link}
-                link_creation_data.update(link_properties)
-
-                link_data: LinkInfoDTOType
+                link_properties = {"area1": area_id, "area2": link}
+                link_dto: LinkInfoDTO
                 if StudyVersion.parse(study.version) < STUDY_VERSION_8_2:
-                    link_data = LinkInfoDTOBase(**link_creation_data)
+                    link_properties.update(LinkInfoProperties(**link_tree_config).model_dump())
+                    link_dto = LinkInfoDTOBase(**link_properties)
                 else:
-                    link_data = LinkInfoDTO820(**link_creation_data)
+                    link_properties.update(LinkInfoProperties820(**link_tree_config).model_dump())
+                    link_dto = LinkInfoDTO820(**link_properties)
 
-                result.append(link_data)
+                result.append(link_dto)
 
         return result
 
-    def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTOType) -> LinkInfoDTOType:
+    def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTO) -> LinkInfoDTO:
         if link_creation_info.area1 == link_creation_info.area2:
             raise LinkValidationError(f"Cannot create link on same area: {link_creation_info.area1}")
 
@@ -88,17 +95,15 @@ class LinkManager:
             if link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None:
                 raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
-        link_info = link_creation_info.model_dump(exclude_none=True, by_alias=True)
-
-        link_data: LinkInfoDTOType
-        if StudyVersion.parse(study.version) < STUDY_VERSION_8_2:
-            link_data = LinkInfoDTOBase(**link_info)
+        link_dto: LinkInfoDTO
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2 and isinstance(link_creation_info, LinkInfoDTO820):
+            if link_creation_info.filter_synthesis is None:
+                link_creation_info.filter_synthesis = FilteringOptions.FILTER_SYNTHESIS
+            if link_creation_info.filter_year_by_year is None:
+                link_creation_info.filter_year_by_year = FilteringOptions.FILTER_YEAR_BY_YEAR
+            link_dto = LinkInfoDTO820(**link_creation_info.model_dump())
         else:
-            link_data = LinkInfoDTO820(**link_info)
-            if isinstance(link_data, LinkInfoDTO820) and link_data.filter_synthesis is None:
-                link_data.filter_synthesis = FilteringOptions.FILTER_SYNTHESIS
-            if isinstance(link_data, LinkInfoDTO820) and link_data.filter_year_by_year is None:
-                link_data.filter_year_by_year = FilteringOptions.FILTER_YEAR_BY_YEAR
+            link_dto = LinkInfoDTOBase(**link_creation_info.model_dump())
 
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
@@ -106,13 +111,13 @@ class LinkManager:
         command = CreateLink(
             area1=link_creation_info.area1,
             area2=link_creation_info.area2,
-            parameters=link_data.model_dump(exclude={"area1", "area2"}, exclude_none=True, by_alias=True),
+            parameters=link_dto.model_dump(exclude_none=True),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        return link_data
+        return link_dto
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
