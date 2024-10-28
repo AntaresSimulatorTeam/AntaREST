@@ -25,6 +25,7 @@ from uuid import uuid4
 
 import numpy as np
 import pandas as pd
+from antares.study.version import StudyVersion
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -1479,10 +1480,7 @@ class StudyService:
         return output_id
 
     def _create_edit_study_command(
-        self,
-        tree_node: INode[JSON, SUB_JSON, JSON],
-        url: str,
-        data: SUB_JSON,
+        self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
     ) -> ICommand:
         """
         Create correct command to edit study
@@ -1499,41 +1497,29 @@ class StudyService:
 
         if isinstance(tree_node, IniFileNode):
             assert not isinstance(data, (bytes, list))
-            return UpdateConfig(
-                target=url,
-                data=data,
-                command_context=context,
-            )
+            return UpdateConfig(target=url, data=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
                 matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
-                    target=url,
-                    matrix=matrix.tolist(),
-                    command_context=context,
+                    target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
                 )
             assert isinstance(data, (list, str))
-            return ReplaceMatrix(
-                target=url,
-                matrix=data,
-                command_context=context,
-            )
+            return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 assert isinstance(data, str)
-                return UpdateComments(
-                    comments=data,
-                    command_context=context,
-                )
+                return UpdateComments(comments=data, command_context=context, study_version=study_version)
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
                     b64Data=base64.b64encode(data).decode("utf-8"),
                     command_context=context,
+                    study_version=study_version,
                 )
         raise NotImplementedError()
 
@@ -1579,7 +1565,8 @@ class StudyService:
         # A 404 Not Found error is raised if the file does not exist.
         tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
 
-        command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+        study_version = file_study.config.version
+        command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data, study_version=study_version)
 
         if isinstance(study_service, RawStudyService):
             res = command.apply(study_data=file_study)
@@ -1591,7 +1578,9 @@ class StudyService:
             # noinspection SpellCheckingInspection
             url = "study/antares/lastsave"
             last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time.time()))
+            cmd = self._create_edit_study_command(
+                tree_node=last_save_node, url=url, data=int(time.time()), study_version=study_version
+            )
             cmd.apply(file_study)
 
             self.storage_service.variant_study_service.invalidate_cache(study)
