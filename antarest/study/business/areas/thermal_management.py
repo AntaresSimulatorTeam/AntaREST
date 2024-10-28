@@ -296,7 +296,7 @@ class ThermalManager:
 
         file_study = self._get_file_study(study)
         cluster = cluster_data.to_config(StudyVersion.parse(study.version))
-        command = self._make_create_cluster_cmd(area_id, cluster)
+        command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
         execute_or_add_commands(
             study,
             file_study,
@@ -306,7 +306,9 @@ class ThermalManager:
         output = self.get_cluster(study, area_id, cluster.id)
         return output
 
-    def _make_create_cluster_cmd(self, area_id: str, cluster: ThermalConfigType) -> CreateCluster:
+    def _make_create_cluster_cmd(
+        self, area_id: str, cluster: ThermalConfigType, study_version: StudyVersion
+    ) -> CreateCluster:
         # NOTE: currently, in the `CreateCluster` class, there is a confusion
         # between the cluster name and the cluster ID (which is a section name).
         args = {
@@ -314,6 +316,7 @@ class ThermalManager:
             "cluster_name": cluster.id,
             "parameters": cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "study_version": study_version,
         }
         command = CreateCluster.model_validate(args)
         return command
@@ -434,8 +437,9 @@ class ThermalManager:
         source_cluster = self.get_cluster(study, area_id, source_id)
         source_cluster.name = new_cluster_name
         creation_form = ThermalClusterCreation(**source_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(StudyVersion.parse(study.version))
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
+        study_version = StudyVersion.parse(study.version)
+        new_config = creation_form.to_config(study_version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
         lower_source_id = source_id.lower()
