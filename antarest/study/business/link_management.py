@@ -112,15 +112,15 @@ class LinkManager:
 
         return link_dto
 
-    def update_link(self, study: RawStudy, link_creation_info: LinkInfoDTO) -> LinkInfoDTO:
+    def update_link(self, study: RawStudy, link_update_info: LinkInfoDTO) -> LinkInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        self.check_attributes_coherence(file_study, StudyVersion.parse(study.version), link_creation_info)
+        self.check_attributes_coherence(file_study, StudyVersion.parse(study.version), link_update_info)
 
         command = UpdateLink(
-            area1=link_creation_info.area1,
-            area2=link_creation_info.area2,
-            parameters=link_creation_info.model_dump(
+            area1=link_update_info.area1,
+            area2=link_update_info.area2,
+            parameters=link_update_info.model_dump(
                 mode="json", exclude={"area1", "area2"}, exclude_none=True, exclude_unset=True
             ),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
@@ -128,8 +128,8 @@ class LinkManager:
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        existing_link = self.get_one_link(study, link_creation_info)
-        return existing_link
+        updated_link = self.get_one_link(study, link_update_info)
+        return updated_link
 
     def check_attributes_coherence(
         self, file_study: FileStudy, study_version: StudyVersion, link_creation_info: LinkInfoDTO
