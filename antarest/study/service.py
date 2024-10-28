@@ -85,7 +85,7 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.link_management import LinkInfoDTOType, LinkManager
+from antarest.study.business.link_management import LinkInfoDTO, LinkManager, LinkOutput
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
@@ -1826,7 +1826,7 @@ class StudyService:
         self,
         uuid: str,
         params: RequestParameters,
-    ) -> t.List[LinkInfoDTOType]:
+    ) -> t.List[LinkInfoDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.links.get_all_links(study)
@@ -1853,9 +1853,9 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkInfoDTOType,
+        link_creation_dto: LinkInfoDTO,
         params: RequestParameters,
-    ) -> LinkInfoDTOType:
+    ) -> LinkInfoDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)

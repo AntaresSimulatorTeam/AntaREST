@@ -155,19 +155,19 @@ class TestLink:
         expected = {
             "area1": "area 1",
             "area2": "area 2",
-            "asset-type": "ac",
+            "assetType": "ac",
             "colorb": 112,
             "colorg": 112,
             "colorr": 112,
-            "display-comments": True,
-            "filter-synthesis": "hourly, daily, weekly, monthly, annual",
-            "filter-year-by-year": "hourly, daily, weekly, monthly, annual",
-            "hurdles-cost": False,
-            "link-style": "plain",
-            "link-width": 1.0,
-            "loop-flow": False,
-            "transmission-capacities": "enabled",
-            "use-phase-shifter": False,
+            "displayComments": True,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
         }
         assert expected == res.json()
         res = client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
@@ -176,20 +176,21 @@ class TestLink:
         # Test create link with parameters
 
         parameters = {
-            "area1": area1_id,
-            "area2": area2_id,
-            "asset-type": "dc",
+            "area1": "area 1",
+            "area2": "area 2",
+            "assetType": "ac",
             "colorb": 160,
             "colorg": 170,
             "colorr": 180,
-            "display-comments": True,
-            "filter-synthesis": "hourly",
-            "hurdles-cost": True,
-            "link-style": "plain",
-            "link-width": 2.0,
-            "loop-flow": False,
-            "transmission-capacities": "enabled",
-            "use-phase-shifter": True,
+            "displayComments": True,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
         }
         res = client.post(
             f"/v1/studies/{study_id}/links",
@@ -197,7 +198,6 @@ class TestLink:
         )
 
         assert res.status_code == 200, res.json()
-        parameters["filter-year-by-year"] = "hourly, daily, weekly, monthly, annual"
 
         assert parameters == res.json()
         res = client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
@@ -238,11 +238,11 @@ class TestLink:
 
         res = client.post(
             f"/v1/studies/{study_id}/links",
-            json={"area1": area1_id, "area2": area1_id, "asset-type": TransmissionCapacity.ENABLED},
+            json={"area1": area1_id, "area2": area2_id, "assetType": TransmissionCapacity.ENABLED},
         )
         assert res.status_code == 422, res.json()
         expected = {
-            "body": {"area1": "area 1", "area2": "area 1", "asset-type": "enabled"},
+            "body": {"area1": "area 1", "area2": "area 2", "assetType": "enabled"},
             "description": "Input should be 'ac', 'dc', 'gaz', 'virt' or 'other'",
             "exception": "RequestValidationError",
         }
@@ -264,7 +264,7 @@ class TestLink:
 
         res = client.post(
             f"/v1/studies/{study_id}/links",
-            json={"area1": area1_id, "area2": area2_id, "filter-synthesis": "centurial"},
+            json={"area1": area1_id, "area2": area2_id, "filterSynthesis": "centurial"},
         )
 
         assert res.status_code == 422, res.json()
@@ -283,7 +283,7 @@ class TestLink:
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
 
         res = client.post(
-            f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "filter-synthesis": "hourly"}
+            f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "filterSynthesis": "hourly"}
         )
 
         assert res.status_code == 422, res.json()
