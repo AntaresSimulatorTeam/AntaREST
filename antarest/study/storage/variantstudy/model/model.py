@@ -14,6 +14,8 @@ import typing as t
 import uuid
 
 import typing_extensions as te
+from antares.study.version import StudyVersion
+from pydantic import field_validator
 
 from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
@@ -73,6 +75,11 @@ class CommandDTO(AntaresBaseModel):
     action: str
     args: t.Union[t.MutableSequence[JSON], JSON]
     version: int = 1
+    study_version: StudyVersion
+
+    @field_validator("study_version", mode="before")
+    def _validate_version(cls, v: t.Any) -> StudyVersion:
+        return StudyVersion.parse(v)
 
 
 class CommandResultDTO(AntaresBaseModel):
