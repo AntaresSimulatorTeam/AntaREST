@@ -136,6 +136,7 @@ class CommandReverter:
                     "filter_synthesis": command.filter_synthesis,
                     "comments": command.comments,
                     "command_context": command.command_context,
+                    "study_version": base.config.version,
                 }
 
                 matrix_service = command.command_context.matrix_service

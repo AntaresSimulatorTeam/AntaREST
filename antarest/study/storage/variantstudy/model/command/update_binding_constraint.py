@@ -183,7 +183,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        props = create_binding_constraint_config(study_version, **self.model_dump())
+        props = create_binding_constraint_config(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
         updated_cfg = binding_constraints[index]

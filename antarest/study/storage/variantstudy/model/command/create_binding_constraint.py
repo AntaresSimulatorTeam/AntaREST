@@ -432,7 +432,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
 
         study_version = study_data.config.version
-        props = create_binding_constraint_config(study_version, **self.model_dump())
+        props = create_binding_constraint_config(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True)
 
         new_binding = {"id": bd_id, "name": self.name, **obj}
@@ -457,7 +457,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
         other = t.cast(CreateBindingConstraint, other)
         bd_id = transform_name_to_id(self.name)
-        args = {"id": bd_id, "command_context": other.command_context}
+        args = {"id": bd_id, "command_context": other.command_context, "study_version": other.study_version}
 
         excluded_fields = set(ICommand.model_fields)
         self_command = self.model_dump(mode="json", exclude=excluded_fields)
