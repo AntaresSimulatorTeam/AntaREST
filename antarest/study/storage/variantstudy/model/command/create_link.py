@@ -13,7 +13,7 @@ import typing as t
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from antares.study.version import StudyVersion
-from pydantic import Field, ValidationInfo, field_validator, model_validator
+from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
@@ -50,18 +50,14 @@ class LinkInfoProperties(AntaresBaseModel):
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
 
-    class Config:
-        alias_generator = to_kebab_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True)
 
 
 class LinkInfoProperties820(LinkInfoProperties):
-    filter_synthesis: t.Optional[str] = None
-    filter_year_by_year: t.Optional[str] = None
+    filter_synthesis: t.Optional[str] = "hourly, daily, weekly, monthly, annual"
+    filter_year_by_year: t.Optional[str] = "hourly, daily, weekly, monthly, annual"
 
-    class Config:
-        alias_generator = to_kebab_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True)
 
     @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def validate_individual_filters(cls, value: Optional[str]) -> Optional[str]:

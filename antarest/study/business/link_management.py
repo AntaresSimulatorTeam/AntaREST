@@ -13,7 +13,7 @@
 import typing as t
 
 from antares.study.version import StudyVersion
-from pydantic import BaseModel
+from pydantic import ConfigDict
 
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
 from antarest.core.model import JSON
@@ -23,7 +23,6 @@ from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_2, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_link import (
     AreaInfo,
     CreateLink,
@@ -37,15 +36,11 @@ _ALL_LINKS_PATH = "input/links"
 
 
 class LinkInfoDTOBase(AreaInfo, LinkInfoProperties):
-    class Config:
-        alias_generator = to_camel_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
 
 class LinkInfoDTO820(AreaInfo, LinkInfoProperties820):
-    class Config:
-        alias_generator = to_camel_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
 
 LinkInfoDTO = t.Union[LinkInfoDTO820, LinkInfoDTOBase]
@@ -91,19 +86,15 @@ class LinkManager:
         if link_creation_info.area1 == link_creation_info.area2:
             raise LinkValidationError(f"Cannot create link on same area: {link_creation_info.area1}")
 
-        if StudyVersion.parse(study.version) < STUDY_VERSION_8_2 and isinstance(link_creation_info, LinkInfoDTO820):
-            if link_creation_info.filter_synthesis is not None or link_creation_info.filter_year_by_year is not None:
-                raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
-
         link_dto: LinkInfoDTO
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2 and isinstance(link_creation_info, LinkInfoDTO820):
-            if link_creation_info.filter_synthesis is None:
-                link_creation_info.filter_synthesis = FilteringOptions.FILTER_SYNTHESIS
-            if link_creation_info.filter_year_by_year is None:
-                link_creation_info.filter_year_by_year = FilteringOptions.FILTER_YEAR_BY_YEAR
-            link_dto = LinkInfoDTO820(**link_creation_info.model_dump())
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2:
+            link_dto = LinkInfoDTO820.model_validate(link_creation_info.model_dump())
         else:
-            link_dto = LinkInfoDTOBase(**link_creation_info.model_dump())
+            forbidden_fields = {"filter_synthesis", "filter_year_by_year"}
+            fields = set(link_creation_info.model_dump(exclude_defaults=True))
+            if forbidden_fields & fields:
+                raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
+            link_dto = LinkInfoDTOBase.model_validate(link_creation_info.model_dump(exclude=forbidden_fields))
 
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
