@@ -146,6 +146,7 @@ class TimeSeriesConfigManager:
                     target=f"{GENERAL_DATA_PATH}/general/nbtimeseries{ts_type}",
                     data=field_values.number,
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 )
             )
 
@@ -155,6 +156,7 @@ class TimeSeriesConfigManager:
                     target=f"{GENERAL_DATA_PATH}/general/refreshinterval{ts_type}",
                     data=field_values.refresh_interval,
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 )
             )
 
@@ -164,6 +166,7 @@ class TimeSeriesConfigManager:
                     target=f"input/{ts_type}/prepro/correlation/general/mode",
                     data=field_values.season_correlation.value,
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 )
             )
 
@@ -192,6 +195,7 @@ class TimeSeriesConfigManager:
             target=path,
             data=", ".join([ts_type for ts_type in new_types if new_types[ts_type]]),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
 
     @staticmethod
