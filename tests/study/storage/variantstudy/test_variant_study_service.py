@@ -18,6 +18,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
@@ -165,6 +166,7 @@ class TestVariantStudyService:
 
         ## Prepare the RAW Study
         raw_study_service.create(raw_study)
+        study_version = StudyVersion.parse(raw_study.version)
 
         variant_study = variant_study_service.create_variant_study(
             raw_study.id,
@@ -184,10 +186,7 @@ class TestVariantStudyService:
             patch_service=patch_service,
         )
 
-        create_area_fr = CreateArea(
-            command_context=command_context,
-            area_name="fr",
-        )
+        create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=study_version)
 
         ## Prepare the Variant Study Data
         # noinspection SpellCheckingInspection
@@ -210,6 +209,7 @@ class TestVariantStudyService:
             ),
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
+            study_version=study_version,
         )
 
         execute_or_add_commands(

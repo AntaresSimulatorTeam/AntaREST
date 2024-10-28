@@ -195,6 +195,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 args=to_json_string(command.args),
                 index=(first_index + i),
                 version=command.version,
+                study_version=str(command.study_version),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -870,6 +871,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 args=command.args,
                 index=command.index,
                 version=command.version,
+                study_version=str(command.study_version),
             )
             for command in src_meta.commands
         ]
