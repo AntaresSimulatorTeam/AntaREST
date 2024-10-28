@@ -23,6 +23,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from typing_extensions import Annotated
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
@@ -99,7 +100,7 @@ class LinkInfoProperties(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True)
 
 
-comma_separated_enum_list = t.Annotated[
+comma_separated_enum_list = Annotated[
     t.List[FilterOption],
     BeforeValidator(lambda x: validate_filters(x, FilterOption)),
     PlainSerializer(lambda x: join_with_comma(x)),
