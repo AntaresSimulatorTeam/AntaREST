@@ -10,10 +10,19 @@
 #
 # This file is part of the Antares project.
 import typing as t
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
@@ -21,7 +30,12 @@ from antarest.core.utils.string import to_kebab_case
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_2
-from antarest.study.storage.rawstudy.model.filesystem.config.links import AssetType, LinkStyle, TransmissionCapacity
+from antarest.study.storage.rawstudy.model.filesystem.config.links import (
+    AssetType,
+    FilterOption,
+    LinkStyle,
+    TransmissionCapacity,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -30,7 +44,38 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 DEFAULT_COLOR = 112
-FILTER_VALUES = ["hourly", "daily", "weekly", "monthly", "annual"]
+FILTER_VALUES: t.List[FilterOption] = [
+    FilterOption.HOURLY,
+    FilterOption.DAILY,
+    FilterOption.WEEKLY,
+    FilterOption.MONTHLY,
+    FilterOption.ANNUAL,
+]
+
+
+def validate_filters(
+    filter_value: Union[List[FilterOption], str], enum_cls: t.Type[FilterOption]
+) -> List[FilterOption]:
+    if filter_value is not None and isinstance(filter_value, str):
+        filter_accepted_values = [e for e in enum_cls]
+
+        options = filter_value.replace(" ", "").split(",")
+
+        invalid_options = [opt for opt in options if opt not in filter_accepted_values]
+        if invalid_options:
+            raise LinkValidationError(
+                f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
+                f"Allowed values are: {', '.join(filter_accepted_values)}."
+            )
+
+        return [enum_cls(opt) for opt in options]
+
+    return filter_value
+
+
+def join_with_comma(values: t.List[FilterOption]) -> str:
+    return ", ".join(value.name.lower() for value in values)
+
 
 class AreaInfo(AntaresBaseModel):
     area1: str
@@ -53,25 +98,17 @@ class LinkInfoProperties(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True)
 
 
+comma_separated_enum_list = t.Annotated[
+    t.List[FilterOption],
+    BeforeValidator(lambda x: validate_filters(x, FilterOption)),
+    PlainSerializer(lambda x: join_with_comma(x)),
+]
+
 class LinkInfoProperties820(LinkInfoProperties):
-    filter_synthesis: t.Optional[str] = ", ".join(FILTER_VALUES)
-    filter_year_by_year: t.Optional[str] = ", ".join(FILTER_VALUES)
+    filter_synthesis: comma_separated_enum_list = FILTER_VALUES
+    filter_year_by_year: comma_separated_enum_list = FILTER_VALUES
 
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True)
-
-    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
-    def validate_individual_filters(cls, value: Optional[str]) -> Optional[str]:
-        if value is not None:
-            filter_values = FILTER_VALUES
-
-            options = value.replace(" ", "").split(",")
-            invalid_options = [opt for opt in options if opt not in filter_values]
-            if invalid_options:
-                raise LinkValidationError(
-                    f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
-                    f"Allowed values are: {', '.join(filter_values)}."
-                )
-        return value
 
 
 class LinkProperties(LinkInfoProperties820):
