@@ -30,7 +30,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 DEFAULT_COLOR = 112
-
+FILTER_VALUES = ["hourly", "daily", "weekly", "monthly", "annual"]
 
 class AreaInfo(AntaresBaseModel):
     area1: str
@@ -54,15 +54,15 @@ class LinkInfoProperties(AntaresBaseModel):
 
 
 class LinkInfoProperties820(LinkInfoProperties):
-    filter_synthesis: t.Optional[str] = "hourly, daily, weekly, monthly, annual"
-    filter_year_by_year: t.Optional[str] = "hourly, daily, weekly, monthly, annual"
+    filter_synthesis: t.Optional[str] = ", ".join(FILTER_VALUES)
+    filter_year_by_year: t.Optional[str] = ", ".join(FILTER_VALUES)
 
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True)
 
     @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def validate_individual_filters(cls, value: Optional[str]) -> Optional[str]:
         if value is not None:
-            filter_values = ["hourly", "daily", "weekly", "monthly", "annual"]
+            filter_values = FILTER_VALUES
 
             options = value.replace(" ", "").split(",")
             invalid_options = [opt for opt in options if opt not in filter_values]
