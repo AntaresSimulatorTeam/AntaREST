@@ -239,7 +239,9 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             if matrix_attr is not None:
                 args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
 
-        return CommandDTO(action=self.command_name.value, args=args, version=self.version)
+        return CommandDTO(
+            action=self.command_name.value, args=args, version=self.version, study_version=self.study_version
+        )
 
     def get_inner_matrices(self) -> t.List[str]:
         matrix_service = self.command_context.matrix_service

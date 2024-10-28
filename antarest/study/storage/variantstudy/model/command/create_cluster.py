@@ -167,6 +167,7 @@ class CreateCluster(ICommand):
                 "prepro": strip_matrix_protocol(self.prepro),
                 "modulation": strip_matrix_protocol(self.modulation),
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
@@ -205,6 +206,7 @@ class CreateCluster(ICommand):
                     target=f"input/thermal/prepro/{self.area_id}/{series_id}/data",
                     matrix=strip_matrix_protocol(other.prepro),
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         if self.modulation != other.modulation:
@@ -213,6 +215,7 @@ class CreateCluster(ICommand):
                     target=f"input/thermal/prepro/{self.area_id}/{series_id}/modulation",
                     matrix=strip_matrix_protocol(other.modulation),
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         if self.parameters != other.parameters:
@@ -221,6 +224,7 @@ class CreateCluster(ICommand):
                     target=f"input/thermal/clusters/{self.area_id}/list/{self.cluster_name}",
                     data=other.parameters,
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         return commands

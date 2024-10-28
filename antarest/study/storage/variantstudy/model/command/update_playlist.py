@@ -61,6 +61,7 @@ class UpdatePlaylist(ICommand):
                 "weights": self.weights,
                 "reverse": self.reverse,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

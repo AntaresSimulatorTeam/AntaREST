@@ -112,6 +112,7 @@ class CreateDistrict(ICommand):
                 "output": self.output,
                 "comments": self.comments,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
@@ -150,6 +151,7 @@ class CreateDistrict(ICommand):
                     "comments": other.comments,
                 },
                 command_context=self.command_context,
+                study_version=self.study_version,
             )
         ]
 

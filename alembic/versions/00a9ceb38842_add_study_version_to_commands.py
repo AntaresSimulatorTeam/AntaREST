@@ -44,7 +44,7 @@ def upgrade():
 
     # Clean orphan commands
     study_ids = {study_id for study_id, _ in study_info}
-    ids_to_remove = [cmd_id for study_id, cmd_ids in mapping.items() if study_id not in study_ids for cmd_id in cmd_ids]
+    ids_to_remove = {cmd_id for study_id, cmd_ids in mapping.items() if study_id not in study_ids for cmd_id in cmd_ids}
     bind.execute(commandblock_table.delete().where(commandblock_table.c.id.in_(ids_to_remove)))
 
     # Insert new values

@@ -271,10 +271,7 @@ class CreateLink(ICommand):
             args["direct"] = strip_matrix_protocol(self.direct)
         if self.indirect:
             args["indirect"] = strip_matrix_protocol(self.indirect)
-        return CommandDTO(
-            action=CommandName.CREATE_LINK.value,
-            args=args,
-        )
+        return CommandDTO(action=CommandName.CREATE_LINK.value, args=args, study_version=self.study_version)
 
     def match_signature(self) -> str:
         return str(
@@ -309,6 +306,7 @@ class CreateLink(ICommand):
                     target=f"input/links/{area_from}/properties/{area_to}",
                     data=link_property,
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         if self.series != other.series:
@@ -317,6 +315,7 @@ class CreateLink(ICommand):
                     target=f"@links_series/{area_from}/{area_to}",
                     matrix=strip_matrix_protocol(other.series),
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         return commands

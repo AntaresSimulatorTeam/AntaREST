@@ -292,8 +292,7 @@ class CreateArea(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_AREA.value,
-            args={"area_name": self.area_name},
+            action=CommandName.CREATE_AREA.value, args={"area_name": self.area_name}, study_version=self.study_version
         )
 
     def match_signature(self) -> str:

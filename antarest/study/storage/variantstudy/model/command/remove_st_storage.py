@@ -139,6 +139,7 @@ class RemoveSTStorage(ICommand):
         return CommandDTO(
             action=self.command_name.value,
             args={"area_id": self.area_id, "storage_id": self.storage_id},
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

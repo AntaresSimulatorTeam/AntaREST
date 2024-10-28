@@ -209,7 +209,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             if key in matrices:
                 json_command[key] = matrix_service.get_matrix_id(json_command[key])
 
-        return CommandDTO(action=self.command_name.value, args=json_command, version=self.version)
+        return CommandDTO(
+            action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
+        )
 
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)

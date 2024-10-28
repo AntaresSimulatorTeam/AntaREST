@@ -99,8 +99,7 @@ class UpdateScenarioBuilder(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.UPDATE_SCENARIO_BUILDER.value,
-            args={"data": self.data},
+            action=CommandName.UPDATE_SCENARIO_BUILDER.value, args={"data": self.data}, study_version=self.study_version
         )
 
     def match_signature(self) -> str:

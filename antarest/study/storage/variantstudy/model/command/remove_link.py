@@ -154,6 +154,7 @@ class RemoveLink(ICommand):
         return CommandDTO(
             action=CommandName.REMOVE_LINK.value,
             args={"area1": self.area1, "area2": self.area2},
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

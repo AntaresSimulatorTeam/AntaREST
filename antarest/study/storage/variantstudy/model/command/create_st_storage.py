@@ -263,6 +263,7 @@ class CreateSTStorage(ICommand):
                 "parameters": parameters,
                 **{attr: strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES},
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
@@ -315,6 +316,7 @@ class CreateSTStorage(ICommand):
                 target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{attr}",
                 matrix=strip_matrix_protocol(getattr(other, attr)),
                 command_context=self.command_context,
+                study_version=self.study_version,
             )
             for attr in _MATRIX_NAMES
             if getattr(self, attr) != getattr(other, attr)
@@ -326,6 +328,7 @@ class CreateSTStorage(ICommand):
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
                     data=data,
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         return commands

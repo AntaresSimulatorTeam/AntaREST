@@ -66,6 +66,7 @@ class UpdateRawFile(ICommand):
         return CommandDTO(
             action=self.command_name.value,
             args={"target": self.target, "b64Data": self.b64Data},
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

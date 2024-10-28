@@ -16,7 +16,8 @@ import uuid
 from abc import ABC, abstractmethod
 
 import typing_extensions as te
-from pydantic import BaseModel
+from antares.study.version import StudyVersion
+from pydantic import BaseModel, field_validator
 
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -50,6 +51,11 @@ class ICommand(ABC, BaseModel, extra="forbid", arbitrary_types_allowed=True):
     command_name: CommandName
     version: int
     command_context: CommandContext
+    study_version: StudyVersion
+
+    @field_validator("study_version", mode="before")
+    def _validate_version(cls, v: t.Any) -> StudyVersion:
+        return StudyVersion.parse(v)
 
     @abstractmethod
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:

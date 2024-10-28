@@ -59,6 +59,7 @@ class UpdateComments(ICommand):
             args={
                 "comments": self.comments,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
