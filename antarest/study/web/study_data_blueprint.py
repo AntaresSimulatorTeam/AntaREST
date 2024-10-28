@@ -201,11 +201,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Update a link",
-        response_model=LinkInfoDTOType,
+        response_model=LinkInfoDTO,
     )
     def update_link(
         uuid: str,
-        link_creation_info: LinkInfoDTOType,
+        link_creation_info: LinkInfoDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])

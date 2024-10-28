@@ -31,35 +31,29 @@ class TestLink:
 
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
-        client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "hurdles-cost": True})
+        client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "hurdlesCost": True})
         res = client.put(
             f"/v1/studies/{study_id}/links",
-            json={
-                "area1": area1_id,
-                "area2": area2_id,
-                "hurdles-cost": False,
-                "colorr": 150,
-                "filter-synthesis": "hourly",
-            },
+            json={"area1": area1_id, "area2": area2_id, "colorr": 150},
         )
 
         assert res.status_code == 200
         expected = {
             "area1": "area 1",
             "area2": "area 2",
-            "asset-type": "ac",
+            "assetType": "ac",
             "colorb": 112,
             "colorg": 112,
             "colorr": 150,
-            "display-comments": True,
-            "filter-synthesis": "hourly",
-            "filter-year-by-year": "hourly, daily, weekly, monthly, annual",
-            "hurdles-cost": False,
-            "link-style": "plain",
-            "link-width": 1.0,
-            "loop-flow": False,
-            "transmission-capacities": "enabled",
-            "use-phase-shifter": False,
+            "displayComments": True,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": True,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
         }
         assert expected == res.json()
 
@@ -70,7 +64,7 @@ class TestLink:
             json={
                 "area1": area1_id,
                 "area2": area1_id,
-                "hurdles-cost": False,
+                "hurdlesCost": False,
             },
         )
         assert res.status_code == 422
@@ -84,7 +78,7 @@ class TestLink:
             json={
                 "area1": area1_id,
                 "area2": "id_do_not_exist",
-                "hurdles-cost": False,
+                "hurdlesCost": False,
             },
         )
         assert res.status_code == 422
@@ -124,7 +118,7 @@ class TestLink:
                 json={
                     "area1": area1_id,
                     "area2": area2_id,
-                    "hurdles-cost": False,
+                    "hurdlesCost": False,
                 },
             )
             assert res.status_code == 200
@@ -132,7 +126,7 @@ class TestLink:
             res = client.get(f"/v1/studies/{study_id}/commands")
             commands = res.json()
             command_args = commands[-1]["args"]
-            assert command_args["parameters"] == {"hurdles-cost": False}
+            assert command_args["parameters"] == {"hurdles_cost": False}
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_820(self, client: TestClient, user_access_token: str, study_type: str) -> None:

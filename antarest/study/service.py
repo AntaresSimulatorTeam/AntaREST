@@ -1872,9 +1872,9 @@ class StudyService:
     def update_link(
         self,
         uuid: str,
-        link_update_dto: LinkInfoDTOType,
+        link_update_dto: LinkInfoDTO,
         params: RequestParameters,
-    ) -> LinkInfoDTOType:
+    ) -> LinkInfoDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)

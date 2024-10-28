@@ -11,13 +11,20 @@
 # This file is part of the Antares project.
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import ValidationError
 
 from antarest.core.exceptions import LinkValidationError
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand, LinkProperties
+from antarest.study.storage.variantstudy.model.command.create_link import (
+    AbstractLinkCommand,
+    LinkInfoProperties,
+    LinkInfoProperties820,
+    LinkProperties,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -51,7 +58,6 @@ class UpdateLink(AbstractLinkCommand):
         properties = LinkProperties.model_validate(self.parameters or {}).model_dump(exclude_unset=True, by_alias=True)
 
         current_parameters = study_data.tree.get(["input", "links", area_from, "properties", area_to])
-
         current_parameters.update(properties)
 
         study_data.tree.save(current_parameters, ["input", "links", area_from, "properties", area_to])

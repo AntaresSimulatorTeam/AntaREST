@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from enum import Enum
 from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
@@ -24,7 +23,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
