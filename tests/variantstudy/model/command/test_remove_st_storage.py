@@ -24,7 +24,7 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
+from antarest.study.model import STUDY_VERSION_8_8
 
 @pytest.fixture(name="recent_study")
 def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
@@ -63,11 +63,13 @@ class TestRemoveSTStorage:
             command_context=command_context,
             area_id="area_fr",
             storage_id="storage_1",
+            study_version=STUDY_VERSION_8_8
         )
 
         # Check the attribues
         assert cmd.command_name == CommandName.REMOVE_ST_STORAGE
         assert cmd.version == 1
+        assert cmd.study_version == STUDY_VERSION_8_8
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
         assert cmd.storage_id == "storage_1"
@@ -79,6 +81,7 @@ class TestRemoveSTStorage:
                 command_context=command_context,
                 area_id="dummy",
                 storage_id="?%$$",  # bad name
+                study_version=STUDY_VERSION_8_8
             )
         assert ctx.value.errors() == [
             {
@@ -93,18 +96,20 @@ class TestRemoveSTStorage:
 
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
+        study_version = empty_study.config.version
         # When we apply the config to add a new ST Storage
         remove_st_storage = RemoveSTStorage(
             command_context=command_context,
             area_id="foo",
             storage_id="bar",
+            study_version=study_version
         )
         command_output = remove_st_storage.apply_config(empty_study.config)
 
         # Then, the output should be an error
         assert command_output.status is False
         assert re.search(
-            rf"Invalid.*version {empty_study.config.version}",
+            rf"Invalid.*version {study_version}",
             command_output.message,
             flags=re.IGNORECASE,
         )
