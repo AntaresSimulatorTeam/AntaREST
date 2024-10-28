@@ -95,8 +95,9 @@ def test_thematic_trimming_config() -> None:
     assert actual == expected
 
     study.version = config.version = 840
+    study_version = StudyVersion.parse(study.version)
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(StudyVersion.parse(study.version))
+    fields_info = get_fields_info(study_version)
     expected = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, False))
     expected.cong_fee_alg = True
     assert actual == expected
@@ -109,6 +110,7 @@ def test_thematic_trimming_config() -> None:
             target="settings/generaldata/variables selection",
             data={"select_var -": [FIELDS_INFO["coal"]["path"]]},
             command_context=command_context,
+            study_version=study_version,
         )
     )
 
@@ -123,6 +125,7 @@ def test_thematic_trimming_config() -> None:
                 "select_var +": [FIELDS_INFO["renw_1"]["path"]],
             },
             command_context=command_context,
+            study_version=study_version,
         )
     )
 

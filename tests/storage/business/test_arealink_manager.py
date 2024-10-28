@@ -25,7 +25,7 @@ from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkInfoDTO, LinkManager
-from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
+from antarest.study.model import STUDY_VERSION_8_8, Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -100,10 +100,12 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # Check `AreaManager` behaviour with a RAW study
     study_id = str(uuid.uuid4())
     # noinspection PyArgumentList
+    study_version = empty_study.config.version
     study = RawStudy(
         id=study_id,
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
+        version=str(study_version),
     )
     db.session.add(study)
     db.session.commit()
@@ -150,6 +152,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         id=variant_id,
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
+        version=str(study_version),
     )
     variant_study_service.get_raw.return_value = empty_study
     area_manager.create_area(
@@ -158,12 +161,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     )
     variant_study_service.append_commands.assert_called_with(
         variant_id,
-        [
-            CommandDTO(
-                action=CommandName.CREATE_AREA.value,
-                args={"area_name": "test"},
-            )
-        ],
+        [CommandDTO(action=CommandName.CREATE_AREA.value, args={"area_name": "test"}, study_version=study_version)],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
     assert (empty_study.config.study_path / "patch.json").exists()
@@ -210,6 +208,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "data": "255,0,100",
                     },
                 ],
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -227,6 +226,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                     "area2": "test2",
                     "parameters": None,
                 },
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -238,6 +238,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
             CommandDTO(
                 action=CommandName.REMOVE_LINK.value,
                 args={"area1": "test", "area2": "test2"},
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -246,7 +247,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
-            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}),
+            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}, study_version=study_version),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
