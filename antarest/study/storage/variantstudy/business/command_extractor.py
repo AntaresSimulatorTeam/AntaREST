@@ -354,6 +354,7 @@ class CommandExtractor(ICommandExtractor):
         bindings_data: t.Optional[JSON] = None,
     ) -> t.List[ICommand]:
         study_tree = study.tree
+        study_version = study.config.version
 
         # Retrieve binding constraint properties from the study tree,
         # so, field names follow the same convention as the INI file.
@@ -372,7 +373,7 @@ class CommandExtractor(ICommandExtractor):
                 del binding[term_id]
 
         # Extract the matrices associated with the binding constraint
-        if study.config.version < STUDY_VERSION_8_7:
+        if study_version < STUDY_VERSION_8_7:
             urls = {"values": ["input", "bindingconstraints", bc_id]}
         else:
             urls = {
@@ -388,7 +389,13 @@ class CommandExtractor(ICommandExtractor):
                 matrices[name] = matrix["data"]
 
         # Create the command to create the binding constraint
-        kwargs = {**binding, **matrices, "coeffs": terms, "command_context": self.command_context}
+        kwargs = {
+            **binding,
+            **matrices,
+            "coeffs": terms,
+            "command_context": self.command_context,
+            "study_version": study_version,
+        }
         create_cmd = CreateBindingConstraint.model_validate(kwargs)
 
         return [create_cmd]
