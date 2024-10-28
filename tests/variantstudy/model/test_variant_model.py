@@ -15,6 +15,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
@@ -93,6 +94,7 @@ class TestVariantStudyService:
 
         # Create un new variant
         variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant", params=params)
+        study_version = StudyVersion.parse(variant_study.version)
         saved_id = variant_study.id
         study = variant_study_service.repository.get(saved_id)
         assert study is not None
@@ -101,11 +103,11 @@ class TestVariantStudyService:
 
         # Append command
         command_count = 0
-        command_1 = CommandDTO(action="create_area", args={"area_name": "Yes"})
+        command_1 = CommandDTO(action="create_area", args={"area_name": "Yes"}, study_version=study_version)
         variant_study_service.append_command(saved_id, command_1, params=params)
         command_count += 1
 
-        command_2 = CommandDTO(action="create_area", args={"area_name": "No"})
+        command_2 = CommandDTO(action="create_area", args={"area_name": "No"}, study_version=study_version)
         variant_study_service.append_command(saved_id, command_2, params=params)
         command_count += 1
 
@@ -113,8 +115,8 @@ class TestVariantStudyService:
         assert len(commands) == command_count
 
         # Append multiple commands
-        command_3 = CommandDTO(action="create_area", args={"area_name": "Maybe"})
-        command_4 = CommandDTO(action="create_link", args={"area1": "no", "area2": "yes"})
+        command_3 = CommandDTO(action="create_area", args={"area_name": "Maybe"}, study_version=study_version)
+        command_4 = CommandDTO(action="create_link", args={"area1": "no", "area2": "yes"}, study_version=study_version)
         variant_study_service.append_commands(saved_id, [command_3, command_4], params=params)
         command_count += 2
 
@@ -136,6 +138,7 @@ class TestVariantStudyService:
                 "cluster_name": "cl1",
                 "parameters": {"group": "Gas", "unitcount": 1, "nominalcapacity": 500},
             },
+            study_version=study_version,
         )
         variant_study_service.append_command(saved_id, command_5, params=params)
         command_count += 1
