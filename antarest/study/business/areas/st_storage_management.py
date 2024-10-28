@@ -290,7 +290,7 @@ class STStorageManager:
         if values is not None:
             raise DuplicateSTStorage(area_id, storage.id)
 
-        command = self._make_create_cluster_cmd(area_id, storage)
+        command = self._make_create_cluster_cmd(area_id, storage, file_study.config.version)
         execute_or_add_commands(
             study,
             file_study,
@@ -300,11 +300,14 @@ class STStorageManager:
         output = self.get_storage(study, area_id, storage_id=storage.id)
         return output
 
-    def _make_create_cluster_cmd(self, area_id: str, cluster: STStorageConfigType) -> CreateSTStorage:
+    def _make_create_cluster_cmd(
+        self, area_id: str, cluster: STStorageConfigType, study_version: StudyVersion
+    ) -> CreateSTStorage:
         command = CreateSTStorage(
             area_id=area_id,
             parameters=cluster,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=study_version,
         )
         return command
 
@@ -560,7 +563,7 @@ class STStorageManager:
         creation_form = STStorageCreation(**current_cluster.model_dump(by_alias=False, exclude=fields_to_exclude))
 
         new_config = creation_form.to_config(study_version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
         lower_source_id = source_id.lower()

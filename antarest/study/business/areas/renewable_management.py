@@ -207,7 +207,7 @@ class RenewableManager:
         """
         file_study = self._get_file_study(study)
         cluster = cluster_data.to_config(StudyVersion.parse(study.version))
-        command = self._make_create_cluster_cmd(area_id, cluster)
+        command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
         execute_or_add_commands(
             study,
             file_study,
@@ -217,12 +217,15 @@ class RenewableManager:
         output = self.get_cluster(study, area_id, cluster.id)
         return output
 
-    def _make_create_cluster_cmd(self, area_id: str, cluster: RenewableConfigType) -> CreateRenewablesCluster:
+    def _make_create_cluster_cmd(
+        self, area_id: str, cluster: RenewableConfigType, study_version: StudyVersion
+    ) -> CreateRenewablesCluster:
         command = CreateRenewablesCluster(
             area_id=area_id,
             cluster_name=cluster.id,
             parameters=cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=study_version,
         )
         return command
 
@@ -365,7 +368,7 @@ class RenewableManager:
         current_cluster.name = new_cluster_name
         creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
         new_config = creation_form.to_config(study_version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
         lower_source_id = source_id.lower()
