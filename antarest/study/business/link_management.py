@@ -157,13 +157,12 @@ class LinkManager:
 
         area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
         try:
-            link_updated = LinkInfoProperties.model_validate(
-                file_study.tree.get(["input", "links", area_from, "properties", area_to])
-            )
+            link_properties = file_study.tree.get(["input", "links", area_from, "properties", area_to])
         except KeyError:
             raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
 
-        return link_creation_info.model_copy(update=link_updated.model_dump())
+        updated_link = LinkInfoProperties.model_validate(link_properties)
+        return link_creation_info.model_copy(update=updated_link.model_dump())
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
