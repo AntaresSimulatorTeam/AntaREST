@@ -411,7 +411,10 @@ def _generate_replace_matrix_commands(
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
         }[value.time_step].tolist()
         command = ReplaceMatrix(
-            target=f"input/bindingconstraints/{bc_id}", matrix=matrix, command_context=command_context
+            target=f"input/bindingconstraints/{bc_id}",
+            matrix=matrix,
+            command_context=command_context,
+            study_version=study_version,
         )
         commands.append(command)
     else:
@@ -424,7 +427,10 @@ def _generate_replace_matrix_commands(
         for matrix_name in matrices_to_replace:
             matrix_id = matrix_name.format(bc_id=bc_id)
             command = ReplaceMatrix(
-                target=f"input/bindingconstraints/{matrix_id}", matrix=matrix, command_context=command_context
+                target=f"input/bindingconstraints/{matrix_id}",
+                matrix=matrix,
+                command_context=command_context,
+                study_version=study_version,
             )
             commands.append(command)
     return commands
@@ -915,6 +921,7 @@ class BindingConstraintManager:
             target="input/bindingconstraints/bindingconstraints",
             data=config,
             command_context=command_context,
+            study_version=study_version,
         )
         commands.append(command)
         execute_or_add_commands(study, file_study, commands, self.storage_service)
@@ -935,7 +942,9 @@ class BindingConstraintManager:
         bc = self.get_binding_constraint(study, binding_constraint_id)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        command = RemoveBindingConstraint(id=bc.id, command_context=command_context)
+        command = RemoveBindingConstraint(
+            id=bc.id, command_context=command_context, study_version=file_study.config.version
+        )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def _update_constraint_with_terms(

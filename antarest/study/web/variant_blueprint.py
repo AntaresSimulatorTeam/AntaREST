@@ -98,6 +98,7 @@ def create_study_variant_routes(
                             }
                         },
                         command_context=command_context,
+                        study_version=variant_study.version,
                     ).to_dto()
                 ],
                 params,

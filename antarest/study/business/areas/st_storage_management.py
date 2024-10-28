@@ -385,6 +385,7 @@ class STStorageManager:
 
         # Prepare the commands to update the storage clusters.
         commands = []
+        study_version = StudyVersion.parse(study.version)
         for area_id, update_storages_by_ids in update_storages_by_areas.items():
             old_storages_by_ids = old_storages_by_areas[area_id]
             for storage_id, update_cluster in update_storages_by_ids.items():
@@ -395,13 +396,14 @@ class STStorageManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_st_storage_config(
-                    StudyVersion.parse(study.version), **new_cluster.model_dump(by_alias=False, exclude_none=True)
+                    study_version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
                 )
                 path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
                 cmd = UpdateConfig(
                     target=path,
                     data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=study_version,
                 )
                 commands.append(cmd)
 
@@ -484,7 +486,9 @@ class STStorageManager:
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         commands = [
-            UpdateConfig(target=f"{path}/{key}", data=value, command_context=command_context)
+            UpdateConfig(
+                target=f"{path}/{key}", data=value, command_context=command_context, study_version=study_version
+            )
             for key, value in data.items()
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
@@ -520,6 +524,7 @@ class STStorageManager:
                 area_id=area_id,
                 storage_id=storage_id,
                 command_context=command_context,
+                study_version=file_study.config.version,
             )
             execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -576,7 +581,9 @@ class STStorageManager:
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):
             current_matrix = storage_service.get(study, source_path)["data"]
-            command = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
+            command = ReplaceMatrix(
+                target=new_path, matrix=current_matrix, command_context=command_context, study_version=study_version
+            )
             commands.append(command)
 
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
@@ -651,7 +658,9 @@ class STStorageManager:
         file_study = self._get_file_study(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
-        command = ReplaceMatrix(target=path, matrix=matrix_data, command_context=command_context)
+        command = ReplaceMatrix(
+            target=path, matrix=matrix_data, command_context=command_context, study_version=file_study.config.version
+        )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def validate_matrices(

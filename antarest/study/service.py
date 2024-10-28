@@ -201,10 +201,12 @@ class ThermalClusterTimeSeriesGeneratorTask:
     def _generate_timeseries(self) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries(command_context=command_context)
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
+            command = GenerateThermalClusterTimeSeries(
+                command_context=command_context, study_version=file_study.config.version
+            )
             execute_or_add_commands(study, file_study, [command], self.storage_service)
             self.event_bus.push(
                 Event(
@@ -553,6 +555,7 @@ class StudyService:
                     target="settings/comments",
                     b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
                     command_context=variant_study_service.command_factory.command_context,
+                    study_version=study.version,
                 )
             ]
             variant_study_service.append_commands(

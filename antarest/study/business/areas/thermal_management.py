@@ -250,6 +250,7 @@ class ThermalManager:
 
         # Prepare the commands to update the thermal clusters.
         commands = []
+        study_version = StudyVersion.parse(study.version)
         for area_id, update_thermals_by_ids in update_thermals_by_areas.items():
             old_thermals_by_ids = old_thermals_by_areas[area_id]
             for thermal_id, update_cluster in update_thermals_by_ids.items():
@@ -260,13 +261,14 @@ class ThermalManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_thermal_config(
-                    StudyVersion.parse(study.version), **new_cluster.model_dump(by_alias=False, exclude_none=True)
+                    study_version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
                 cmd = UpdateConfig(
                     target=path,
                     data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=study_version,
                 )
                 commands.append(cmd)
 
@@ -366,7 +368,9 @@ class ThermalManager:
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         commands = [
-            UpdateConfig(target=f"{path}/{key}", data=value, command_context=command_context)
+            UpdateConfig(
+                target=f"{path}/{key}", data=value, command_context=command_context, study_version=study_version
+            )
             for key, value in data.items()
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
@@ -388,7 +392,12 @@ class ThermalManager:
         command_context = self.storage_service.variant_study_service.command_factory.command_context
 
         commands = [
-            RemoveCluster(area_id=area_id, cluster_id=cluster_id, command_context=command_context)
+            RemoveCluster(
+                area_id=area_id,
+                cluster_id=cluster_id,
+                command_context=command_context,
+                study_version=file_study.config.version,
+            )
             for cluster_id in cluster_ids
         ]
 
@@ -440,7 +449,8 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
+        study_version = StudyVersion.parse(study.version)
+        if study_version >= STUDY_VERSION_8_7:
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
             new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
@@ -452,7 +462,9 @@ class ThermalManager:
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):
             current_matrix = storage_service.get(study, source_path)["data"]
-            command = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
+            command = ReplaceMatrix(
+                target=new_path, matrix=current_matrix, command_context=command_context, study_version=study_version
+            )
             commands.append(command)
 
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
