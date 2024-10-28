@@ -104,6 +104,7 @@ comma_separated_enum_list = t.Annotated[
     PlainSerializer(lambda x: join_with_comma(x)),
 ]
 
+
 class LinkInfoProperties820(LinkInfoProperties):
     filter_synthesis: comma_separated_enum_list = FILTER_VALUES
     filter_year_by_year: comma_separated_enum_list = FILTER_VALUES
