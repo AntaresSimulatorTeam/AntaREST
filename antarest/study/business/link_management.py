@@ -128,7 +128,8 @@ class LinkManager:
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        updated_link = self.get_one_link(study, link_update_info)
+        updated_link = self.get_updated_link(study, link_update_info)
+
         return updated_link
 
     def check_attributes_coherence(
@@ -151,7 +152,7 @@ class LinkManager:
                 ):
                     raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
-    def get_one_link(self, study: RawStudy, link_creation_info: LinkInfoDTO) -> LinkInfoDTO:
+    def get_updated_link(self, study: RawStudy, link_creation_info: LinkInfoDTO) -> LinkInfoDTO:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
