@@ -774,6 +774,7 @@ class BindingConstraintManager:
         args = {
             **new_constraint,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "study_version": version,
         }
         if data.terms:
             args["coeffs"] = self.terms_to_coeffs(data.terms)
@@ -814,6 +815,7 @@ class BindingConstraintManager:
         args = {
             **upd_constraint,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "study_version": study_version,
         }
         if data.terms:
             args["coeffs"] = self.terms_to_coeffs(data.terms)
@@ -954,9 +956,14 @@ class BindingConstraintManager:
             term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
         }
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        args = {"id": bc.id, "coeffs": coeffs, "command_context": command_context}
-        command = UpdateBindingConstraint.model_validate(args)
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        args = {
+            "id": bc.id,
+            "coeffs": coeffs,
+            "command_context": command_context,
+            "study_version": file_study.config.version,
+        }
+        command = UpdateBindingConstraint.model_validate(args)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def update_constraint_terms(
