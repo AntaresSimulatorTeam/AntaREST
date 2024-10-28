@@ -68,10 +68,10 @@ class UpdateLink(AbstractLinkCommand):
             self.save_series(area_from, area_to, study_data, version)
 
         if self.direct:
-            self.save_direct_series(area_from, area_to, study_data, version)
+            self.save_direct(area_from, area_to, study_data, version)
 
         if self.indirect:
-            self.save_indirect_series(area_from, area_to, study_data, version)
+            self.save_indirect(area_from, area_to, study_data, version)
 
         return output
 
