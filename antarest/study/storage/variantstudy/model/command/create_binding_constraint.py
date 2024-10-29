@@ -39,6 +39,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MatrixType = t.List[t.List[MatrixData]]
@@ -426,7 +427,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         )
         return CommandOutput(status=True), {}
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = str(len(binding_constraints))
         bd_id = transform_name_to_id(self.name)

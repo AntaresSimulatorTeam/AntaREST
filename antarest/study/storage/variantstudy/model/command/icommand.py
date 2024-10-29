@@ -17,13 +17,15 @@ from abc import ABC, abstractmethod
 
 import typing_extensions as te
 from antares.study.version import StudyVersion
-from pydantic import BaseModel, field_validator
+from pydantic import field_validator
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import assert_this
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 if t.TYPE_CHECKING:  # False at runtime, for mypy
@@ -36,7 +38,7 @@ logger = logging.getLogger(__name__)
 OutputTuple: te.TypeAlias = t.Tuple[CommandOutput, t.Dict[str, t.Any]]
 
 
-class ICommand(ABC, BaseModel, extra="forbid", arbitrary_types_allowed=True):
+class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
     """
     Interface for all commands that can be applied to a study.
 
@@ -84,7 +86,7 @@ class ICommand(ABC, BaseModel, extra="forbid", arbitrary_types_allowed=True):
         return output
 
     @abstractmethod
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -96,18 +98,19 @@ class ICommand(ABC, BaseModel, extra="forbid", arbitrary_types_allowed=True):
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: FileStudy) -> CommandOutput:
+    def apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
         Args:
             study_data: The study data to be applied.
+            listener: Can be used by the command to notify anyone giving one.
 
         Returns:
             The output of the command execution.
         """
         try:
-            return self._apply(study_data)
+            return self._apply(study_data, listener)
         except Exception as e:
             logger.warning(
                 f"Failed to execute variant command {self.command_name}",
