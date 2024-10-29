@@ -34,7 +34,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
+    bp = APIRouter(prefix="/v1/private")
     auth = Auth(config)
 
     @bp.get(
