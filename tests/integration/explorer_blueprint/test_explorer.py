@@ -70,7 +70,7 @@ def test_explorer(app: FastAPI, client: TestClient, admin_access_token: str, stu
     directories_res = [NonStudyFolder(**d) for d in directories_res]
     directorires_expected = [
         NonStudyFolder(
-            path=f"{study_tree}/ext_workspace/folder/trash",
+            path=str(study_tree / "ext_workspace/folder/trash"),
             workspace="ext",
             name="trash",
         )
