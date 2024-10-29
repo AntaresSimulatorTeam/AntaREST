@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import numpy as np
 import numpy.typing as npt
+from antares.study.version import StudyVersion
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -91,9 +92,10 @@ def test_parse_commands(tmp_path: str, app: FastAPI) -> None:
     client = TestClient(app, raise_server_exceptions=False)
 
     extract_commands(study_path, output_dir)
-    commands = [CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "all areas"})] + parse_commands(
-        output_dir / COMMAND_FILE
-    )
+    study_version = StudyVersion.parse(version)
+    commands = [
+        CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "all areas"}, study_version=study_version)
+    ] + parse_commands(output_dir / COMMAND_FILE)
     res, study_id = generate_study_with_server(client, name, version, commands, output_dir / MATRIX_STORE_DIR)
     assert res is not None and res.success
     generated_study_path = tmp_path / "internal_workspace" / study_id / "snapshot"
