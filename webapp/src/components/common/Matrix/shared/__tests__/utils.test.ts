@@ -15,7 +15,7 @@
 import { Column } from "../constants";
 import {
   calculateMatrixAggregates,
-  formatNumber,
+  formatGridNumber,
   generateCustomColumns,
   generateDateTime,
   generateTimeSeriesColumns,
@@ -101,7 +101,7 @@ describe("Matrix Utils", () => {
   describe("Number Formatting", () => {
     describe.each(FORMAT_TEST_CASES)("$name", ({ cases }) => {
       test.each(cases)("$description", ({ value, maxDecimals, expected }) => {
-        expect(formatNumber({ value, maxDecimals })).toBe(expected);
+        expect(formatGridNumber({ value, maxDecimals })).toBe(expected);
       });
     });
   });

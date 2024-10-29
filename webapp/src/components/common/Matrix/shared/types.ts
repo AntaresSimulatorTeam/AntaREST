@@ -51,7 +51,7 @@ export interface CustomColumnOptions {
   width?: number;
 }
 
-export interface FormatNumberOptions {
+export interface FormatGridNumberOptions {
   value?: number;
   maxDecimals?: number;
 }

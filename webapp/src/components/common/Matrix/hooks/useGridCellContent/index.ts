@@ -19,7 +19,7 @@ import {
   type ColumnType,
   MatrixAggregates,
 } from "../../shared/types";
-import { formatNumber } from "../../shared/utils";
+import { formatGridNumber } from "../../shared/utils";
 import { Column } from "../../shared/constants";
 import { type CellContentGenerator } from "./types";
 
@@ -56,7 +56,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: formatNumber({ value, maxDecimals: 6 }),
+      displayData: formatGridNumber({ value, maxDecimals: 6 }),
       readonly: !column.editable,
       allowOverlay: true,
       decimalSeparator: ".",
@@ -69,7 +69,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: formatNumber({ value, maxDecimals: 3 }),
+      displayData: formatGridNumber({ value, maxDecimals: 3 }),
       readonly: !column.editable,
       allowOverlay: false,
       decimalSeparator: ".",

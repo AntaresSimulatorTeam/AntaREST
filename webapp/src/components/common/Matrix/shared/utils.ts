@@ -20,7 +20,7 @@ import {
   type AggregateType,
   type AggregateConfig,
   type DateTimeMetadataDTO,
-  type FormatNumberOptions,
+  type FormatGridNumberOptions,
 } from "./types";
 import { parseISO, Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -28,36 +28,50 @@ import { getCurrentLanguage } from "@/utils/i18nUtils";
 import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
 
 /**
- * Formats a number by adding thousand separators.
+ * Formats a number for display in a grid cell by adding thousand separators and handling decimals.
  *
  * This function is particularly useful for displaying load factors,
  * which are numbers between 0 and 1. For load factors, a maximum of
  * 6 decimal places should be displayed. For statistics, a maximum of
  * 3 decimal places is recommended.
  *
- * @param options - The options for formatting the number.
+ * @example
+ * ```typescript
+ * formatGridNumber({ value: 1234567.89, maxDecimals: 2 }) // "1 234 567.89"
+ * formatGridNumber({ value: 0, maxDecimals: 6 }) // "0"
+ * formatGridNumber({ value: undefined }) // ""
+ * formatGridNumber({ value: NaN }) // ""
+ * ```
+ * @param options - The formatting options
  * @param options.value - The number to format.
- * @param options.maxDecimals - The maximum number of decimal places to keep.
- * @returns The formatted number as a string.
+ * @param options.maxDecimals - Maximum number of decimal places to show.
+ * @returns A formatted string representation of the number with proper separators.
  */
-export function formatNumber({
+export function formatGridNumber({
   value,
   maxDecimals = 0,
-}: FormatNumberOptions): string {
+}: FormatGridNumberOptions): string {
   if (value === undefined) {
     return "";
   }
 
-  // Determine if we need to apply maxDecimals
-  const shouldFormatDecimals =
-    value % 1 !== 0 &&
-    maxDecimals > 0 &&
-    value.toString().split(".")[1].length > maxDecimals;
+  const numValue = Number(value);
 
-  // Use toFixed only if we need to control decimals
+  if (isNaN(numValue)) {
+    return "";
+  }
+
+  const stringValue = value.toString();
+  const dotIndex = stringValue.indexOf(".");
+  const hasDecimals = dotIndex !== -1;
+  const shouldFormatDecimals =
+    hasDecimals &&
+    maxDecimals > 0 &&
+    stringValue.length - dotIndex - 1 > maxDecimals;
+
   const formattedValue = shouldFormatDecimals
-    ? value.toFixed(maxDecimals)
-    : value.toString();
+    ? numValue.toFixed(maxDecimals)
+    : stringValue;
 
   const [integerPart, decimalPart] = formattedValue.split(".");
 
