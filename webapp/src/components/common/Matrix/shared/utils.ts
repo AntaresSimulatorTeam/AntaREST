@@ -21,7 +21,7 @@ import {
   type AggregateConfig,
   type DateTimeMetadataDTO,
   type FormatNumberOptions,
-} from "../core/types";
+} from "./types";
 import { parseISO, Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { getCurrentLanguage } from "@/utils/i18nUtils";

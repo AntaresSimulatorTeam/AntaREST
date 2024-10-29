@@ -28,7 +28,7 @@ import {
   type EnhancedGridColumn,
   type GridUpdate,
   type MatrixAggregates,
-} from "../../core/types";
+} from "../../shared/types";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useMatrixPortal } from "../../hooks/useMatrixPortal";
 import { darkTheme, readOnlyDarkTheme } from "./styles";

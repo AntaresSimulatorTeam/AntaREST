@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Column } from "../../../core/constants";
+import { Column } from "../../../shared/constants";
 import { createColumn, createNumericColumn } from "./utils";
 
 export const COLUMNS = {

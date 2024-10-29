@@ -18,9 +18,9 @@ import {
   type EnhancedGridColumn,
   type ColumnType,
   MatrixAggregates,
-} from "../../core/types";
-import { formatNumber } from "../../core/utils";
-import { Column } from "../../core/constants";
+} from "../../shared/types";
+import { formatNumber } from "../../shared/utils";
+import { Column } from "../../shared/constants";
 import { type CellContentGenerator } from "./types";
 
 /**

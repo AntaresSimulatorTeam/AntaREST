@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { ColumnType, EnhancedGridColumn } from "../../../core/types";
-import { Column } from "../../../core/constants";
+import type { ColumnType, EnhancedGridColumn } from "../../../shared/types";
+import { Column } from "../../../shared/constants";
 import type { TestCase } from "../types";
 
 export const createColumn = (

@@ -30,19 +30,19 @@ import {
   MatrixUpdateDTO,
   MatrixAggregates,
   AggregateConfig,
-} from "../../core/types";
+} from "../../shared/types";
 import {
   calculateMatrixAggregates,
   generateDataColumns,
   generateDateTime,
   getAggregateTypes,
-} from "../../core/utils";
+} from "../../shared/utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 import { importFile } from "../../../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import usePrompt from "../../../../../hooks/usePrompt";
-import { Aggregate, Column, Operation } from "../../core/constants";
+import { Aggregate, Column, Operation } from "../../shared/constants";
 import { aggregatesTheme } from "../../components/MatrixGrid/styles";
 
 interface DataState {

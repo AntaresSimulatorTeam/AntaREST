@@ -57,8 +57,8 @@ import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index
 import {
   generateCustomColumns,
   generateDateTime,
-} from "../../../../../common/Matrix/core/utils.ts";
-import { Column } from "@/components/common/Matrix/core/constants.ts";
+} from "../../../../../common/Matrix/shared/utils.ts";
+import { Column } from "@/components/common/Matrix/shared/constants.ts";
 import SplitView from "../../../../../common/SplitView/index.tsx";
 import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";

@@ -23,7 +23,7 @@ import {
   Operator,
   StudyOutputDownloadLevelDTO,
 } from "@/common/types";
-import { GridUpdate, MatrixDataDTO } from "../../core/types";
+import { GridUpdate, MatrixDataDTO } from "../../shared/types";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
 vi.mock("@/services/api/matrix");

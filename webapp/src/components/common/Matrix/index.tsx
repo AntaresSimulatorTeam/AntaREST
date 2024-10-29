@@ -24,7 +24,7 @@ import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 import MatrixActions from "./components/MatrixActions";
 import EmptyView from "../page/SimpleContent";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { AggregateConfig } from "./core/types";
+import { AggregateConfig } from "./shared/types";
 
 interface MatrixProps {
   url: string;

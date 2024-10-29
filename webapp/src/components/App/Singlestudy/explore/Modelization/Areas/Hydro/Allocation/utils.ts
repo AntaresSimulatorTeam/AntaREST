@@ -14,7 +14,7 @@
 
 import { StudyMetadata, Area } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
-import { MatrixDataDTO } from "../../../../../../../common/Matrix/core/types";
+import { MatrixDataDTO } from "../../../../../../../common/Matrix/shared/types";
 import { AreaCoefficientItem } from "../utils";
 
 ////////////////////////////////////////////////////////////////

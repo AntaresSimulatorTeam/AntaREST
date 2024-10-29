@@ -14,9 +14,9 @@
 
 import { Item } from "@glideapps/glide-data-grid";
 import { renderHook } from "@testing-library/react";
-import type { ColumnType, EnhancedGridColumn } from "../../../core/types";
+import type { ColumnType, EnhancedGridColumn } from "../../../shared/types";
 import { useColumnMapping } from "..";
-import { Column } from "../../../core/constants";
+import { Column } from "../../../shared/constants";
 
 export const createCoordinate = (col: number, row: number): Item =>
   [col, row] as Item;
