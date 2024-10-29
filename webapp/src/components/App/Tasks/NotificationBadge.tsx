@@ -77,10 +77,6 @@ function NotificationBadge(props: Props) {
             newNotification("studies.studyunarchiving");
           } else if (task.type === TaskType.Scan) {
             newNotification("studies.success.scanFolder");
-          } else if (task.type === TaskType.UpgradeStudy) {
-            newNotification("study.message.upgradeInProgress");
-          } else if (task.type === TaskType.ThermalClusterSeriesGeneration) {
-            newNotification("study.message.tsGenerationInProgress");
           }
         } catch (error) {
           logError(error);
