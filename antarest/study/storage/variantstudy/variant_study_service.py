@@ -242,7 +242,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         validated_commands = transform_command_to_dto(command_objs, commands)
         # noinspection PyArgumentList
         study.commands = [
-            CommandBlock(command=command.action, args=to_json_string(command.args), index=i, version=command.version)
+            CommandBlock(
+                command=command.action,
+                args=to_json_string(command.args),
+                index=i,
+                version=command.version,
+                study_version=str(command.study_version),
+            )
             for i, command in enumerate(validated_commands)
         ]
         self.invalidate_cache(study, invalidate_self_snapshot=True)
