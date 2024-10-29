@@ -28,6 +28,7 @@ from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
+from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, Study, StudyAdditionalData
@@ -36,7 +37,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from core.tasks.service import ITaskNotifier
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import AnyUUID, with_db_context
 
