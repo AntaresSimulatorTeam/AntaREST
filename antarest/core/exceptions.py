@@ -674,7 +674,7 @@ class WorkspaceNotFound(HTTPException):
     """
 
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
 class BadArchiveContent(Exception):
