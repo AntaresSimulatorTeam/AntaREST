@@ -77,19 +77,30 @@ class CommandDTOAPI(AntaresBaseModel):
     version: int = 1
 
 
-class CommandDTO(CommandDTOAPI):
+class CommandDTO(AntaresBaseModel):
     """
-    This class represents a command internally
+    This class represents a command internally.
 
     Attributes:
+        id: The unique identifier of the command.
+        action: The action to be performed by the command.
+        args: The arguments for the command action.
+        version: The version of the command.
         study_version: The version of the study associated to the command.
     """
 
+    id: t.Optional[str] = None
+    action: str
+    args: t.Union[t.MutableSequence[JSON], JSON]
+    version: int = 1
     study_version: StudyVersion
 
     @field_validator("study_version", mode="before")
     def _validate_version(cls, v: t.Any) -> StudyVersion:
         return StudyVersion.parse(v)
+
+    def to_api(self) -> CommandDTOAPI:
+        return CommandDTOAPI.model_validate(self.model_dump(mode="json", exclude={"study_version"}))
 
 
 class CommandResultDTO(AntaresBaseModel):
