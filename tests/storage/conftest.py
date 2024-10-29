@@ -26,7 +26,6 @@ from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 
 @pytest.fixture
@@ -296,7 +295,6 @@ class SimpleSyncTaskService(ITaskService):
         progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
-        listener: Optional[ICommandListener] = None,
     ) -> str:
         action(NoopNotifier())
         return str(uuid.uuid4())

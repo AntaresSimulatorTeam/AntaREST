@@ -50,7 +50,6 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {

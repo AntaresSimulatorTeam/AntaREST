@@ -42,7 +42,6 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
@@ -89,7 +88,6 @@ class SynchTaskService(ITaskService):
         progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
-        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         self._task_result = action(NoopNotifier())
         return str(uuid.uuid4())
