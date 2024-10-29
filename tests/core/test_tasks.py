@@ -564,8 +564,6 @@ nominalcapacity = 14.0
         event_bus=study_service.event_bus,
     )
 
-    listener = task.TsGenerationListener("", study_service.event_bus)
-
     task_id = study_service.task_service.add_task(
         task,
         "test_generation",
@@ -574,7 +572,6 @@ nominalcapacity = 14.0
         progress=0,
         custom_event_messages=None,
         request_params=RequestParameters(DEFAULT_ADMIN_USER),
-        listener=listener,
     )
 
     # Await task

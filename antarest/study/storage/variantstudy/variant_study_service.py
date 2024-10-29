@@ -1115,7 +1115,7 @@ class SnapshotCleanerTask:
                     if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
-    def run_task(self, notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Start cleaning all snapshots updated or accessed {humanize.precisedelta(self._retention_time)} ago."
         notifier(msg)
         self._clear_all_snapshots()

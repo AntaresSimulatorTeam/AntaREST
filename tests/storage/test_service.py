@@ -1826,7 +1826,7 @@ def test_upgrade_study__raw_study__nominal(
     # The task is called with a `TaskUpdateNotifier` a parameter.
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
-    actual = task(notifier, None)
+    actual = task(notifier)
 
     upgrade_study_mock.assert_called_once_with()
 
@@ -1914,7 +1914,7 @@ def test_upgrade_study__variant_study__nominal(
     # The task is called with a `TaskUpdateNotifier` a parameter.
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
-    actual = task(notifier, None)
+    actual = task(notifier)
 
     # The `upgrade_study()` function is not called for a variant study.
     upgrade_study_mock.assert_not_called()
@@ -2005,7 +2005,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
     with pytest.raises(MissingSectionHeaderError, match="File contains no section headers"):
-        task(notifier, None)
+        task(notifier)
 
     # The study must not be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
