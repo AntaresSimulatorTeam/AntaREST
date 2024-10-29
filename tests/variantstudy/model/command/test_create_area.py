@@ -17,6 +17,7 @@ import pytest
 from antares.study.version import StudyVersion
 
 from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
@@ -96,9 +97,9 @@ class TestCreateArea:
 
         # Allocation
         assert (study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini").exists()
-        allocation = configparser.ConfigParser()
-        allocation.read(study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini")
-        assert int(allocation["[allocation"][area_id]) == 1
+        reader = IniReader()
+        allocation = reader.read(study_path / "input" / "hydro" / "allocation" / f"{area_id}.ini")
+        assert int(allocation["[allocation]"][area_id]) == 1
 
         # Capacity
         assert (study_path / "input" / "hydro" / "common" / "capacity" / f"maxpower_{area_id}.txt.link").exists()
