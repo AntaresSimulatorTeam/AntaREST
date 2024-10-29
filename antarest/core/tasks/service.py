@@ -117,7 +117,7 @@ class TaskJobLogRecorder:
         task = self.session.query(TaskJob).get(self.task_id)
         if task:
             task.logs.append(TaskJobLog(message=message, task_id=self.task_id))
-            db.session.commit()
+            self.session.commit()
 
 
 class TaskJobService(ITaskService):

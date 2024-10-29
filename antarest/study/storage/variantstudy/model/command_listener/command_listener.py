@@ -12,19 +12,14 @@
 
 from abc import ABC, abstractmethod
 
-from antarest.core.serialization import AntaresBaseModel
 
-
-class ICommandListener(ABC, AntaresBaseModel):
+class ICommandListener(ABC):
     """
     Interface for all listeners that can be given inside the `apply` method of a command.
     """
 
-    class Config:
-        extra = "forbid"
-        arbitrary_types_allowed = True
-
-    task_id: str
+    def __init__(self, task_id: str) -> None:
+        self.task_id = task_id
 
     @abstractmethod
     def notify_progress(self, progress: int) -> None:

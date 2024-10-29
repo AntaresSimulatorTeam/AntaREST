@@ -564,8 +564,7 @@ nominalcapacity = 14.0
         event_bus=study_service.event_bus,
     )
 
-    args = {"event_bus": study_service.event_bus, "task_id": ""}
-    listener = task.TsGenerationListener(**args)
+    listener = task.TsGenerationListener("", study_service.event_bus)
 
     task_id = study_service.task_service.add_task(
         task,
@@ -595,9 +594,9 @@ nominalcapacity = 14.0
     assert events[0].type == EventType.TASK_ADDED
     assert events[1].type == EventType.TASK_RUNNING
 
-    assert events[2].type == EventType.TS_GENERATION_PROGRESS
+    assert events[2].type == EventType.TASK_PROGRESS
     assert events[2].payload == {"task_id": task_id, "progress": 50}
-    assert events[3].type == EventType.TS_GENERATION_PROGRESS
+    assert events[3].type == EventType.TASK_PROGRESS
     assert events[3].payload == {"task_id": task_id, "progress": 100}
 
     assert events[4].type == EventType.STUDY_EDITED

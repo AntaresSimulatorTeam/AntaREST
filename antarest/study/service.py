@@ -241,7 +241,9 @@ class ThermalClusterTimeSeriesGeneratorTask:
     __call__ = run_task
 
     class TsGenerationListener(ICommandListener):
-        event_bus: IEventBus
+        def __init__(self, task_id: str, event_bus: IEventBus) -> None:
+            super().__init__(task_id)
+            self.event_bus = event_bus
 
         def notify_progress(self, progress: int) -> None:
             with db():
@@ -250,7 +252,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
 
             self.event_bus.push(
                 Event(
-                    type=EventType.TS_GENERATION_PROGRESS,
+                    type=EventType.TASK_PROGRESS,
                     payload={
                         "task_id": self.task_id,
                         "progress": progress,
@@ -2525,8 +2527,7 @@ class StudyService:
             event_bus=self.event_bus,
         )
 
-        args = {"event_bus": self.event_bus, "task_id": ""}
-        listener = thermal_cluster_timeseries_generation_task.TsGenerationListener(**args)
+        listener = thermal_cluster_timeseries_generation_task.TsGenerationListener("", self.event_bus)
 
         return self.task_service.add_task(
             thermal_cluster_timeseries_generation_task,
