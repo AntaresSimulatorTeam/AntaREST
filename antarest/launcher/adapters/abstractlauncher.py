@@ -116,6 +116,6 @@ class AbstractLauncher(ABC):
                         channel=EventChannelDirectory.JOB_STATUS + job_id,
                     )
                 )
-                self.cache.put(f"Launch_Progress_{job_id}", launch_progress_dto.model_dump())
+                self.cache.put(f"Launch_Progress_{job_id}", launch_progress_dto.model_dump(mode="json"))
 
         return update_log

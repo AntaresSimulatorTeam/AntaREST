@@ -254,7 +254,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {fred_credentials["refresh_token"]}'},
     )
     fred_credentials = res.json()
-    res = client.post(
+    client.post(
         f"/v1/studies?name=bar&groups={group_id}",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
@@ -606,15 +606,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     res.raise_for_status()
-    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump()]
+    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
 
     res = client.post(f"/v1/studies/{study_id}/layers?name=test")
     assert res.json() == "1"
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
-        LayerInfoDTO(id="1", name="test", areas=[]).model_dump(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        LayerInfoDTO(id="1", name="test", areas=[]).model_dump(mode="json"),
     ]
 
     res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2")
@@ -625,8 +625,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code in {200, 201}, res.json()
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
-        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).model_dump(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).model_dump(mode="json"),
     ]
 
     # Delete the layer '1' that has 1 area
@@ -1554,7 +1554,7 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
 
     res = client.get(f"/v1/studies/{study_id}")
     assert res.json()["archived"]
-    assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
     res = client.put(f"/v1/studies/{study_id}/unarchive")
 
@@ -1563,12 +1563,12 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
         lambda: client.get(
             f"/v1/tasks/{task_id}",
         ).json()["status"]
-        == 3
+        == 3,
     )
 
     res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
-    assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert not (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:

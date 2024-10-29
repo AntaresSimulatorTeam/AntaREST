@@ -34,8 +34,9 @@ from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, is_zip, read_in_zip, zip_dir
+from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
@@ -185,7 +186,7 @@ class LauncherService:
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_JOB_COMPLETED if final_status else EventType.STUDY_JOB_STATUS_UPDATE,
-                        payload=job_result.to_dto().model_dump(),
+                        payload=job_result.to_dto().model_dump(mode="json"),
                         permissions=PermissionInfo(public_mode=PublicMode.READ),
                         channel=EventChannelDirectory.JOB_STATUS + job_result.id,
                     )
@@ -549,7 +550,7 @@ class LauncherService:
             if not output_is_zipped and job_launch_params.archive_output:
                 logger.info("Re zipping output for transfer")
                 zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
-                zip_dir(output_true_path, zip_path=zip_path)
+                archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
                 stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
 
             final_output_path = zip_path or output_true_path
@@ -601,7 +602,7 @@ class LauncherService:
             def export_task(_: TaskUpdateNotifier, listener: Optional[ICommandListener]) -> TaskResult:
                 try:
                     #
-                    zip_dir(output_path, export_path)
+                    archive_dir(output_path, export_path, archive_format=ArchiveFormat.ZIP)
                     self.file_transfer_manager.set_ready(export_id)
                     return TaskResult(success=True, message="")
                 except Exception as e:

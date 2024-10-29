@@ -141,8 +141,8 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         if not isinstance(other, self.__class__):
             return False
         excluded_fields = set(ICommand.model_fields)
-        this_values = self.model_dump(exclude=excluded_fields)
-        that_values = other.model_dump(exclude=excluded_fields)
+        this_values = self.model_dump(mode="json", exclude=excluded_fields)
+        that_values = other.model_dump(mode="json", exclude=excluded_fields)
         return this_values == that_values
 
     @abstractmethod

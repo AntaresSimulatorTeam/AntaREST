@@ -33,8 +33,9 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, zip_dir
+from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -101,11 +102,7 @@ class ISimpleMatrixService(ABC):
         """
         # noinspection SpellCheckingInspection
         if isinstance(matrix, str):
-            # str.removeprefix() is not available in Python 3.8
-            prefix = "matrix://"
-            if matrix.startswith(prefix):
-                return matrix[len(prefix) :]
-            return matrix
+            return matrix.removeprefix("matrix://")
         elif isinstance(matrix, list):
             return self.create(matrix)
         else:
@@ -470,7 +467,7 @@ class MatrixService(ISimpleMatrixService):
                 else:
                     # noinspection PyTypeChecker
                     np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
-            zip_dir(Path(tmpdir), export_path)
+            archive_dir(Path(tmpdir), export_path, archive_format=ArchiveFormat.ZIP)
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
         return str(export_path)
 
