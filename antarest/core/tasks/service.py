@@ -38,7 +38,6 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
@@ -57,7 +56,7 @@ class ITaskNotifier(ABC):
         raise NotImplementedError()
 
 
-Task = t.Callable[[ITaskNotifier, t.Optional[ICommandListener]], TaskResult]
+Task = t.Callable[[ITaskNotifier], TaskResult]
 
 
 class ITaskService(ABC):
@@ -83,7 +82,6 @@ class ITaskService(ABC):
         progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
-        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         raise NotImplementedError()
 
@@ -173,7 +171,7 @@ class TaskJobService(ITaskService):
         task_id: str,
         task_type: str,
         task_args: t.Dict[str, t.Union[int, float, bool, str]],
-    ) -> t.Callable[[ITaskNotifier, t.Optional[ICommandListener]], TaskResult]:
+    ) -> t.Callable[[ITaskNotifier], TaskResult]:
         task_result_wrapper: t.List[TaskResult] = []
 
         def _create_awaiter(
@@ -187,7 +185,7 @@ class TaskJobService(ITaskService):
             return _await_task_end
 
         # noinspection PyUnusedLocal
-        def _send_worker_task(logger_: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def _send_worker_task(logger_: ITaskNotifier) -> TaskResult:
             listener_id = self.event_bus.add_listener(
                 _create_awaiter(task_result_wrapper),
                 [EventType.WORKER_TASK_ENDED],
@@ -247,10 +245,9 @@ class TaskJobService(ITaskService):
         progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
-        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         task = self._create_task(name, task_type, ref_id, progress, request_params)
-        self._launch_task(action, task, custom_event_messages, request_params, listener)
+        self._launch_task(action, task, custom_event_messages, request_params)
         return str(task.id)
 
     def _create_task(
@@ -280,7 +277,6 @@ class TaskJobService(ITaskService):
         task: TaskJob,
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
-        listener: t.Optional[ICommandListener] = None,
     ) -> None:
         if not request_params.user:
             raise MustBeAuthenticatedError()
@@ -297,7 +293,7 @@ class TaskJobService(ITaskService):
                 permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages, listener)
+        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> t.Callable[[Event], t.Awaitable[None]]:
@@ -391,7 +387,6 @@ class TaskJobService(ITaskService):
         callback: Task,
         task_id: str,
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
-        listener: t.Optional[ICommandListener] = None,
     ) -> None:
         # attention: this function is executed in a thread, not in the main process
 
@@ -418,7 +413,7 @@ class TaskJobService(ITaskService):
         try:
             with db():
                 # We must use the DB session attached to the current thread
-                result = callback(TaskJobLogRecorder(task_id, db.session, self.event_bus), listener)
+                result = callback(TaskJobLogRecorder(task_id, db.session, self.event_bus))
 
             status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
             logger.info(f"Task {task_id} ended with status {status}")

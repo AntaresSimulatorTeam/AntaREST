@@ -599,7 +599,7 @@ class LauncherService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(_: ITaskNotifier, listener: Optional[ICommandListener]) -> TaskResult:
+            def export_task(_: ITaskNotifier) -> TaskResult:
                 try:
                     #
                     archive_dir(output_path, export_path, archive_format=ArchiveFormat.ZIP)

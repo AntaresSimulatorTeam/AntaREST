@@ -511,7 +511,7 @@ class MatrixService(ISimpleMatrixService):
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 self.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
                 self.file_transfer_manager.set_ready(export_id)

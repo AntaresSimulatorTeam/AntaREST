@@ -613,7 +613,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             # db context, so we need to fetch the id attribute before
             study_id = metadata.id
 
-            def callback(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+            def callback(notifier: ITaskNotifier) -> TaskResult:
                 generator = SnapshotGenerator(
                     cache=self.cache,
                     raw_study_service=self.raw_study_service,
