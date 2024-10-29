@@ -132,7 +132,6 @@ export const MATRICES: Matrices = {
     columns: generateColumns("%"),
     rowHeaders: ["Generating Power", "Pumping Power"],
     enableDateTimeColumn: false,
-    showPercent: true,
   },
   [HydroMatrix.EnergyCredits]: {
     title: "Standard Credits",
@@ -148,7 +147,6 @@ export const MATRICES: Matrices = {
     title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     columns: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
-    showPercent: true,
   },
   [HydroMatrix.WaterValues]: {
     title: "Water Values",

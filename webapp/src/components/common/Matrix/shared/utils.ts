@@ -184,7 +184,7 @@ export function generateCustomColumns({
 export function generateDataColumns(
   enableTimeSeriesColumns: boolean,
   columnCount: number,
-  customColumns?: string[],
+  customColumns?: string[] | readonly string[],
   colWidth?: number,
 ): EnhancedGridColumn[] {
   // If custom columns are provided, use them
