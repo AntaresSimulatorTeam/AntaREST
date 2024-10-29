@@ -12,13 +12,11 @@
 
 import typing as t
 
-from pydantic import BaseModel
-
-from antarest.core.serialization import from_json, to_json
+from antarest.core.serialization import AntaresBaseModel, from_json, to_json
 
 
 class IniProperties(
-    BaseModel,
+    AntaresBaseModel,
     # On reading, if the configuration contains an extra field, it is better
     # to forbid it, because it allows errors to be detected early.
     # Ignoring extra attributes can hide errors.
