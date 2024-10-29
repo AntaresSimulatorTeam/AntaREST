@@ -37,7 +37,7 @@ class Explorer:
         """
         return a list of all directories under workspace_directory_path, that aren't studies.
         """
-        workspace = get_workspace_from_config(self.config, workspace_name)
+        workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         directories = []
         for child in directory_path.iterdir():
