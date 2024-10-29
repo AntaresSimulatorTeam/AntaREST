@@ -18,15 +18,9 @@ class ICommandListener(ABC):
     Interface for all listeners that can be given inside the `apply` method of a command.
     """
 
-    def __init__(self, task_id: str) -> None:
-        self.task_id = task_id
-
     @abstractmethod
     def notify_progress(self, progress: int) -> None:
         """
         Given a command progression, notifies the information.
         """
         raise NotImplementedError()
-
-    def set_task_id(self, task_id: str) -> None:
-        self.task_id = task_id

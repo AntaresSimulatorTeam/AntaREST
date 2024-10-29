@@ -57,7 +57,7 @@ from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, Stud
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskJob, TaskListFilter, TaskResult, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
@@ -182,6 +182,14 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
     return total_size
 
 
+class TaskProgressRecorder(ICommandListener):
+    def __init__(self, notifier: ITaskNotifier) -> None:
+        self.notifier = notifier
+
+    def notify_progress(self, progress: int) -> None:
+        return self.notifier.notify_progress(progress)
+
+
 class ThermalClusterTimeSeriesGeneratorTask:
     """
     Task to generate thermal clusters time series
@@ -229,7 +237,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 )
             )
 
-    def run_task(self, notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
         notifier(msg)
         self._generate_timeseries(listener)
@@ -322,7 +330,7 @@ class StudyUpgraderTask:
                     file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                     file_study.tree.normalize()
 
-    def run_task(self, notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
         """
         Run the study upgrade task.
 
@@ -1003,7 +1011,7 @@ class StudyService:
         assert_permission(params.user, src_study, StudyPermissionType.READ)
         self._assert_study_unarchived(src_study)
 
-        def copy_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def copy_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study,
@@ -1043,7 +1051,7 @@ class StudyService:
                 request_params=params,
             )
         else:
-            res = copy_task(noop_notifier, None)
+            res = copy_task(NoopNotifier(), None)
             task_or_study_id = res.return_value or ""
 
         return task_or_study_id
@@ -1089,7 +1097,7 @@ class StudyService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def export_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
                 self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
@@ -1156,7 +1164,7 @@ class StudyService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def export_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 target_study = self.get_study(study_uuid)
                 self.storage_service.get_storage(target_study).export_output(
@@ -1320,7 +1328,7 @@ class StudyService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(_notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+            def export_task(_notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
                 try:
                     _study = self.get_study(study_id)
                     _stopwatch = StopWatch()
@@ -2045,7 +2053,7 @@ class StudyService:
         ):
             raise TaskAlreadyRunning()
 
-        def archive_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def archive_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.archive(study_to_archive)
             study_to_archive.archived = True
@@ -2089,7 +2097,7 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
 
-        def unarchive_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def unarchive_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
@@ -2397,7 +2405,7 @@ class StudyService:
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
 
-        def archive_output_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def archive_output_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()
@@ -2457,7 +2465,7 @@ class StudyService:
         if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
             raise TaskAlreadyRunning()
 
-        def unarchive_output_task(notifier: TaskUpdateNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
+        def unarchive_output_task(notifier: ITaskNotifier, listener: t.Optional[ICommandListener]) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()

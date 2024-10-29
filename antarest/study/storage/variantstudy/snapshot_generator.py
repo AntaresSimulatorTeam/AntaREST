@@ -23,7 +23,7 @@ from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
-from antarest.core.tasks.service import TaskUpdateNotifier, noop_notifier
+from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
@@ -71,7 +71,7 @@ class SnapshotGenerator:
         *,
         denormalize: bool = True,
         from_scratch: bool = False,
-        notifier: TaskUpdateNotifier = noop_notifier,
+        notifier: ITaskNotifier = NoopNotifier(),
         listener: t.Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
