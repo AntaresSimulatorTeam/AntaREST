@@ -21,6 +21,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import humanize
+from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from filelock import FileLock
 
@@ -63,6 +64,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
+    CommandDTOAPI,
     CommandResultDTO,
     GenerationResultInfoDTO,
     VariantTreeDTO,
@@ -120,7 +122,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
-    def get_commands(self, study_id: str, params: RequestParameters) -> t.List[CommandDTO]:
+    def get_commands(self, study_id: str, params: RequestParameters) -> t.List[CommandDTOAPI]:
         """
         Get command lists
         Args:
@@ -129,7 +131,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: List of commands
         """
         study = self._get_variant_study(study_id, params)
-        return [command.to_dto() for command in study.commands]
+        return [self._convert_internal_dto_to_api_dto(command.to_dto()) for command in study.commands]
+
+    def convert_commands(
+        self, study_id: str, api_commands: t.List[CommandDTOAPI], params: RequestParameters
+    ) -> t.List[CommandDTO]:
+        study = self._get_variant_study(study_id, params)
+        study_version = StudyVersion.parse(study.version)
+        return [self._convert_api_dto_to_internal_dto(command, study_version) for command in api_commands]
+
+    def _convert_internal_dto_to_api_dto(self, internal_dto: CommandDTO) -> CommandDTOAPI:
+        return CommandDTOAPI.model_validate(internal_dto.model_dump(mode="json", exclude={"study_version"}))
+
+    def _convert_api_dto_to_internal_dto(self, api_dto: CommandDTOAPI, study_version: StudyVersion) -> CommandDTO:
+        return CommandDTO.model_validate({"study_version": study_version, **api_dto.model_dump(mode="json")})
 
     def _check_commands_validity(self, study_id: str, commands: t.List[CommandDTO]) -> t.List[ICommand]:
         command_objects: t.List[ICommand] = []

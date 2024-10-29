@@ -27,7 +27,7 @@ from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.model import CommandDTO, VariantTreeDTO
+from antarest.study.storage.variantstudy.model.model import CommandDTOAPI, VariantTreeDTO
 
 logger = logging.getLogger(__name__)
 
@@ -158,14 +158,14 @@ def create_study_variant_routes(
         responses={
             200: {
                 "description": "The detail of a command content",
-                "model": List[CommandDTO],
+                "model": List[CommandDTOAPI],
             }
         },
     )
     def list_commands(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[CommandDTO]:
+    ) -> List[CommandDTOAPI]:
         logger.info(
             f"Fetching command list of variant study {uuid}",
             extra={"user": current_user.id},
@@ -204,7 +204,7 @@ def create_study_variant_routes(
     )
     def append_commands(
         uuid: str,
-        commands: List[CommandDTO] = Body(...),
+        commands: List[CommandDTOAPI] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Optional[List[str]]:
         logger.info(
@@ -213,7 +213,8 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return study_service.apply_commands(sanitized_uuid, commands, params)
+        internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands, params)
+        return study_service.apply_commands(sanitized_uuid, internal_commands, params)
 
     @bp.put(
         "/studies/{uuid}/commands",
@@ -227,7 +228,7 @@ def create_study_variant_routes(
     )
     def replace_commands(
         uuid: str,
-        commands: List[CommandDTO] = Body(...),
+        commands: List[CommandDTOAPI] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
@@ -236,7 +237,8 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.replace_commands(sanitized_uuid, commands, params)
+        internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands, params)
+        return variant_study_service.replace_commands(sanitized_uuid, internal_commands, params)
 
     @bp.post(
         "/studies/{uuid}/command",
@@ -250,7 +252,7 @@ def create_study_variant_routes(
     )
     def append_command(
         uuid: str,
-        command: CommandDTO,
+        command: CommandDTOAPI,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         logger.info(
@@ -259,7 +261,8 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.append_command(sanitized_uuid, command, params)
+        internal_command = variant_study_service.convert_commands(sanitized_uuid, [command], params)[0]
+        return variant_study_service.append_command(sanitized_uuid, internal_command, params)
 
     @bp.get(
         "/studies/{uuid}/commands/{cid}",
@@ -268,7 +271,7 @@ def create_study_variant_routes(
         responses={
             200: {
                 "description": "The detail of a command content",
-                "model": CommandDTO,
+                "model": CommandDTOAPI,
             }
         },
     )
@@ -276,7 +279,7 @@ def create_study_variant_routes(
         uuid: str,
         cid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> CommandDTO:
+    ) -> CommandDTOAPI:
         logger.info(
             f"Fetching command {cid} info of variant study {uuid}",
             extra={"user": current_user.id},
@@ -314,7 +317,7 @@ def create_study_variant_routes(
     def update_command(
         uuid: str,
         cid: str,
-        command: CommandDTO,
+        command: CommandDTOAPI,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
@@ -324,7 +327,8 @@ def create_study_variant_routes(
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
-        variant_study_service.update_command(sanitized_uuid, sanitized_cid, command, params)
+        internal_command = variant_study_service.convert_commands(sanitized_uuid, [command], params)[0]
+        variant_study_service.update_command(sanitized_uuid, sanitized_cid, internal_command, params)
 
     @bp.delete(
         "/studies/{uuid}/commands/{cid}",

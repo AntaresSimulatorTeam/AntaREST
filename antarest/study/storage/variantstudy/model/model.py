@@ -60,9 +60,9 @@ class GenerationResultInfoDTO(AntaresBaseModel):
     details: t.MutableSequence[DetailsDTO]
 
 
-class CommandDTO(AntaresBaseModel):
+class CommandDTOAPI(AntaresBaseModel):
     """
-    This class represents a command.
+    This class exposes a command inside the API.
 
     Attributes:
         id: The unique identifier of the command.
@@ -75,6 +75,16 @@ class CommandDTO(AntaresBaseModel):
     action: str
     args: t.Union[t.MutableSequence[JSON], JSON]
     version: int = 1
+
+
+class CommandDTO(CommandDTOAPI):
+    """
+    This class represents a command internally
+
+    Attributes:
+        study_version: The version of the study associated to the command.
+    """
+
     study_version: StudyVersion
 
     @field_validator("study_version", mode="before")

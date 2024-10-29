@@ -25,7 +25,7 @@ from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.model.model import CommandDTO
+from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import AnyUUID, with_db_context
@@ -124,7 +124,11 @@ class TestVariantStudyService:
         assert len(commands) == command_count
 
         # Get command
-        assert commands[0] == variant_study_service.get_command(saved_id, commands[0].id, params=params)
+        assert commands[0] == CommandDTOAPI.model_validate(
+            variant_study_service.get_command(saved_id, commands[0].id, params=params).model_dump(
+                mode="json", exclude={"study_version"}
+            )
+        )
 
         # Remove command (area "Maybe")
         variant_study_service.remove_command(saved_id, commands[2].id, params=params)
