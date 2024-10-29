@@ -146,17 +146,15 @@ function JobTableView(props: PropType) {
               <>
                 <Typography>{t("study.allocatedCpuRate")}</Typography>
                 <LinearProgressWithLabel
-                  indicator={Math.floor(data.allocatedCpuRate)}
-                  size="20%"
+                  value={Math.floor(data.allocatedCpuRate)}
                   tooltip={t("study.allocatedCpuRate")}
-                  gradiant
+                  sx={{ width: "20%" }}
                 />
                 <Typography>{t("study.clusterLoadRate")}</Typography>
                 <LinearProgressWithLabel
-                  indicator={Math.floor(data.clusterLoadRate)}
-                  size="20%"
+                  value={Math.floor(data.clusterLoadRate)}
                   tooltip={t("study.clusterLoadRate")}
-                  gradiant
+                  sx={{ width: "20%" }}
                 />
                 <Typography>
                   {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}

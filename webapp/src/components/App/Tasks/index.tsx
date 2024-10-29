@@ -313,9 +313,9 @@ function JobsListing() {
             </Box>
             {job.status === "running" && (
               <LinearProgressWithLabel
-                indicator={studyJobsProgress[job.id] as number}
-                size="20%"
+                value={studyJobsProgress[job.id] as number}
                 tooltip="Progression"
+                sx={{ width: "20%" }}
               />
             )}
           </Box>
