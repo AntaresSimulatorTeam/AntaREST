@@ -12,6 +12,7 @@
 
 from typing import Any, Dict, List, Union, cast
 
+from antares.study.version import StudyVersion
 from pydantic.types import StrictBool
 
 from antarest.study.business.all_optional_meta import all_optional_model
@@ -155,7 +156,7 @@ class OptimizationManager:
                         target=info["path"],
                         data=value,
                         command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                        study_version=study.config.version,
+                        study_version=study.version,
                     )
                 )
 
