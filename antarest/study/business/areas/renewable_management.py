@@ -65,7 +65,7 @@ class RenewableClusterInput(RenewableProperties):
                 unit_count=100,
                 nominal_capacity=1000.0,
                 ts_interpretation="power-generation",
-            ).model_dump()
+            ).model_dump(mode="json")
 
 
 class RenewableClusterCreation(RenewableClusterInput):

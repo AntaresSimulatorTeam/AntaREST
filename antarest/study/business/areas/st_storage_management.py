@@ -68,7 +68,7 @@ class STStorageInput(STStorage880Properties):
                 efficiency=0.94,
                 initial_level=0.5,
                 initial_level_optim=True,
-            ).model_dump()
+            ).model_dump(mode="json")
 
 
 class STStorageCreation(STStorageInput):
@@ -88,7 +88,7 @@ class STStorageCreation(STStorageInput):
 
     # noinspection PyUnusedLocal
     def to_config(self, study_version: StudyVersion) -> STStorageConfigType:
-        values = self.model_dump(by_alias=False, exclude_none=True)
+        values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
         return create_st_storage_config(study_version=study_version, **values)
 
 
@@ -111,7 +111,7 @@ class STStorageOutput(STStorage880Config):
                 reservoir_capacity=600,
                 efficiency=0.94,
                 initial_level_optim=True,
-            ).model_dump()
+            ).model_dump(mode="json")
 
 
 # =============
@@ -246,7 +246,7 @@ def create_storage_output(
     config: t.Mapping[str, t.Any],
 ) -> "STStorageOutput":
     obj = create_st_storage_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.model_dump(by_alias=False)
+    kwargs = obj.model_dump(mode="json", by_alias=False)
     return STStorageOutput(**kwargs)
 
 
@@ -390,12 +390,15 @@ class STStorageManager:
             for storage_id, update_cluster in update_storages_by_ids.items():
                 # Update the storage cluster properties.
                 old_cluster = old_storages_by_ids[storage_id]
-                new_cluster = old_cluster.copy(update=update_cluster.model_dump(by_alias=False, exclude_none=True))
+                new_cluster = old_cluster.copy(
+                    update=update_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
+                )
                 new_storages_by_areas[area_id][storage_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_st_storage_config(
-                    StudyVersion.parse(study.version), **new_cluster.model_dump(by_alias=False, exclude_none=True)
+                    StudyVersion.parse(study.version),
+                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
                 )
                 path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
                 cmd = UpdateConfig(
@@ -469,7 +472,7 @@ class STStorageManager:
         old_config = create_st_storage_config(study_version, **values)
 
         # use Python values to synchronize Config and Form values
-        new_values = form.model_dump(by_alias=False, exclude_none=True)
+        new_values = form.model_dump(mode="json", by_alias=False, exclude_none=True)
         new_config = old_config.copy(exclude={"id"}, update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
@@ -489,7 +492,7 @@ class STStorageManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = new_config.model_dump(by_alias=False)
+        values = new_config.model_dump(mode="json", by_alias=False)
         return STStorageOutput(**values, id=storage_id)
 
     def delete_storages(
@@ -552,7 +555,9 @@ class STStorageManager:
         study_version = StudyVersion.parse(study.version)
         if study_version < STUDY_VERSION_8_8:
             fields_to_exclude.add("enabled")
-        creation_form = STStorageCreation(**current_cluster.model_dump(by_alias=False, exclude=fields_to_exclude))
+        creation_form = STStorageCreation(
+            **current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
+        )
 
         new_config = creation_form.to_config(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
@@ -581,7 +586,7 @@ class STStorageManager:
 
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
-        return STStorageOutput(**new_config.model_dump(by_alias=False))
+        return STStorageOutput(**new_config.model_dump(mode="json", by_alias=False))
 
     def get_matrix(
         self,

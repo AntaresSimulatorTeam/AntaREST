@@ -42,7 +42,7 @@ def test_lifecycle():
     id = "some_id"
     redis_key = f"cache:{id}"
     duration = 3600
-    cache_element = RedisCacheElement(duration=duration, data=config.model_dump()).model_dump_json()
+    cache_element = RedisCacheElement(duration=duration, data=config.model_dump(mode="json")).model_dump_json()
 
     # GET
     redis_client.get.return_value = cache_element
@@ -53,7 +53,7 @@ def test_lifecycle():
 
     # PUT
     duration = 7200
-    cache_element = RedisCacheElement(duration=duration, data=config.model_dump()).model_dump_json()
-    cache.put(id=id, data=config.model_dump(), duration=duration)
+    cache_element = RedisCacheElement(duration=duration, data=config.model_dump(mode="json")).model_dump_json()
+    cache.put(id=id, data=config.model_dump(mode="json"), duration=duration)
     redis_client.set.assert_called_once_with(redis_key, cache_element)
     redis_client.expire.assert_called_with(redis_key, duration)

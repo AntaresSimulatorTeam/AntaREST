@@ -397,11 +397,7 @@ COMMANDS: List[CommandDTO] = [
 @pytest.fixture
 def command_factory() -> CommandFactory:
     def get_matrix_id(matrix: str) -> str:
-        # str.removeprefix() is not available in Python 3.8
-        prefix = "matrix://"
-        if matrix.startswith(prefix):
-            return matrix[len(prefix) :]
-        return matrix
+        return matrix.removeprefix("matrix://")
 
     return CommandFactory(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
