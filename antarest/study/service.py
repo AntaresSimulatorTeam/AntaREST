@@ -1347,7 +1347,7 @@ class StudyService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = to_json(matrix.model_dump())
+                json_response = to_json(matrix.model_dump(mode="json"))
                 return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:
@@ -2457,7 +2457,7 @@ class StudyService:
                     src=str(src),
                     dest=str(dest),
                     remove_src=not keep_src_zip,
-                ).model_dump(),
+                ).model_dump(mode="json"),
                 name=task_name,
                 ref_id=study.id,
                 request_params=params,

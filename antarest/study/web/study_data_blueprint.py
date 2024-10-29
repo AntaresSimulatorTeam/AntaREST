@@ -94,7 +94,7 @@ class BCKeyValueType(te.TypedDict):
     value: t.Union[str, int, float, bool]
 
 
-class ClusterType(str, enum.Enum):
+class ClusterType(enum.StrEnum):
     """
     Cluster type:
 

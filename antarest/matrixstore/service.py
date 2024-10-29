@@ -101,11 +101,7 @@ class ISimpleMatrixService(ABC):
         """
         # noinspection SpellCheckingInspection
         if isinstance(matrix, str):
-            # str.removeprefix() is not available in Python 3.8
-            prefix = "matrix://"
-            if matrix.startswith(prefix):
-                return matrix[len(prefix) :]
-            return matrix
+            return matrix.removeprefix("matrix://")
         elif isinstance(matrix, list):
             return self.create(matrix)
         else:
