@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-import typing as t
 from pathlib import Path
 
 import pytest
@@ -138,7 +136,7 @@ def test_explorer_access_not_found_workspace_attempt(
 
 def test_explorer_list_workspaces(app: FastAPI, client: TestClient, admin_access_token: str):
     res = client.get(
-        f"/v1/private/explorer/_list_workspaces",
+        "/v1/private/explorer/_list_workspaces",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
     expected = [
