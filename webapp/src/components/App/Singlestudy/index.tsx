@@ -37,6 +37,7 @@ import CommandDrawer from "./Commands";
 import { addWsEventListener } from "../../../services/webSocket/ws";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
+import FreezeStudy from "./FreezeStudy";
 import { WsEvent } from "@/services/webSocket/types";
 import { WsEventType } from "@/services/webSocket/constants";
 
@@ -186,12 +187,14 @@ function SingleStudy(props: Props) {
         alignItems="center"
         boxSizing="border-box"
         overflow="hidden"
+        position="relative"
       >
         {isExplorer === true ? (
           <TabWrapper study={study} border tabList={tabList} />
         ) : (
           <HomeView study={study} tree={tree} />
         )}
+        <FreezeStudy studyId={studyId!} />
       </Box>
       {openCommands && studyId && (
         <CommandDrawer

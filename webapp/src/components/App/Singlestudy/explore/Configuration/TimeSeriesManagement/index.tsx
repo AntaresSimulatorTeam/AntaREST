@@ -26,10 +26,12 @@ import { useTranslation } from "react-i18next";
 import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
 import { generateTimeSeries } from "../../../../../../services/api/studies/timeseries";
 import BuildIcon from "@mui/icons-material/Build";
+import { useState } from "react";
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
+  const [generationInProgress, setGenerationInProgress] = useState(false);
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,
@@ -45,9 +47,13 @@ function TimeSeriesManagement() {
     return setTimeSeriesFormFields(study.id, data.dirtyValues);
   };
 
-  const handleSubmitSuccessful = () => {
+  const handleSubmitSuccessful = async () => {
+    setGenerationInProgress(true);
+
     // The WebSocket will trigger an event after the fulfillment of the promise
-    handleGenerateTs({ studyId: study.id });
+    await handleGenerateTs({ studyId: study.id });
+
+    setGenerationInProgress(false);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -57,7 +63,10 @@ function TimeSeriesManagement() {
   return (
     <Form
       key={study.id}
-      config={{ defaultValues: () => getTimeSeriesFormFields(study.id) }}
+      config={{
+        defaultValues: () => getTimeSeriesFormFields(study.id),
+        disabled: generationInProgress,
+      }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
       submitButtonText={t("study.configuration.tsManagement.generateTs")}
