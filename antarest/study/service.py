@@ -240,10 +240,10 @@ class ThermalClusterTimeSeriesGeneratorTask:
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
-        notifier(msg)
+        notifier.notify_message(msg)
         self._generate_timeseries(notifier)
         msg = f"Successfully generated thermal timeseries for study '{self._study_id}'"
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
@@ -322,10 +322,10 @@ class StudyUpgraderTask:
         # The call to `_upgrade_study` may raise an exception, which will be
         # handled in the task service (see: `TaskJobService._run_task`)
         msg = f"Upgrade study '{self._study_id}' to version {self._target_version}"
-        notifier(msg)
+        notifier.notify_message(msg)
         self._upgrade_study()
         msg = f"Successfully upgraded study '{self._study_id}' to version {self._target_version}"
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     # Make `StudyUpgraderTask` object is callable

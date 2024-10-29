@@ -135,7 +135,7 @@ class SnapshotGenerator:
 
         else:
             try:
-                notifier(results.model_dump_json())
+                notifier.notify_message(results.model_dump_json())
             except Exception as exc:
                 # This exception is ignored, because it is not critical.
                 logger.warning(f"Error while sending notification: {exc}", exc_info=True)

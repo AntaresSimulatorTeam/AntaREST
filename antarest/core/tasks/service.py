@@ -48,7 +48,7 @@ DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
 
 class ITaskNotifier(ABC):
     @abstractmethod
-    def __call__(self, message: str) -> None:
+    def notify_message(self, message: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -107,14 +107,14 @@ class ITaskService(ABC):
 class NoopNotifier(ITaskNotifier):
     """This class is used in tasks when no notification is required."""
 
-    def __call__(self, message: str) -> None:
+    def notify_message(self, message: str) -> None:
         return
 
     def notify_progress(self, progress: int) -> None:
         return
 
 
-class TaskJobLogRecorder(ITaskNotifier):
+class TaskLogAndProgressRecorder(ITaskNotifier):
     """
     Callback used to register log messages in the TaskJob table.
 
@@ -128,7 +128,7 @@ class TaskJobLogRecorder(ITaskNotifier):
         self.task_id = task_id
         self.event_bus = event_bus
 
-    def __call__(self, message: str) -> None:
+    def notify_message(self, message: str) -> None:
         task = self.session.query(TaskJob).get(self.task_id)
         if task:
             task.logs.append(TaskJobLog(message=message, task_id=self.task_id))
@@ -171,7 +171,7 @@ class TaskJobService(ITaskService):
         task_id: str,
         task_type: str,
         task_args: t.Dict[str, t.Union[int, float, bool, str]],
-    ) -> t.Callable[[ITaskNotifier], TaskResult]:
+    ) -> Task:
         task_result_wrapper: t.List[TaskResult] = []
 
         def _create_awaiter(
@@ -413,7 +413,7 @@ class TaskJobService(ITaskService):
         try:
             with db():
                 # We must use the DB session attached to the current thread
-                result = callback(TaskJobLogRecorder(task_id, db.session, self.event_bus))
+                result = callback(TaskLogAndProgressRecorder(task_id, db.session, self.event_bus))
 
             status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
             logger.info(f"Task {task_id} ended with status {status}")

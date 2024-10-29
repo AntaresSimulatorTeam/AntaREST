@@ -727,7 +727,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     success=command_result,
                     message=command_message,
                 )
-                notifier(command_result_obj.model_dump_json())
+                notifier.notify_message(command_result_obj.model_dump_json())
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
@@ -1117,10 +1117,10 @@ class SnapshotCleanerTask:
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Start cleaning all snapshots updated or accessed {humanize.precisedelta(self._retention_time)} ago."
-        notifier(msg)
+        notifier.notify_message(msg)
         self._clear_all_snapshots()
         msg = "All selected snapshots were successfully cleared."
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     __call__ = run_task

@@ -40,7 +40,7 @@ from antarest.core.tasks.model import (
     cancel_orphan_tasks,
 )
 from antarest.core.tasks.repository import TaskJobRepository
-from antarest.core.tasks.service import TaskJobService
+from antarest.core.tasks.service import ITaskNotifier, TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
@@ -137,7 +137,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     # ================================================
 
     # noinspection PyUnusedLocal
-    def action_fail(update_msg: t.Callable[[str], None]) -> TaskResult:
+    def action_fail(notifier: ITaskNotifier) -> TaskResult:
         raise Exception("this action failed")
 
     failed_id = service.add_task(
@@ -164,9 +164,9 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     # Test Case: add a task that succeeds and wait for it
     # ===================================================
 
-    def action_ok(update_msg: t.Callable[[str], None]) -> TaskResult:
-        update_msg("start")
-        update_msg("end")
+    def action_ok(notifier: ITaskNotifier) -> TaskResult:
+        notifier.notify_message("start")
+        notifier.notify_message("end")
         return TaskResult(success=True, message="OK")
 
     ok_id = service.add_task(
@@ -506,7 +506,7 @@ def test_ts_generation_task(
     thermal_path = raw_study_path / "input" / "thermal"
     thermal_path.mkdir(parents=True, exist_ok=True)
     fr_path = thermal_path / "clusters" / "fr"
-    (fr_path).mkdir(parents=True, exist_ok=True)
+    fr_path.mkdir(parents=True, exist_ok=True)
     (fr_path / "list.ini").touch(exist_ok=True)
     content = """
     [th_1]

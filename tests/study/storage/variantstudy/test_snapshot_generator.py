@@ -36,8 +36,11 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from core.tasks.service import ITaskNotifier
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import AnyUUID, with_db_context
+
+logger = logging.getLogger(__name__)
 
 
 def _create_variant(
@@ -682,7 +685,7 @@ class TestSearchRefStudy:
         assert search_result.force_regenerate is True
 
 
-class RegisterNotification:
+class RegisterNotification(ITaskNotifier):
     """
     Callable used to register notifications.
     """
@@ -690,8 +693,22 @@ class RegisterNotification:
     def __init__(self) -> None:
         self.notifications: t.MutableSequence[str] = []
 
-    def __call__(self, notification: str) -> None:
+    def notify_message(self, notification: str) -> None:
         self.notifications.append(json.loads(notification))
+
+    def notify_progress(self, progress: int) -> None:
+        return
+
+
+class FailingNotifier(ITaskNotifier):
+    def __init__(self) -> None:
+        pass
+
+    def notify_message(self, notification: str) -> None:
+        logger.warning("Something went wrong")
+
+    def notify_progress(self, progress: int) -> None:
+        return
 
 
 class TestSnapshotGenerator:
@@ -1159,7 +1176,7 @@ class TestSnapshotGenerator:
             repository=variant_study_service.repository,
         )
 
-        notifier = Mock(side_effect=Exception("Something went wrong"))
+        notifier = FailingNotifier()
 
         with caplog.at_level(logging.WARNING):
             results = generator.generate_snapshot(
