@@ -147,7 +147,7 @@ class LinkManager:
             for area2_id, properties_cfg in property_map.items():
                 area1_id, area2_id = sorted([area1_id, area2_id])
                 properties = LinkProperties(**properties_cfg)
-                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.model_dump(by_alias=False))
+                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.model_dump(mode="json", by_alias=False))
 
         return links_by_ids
 
@@ -163,17 +163,17 @@ class LinkManager:
         for (area1, area2), update_link_dto in update_links_by_ids.items():
             # Update the link properties.
             old_link_dto = old_links_by_ids[(area1, area2)]
-            updated_link_properties = old_link_dto.copy(
-                update=update_link_dto.model_dump(by_alias=False, exclude_none=True)
+            new_link_dto = old_link_dto.copy(
+                update=update_link_dto.model_dump(mode="json", by_alias=False, exclude_none=True)
             )
-            new_links_by_ids[(area1, area2)] = updated_link_properties
+            new_links_by_ids[(area1, area2)] = new_link_dto
 
             # Convert the DTO to a configuration object and update the configuration file.
-            properties = LinkProperties(**updated_link_properties.model_dump(by_alias=False))
+            properties = LinkProperties(**new_link_dto.model_dump(by_alias=False))
             path = f"{_ALL_LINKS_PATH}/{area1}/properties/{area2}"
             cmd = UpdateConfig(
                 target=path,
-                data=properties.to_ini(int(study.version)),
+                data=properties.to_config(),
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
             )
             commands.append(cmd)
