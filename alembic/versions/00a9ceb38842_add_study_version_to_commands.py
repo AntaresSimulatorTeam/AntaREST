@@ -48,12 +48,9 @@ def upgrade():
     bind.execute(commandblock_table.delete().where(commandblock_table.c.id.in_(ids_to_remove)))
 
     # Insert new values
-    for study_id, version in study_info:
-        for cmd_id in mapping[study_id]:
-            bind.execute(
-                "UPDATE commandblock SET study_version = :version WHERE id = :cmd_id",
-                {"version": version, "cmd_id": cmd_id}
-            )
+    alter_table = table("commandblock", column("id"), column("study_id"), column("study_version"))
+    scalar_subq = sa.select(study_table.c.version).where(study_table.c.id == alter_table.c.study_id).scalar_subquery()
+    bind.execute(sa.update(alter_table).values(study_version=scalar_subq))
 
 
 def downgrade():
