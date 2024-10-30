@@ -325,7 +325,7 @@ class NonStudyFolder(AntaresBaseModel):
     so the user can navigate in the hierarchy
     """
 
-    path: str
+    path: Path
     workspace: str
     name: str
 

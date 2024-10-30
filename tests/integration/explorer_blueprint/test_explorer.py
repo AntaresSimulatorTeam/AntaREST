@@ -37,9 +37,6 @@ def study_tree(tmp_path: Path) -> Path:
             ├── another_folder
             │   ├── AW_NO_SCAN
             │   └── study.antares
-            └── subfolder
-                └── studyG
-                    └── study.antares
     """
     ext_workspace = tmp_path / "ext_workspace"
     c = ext_workspace / "folder/studyC"
@@ -58,7 +55,7 @@ def study_tree(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def test_explorer(app: FastAPI, client: TestClient, admin_access_token: str, study_tree: Path):
+def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path):
     workspace = "ext"
 
     res = client.get(
@@ -70,17 +67,14 @@ def test_explorer(app: FastAPI, client: TestClient, admin_access_token: str, stu
     directories_res = [NonStudyFolder(**d) for d in directories_res]
     directorires_expected = [
         NonStudyFolder(
-            path=str(study_tree / "ext_workspace/folder/trash"),
+            path=Path("folder/trash"),
             workspace="ext",
             name="trash",
         )
     ]
     assert directories_res == directorires_expected
 
-
-def test_explorer_no_directories(app: FastAPI, client: TestClient, admin_access_token: str, study_tree: Path):
-    workspace = "ext"
-
+    # request an path where there're no folders
     res = client.get(
         f"/v1/private/explorer/{workspace}/_list_dir?path=folder/trash",
         headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -89,52 +83,38 @@ def test_explorer_no_directories(app: FastAPI, client: TestClient, admin_access_
     directories_res = res.json()
     assert len(directories_res) == 0
 
-
-def test_explorer_path_is_not_dir(app: FastAPI, client: TestClient, admin_access_token: str, study_tree: Path):
-    workspace = "ext"
-
+    # request a path that isn't a folder
     res = client.get(
         f"/v1/private/explorer/{workspace}/_list_dir?path=folder/trash/trash",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
     assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
 
-
-def test_explorer_path_traversal_attempt(app: FastAPI, client: TestClient, admin_access_token: str, study_tree: Path):
-    workspace = "ext"
-
+    # try a path traversal attack
     res = client.get(
         f"/v1/private/explorer/{workspace}/_list_dir?path=folder/../../",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
     assert res.status_code == INVALID_PARAMS_STATUS_CODE, res.json()
 
-
-def test_explorer_access_default_folder_attempt(
-    app: FastAPI, client: TestClient, admin_access_token: str, study_tree: Path
-):
+    # try to access default workspase
     workspace = "default"
-
     res = client.get(
         f"/v1/private/explorer/{workspace}/_list_dir?path=folder",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
     assert res.status_code == BAD_REQUEST_STATUS_CODE
 
-
-def test_explorer_access_not_found_workspace_attempt(
-    app: FastAPI, client: TestClient, admin_access_token: str, study_tree: Path
-):
-    workspace = "crazyworkspace"
-
+    # request a workspace that doesn't exist
+    workspace = "ext2"
     res = client.get(
         f"/v1/private/explorer/{workspace}/_list_dir?path=folder",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
     assert res.status_code == INVALID_PARAMS_STATUS_CODE
 
+    # get list of workspaces
 
-def test_explorer_list_workspaces(app: FastAPI, client: TestClient, admin_access_token: str):
     res = client.get(
         "/v1/private/explorer/_list_workspaces",
         headers={"Authorization": f"Bearer {admin_access_token}"},

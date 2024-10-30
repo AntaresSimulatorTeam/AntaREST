@@ -688,7 +688,7 @@ class BadArchiveContent(Exception):
 
 class FolderNotFoundInWorkspace(HTTPException):
     """
-    This will be raised when we try to load a workspace that does not exist
+    This will be raised when we try to load a folder that does not exist
     """
 
     def __init__(self, message: str) -> None:

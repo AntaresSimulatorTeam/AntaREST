@@ -86,7 +86,7 @@ def test_list_dir_empty_string(config_scenario_a: Config):
 
     assert len(result) == 1
     workspace_path = config_scenario_a.get_workspace_path(workspace="diese")
-    assert result[0] == NonStudyFolder(path=str(workspace_path / "folder"), workspace="diese", name="folder")
+    assert result[0] == NonStudyFolder(path=Path("folder"), workspace="diese", name="folder")
 
 
 @pytest.mark.unit_test
@@ -96,10 +96,10 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
 
     assert len(result) == 3
     workspace_path = config_scenario_a.get_workspace_path(workspace="diese")
-    folder_path = workspace_path / "folder"
-    assert NonStudyFolder(path=str(folder_path / "subfolder1"), workspace="diese", name="subfolder1") in result
-    assert NonStudyFolder(path=str(folder_path / "subfolder2"), workspace="diese", name="subfolder2") in result
-    assert NonStudyFolder(path=str(folder_path / "subfolder3"), workspace="diese", name="subfolder3") in result
+    folder_path = Path("folder")
+    assert NonStudyFolder(path=(folder_path / "subfolder1"), workspace="diese", name="subfolder1") in result
+    assert NonStudyFolder(path=(folder_path / "subfolder2"), workspace="diese", name="subfolder2") in result
+    assert NonStudyFolder(path=(folder_path / "subfolder3"), workspace="diese", name="subfolder3") in result
 
 
 @pytest.mark.unit_test
