@@ -16,6 +16,7 @@ import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
+from enum import StrEnum
 from pathlib import Path
 
 from antares.study.version import StudyVersion
@@ -506,7 +507,7 @@ class ExportFormat(enum.StrEnum):
         return mapping[self]
 
 
-class MatrixFormat(str, enum.Enum):  # Todo set new StrEnum when we upgrade to python 3.11
+class MatrixFormat(StrEnum):
     JSON = "json"
     ARROW = "arrow"
 

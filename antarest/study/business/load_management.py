@@ -11,11 +11,14 @@
 # This file is part of the Antares project.
 import typing as t
 
+from antarest.core.serialization import AntaresBaseModel
+from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.model import MatrixFormat, Study
 from antarest.study.storage.storage_service import StudyStorageService
 
 
-class LoadOutput:
+@camel_case_model
+class LoadInfoDTO(AntaresBaseModel):
     pass
 
 
@@ -23,5 +26,8 @@ class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_load_matrix(self, study: Study, area_id: str, matrix_format: t.Optional[MatrixFormat]) -> LoadOutput:
-        return LoadOutput()
+    def get_load_matrix(
+        self, study: Study, area_id: str, matrix_format: t.Optional[MatrixFormat]
+    ) -> t.List[LoadInfoDTO]:
+        list_loads: t.List[LoadInfoDTO] = []
+        return list_loads
