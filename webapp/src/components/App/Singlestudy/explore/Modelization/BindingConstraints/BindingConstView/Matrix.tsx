@@ -13,14 +13,14 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { MatrixStats, StudyMetadata } from "../../../../../../../common/types";
-import MatrixInput from "../../../../../../common/MatrixInput";
+import { StudyMetadata } from "../../../../../../../common/types";
 import { Operator } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
 import { Box, Button } from "@mui/material";
 import BasicDialog, {
   BasicDialogProps,
 } from "../../../../../../common/dialogs/BasicDialog";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   study: StudyMetadata;
@@ -30,8 +30,13 @@ interface Props {
   onClose: () => void;
 }
 
-// TODO rename MatrixDialog or ConstraintMatrixDialog
-function Matrix({ study, operator, constraintId, open, onClose }: Props) {
+function ConstraintMatrix({
+  study,
+  operator,
+  constraintId,
+  open,
+  onClose,
+}: Props) {
   const { t } = useTranslation();
   const dialogProps: BasicDialogProps = {
     open,
@@ -59,63 +64,51 @@ function Matrix({ study, operator, constraintId, open, onClose }: Props) {
       {Number(study.version) >= 870 ? (
         <>
           {operator === "less" && (
-            <MatrixInput
-              study={study}
+            <Matrix
               title={t("study.modelization.bindingConst.timeSeries.less")}
               url={`input/bindingconstraints/${constraintId}_lt`}
-              computStats={MatrixStats.NOCOL}
             />
           )}
           {operator === "equal" && (
-            <MatrixInput
-              study={study}
+            <Matrix
               title={t("study.modelization.bindingConst.timeSeries.equal")}
               url={`input/bindingconstraints/${constraintId}_eq`}
-              computStats={MatrixStats.NOCOL}
             />
           )}
           {operator === "greater" && (
-            <MatrixInput
-              study={study}
+            <Matrix
               title={t("study.modelization.bindingConst.timeSeries.greater")}
               url={`input/bindingconstraints/${constraintId}_gt`}
-              computStats={MatrixStats.NOCOL}
             />
           )}
           {operator === "both" && (
             <SplitView id="binding-constraints-matrix" sizes={[50, 50]}>
               <Box sx={{ px: 2 }}>
-                <MatrixInput
-                  study={study}
+                <Matrix
                   title={t("study.modelization.bindingConst.timeSeries.less")}
                   url={`input/bindingconstraints/${constraintId}_lt`}
-                  computStats={MatrixStats.NOCOL}
                 />
               </Box>
               <Box sx={{ px: 2 }}>
-                <MatrixInput
-                  study={study}
+                <Matrix
                   title={t(
                     "study.modelization.bindingConst.timeSeries.greater",
                   )}
                   url={`input/bindingconstraints/${constraintId}_gt`}
-                  computStats={MatrixStats.NOCOL}
                 />
               </Box>
             </SplitView>
           )}
         </>
       ) : (
-        <MatrixInput
-          study={study}
+        <Matrix
           title={t("global.matrix")}
           url={`input/bindingconstraints/${constraintId}`}
-          columnsNames={["<", ">", "="]}
-          computStats={MatrixStats.NOCOL}
+          customColumns={["<", ">", "="]}
         />
       )}
     </BasicDialog>
   );
 }
 
-export default Matrix;
+export default ConstraintMatrix;

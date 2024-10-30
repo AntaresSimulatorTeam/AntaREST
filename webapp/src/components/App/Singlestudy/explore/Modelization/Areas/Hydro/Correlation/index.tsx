@@ -27,7 +27,7 @@ import {
 } from "./utils";
 import Fields from "./Fields";
 import HydroMatrixDialog from "../HydroMatrixDialog";
-import { HydroMatrixType } from "../utils";
+import { HydroMatrix } from "../utils";
 import { FormBox, FormPaper } from "../style";
 import ViewMatrixButton from "../ViewMatrixButton";
 
@@ -79,7 +79,7 @@ function Correlation() {
       </FormPaper>
       {matrixDialogOpen && (
         <HydroMatrixDialog
-          type={HydroMatrixType.Correlation}
+          type={HydroMatrix.Correlation}
           open={matrixDialogOpen}
           onClose={() => setMatrixDialogOpen(false)}
         />

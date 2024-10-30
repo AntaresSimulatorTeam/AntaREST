@@ -22,16 +22,12 @@ import Fieldset from "../../../../../../common/Fieldset";
 import { AutoSubmitHandler } from "../../../../../../common/Form/types";
 import { getLinkPath, LinkFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import {
-  LinkElement,
-  MatrixStats,
-  StudyMetadata,
-} from "../../../../../../../common/types";
+import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";
 import { useFormContextPlus } from "../../../../../../common/Form";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   link: LinkElement;
@@ -251,11 +247,9 @@ function LinkForm(props: Props) {
           {isTabMatrix ? (
             <LinkMatrixView study={study} area1={area1} area2={area2} />
           ) : (
-            <MatrixInput
-              study={study}
+            <Matrix
               url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}`}
-              columnsNames={columnsNames}
-              computStats={MatrixStats.NOCOL}
+              customColumns={columnsNames}
             />
           )}
         </Box>
