@@ -25,7 +25,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, Task
+from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 
 
 @pytest.fixture
@@ -296,7 +296,7 @@ class SimpleSyncTaskService(ITaskService):
         custom_event_messages: Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
-        action(lambda message: None)
+        action(NoopNotifier())
         return str(uuid.uuid4())
 
     def status_task(

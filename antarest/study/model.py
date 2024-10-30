@@ -456,13 +456,13 @@ class StudySimResultDTO(AntaresBaseModel):
     archived: bool
 
 
-class StudyDownloadType(str, enum.Enum):
+class StudyDownloadType(enum.StrEnum):
     LINK = "LINK"
     DISTRICT = "DISTRICT"
     AREA = "AREA"
 
 
-class StudyDownloadLevelDTO(str, enum.Enum):
+class StudyDownloadLevelDTO(enum.StrEnum):
     ANNUAL = "annual"
     MONTHLY = "monthly"
     WEEKLY = "weekly"
@@ -487,7 +487,7 @@ class StudyDownloadLevelDTO(str, enum.Enum):
             raise ShouldNotHappenException()
 
 
-class ExportFormat(str, enum.Enum):
+class ExportFormat(enum.StrEnum):
     ZIP = "application/zip"
     TAR_GZ = "application/tar+gz"
     JSON = "application/json"

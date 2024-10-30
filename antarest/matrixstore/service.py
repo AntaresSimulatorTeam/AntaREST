@@ -32,7 +32,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
+from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
@@ -101,11 +101,7 @@ class ISimpleMatrixService(ABC):
         """
         # noinspection SpellCheckingInspection
         if isinstance(matrix, str):
-            # str.removeprefix() is not available in Python 3.8
-            prefix = "matrix://"
-            if matrix.startswith(prefix):
-                return matrix[len(prefix) :]
-            return matrix
+            return matrix.removeprefix("matrix://")
         elif isinstance(matrix, list):
             return self.create(matrix)
         else:
@@ -514,7 +510,7 @@ class MatrixService(ISimpleMatrixService):
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 self.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
                 self.file_transfer_manager.set_ready(export_id)

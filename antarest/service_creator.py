@@ -12,7 +12,7 @@
 
 import logging
 import typing as t
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import redis
@@ -67,7 +67,7 @@ This mapping can be used to instantiate a new session, for example:
 """
 
 
-class Module(str, Enum):
+class Module(StrEnum):
     APP = "app"
     WATCHER = "watcher"
     MATRIX_GC = "matrix_gc"
@@ -127,9 +127,15 @@ def create_event_bus(app_ctxt: t.Optional[AppBuildContext], config: Config) -> t
     )
 
 
-def create_core_services(
-    app_ctxt: t.Optional[AppBuildContext], config: Config
-) -> t.Tuple[ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService,]:
+def create_core_services(app_ctxt: t.Optional[AppBuildContext], config: Config) -> t.Tuple[
+    ICache,
+    IEventBus,
+    ITaskService,
+    FileTransferManager,
+    LoginService,
+    MatrixService,
+    StudyService,
+]:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
     filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)

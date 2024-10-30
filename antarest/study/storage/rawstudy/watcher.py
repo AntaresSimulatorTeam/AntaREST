@@ -24,7 +24,7 @@ from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
+from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
@@ -177,7 +177,7 @@ class Watcher(IService):
         """
 
         # noinspection PyUnusedLocal
-        def scan_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def scan_task(notifier: ITaskNotifier) -> TaskResult:
             self.scan(recursive, workspace, path)
             return TaskResult(success=True, message="Scan completed")
 

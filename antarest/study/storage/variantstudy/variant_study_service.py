@@ -45,7 +45,7 @@ from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissio
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.matrixstore.service import MatrixService
@@ -60,6 +60,7 @@ from antarest.study.storage.utils import assert_permission, export_study_flat, i
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -587,6 +588,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         metadata: VariantStudy,
         denormalize: bool = False,
         from_scratch: bool = False,
+        listener: t.Optional[ICommandListener] = None,
     ) -> str:
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
@@ -611,7 +613,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             # db context, so we need to fetch the id attribute before
             study_id = metadata.id
 
-            def callback(notifier: TaskUpdateNotifier) -> TaskResult:
+            def callback(notifier: ITaskNotifier) -> TaskResult:
                 generator = SnapshotGenerator(
                     cache=self.cache,
                     raw_study_service=self.raw_study_service,
@@ -626,6 +628,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     denormalize=denormalize,
                     from_scratch=from_scratch,
                     notifier=notifier,
+                    listener=listener,
                 )
                 return TaskResult(
                     success=generate_result.success,
@@ -710,7 +713,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def _get_commands_and_notifier(
         self,
         variant_study: VariantStudy,
-        notifier: TaskUpdateNotifier,
+        notifier: ITaskNotifier,
         from_index: int = 0,
     ) -> t.Tuple[t.List[t.List[ICommand]], t.Callable[[int, bool, str], None]]:
         # Generate
@@ -724,7 +727,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     success=command_result,
                     message=command_message,
                 )
-                notifier(command_result_obj.model_dump_json())
+                notifier.notify_message(command_result_obj.model_dump_json())
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
@@ -753,7 +756,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         variant_study: VariantStudy,
         config: FileStudyTreeConfig,
-        notifier: TaskUpdateNotifier = noop_notifier,
+        notifier: ITaskNotifier = NoopNotifier(),
     ) -> t.Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         commands, notify = self._get_commands_and_notifier(variant_study=variant_study, notifier=notifier)
         return self.generator.generate_config(commands, config, variant_study, notifier=notify)
@@ -762,7 +765,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         variant_study: VariantStudy,
         dst_path: Path,
-        notifier: TaskUpdateNotifier = noop_notifier,
+        notifier: ITaskNotifier = NoopNotifier(),
         from_command_index: int = 0,
     ) -> GenerationResultInfoDTO:
         commands, notify = self._get_commands_and_notifier(
@@ -1112,12 +1115,12 @@ class SnapshotCleanerTask:
                     if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Start cleaning all snapshots updated or accessed {humanize.precisedelta(self._retention_time)} ago."
-        notifier(msg)
+        notifier.notify_message(msg)
         self._clear_all_snapshots()
         msg = "All selected snapshots were successfully cleared."
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     __call__ = run_task
