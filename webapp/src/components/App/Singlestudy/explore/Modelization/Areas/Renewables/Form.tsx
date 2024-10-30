@@ -81,23 +81,16 @@ function Renewables() {
           config={{ defaultValues }}
           onSubmit={handleSubmit}
           enableUndoRedo
+          sx={{ height: "50%" }}
         >
           <Fields />
         </Form>
         <Box
           sx={{
-            width: 1,
-            display: "flex",
-            flexDirection: "column",
-            py: 3,
-            height: "75vh",
+            height: "70vh",
           }}
         >
-          <Matrix
-            study={study}
-            areaId={areaId}
-            clusterId={nameToId(clusterId)}
-          />
+          <Matrix areaId={areaId} clusterId={nameToId(clusterId)} />
         </Box>
       </Box>
     </Box>

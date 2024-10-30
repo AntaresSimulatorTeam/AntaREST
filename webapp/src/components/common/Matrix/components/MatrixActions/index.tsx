@@ -13,13 +13,11 @@
  */
 
 import { Box, Divider, IconButton, Tooltip } from "@mui/material";
-import SplitButton from "../buttons/SplitButton";
-import FileDownload from "@mui/icons-material/FileDownload";
+import SplitButton from "@/components/common/buttons/SplitButton";
+import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
+import { FileDownload, Save, Undo, Redo } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
-import Save from "@mui/icons-material/Save";
-import { Undo, Redo } from "@mui/icons-material";
-import DownloadMatrixButton from "../buttons/DownloadMatrixButton";
 
 interface MatrixActionsProps {
   onImport: VoidFunction;
@@ -33,6 +31,7 @@ interface MatrixActionsProps {
   redo: VoidFunction;
   canUndo: boolean;
   canRedo: boolean;
+  isImportDisabled?: boolean;
 }
 
 function MatrixActions({
@@ -47,6 +46,7 @@ function MatrixActions({
   redo,
   canUndo,
   canRedo,
+  isImportDisabled = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
 
@@ -99,7 +99,7 @@ function MatrixActions({
         ButtonProps={{
           startIcon: <FileDownload />,
         }}
-        disabled={isSubmitting}
+        disabled={isSubmitting || isImportDisabled}
       >
         {t("global.import")}
       </SplitButton>

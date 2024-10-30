@@ -14,25 +14,21 @@
 
 import { useCallback, useMemo } from "react";
 import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
-import { type EnhancedGridColumn, type ColumnType, ColumnTypes } from "./types";
-import { formatDateTime } from "./utils";
-
-type CellContentGenerator = (
-  row: number,
-  col: number,
-  column: EnhancedGridColumn,
-  data: number[][],
-  dateTime?: string[],
-  aggregates?: Record<string, number[]>,
-  rowHeaders?: string[],
-) => GridCell;
+import {
+  type EnhancedGridColumn,
+  type ColumnType,
+  MatrixAggregates,
+} from "../../shared/types";
+import { formatGridNumber } from "../../shared/utils";
+import { Column } from "../../shared/constants";
+import { type CellContentGenerator } from "./types";
 
 /**
  * Map of cell content generators for each column type.
  * Each generator function creates the appropriate GridCell based on the column type and data.
  */
 const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
-  [ColumnTypes.Text]: (
+  [Column.Text]: (
     row,
     col,
     column,
@@ -47,33 +43,37 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnTypes.DateTime]: (row, col, column, data, dateTime) => ({
+  [Column.DateTime]: (row, col, column, data, dateTime) => ({
     kind: GridCellKind.Text,
     data: "", // Date/time columns are not editable
-    displayData: formatDateTime(dateTime?.[row] ?? ""),
+    displayData: dateTime?.[row] ?? "",
     readonly: !column.editable,
     allowOverlay: false,
   }),
-  [ColumnTypes.Number]: (row, col, column, data) => {
+  [Column.Number]: (row, col, column, data) => {
     const value = data?.[row]?.[col];
 
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: value?.toString(),
+      displayData: formatGridNumber({ value, maxDecimals: 6 }),
       readonly: !column.editable,
       allowOverlay: true,
+      decimalSeparator: ".",
+      thousandSeparator: " ",
     };
   },
-  [ColumnTypes.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
-    const value = aggregates?.[column.id]?.[row];
+  [Column.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
+    const value = aggregates?.[column.id as keyof MatrixAggregates]?.[row];
 
     return {
       kind: GridCellKind.Number,
       data: value,
-      displayData: value?.toString() ?? "",
+      displayData: formatGridNumber({ value, maxDecimals: 3 }),
       readonly: !column.editable,
       allowOverlay: false,
+      decimalSeparator: ".",
+      thousandSeparator: " ",
     };
   },
 };
@@ -100,7 +100,8 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
  * @param dateTime - Optional array of date-time strings for date columns.
  * @param aggregates - Optional object mapping column IDs to arrays of aggregated values.
  * @param rowHeaders - Optional array of row header labels.
- * @param readOnly - Whether the grid is read-only (default is false).
+ * @param isReadOnly - Whether the grid is read-only (default is false).
+ * @param isPercentDisplayEnabled - Whether to display number values as percentages (default is false).
  * @returns A function that accepts a grid item and returns the configured grid cell content.
  */
 export function useGridCellContent(
@@ -108,9 +109,10 @@ export function useGridCellContent(
   columns: EnhancedGridColumn[],
   gridToData: (cell: Item) => Item | null,
   dateTime?: string[],
-  aggregates?: Record<string, number[]>,
+  aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
-  readOnly = false,
+  isReadOnly = false,
+  isPercentDisplayEnabled = false,
 ): (cell: Item) => GridCell {
   const columnMap = useMemo(() => {
     return new Map(columns.map((column, index) => [index, column]));
@@ -149,7 +151,7 @@ export function useGridCellContent(
       // accounting for any non-data columns in the grid
       let adjustedCol = col;
 
-      if (column.type === ColumnTypes.Number && gridToData) {
+      if (column.type === Column.Number && gridToData) {
         // Map grid cell to data array index
         const dataCell = gridToData(cell);
 
@@ -168,8 +170,18 @@ export function useGridCellContent(
         rowHeaders,
       );
 
+      // Display number values as percentages if enabled
+      if (isPercentDisplayEnabled && gridCell.kind === GridCellKind.Number) {
+        return {
+          ...gridCell,
+          displayData: `${gridCell.data}%`,
+          // If ReadOnly is enabled, we don't want to allow overlay
+          allowOverlay: !isReadOnly,
+        };
+      }
+
       // Prevent updates for read-only grids
-      if (readOnly) {
+      if (isReadOnly) {
         return {
           ...gridCell,
           allowOverlay: false,
@@ -178,7 +190,16 @@ export function useGridCellContent(
 
       return gridCell;
     },
-    [columnMap, gridToData, data, dateTime, aggregates, rowHeaders, readOnly],
+    [
+      columnMap,
+      gridToData,
+      data,
+      dateTime,
+      aggregates,
+      rowHeaders,
+      isReadOnly,
+      isPercentDisplayEnabled,
+    ],
   );
 
   return getCellContent;

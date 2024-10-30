@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { validatePassword, validateString } from "./string";
+import { validatePassword, validateString } from "../string";
 
 vi.mock("i18next", () => ({
   t: vi.fn((key, options) => {
