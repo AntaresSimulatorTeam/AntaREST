@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 _ENR_MODELLING_KEY = "settings/generaldata/other preferences/renewable-generation-modelling"
@@ -63,7 +64,7 @@ class UpdateConfig(ICommand):
 
         return CommandOutput(status=True, message="ok"), {}
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, IniFileNode):
