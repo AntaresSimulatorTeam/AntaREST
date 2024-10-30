@@ -15,23 +15,23 @@
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type {
+  SubmitHandlerPlus,
+  UseFormReturnPlus,
+} from "../../../../../common/Form/types";
 import Fields from "./Fields";
-import {
-  getTimeSeriesFormFields,
-  setTimeSeriesFormFields,
-  TSFormFields,
-} from "./utils";
+import { DEFAULT_VALUES, setTimeSeriesFormFields, TSFormFields } from "./utils";
 import { useTranslation } from "react-i18next";
 import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
 import { generateTimeSeries } from "../../../../../../services/api/studies/timeseries";
 import BuildIcon from "@mui/icons-material/Build";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
-  const [generationInProgress, setGenerationInProgress] = useState(false);
+  const [launchTaskInProgress, setLaunchTaskInProgress] = useState(false);
+  const apiRef = useRef<UseFormReturnPlus<TSFormFields>>();
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,
@@ -48,12 +48,14 @@ function TimeSeriesManagement() {
   };
 
   const handleSubmitSuccessful = async () => {
-    setGenerationInProgress(true);
+    setLaunchTaskInProgress(true);
 
-    // The WebSocket will trigger an event after the fulfillment of the promise
+    // The WebSocket will trigger an event after the fulfillment of the promise (see `FreezeStudy`)
     await handleGenerateTs({ studyId: study.id });
 
-    setGenerationInProgress(false);
+    setLaunchTaskInProgress(false);
+
+    apiRef.current?.reset(DEFAULT_VALUES);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -64,14 +66,14 @@ function TimeSeriesManagement() {
     <Form
       key={study.id}
       config={{
-        defaultValues: () => getTimeSeriesFormFields(study.id),
-        disabled: generationInProgress,
+        defaultValues: DEFAULT_VALUES,
+        disabled: launchTaskInProgress,
       }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
       submitButtonText={t("study.configuration.tsManagement.generateTs")}
       submitButtonIcon={<BuildIcon />}
-      allowSubmitOnPristine
+      apiRef={apiRef}
     >
       <Fields />
     </Form>
