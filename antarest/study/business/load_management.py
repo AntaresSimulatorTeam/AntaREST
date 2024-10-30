@@ -22,6 +22,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 
 LOAD_PATH = "input/load/series/load_{area_id}"
 
+
 class LoadInfoDTO(AntaresBaseModel):
     matrix: JSON | bytes
 
@@ -39,10 +40,10 @@ class LoadManager:
         if isinstance(node, InputSeriesMatrix):
             if matrix_format == MatrixFormat.JSON:
                 matrix_json = cast(JSON, InputSeriesMatrix.parse(node))
-                return LoadInfoDTO(matrix = matrix_json)
+                return LoadInfoDTO(matrix=matrix_json)
             elif matrix_format == MatrixFormat.ARROW:
                 matrix_df: pd.DataFrame = cast(pd.DataFrame, InputSeriesMatrix.parse(node, return_dataframe=True))
                 with io.BytesIO() as buffer:
                     matrix_df.columns = matrix_df.columns.map(str)
                     matrix_df.to_feather(buffer, compression="uncompressed")
-                    return LoadInfoDTO(matrix = buffer.getvalue())
+                    return LoadInfoDTO(matrix=buffer.getvalue())
