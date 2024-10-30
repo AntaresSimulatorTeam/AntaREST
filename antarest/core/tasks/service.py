@@ -42,11 +42,21 @@ from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
 
-TaskUpdateNotifier = t.Callable[[str], None]
-Task = t.Callable[[TaskUpdateNotifier], TaskResult]
-
 DEFAULT_AWAIT_MAX_TIMEOUT = 172800  # 48 hours
 """Default timeout for `await_task` in seconds."""
+
+
+class ITaskNotifier(ABC):
+    @abstractmethod
+    def notify_message(self, message: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def notify_progress(self, progress: int) -> None:
+        raise NotImplementedError()
+
+
+Task = t.Callable[[ITaskNotifier], TaskResult]
 
 
 class ITaskService(ABC):
@@ -94,11 +104,17 @@ class ITaskService(ABC):
 
 
 # noinspection PyUnusedLocal
-def noop_notifier(message: str) -> None:
-    """This function is used in tasks when no notification is required."""
+class NoopNotifier(ITaskNotifier):
+    """This class is used in tasks when no notification is required."""
+
+    def notify_message(self, message: str) -> None:
+        return
+
+    def notify_progress(self, progress: int) -> None:
+        return
 
 
-class TaskJobLogRecorder:
+class TaskLogAndProgressRecorder(ITaskNotifier):
     """
     Callback used to register log messages in the TaskJob table.
 
@@ -107,15 +123,32 @@ class TaskJobLogRecorder:
         session: The database session created in the same thread as the task thread.
     """
 
-    def __init__(self, task_id: str, session: Session):
+    def __init__(self, task_id: str, session: Session, event_bus: IEventBus) -> None:
         self.session = session
         self.task_id = task_id
+        self.event_bus = event_bus
 
-    def __call__(self, message: str) -> None:
+    def notify_message(self, message: str) -> None:
         task = self.session.query(TaskJob).get(self.task_id)
         if task:
             task.logs.append(TaskJobLog(message=message, task_id=self.task_id))
-            db.session.commit()
+            self.session.commit()
+
+    def notify_progress(self, progress: int) -> None:
+        self.session.query(TaskJob).filter(TaskJob.id == self.task_id).update({TaskJob.progress: progress})
+        self.session.commit()
+
+        self.event_bus.push(
+            Event(
+                type=EventType.TASK_PROGRESS,
+                payload={
+                    "task_id": self.task_id,
+                    "progress": progress,
+                },
+                permissions=PermissionInfo(public_mode=PublicMode.READ),
+                channel=EventChannelDirectory.TASK + self.task_id,
+            )
+        )
 
 
 class TaskJobService(ITaskService):
@@ -138,7 +171,7 @@ class TaskJobService(ITaskService):
         task_id: str,
         task_type: str,
         task_args: t.Dict[str, t.Union[int, float, bool, str]],
-    ) -> t.Callable[[TaskUpdateNotifier], TaskResult]:
+    ) -> Task:
         task_result_wrapper: t.List[TaskResult] = []
 
         def _create_awaiter(
@@ -152,7 +185,7 @@ class TaskJobService(ITaskService):
             return _await_task_end
 
         # noinspection PyUnusedLocal
-        def _send_worker_task(logger_: TaskUpdateNotifier) -> TaskResult:
+        def _send_worker_task(logger_: ITaskNotifier) -> TaskResult:
             listener_id = self.event_bus.add_listener(
                 _create_awaiter(task_result_wrapper),
                 [EventType.WORKER_TASK_ENDED],
@@ -380,7 +413,7 @@ class TaskJobService(ITaskService):
         try:
             with db():
                 # We must use the DB session attached to the current thread
-                result = callback(TaskJobLogRecorder(task_id, session=db.session))
+                result = callback(TaskLogAndProgressRecorder(task_id, db.session, self.event_bus))
 
             status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
             logger.info(f"Task {task_id} ended with status {status}")
