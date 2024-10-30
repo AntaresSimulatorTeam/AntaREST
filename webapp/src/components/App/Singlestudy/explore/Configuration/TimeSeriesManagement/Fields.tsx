@@ -26,6 +26,7 @@ import { useFormContextPlus } from "../../../../../common/Form";
 import { TSFormFields, TSType } from "./utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useTranslation } from "react-i18next";
+import { validateNumber } from "@/utils/validation/number";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
@@ -89,6 +90,7 @@ function Fields() {
                 control={control}
                 size="small"
                 disabled={isReadyMade}
+                rules={{ validate: validateNumber({ min: 1 }) }}
                 sx={{ width: 110 }}
               />
             </TableCell>
