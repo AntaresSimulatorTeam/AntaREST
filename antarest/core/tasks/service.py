@@ -289,6 +289,8 @@ class TaskJobService(ITaskService):
                     message=custom_event_messages.start
                     if custom_event_messages is not None
                     else f"Task {task.id} added",
+                    type=task.type,
+                    study_id=task.ref_id,
                 ).model_dump(),
                 permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
@@ -389,6 +391,10 @@ class TaskJobService(ITaskService):
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
     ) -> None:
         # attention: this function is executed in a thread, not in the main process
+        with db():
+            task = db.session.query(TaskJob).get(task_id)
+            task_type = task.type
+            study_id = task.ref_id
 
         self.event_bus.push(
             Event(
@@ -398,6 +404,8 @@ class TaskJobService(ITaskService):
                     message=custom_event_messages.running
                     if custom_event_messages is not None
                     else f"Task {task_id} is running",
+                    type=task_type,
+                    study_id=study_id,
                 ).model_dump(),
                 permissions=PermissionInfo(public_mode=PublicMode.READ),
                 channel=EventChannelDirectory.TASK + task_id,
@@ -444,6 +452,8 @@ class TaskJobService(ITaskService):
                             if custom_event_messages is not None
                             else f"Task {task_id} {event_msg}"
                         ),
+                        type=task_type,
+                        study_id=study_id,
                     ).model_dump(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
@@ -469,7 +479,9 @@ class TaskJobService(ITaskService):
             self.event_bus.push(
                 Event(
                     type=EventType.TASK_FAILED,
-                    payload=TaskEventPayload(id=task_id, message=message).model_dump(),
+                    payload=TaskEventPayload(
+                        id=task_id, message=message, type=task_type, study_id=study_id
+                    ).model_dump(),
                     permissions=PermissionInfo(public_mode=PublicMode.READ),
                     channel=EventChannelDirectory.TASK + task_id,
                 )

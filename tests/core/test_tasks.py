@@ -143,7 +143,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     failed_id = service.add_task(
         action_fail,
         "failed action",
-        None,
+        TaskType.COPY,
         None,
         None,
         None,
@@ -172,7 +172,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     ok_id = service.add_task(
         action_ok,
         None,
-        None,
+        TaskType.COPY,
         None,
         None,
         None,

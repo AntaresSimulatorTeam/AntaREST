@@ -58,6 +58,8 @@ export interface StudyJobLogUpdatePayload {
 export interface TaskEventPayload {
   id: string;
   message: string;
+  type: TTaskType;
+  study_id?: StudyMetadata["id"];
 }
 
 ////////////////////////////////////////////////////////////////
