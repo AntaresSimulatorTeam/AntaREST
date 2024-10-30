@@ -416,13 +416,10 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
         `True` if the folder path is safe, `False` otherwise.
     """
     requested_path = workspace.path / folder
-    safe_dir = os.path.realpath(workspace.path)
-    real_requested_path = os.path.realpath(requested_path)  # resolve symbolic links like ~ , .. and .
-    # we check if real_requested_path starts with safe_dir,
-    # if not, it means that the requested path is outside the workspace
-    # TODO: replace by is_relative_to when we switch to python 3.11
-    common_prefix = os.path.commonprefix((real_requested_path, safe_dir))  # get the common prefix of the two paths
-    return common_prefix == safe_dir  # if requested path isn't in workspace, then common prefix is different
+    requested_path = requested_path.resolve()
+    safe_dir = workspace.path.resolve()
+    # check weither the requested path is a subdirectory of the workspace
+    return requested_path.is_relative_to(safe_dir)
 
 
 def is_study_folder(path: Path) -> bool:
