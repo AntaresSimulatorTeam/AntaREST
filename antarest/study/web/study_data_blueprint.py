@@ -529,14 +529,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/{uuid}/{area_id}/load/series",
         tags=[APITag.study_data],
         summary="Get load series data",
-        response_model=t.List[LoadInfoDTO],
+        response_model=LoadInfoDTO,
     )
     def get_load_series(
         uuid: str,
         area_id: str,
-        matrix_format: t.Optional[MatrixFormat] = None,
+        matrix_format: MatrixFormat = MatrixFormat.JSON,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.List[LoadInfoDTO]:
+    ) -> LoadInfoDTO:
         logger.info(
             msg=f"Getting load series data for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
