@@ -14,15 +14,15 @@
 
 import { Skeleton } from "@mui/material";
 import OkDialog, { OkDialogProps } from "./OkDialog";
-import EditableMatrix from "../EditableMatrix";
-import UsePromiseCond from "../utils/UsePromiseCond";
-import type { LaunchJob } from "../../../common/types";
-import { getStudyData } from "../../../services/api/study";
-import usePromise from "../../../hooks/usePromise";
+import type { LaunchJob } from "@/common/types";
+import { getStudyData } from "@/services/api/study";
+import usePromise from "@/hooks/usePromise";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import EmptyView from "../page/SimpleContent";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
+import UsePromiseCond from "../utils/UsePromiseCond";
+import EmptyView from "../page/SimpleContent";
+import EditableMatrix from "../EditableMatrix";
 
 // TODO: redesign DataViewerDialog to use path, then remove this component
 

@@ -17,7 +17,7 @@ import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
+import { StudyMetadata } from "@/common/types";
 import {
   RENEWABLE_GROUPS,
   RenewableGroup,
@@ -27,18 +27,18 @@ import {
   getRenewableClusters,
   type RenewableClusterWithCapacity,
 } from "./utils";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import GroupedDataTable from "../../../../../../common/GroupedDataTable";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import GroupedDataTable from "@/components/common/GroupedDataTable";
+import BooleanCell from "@/components/common/GroupedDataTable/cellRenderers/BooleanCell";
+import { TRow } from "@/components/common/GroupedDataTable/types";
 import {
   addClusterCapacity,
-  capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
+  capacityAggregationFn,
 } from "../common/clustersUtils";
-import { TRow } from "../../../../../../common/GroupedDataTable/types";
-import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 
 const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 

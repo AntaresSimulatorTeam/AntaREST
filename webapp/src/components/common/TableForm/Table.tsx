@@ -15,12 +15,10 @@
 import HT from "handsontable";
 import * as RA from "ramda-adjunct";
 import { useMemo } from "react";
-import type { IdType } from "../../../common/types";
+import type { IdType } from "@/common/types";
+import { HotTableClass } from "@handsontable/react";
 import { useFormContextPlus } from "../Form";
-import Handsontable, {
-  HandsontableProps,
-  HotTableClass,
-} from "../Handsontable";
+import Handsontable, { HandsontableProps } from "../Handsontable";
 
 type Row = { id: IdType } & HT.RowObject;
 

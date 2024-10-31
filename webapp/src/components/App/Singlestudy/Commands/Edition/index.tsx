@@ -45,27 +45,27 @@ import {
   applyCommands,
   getStudyTask,
   exportCommandsMatrices,
-} from "../../../../../services/api/variant";
+} from "@/services/api/variant";
 import {
   WSEvent,
   WSMessage,
   CommandResultDTO,
   TaskEventPayload,
   TaskStatus,
-} from "../../../../../common/types";
+} from "@/common/types";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
-import { getTask } from "../../../../../services/api/tasks";
+import { getTask } from "@/services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
-import SimpleLoader from "../../../../common/loaders/SimpleLoader";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   addWsMessageListener,
   sendWsSubscribeMessage,
   WsChannel,
-} from "../../../../../services/webSockets";
-import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
-import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
-import EmptyView from "../../../../common/page/SimpleContent";
+} from "@/services/webSockets";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import EmptyView from "@/components/common/page/SimpleContent";
 
 const logError = debug("antares:variantedition:error");
 

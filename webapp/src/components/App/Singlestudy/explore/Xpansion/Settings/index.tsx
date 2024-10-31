@@ -18,8 +18,8 @@ import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { StudyMetadata } from "../../../../../../common/types";
-import { XpansionResourceType, XpansionSettings } from "../types";
+import { StudyMetadata } from "@/common/types";
+import { XpansionResourceType, XpansionSettings } from "@/types";
 import {
   getXpansionSettings,
   getAllConstraints,
@@ -28,13 +28,13 @@ import {
   getAllWeights,
   getWeight,
   getAllCandidates,
-} from "../../../../../../services/api/xpansion";
+} from "@/services/api/xpansion";
 import SettingsForm from "./SettingsForm";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import { removeEmptyFields } from "../../../../../../services/utils/index";
-import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import SimpleLoader from "@/common/loaders/SimpleLoader";
+import { removeEmptyFields } from "@/services/utils/index";
+import DataViewerDialog from "@/common/dialogs/DataViewerDialog";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 
 const resourceContentFetcher = (
   resourceType: string,

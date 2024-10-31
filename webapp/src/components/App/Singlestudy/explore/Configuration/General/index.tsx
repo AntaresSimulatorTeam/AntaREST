@@ -15,8 +15,7 @@
 import { useOutletContext } from "react-router";
 import * as R from "ramda";
 import { useState } from "react";
-import { StudyMetadata } from "../../../../../../common/types";
-import Form from "../../../../../common/Form";
+import { StudyMetadata } from "@/common/types";
 import Fields from "./Fields";
 import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
 import ScenarioPlaylistDialog from "./dialogs/ScenarioPlaylistDialog";
@@ -28,8 +27,9 @@ import {
   SetDialogStateType,
   setGeneralFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 
 function General() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

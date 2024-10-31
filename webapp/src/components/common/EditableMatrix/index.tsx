@@ -20,7 +20,7 @@ import {
   MatrixEditDTO,
   MatrixType,
   MatrixStats,
-} from "../../../common/types";
+} from "@/common/types";
 import "handsontable/dist/handsontable.min.css";
 import { Root } from "./style";
 import {

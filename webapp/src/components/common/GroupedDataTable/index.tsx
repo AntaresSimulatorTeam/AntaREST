@@ -29,18 +29,18 @@ import {
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import CreateDialog from "./CreateDialog";
-import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
 import DuplicateDialog from "./DuplicateDialog";
-import { translateWithColon } from "../../../utils/i18nUtils";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import { translateWithColon } from "@/utils/i18nUtils";
+import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { PromiseAny } from "../../../utils/tsUtils";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
-import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
+import { PromiseAny } from "@/utils/tsUtils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
+import useOperationInProgressCount from "@/hooks/useOperationInProgressCount";
 import type { TRow } from "./types";
+import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 
 export interface GroupedDataTableProps<
   TGroups extends string[],

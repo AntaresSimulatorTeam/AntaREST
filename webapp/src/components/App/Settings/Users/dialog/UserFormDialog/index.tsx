@@ -13,11 +13,11 @@
  */
 
 import { DialogContentText } from "@mui/material";
+import { GroupDTO, RoleType } from "@/common/types";
+import UserForm from "./UserForm";
 import FormDialog, {
   FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
-import { GroupDTO, RoleType } from "../../../../../../common/types";
-import UserForm from "./UserForm";
+} from "@/components/common/dialogs/FormDialog";
 
 export interface UserFormDialogProps extends Omit<FormDialogProps, "children"> {
   defaultValues?: {

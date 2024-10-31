@@ -28,7 +28,7 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { MatrixType } from "../../../common/types";
+import { MatrixType } from "@/common/types";
 import "handsontable/dist/handsontable.min.css";
 import { formatDateFromIndex } from "./utils";
 

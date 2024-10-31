@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import client from "../../client";
-import { format } from "../../../../utils/stringUtils";
+import client from "@/services/api/client";
+import { format } from "@/utils/stringUtils";
 import type {
   GetTableModeParams,
   SetTableModeParams,

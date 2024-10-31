@@ -17,7 +17,7 @@ import {
   deleteWeight,
   getWeight,
   getAllWeights,
-} from "../../../../../services/api/xpansion";
+} from "@/services/api/xpansion";
 import FileList from "./FileList";
 
 function Weights() {

@@ -38,16 +38,13 @@ import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
 import { TokenFormDialogProps } from ".";
-import { GroupDTO, RoleType } from "../../../../../../common/types";
-import usePromise from "../../../../../../hooks/usePromise";
-import { getGroups } from "../../../../../../services/api/user";
-import { roleToString, sortByName } from "../../../../../../services/utils";
-import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import {
-  getAuthUser,
-  isAuthUserAdmin,
-} from "../../../../../../redux/selectors";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+import { GroupDTO, RoleType } from "@/common/types";
+import usePromise from "@/hooks/usePromise";
+import { getGroups } from "@/services/api/user";
+import { roleToString, sortByName } from "@/services/utils";
+import { getAuthUser, isAuthUserAdmin } from "@/redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "@/common/contants";
 
 interface Props extends UseFormReturn {
   onlyPermissions?: TokenFormDialogProps["onlyPermissions"];

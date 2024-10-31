@@ -45,21 +45,21 @@ import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import axios from "axios";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import useDebounce from "../../../hooks/useDebounce";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useDebounce from "@/hooks/useDebounce";
 import {
   ROOT_ERROR_KEY,
   getDirtyValues,
   stringToPath,
   toAutoSubmitConfig,
 } from "./utils";
-import useDebouncedState from "../../../hooks/useDebouncedState";
-import usePrompt from "../../../hooks/usePrompt";
+import useDebouncedState from "@/hooks/useDebouncedState";
+import usePrompt from "@/hooks/usePrompt";
 import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
-import { mergeSxProp } from "../../../utils/muiUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 export interface AutoSubmitConfig {
   enable: boolean;

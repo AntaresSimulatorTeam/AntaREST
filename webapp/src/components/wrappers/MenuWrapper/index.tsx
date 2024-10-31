@@ -40,10 +40,8 @@ import {
   useTheme,
 } from "@mui/material";
 import { useMount } from "react-use";
-import logo from "../../../assets/img/logo.png";
-import NotificationBadge from "../../App/Tasks/NotificationBadge";
-import topRightBackground from "../../../assets/img/top-right-background.png";
-import { setMenuCollapse } from "../../../redux/ducks/ui";
+import logo from "@/assets/img/logo.png";
+import { setMenuCollapse } from "@/redux/ducks/ui";
 import {
   NavDrawer,
   NavListItem,
@@ -56,18 +54,20 @@ import {
   MenuContainer,
   LogoContainer,
 } from "./styles";
-import { getConfig } from "../../../services/config";
+import { getConfig } from "@/services/config";
 import {
   getCurrentStudyId,
   getMenuExtended,
   getWebSocketConnected,
-} from "../../../redux/selectors";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import { logout } from "../../../redux/ducks/auth";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { fetchUsers } from "../../../redux/ducks/users";
-import { fetchGroups } from "../../../redux/ducks/groups";
+} from "@/redux/selectors";
+import { logout } from "@/redux/ducks/auth";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { fetchUsers } from "@/redux/ducks/users";
+import { fetchGroups } from "@/redux/ducks/groups";
+import NotificationBadge from "@/components/App/Tasks/NotificationBadge";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import topRightBackground from "@/assets/img/top-right-background.png";
 
 const pulsatingAnimation = keyframes`
   0% {

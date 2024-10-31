@@ -14,17 +14,17 @@
 
 import { Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import Form from "../../../../../../common/Form";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 import {
   PropertiesFormFields,
   getPropertiesFormFields,
   setPropertiesFormFields,
 } from "./utils";
 import Fields from "./Fields";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 
 function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

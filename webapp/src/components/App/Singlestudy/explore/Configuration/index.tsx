@@ -16,17 +16,17 @@ import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../common/types";
-import PropertiesView from "../../../../common/PropertiesView";
-import ListElement from "../common/ListElement";
+import { StudyMetadata } from "@/common/types";
 import AdequacyPatch from "./AdequacyPatch";
 import AdvancedParameters from "./AdvancedParameters";
 import General from "./General";
 import Optimization from "./Optimization";
 import TimeSeriesManagement from "./TimeSeriesManagement";
-import TableMode from "../../../../common/TableMode";
-import SplitView from "../../../../common/SplitView";
-import ViewWrapper from "../../../../common/page/ViewWrapper";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import PropertiesView from "@/components/common/PropertiesView";
+import SplitView from "@/components/common/SplitView";
+import TableMode from "@/components/common/TableMode";
+import ListElement from "../common/ListElement";
 
 function Configuration() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

@@ -15,7 +15,7 @@
 import React, { useEffect, useState } from "react";
 import Split, { SplitProps } from "react-split";
 import { Box } from "@mui/material";
-import storage from "../../../services/utils/localStorage";
+import storage from "@/services/utils/localStorage";
 import "./style.css";
 
 export interface SplitViewProps {

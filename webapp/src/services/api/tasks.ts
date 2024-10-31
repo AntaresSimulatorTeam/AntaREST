@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { TaskDTO, TaskStatus } from "../../common/types";
+import { TaskDTO, TaskStatus } from "@/common/types";
 import client from "./client";
 
 export const getStudyRunningTasks = async (sid: string): Promise<TaskDTO[]> => {

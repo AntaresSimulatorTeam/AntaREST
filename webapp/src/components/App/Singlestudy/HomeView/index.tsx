@@ -15,7 +15,7 @@
 import { useNavigate } from "react-router-dom";
 import { Box } from "@mui/material";
 import Split from "react-split";
-import { StudyMetadata, VariantTree } from "../../../../common/types";
+import { StudyMetadata, VariantTree } from "@/common/types";
 import "./Split.css";
 import StudyTreeView from "./StudyTreeView";
 import InformationView from "./InformationView";

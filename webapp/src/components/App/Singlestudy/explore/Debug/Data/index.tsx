@@ -17,10 +17,9 @@ import Image from "./Image";
 import Json from "./Json";
 import Matrix from "./Matrix";
 import Folder from "./Folder";
-import { canEditFile, type FileInfo, type FileType } from "../utils";
-import type { DataCompProps } from "../utils";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "@/common/types";
+import { canEditFile, DataCompProps, FileInfo, FileType } from "../utils";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
 
 interface Props extends FileInfo {
   study: StudyMetadata;

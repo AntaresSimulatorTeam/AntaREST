@@ -41,10 +41,9 @@ import DragHandleIcon from "@mui/icons-material/DragHandle";
 import * as RA from "ramda-adjunct";
 import { useUpdateEffect } from "react-use";
 import { FieldPath, FieldValues } from "react-hook-form";
-import StringFE from "../StringFE";
 import reactHookFormSupport, {
   ReactHookFormSupportProps,
-} from "../../../../hoc/reactHookFormSupport";
+} from "@/hoc/reactHookFormSupport";
 import {
   createFakeBlurEventHandler,
   createFakeChangeEventHandler,
@@ -52,8 +51,9 @@ import {
   FakeBlurEventHandler,
   FakeChangeEventHandler,
   InputObject,
-} from "../../../../utils/feUtils";
+} from "@/utils/feUtils";
 import { makeLabel, makeListItems } from "./utils";
+import StringFE from "../StringFE";
 
 interface ListFEProps<TItem, TOption> {
   defaultValue?: TItem[];

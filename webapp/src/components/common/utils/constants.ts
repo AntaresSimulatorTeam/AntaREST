@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { GenericInfo } from "../../../common/types";
+import { GenericInfo } from "@/common/types";
 
 export const PUBLIC_MODE_LIST: GenericInfo[] = [
   { id: "NONE", name: "study.nonePublicMode" },

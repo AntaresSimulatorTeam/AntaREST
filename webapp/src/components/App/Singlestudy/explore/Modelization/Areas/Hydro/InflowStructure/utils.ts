@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { type StudyMetadata } from "../../../../../../../../common/types";
-import client from "../../../../../../../../services/api/client";
+import { type StudyMetadata } from "@/common/types";
+import client from "@/services/api/client";
 
 ////////////////////////////////////////////////////////////////
 // Types

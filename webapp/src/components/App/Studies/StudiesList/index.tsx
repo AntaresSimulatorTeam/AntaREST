@@ -38,32 +38,29 @@ import RadarIcon from "@mui/icons-material/Radar";
 import { FixedSizeGrid, GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
 import { AxiosError } from "axios";
-import { StudyMetadata } from "../../../../common/types";
-import {
-  STUDIES_HEIGHT_HEADER,
-  STUDIES_LIST_HEADER_HEIGHT,
-} from "../../../../theme";
+import { StudyMetadata } from "@/common/types";
+import { STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from "@/theme";
 import {
   setStudyScrollPosition,
   StudiesSortConf,
   updateStudiesSortConf,
   updateStudyFilters,
-} from "../../../../redux/ducks/studies";
-import LauncherDialog from "../LauncherDialog";
-import useDebounce from "../../../../hooks/useDebounce";
+} from "@/redux/ducks/studies";
+import useDebounce from "@/hooks/useDebounce";
 import {
   getStudiesScrollPosition,
   getStudiesSortConf,
   getStudyFilters,
-} from "../../../../redux/selectors";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
+} from "@/redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import StudyCardCell from "./StudyCardCell";
+import { scanFolder } from "@/services/api/study";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import BatchModeMenu from "../BatchModeMenu";
+import LauncherDialog from "../LauncherDialog";
 import RefreshButton from "../RefreshButton";
-import { scanFolder } from "../../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;

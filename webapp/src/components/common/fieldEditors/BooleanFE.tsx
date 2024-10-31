@@ -14,7 +14,7 @@
 
 import { SelectProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import SelectFE, { SelectFEProps } from "./SelectFE";
 
 export interface BooleanFEProps

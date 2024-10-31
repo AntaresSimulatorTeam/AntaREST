@@ -16,8 +16,8 @@ import { v4 as uuidv4 } from "uuid";
 import {
   TableModeColumnsForType,
   TableModeType,
-} from "../../../../../services/api/studies/tableMode/types";
-import { TABLE_MODE_COLUMNS_BY_TYPE } from "../../../../../services/api/studies/tableMode/constants";
+} from "@/services/api/studies/tableMode/types";
+import { TABLE_MODE_COLUMNS_BY_TYPE } from "@/services/api/studies/tableMode/constants";
 
 ////////////////////////////////////////////////////////////////
 // Types

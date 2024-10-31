@@ -16,13 +16,13 @@ import {
   LinkCreationInfoDTO,
   LinkInfoWithUI,
   UpdateAreaUi,
-} from "../../common/types";
+} from "@/common/types";
 import {
   BindingConstraint,
   ConstraintTerm,
   bindingConstraintModelAdapter,
-} from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
-import { StudyMapNode } from "../../redux/ducks/studyMaps";
+} from "@/components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
+import { StudyMapNode } from "@/redux/ducks/studyMaps";
 import client from "./client";
 
 export const createArea = async (

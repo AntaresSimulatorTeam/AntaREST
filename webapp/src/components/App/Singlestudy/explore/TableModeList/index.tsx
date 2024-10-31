@@ -19,19 +19,17 @@ import { useUpdateEffect } from "react-use";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuidv4 } from "uuid";
-import PropertiesView from "../../../../common/PropertiesView";
-import ListElement from "../common/ListElement";
+import PropertiesView from "@/common/PropertiesView";
+import ListElement from "@/common/ListElement";
 import type { TableTemplate } from "./utils";
-import storage, {
-  StorageKey,
-} from "../../../../../services/utils/localStorage";
-import { StudyMetadata } from "../../../../../common/types";
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import { StudyMetadata } from "@/common/types";
 import CreateTemplateTableDialog from "./dialogs/CreateTemplateTableDialog";
 import UpdateTemplateTableDialog from "./dialogs/UpdateTemplateTableDialog";
-import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
-import TableMode from "../../../../common/TableMode";
-import SplitView from "../../../../common/SplitView";
-import ViewWrapper from "../../../../common/page/ViewWrapper";
+import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
+import TableMode from "@/common/TableMode";
+import SplitView from "@/common/SplitView";
+import ViewWrapper from "@/common/page/ViewWrapper";
 
 function TableModeList() {
   const { t } = useTranslation();

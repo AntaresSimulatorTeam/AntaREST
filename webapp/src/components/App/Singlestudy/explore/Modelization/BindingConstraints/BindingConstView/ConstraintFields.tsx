@@ -19,12 +19,12 @@ import {
   TIME_STEPS,
 } from "./utils";
 
-import Fieldset from "../../../../../../common/Fieldset";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import { StudyMetadata } from "../../../../../../../common/types";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import { useFormContextPlus } from "../../../../../../common/Form";
+import Fieldset from "@/common/Fieldset";
+import SelectFE from "@/common/fieldEditors/SelectFE";
+import StringFE from "@/common/fieldEditors/StringFE";
+import { StudyMetadata } from "@/common/types";
+import SwitchFE from "@/common/fieldEditors/SwitchFE";
+import { useFormContextPlus } from "@/common/Form";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Button } from "@mui/material";

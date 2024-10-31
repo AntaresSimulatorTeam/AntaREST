@@ -28,10 +28,6 @@ import {
   styled,
   Typography,
 } from "@mui/material";
-import { CommandItem } from "../../commandTypes";
-import CommandImportButton from "../CommandImportButton";
-import { CommandResultDTO } from "../../../../../../../common/types";
-import LogModal from "../../../../../../common/LogModal";
 import {
   detailsStyle,
   DraggableAccorderon,
@@ -43,6 +39,10 @@ import {
   StyledDeleteIcon,
 } from "./style";
 import CommandMatrixViewer from "./CommandMatrixViewer";
+import { CommandResultDTO } from "@/common/types";
+import LogModal from "@/components/common/LogModal";
+import { CommandItem } from "../../commandTypes";
+import CommandImportButton from "../CommandImportButton";
 
 export const Item = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",

@@ -18,9 +18,9 @@ import { ColorResult, SketchPicker } from "react-color";
 import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
 import { useClickAway, useKey, useUpdateEffect } from "react-use";
 import { rgbToString, stringToRGB } from "./utils";
-import { mergeSxProp } from "../../../../utils/muiUtils";
-import { composeRefs } from "../../../../utils/reactUtils";
-import reactHookFormSupport from "../../../../hoc/reactHookFormSupport";
+import { mergeSxProp } from "@/utils/muiUtils";
+import { composeRefs } from "@/utils/reactUtils";
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 
 export type ColorPickerFEProps = Omit<
   TextFieldProps,

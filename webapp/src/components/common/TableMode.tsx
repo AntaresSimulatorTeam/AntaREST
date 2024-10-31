@@ -13,17 +13,14 @@
  */
 
 import { useEffect, useState } from "react";
-import { StudyMetadata } from "../../common/types";
-import usePromise from "../../hooks/usePromise";
-import {
-  getTableMode,
-  setTableMode,
-} from "../../services/api/studies/tableMode";
+import { StudyMetadata } from "@/common/types";
+import usePromise from "@/hooks/usePromise";
+import { getTableMode, setTableMode } from "@/services/api/studies/tableMode";
 import {
   TableData,
   TableModeColumnsForType,
   TableModeType,
-} from "../../services/api/studies/tableMode/types";
+} from "@/services/api/studies/tableMode/types";
 import { SubmitHandlerPlus } from "./Form/types";
 import TableForm from "./TableForm";
 import UsePromiseCond from "./utils/UsePromiseCond";

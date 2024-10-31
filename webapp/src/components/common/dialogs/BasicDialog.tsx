@@ -25,7 +25,7 @@ import {
 import * as RA from "ramda-adjunct";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
-import { mergeSxProp } from "../../../utils/muiUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 enum Alert {
   success,

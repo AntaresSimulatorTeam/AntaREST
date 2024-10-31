@@ -15,11 +15,11 @@
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import SplitButton, { SplitButtonProps } from "./SplitButton";
 import { useState } from "react";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { useTranslation } from "react-i18next";
-import type { PromiseAny } from "../../../utils/tsUtils";
+import type { PromiseAny } from "@/utils/tsUtils";
 import { LoadingButton } from "@mui/lab";
-import { toError } from "../../../utils/fnUtils";
+import { toError } from "@/utils/fnUtils";
 
 export type DownloadButtonProps<OptionValue extends string> = {
   children?: React.ReactNode;

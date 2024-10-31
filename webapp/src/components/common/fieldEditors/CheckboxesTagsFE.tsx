@@ -24,7 +24,7 @@ import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import { FieldPath, FieldValues } from "react-hook-form";
 import reactHookFormSupport, {
   ReactHookFormSupportProps,
-} from "../../../hoc/reactHookFormSupport";
+} from "@/hoc/reactHookFormSupport";
 
 interface CheckboxesTagsFEProps<
   T,

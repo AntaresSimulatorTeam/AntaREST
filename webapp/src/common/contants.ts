@@ -12,12 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import * as RA from "ramda-adjunct";
-import { RoleType } from "../../../common/types";
+import { RoleType } from "./types";
 
+export const APP_NAME = "antares-web";
 export const RESERVED_USER_NAMES = ["admin"];
 export const RESERVED_GROUP_NAMES = ["admin"];
-
 export const ROLE_TYPE_KEYS = Object.values(RoleType).filter(
-  RA.isString,
-) as Array<keyof typeof RoleType>;
+  (value): value is keyof typeof RoleType => typeof value === "string",
+);

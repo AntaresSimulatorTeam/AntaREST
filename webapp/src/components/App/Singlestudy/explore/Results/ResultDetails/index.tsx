@@ -23,23 +23,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import {
-  Area,
-  LinkElement,
-  MatrixType,
-  StudyMetadata,
-} from "../../../../../../common/types";
-import usePromise from "../../../../../../hooks/usePromise";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import {
-  getAreas,
-  getLinks,
-  getStudyOutput,
-} from "../../../../../../redux/selectors";
-import { getStudyData } from "../../../../../../services/api/study";
-import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import PropertiesView from "../../../../../common/PropertiesView";
-import ListElement from "../../common/ListElement";
+import { Area, LinkElement, MatrixType, StudyMetadata } from "@/common/types";
+import usePromise from "@/hooks/usePromise";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreas, getLinks, getStudyOutput } from "@/redux/selectors";
+import { getStudyData } from "@/services/api/study";
+import { isSearchMatching } from "@/utils/stringUtils";
 import {
   createPath,
   DataType,
@@ -48,22 +37,24 @@ import {
   SYNTHESIS_ITEMS,
   Timestep,
 } from "./utils";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getStudyMatrixIndex } from "@/services/api/matrix";
+import SplitView from "@/components/common/SplitView";
+import PropertiesView from "@/components/common/PropertiesView";
+import ButtonBack from "@/components/common/ButtonBack";
+import ResultFilters from "./ResultFilters";
 import UsePromiseCond, {
   mergeResponses,
-} from "../../../../../common/utils/UsePromiseCond";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import ButtonBack from "../../../../../common/ButtonBack";
-import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index.tsx";
+} from "@/components/common/utils/UsePromiseCond";
+import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
 import {
   generateCustomColumns,
   generateDateTime,
-} from "../../../../../common/Matrix/shared/utils.ts";
-import { Column } from "@/components/common/Matrix/shared/constants.ts";
-import SplitView from "../../../../../common/SplitView/index.tsx";
-import ResultFilters from "./ResultFilters.tsx";
-import { toError } from "../../../../../../utils/fnUtils.ts";
-import EmptyView from "../../../../../common/page/SimpleContent.tsx";
-import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
+} from "@/components/common/Matrix/shared/utils";
+import { Column } from "@/components/common/Matrix/shared/constants";
+import EmptyView from "@/components/common/page/SimpleContent";
+import { toError } from "@/utils/fnUtils";
+import ListElement from "../../common/ListElement";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

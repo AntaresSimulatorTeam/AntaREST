@@ -13,19 +13,19 @@
  */
 
 import { useTranslation } from "react-i18next";
-import TableForm from "../../../../../../../common/TableForm";
+import TableForm from "@/common/TableForm";
 import {
   GenericScenarioConfig,
   ScenarioType,
   ClustersHandlerReturn,
   updateScenarioBuilderConfig,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import EmptyView from "../../../../../../../common/page/SimpleContent";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../../../../../../utils/fnUtils";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import EmptyView from "@/common/page/SimpleContent";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import { StudyMetadata } from "@/common/types";
 
 interface Props {
   config: GenericScenarioConfig | ClustersHandlerReturn;

@@ -17,17 +17,14 @@ import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import {
-  getAreas,
-  getStudyMapDistrictsById,
-} from "../../../../../../../../redux/selectors";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import TableForm from "../../../../../../../common/TableForm";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreas, getStudyMapDistrictsById } from "@/redux/selectors";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import TableForm from "@/common/TableForm";
 import CreateDistrictDialog from "./CreateDistrictDialog";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import { updateStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { updateStudyMapDistrict } from "@/redux/ducks/studyMaps";
 import UpdateDistrictDialog from "./UpdateDistrictDialog";
 
 function Districts() {

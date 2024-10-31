@@ -14,15 +14,15 @@
 
 import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
 import { jwtDecode, type JwtPayload } from "jwt-decode";
-import { UserInfo } from "../../common/types";
-import * as authApi from "../../services/api/auth";
-import * as clientApi from "../../services/api/client";
-import { isUserExpired } from "../../services/utils";
+import { UserInfo } from "@/common/types";
+import * as authApi from "@/services/api/auth";
+import * as clientApi from "@/services/api/client";
+import { isUserExpired } from "@/services/utils";
 import {
   closeWebSocket,
   initWebSocket,
   reloadWebSocket,
-} from "../../services/webSockets";
+} from "@/services/webSockets";
 import { getAuthUser } from "../selectors";
 import { AppAsyncThunkConfig } from "../store";
 import { createThunk, makeActionName } from "../utils";

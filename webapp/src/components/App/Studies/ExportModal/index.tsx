@@ -28,20 +28,20 @@ import {
   StudyOutputDownloadDTO,
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
-} from "../../../../common/types";
-import BasicDialog, {
-  BasicDialogProps,
-} from "../../../common/dialogs/BasicDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import SelectSingle from "../../../common/SelectSingle";
+} from "@/common/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   exportStudy,
   exportOuput as callExportOutput,
   getStudyOutputs,
   getStudySynthesis,
   downloadOutput,
-} from "../../../../services/api/study";
+} from "@/services/api/study";
 import ExportFilter from "./ExportFilter";
+import BasicDialog, {
+  BasicDialogProps,
+} from "@/components/common/dialogs/BasicDialog";
+import SelectSingle from "@/components/common/SelectSingle";
 
 const logError = debug("antares:studies:card:error");
 

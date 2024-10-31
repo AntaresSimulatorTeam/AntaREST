@@ -17,8 +17,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import TableTemplateFormDialog, {
   TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";
-import { TableTemplate } from "../utils";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import { TableTemplate } from "@/utils";
+import { SubmitHandlerPlus } from "@/common/Form/types";
 
 interface Props
   extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {

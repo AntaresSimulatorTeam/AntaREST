@@ -18,22 +18,19 @@ import { useTranslation } from "react-i18next";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import Handsontable from "handsontable";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import usePromise from "../../../../../../../../hooks/usePromise";
-import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
-import TableForm from "../../../../../../../common/TableForm";
-import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import { StudyMetadata } from "@/common/types";
+import usePromise from "@/hooks/usePromise";
+import BasicDialog from "@/common/dialogs/BasicDialog";
+import TableForm from "@/common/TableForm";
+import UsePromiseCond from "@/common/utils/UsePromiseCond";
 import {
   DEFAULT_WEIGHT,
   getPlaylist,
   PlaylistData,
   setPlaylist,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import {
-  HandsontableProps,
-  HotTableClass,
-} from "../../../../../../../common/Handsontable";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import { HandsontableProps, HotTableClass } from "@/common/Handsontable";
 
 interface Props {
   study: StudyMetadata;

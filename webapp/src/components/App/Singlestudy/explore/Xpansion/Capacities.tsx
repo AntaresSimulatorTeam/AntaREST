@@ -17,7 +17,7 @@ import {
   deleteCapacity,
   getCapacity,
   addCapacity,
-} from "../../../../../services/api/xpansion";
+} from "@/services/api/xpansion";
 import FileList from "./FileList";
 
 function Capacities() {

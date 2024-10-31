@@ -13,7 +13,7 @@
  */
 
 import { useState } from "react";
-import { StudyMetadata } from "../../common/types";
+import { StudyMetadata } from "@/common/types";
 import { AppState } from "../ducks";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
@@ -24,8 +24,8 @@ import {
   fetchStudyMapDistricts,
 } from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
-import { Response } from "../../components/common/utils/UsePromiseCond";
-import usePromise, { PromiseStatus } from "../../hooks/usePromise";
+import { Response } from "@/components/common/utils/UsePromiseCond";
+import usePromise, { PromiseStatus } from "@/hooks/usePromise";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];

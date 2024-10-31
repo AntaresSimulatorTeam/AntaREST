@@ -13,18 +13,18 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import Form from "../../../../../../../common/Form";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 import {
   type InflowStructureFields,
   getInflowStructureFields,
   updateInflowStructureFields,
 } from "./utils";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { useTranslation } from "react-i18next";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 
 function InflowStructure() {
   const [t] = useTranslation();

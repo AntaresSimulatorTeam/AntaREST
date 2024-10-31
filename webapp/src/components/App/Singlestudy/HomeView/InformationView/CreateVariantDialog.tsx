@@ -16,14 +16,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { GenericInfo, VariantTree } from "../../../../../common/types";
-import { createVariant } from "../../../../../services/api/variant";
-import { createListFromTree } from "../../../../../services/utils";
-import FormDialog from "../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../common/fieldEditors/StringFE";
-import Fieldset from "../../../../common/Fieldset";
-import SelectFE from "../../../../common/fieldEditors/SelectFE";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import { GenericInfo, VariantTree } from "@/common/types";
+import { createVariant } from "@/services/api/variant";
+import { createListFromTree } from "@/services/utils";
+import FormDialog from "@/common/dialogs/FormDialog";
+import StringFE from "@/common/fieldEditors/StringFE";
+import Fieldset from "@/common/Fieldset";
+import SelectFE from "@/common/fieldEditors/SelectFE";
+import { SubmitHandlerPlus } from "@/common/Form/types";
 import { validateString } from "@/utils/validation/string";
 
 interface Props {

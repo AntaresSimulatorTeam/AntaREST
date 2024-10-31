@@ -21,15 +21,12 @@ import {
 } from "react-router-dom";
 import { CssBaseline, IconButton, ThemeProvider } from "@mui/material";
 import { SnackbarKey, SnackbarProvider, useSnackbar } from "notistack";
-import maintheme from "../../theme";
-import MenuWrapper from "../wrappers/MenuWrapper";
+import maintheme from "@/theme";
 import Studies from "./Studies";
 import Data from "./Data";
 import Tasks from "./Tasks";
 import Settings from "./Settings";
 import Api from "./Api";
-import LoginWrapper from "../wrappers/LoginWrapper";
-import MaintenanceWrapper from "../wrappers/MaintenanceWrapper";
 import SingleStudy from "./Singlestudy";
 import Modelization from "./Singlestudy/explore/Modelization";
 import Results from "./Singlestudy/explore/Results";
@@ -69,6 +66,9 @@ import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import RenewableForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
 import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
 import CloseIcon from "@mui/icons-material/Close";
+import LoginWrapper from "../wrappers/LoginWrapper";
+import MaintenanceWrapper from "../wrappers/MaintenanceWrapper";
+import MenuWrapper from "../wrappers/MenuWrapper";
 
 // TODO: replace 'notistack' by 'sonner' (https://sonner.emilkowal.ski/)
 function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {

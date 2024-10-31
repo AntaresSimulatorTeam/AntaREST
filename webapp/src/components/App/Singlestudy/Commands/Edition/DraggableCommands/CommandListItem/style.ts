@@ -14,7 +14,7 @@
 
 import { Accordion, Box, styled } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/HighlightOff";
-import { PAPER_BACKGROUND_NO_TRANSPARENCY } from "../../../../../../../theme";
+import { PAPER_BACKGROUND_NO_TRANSPARENCY } from "@/theme";
 
 export const ItemContainer = styled(Box, {
   shouldForwardProp: (prop) => prop !== "onTopVisible",

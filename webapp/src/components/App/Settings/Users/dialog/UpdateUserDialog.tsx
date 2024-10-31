@@ -17,16 +17,12 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import {
-  GroupDTO,
-  RoleType,
-  UserDetailsDTO,
-} from "../../../../../common/types";
-import { createRole, deleteUserRoles } from "../../../../../services/api/user";
+import { GroupDTO, RoleType, UserDetailsDTO } from "@/common/types";
+import { createRole, deleteUserRoles } from "@/services/api/user";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 import { UserEdit } from "..";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 type InheritPropsToOmit =
   | "title"

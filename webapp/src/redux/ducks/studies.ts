@@ -27,8 +27,8 @@ import {
   StudySummary,
   UserDTO,
   WSMessage,
-} from "../../common/types";
-import * as api from "../../services/api/study";
+} from "@/common/types";
+import * as api from "@/services/api/study";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
 import {

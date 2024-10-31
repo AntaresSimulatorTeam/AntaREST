@@ -18,16 +18,16 @@ import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { StudyMetadata } from "../../../../../../../common/types";
-import Form from "../../../../../../common/Form";
+import { StudyMetadata } from "@/common/types";
 import Fields from "./Fields";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 import { Storage, getStorage, updateStorage } from "./utils";
 import Matrix from "./Matrix";
-import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
-import { nameToId } from "../../../../../../../services/utils";
+import useNavigateOnCondition from "@/hooks/useNavigateOnCondition";
+import { nameToId } from "@/services/utils";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 
 function Storages() {
   const { t } = useTranslation();
@@ -81,7 +81,7 @@ function Storages() {
       <Button
         color="secondary"
         size="small"
-        onClick={() => navigate("../storages")}
+        onClick={() => navigate("@/storages")}
         startIcon={<ArrowBackIcon color="secondary" />}
         sx={{ alignSelf: "flex-start", mb: 1 }}
       >

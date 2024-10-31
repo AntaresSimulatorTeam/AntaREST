@@ -15,21 +15,21 @@
 import { Grid } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useState } from "react";
-import Form from "../../../../../../../common/Form";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 import {
   CorrelationFormFields,
   getCorrelationFormFields,
   setCorrelationFormFields,
 } from "./utils";
 import Fields from "./Fields";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 import HydroMatrixDialog from "../HydroMatrixDialog";
-import { HydroMatrix } from "../utils";
 import { FormBox, FormPaper } from "../style";
 import ViewMatrixButton from "../ViewMatrixButton";
+import { HydroMatrix } from "../utils";
 
 function Correlation() {
   const {

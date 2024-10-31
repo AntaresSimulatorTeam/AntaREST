@@ -19,8 +19,8 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
-import { StudyMetadata } from "../../../../common/types";
-import { mergeSxProp } from "../../../../utils/muiUtils";
+import { StudyMetadata } from "@/common/types";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 export const StyledTabs = styled(Tabs, {
   shouldForwardProp: (prop) => prop !== "border" && prop !== "tabStyle",

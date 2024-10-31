@@ -21,7 +21,7 @@ import {
   MatrixStats,
   Operator,
   StudyOutputDownloadLevelDTO,
-} from "../../../common/types";
+} from "@/common/types";
 
 export const formatDateFromIndex = (
   index: Array<string | number>,

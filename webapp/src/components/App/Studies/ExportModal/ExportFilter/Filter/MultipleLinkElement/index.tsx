@@ -15,9 +15,9 @@
 import { Box, Chip, ListItem } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import SelectSingle from "../../../../../../common/SelectSingle";
-import TextSeparator from "../../../../../../common/TextSeparator";
-import { AddIcon } from "../../TagSelect/style";
+import SelectSingle from "@/common/SelectSingle";
+import TextSeparator from "@/common/TextSeparator";
+import { AddIcon } from "@/TagSelect/style";
 import { FilterLinkContainer, Root, Container } from "./style";
 
 interface FilterLink {

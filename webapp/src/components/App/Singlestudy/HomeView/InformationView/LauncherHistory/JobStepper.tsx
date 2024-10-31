@@ -25,15 +25,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import {
-  JobStatus,
-  LaunchJob,
-  LaunchJobsProgress,
-} from "../../../../../../common/types";
-import { convertUTCToLocalTime } from "../../../../../../services/utils";
-import { killStudy } from "../../../../../../services/api/study";
-import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import { JobStatus, LaunchJob, LaunchJobsProgress } from "@/common/types";
+import { convertUTCToLocalTime } from "@/services/utils";
+import { killStudy } from "@/services/api/study";
+import LaunchJobLogView from "@/Tasks/LaunchJobLogView";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   CancelContainer,
   JobRoot,
@@ -42,10 +38,10 @@ import {
   StepLabelRoot,
   StepLabelRow,
 } from "./style";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
-import DigestDialog from "../../../../../common/dialogs/DigestDialog";
-import type { EmptyObject } from "../../../../../../utils/tsUtils";
+import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
+import LinearProgressWithLabel from "@/common/LinearProgressWithLabel";
+import DigestDialog from "@/common/dialogs/DigestDialog";
+import type { EmptyObject } from "@/utils/tsUtils";
 
 export const ColorStatus = {
   running: "warning.main",

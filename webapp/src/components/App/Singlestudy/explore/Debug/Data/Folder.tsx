@@ -27,27 +27,27 @@ import {
 import FolderIcon from "@mui/icons-material/Folder";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DeleteIcon from "@mui/icons-material/Delete";
-import {
-  getFileIcon,
-  getFileType,
-  type TreeFolder,
-  type DataCompProps,
-  isFolder,
-  canEditFile,
-} from "../utils";
 import { Fragment, useState } from "react";
-import EmptyView from "../../../../../common/page/SimpleContent";
 import { useTranslation } from "react-i18next";
 import { Filename, Menubar } from "./styles";
-import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import useConfirm from "../../../../../../hooks/useConfirm";
-import { deleteFile } from "../../../../../../services/api/studies/raw";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../../../../utils/fnUtils";
+import useConfirm from "@/hooks/useConfirm";
+import { deleteFile } from "@/services/api/studies/raw";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "@/common/types";
 import { useSnackbar } from "notistack";
+import UploadFileButton from "@/components/common/buttons/UploadFileButton";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import EmptyView from "@/components/common/page/SimpleContent";
+import {
+  DataCompProps,
+  TreeFolder,
+  isFolder,
+  getFileType,
+  getFileIcon,
+  canEditFile,
+} from "../utils";
 
 function Folder(props: DataCompProps) {
   const {

@@ -14,9 +14,9 @@
 
 import { ComponentType, useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
-import SplitView from "../../../../../../../common/SplitView";
-import PropertiesView from "../../../../../../../common/PropertiesView";
-import ListElement from "../../../../common/ListElement";
+import SplitView from "@/common/SplitView";
+import PropertiesView from "@/common/PropertiesView";
+import ListElement from "@/common/ListElement";
 import {
   GenericScenarioConfig,
   HandlerReturnTypes,

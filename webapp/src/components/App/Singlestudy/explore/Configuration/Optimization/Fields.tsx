@@ -14,11 +14,7 @@
 
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../common/types";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../common/Form";
+import { StudyMetadata } from "@/common/types";
 import {
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,
   OptimizationFormFields,
@@ -27,6 +23,10 @@ import {
   TRANSMISSION_CAPACITIES_OPTIONS,
   UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS,
 } from "./utils";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
 
 interface Props {
   study: StudyMetadata;

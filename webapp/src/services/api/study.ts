@@ -29,11 +29,11 @@ import {
   StudyMetadataPatchDTO,
   LaunchOptions,
   StudyLayer,
-} from "../../common/types";
+} from "@/common/types";
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
-import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
+import { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies`);

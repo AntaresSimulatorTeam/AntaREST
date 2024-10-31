@@ -26,19 +26,16 @@ import {
   StudyMetadata,
   WSEvent,
   WSMessage,
-} from "../../../../../../common/types";
-import {
-  getStudyJobs,
-  mapLaunchJobDTO,
-} from "../../../../../../services/api/study";
+} from "@/common/types";
+import { getStudyJobs, mapLaunchJobDTO } from "@/services/api/study";
 import {
   addWsMessageListener,
   sendWsSubscribeMessage,
   WsChannel,
-} from "../../../../../../services/webSockets";
+} from "@/services/webSockets";
 import JobStepper from "./JobStepper";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getProgress } from "../../../../../../services/api/tasks";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { getProgress } from "@/services/api/tasks";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
   display: "flex",

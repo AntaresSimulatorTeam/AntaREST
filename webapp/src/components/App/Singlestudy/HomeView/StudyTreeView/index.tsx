@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
 import { Box, styled } from "@mui/material";
-import { StudyMetadata, VariantTree } from "../../../../../common/types";
+import { StudyMetadata, VariantTree } from "@/common/types";
 import { StudyTree, getTreeNodes } from "./utils";
 import {
   CIRCLE_RADIUS,

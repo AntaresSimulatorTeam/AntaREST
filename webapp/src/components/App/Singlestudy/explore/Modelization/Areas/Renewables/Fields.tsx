@@ -13,17 +13,17 @@
  */
 
 import { useTranslation } from "react-i18next";
-import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../../common/Form";
 import {
   RENEWABLE_GROUPS,
   RenewableCluster,
   TS_INTERPRETATION_OPTIONS,
 } from "./utils";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
 
 function Fields() {
   const [t] = useTranslation();

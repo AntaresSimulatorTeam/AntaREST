@@ -13,7 +13,7 @@
  */
 
 import { DeepPartial } from "react-hook-form";
-import type { StudyMetadata } from "../../../../common/types";
+import type { StudyMetadata } from "@/common/types";
 import { TABLE_MODE_COLUMNS_BY_TYPE, TABLE_MODE_TYPES } from "./constants";
 
 export type TableModeType = (typeof TABLE_MODE_TYPES)[number];

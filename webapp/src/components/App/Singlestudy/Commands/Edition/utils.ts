@@ -17,7 +17,7 @@ import {
   CommandResultDTO,
   TaskDTO,
   TaskStatus,
-} from "../../../../../common/types";
+} from "@/common/types";
 import { CommandEnum, CommandItem, JsonCommandItem } from "./commandTypes";
 
 export const CommandList = [

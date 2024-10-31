@@ -26,13 +26,13 @@ import {
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { Skeleton } from "@mui/material";
-import { getComponentDisplayName } from "../utils/reactUtils";
-import { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
+import { getComponentDisplayName } from "@/utils/reactUtils";
+import { FakeBlurEventHandler, FakeChangeEventHandler } from "@/utils/feUtils";
 import {
   ControlPlus,
   RegisterOptionsPlus,
-} from "../components/common/Form/types";
-import FormContext from "../components/common/Form/FormContext";
+} from "@/components/common/Form/types";
+import FormContext from "@/components/common/Form/FormContext";
 
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);

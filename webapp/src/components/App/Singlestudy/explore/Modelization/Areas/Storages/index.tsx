@@ -17,10 +17,9 @@ import { useTranslation } from "react-i18next";
 import { createMRTColumnHelper } from "material-react-table";
 import { Box, Tooltip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { StudyMetadata } from "../../../../../../../common/types";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import GroupedDataTable from "../../../../../../common/GroupedDataTable";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 import {
   Storage,
   getStorages,
@@ -31,9 +30,10 @@ import {
   duplicateStorage,
   getStoragesTotals,
 } from "./utils";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import type { TRow } from "../../../../../../common/GroupedDataTable/types";
-import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import GroupedDataTable from "@/components/common/GroupedDataTable";
+import BooleanCell from "@/components/common/GroupedDataTable/cellRenderers/BooleanCell";
+import { TRow } from "@/components/common/GroupedDataTable/types";
 
 const columnHelper = createMRTColumnHelper<Storage>();
 

@@ -15,10 +15,10 @@
 import { useNavigate } from "react-router";
 import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { STUDIES_SIDE_NAV_WIDTH } from "../../../theme";
+import { STUDIES_SIDE_NAV_WIDTH } from "@/theme";
 import StudyTree from "./StudyTree";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getFavoriteStudies } from "../../../redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getFavoriteStudies } from "@/redux/selectors";
 
 function SideNav() {
   const favorites = useAppSelector(getFavoriteStudies);

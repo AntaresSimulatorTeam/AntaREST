@@ -24,15 +24,15 @@ import {
 import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
-import { exportText } from "../../services/utils/index";
-import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
+import { exportText } from "@/services/utils/index";
+import { WSEvent, WSLogMessage, WSMessage } from "@/common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
 import BasicDialog from "./dialogs/BasicDialog";
 import {
   addWsMessageListener,
   sendWsSubscribeMessage,
   WsChannel,
-} from "../../services/webSockets";
+} from "@/services/webSockets";
 
 interface Props {
   isOpen: boolean;

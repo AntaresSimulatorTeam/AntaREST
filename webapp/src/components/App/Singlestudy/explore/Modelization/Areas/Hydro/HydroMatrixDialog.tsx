@@ -15,10 +15,7 @@
 import { Button, Box, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
-import BasicDialog, {
-  BasicDialogProps,
-} from "../../../../../../common/dialogs/BasicDialog";
-import Matrix from "../../../../../../common/Matrix";
+
 import { HydroMatrixType } from "./utils";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
@@ -27,6 +24,10 @@ import { StudyMetadata } from "../../../../../../../common/types";
 import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { AxiosError } from "axios";
+import BasicDialog, {
+  BasicDialogProps,
+} from "@/components/common/dialogs/BasicDialog";
+import Matrix from "@/components/common/Matrix";
 
 interface AdaptedMatrixData {
   data: number[][];

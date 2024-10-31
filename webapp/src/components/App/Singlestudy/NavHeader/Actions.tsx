@@ -19,12 +19,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { StudyMetadata, StudyType } from "../../../../common/types";
-import { toggleFavorite } from "../../../../redux/ducks/studies";
-import StarToggle from "../../../common/StarToggle";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isCurrentStudyFavorite } from "../../../../redux/selectors";
+import { StudyMetadata, StudyType } from "@/common/types";
+import { toggleFavorite } from "@/redux/ducks/studies";
+import StarToggle from "@/common/StarToggle";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isCurrentStudyFavorite } from "@/redux/selectors";
 
 interface Props {
   study: StudyMetadata | undefined;

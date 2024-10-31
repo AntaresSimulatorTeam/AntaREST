@@ -34,22 +34,17 @@ import InfoIcon from "@mui/icons-material/Info";
 import TokenIcon from "@mui/icons-material/Token";
 import * as R from "ramda";
 import { useSnackbar } from "notistack";
-import { BotDTO, BotDetailsDTO, UserDTO } from "../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import {
-  deleteBot,
-  getBots,
-  getUser,
-  getUsers,
-} from "../../../../services/api/user";
-import { isUserAdmin, sortByProp } from "../../../../services/utils";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
+import { BotDTO, BotDetailsDTO, UserDTO } from "@/common/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { deleteBot, getBots, getUser, getUsers } from "@/services/api/user";
+import { isUserAdmin, sortByProp } from "@/services/utils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import Header from "./Header";
-import { getAuthUser } from "../../../../redux/selectors";
+import { getAuthUser } from "@/redux/selectors";
 import TokenInfoDialog from "./dialog/TokenInfoDialog";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isSearchMatching } from "../../../../utils/stringUtils";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isSearchMatching } from "@/utils/stringUtils";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 
 interface BotDetailsDtoWithUser extends BotDetailsDTO {
   user: UserDTO;

@@ -34,16 +34,16 @@ import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
 import { Action } from "redux";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
-import { deleteUser, getUsers } from "../../../../services/api/user";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import { deleteUser, getUsers } from "@/services/api/user";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import Header from "./Header";
-import { RESERVED_USER_NAMES } from "../utils";
-import { UserDetailsDTO } from "../../../../common/types";
+import { UserDetailsDTO } from "@/common/types";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
-import { sortByName } from "../../../../services/utils";
-import { isSearchMatching } from "../../../../utils/stringUtils";
+import { sortByName } from "@/services/utils";
+import { isSearchMatching } from "@/utils/stringUtils";
+import { RESERVED_USER_NAMES } from "@/common/contants";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 
 enum UserActionKind {
   ADD = "ADD",

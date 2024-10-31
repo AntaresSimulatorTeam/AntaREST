@@ -27,15 +27,15 @@ import { useState } from "react";
 import { Controller, FieldValues, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
   getMaintenanceMode,
   getMessageInfo,
   updateMaintenanceMode,
   updateMessageInfo,
-} from "../../../../services/api/maintenance";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+} from "@/services/api/maintenance";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 
 function Maintenance() {
   const { t } = useTranslation();

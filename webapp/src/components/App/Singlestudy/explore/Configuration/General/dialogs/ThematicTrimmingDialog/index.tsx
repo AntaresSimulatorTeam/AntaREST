@@ -24,25 +24,22 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useState } from "react";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import {
-  SubmitHandlerPlus,
-  UseFormReturnPlus,
-} from "../../../../../../../common/Form/types";
-import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
-import { isSearchMatching } from "../../../../../../../../utils/stringUtils";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
+import { StudyMetadata } from "@/common/types";
+import SwitchFE from "@/common/fieldEditors/SwitchFE";
+import { SubmitHandlerPlus, UseFormReturnPlus } from "@/common/Form/types";
+import SearchFE from "@/common/fieldEditors/SearchFE";
+import { isSearchMatching } from "@/utils/stringUtils";
+import FormDialog from "@/common/dialogs/FormDialog";
 import {
   THEMATIC_TRIMMING_GROUPS,
   getFieldLabelsForGroup,
   type ThematicTrimmingGroup,
 } from "./utils";
-import type { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
+import type { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
 import {
   getThematicTrimmingConfig,
   setThematicTrimmingConfig,
-} from "../../../../../../../../services/api/studies/config/thematicTrimming";
+} from "@/services/api/studies/config/thematicTrimming";
 import { useTranslation } from "react-i18next";
 import Stack from "@mui/material/Stack";
 

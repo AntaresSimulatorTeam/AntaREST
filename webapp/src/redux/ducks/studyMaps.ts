@@ -28,16 +28,16 @@ import {
   StudyLayer,
   StudyMetadata,
   UpdateAreaUi,
-} from "../../common/types";
+} from "@/common/types";
 
 import { AppAsyncThunkConfig, AppDispatch } from "../store";
 import { makeActionName, makeLinkId, parseLinkId } from "../utils";
-import * as studyApi from "../../services/api/study";
+import * as studyApi from "@/services/api/study";
 import {
   getNodeWidth,
   NODE_COLOR,
   NODE_HEIGHT,
-} from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
+} from "@/components/App/Singlestudy/explore/Modelization/Map/utils";
 import { AppState } from ".";
 import {
   getArea,
@@ -46,7 +46,7 @@ import {
   getStudyMapLayersById,
   getStudySynthesis,
 } from "../selectors";
-import * as studyDataApi from "../../services/api/studydata";
+import * as studyDataApi from "@/services/api/studydata";
 import {
   createStudyLink,
   deleteStudyLink,

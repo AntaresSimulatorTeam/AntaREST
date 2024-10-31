@@ -17,8 +17,7 @@ import { Box, Button } from "@mui/material";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
-import Form from "../../../../../../common/Form";
+import { StudyMetadata } from "@/common/types";
 import Fields from "./Fields";
 import Matrix from "./Matrix";
 import {
@@ -26,11 +25,12 @@ import {
   getRenewableCluster,
   updateRenewableCluster,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
-import { nameToId } from "../../../../../../../services/utils";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+import useNavigateOnCondition from "@/hooks/useNavigateOnCondition";
+import { nameToId } from "@/services/utils";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 
 function Renewables() {
   const { t } = useTranslation();
@@ -41,7 +41,7 @@ function Renewables() {
 
   useNavigateOnCondition({
     deps: [areaId],
-    to: "../renewables",
+    to: "@/renewables",
   });
 
   // prevent re-fetch while useNavigateOnCondition event occurs
@@ -69,7 +69,7 @@ function Renewables() {
       <Button
         color="secondary"
         size="small"
-        onClick={() => navigate("../renewables")}
+        onClick={() => navigate("@/renewables")}
         startIcon={<ArrowBackIcon color="secondary" />}
         sx={{ alignSelf: "flex-start", mb: 1 }}
       >

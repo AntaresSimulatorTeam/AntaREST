@@ -25,7 +25,7 @@ import {
   BotDTO,
   RoleDetailsDTO,
   UserDetailsDTO,
-} from "../../common/types";
+} from "@/common/types";
 
 ////////////////////////////////////////////////////////////////
 // Users

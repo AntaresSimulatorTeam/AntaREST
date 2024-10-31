@@ -17,13 +17,9 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import {
-  type MatrixItem,
-  type StudyMetadata,
-} from "../../../../../../../common/types";
-import { Storage } from "./utils";
-import SplitView from "../../../../../../common/SplitView";
-import Matrix from "../../../../../../common/Matrix";
+import { StudyMetadata, MatrixItem } from "@/common/types";
+import SplitView from "@/components/common/SplitView";
+import Matrix from "@/components/common/Matrix";
 
 interface Props {
   study: StudyMetadata;

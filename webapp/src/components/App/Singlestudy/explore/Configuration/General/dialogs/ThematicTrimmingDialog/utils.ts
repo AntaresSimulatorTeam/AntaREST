@@ -13,7 +13,7 @@
  */
 
 import * as R from "ramda";
-import { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
+import { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
 import { O } from "ts-toolbelt";
 
 export const THEMATIC_TRIMMING_GROUPS = [

@@ -14,7 +14,7 @@
 
 import { Box, BoxProps, Divider, SxProps, Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import { mergeSxProp } from "../../utils/muiUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 interface FieldsetProps {
   legend?: string | React.ReactNode;

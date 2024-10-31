@@ -23,8 +23,8 @@ import {
   Theme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { GenericInfo } from "../../common/types";
-import { mergeSxProp } from "../../utils/muiUtils";
+import { GenericInfo } from "@/common/types";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 interface Props {
   name: string;

@@ -15,7 +15,7 @@
 import { Box } from "@mui/material";
 import SwaggerUI from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
-import { getConfig } from "../../services/config";
+import { getConfig } from "@/services/config";
 
 function Api() {
   return (

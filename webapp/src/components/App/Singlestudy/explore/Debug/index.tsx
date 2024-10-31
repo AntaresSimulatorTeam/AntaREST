@@ -18,10 +18,9 @@ import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import Tree from "./Tree";
 import Data from "./Data";
-import { StudyMetadata } from "../../../../../common/types";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import { getStudyData } from "../../../../../services/api/study";
+import { StudyMetadata } from "@/common/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getStudyData } from "@/services/api/study";
 import DebugContext from "./DebugContext";
 import {
   getFileType,
@@ -30,8 +29,9 @@ import {
   type TreeFolder,
 } from "./utils";
 import * as R from "ramda";
-import SplitView from "../../../../common/SplitView";
 import { useUpdateEffect } from "react-use";
+import SplitView from "@/components/common/SplitView";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 function Debug() {
   const [t] = useTranslation();

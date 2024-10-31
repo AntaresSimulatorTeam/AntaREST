@@ -18,19 +18,19 @@ import Toolbar from "@mui/material/Toolbar";
 import Divider from "@mui/material/Divider";
 import { Button, Drawer, List, ListItem, Typography } from "@mui/material";
 import { useEffect, useRef } from "react";
-import { STUDIES_FILTER_WIDTH } from "../../../theme";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { STUDIES_FILTER_WIDTH } from "@/theme";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import {
   getGroups,
   getStudyFilters,
   getStudyVersions,
   getUsers,
-} from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { StudyFilters, updateStudyFilters } from "../../../redux/ducks/studies";
-import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import { displayVersionName } from "../../../services/utils";
-import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
+} from "@/redux/selectors";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { StudyFilters, updateStudyFilters } from "@/redux/ducks/studies";
+import { displayVersionName } from "@/services/utils";
+import CheckboxesTagsFE from "@/components/common/fieldEditors/CheckboxesTagsFE";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 
 interface Props {
   open: boolean;

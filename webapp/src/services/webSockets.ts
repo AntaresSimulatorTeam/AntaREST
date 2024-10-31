@@ -21,18 +21,18 @@ import {
   UserInfo,
   WSEvent,
   WSMessage,
-} from "../common/types";
+} from "@/common/types";
 import { getConfig } from "./config";
 import { isStringEmpty, isUserExpired } from "./utils";
-import { AppDispatch } from "../redux/store";
-import { refresh as refreshUser } from "../redux/ducks/auth";
-import { deleteStudy, setStudy } from "../redux/ducks/studies";
+import { AppDispatch } from "@/redux/store";
+import { refresh as refreshUser } from "@/redux/ducks/auth";
+import { deleteStudy, setStudy } from "@/redux/ducks/studies";
 import {
   setMaintenanceMode,
   setMessageInfo,
   setWebSocketConnected,
-} from "../redux/ducks/ui";
-import { refreshStudySynthesis } from "../redux/ducks/studySyntheses";
+} from "@/redux/ducks/ui";
+import { refreshStudySynthesis } from "@/redux/ducks/studySyntheses";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");

@@ -20,7 +20,7 @@ import {
   Switch,
   SwitchProps,
 } from "@mui/material";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 
 export interface SwitchFEProps
   extends Omit<SwitchProps, "checked" | "defaultChecked" | "defaultValue"> {

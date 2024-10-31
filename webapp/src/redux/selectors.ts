@@ -22,10 +22,10 @@ import {
   LinkElement,
   StudyMetadata,
   UserDetailsDTO,
-} from "../common/types";
-import { buildStudyTree } from "../components/App/Studies/utils";
-import { filterStudies, sortStudies } from "../utils/studiesUtils";
-import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
+} from "@/common/types";
+import { buildStudyTree } from "@/components/App/Studies/utils";
+import { filterStudies, sortStudies } from "@/utils/studiesUtils";
+import { convertVersions, isGroupAdmin, isUserAdmin } from "@/services/utils";
 import { AppState } from "./ducks";
 import { AuthState } from "./ducks/auth";
 import { GroupsState } from "./ducks/groups";

@@ -18,8 +18,8 @@ import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
-import { convertDraftJSToXML, convertXMLToDraftJS } from "../utils";
-import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
+import { convertDraftJSToXML, convertXMLToDraftJS } from "@/utils";
+import BasicDialog from "@/common/dialogs/BasicDialog";
 import {
   EditorButton,
   EditorContainer,

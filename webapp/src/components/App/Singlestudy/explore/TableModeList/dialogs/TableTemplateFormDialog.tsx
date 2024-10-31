@@ -15,14 +15,12 @@
 import { Box } from "@mui/material";
 import { startCase } from "lodash";
 import { useTranslation } from "react-i18next";
-import FormDialog, {
-  FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
-import ListFE from "../../../../../common/fieldEditors/ListFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import { getTableColumnsForType, type TableTemplate } from "../utils";
-import { TABLE_MODE_TYPES } from "../../../../../../services/api/studies/tableMode/constants";
+import FormDialog, { FormDialogProps } from "@/common/dialogs/FormDialog";
+import ListFE from "@/common/fieldEditors/ListFE";
+import SelectFE from "@/common/fieldEditors/SelectFE";
+import StringFE from "@/common/fieldEditors/StringFE";
+import { getTableColumnsForType, type TableTemplate } from "@/utils";
+import { TABLE_MODE_TYPES } from "@/services/api/studies/tableMode/constants";
 import { useMemo } from "react";
 import { validateArray } from "@/utils/validation/array";
 import { validateString } from "@/utils/validation/string";

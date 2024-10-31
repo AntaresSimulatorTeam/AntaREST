@@ -17,17 +17,14 @@ import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { Add, Edit } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import {
-  getAreas,
-  getStudyMapLayersById,
-} from "../../../../../../../../redux/selectors";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import TableForm from "../../../../../../../common/TableForm";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreas, getStudyMapLayersById } from "@/redux/selectors";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import TableForm from "@/common/TableForm";
 import CreateLayerDialog from "./CreateLayerDialog";
-import { updateStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import { updateStudyMapLayer } from "@/redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import UpdateLayerDialog from "./UpdateLayerDialog";
 
 function Layers() {

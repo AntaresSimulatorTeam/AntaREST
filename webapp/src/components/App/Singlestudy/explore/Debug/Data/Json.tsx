@@ -14,16 +14,16 @@
 
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { editStudy, getStudyData } from "../../../../../../services/api/study";
-import JSONEditor, { JSONEditorProps } from "../../../../../common/JSONEditor";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import type { DataCompProps } from "../utils";
-import DownloadButton from "../../../../../common/buttons/DownloadButton";
-import { downloadFile } from "../../../../../../utils/fileUtils";
+import { editStudy, getStudyData } from "@/services/api/study";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { downloadFile } from "@/utils/fileUtils";
 import { useEffect, useState } from "react";
 import { Filename, Flex, Menubar } from "./styles";
-import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
+import DownloadButton from "@/components/common/buttons/DownloadButton";
+import UploadFileButton from "@/components/common/buttons/UploadFileButton";
+import JSONEditor, { JSONEditorProps } from "@/components/common/JSONEditor";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import { DataCompProps } from "../utils";
 
 function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const [t] = useTranslation();

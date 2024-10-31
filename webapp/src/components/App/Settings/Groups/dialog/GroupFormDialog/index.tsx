@@ -14,8 +14,8 @@
 
 import FormDialog, {
   FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
-import { RoleType, UserDTO } from "../../../../../../common/types";
+} from "@/components/common/dialogs/FormDialog";
+import { RoleType, UserDTO } from "@/common/types";
 import GroupForm from "./GroupForm";
 
 export interface GroupFormDialogProps

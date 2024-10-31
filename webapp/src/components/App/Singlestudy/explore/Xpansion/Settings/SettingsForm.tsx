@@ -16,17 +16,17 @@ import { useState, useEffect } from "react";
 import { Box, Divider, Typography, Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
-import { XpansionResourceType, XpansionSettings } from "../types";
+import { XpansionResourceType, XpansionSettings } from "@/types";
 import {
   Fields,
   SelectFields,
   Title,
   StyledVisibilityIcon,
-} from "../share/styles";
-import SelectSingle from "../../../../../common/SelectSingle";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+} from "@/share/styles";
+import SelectSingle from "@/common/SelectSingle";
+import NumberFE from "@/common/fieldEditors/NumberFE";
+import SelectFE from "@/common/fieldEditors/SelectFE";
+import SwitchFE from "@/common/fieldEditors/SwitchFE";
 
 interface PropType {
   settings: XpansionSettings;

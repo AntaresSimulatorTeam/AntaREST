@@ -13,17 +13,17 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import { updateStudySynthesis } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import Form from "../../../../../common/Form";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import { StudyMetadata } from "@/common/types";
+import { updateStudySynthesis } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import Fields from "./Fields";
 import {
   AdvancedParamsFormFields,
   getAdvancedParamsFormFields,
   setAdvancedParamsFormFields,
 } from "./utils";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 
 function AdvancedParameters() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

@@ -13,14 +13,14 @@
  */
 
 import { StudyTreeNode } from "./utils";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudiesTree, getStudyFilters } from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { updateStudyFilters } from "../../../redux/ducks/studies";
-import TreeItemEnhanced from "../../common/TreeItemEnhanced";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesTree, getStudyFilters } from "@/redux/selectors";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { updateStudyFilters } from "@/redux/ducks/studies";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { getParentPaths } from "../../../utils/pathUtils";
+import { getParentPaths } from "@/utils/pathUtils";
 import * as R from "ramda";
+import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 
 function StudyTree() {
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);

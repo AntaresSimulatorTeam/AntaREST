@@ -20,37 +20,33 @@ import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import {
-  LinkProperties,
-  StudyMetadata,
-  UpdateAreaUi,
-} from "../../../../../../common/types";
+import { LinkProperties, StudyMetadata, UpdateAreaUi } from "@/common/types";
 import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { getUpdatedNode, INITIAL_ZOOM, NODE_COLOR } from "./utils";
 import { MapContainer } from "./style";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import {
   getCurrentLayer,
   getCurrentStudyMapNode,
   getStudyMapLinks,
   getStudyMapNodes,
-} from "../../../../../../redux/selectors";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+} from "@/redux/selectors";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import MapConfig from "./MapConfig";
-import useStudyMaps from "../../../../../../redux/hooks/useStudyMaps";
+import useStudyMaps from "@/redux/hooks/useStudyMaps";
 import {
   StudyMapNode,
   createStudyMapNode,
   updateStudyMapNode,
-} from "../../../../../../redux/ducks/studyMaps";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+} from "@/redux/ducks/studyMaps";
+import UsePromiseCond from "@/common/utils/UsePromiseCond";
 import MapHeader from "./MapHeader";
 import MapControlButtons from "./MapControlButtons";
-import useDebouncedState from "../../../../../../hooks/useDebouncedState";
-import SplitView from "../../../../../common/SplitView";
+import useDebouncedState from "@/hooks/useDebouncedState";
+import SplitView from "@/common/SplitView";
 import { Box } from "@mui/material";
 
 function Map() {

@@ -22,11 +22,11 @@ import {
   RoleType,
   UserDetailsDTO,
   UserDTO,
-} from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createRole, createUser } from "../../../../../services/api/user";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+} from "@/common/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createRole, createUser } from "@/services/api/user";
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 

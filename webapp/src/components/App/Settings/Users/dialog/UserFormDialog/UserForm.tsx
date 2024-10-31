@@ -37,18 +37,19 @@ import { Controller, useFieldArray } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
+
+import { GroupDTO, RoleType } from "@/common/types";
+import { roleToString, sortByName } from "@/services/utils";
+import usePromise from "@/hooks/usePromise";
+import { getGroups, getUsers } from "@/services/api/user";
+import { UserFormDialogProps } from ".";
+import { validatePassword, validateString } from "@/utils/validation/string";
+import { UseFormReturnPlus } from "@/components/common/Form/types";
 import {
   RESERVED_GROUP_NAMES,
   RESERVED_USER_NAMES,
   ROLE_TYPE_KEYS,
-} from "../../../utils";
-import { GroupDTO, RoleType } from "../../../../../../common/types";
-import { roleToString, sortByName } from "../../../../../../services/utils";
-import usePromise from "../../../../../../hooks/usePromise";
-import { getGroups, getUsers } from "../../../../../../services/api/user";
-import { UserFormDialogProps } from ".";
-import { UseFormReturnPlus } from "../../../../../common/Form/types";
-import { validatePassword, validateString } from "@/utils/validation/string";
+} from "@/common/contants";
 
 interface Props extends UseFormReturnPlus {
   onlyPermissions?: UserFormDialogProps["onlyPermissions"];

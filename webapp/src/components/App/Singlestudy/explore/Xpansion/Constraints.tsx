@@ -17,7 +17,7 @@ import {
   deleteConstraints,
   getConstraint,
   addConstraints,
-} from "../../../../../services/api/xpansion";
+} from "@/services/api/xpansion";
 import FileList from "./FileList";
 
 function Constraints() {

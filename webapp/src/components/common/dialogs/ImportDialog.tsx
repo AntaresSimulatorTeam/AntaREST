@@ -18,10 +18,10 @@ import { FileRejection, useDropzone, type Accept } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 import { blue, grey } from "@mui/material/colors";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
 import { enqueueSnackbar } from "notistack";
-import { PromiseAny } from "../../../utils/tsUtils";
+import { PromiseAny } from "@/utils/tsUtils";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
 interface ImportDialogProps extends Omit<BasicDialogProps, "actions"> {

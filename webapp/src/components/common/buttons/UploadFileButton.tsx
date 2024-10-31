@@ -16,12 +16,12 @@ import { LoadingButton } from "@mui/lab";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
 import { Accept, useDropzone } from "react-dropzone";
-import { StudyMetadata } from "../../../common/types";
+import { StudyMetadata } from "@/common/types";
 import { useSnackbar } from "notistack";
-import { importFile } from "../../../services/api/studies/raw";
+import { importFile } from "@/services/api/studies/raw";
 
 type ValidateResult = boolean | null | undefined;
 type Validate = (file: File) => ValidateResult | Promise<ValidateResult>;

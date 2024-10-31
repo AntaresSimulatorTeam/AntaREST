@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import { BotDetailsDTO } from "@/common/types";
+import OkDialog, { OkDialogProps } from "@/components/common/dialogs/OkDialog";
 import { DialogContentText } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import InfoIcon from "@mui/icons-material/Info";
 import { useMemo } from "react";
 import { FieldValues } from "react-hook-form";
-import { BotDetailsDTO } from "../../../../../common/types";
-import OkDialog, { OkDialogProps } from "../../../../common/dialogs/OkDialog";
+import { useTranslation } from "react-i18next";
 import TokenForm from "./TokenFormDialog/TokenForm";
-import Form from "../../../../common/Form";
+import Form from "@/components/common/Form";
+import { Info } from "@mui/icons-material";
 
 interface Props extends Omit<OkDialogProps, "title" | "titleIcon"> {
   token: BotDetailsDTO;
@@ -52,7 +52,7 @@ function TokenInfoDialog(props: Props) {
       fullWidth
       {...dialogProps}
       title={t("global.permissions")}
-      titleIcon={InfoIcon}
+      titleIcon={Info}
     >
       <DialogContentText>
         {t("settings.currentToken", { 0: token.name })}

@@ -25,24 +25,18 @@ import {
   VariantTree,
   WSEvent,
   WSMessage,
-} from "../../../common/types";
-import { getStudyMetadata } from "../../../services/api/study";
+} from "@/common/types";
+import { getStudyMetadata } from "@/services/api/study";
 import NavHeader from "./NavHeader";
-import {
-  getVariantChildren,
-  getVariantParents,
-} from "../../../services/api/variant";
+import { getVariantChildren, getVariantParents } from "@/services/api/variant";
 import TabWrapper from "./explore/TabWrapper";
 import HomeView from "./HomeView";
-import {
-  fetchStudyVersions,
-  setCurrentStudy,
-} from "../../../redux/ducks/studies";
-import { findNodeInTree } from "../../../services/utils";
+import { fetchStudyVersions, setCurrentStudy } from "@/redux/ducks/studies";
+import { findNodeInTree } from "@/services/utils";
 import CommandDrawer from "./Commands";
-import { addWsMessageListener } from "../../../services/webSockets";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
+import { addWsMessageListener } from "@/services/webSockets";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import SimpleLoader from "@/common/loaders/SimpleLoader";
 
 const logError = debug("antares:singlestudy:error");
 

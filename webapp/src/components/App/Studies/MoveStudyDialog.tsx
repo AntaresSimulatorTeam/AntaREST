@@ -18,12 +18,12 @@ import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { usePromise } from "react-use";
-import { StudyMetadata } from "../../../common/types";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { moveStudy } from "../../../services/api/study";
-import { isStringEmpty } from "../../../services/utils";
-import FormDialog from "../../common/dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../../common/Form/types";
+import { StudyMetadata } from "@/common/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { moveStudy } from "@/services/api/study";
+import { isStringEmpty } from "@/services/utils";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 interface Props extends DialogProps {
   study: StudyMetadata;

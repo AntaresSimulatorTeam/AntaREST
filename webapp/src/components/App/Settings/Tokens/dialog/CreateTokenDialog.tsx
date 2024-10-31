@@ -19,17 +19,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import {
-  BotCreateDTO,
-  BotDTO,
-  GroupDTO,
-  RoleType,
-} from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createBot } from "../../../../../services/api/user";
-import OkDialog from "../../../../common/dialogs/OkDialog";
+import { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "@/common/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createBot } from "@/services/api/user";
 import TokenFormDialog, { TokenFormDialogProps } from "./TokenFormDialog";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import OkDialog from "@/components/common/dialogs/OkDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 

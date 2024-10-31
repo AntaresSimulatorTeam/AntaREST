@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import client from "@/services/api/client";
 import type {
   GetThematicTrimmingConfigParams,
   SetThematicTrimmingConfigParams,
   ThematicTrimmingConfig,
 } from "./types";
-import client from "../../../client";
-import { format } from "../../../../../utils/stringUtils";
+import { format } from "@/utils/stringUtils";
 
 const URL = "/v1/studies/{studyId}/config/thematictrimming/form";
 

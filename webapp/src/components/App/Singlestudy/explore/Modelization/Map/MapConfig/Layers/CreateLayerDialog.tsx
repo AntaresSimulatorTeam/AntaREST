@@ -17,15 +17,15 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useOutletContext } from "react-router";
 import { AxiosError } from "axios";
 import { useMemo } from "react";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
+import FormDialog from "@/common/dialogs/FormDialog";
+import StringFE from "@/common/fieldEditors/StringFE";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import { StudyMetadata } from "@/common/types";
+import { createStudyMapLayer } from "@/redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyMapLayersById } from "@/redux/selectors";
 import { validateString } from "@/utils/validation/string";
 
 interface Props {

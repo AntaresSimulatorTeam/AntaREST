@@ -14,14 +14,14 @@
 
 import { useState } from "react";
 import { useAsync } from "react-use";
-import { StudyMetadata } from "../../common/types";
+import { StudyMetadata } from "@/common/types";
 import { AppState } from "../ducks";
 import { createStudySynthesis } from "../ducks/studySyntheses";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 import { getStudySynthesis } from "../selectors";
-import { PromiseStatus } from "../../hooks/usePromise";
-import { Response } from "../../components/common/utils/UsePromiseCond";
+import { PromiseStatus } from "@/hooks/usePromise";
+import { Response } from "@/components/common/utils/UsePromiseCond";
 
 export interface UseStudySynthesisProps<T> {
   studyId: StudyMetadata["id"];

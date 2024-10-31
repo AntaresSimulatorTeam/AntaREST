@@ -20,12 +20,12 @@ import { Box, type SxProps } from "@mui/material";
 import type { Theme } from "@mui/material";
 import { useMemo } from "react";
 import { DefaultValues } from "react-hook-form";
-import type { IdType } from "../../../common/types";
-import Form, { FormProps } from "../Form";
+import type { IdType } from "@/common/types";
+import Form, { FormProps } from "@/components/common/Form";
 import Table, { TableProps } from "./Table";
 import { getCellType } from "./utils";
-import { mergeSxProp } from "../../../utils/muiUtils";
-import useMemoLocked from "../../../hooks/useMemoLocked";
+import { mergeSxProp } from "@/utils/muiUtils";
+import useMemoLocked from "@/hooks/useMemoLocked";
 
 type TableFieldValuesByRow = Record<
   IdType,

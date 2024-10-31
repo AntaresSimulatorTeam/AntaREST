@@ -23,11 +23,11 @@ import {
   StudyOutputDownloadDTO,
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
-} from "../../../../../common/types";
+} from "@/common/types";
 import Filter from "./Filter";
 import TagSelect from "./TagSelect";
-import SelectSingle from "../../../../common/SelectSingle";
-import SelectMulti from "../../../../common/SelectMulti";
+import SelectMulti from "@/components/common/SelectMulti";
+import SelectSingle from "@/components/common/SelectSingle";
 
 const Root = styled(Box)(({ theme }) => ({
   flex: 1,

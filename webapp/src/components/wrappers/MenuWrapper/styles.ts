@@ -19,7 +19,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 
 import { Box, styled } from "@mui/material";
-import { DRAWER_WIDTH, DRAWER_WIDTH_EXTENDED } from "../../../theme";
+import { DRAWER_WIDTH, DRAWER_WIDTH_EXTENDED } from "@/theme";
 
 export const Root = styled(Box)({
   display: "flex",

@@ -15,20 +15,20 @@
 import { Grid } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useState } from "react";
-import Form from "../../../../../../../common/Form";
 import Fields from "./Fields";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 import {
   AllocationFormFields,
   getAllocationFormFields,
   setAllocationFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import HydroMatrixDialog from "../HydroMatrixDialog";
-import { HydroMatrix } from "../utils";
 import { FormBox, FormPaper } from "../style";
+import { HydroMatrix } from "../utils";
 import ViewMatrixButton from "../ViewMatrixButton";
 
 function Allocation() {

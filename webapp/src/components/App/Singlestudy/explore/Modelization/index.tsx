@@ -16,16 +16,12 @@ import { useEffect, useMemo } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../common/types";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreas, getCurrentAreaId, getLinks } from "@/redux/selectors";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { setCurrentArea } from "@/redux/ducks/studySyntheses";
 import TabWrapper from "../TabWrapper";
-import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import {
-  getAreas,
-  getCurrentAreaId,
-  getLinks,
-} from "../../../../../redux/selectors";
-import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
-import { setCurrentArea } from "../../../../../redux/ducks/studySyntheses";
 
 function Modelization() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

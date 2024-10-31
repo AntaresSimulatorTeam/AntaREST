@@ -51,22 +51,22 @@ import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import debug from "debug";
 import { areEqual } from "react-window";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { StudyMetadata, StudyType } from "../../../common/types";
+import { StudyMetadata, StudyType } from "@/common/types";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   displayVersionName,
-} from "../../../services/utils";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+} from "@/services/utils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import ExportModal from "./ExportModal";
-import StarToggle from "../../common/StarToggle";
 import MoveStudyDialog from "./MoveStudyDialog";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy, isStudyFavorite } from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { deleteStudy, toggleFavorite } from "../../../redux/ducks/studies";
-import * as studyApi from "../../../services/api/study";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudy, isStudyFavorite } from "@/redux/selectors";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { deleteStudy, toggleFavorite } from "@/redux/ducks/studies";
+import * as studyApi from "@/services/api/study";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import StarToggle from "@/components/common/StarToggle";
 import PropertiesDialog from "../Singlestudy/PropertiesDialog";
 
 const logError = debug("antares:studieslist:error");

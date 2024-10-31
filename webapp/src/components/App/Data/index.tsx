@@ -27,18 +27,18 @@ import {
   exportMatrixDataset,
   getMatrixList,
   getExportMatrixUrl,
-} from "../../../services/api/matrix";
-import { MatrixInfoDTO, MatrixDataSetDTO } from "../../../common/types";
+} from "@/services/api/matrix";
+import { MatrixInfoDTO, MatrixDataSetDTO } from "@/common/types";
 import DatasetCreationDialog from "./DatasetCreationDialog";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import RootPage from "../../common/page/RootPage";
 import MatrixDialog from "./MatrixDialog";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import FileTable from "../../common/FileTable";
-import { getAuthUser } from "../../../redux/selectors";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import SplitView from "../../common/SplitView";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { getAuthUser } from "@/redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import FileTable from "@/components/common/FileTable";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import RootPage from "@/components/common/page/RootPage";
+import SplitView from "@/components/common/SplitView";
 
 function Data() {
   const [t] = useTranslation();

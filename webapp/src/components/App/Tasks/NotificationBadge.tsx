@@ -20,16 +20,16 @@ import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
-import { TaskEventPayload, WSEvent, WSMessage } from "../../../common/types";
-import { getTask } from "../../../services/api/tasks";
-import { addWsMessageListener } from "../../../services/webSockets";
+import { TaskEventPayload, WSEvent, WSMessage } from "@/common/types";
+import { getTask } from "@/services/api/tasks";
+import { addWsMessageListener } from "@/services/webSockets";
 import {
   incrementTaskNotifications,
   resetTaskNotifications,
-} from "../../../redux/ducks/ui";
-import { getTaskNotificationsCount } from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+} from "@/redux/ducks/ui";
+import { getTaskNotificationsCount } from "@/redux/selectors";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 
 const logError = debug("antares:downloadbadge:error");
 

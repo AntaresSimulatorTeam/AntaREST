@@ -19,15 +19,15 @@ import debug from "debug";
 import { Box, Button, keyframes, styled, Typography } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import ErrorIcon from "@mui/icons-material/Error";
-import { isUserAdmin } from "../../../services/utils";
-import { getConfig } from "../../../services/config";
+import { isUserAdmin } from "@/services/utils";
+import { getConfig } from "@/services/config";
 import MessageInfoDialog from "./MessageInfoDialog";
 import Stars from "./Stars";
-import { setMaintenanceMode } from "../../../redux/ducks/ui";
-import { getAuthUser, getMaintenanceMode } from "../../../redux/selectors";
-import { getMaintenanceMode as getMaintenanceModeAPI } from "../../../services/api/maintenance";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import { setMaintenanceMode } from "@/redux/ducks/ui";
+import { getAuthUser, getMaintenanceMode } from "@/redux/selectors";
+import { getMaintenanceMode as getMaintenanceModeAPI } from "@/services/api/maintenance";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 
 const logError = debug("antares:maintenancewrapper:error");
 

@@ -14,10 +14,10 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 import TabWrapper from "../../../TabWrapper";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

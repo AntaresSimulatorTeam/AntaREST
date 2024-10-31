@@ -16,10 +16,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
-import PropertiesView from "../../../../../common/PropertiesView";
-import { XpansionCandidate } from "../types";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import ListElement from "../../common/ListElement";
+import PropertiesView from "@/common/PropertiesView";
+import { XpansionCandidate } from "@/types";
+import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
+import ListElement from "@/common/ListElement";
 
 interface PropsType {
   candidateList: XpansionCandidate[];

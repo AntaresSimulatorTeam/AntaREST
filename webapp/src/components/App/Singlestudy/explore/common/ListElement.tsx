@@ -25,8 +25,8 @@ import {
 } from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import { useState } from "react";
-import { IdType } from "../../../../../common/types";
-import { mergeSxProp } from "../../../../../utils/muiUtils";
+import { IdType } from "@/common/types";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 interface Props<T> {
   list: T[];

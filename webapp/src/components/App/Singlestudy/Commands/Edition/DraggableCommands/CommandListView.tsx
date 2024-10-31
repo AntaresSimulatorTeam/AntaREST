@@ -20,8 +20,8 @@ import {
   Draggable,
   OnDragEndResponder,
 } from "react-beautiful-dnd";
-import { CommandItem } from "../commandTypes";
 import CommandListItem from "./CommandListItem";
+import { CommandItem } from "../commandTypes";
 
 const Row = memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;

@@ -26,8 +26,8 @@ import {
   SxProps,
   Theme,
 } from "@mui/material";
-import { GenericInfo } from "../../common/types";
-import { mergeSxProp } from "../../utils/muiUtils";
+import { GenericInfo } from "@/common/types";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 interface Props {
   name: string;

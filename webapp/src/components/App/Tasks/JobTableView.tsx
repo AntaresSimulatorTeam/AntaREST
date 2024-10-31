@@ -40,12 +40,12 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
-import { TaskView, TaskType } from "../../../common/types";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import { getLauncherMetrics } from "../../../services/api/study";
-import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
-import UsePromiseCond from "../../common/utils/UsePromiseCond";
+import { TaskView, TaskType } from "@/common/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getLauncherMetrics } from "@/services/api/study";
 import { useInterval } from "react-use";
+import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 interface PropType {
   content: TaskView[];

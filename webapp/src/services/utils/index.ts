@@ -25,7 +25,7 @@ import {
   VariantTreeDTO,
   VariantTree,
   GenericInfo,
-} from "../../common/types";
+} from "@/common/types";
 import { getMaintenanceMode, getMessageInfo } from "../api/maintenance";
 import { getConfig } from "../config";
 

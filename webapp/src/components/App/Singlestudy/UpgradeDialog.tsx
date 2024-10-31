@@ -15,14 +15,14 @@
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../common/types";
-import { SubmitHandlerPlus } from "../../common/Form/types";
-import Fieldset from "../../common/Fieldset";
-import SelectFE from "../../common/fieldEditors/SelectFE";
-import FormDialog from "../../common/dialogs/FormDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudyVersionsFormatted } from "../../../redux/selectors";
-import { upgradeStudy } from "../../../services/api/study";
+import { StudyMetadata } from "@/common/types";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import Fieldset from "@/common/Fieldset";
+import SelectFE from "@/common/fieldEditors/SelectFE";
+import FormDialog from "@/common/dialogs/FormDialog";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyVersionsFormatted } from "@/redux/selectors";
+import { upgradeStudy } from "@/services/api/study";
 
 interface Props {
   study: StudyMetadata;

@@ -26,9 +26,9 @@ import {
   convertUTCToLocalTime,
   countAllChildrens,
   displayVersionName,
-} from "../../../../services/utils";
-import { StudyMetadata, VariantTree } from "../../../../common/types";
-import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
+} from "@/services/utils";
+import { StudyMetadata, VariantTree } from "@/common/types";
+import { PUBLIC_MODE_LIST } from "@/common/utils/constants";
 
 const MAX_STUDY_TITLE_LENGTH = 45;
 

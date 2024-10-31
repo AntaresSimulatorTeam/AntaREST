@@ -13,12 +13,12 @@
  */
 
 import { useEffect, useState } from "react";
-import { Area } from "../../../../../../common/types";
-import PropertiesView from "../../../../../common/PropertiesView";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getAreas } from "../../../../../../redux/selectors";
+import { Area } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreas } from "@/redux/selectors";
+import { transformNameToId } from "@/services/utils";
+import PropertiesView from "@/components/common/PropertiesView";
 import ListElement from "../../common/ListElement";
-import { transformNameToId } from "../../../../../../services/utils";
 
 interface PropsType {
   studyId: string;

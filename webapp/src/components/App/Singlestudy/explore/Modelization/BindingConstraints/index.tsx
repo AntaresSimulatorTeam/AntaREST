@@ -14,23 +14,20 @@
 
 import { Box } from "@mui/material";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import { StudyMetadata } from "@/common/types";
 import BindingConstPropsView from "./BindingConstPropsView";
-import {
-  getBindingConst,
-  getCurrentBindingConstId,
-} from "../../../../../../redux/selectors";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
+import { getBindingConst, getCurrentBindingConstId } from "@/redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";
 import BindingConstView from "./BindingConstView";
-import usePromise from "../../../../../../hooks/usePromise";
-import { getBindingConstraintList } from "../../../../../../services/api/studydata";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
+import usePromise from "@/hooks/usePromise";
+import { getBindingConstraintList } from "@/services/api/studydata";
 import { useEffect } from "react";
-import SplitView from "../../../../../common/SplitView";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import EmptyView from "@/components/common/page/SimpleContent";
+import SplitView from "@/components/common/SplitView";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

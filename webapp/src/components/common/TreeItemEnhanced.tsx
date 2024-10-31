@@ -13,7 +13,7 @@
  */
 
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
-import { mergeSxProp } from "../../utils/muiUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
 import * as R from "ramda";
 
 export type TreeItemEnhancedProps = TreeItemProps;

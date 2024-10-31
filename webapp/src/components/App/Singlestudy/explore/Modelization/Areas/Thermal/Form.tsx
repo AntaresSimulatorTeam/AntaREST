@@ -17,8 +17,7 @@ import { Box, Button } from "@mui/material";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
-import Form from "../../../../../../common/Form";
+import { StudyMetadata } from "@/common/types";
 import Fields from "./Fields";
 import Matrix from "./Matrix";
 import {
@@ -26,11 +25,12 @@ import {
   getThermalCluster,
   updateThermalCluster,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
-import { nameToId } from "../../../../../../../services/utils";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+import useNavigateOnCondition from "@/hooks/useNavigateOnCondition";
+import { nameToId } from "@/services/utils";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import Form from "@/components/common/Form";
 
 function ThermalForm() {
   const { t } = useTranslation();
@@ -41,7 +41,7 @@ function ThermalForm() {
 
   useNavigateOnCondition({
     deps: [areaId],
-    to: "../thermal",
+    to: "@/thermal",
   });
 
   // prevent re-fetch while useNavigateOnCondition event occurs
@@ -67,7 +67,7 @@ function ThermalForm() {
       <Button
         color="secondary"
         size="small"
-        onClick={() => navigate("../thermal")}
+        onClick={() => navigate("@/thermal")}
         startIcon={<ArrowBackIcon color="secondary" />}
         sx={{ alignSelf: "flex-start", mb: 1 }}
       >

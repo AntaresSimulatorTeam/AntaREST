@@ -17,10 +17,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import { createStudy } from "../../../redux/ducks/studies";
-import ImportDialog from "../../common/dialogs/ImportDialog";
+import { createStudy } from "@/redux/ducks/studies";
 import CreateStudyDialog from "./CreateStudyDialog";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import ImportDialog from "@/components/common/dialogs/ImportDialog";
 
 function HeaderRight() {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);

@@ -17,9 +17,9 @@ import {
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import { GroupDetailsDTO } from "../../common/types";
+import { GroupDetailsDTO } from "@/common/types";
 import { AsyncEntityState, FetchStatus, makeActionName } from "../utils";
-import * as api from "../../services/api/user";
+import * as api from "@/services/api/user";
 import { AppAsyncThunkConfig } from "../store";
 
 const groupsAdapter = createEntityAdapter<GroupDetailsDTO>();

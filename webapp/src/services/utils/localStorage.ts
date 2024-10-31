@@ -13,12 +13,12 @@
  */
 
 import * as RA from "ramda-adjunct";
-import packages from "../../../package.json";
-import { UserInfo } from "../../common/types";
-import { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
-import { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
-import { UIState } from "../../redux/ducks/ui";
+import { UserInfo } from "@/common/types";
+import { TableTemplate } from "@/components/App/Singlestudy/explore/TableModeList/utils";
+import { StudiesSortConf, StudiesState } from "@/redux/ducks/studies";
+import { UIState } from "@/redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
+import { APP_NAME } from "@/common/contants";
 
 export const StorageKey = {
   Version: "version",
@@ -33,7 +33,6 @@ export const StorageKey = {
 
 type Key = (typeof StorageKey)[keyof typeof StorageKey] | string;
 
-const APP_NAME = packages.name;
 const SHARED_KEYS = [StorageKey.Version, StorageKey.AuthUser];
 
 interface TypeFromKey {

@@ -40,7 +40,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { grey } from "@mui/material/colors";
 import moment from "moment";
 import { AxiosError } from "axios";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
   archiveOutput,
   deleteOutput,
@@ -48,18 +48,14 @@ import {
   getStudyJobs,
   getStudyOutputs,
   unarchiveOutput,
-} from "../../../../../services/api/study";
-import {
-  LaunchJob,
-  StudyMetadata,
-  StudyOutput,
-} from "../../../../../common/types";
-import { convertUTCToLocalTime } from "../../../../../services/utils";
-import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
-import type { EmptyObject } from "../../../../../utils/tsUtils";
-import DigestDialog from "../../../../common/dialogs/DigestDialog";
+} from "@/services/api/study";
+import { LaunchJob, StudyMetadata, StudyOutput } from "@/common/types";
+import { convertUTCToLocalTime } from "@/services/utils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import type { EmptyObject } from "@/utils/tsUtils";
+import LaunchJobLogView from "@/components/App/Tasks/LaunchJobLogView";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
 
 interface OutputDetail {
   name: string;

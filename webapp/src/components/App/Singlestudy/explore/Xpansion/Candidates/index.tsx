@@ -19,8 +19,8 @@ import { useTranslation } from "react-i18next";
 import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import { MatrixType, StudyMetadata } from "../../../../../../common/types";
-import { XpansionCandidate } from "../types";
+import { MatrixType, StudyMetadata } from "@/common/types";
+import { XpansionCandidate } from "@/types";
 import {
   getAllCandidates,
   getAllCapacities,
@@ -30,20 +30,17 @@ import {
   updateCandidate,
   getCapacity,
   xpansionConfigurationExist,
-} from "../../../../../../services/api/xpansion";
-import {
-  transformNameToId,
-  removeEmptyFields,
-} from "../../../../../../services/utils/index";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getAllLinks } from "../../../../../../services/api/studydata";
+} from "@/services/api/xpansion";
+import { transformNameToId, removeEmptyFields } from "@/services/utils/index";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { getAllLinks } from "@/services/api/studydata";
 import XpansionPropsView from "./XpansionPropsView";
 import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import EmptyView from "../../../../../common/page/SimpleContent";
-import SplitView from "../../../../../common/SplitView";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import DataViewerDialog from "@/common/dialogs/DataViewerDialog";
+import EmptyView from "@/common/page/SimpleContent";
+import SplitView from "@/common/SplitView";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -123,7 +120,7 @@ function Candidates() {
         e as AxiosError,
       );
     } finally {
-      navigate("../../xpansion", { state: { exist: false } });
+      navigate("@/xpansion", { state: { exist: false } });
     }
   };
 

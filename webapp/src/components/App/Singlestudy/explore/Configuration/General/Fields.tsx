@@ -18,8 +18,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useEffect } from "react";
 import * as RA from "ramda-adjunct";
 import { Validate } from "react-hook-form";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
   BuildingMode,
   BUILDING_MODE_OPTIONS,
@@ -30,12 +28,14 @@ import {
   WEEK_OPTIONS,
   YEAR_OPTIONS,
 } from "./utils";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import { useFormContextPlus } from "../../../../../common/Form";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import Fieldset from "../../../../../common/Fieldset";
 import { FieldWithButton } from "./styles";
+import { useFormContextPlus } from "@/components/common/Form";
+import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
 
 interface Props {
   setDialog: React.Dispatch<React.SetStateAction<SetDialogStateType>>;

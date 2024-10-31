@@ -29,17 +29,17 @@ import {
   editComments,
   getComments,
   getStudyDiskUsage,
-} from "../../../../../../services/api/study";
+} from "@/services/api/study";
 import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
-import { StudyMetadata } from "../../../../../../common/types";
+import { StudyMetadata } from "@/common/types";
 import NoteEditorModal from "./NodeEditorModal";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import DetailsList from "./DetailsList";
-import { getAreas, getLinks } from "../../../../../../redux/selectors";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { getAreas, getLinks } from "@/redux/selectors";
+import UsePromiseCond from "@/common/utils/UsePromiseCond";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 
 const Root = styled(Box)(() => ({
   flex: "0 0 40%",

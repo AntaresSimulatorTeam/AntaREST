@@ -13,8 +13,8 @@
  */
 
 import { AxiosResponse } from "axios";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import client from "../../../../../../../../services/api/client";
+import { StudyMetadata } from "@/common/types";
+import client from "@/services/api/client";
 
 ////////////////////////////////////////////////////////////////
 // Constants

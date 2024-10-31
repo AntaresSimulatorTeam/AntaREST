@@ -14,7 +14,7 @@
 
 import { TextField, TextFieldProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 
 export type NumberFEProps = {
   value?: number;

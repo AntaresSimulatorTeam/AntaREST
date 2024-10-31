@@ -15,10 +15,10 @@
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { MatrixInfoDTO, MatrixType } from "../../../common/types";
-import { getMatrix } from "../../../services/api/matrix";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import DataViewerDialog from "../../common/dialogs/DataViewerDialog";
+import { MatrixInfoDTO, MatrixType } from "@/common/types";
+import { getMatrix } from "@/services/api/matrix";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import DataViewerDialog from "@/components/common/dialogs/DataViewerDialog";
 
 interface PropTypes {
   matrixInfo: MatrixInfoDTO;

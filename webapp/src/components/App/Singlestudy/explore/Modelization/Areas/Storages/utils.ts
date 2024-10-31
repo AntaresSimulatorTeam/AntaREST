@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata, Area } from "../../../../../../../common/types";
-import client from "../../../../../../../services/api/client";
-import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
+import { StudyMetadata, Area } from "@/common/types";
+import client from "@/services/api/client";
+import type { PartialExceptFor } from "@/utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants

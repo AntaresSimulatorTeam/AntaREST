@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import client from "../../client";
+import client from "@/services/api/client";
 import type {
   DeleteFileParams,
   DownloadMatrixParams,

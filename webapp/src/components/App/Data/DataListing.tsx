@@ -17,7 +17,7 @@ import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
-import { MatrixDataSetDTO } from "../../../common/types";
+import { MatrixDataSetDTO } from "@/common/types";
 
 const ROW_ITEM_SIZE = 45;
 const BUTTONS_SIZE = 40;

@@ -19,7 +19,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "@/common/types";
 
 ////////////////////////////////////////////////////////////////
 // Types

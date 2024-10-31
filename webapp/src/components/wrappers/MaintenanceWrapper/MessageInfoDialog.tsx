@@ -16,14 +16,14 @@ import { useEffect, useState } from "react";
 import { Box, styled, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import { isStringEmpty, isUserAdmin } from "../../../services/utils";
-import { getMessageInfo as getMessageInfoAPI } from "../../../services/api/maintenance";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { isStringEmpty, isUserAdmin } from "@/services/utils";
+import { getMessageInfo as getMessageInfoAPI } from "@/services/api/maintenance";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import OkDialog from "../../common/dialogs/OkDialog";
-import { setMessageInfo } from "../../../redux/ducks/ui";
-import { getAuthUser, getMessageInfo } from "../../../redux/selectors";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import { setMessageInfo } from "@/redux/ducks/ui";
+import { getAuthUser, getMessageInfo } from "@/redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 
 export const Main = styled(Box)(({ theme }) => ({
   width: "600px",

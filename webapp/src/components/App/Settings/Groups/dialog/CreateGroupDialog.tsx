@@ -21,11 +21,11 @@ import {
   GroupDTO,
   RoleDetailsDTO,
   UserDTO,
-} from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createGroup, createRole } from "../../../../../services/api/user";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+} from "@/common/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createGroup, createRole } from "@/services/api/user";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 

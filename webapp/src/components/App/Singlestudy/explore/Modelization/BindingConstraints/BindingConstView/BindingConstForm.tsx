@@ -20,27 +20,24 @@ import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRou
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useFieldArray } from "react-hook-form";
 import { useSnackbar } from "notistack";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   type ConstraintTerm,
   generateTermId,
   BindingConstraint,
 } from "./utils";
-import {
-  AllClustersAndLinks,
-  StudyMetadata,
-} from "../../../../../../../common/types";
+import { AllClustersAndLinks, StudyMetadata } from "@/common/types";
 import ConstraintTermItem from "./ConstraintTerm";
-import { useFormContextPlus } from "../../../../../../common/Form";
+import { useFormContextPlus } from "@/common/Form";
 import {
   deleteConstraintTerm,
   updateConstraintTerm,
-} from "../../../../../../../services/api/studydata";
-import TextSeparator from "../../../../../../common/TextSeparator";
+} from "@/services/api/studydata";
+import TextSeparator from "@/common/TextSeparator";
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
-import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
-import useDebounce from "../../../../../../../hooks/useDebounce";
-import Fieldset from "../../../../../../common/Fieldset";
+import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
+import useDebounce from "@/hooks/useDebounce";
+import Fieldset from "@/common/Fieldset";
 
 interface Props {
   study: StudyMetadata;

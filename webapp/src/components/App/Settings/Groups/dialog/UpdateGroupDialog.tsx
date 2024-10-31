@@ -18,17 +18,17 @@ import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
-import { GroupDetailsDTO } from "../../../../../common/types";
+import { GroupDetailsDTO } from "@/common/types";
 import {
   createRole,
   deleteUserRole,
   getRolesForGroup,
   updateGroup,
-} from "../../../../../services/api/user";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+} from "@/services/api/user";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 import { GroupEdit } from "..";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 type InheritPropsToOmit =
   | "title"

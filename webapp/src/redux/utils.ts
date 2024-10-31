@@ -20,8 +20,8 @@ import {
 import * as R from "ramda";
 import { AppState } from "./ducks";
 import { AppDispatch, AppThunk } from "./store";
-import packages from "../../package.json";
-import { LinkElement } from "../common/types";
+import { LinkElement } from "@/common/types";
+import { APP_NAME } from "@/common/contants";
 
 export enum FetchStatus {
   Idle = "idle",
@@ -37,7 +37,7 @@ export interface AsyncEntityState<T> extends EntityState<T> {
 
 export const makeActionName = R.curry(
   (reducerName: string, actionType: string) =>
-    `${packages.name}/${reducerName}/${actionType}`,
+    `${APP_NAME}/${reducerName}/${actionType}`,
 );
 
 interface ThunkAPI {

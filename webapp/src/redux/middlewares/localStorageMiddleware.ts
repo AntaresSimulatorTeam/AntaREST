@@ -13,13 +13,13 @@
  */
 
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
-import { UserInfo } from "../../common/types";
-import storage, { StorageKey } from "../../services/utils/localStorage";
+import { UserInfo } from "@/common/types";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 import { AppState } from "../ducks";
-import { login, logout, refresh } from "../ducks/auth";
+import { login, refresh, logout } from "../ducks/auth";
 import {
-  setFavoriteStudies,
   updateStudiesFromLocalStorage,
+  setFavoriteStudies,
   updateStudiesSortConf,
 } from "../ducks/studies";
 import { setMenuCollapse } from "../ducks/ui";

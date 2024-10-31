@@ -16,16 +16,16 @@ import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useOutletContext } from "react-router";
 import { useMemo } from "react";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import { createStudyMapDistrict } from "../../../../../../../../redux/ducks/studyMaps";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
+import FormDialog from "@/common/dialogs/FormDialog";
+import StringFE from "@/common/fieldEditors/StringFE";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import { StudyMetadata } from "@/common/types";
+import SwitchFE from "@/common/fieldEditors/SwitchFE";
+import Fieldset from "@/common/Fieldset";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { createStudyMapDistrict } from "@/redux/ducks/studyMaps";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyMapDistrictsById } from "@/redux/selectors";
 import { validateString } from "@/utils/validation/string";
 
 interface Props {

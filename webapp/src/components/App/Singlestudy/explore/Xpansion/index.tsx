@@ -18,15 +18,15 @@ import { AxiosError } from "axios";
 import { useOutletContext } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../common/types";
+import { StudyMetadata } from "@/common/types";
 import {
   createXpansionConfiguration,
   xpansionConfigurationExist,
-} from "../../../../../services/api/xpansion";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import TabWrapper from "../TabWrapper";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
+} from "@/services/api/xpansion";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import TabWrapper from "@/TabWrapper";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import UsePromiseCond from "@/common/utils/UsePromiseCond";
 import { Add } from "@mui/icons-material";
 
 function Xpansion() {

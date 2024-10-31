@@ -25,7 +25,7 @@ import { v4 as uuidv4 } from "uuid";
 import * as RA from "ramda-adjunct";
 import { startCase } from "lodash";
 import { O } from "ts-toolbelt";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 
 type OptionObj<T extends O.Object = O.Object> = {
   label: string;

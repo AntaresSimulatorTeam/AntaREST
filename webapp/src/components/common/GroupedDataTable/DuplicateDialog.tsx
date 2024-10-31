@@ -14,11 +14,11 @@
 
 import { useTranslation } from "react-i18next";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import Fieldset from "../Fieldset";
-import FormDialog from "../dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../Form/types";
-import StringFE from "../fieldEditors/StringFE";
 import { validateString } from "@/utils/validation/string";
+import FormDialog from "../dialogs/FormDialog";
+import StringFE from "../fieldEditors/StringFE";
+import Fieldset from "../Fieldset";
+import { SubmitHandlerPlus } from "../Form/types";
 
 interface Props {
   open: boolean;

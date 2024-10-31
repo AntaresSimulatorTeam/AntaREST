@@ -31,28 +31,24 @@ import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
-import {
-  LaunchOptions,
-  StudyMetadata,
-  StudyOutput,
-} from "../../../common/types";
+import { LaunchOptions, StudyMetadata, StudyOutput } from "@/common/types";
 import {
   getLauncherCores,
   getLauncherTimeLimit,
   getLauncherVersions,
   getStudyOutputs,
   launchStudy,
-} from "../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import BasicDialog from "../../common/dialogs/BasicDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy } from "../../../redux/selectors";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import SelectSingle from "../../common/SelectSingle";
-import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
-import { convertVersions } from "../../../services/utils";
-import UsePromiseCond from "../../common/utils/UsePromiseCond";
-import SwitchFE from "../../common/fieldEditors/SwitchFE";
+} from "@/services/api/study";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudy } from "@/redux/selectors";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { convertVersions } from "@/services/utils";
+import BasicDialog from "@/components/common/dialogs/BasicDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import SelectSingle from "@/components/common/SelectSingle";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 interface Props {
   open: boolean;

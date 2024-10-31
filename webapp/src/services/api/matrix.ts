@@ -21,10 +21,10 @@ import {
   MatrixDataSetUpdateDTO,
   MatrixIndex,
   MatrixEditDTO,
-} from "../../common/types";
+} from "@/common/types";
 import { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
-import { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
+import { MatrixUpdateDTO } from "@/components/common/Matrix/shared/types";
 
 export const getMatrixList = async (
   name = "",

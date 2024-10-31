@@ -13,7 +13,7 @@
  */
 
 import { styled, Box, Chip } from "@mui/material";
-import mapbackground from "../../../../../../assets/img/mapbackground.png";
+import mapbackground from "@/assets/img/mapbackground.png";
 import { getTextColor, RGB } from "./utils";
 
 ////////////////////////////////////////////////////////////////

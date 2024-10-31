@@ -17,12 +17,12 @@ import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { Code } from "./styles";
-import { MatrixType } from "../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import OkDialog from "../OkDialog";
-import EditableMatrix from "../../EditableMatrix";
-import { getStudyMatrixIndex } from "../../../../services/api/matrix";
-import SimpleLoader from "../../loaders/SimpleLoader";
+import { MatrixType } from "@/common/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import OkDialog from "@/OkDialog";
+import EditableMatrix from "@/EditableMatrix";
+import { getStudyMatrixIndex } from "@/services/api/matrix";
+import SimpleLoader from "@/loaders/SimpleLoader";
 
 type MatrixTypeWithId = MatrixType & { id?: string };
 

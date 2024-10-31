@@ -14,12 +14,12 @@
 
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getAreas } from "../../../../../../redux/selectors";
-import Fieldset from "../../../../../common/Fieldset";
+import FormDialog from "@/common/dialogs/FormDialog";
+import StringFE from "@/common/fieldEditors/StringFE";
+import { SubmitHandlerPlus } from "@/common/Form/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreas } from "@/redux/selectors";
+import Fieldset from "@/common/Fieldset";
 import { validateString } from "@/utils/validation/string";
 
 interface Props {

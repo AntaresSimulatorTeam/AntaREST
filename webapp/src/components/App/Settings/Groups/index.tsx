@@ -34,18 +34,18 @@ import EditIcon from "@mui/icons-material/Edit";
 import * as R from "ramda";
 import GroupIcon from "@mui/icons-material/Group";
 import { useSnackbar } from "notistack";
-import { GroupDetailsDTO } from "../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import { deleteGroup, getGroups } from "../../../../services/api/user";
-import { sortByName } from "../../../../services/utils";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import { RESERVED_GROUP_NAMES } from "../utils";
+import { GroupDetailsDTO } from "@/common/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { deleteGroup, getGroups } from "@/services/api/user";
+import { sortByName } from "@/services/utils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
-import { getAuthUser } from "../../../../redux/selectors";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isSearchMatching } from "../../../../utils/stringUtils";
+import { getAuthUser } from "@/redux/selectors";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isSearchMatching } from "@/utils/stringUtils";
+import { RESERVED_GROUP_NAMES } from "@/common/contants";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 
 enum GroupActionKind {
   ADD = "ADD",

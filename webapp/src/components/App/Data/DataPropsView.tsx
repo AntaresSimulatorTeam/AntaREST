@@ -13,10 +13,10 @@
  */
 
 import { useState } from "react";
-import { MatrixDataSetDTO, MatrixInfoDTO } from "../../../common/types";
-import PropertiesView from "../../common/PropertiesView";
+import { MatrixDataSetDTO, MatrixInfoDTO } from "@/common/types";
 import DataListing from "./DataListing";
 import { StyledListingBox } from "./styles";
+import PropertiesView from "@/components/common/PropertiesView";
 
 interface PropTypes {
   dataset: MatrixDataSetDTO[];
@@ -39,7 +39,7 @@ function DataPropsView(props: PropTypes) {
     );
   };
 
-  const onChange = async (currentName: string) => {
+  const onChange = (currentName: string) => {
     if (currentName !== "") {
       const f = filter(currentName);
       setFilteredDatas(f);

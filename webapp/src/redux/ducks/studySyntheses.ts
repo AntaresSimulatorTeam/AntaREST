@@ -26,8 +26,8 @@ import {
   Link,
   LinkElement,
   WSMessage,
-} from "../../common/types";
-import * as api from "../../services/api/study";
+} from "@/common/types";
+import * as api from "@/services/api/study";
 import {
   getStudyMapsIds,
   getStudySynthesis,

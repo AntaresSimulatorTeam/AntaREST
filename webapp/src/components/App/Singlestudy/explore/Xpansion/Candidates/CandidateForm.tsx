@@ -25,7 +25,7 @@ import {
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
+import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
 import {
   Title,
   Fields,
@@ -34,11 +34,11 @@ import {
   ActiveButton,
   StyledVisibilityIcon,
   StyledDeleteIcon,
-} from "../share/styles";
-import { LinkCreationInfoDTO } from "../../../../../../common/types";
-import { XpansionCandidate } from "../types";
-import SelectSingle from "../../../../../common/SelectSingle";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+} from "@/share/styles";
+import { LinkCreationInfoDTO } from "@/common/types";
+import { XpansionCandidate } from "@/types";
+import SelectSingle from "@/common/SelectSingle";
+import SwitchFE from "@/common/fieldEditors/SwitchFE";
 
 interface PropType {
   candidate: XpansionCandidate | undefined;

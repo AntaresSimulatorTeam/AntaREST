@@ -15,9 +15,9 @@
 import { memo } from "react";
 import { Box, Skeleton } from "@mui/material";
 import { GridChildComponentProps, areEqual } from "react-window";
-import { StudyMetadata } from "../../../../common/types";
-import StudyCard from "../StudyCard";
+import { StudyMetadata } from "@/common/types";
 import { StudiesListProps } from ".";
+import StudyCard from "../StudyCard";
 
 type Props = GridChildComponentProps<{
   setStudyToLaunch: (id: StudyMetadata["id"]) => void;

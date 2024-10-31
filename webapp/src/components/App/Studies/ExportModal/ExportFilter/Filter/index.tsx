@@ -15,15 +15,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TextField } from "@mui/material";
-import {
-  Area,
-  Set,
-  StudyOutputDownloadType,
-} from "../../../../../../common/types";
-import SelectMulti from "../../../../../common/SelectMulti";
+import { Area, Set, StudyOutputDownloadType } from "@/common/types";
 import { Root } from "./style";
 import MultipleLinkElement from "./MultipleLinkElement";
 import SingleLinkElement from "./SingleLinkElement";
+import SelectMulti from "@/components/common/SelectMulti";
 
 interface PropTypes {
   type: StudyOutputDownloadType;
