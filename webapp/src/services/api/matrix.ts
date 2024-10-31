@@ -24,7 +24,7 @@ import {
 } from "../../common/types";
 import { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
-import { MatrixUpdateDTO } from "../../components/common/MatrixGrid/types";
+import { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
 
 export const getMatrixList = async (
   name = "",

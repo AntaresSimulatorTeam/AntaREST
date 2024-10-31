@@ -18,33 +18,40 @@ import DataEditor, {
   EditableGridCell,
   EditListItem,
   GridCellKind,
+  GridColumn,
   GridSelection,
   Item,
 } from "@glideapps/glide-data-grid";
-import { useGridCellContent } from "./useGridCellContent";
+import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useMemo, useState } from "react";
-import { EnhancedGridColumn, GridUpdate } from "./types";
-import { darkTheme, readOnlyDarkTheme } from "./utils";
-import { useColumnMapping } from "./useColumnMapping";
+import {
+  type EnhancedGridColumn,
+  type GridUpdate,
+  type MatrixAggregates,
+} from "../../shared/types";
+import { useColumnMapping } from "../../hooks/useColumnMapping";
+import { useMatrixPortal } from "../../hooks/useMatrixPortal";
+import { darkTheme, readOnlyDarkTheme } from "./styles";
 
 export interface MatrixGridProps {
   data: number[][];
   rows: number;
   columns: EnhancedGridColumn[];
   dateTime?: string[];
-  aggregates?: Record<string, number[]>;
+  aggregates?: Partial<MatrixAggregates>;
   rowHeaders?: string[];
   width?: string;
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
-  readOnly?: boolean;
+  isReadOnly?: boolean;
+  isPercentDisplayEnabled?: boolean;
 }
 
 function MatrixGrid({
   data,
   rows,
-  columns,
+  columns: initialColumns,
   dateTime,
   aggregates,
   rowHeaders,
@@ -52,8 +59,10 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
-  readOnly = false,
+  isReadOnly,
+  isPercentDisplayEnabled,
 }: MatrixGridProps) {
+  const [columns, setColumns] = useState<EnhancedGridColumn[]>(initialColumns);
   const [selection, setSelection] = useState<GridSelection>({
     columns: CompactSelection.empty(),
     rows: CompactSelection.empty(),
@@ -61,8 +70,17 @@ function MatrixGrid({
 
   const { gridToData } = useColumnMapping(columns);
 
+  // Due to a current limitation of Glide Data Grid, only one id="portal" is active on the DOM
+  // This is an issue on splited matrices, the second matrix does not have an id="portal"
+  // Causing the overlay editor to not behave correctly on click
+  // This hook manage portal creation and cleanup for matrices in split views
+  // TODO: add a prop to detect matrices in split views and enable this conditionnaly
+  // !Workaround: a proper solution should be replacing this in the future
+  const { containerRef, handleMouseEnter, handleMouseLeave } =
+    useMatrixPortal();
+
   const theme = useMemo(() => {
-    if (readOnly) {
+    if (isReadOnly) {
       return {
         ...darkTheme,
         ...readOnlyDarkTheme,
@@ -70,7 +88,7 @@ function MatrixGrid({
     }
 
     return darkTheme;
-  }, [readOnly]);
+  }, [isReadOnly]);
 
   const getCellContent = useGridCellContent(
     data,
@@ -79,12 +97,26 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
-    readOnly,
+    isReadOnly,
+    isPercentDisplayEnabled,
   );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+
+  const handleColumnResize = (
+    column: GridColumn,
+    newSize: number,
+    colIndex: number,
+    newSizeWithGrow: number,
+  ) => {
+    const newColumns = columns.map((col, index) =>
+      index === colIndex ? { ...col, width: newSize } : col,
+    );
+
+    setColumns(newColumns);
+  };
 
   const handleCellEdited = (coordinates: Item, value: EditableGridCell) => {
     if (value.kind !== GridCellKind.Number) {
@@ -141,23 +173,39 @@ function MatrixGrid({
 
   return (
     <>
-      <DataEditor
-        theme={theme}
-        width={width}
-        height={height}
-        rows={rows}
-        columns={columns}
-        getCellContent={getCellContent}
-        onCellEdited={handleCellEdited}
-        onCellsEdited={handleCellsEdited}
-        gridSelection={selection}
-        onGridSelectionChange={setSelection}
-        getCellsForSelection // Enable copy support
-        onPaste
-        fillHandle
-        rowMarkers="both"
-      />
-      <div id="portal" />
+      <div
+        ref={containerRef}
+        className="matrix-container"
+        style={{ width, height }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <DataEditor
+          theme={theme}
+          width={width}
+          height={height}
+          rows={rows}
+          columns={columns}
+          getCellContent={getCellContent}
+          onCellEdited={handleCellEdited}
+          onCellsEdited={handleCellsEdited}
+          gridSelection={selection}
+          onGridSelectionChange={setSelection}
+          keybindings={{ paste: false, copy: false }}
+          getCellsForSelection // TODO handle large copy/paste using this
+          fillHandle
+          allowedFillDirections="any"
+          rowMarkers="both"
+          freezeColumns={1} // Make the first column sticky
+          onColumnResize={handleColumnResize}
+          smoothScrollX
+          smoothScrollY
+          rowHeight={30}
+          overscrollX={100}
+          overscrollY={100}
+          cellActivationBehavior="second-click"
+        />
+      </div>
     </>
   );
 }

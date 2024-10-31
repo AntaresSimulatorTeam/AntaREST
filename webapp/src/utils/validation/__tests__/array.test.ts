@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { validateArray } from "./array";
+import { validateArray } from "../array";
 
 vi.mock("i18next", () => ({
   t: vi.fn((key) => key),

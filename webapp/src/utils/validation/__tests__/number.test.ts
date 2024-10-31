@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { validateNumber } from "./number";
+import { validateNumber } from "../number";
 
 // Mock i18next
 vi.mock("i18next", () => ({
