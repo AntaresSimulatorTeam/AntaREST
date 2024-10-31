@@ -24,7 +24,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
-from antarest.study.business.link_management import LinkInfoDTO820, LinkInfoDTOBase, LinkManager
+from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
@@ -139,7 +139,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     study.version = 820
     link_manager.create_link(
         study,
-        LinkInfoDTO820(
+        LinkDTO(
             area1="test",
             area2="test2",
         ),
@@ -230,7 +230,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     study.version = 880
     link_manager.create_link(
         study,
-        LinkInfoDTO820(
+        LinkDTO(
             area1="test",
             area2="test2",
         ),
@@ -268,7 +268,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     study.version = 810
     link_manager.create_link(
         study,
-        LinkInfoDTOBase(
+        LinkDTO(
             area1="test",
             area2="test2",
         ),
