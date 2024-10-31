@@ -14,15 +14,8 @@ module.exports = {
     "plugin:jsdoc/recommended-typescript",
     "plugin:prettier/recommended", // Must be the last one
   ],
-  plugins: [
-    "license-header",
-    "react-refresh",
-  ],
-  ignorePatterns: [
-    "dist", 
-    "license-header.js", 
-    ".eslintrc.cjs",
-  ],
+  plugins: ["license-header", "react-refresh", "simple-import-sort"],
+  ignorePatterns: ["dist", "license-header.js", ".eslintrc.cjs"],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     // `ecmaVersion` is automatically sets by `esXXXX` in `env`
@@ -85,5 +78,33 @@ module.exports = {
     "react/prop-types": "off",
     "react/self-closing-comp": "error",
     "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low
+    "simple-import-sort/imports": [
+      "error",
+      {
+        groups: [
+          // React first, then packages starting with a character
+          ["^react$", "^[a-z]"],
+
+          // Packages starting with `@` (except our internal @/)
+          ["^@(?!/)"],
+
+          // Internal imports from src using @/
+          ["^@/"],
+
+          // Imports starting with `../`
+          ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+
+          // Imports starting with `./`
+          ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+
+          // Style imports
+          ["^.+\\.s?css$"],
+
+          // Side effect imports
+          ["^\\u0000"],
+        ],
+      },
+    ],
+    "simple-import-sort/exports": "error",
   },
 };
