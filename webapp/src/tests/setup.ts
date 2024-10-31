@@ -12,10 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import "@testing-library/jest-dom/vitest";
-import { expect, afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { afterEach, expect } from "vitest";
+
 import * as matchers from "@testing-library/jest-dom/matchers";
+import { cleanup } from "@testing-library/react";
+
+import "@testing-library/jest-dom/vitest";
 import "./mocks/mockResizeObserver";
 
 // Extend Vitest's expect function with jest-dom matchers for enhanced DOM assertions.

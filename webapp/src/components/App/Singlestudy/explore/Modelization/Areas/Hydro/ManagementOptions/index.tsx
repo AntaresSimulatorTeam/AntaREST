@@ -13,17 +13,19 @@
  */
 
 import { useOutletContext } from "react-router";
+
 import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "@/redux/selectors";
+
 import Fields from "./Fields";
 import {
   getManagementOptionsFormFields,
   HydroFormFields,
   setManagementOptionsFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
-import Form from "@/components/common/Form";
 
 function ManagementOptions() {
   const {

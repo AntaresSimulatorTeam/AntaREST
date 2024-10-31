@@ -13,16 +13,19 @@
  */
 
 import { useEffect, useState } from "react";
-import { Box, Button, LinearProgress, Paper, Typography } from "@mui/material";
-import { FileRejection, useDropzone, type Accept } from "react-dropzone";
+import { enqueueSnackbar } from "notistack";
+import { type Accept, FileRejection, useDropzone } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import BasicDialog, { BasicDialogProps } from "./BasicDialog";
+
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import { Box, Button, LinearProgress, Paper, Typography } from "@mui/material";
 import { blue, grey } from "@mui/material/colors";
+
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { toError } from "@/utils/fnUtils";
-import { enqueueSnackbar } from "notistack";
 import { PromiseAny } from "@/utils/tsUtils";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
+
+import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
 interface ImportDialogProps extends Omit<BasicDialogProps, "actions"> {
   dropzoneText?: string;

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Box, List, styled } from "@mui/material";
 import AddCircleOutlinedIcon from "@mui/icons-material/AddCircleOutlined";
+import { Box, List, styled } from "@mui/material";
 
 export const Root = styled(Box)(({ theme }) => ({
   width: "100%",

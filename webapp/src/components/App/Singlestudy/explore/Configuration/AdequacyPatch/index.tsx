@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+
 import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import TableMode from "@/components/common/TableMode";
+import TabsView from "@/components/common/TabsView";
+
 import Fields from "./Fields";
 import {
   AdequacyPatchFormFields,
   getAdequacyPatchFormFields,
   setAdequacyPatchFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
-import TableMode from "@/components/common/TableMode";
-import TabsView from "@/components/common/TabsView";
-import Form from "@/components/common/Form";
 
 function AdequacyPatch() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

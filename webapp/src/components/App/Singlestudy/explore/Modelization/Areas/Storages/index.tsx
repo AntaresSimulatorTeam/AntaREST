@@ -13,27 +13,30 @@
  */
 
 import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { createMRTColumnHelper } from "material-react-table";
-import { Box, Tooltip } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+
+import { Box, Tooltip } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "@/redux/selectors";
-import {
-  Storage,
-  getStorages,
-  deleteStorages,
-  createStorage,
-  STORAGE_GROUPS,
-  StorageGroup,
-  duplicateStorage,
-  getStoragesTotals,
-} from "./utils";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import GroupedDataTable from "@/components/common/GroupedDataTable";
 import BooleanCell from "@/components/common/GroupedDataTable/cellRenderers/BooleanCell";
 import { TRow } from "@/components/common/GroupedDataTable/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+
+import {
+  createStorage,
+  deleteStorages,
+  duplicateStorage,
+  getStorages,
+  getStoragesTotals,
+  Storage,
+  STORAGE_GROUPS,
+  StorageGroup,
+} from "./utils";
 
 const columnHelper = createMRTColumnHelper<Storage>();
 

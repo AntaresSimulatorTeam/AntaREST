@@ -12,13 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
-import TokenIcon from "@mui/icons-material/Token";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import TokenIcon from "@mui/icons-material/Token";
+import { Box, Button } from "@mui/material";
+
 import { BotDTO } from "@/common/types";
-import CreateTokenDialog from "./dialog/CreateTokenDialog";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
+
+import CreateTokenDialog from "./dialog/CreateTokenDialog";
 
 interface Props {
   setSearchValue: (v: string) => void;

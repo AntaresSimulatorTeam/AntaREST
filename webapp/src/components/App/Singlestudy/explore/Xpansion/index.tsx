@@ -15,19 +15,22 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
-import { useOutletContext } from "react-router-dom";
-import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router-dom";
+
+import { Add } from "@mui/icons-material";
+import { Box, Button } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
   createXpansionConfiguration,
   xpansionConfigurationExist,
 } from "@/services/api/xpansion";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import TabWrapper from "@/TabWrapper";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "@/common/utils/UsePromiseCond";
-import { Add } from "@mui/icons-material";
+
+import TabWrapper from "../TabWrapper";
 
 function Xpansion() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

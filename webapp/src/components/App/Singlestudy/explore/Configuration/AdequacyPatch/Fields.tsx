@@ -12,17 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { AdequacyPatchFormFields, PRICE_TAKING_ORDER_OPTIONS } from "./utils";
+
+import { Box } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
-import { validateNumber } from "@/utils/validation/number";
 import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
+import { validateNumber } from "@/utils/validation/number";
+
+import { AdequacyPatchFormFields, PRICE_TAKING_ORDER_OPTIONS } from "./utils";
 
 function Fields() {
   const { t } = useTranslation();

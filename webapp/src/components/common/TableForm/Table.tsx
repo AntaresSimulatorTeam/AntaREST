@@ -12,11 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import { useMemo } from "react";
 import HT from "handsontable";
 import * as RA from "ramda-adjunct";
-import { useMemo } from "react";
-import type { IdType } from "@/common/types";
+
 import { HotTableClass } from "@handsontable/react";
+
+import type { IdType } from "@/common/types";
+
 import { useFormContextPlus } from "../Form";
 import Handsontable, { HandsontableProps } from "../Handsontable";
 

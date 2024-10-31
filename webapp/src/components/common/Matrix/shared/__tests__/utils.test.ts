@@ -21,12 +21,13 @@ import {
   generateTimeSeriesColumns,
   getAggregateTypes,
 } from "../utils";
+
 import {
-  DATE_TIME_TEST_CASES,
-  COLUMN_TEST_CASES,
-  AGGREGATE_TEST_CASES,
-  FORMAT_TEST_CASES,
   AGGREGATE_CONFIG_CASES,
+  AGGREGATE_TEST_CASES,
+  COLUMN_TEST_CASES,
+  DATE_TIME_TEST_CASES,
+  FORMAT_TEST_CASES,
 } from "./fixtures";
 
 describe("Matrix Utils", () => {

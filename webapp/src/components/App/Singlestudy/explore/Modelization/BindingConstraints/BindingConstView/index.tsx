@@ -12,35 +12,39 @@
  * This file is part of the Antares project.
  */
 
-import { BindingConstraint } from "./utils";
+import { useState } from "react";
+import { AxiosError } from "axios";
+import { t } from "i18next";
+import { useSnackbar } from "notistack";
+import { useOutletContext } from "react-router";
+
+import Delete from "@mui/icons-material/Delete";
 import { Box, Button, Paper, Skeleton } from "@mui/material";
-import Form from "@/common/Form";
-import UsePromiseCond, { mergeResponses } from "@/common/utils/UsePromiseCond";
+
+import { StudyMetadata } from "@/common/types";
+import { CommandEnum } from "@/components/App/Singlestudy/Commands/Edition/commandTypes";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import UsePromiseCond, {
+  mergeResponses,
+} from "@/components/common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromise from "@/hooks/usePromise";
+import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getLinksAndClusters } from "@/redux/selectors";
 import {
   getBindingConstraint,
   getBindingConstraintList,
   updateBindingConstraint,
 } from "@/services/api/studydata";
-import { useOutletContext } from "react-router";
-
-import { AxiosError } from "axios";
-import BindingConstForm from "./BindingConstForm";
-import { CommandEnum } from "@/Commands/Edition/commandTypes";
-import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
-import ConstraintFields from "./ConstraintFields";
-import Delete from "@mui/icons-material/Delete";
-import { StudyMetadata } from "@/common/types";
-import { SubmitHandlerPlus } from "@/common/Form/types";
 import { appendCommands } from "@/services/api/variant";
-import { getLinksAndClusters } from "@/redux/selectors";
-import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";
-import { t } from "i18next";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import usePromise from "@/hooks/usePromise";
-import { useSnackbar } from "notistack";
-import { useState } from "react";
-import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+
+import BindingConstForm from "./BindingConstForm";
+import ConstraintFields from "./ConstraintFields";
+import { BindingConstraint } from "./utils";
 
 interface Props {
   constraintId: string;

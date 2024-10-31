@@ -12,36 +12,40 @@
  * This file is part of the Antares project.
  */
 
-import { useState, MouseEvent } from "react";
+import { MouseEvent, useState } from "react";
+import { AxiosError } from "axios";
 import debug from "debug";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { AxiosError } from "axios";
-import { Box, Typography } from "@mui/material";
-import UpgradeIcon from "@mui/icons-material/Upgrade";
-import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { useTranslation } from "react-i18next";
+import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
+import UpgradeIcon from "@mui/icons-material/Upgrade";
+import { Box, Typography } from "@mui/material";
+
 import { StudyMetadata, VariantTree } from "@/common/types";
-import { STUDIES_HEIGHT_HEADER } from "@/theme";
-import { archiveStudy, unarchiveStudy } from "@/services/api/study";
-import { deleteStudy } from "@/redux/ducks/studies";
-import LauncherDialog from "@/Studies/LauncherDialog";
-import PropertiesDialog from "@/PropertiesDialog";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { getLatestStudyVersion } from "@/redux/selectors";
-import ExportDialog from "@/Studies/ExportModal";
-import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
-import useAppSelector from "@/redux/hooks/useAppSelector";
+import { deleteStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import CheckBoxFE from "@/common/fieldEditors/CheckBoxFE";
-import Details from "./Details";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getLatestStudyVersion } from "@/redux/selectors";
+import { archiveStudy, unarchiveStudy } from "@/services/api/study";
+import { STUDIES_HEIGHT_HEADER } from "@/theme";
+
+import ExportModal from "../../Studies/ExportModal";
+import LauncherDialog from "../../Studies/LauncherDialog";
+import PropertiesDialog from "../PropertiesDialog";
+import UpgradeDialog from "../UpgradeDialog";
+
 import Actions from "./Actions";
-import UpgradeDialog from "@/UpgradeDialog";
 import ActionsMenu, { ActionsMenuItem } from "./ActionsMenu";
+import Details from "./Details";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -289,7 +293,7 @@ function NavHeader({
         />
       )}
       {study && openExportDialog && (
-        <ExportDialog
+        <ExportModal
           open={openExportDialog}
           onClose={() => setOpenExportDialog(false)}
           study={study}

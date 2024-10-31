@@ -12,9 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { SelectProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
+
+import { SelectProps } from "@mui/material";
+
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
+
 import SelectFE, { SelectFEProps } from "./SelectFE";
 
 export interface BooleanFEProps

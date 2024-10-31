@@ -13,10 +13,12 @@
  */
 
 import { useState } from "react";
+
 import { MatrixDataSetDTO, MatrixInfoDTO } from "@/common/types";
+import PropertiesView from "@/components/common/PropertiesView";
+
 import DataListing from "./DataListing";
 import { StyledListingBox } from "./styles";
-import PropertiesView from "@/components/common/PropertiesView";
 
 interface PropTypes {
   dataset: MatrixDataSetDTO[];

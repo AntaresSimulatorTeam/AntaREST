@@ -14,22 +14,29 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
-import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import { MatrixIndex } from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { enqueueSnackbar } from "notistack";
+import useUndo from "use-undo";
+
+import { GridCellKind } from "@glideapps/glide-data-grid";
+
+import { MatrixIndex } from "@/common/types";
+import { fetchMatrixFn } from "@/components/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePrompt from "@/hooks/usePrompt";
+import { getStudyMatrixIndex, updateMatrix } from "@/services/api/matrix";
+import { importFile } from "@/services/api/studies/raw";
+import { getStudyData } from "@/services/api/study";
+
+import { aggregatesTheme } from "../../components/MatrixGrid/styles";
+import { Aggregate, Column, Operation } from "../../shared/constants";
 import {
-  getStudyMatrixIndex,
-  updateMatrix,
-} from "../../../../../services/api/matrix";
-import { getStudyData } from "../../../../../services/api/study";
-import {
-  EnhancedGridColumn,
-  MatrixDataDTO,
-  GridUpdate,
-  MatrixUpdateDTO,
-  MatrixAggregates,
   AggregateConfig,
+  EnhancedGridColumn,
+  GridUpdate,
+  MatrixAggregates,
+  MatrixDataDTO,
+  MatrixUpdateDTO,
 } from "../../shared/types";
 import {
   calculateMatrixAggregates,
@@ -37,13 +44,6 @@ import {
   generateDateTime,
   getAggregateTypes,
 } from "../../shared/utils";
-import useUndo from "use-undo";
-import { GridCellKind } from "@glideapps/glide-data-grid";
-import { importFile } from "../../../../../services/api/studies/raw";
-import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import usePrompt from "../../../../../hooks/usePrompt";
-import { Aggregate, Column, Operation } from "../../shared/constants";
-import { aggregatesTheme } from "../../components/MatrixGrid/styles";
 
 interface DataState {
   data: MatrixDataDTO["data"];

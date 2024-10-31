@@ -12,11 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { configureStore } from "@reduxjs/toolkit";
-import { ThunkAction } from "redux-thunk";
 import { AnyAction } from "redux";
-import rootReducer, { AppState } from "./ducks";
+import { ThunkAction } from "redux-thunk";
+
+import { configureStore } from "@reduxjs/toolkit";
+
 import localStorageMiddleware from "./middlewares/localStorageMiddleware";
+import rootReducer, { AppState } from "./ducks";
 
 const store = configureStore({
   reducer: rootReducer,

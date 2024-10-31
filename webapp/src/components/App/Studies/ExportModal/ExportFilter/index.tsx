@@ -13,21 +13,24 @@
  */
 
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import _ from "lodash";
+import { useTranslation } from "react-i18next";
+
 import { Box, Checkbox, FormControlLabel, styled } from "@mui/material";
+
 import {
   Area,
-  Set as District,
   FileStudyTreeConfigDTO,
+  Set as District,
   StudyOutputDownloadDTO,
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
 } from "@/common/types";
-import Filter from "./Filter";
-import TagSelect from "./TagSelect";
 import SelectMulti from "@/components/common/SelectMulti";
 import SelectSingle from "@/components/common/SelectSingle";
+
+import Filter from "./Filter";
+import TagSelect from "./TagSelect";
 
 const Root = styled(Box)(({ theme }) => ({
   flex: 1,

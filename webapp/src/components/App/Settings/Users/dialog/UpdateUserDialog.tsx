@@ -12,17 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import EditIcon from "@mui/icons-material/Edit";
 import { useMemo } from "react";
+import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import { useSnackbar } from "notistack";
+
+import EditIcon from "@mui/icons-material/Edit";
+
 import { GroupDTO, RoleType, UserDetailsDTO } from "@/common/types";
-import { createRole, deleteUserRoles } from "@/services/api/user";
-import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
-import { UserEdit } from "..";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createRole, deleteUserRoles } from "@/services/api/user";
+
+import { UserEdit } from "..";
+
+import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
 
 type InheritPropsToOmit =
   | "title"

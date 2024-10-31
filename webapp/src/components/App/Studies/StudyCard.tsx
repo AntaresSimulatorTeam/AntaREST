@@ -13,61 +13,65 @@
  */
 
 import { memo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
+import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import { NavLink, useNavigate } from "react-router-dom";
+import { areEqual } from "react-window";
+
+import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import BoltIcon from "@mui/icons-material/Bolt";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
+import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
+import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import {
   Box,
+  Button,
   Card,
   CardActions,
   CardContent,
-  Button,
-  Typography,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Tooltip,
   Chip,
   Divider,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import { indigo } from "@mui/material/colors";
-import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
-import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import BoltIcon from "@mui/icons-material/Bolt";
-import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
-import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
-import debug from "debug";
-import { areEqual } from "react-window";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import { styled } from "@mui/material/styles";
+
 import { StudyMetadata, StudyType } from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import StarToggle from "@/components/common/StarToggle";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { deleteStudy, toggleFavorite } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudy, isStudyFavorite } from "@/redux/selectors";
+import * as studyApi from "@/services/api/study";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   displayVersionName,
 } from "@/services/utils";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+
+import PropertiesDialog from "../Singlestudy/PropertiesDialog";
+
 import ExportModal from "./ExportModal";
 import MoveStudyDialog from "./MoveStudyDialog";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudy, isStudyFavorite } from "@/redux/selectors";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { deleteStudy, toggleFavorite } from "@/redux/ducks/studies";
-import * as studyApi from "@/services/api/study";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import StarToggle from "@/components/common/StarToggle";
-import PropertiesDialog from "../Singlestudy/PropertiesDialog";
 
 const logError = debug("antares:studieslist:error");
 

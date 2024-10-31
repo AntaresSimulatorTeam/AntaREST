@@ -13,6 +13,7 @@
  */
 
 import { Column } from "../../../shared/constants";
+
 import { createColumn, createNumericColumn } from "./utils";
 
 export const COLUMNS = {

@@ -12,14 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import Text from "./Text";
+import type { StudyMetadata } from "@/common/types";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+
+import { canEditFile, DataCompProps, FileInfo, FileType } from "../utils";
+
+import Folder from "./Folder";
 import Image from "./Image";
 import Json from "./Json";
 import Matrix from "./Matrix";
-import Folder from "./Folder";
-import type { StudyMetadata } from "@/common/types";
-import { canEditFile, DataCompProps, FileInfo, FileType } from "../utils";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
+import Text from "./Text";
 
 interface Props extends FileInfo {
   study: StudyMetadata;

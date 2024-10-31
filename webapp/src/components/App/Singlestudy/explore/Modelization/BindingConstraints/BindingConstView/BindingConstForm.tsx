@@ -12,32 +12,35 @@
  * This file is part of the Antares project.
  */
 
-import { AxiosError } from "axios";
 import { useMemo, useState } from "react";
+import { AxiosError } from "axios";
+import { useSnackbar } from "notistack";
+import { useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Box, Button } from "@mui/material";
+
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useFieldArray } from "react-hook-form";
-import { useSnackbar } from "notistack";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import {
-  type ConstraintTerm,
-  generateTermId,
-  BindingConstraint,
-} from "./utils";
+import { Box, Button } from "@mui/material";
+
 import { AllClustersAndLinks, StudyMetadata } from "@/common/types";
-import ConstraintTermItem from "./ConstraintTerm";
-import { useFormContextPlus } from "@/common/Form";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+import TextSeparator from "@/components/common/TextSeparator";
+import useDebounce from "@/hooks/useDebounce";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   deleteConstraintTerm,
   updateConstraintTerm,
 } from "@/services/api/studydata";
-import TextSeparator from "@/common/TextSeparator";
+
 import AddConstraintTermDialog from "./AddConstraintTermDialog";
-import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
-import useDebounce from "@/hooks/useDebounce";
-import Fieldset from "@/common/Fieldset";
+import ConstraintTermItem from "./ConstraintTerm";
+import {
+  BindingConstraint,
+  type ConstraintTerm,
+  generateTermId,
+} from "./utils";
 
 interface Props {
   study: StudyMetadata;

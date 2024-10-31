@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { styled, Box } from "@mui/material";
+import { Box, styled } from "@mui/material";
 
 export const Root = styled(Box)(({ theme }) => ({
   width: "100%",

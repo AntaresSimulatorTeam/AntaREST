@@ -13,15 +13,17 @@
  */
 
 import { memo, useEffect, useRef } from "react";
-import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
 import {
   DragDropContext,
-  Droppable,
   Draggable,
+  Droppable,
   OnDragEndResponder,
 } from "react-beautiful-dnd";
-import CommandListItem from "./CommandListItem";
+import { areEqual, FixedSizeList, ListChildComponentProps } from "react-window";
+
 import { CommandItem } from "../commandTypes";
+
+import CommandListItem from "./CommandListItem";
 
 const Row = memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;

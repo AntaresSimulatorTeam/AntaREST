@@ -12,15 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Divider } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import SettingsIcon from "@mui/icons-material/Settings";
 import { useEffect } from "react";
 import * as RA from "ramda-adjunct";
 import { Validate } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import SettingsIcon from "@mui/icons-material/Settings";
+import { Box, Button, Divider } from "@mui/material";
+
+import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+
+import { FieldWithButton } from "./styles";
 import {
-  BuildingMode,
   BUILDING_MODE_OPTIONS,
+  BuildingMode,
   FIRST_JANUARY_OPTIONS,
   GeneralFormFields,
   MODE_OPTIONS,
@@ -28,14 +39,6 @@ import {
   WEEK_OPTIONS,
   YEAR_OPTIONS,
 } from "./utils";
-import { FieldWithButton } from "./styles";
-import { useFormContextPlus } from "@/components/common/Form";
-import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
-import NumberFE from "@/components/common/fieldEditors/NumberFE";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
-import Fieldset from "@/components/common/Fieldset";
 
 interface Props {
   setDialog: React.Dispatch<React.SetStateAction<SetDialogStateType>>;

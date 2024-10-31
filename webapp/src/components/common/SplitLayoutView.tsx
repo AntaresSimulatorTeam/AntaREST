@@ -13,7 +13,8 @@
  */
 
 import { ReactNode } from "react";
-import { Divider, Box, SxProps, Theme } from "@mui/material";
+
+import { Box, Divider, SxProps, Theme } from "@mui/material";
 
 interface Props {
   left: ReactNode;

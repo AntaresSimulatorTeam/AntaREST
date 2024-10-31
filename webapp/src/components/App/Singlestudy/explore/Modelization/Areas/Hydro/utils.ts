@@ -13,10 +13,11 @@
  */
 
 import {
-  MatrixDataDTO,
   AggregateConfig,
+  MatrixDataDTO,
 } from "@/components/common/Matrix/shared/types";
 import { SplitViewProps } from "@/components/common/SplitView";
+
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
 import InflowStructure from "./InflowStructure";

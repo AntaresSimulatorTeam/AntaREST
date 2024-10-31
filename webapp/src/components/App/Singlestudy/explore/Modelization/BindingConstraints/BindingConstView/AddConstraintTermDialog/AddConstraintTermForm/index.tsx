@@ -13,16 +13,20 @@
  */
 
 import { useState } from "react";
-import { Box, Button, Typography } from "@mui/material";
-import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import { useTranslation } from "react-i18next";
+
+import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
+import { Box, Button, Typography } from "@mui/material";
+
 import { AllClustersAndLinks } from "@/common/types";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import { useFormContextPlus } from "@/components/common/Form";
+
+import ConstraintElement from "../../constraintviews/ConstraintElement";
+import OffsetInput from "../../constraintviews/OffsetInput";
+import { ConstraintTerm } from "../../utils";
+
 import OptionsList from "./OptionsList";
-import NumberFE from "@/common/fieldEditors/NumberFE";
-import { useFormContextPlus } from "@/common/Form";
-import { type ConstraintTerm } from "@/utils";
-import ConstraintElement from "@/constraintviews/ConstraintElement";
-import OffsetInput from "@/constraintviews/OffsetInput";
 
 interface Props {
   options: AllClustersAndLinks;

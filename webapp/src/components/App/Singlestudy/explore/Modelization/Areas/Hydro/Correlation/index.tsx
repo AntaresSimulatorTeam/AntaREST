@@ -12,24 +12,28 @@
  * This file is part of the Antares project.
  */
 
-import { Grid } from "@mui/material";
-import { useOutletContext } from "react-router";
 import { useState } from "react";
+import { useOutletContext } from "react-router";
+
+import { Grid } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "@/redux/selectors";
+
+import HydroMatrixDialog from "../HydroMatrixDialog";
+import { FormBox, FormPaper } from "../style";
+import { HydroMatrix } from "../utils";
+import ViewMatrixButton from "../ViewMatrixButton";
+
+import Fields from "./Fields";
 import {
   CorrelationFormFields,
   getCorrelationFormFields,
   setCorrelationFormFields,
 } from "./utils";
-import Fields from "./Fields";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
-import Form from "@/components/common/Form";
-import HydroMatrixDialog from "../HydroMatrixDialog";
-import { FormBox, FormPaper } from "../style";
-import ViewMatrixButton from "../ViewMatrixButton";
-import { HydroMatrix } from "../utils";
 
 function Correlation() {
   const {

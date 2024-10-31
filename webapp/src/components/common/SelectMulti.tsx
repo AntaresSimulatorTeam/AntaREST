@@ -13,6 +13,7 @@
  */
 
 import * as React from "react";
+
 import {
   Box,
   Checkbox,
@@ -26,6 +27,7 @@ import {
   SxProps,
   Theme,
 } from "@mui/material";
+
 import { GenericInfo } from "@/common/types";
 import { mergeSxProp } from "@/utils/muiUtils";
 

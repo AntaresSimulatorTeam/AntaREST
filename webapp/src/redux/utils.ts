@@ -12,16 +12,19 @@
  * This file is part of the Antares project.
  */
 
+import * as R from "ramda";
+
 import {
-  createAction,
   ActionCreatorWithPayload,
+  createAction,
   EntityState,
 } from "@reduxjs/toolkit";
-import * as R from "ramda";
+
+import packages from "../../package.json";
+import { LinkElement } from "../common/types";
+
 import { AppState } from "./ducks";
 import { AppDispatch, AppThunk } from "./store";
-import { LinkElement } from "@/common/types";
-import { APP_NAME } from "@/common/contants";
 
 export enum FetchStatus {
   Idle = "idle",
@@ -37,7 +40,7 @@ export interface AsyncEntityState<T> extends EntityState<T> {
 
 export const makeActionName = R.curry(
   (reducerName: string, actionType: string) =>
-    `${APP_NAME}/${reducerName}/${actionType}`,
+    `${packages.name}/${reducerName}/${actionType}`,
 );
 
 interface ThunkAPI {

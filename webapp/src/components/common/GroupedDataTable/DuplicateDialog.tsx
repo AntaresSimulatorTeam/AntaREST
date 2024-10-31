@@ -13,8 +13,11 @@
  */
 
 import { useTranslation } from "react-i18next";
+
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+
 import { validateString } from "@/utils/validation/string";
+
 import FormDialog from "../dialogs/FormDialog";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";

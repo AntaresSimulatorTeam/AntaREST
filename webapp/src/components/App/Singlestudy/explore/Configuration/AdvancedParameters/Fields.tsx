@@ -12,28 +12,31 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import {
-  AdvancedParamsFormFields,
-  HYDRO_HEURISTIC_POLICY_OPTIONS,
-  INITIAL_RESERVOIR_OPTIONS,
-  HYDRO_PRICING_MODE_OPTIONS,
-  POWER_FLUCTUATIONS_OPTIONS,
-  SPATIAL_CORRELATIONS_OPTIONS,
-  SHEDDING_POLICY_OPTIONS,
-  RESERVE_MANAGEMENT_OPTIONS,
-  UNIT_COMMITMENT_MODE_OPTIONS,
-  SIMULATION_CORES_OPTIONS,
-  RENEWABLE_GENERATION_OPTIONS,
-  UnitCommitmentMode,
-} from "./utils";
 import { useOutletContext } from "react-router";
+
+import { Box } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
 import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
+
+import {
+  AdvancedParamsFormFields,
+  HYDRO_HEURISTIC_POLICY_OPTIONS,
+  HYDRO_PRICING_MODE_OPTIONS,
+  INITIAL_RESERVOIR_OPTIONS,
+  POWER_FLUCTUATIONS_OPTIONS,
+  RENEWABLE_GENERATION_OPTIONS,
+  RESERVE_MANAGEMENT_OPTIONS,
+  SHEDDING_POLICY_OPTIONS,
+  SIMULATION_CORES_OPTIONS,
+  SPATIAL_CORRELATIONS_OPTIONS,
+  UNIT_COMMITMENT_MODE_OPTIONS,
+  UnitCommitmentMode,
+} from "./utils";
 
 function Fields() {
   const [t] = useTranslation();

@@ -12,10 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { useTranslation } from "react-i18next";
+
+import { StudyMetadata } from "@/common/types";
 import { downloadMatrix } from "@/services/api/studies/raw";
 import { downloadFile } from "@/utils/fileUtils";
-import { StudyMetadata } from "@/common/types";
-import { useTranslation } from "react-i18next";
+
 import DownloadButton from "./DownloadButton";
 
 export interface DownloadMatrixButtonProps {

@@ -12,25 +12,29 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Divider } from "@mui/material";
 import { useRef } from "react";
-import { useTranslation } from "react-i18next";
+import Handsontable from "handsontable";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import Handsontable from "handsontable";
+import { useTranslation } from "react-i18next";
+
+import { HotTableClass } from "@handsontable/react";
+import { Box, Button, Divider } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import BasicDialog from "@/components/common/dialogs/BasicDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { HandsontableProps } from "@/components/common/Handsontable";
+import TableForm from "@/components/common/TableForm";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
-import BasicDialog from "@/common/dialogs/BasicDialog";
-import TableForm from "@/common/TableForm";
-import UsePromiseCond from "@/common/utils/UsePromiseCond";
+
 import {
   DEFAULT_WEIGHT,
   getPlaylist,
   PlaylistData,
   setPlaylist,
 } from "./utils";
-import { SubmitHandlerPlus } from "@/common/Form/types";
-import { HandsontableProps, HotTableClass } from "@/common/Handsontable";
 
 interface Props {
   study: StudyMetadata;

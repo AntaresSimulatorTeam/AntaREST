@@ -12,10 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { FormControlLabel, Switch, Typography } from "@mui/material";
 import { ReactNode } from "react";
-import { ConstraintElementData, ConstraintElementRoot } from "./style";
 import { useTranslation } from "react-i18next";
+
+import { FormControlLabel, Switch, Typography } from "@mui/material";
+
+import { ConstraintElementData, ConstraintElementRoot } from "./style";
 
 interface ElementProps {
   left: ReactNode;

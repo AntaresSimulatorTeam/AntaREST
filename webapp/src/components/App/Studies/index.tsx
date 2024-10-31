@@ -13,24 +13,27 @@
  */
 
 import { useState } from "react";
-import { Box, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import SideNav from "./SideNav";
-import StudiesList from "./StudiesList";
+import { Box, Divider } from "@mui/material";
+
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import RootPage from "@/components/common/page/RootPage";
+import UseAsyncAppSelectorCond from "@/redux/components/UseAsyncAppSelectorCond";
 import { fetchStudies } from "@/redux/ducks/studies";
-import HeaderTopRight from "./HeaderTopRight";
-import HeaderBottom from "./HeaderBottom";
+import useAsyncAppSelector from "@/redux/hooks/useAsyncAppSelector";
 import {
   getStudiesState,
   getStudyIdsFilteredAndSorted,
 } from "@/redux/selectors";
-import useAsyncAppSelector from "@/redux/hooks/useAsyncAppSelector";
+
 import FilterDrawer from "./FilterDrawer";
-import UseAsyncAppSelectorCond from "@/redux/components/UseAsyncAppSelectorCond";
+import HeaderBottom from "./HeaderBottom";
+import HeaderTopRight from "./HeaderTopRight";
 import RefreshButton from "./RefreshButton";
-import SimpleLoader from "@/components/common/loaders/SimpleLoader";
-import RootPage from "@/components/common/page/RootPage";
+import SideNav from "./SideNav";
+import StudiesList from "./StudiesList";
 
 function Studies() {
   const [t] = useTranslation();

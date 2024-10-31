@@ -12,26 +12,28 @@
  * This file is part of the Antares project.
  */
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+
 import { Delete, Edit } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
-import { useState } from "react";
-import FormDialog from "@/common/dialogs/FormDialog";
-import StringFE from "@/common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "@/common/Form/types";
+
 import { StudyMetadata } from "@/common/types";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudyMapDistrictsById } from "@/redux/selectors";
-import SelectFE from "@/common/fieldEditors/SelectFE";
-import Fieldset from "@/common/Fieldset";
-import ConfirmationDialog from "@/common/dialogs/ConfirmationDialog";
-import SwitchFE from "@/common/fieldEditors/SwitchFE";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import {
   deleteStudyMapDistrict,
   updateStudyMapDistrict,
 } from "@/redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyMapDistrictsById } from "@/redux/selectors";
 
 interface Props {
   open: boolean;

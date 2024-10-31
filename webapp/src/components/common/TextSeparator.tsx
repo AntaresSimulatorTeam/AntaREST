@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { SxProps, Theme, Divider, Typography, Box } from "@mui/material";
+import { Box, Divider, SxProps, Theme, Typography } from "@mui/material";
 
 interface Props {
   text: string;

@@ -12,12 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Typography, Grid } from "@mui/material";
 import { FieldArrayWithId } from "react-hook-form";
-import NumberFE from "@/common/fieldEditors/NumberFE";
-import { useFormContextPlus } from "@/common/Form";
-import { AllocationFormFields } from "./utils";
+
+import { Grid, Typography } from "@mui/material";
+
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import { useFormContextPlus } from "@/components/common/Form";
 import { validateNumber } from "@/utils/validation/number";
+
+import { AllocationFormFields } from "./utils";
 
 interface Props {
   field: FieldArrayWithId<AllocationFormFields, "allocation">;

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { v4 as uuidv4 } from "uuid";
 import * as RA from "ramda-adjunct";
+import { v4 as uuidv4 } from "uuid";
 
 export function makeListItems<T>(
   value: readonly T[],

@@ -12,14 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { IconButton, InputAdornment } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import { useTranslation } from "react-i18next";
-import clsx from "clsx";
 import { useState } from "react";
-import { useUpdateEffect } from "react-use";
+import clsx from "clsx";
 import * as RA from "ramda-adjunct";
+import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
+
+import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
+import { IconButton, InputAdornment } from "@mui/material";
+
 import StringFE, { StringFEProps } from "./StringFE";
 
 export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {

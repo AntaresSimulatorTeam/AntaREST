@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { useEffect } from "react";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { useEffect } from "react";
+
 import useDebounce, { UseDebounceParams } from "./useDebounce";
 
 export interface UseDebouncedEffectParams extends UseDebounceParams {

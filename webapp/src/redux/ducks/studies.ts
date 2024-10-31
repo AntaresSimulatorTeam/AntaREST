@@ -12,14 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import * as R from "ramda";
+import { O } from "ts-toolbelt";
+
 import {
   createAction,
   createAsyncThunk,
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import * as R from "ramda";
-import { O } from "ts-toolbelt";
+
 import {
   GroupDTO,
   StudyMetadata,
@@ -27,16 +29,17 @@ import {
   StudySummary,
   UserDTO,
   WSMessage,
-} from "@/common/types";
-import * as api from "@/services/api/study";
+} from "../../common/types";
+import * as api from "../../services/api/study";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import { AppAsyncThunkConfig, AppThunk } from "../store";
 import {
-  makeActionName,
-  FetchStatus,
   AsyncEntityState,
   createThunk,
+  FetchStatus,
+  makeActionName,
 } from "../utils";
+
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();

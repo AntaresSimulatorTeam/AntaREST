@@ -13,59 +13,62 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
-import { DropResult } from "react-beautiful-dnd";
+import { AxiosError } from "axios";
+import debug from "debug";
 import _ from "lodash";
+import { useSnackbar } from "notistack";
+import { DropResult } from "react-beautiful-dnd";
+import { useTranslation } from "react-i18next";
+import { useMountedState } from "react-use";
+
+import BoltIcon from "@mui/icons-material/Bolt";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import BoltIcon from "@mui/icons-material/Bolt";
-import debug from "debug";
-import { AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
 import { Box, Button, Tooltip, Typography } from "@mui/material";
-import { useMountedState } from "react-use";
-import { CommandItem, JsonCommandItem } from "./commandTypes";
-import CommandListView from "./DraggableCommands/CommandListView";
+
 import {
-  reorder,
-  fromCommandDTOToCommandItem,
-  fromCommandDTOToJsonCommand,
-  exportJson,
-  isTaskFinal,
-  updateCommandResults,
-} from "./utils";
-import {
-  deleteCommand,
-  getCommand,
-  getCommands,
-  moveCommand,
-  updateCommand,
-  replaceCommands,
-  applyCommands,
-  getStudyTask,
-  exportCommandsMatrices,
-} from "@/services/api/variant";
-import {
-  WSEvent,
-  WSMessage,
   CommandResultDTO,
   TaskEventPayload,
   TaskStatus,
+  WSEvent,
+  WSMessage,
 } from "@/common/types";
-import CommandImportButton from "./DraggableCommands/CommandImportButton";
-import { getTask } from "@/services/api/tasks";
-import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import EmptyView from "@/components/common/page/SimpleContent";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { getTask } from "@/services/api/tasks";
+import {
+  applyCommands,
+  deleteCommand,
+  exportCommandsMatrices,
+  getCommand,
+  getCommands,
+  getStudyTask,
+  moveCommand,
+  replaceCommands,
+  updateCommand,
+} from "@/services/api/variant";
 import {
   addWsMessageListener,
   sendWsSubscribeMessage,
   WsChannel,
 } from "@/services/webSockets";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SimpleLoader from "@/components/common/loaders/SimpleLoader";
-import EmptyView from "@/components/common/page/SimpleContent";
+
+import CommandImportButton from "./DraggableCommands/CommandImportButton";
+import CommandListView from "./DraggableCommands/CommandListView";
+import { CommandItem, JsonCommandItem } from "./commandTypes";
+import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
+import {
+  exportJson,
+  fromCommandDTOToCommandItem,
+  fromCommandDTOToJsonCommand,
+  isTaskFinal,
+  reorder,
+  updateCommandResults,
+} from "./utils";
 
 const logError = debug("antares:variantedition:error");
 

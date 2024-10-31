@@ -14,6 +14,7 @@
 
 import client from "@/services/api/client";
 import { format } from "@/utils/stringUtils";
+
 import type {
   GetTableModeParams,
   SetTableModeParams,

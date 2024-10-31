@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { defineConfig } from "vite";
+
+import react from "@vitejs/plugin-react-swc";
 
 const SERVER_URL = "http://localhost:8080";
 

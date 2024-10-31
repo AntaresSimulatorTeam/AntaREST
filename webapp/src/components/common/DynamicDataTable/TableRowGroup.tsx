@@ -12,18 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import {
-  TableRow,
-  TableCell,
-  IconButton,
-  Box,
-  Typography,
-} from "@mui/material";
+import { ChangeEvent, useMemo, useState } from "react";
+
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { ChangeEvent, useMemo, useState } from "react";
+import {
+  Box,
+  IconButton,
+  TableCell,
+  TableRow,
+  Typography,
+} from "@mui/material";
+
 import TableRowItem from "./TableRowItem";
-import { Item, Column, calculateColumnResults } from "./utils";
+import { calculateColumnResults, Column, Item } from "./utils";
 
 interface Props {
   itemsByGroup: { group?: string; items: Item[] };

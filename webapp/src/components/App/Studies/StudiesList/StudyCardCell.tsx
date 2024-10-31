@@ -13,11 +13,15 @@
  */
 
 import { memo } from "react";
+import { areEqual, GridChildComponentProps } from "react-window";
+
 import { Box, Skeleton } from "@mui/material";
-import { GridChildComponentProps, areEqual } from "react-window";
+
 import { StudyMetadata } from "@/common/types";
-import { StudiesListProps } from ".";
+
 import StudyCard from "../StudyCard";
+
+import { StudiesListProps } from ".";
 
 type Props = GridChildComponentProps<{
   setStudyToLaunch: (id: StudyMetadata["id"]) => void;

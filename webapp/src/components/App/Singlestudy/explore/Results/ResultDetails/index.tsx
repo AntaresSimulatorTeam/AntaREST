@@ -12,6 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext, useParams } from "react-router";
+
+import GridOffIcon from "@mui/icons-material/GridOff";
 import {
   Box,
   Skeleton,
@@ -19,16 +24,33 @@ import {
   ToggleButtonGroup,
   ToggleButtonGroupProps,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext, useParams } from "react-router";
-import GridOffIcon from "@mui/icons-material/GridOff";
+
 import { Area, LinkElement, MatrixType, StudyMetadata } from "@/common/types";
+import ButtonBack from "@/components/common/ButtonBack";
+import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
+import { Column } from "@/components/common/Matrix/shared/constants";
+import {
+  generateCustomColumns,
+  generateDateTime,
+} from "@/components/common/Matrix/shared/utils";
+import EmptyView from "@/components/common/page/SimpleContent";
+import PropertiesView from "@/components/common/PropertiesView";
+import SplitView from "@/components/common/SplitView";
+import UsePromiseCond, {
+  mergeResponses,
+} from "@/components/common/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import useAppSelector from "@/redux/hooks/useAppSelector";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getAreas, getLinks, getStudyOutput } from "@/redux/selectors";
+import { getStudyMatrixIndex } from "@/services/api/matrix";
 import { getStudyData } from "@/services/api/study";
+import { toError } from "@/utils/fnUtils";
 import { isSearchMatching } from "@/utils/stringUtils";
+
+import ListElement from "../../common/ListElement";
+
+import ResultFilters from "./ResultFilters";
 import {
   createPath,
   DataType,
@@ -37,24 +59,6 @@ import {
   SYNTHESIS_ITEMS,
   Timestep,
 } from "./utils";
-import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
-import { getStudyMatrixIndex } from "@/services/api/matrix";
-import SplitView from "@/components/common/SplitView";
-import PropertiesView from "@/components/common/PropertiesView";
-import ButtonBack from "@/components/common/ButtonBack";
-import ResultFilters from "./ResultFilters";
-import UsePromiseCond, {
-  mergeResponses,
-} from "@/components/common/utils/UsePromiseCond";
-import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
-import {
-  generateCustomColumns,
-  generateDateTime,
-} from "@/components/common/Matrix/shared/utils";
-import { Column } from "@/components/common/Matrix/shared/constants";
-import EmptyView from "@/components/common/page/SimpleContent";
-import { toError } from "@/utils/fnUtils";
-import ListElement from "../../common/ListElement";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

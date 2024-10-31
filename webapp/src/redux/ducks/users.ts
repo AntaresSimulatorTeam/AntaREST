@@ -17,10 +17,11 @@ import {
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import { UserDetailsDTO } from "@/common/types";
-import { AsyncEntityState, FetchStatus, makeActionName } from "../utils";
-import * as api from "@/services/api/user";
+
+import { UserDetailsDTO } from "../../common/types";
+import * as api from "../../services/api/user";
 import { AppAsyncThunkConfig } from "../store";
+import { AsyncEntityState, FetchStatus, makeActionName } from "../utils";
 
 const usersAdapter = createEntityAdapter<UserDetailsDTO>();
 

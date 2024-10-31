@@ -13,14 +13,17 @@
  */
 
 import { useCallback, useMemo } from "react";
+
 import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
+
+import { Column } from "../../shared/constants";
 import {
-  type EnhancedGridColumn,
   type ColumnType,
+  type EnhancedGridColumn,
   MatrixAggregates,
 } from "../../shared/types";
 import { formatGridNumber } from "../../shared/utils";
-import { Column } from "../../shared/constants";
+
 import { type CellContentGenerator } from "./types";
 
 /**

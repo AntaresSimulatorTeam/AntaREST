@@ -12,25 +12,28 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
 import LoginIcon from "@mui/icons-material/Login";
-import { login } from "@/redux/ducks/auth";
+import { Box, Typography } from "@mui/material";
+
 import logo from "@/assets/img/logo.png";
 import topRightBackground from "@/assets/img/top-right-background.png";
-import GlobalPageLoadingError from "../common/loaders/GlobalPageLoadingError";
-import AppLoader from "../common/loaders/AppLoader";
-import { needAuth } from "@/services/api/auth";
-import { getAuthUser } from "@/redux/selectors";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import useAppSelector from "@/redux/hooks/useAppSelector";
+import { login } from "@/redux/ducks/auth";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { needAuth } from "@/services/api/auth";
 import storage, { StorageKey } from "@/services/utils/localStorage";
-import Form from "../common/Form";
-import StringFE from "../common/fieldEditors/StringFE";
+
 import PasswordFE from "../common/fieldEditors/PasswordFE";
-import UsePromiseCond from "../common/utils/UsePromiseCond";
+import StringFE from "../common/fieldEditors/StringFE";
+import Form from "../common/Form";
 import { SubmitHandlerPlus } from "../common/Form/types";
+import AppLoader from "../common/loaders/AppLoader";
+import GlobalPageLoadingError from "../common/loaders/GlobalPageLoadingError";
+import UsePromiseCond from "../common/utils/UsePromiseCond";
 
 interface FormValues {
   username: string;

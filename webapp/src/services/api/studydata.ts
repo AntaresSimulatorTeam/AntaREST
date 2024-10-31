@@ -19,10 +19,11 @@ import {
 } from "@/common/types";
 import {
   BindingConstraint,
-  ConstraintTerm,
   bindingConstraintModelAdapter,
+  ConstraintTerm,
 } from "@/components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
 import { StudyMapNode } from "@/redux/ducks/studyMaps";
+
 import client from "./client";
 
 export const createArea = async (

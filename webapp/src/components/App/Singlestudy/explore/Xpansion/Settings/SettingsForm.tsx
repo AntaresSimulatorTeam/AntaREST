@@ -12,21 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useEffect } from "react";
-import { Box, Divider, Typography, Button, TextField } from "@mui/material";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { Title } from "@mui/icons-material";
 import SaveIcon from "@mui/icons-material/Save";
-import { XpansionResourceType, XpansionSettings } from "@/types";
-import {
-  Fields,
-  SelectFields,
-  Title,
-  StyledVisibilityIcon,
-} from "@/share/styles";
-import SelectSingle from "@/common/SelectSingle";
-import NumberFE from "@/common/fieldEditors/NumberFE";
-import SelectFE from "@/common/fieldEditors/SelectFE";
-import SwitchFE from "@/common/fieldEditors/SwitchFE";
+import { Box, Button, Divider, TextField, Typography } from "@mui/material";
+
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import SelectSingle from "@/components/common/SelectSingle";
+
+import { Fields, SelectFields, StyledVisibilityIcon } from "../share/styles";
+import { XpansionResourceType, XpansionSettings } from "../types";
 
 interface PropType {
   settings: XpansionSettings;

@@ -12,20 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import {
-  type EnhancedGridColumn,
-  type TimeSeriesColumnOptions,
-  type CustomColumnOptions,
-  type MatrixAggregates,
-  type AggregateType,
-  type AggregateConfig,
-  type DateTimeMetadataDTO,
-  type FormatGridNumberOptions,
-} from "./types";
-import { parseISO, Locale } from "date-fns";
-import { fr, enUS } from "date-fns/locale";
+import { Locale, parseISO } from "date-fns";
+import { enUS, fr } from "date-fns/locale";
+
 import { getCurrentLanguage } from "@/utils/i18nUtils";
+
 import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
+import {
+  type AggregateConfig,
+  type AggregateType,
+  type CustomColumnOptions,
+  type DateTimeMetadataDTO,
+  type EnhancedGridColumn,
+  type FormatGridNumberOptions,
+  type MatrixAggregates,
+  type TimeSeriesColumnOptions,
+} from "./types";
 
 /**
  * Formats a number for display in a grid cell by adding thousand separators and handling decimals.

@@ -14,17 +14,20 @@
 
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+
 import { StudyMetadata, UpdateAreaUi } from "@/common/types";
-import PropertiesView from "@/common/PropertiesView";
-import ListElement from "@/common/ListElement";
-import { AreasContainer } from "./style";
+import PropertiesView from "@/components/common/PropertiesView";
+import { StudyMapNode } from "@/redux/ducks/studyMaps";
+import { setCurrentArea } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getCurrentLink, getCurrentStudyMapNode } from "@/redux/selectors";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import AreaConfig from "./AreaConfig";
 import { isSearchMatching } from "@/utils/stringUtils";
-import { setCurrentArea } from "@/redux/ducks/studySyntheses";
-import { StudyMapNode } from "@/redux/ducks/studyMaps";
+
+import ListElement from "../../../common/ListElement";
+
+import AreaConfig from "./AreaConfig";
+import { AreasContainer } from "./style";
 
 interface Props {
   onAdd: () => void;

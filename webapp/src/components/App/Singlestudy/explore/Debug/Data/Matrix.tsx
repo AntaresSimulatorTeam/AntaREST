@@ -13,6 +13,7 @@
  */
 
 import Matrix from "@/components/common/Matrix";
+
 import { DataCompProps } from "../utils";
 
 function DebugMatrix({ studyId, filename, filePath, canEdit }: DataCompProps) {

@@ -12,13 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
+
 import { MatrixInfoDTO, MatrixType } from "@/common/types";
-import { getMatrix } from "@/services/api/matrix";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import DataViewerDialog from "@/components/common/dialogs/DataViewerDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { getMatrix } from "@/services/api/matrix";
 
 interface PropTypes {
   matrixInfo: MatrixInfoDTO;

@@ -13,15 +13,19 @@
  */
 
 import { ChangeEvent, useMemo, useState } from "react";
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-import { useTranslation } from "react-i18next";
-import { ConstraintTerm, isLinkTerm } from "@/utils";
+import { Box, Button, TextField, Typography } from "@mui/material";
+
 import { AllClustersAndLinks } from "@/common/types";
+
+import ConstraintElement from "../constraintviews/ConstraintElement";
+import OffsetInput from "../constraintviews/OffsetInput";
+import { ConstraintTerm, isLinkTerm } from "../utils";
+
 import OptionsList from "./OptionsList";
-import ConstraintElement from "@/constraintviews/ConstraintElement";
-import OffsetInput from "@/constraintviews/OffsetInput";
 
 interface Props {
   options: AllClustersAndLinks;

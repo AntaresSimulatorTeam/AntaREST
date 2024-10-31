@@ -13,8 +13,10 @@
  */
 
 import { createContext } from "react";
-import type { FileInfo } from "./utils";
+
 import { voidFn } from "@/utils/fnUtils";
+
+import type { FileInfo } from "./utils";
 
 const initialDebugContextValue = {
   setSelectedFile: voidFn<[FileInfo]>,

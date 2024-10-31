@@ -13,14 +13,17 @@
  */
 
 import { useEffect, useMemo } from "react";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+
+import { Box } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import { setCurrentArea } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getAreas, getCurrentAreaId, getLinks } from "@/redux/selectors";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { setCurrentArea } from "@/redux/ducks/studySyntheses";
+
 import TabWrapper from "../TabWrapper";
 
 function Modelization() {

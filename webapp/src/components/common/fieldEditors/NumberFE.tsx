@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { TextField, TextFieldProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
+
+import { TextField, TextFieldProps } from "@mui/material";
+
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 
 export type NumberFEProps = {

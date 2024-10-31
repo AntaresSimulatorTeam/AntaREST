@@ -12,10 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
+
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+
 import {
   GroupDTO,
   RoleDetailsDTO,
@@ -23,10 +25,11 @@ import {
   UserDetailsDTO,
   UserDTO,
 } from "@/common/types";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { createRole, createUser } from "@/services/api/user";
+
 import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 

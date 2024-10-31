@@ -13,10 +13,12 @@
  */
 
 import { memo } from "react";
-import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
+import { areEqual, FixedSizeList, ListChildComponentProps } from "react-window";
+
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
+import { Box, styled, Typography } from "@mui/material";
+
 import { MatrixDataSetDTO } from "@/common/types";
 
 const ROW_ITEM_SIZE = 45;

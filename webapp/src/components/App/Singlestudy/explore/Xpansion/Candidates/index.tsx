@@ -13,34 +13,38 @@
  */
 
 import { useState } from "react";
-import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
-import { useTranslation } from "react-i18next";
-import { Backdrop, Box, CircularProgress } from "@mui/material";
-import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { usePromise as usePromiseWrapper } from "react-use";
+
+import { Backdrop, Box, CircularProgress } from "@mui/material";
+
 import { MatrixType, StudyMetadata } from "@/common/types";
-import { XpansionCandidate } from "@/types";
+import DataViewerDialog from "@/components/common/dialogs/DataViewerDialog";
+import EmptyView from "@/components/common/page/SimpleContent";
+import SplitView from "@/components/common/SplitView";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getAllLinks } from "@/services/api/studydata";
 import {
-  getAllCandidates,
-  getAllCapacities,
-  deleteXpansionConfiguration,
   addCandidate,
   deleteCandidate,
-  updateCandidate,
+  deleteXpansionConfiguration,
+  getAllCandidates,
+  getAllCapacities,
   getCapacity,
+  updateCandidate,
   xpansionConfigurationExist,
 } from "@/services/api/xpansion";
-import { transformNameToId, removeEmptyFields } from "@/services/utils/index";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { getAllLinks } from "@/services/api/studydata";
-import XpansionPropsView from "./XpansionPropsView";
-import CreateCandidateDialog from "./CreateCandidateDialog";
+import { removeEmptyFields, transformNameToId } from "@/services/utils/index";
+
+import { XpansionCandidate } from "../types";
+
 import CandidateForm from "./CandidateForm";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import DataViewerDialog from "@/common/dialogs/DataViewerDialog";
-import EmptyView from "@/common/page/SimpleContent";
-import SplitView from "@/common/SplitView";
+import CreateCandidateDialog from "./CreateCandidateDialog";
+import XpansionPropsView from "./XpansionPropsView";
 
 function Candidates() {
   const [t] = useTranslation();

@@ -12,13 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import * as RA from "ramda-adjunct";
+
 import {
   createAction,
   createAsyncThunk,
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import * as RA from "ramda-adjunct";
+
 import {
   FileStudyTreeConfigDTO,
   GenericInfo,
@@ -26,8 +28,8 @@ import {
   Link,
   LinkElement,
   WSMessage,
-} from "@/common/types";
-import * as api from "@/services/api/study";
+} from "../../common/types";
+import * as api from "../../services/api/study";
 import {
   getStudyMapsIds,
   getStudySynthesis,
@@ -35,6 +37,7 @@ import {
 } from "../selectors";
 import { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
+
 import { setStudyMap } from "./studyMaps";
 
 export const studySynthesesAdapter =

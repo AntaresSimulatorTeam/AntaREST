@@ -14,31 +14,35 @@
 
 import { useMemo, useState } from "react";
 import { createMRTColumnHelper } from "material-react-table";
-import { Box } from "@mui/material";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+
+import { Box } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import GroupedDataTable from "@/components/common/GroupedDataTable";
+import BooleanCell from "@/components/common/GroupedDataTable/cellRenderers/BooleanCell";
+import { TRow } from "@/components/common/GroupedDataTable/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+
 import {
-  RENEWABLE_GROUPS,
-  RenewableGroup,
+  addClusterCapacity,
+  capacityAggregationFn,
+  getClustersWithCapacityTotals,
+  toCapacityString,
+} from "../common/clustersUtils";
+
+import {
   createRenewableCluster,
   deleteRenewableClusters,
   duplicateRenewableCluster,
   getRenewableClusters,
+  RENEWABLE_GROUPS,
   type RenewableClusterWithCapacity,
+  RenewableGroup,
 } from "./utils";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "@/redux/selectors";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import GroupedDataTable from "@/components/common/GroupedDataTable";
-import BooleanCell from "@/components/common/GroupedDataTable/cellRenderers/BooleanCell";
-import { TRow } from "@/components/common/GroupedDataTable/types";
-import {
-  addClusterCapacity,
-  getClustersWithCapacityTotals,
-  toCapacityString,
-  capacityAggregationFn,
-} from "../common/clustersUtils";
 
 const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 

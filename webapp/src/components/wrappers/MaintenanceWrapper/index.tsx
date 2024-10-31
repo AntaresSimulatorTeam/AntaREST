@@ -14,20 +14,23 @@
 
 /* eslint-disable react-hooks/exhaustive-deps */
 import { ReactNode, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import debug from "debug";
-import { Box, Button, keyframes, styled, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
+
 import ErrorIcon from "@mui/icons-material/Error";
-import { isUserAdmin } from "@/services/utils";
-import { getConfig } from "@/services/config";
-import MessageInfoDialog from "./MessageInfoDialog";
-import Stars from "./Stars";
+import { Box, Button, keyframes, styled, Typography } from "@mui/material";
+
 import { setMaintenanceMode } from "@/redux/ducks/ui";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getAuthUser, getMaintenanceMode } from "@/redux/selectors";
 import { getMaintenanceMode as getMaintenanceModeAPI } from "@/services/api/maintenance";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { getConfig } from "@/services/config";
+import { isUserAdmin } from "@/services/utils";
+
+import MessageInfoDialog from "./MessageInfoDialog";
+import Stars from "./Stars";
 
 const logError = debug("antares:maintenancewrapper:error");
 

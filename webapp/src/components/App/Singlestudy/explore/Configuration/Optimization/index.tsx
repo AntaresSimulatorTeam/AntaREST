@@ -13,15 +13,17 @@
  */
 
 import { useOutletContext } from "react-router";
+
 import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+
 import Fields from "./Fields";
 import {
   getOptimizationFormFields,
   OptimizationFormFields,
   setOptimizationFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
-import Form from "@/components/common/Form";
 
 function Optimization() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

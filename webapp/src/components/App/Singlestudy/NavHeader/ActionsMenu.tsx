@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
-import { SvgIconComponent } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+
+import { SvgIconComponent } from "@mui/icons-material";
+import { ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 
 export interface ActionsMenuItem {
   key: string;

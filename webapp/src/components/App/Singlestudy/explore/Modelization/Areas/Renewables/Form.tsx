@@ -13,24 +13,27 @@
  */
 
 import { useCallback } from "react";
-import { Box, Button } from "@mui/material";
-import { useParams, useOutletContext, useNavigate } from "react-router-dom";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Box, Button } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useNavigateOnCondition from "@/hooks/useNavigateOnCondition";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+import { nameToId } from "@/services/utils";
+
 import Fields from "./Fields";
 import Matrix from "./Matrix";
 import {
-  RenewableCluster,
   getRenewableCluster,
+  RenewableCluster,
   updateRenewableCluster,
 } from "./utils";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "@/redux/selectors";
-import useNavigateOnCondition from "@/hooks/useNavigateOnCondition";
-import { nameToId } from "@/services/utils";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
-import Form from "@/components/common/Form";
 
 function Renewables() {
   const { t } = useTranslation();

@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { useState } from "react";
+
 import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
-import { useState } from "react";
 
 interface TabsViewProps {
   items: Array<{

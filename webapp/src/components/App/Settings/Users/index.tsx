@@ -12,6 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import { ReactNode, useMemo, useReducer, useState } from "react";
+import { produce } from "immer";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
+import { Action } from "redux";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import PersonIcon from "@mui/icons-material/Person";
 import {
   Box,
   CircularProgress,
@@ -24,26 +35,18 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import { useMemo, useReducer, useState, ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import PersonIcon from "@mui/icons-material/Person";
-import { produce } from "immer";
-import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
-import { Action } from "redux";
-import { useSnackbar } from "notistack";
-import * as R from "ramda";
-import { deleteUser, getUsers } from "@/services/api/user";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import Header from "./Header";
+
+import { RESERVED_USER_NAMES } from "@/common/constants";
 import { UserDetailsDTO } from "@/common/types";
-import UpdateUserDialog from "./dialog/UpdateUserDialog";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { deleteUser, getUsers } from "@/services/api/user";
 import { sortByName } from "@/services/utils";
 import { isSearchMatching } from "@/utils/stringUtils";
-import { RESERVED_USER_NAMES } from "@/common/contants";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+
+import UpdateUserDialog from "./dialog/UpdateUserDialog";
+import Header from "./Header";
 
 enum UserActionKind {
   ADD = "ADD",

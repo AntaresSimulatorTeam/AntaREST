@@ -13,30 +13,34 @@
  */
 
 import { useMemo } from "react";
-import { Box } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import {
-  BindingConstraint,
-  OPERATORS,
-  TIME_STEPS,
-} from "./BindingConstView/utils";
-import { createBindingConstraint } from "@/services/api/studydata";
-import { StudyMetadata } from "@/common/types";
-import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { Control } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { validateString } from "@/utils/validation/string";
+
+import { Box } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { createBindingConstraint } from "@/services/api/studydata";
+import { validateString } from "@/utils/validation/string";
+
 import {
-  TimeStep,
   BindingConstraintOperator,
+  TimeStep,
 } from "../../../Commands/Edition/commandTypes";
-import { Control } from "react-hook-form";
+
+import {
+  BindingConstraint,
+  OPERATORS,
+  TIME_STEPS,
+} from "./BindingConstView/utils";
 
 interface Props {
   open: boolean;

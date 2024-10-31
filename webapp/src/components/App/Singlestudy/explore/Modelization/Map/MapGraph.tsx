@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { RefObject, useEffect, useState } from "react";
 import { AxiosError } from "axios";
 import { DebouncedFunc } from "lodash";
-import { RefObject, useEffect, useState } from "react";
 import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
+
 import { LinkProperties, StudyMetadata } from "@/common/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { createStudyMapLink, StudyMapNode } from "@/redux/ducks/studyMaps";
@@ -26,6 +27,7 @@ import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getCurrentLayer } from "@/redux/selectors";
 import { makeLinkId } from "@/redux/utils";
+
 import Node from "./Node";
 import { INITIAL_ZOOM, useRenderNodes } from "./utils";
 

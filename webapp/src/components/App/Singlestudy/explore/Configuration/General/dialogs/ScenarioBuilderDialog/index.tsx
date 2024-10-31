@@ -12,17 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
-import { Box, Button, Tab, Skeleton } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
+import { Box, Button, Skeleton, Tab } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import BasicDialog from "@/components/common/dialogs/BasicDialog";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+
 import Table from "./Table";
 import { getScenarioConfigByType, SCENARIOS, ScenarioType } from "./utils";
 import withAreas from "./withAreas";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import BasicDialog from "@/components/common/dialogs/BasicDialog";
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 interface Props {
   study: StudyMetadata;

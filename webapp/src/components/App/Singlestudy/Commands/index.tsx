@@ -13,11 +13,13 @@
  */
 
 import { useTranslation } from "react-i18next";
-import Toolbar from "@mui/material/Toolbar";
-import Divider from "@mui/material/Divider";
+
 import { Typography } from "@mui/material";
-import { CommandDrawer, TitleContainer } from "./style";
+import Divider from "@mui/material/Divider";
+import Toolbar from "@mui/material/Toolbar";
+
 import EditionView from "./Edition";
+import { CommandDrawer, TitleContainer } from "./style";
 
 interface Props {
   open: boolean;

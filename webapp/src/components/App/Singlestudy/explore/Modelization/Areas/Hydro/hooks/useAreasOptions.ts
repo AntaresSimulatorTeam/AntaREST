@@ -14,10 +14,12 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
+
 import { StudyMetadata } from "@/common/types";
+import { DynamicListProps } from "@/components/common/DynamicList";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getAreas } from "@/redux/selectors";
-import { DynamicListProps } from "@/components/common/DynamicList";
+
 import { AreaCoefficientItem } from "../utils";
 
 export function useAreasOptions(

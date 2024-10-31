@@ -9,6 +9,7 @@
     "coverage": "vitest run --coverage",
     "dev": "vite",
     "lint": "tsc --noEmit && eslint . --ext ts,tsx --report-unused-disable-directives",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui"

@@ -14,31 +14,35 @@
 
 import { useMemo, useState } from "react";
 import { createMRTColumnHelper } from "material-react-table";
-import { Box } from "@mui/material";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+
+import { Box } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
-import {
-  getThermalClusters,
-  createThermalCluster,
-  deleteThermalClusters,
-  THERMAL_GROUPS,
-  ThermalGroup,
-  duplicateThermalCluster,
-  type ThermalClusterWithCapacity,
-} from "./utils";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "@/redux/selectors";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import GroupedDataTable from "@/components/common/GroupedDataTable";
 import BooleanCell from "@/components/common/GroupedDataTable/cellRenderers/BooleanCell";
 import { TRow } from "@/components/common/GroupedDataTable/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+
 import {
   addClusterCapacity,
+  capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
-  capacityAggregationFn,
 } from "../common/clustersUtils";
+
+import {
+  createThermalCluster,
+  deleteThermalClusters,
+  duplicateThermalCluster,
+  getThermalClusters,
+  THERMAL_GROUPS,
+  type ThermalClusterWithCapacity,
+  ThermalGroup,
+} from "./utils";
 
 const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 

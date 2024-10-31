@@ -12,18 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import { AxiosError } from "axios";
 import debug from "debug";
 import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
-import { usePromise } from "react-use";
 import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+import { usePromise } from "react-use";
+
 import { StudyPublicMode } from "@/common/types";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { createStudy } from "@/redux/ducks/studies";
-import { getStudyVersionsFormatted, getGroups } from "@/redux/selectors";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import CheckboxesTagsFE from "@/components/common/fieldEditors/CheckboxesTagsFE";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
@@ -31,6 +27,11 @@ import StringFE from "@/components/common/fieldEditors/StringFE";
 import Fieldset from "@/components/common/Fieldset";
 import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { PUBLIC_MODE_LIST } from "@/components/common/utils/constants";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createStudy } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getGroups, getStudyVersionsFormatted } from "@/redux/selectors";
 
 const logErr = debug("antares:createstudyform:error");
 

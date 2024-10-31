@@ -12,9 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
+import { Box } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+
 import {
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,
   OptimizationFormFields,
@@ -23,10 +30,6 @@ import {
   TRANSMISSION_CAPACITIES_OPTIONS,
   UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS,
 } from "./utils";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
-import Fieldset from "@/components/common/Fieldset";
-import { useFormContextPlus } from "@/components/common/Form";
 
 interface Props {
   study: StudyMetadata;

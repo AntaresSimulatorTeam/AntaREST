@@ -12,6 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { useState } from "react";
+import { useSnackbar } from "notistack";
+import { Controller, FieldValues, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
+
 import {
   Backdrop,
   Box,
@@ -22,11 +28,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useSnackbar } from "notistack";
-import { useState } from "react";
-import { Controller, FieldValues, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { useUpdateEffect } from "react-use";
+
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
@@ -35,7 +38,6 @@ import {
   updateMaintenanceMode,
   updateMessageInfo,
 } from "@/services/api/maintenance";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 
 function Maintenance() {
   const { t } = useTranslation();

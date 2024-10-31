@@ -12,20 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import * as RA from "ramda-adjunct";
+import { useMemo } from "react";
 import HT from "handsontable";
 import { startCase } from "lodash";
 import * as R from "ramda";
-import { Box, type SxProps } from "@mui/material";
-import type { Theme } from "@mui/material";
-import { useMemo } from "react";
+import * as RA from "ramda-adjunct";
 import { DefaultValues } from "react-hook-form";
+
+import type { Theme } from "@mui/material";
+import { Box, type SxProps } from "@mui/material";
+
 import type { IdType } from "@/common/types";
 import Form, { FormProps } from "@/components/common/Form";
+import useMemoLocked from "@/hooks/useMemoLocked";
+import { mergeSxProp } from "@/utils/muiUtils";
+
 import Table, { TableProps } from "./Table";
 import { getCellType } from "./utils";
-import { mergeSxProp } from "@/utils/muiUtils";
-import useMemoLocked from "@/hooks/useMemoLocked";
 
 type TableFieldValuesByRow = Record<
   IdType,

@@ -12,11 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { renderHook } from "@testing-library/react";
-import { useColumnMapping } from "..";
 import { Item } from "@glideapps/glide-data-grid";
-import { createCoordinate, renderColumnMapping } from "./utils";
+import { renderHook } from "@testing-library/react";
+
+import { useColumnMapping } from "..";
+
 import { COLUMNS } from "./fixtures";
+import { createCoordinate, renderColumnMapping } from "./utils";
 
 describe("useColumnMapping", () => {
   describe("hook initialization", () => {

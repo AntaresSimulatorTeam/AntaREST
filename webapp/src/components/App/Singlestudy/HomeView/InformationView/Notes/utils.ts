@@ -14,10 +14,11 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-param-reassign */
+import { convertFromHTML } from "draft-convert";
 import { ContentState, convertToRaw, EditorState } from "draft-js";
 import draftToHtml from "draftjs-to-html";
-import { convertFromHTML } from "draft-convert";
 import { Element as XMLElement, js2xml, xml2json } from "xml-js";
+
 import theme from "@/theme";
 
 interface BlockMap {

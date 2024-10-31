@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import { MutableRefObject, useEffect, useMemo, useRef } from "react";
+import * as RA from "ramda-adjunct";
 import {
   BatchFieldArrayUpdate,
   FieldPath,
@@ -22,14 +24,14 @@ import {
   UseFormSetValue,
   UseFormUnregister,
 } from "react-hook-form";
-import * as RA from "ramda-adjunct";
-import { MutableRefObject, useEffect, useMemo, useRef } from "react";
+
 import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
+
 import {
+  AutoSubmitHandler,
   UseFormRegisterPlus,
   UseFormReturnPlus,
   UseFormSetValues,
-  AutoSubmitHandler,
 } from "./types";
 
 interface Params<TFieldValues extends FieldValues, TContext> {

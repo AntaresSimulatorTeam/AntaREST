@@ -12,11 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
-import { Box } from "@mui/material";
 import { useContext } from "react";
+
+import { Box } from "@mui/material";
+
+import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
+
 import DebugContext from "../DebugContext";
-import { TreeData, getFileType, getFileIcon, isFolder } from "../utils";
+import { getFileIcon, getFileType, isFolder, TreeData } from "../utils";
 
 interface Props {
   name: string;

@@ -19,4 +19,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.temp-eslint.json

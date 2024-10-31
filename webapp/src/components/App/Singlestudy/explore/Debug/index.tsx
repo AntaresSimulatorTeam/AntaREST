@@ -13,25 +13,28 @@
  */
 
 import { useMemo, useState } from "react";
+import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { useOutletContext, useSearchParams } from "react-router-dom";
-import { Box } from "@mui/material";
-import Tree from "./Tree";
-import Data from "./Data";
-import { StudyMetadata } from "@/common/types";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import { getStudyData } from "@/services/api/study";
-import DebugContext from "./DebugContext";
-import {
-  getFileType,
-  type TreeData,
-  type FileInfo,
-  type TreeFolder,
-} from "./utils";
-import * as R from "ramda";
 import { useUpdateEffect } from "react-use";
+
+import { Box } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
 import SplitView from "@/components/common/SplitView";
 import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getStudyData } from "@/services/api/study";
+
+import Data from "./Data";
+import DebugContext from "./DebugContext";
+import Tree from "./Tree";
+import {
+  type FileInfo,
+  getFileType,
+  type TreeData,
+  type TreeFolder,
+} from "./utils";
 
 function Debug() {
   const [t] = useTranslation();

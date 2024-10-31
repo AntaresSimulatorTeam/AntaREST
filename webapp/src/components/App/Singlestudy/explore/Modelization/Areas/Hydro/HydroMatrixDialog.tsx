@@ -12,22 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { Button, Box, Skeleton } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
-
-import { HydroMatrixType } from "./utils";
-import { getAllocationMatrix } from "./Allocation/utils";
-import { getCorrelationMatrix } from "./Correlation/utils";
-import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
-import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { useEffect, useState } from "react";
 import { AxiosError } from "axios";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+
+import { Box, Button, Skeleton } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
 import BasicDialog, {
   BasicDialogProps,
 } from "@/components/common/dialogs/BasicDialog";
 import Matrix from "@/components/common/Matrix";
+import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+
+import { getAllocationMatrix } from "./Allocation/utils";
+import { getCorrelationMatrix } from "./Correlation/utils";
+import { HydroMatrixType } from "./utils";
 
 interface AdaptedMatrixData {
   data: number[][];

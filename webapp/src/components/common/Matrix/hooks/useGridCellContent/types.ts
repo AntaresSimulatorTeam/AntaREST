@@ -13,6 +13,7 @@
  */
 
 import { GridCell, Item } from "@glideapps/glide-data-grid";
+
 import type { EnhancedGridColumn, MatrixAggregates } from "../../shared/types";
 
 export type GridToDataFunction = (cell: Item) => Item | null;

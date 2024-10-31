@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { capitalize } from "lodash";
+import * as R from "ramda";
+
 import {
   Table,
   TableBody,
@@ -20,14 +23,14 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { capitalize } from "lodash";
-import * as R from "ramda";
-import { TSFormFields, SEASONAL_CORRELATION_OPTIONS, TSType } from "./utils";
+
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import { useFormContextPlus } from "@/components/common/Form";
+
+import { SEASONAL_CORRELATION_OPTIONS, TSFormFields, TSType } from "./utils";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 

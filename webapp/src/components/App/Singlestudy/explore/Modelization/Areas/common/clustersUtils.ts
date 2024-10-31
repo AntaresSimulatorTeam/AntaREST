@@ -13,8 +13,9 @@
  */
 
 import { MRT_AggregationFn } from "material-react-table";
-import { ThermalClusterWithCapacity } from "@/Thermal/utils";
-import { RenewableClusterWithCapacity } from "@/Renewables/utils";
+
+import { RenewableClusterWithCapacity } from "../Renewables/utils";
+import { ThermalClusterWithCapacity } from "../Thermal/utils";
 
 export function toCapacityString(
   enabledCapacity: number,

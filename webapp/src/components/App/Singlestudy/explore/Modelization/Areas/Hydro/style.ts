@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { styled, Box, Paper } from "@mui/material";
+import { Box, Paper, styled } from "@mui/material";
 
 export const FormBox = styled(Box)(({ theme }) => ({
   width: "100%",

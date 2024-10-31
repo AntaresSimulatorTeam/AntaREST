@@ -12,19 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
-import { useOutletContext } from "react-router";
-import { Add, Edit } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+
+import { Add, Edit } from "@mui/icons-material";
+import { Box, Button } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import TableForm from "@/components/common/TableForm";
+import { updateStudyMapDistrict } from "@/redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getAreas, getStudyMapDistrictsById } from "@/redux/selectors";
-import { SubmitHandlerPlus } from "@/common/Form/types";
-import TableForm from "@/common/TableForm";
+
 import CreateDistrictDialog from "./CreateDistrictDialog";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { updateStudyMapDistrict } from "@/redux/ducks/studyMaps";
 import UpdateDistrictDialog from "./UpdateDistrictDialog";
 
 function Districts() {

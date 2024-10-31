@@ -88,8 +88,8 @@ module.exports = {
           // Packages starting with `@` (except our internal @/)
           ["^@(?!/)"],
 
-          // Internal imports from src using @/
-          ["^@/"],
+          // Internal imports from src using @/, sorted alphabetically
+          ["^@/.*"],
 
           // Imports starting with `../`
           ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
@@ -105,6 +105,5 @@ module.exports = {
         ],
       },
     ],
-    "simple-import-sort/exports": "error",
   },
 };

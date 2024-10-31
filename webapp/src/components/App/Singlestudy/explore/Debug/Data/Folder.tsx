@@ -12,6 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import { Fragment, useState } from "react";
+import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import FolderIcon from "@mui/icons-material/Folder";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
   Divider,
   IconButton,
@@ -24,30 +32,26 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import FolderIcon from "@mui/icons-material/Folder";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Fragment, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Filename, Menubar } from "./styles";
-import useConfirm from "@/hooks/useConfirm";
-import { deleteFile } from "@/services/api/studies/raw";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { toError } from "@/utils/fnUtils";
-import { useOutletContext } from "react-router";
+
 import type { StudyMetadata } from "@/common/types";
-import { useSnackbar } from "notistack";
 import UploadFileButton from "@/components/common/buttons/UploadFileButton";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/common/page/SimpleContent";
+import useConfirm from "@/hooks/useConfirm";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { deleteFile } from "@/services/api/studies/raw";
+import { toError } from "@/utils/fnUtils";
+
 import {
-  DataCompProps,
-  TreeFolder,
-  isFolder,
-  getFileType,
-  getFileIcon,
   canEditFile,
+  DataCompProps,
+  getFileIcon,
+  getFileType,
+  isFolder,
+  TreeFolder,
 } from "../utils";
+
+import { Filename, Menubar } from "./styles";
 
 function Folder(props: DataCompProps) {
   const {

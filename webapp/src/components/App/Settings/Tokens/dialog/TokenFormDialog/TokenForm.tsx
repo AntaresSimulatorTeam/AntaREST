@@ -12,6 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { useMemo, useRef, useState } from "react";
+import { Controller, useFieldArray, UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { v4 as uuidv4 } from "uuid";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import GroupIcon from "@mui/icons-material/Group";
 import {
   Box,
   Button,
@@ -31,20 +38,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, UseFormReturn } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { v4 as uuidv4 } from "uuid";
-import DeleteIcon from "@mui/icons-material/Delete";
-import GroupIcon from "@mui/icons-material/Group";
-import { TokenFormDialogProps } from ".";
+
+import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "@/common/constants";
 import { GroupDTO, RoleType } from "@/common/types";
 import usePromise from "@/hooks/usePromise";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser, isAuthUserAdmin } from "@/redux/selectors";
 import { getGroups } from "@/services/api/user";
 import { roleToString, sortByName } from "@/services/utils";
-import { getAuthUser, isAuthUserAdmin } from "@/redux/selectors";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "@/common/contants";
+
+import { TokenFormDialogProps } from ".";
 
 interface Props extends UseFormReturn {
   onlyPermissions?: TokenFormDialogProps["onlyPermissions"];

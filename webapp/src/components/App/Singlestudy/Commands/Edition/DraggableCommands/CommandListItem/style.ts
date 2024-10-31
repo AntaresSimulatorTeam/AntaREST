@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Accordion, Box, styled } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/HighlightOff";
+import { Accordion, Box, styled } from "@mui/material";
+
 import { PAPER_BACKGROUND_NO_TRANSPARENCY } from "@/theme";
 
 export const ItemContainer = styled(Box, {

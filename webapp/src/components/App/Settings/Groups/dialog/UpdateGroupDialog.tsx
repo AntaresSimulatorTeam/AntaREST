@@ -12,23 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import EditIcon from "@mui/icons-material/Edit";
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+import { usePromise as usePromiseWrapper } from "react-use";
+
+import EditIcon from "@mui/icons-material/Edit";
+
 import { GroupDetailsDTO } from "@/common/types";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   createRole,
   deleteUserRole,
   getRolesForGroup,
   updateGroup,
 } from "@/services/api/user";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
+
 import { GroupEdit } from "..";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
+
+import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 
 type InheritPropsToOmit =
   | "title"

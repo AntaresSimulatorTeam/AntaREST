@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
+
+import { ValidationReturn } from "@/common/types";
 
 interface StringValidationOptions {
   existingValues?: string[];

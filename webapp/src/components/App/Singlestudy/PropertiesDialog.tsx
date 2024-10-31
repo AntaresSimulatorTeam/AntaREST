@@ -12,13 +12,25 @@
  * This file is part of the Antares project.
  */
 
+import { useMemo } from "react";
+import { AxiosError } from "axios";
 import debug from "debug";
+import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
-import { useMemo } from "react";
+
 import { StudyMetadata } from "@/common/types";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import CheckboxesTagsFE from "@/components/common/fieldEditors/CheckboxesTagsFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import Fieldset from "@/components/common/Fieldset";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { PUBLIC_MODE_LIST } from "@/components/common/utils/constants";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { updateStudy } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import {
   addStudyGroup,
   changePublicMode,
@@ -26,17 +38,6 @@ import {
   updateStudyMetadata,
 } from "@/services/api/study";
 import { getGroups } from "@/services/api/user";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { PUBLIC_MODE_LIST } from "@/common/utils/constants";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import FormDialog from "@/common/dialogs/FormDialog";
-import StringFE from "@/common/fieldEditors/StringFE";
-import SelectFE from "@/common/fieldEditors/SelectFE";
-import CheckboxesTagsFE from "@/common/fieldEditors/CheckboxesTagsFE";
-import Fieldset from "@/common/Fieldset";
-import { SubmitHandlerPlus } from "@/common/Form/types";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { updateStudy } from "@/redux/ducks/studies";
 import { validateString } from "@/utils/validation/string";
 
 const logErr = debug("antares:createstudyform:error");

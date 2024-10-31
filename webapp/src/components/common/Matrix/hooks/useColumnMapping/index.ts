@@ -13,9 +13,11 @@
  */
 
 import { useMemo } from "react";
+
 import { Item } from "@glideapps/glide-data-grid";
-import { EnhancedGridColumn } from "../../shared/types";
+
 import { Column } from "../../shared/constants";
+import { EnhancedGridColumn } from "../../shared/types";
 
 /**
  * A custom hook that provides coordinate mapping functions for a grid with mixed column types.

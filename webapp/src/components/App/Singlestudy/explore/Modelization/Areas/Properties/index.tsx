@@ -12,19 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import { Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
+
+import { Paper } from "@mui/material";
+
 import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "@/redux/selectors";
+
+import Fields from "./Fields";
 import {
-  PropertiesFormFields,
   getPropertiesFormFields,
+  PropertiesFormFields,
   setPropertiesFormFields,
 } from "./utils";
-import Fields from "./Fields";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
-import Form from "@/components/common/Form";
 
 function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

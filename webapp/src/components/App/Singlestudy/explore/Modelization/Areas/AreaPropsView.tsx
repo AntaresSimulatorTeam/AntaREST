@@ -13,11 +13,13 @@
  */
 
 import { useEffect, useState } from "react";
+
 import { Area } from "@/common/types";
+import PropertiesView from "@/components/common/PropertiesView";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getAreas } from "@/redux/selectors";
 import { transformNameToId } from "@/services/utils";
-import PropertiesView from "@/components/common/PropertiesView";
+
 import ListElement from "../../common/ListElement";
 
 interface PropsType {

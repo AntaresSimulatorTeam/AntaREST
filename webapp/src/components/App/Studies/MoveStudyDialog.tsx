@@ -12,18 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { DialogProps } from "@mui/material";
-import TextField from "@mui/material/TextField";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { usePromise } from "react-use";
+
+import { DialogProps } from "@mui/material";
+import TextField from "@mui/material/TextField";
+
 import { StudyMetadata } from "@/common/types";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { moveStudy } from "@/services/api/study";
 import { isStringEmpty } from "@/services/utils";
-import FormDialog from "@/components/common/dialogs/FormDialog";
-import { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 interface Props extends DialogProps {
   study: StudyMetadata;

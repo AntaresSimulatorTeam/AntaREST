@@ -13,8 +13,10 @@
  */
 
 import { FieldValues } from "react-hook-form";
+
 import { getStudyData } from "@/services/api/study";
-import { FilteringType } from "@/common/types";
+
+import { FilteringType } from "../../../common/types";
 
 type TransCapacitiesType = "infinite" | "ignore" | "enabled";
 type AssetType = "ac" | "dc" | "gaz" | "virt";

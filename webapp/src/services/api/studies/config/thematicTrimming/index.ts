@@ -13,12 +13,13 @@
  */
 
 import client from "@/services/api/client";
+import { format } from "@/utils/stringUtils";
+
 import type {
   GetThematicTrimmingConfigParams,
   SetThematicTrimmingConfigParams,
   ThematicTrimmingConfig,
 } from "./types";
-import { format } from "@/utils/stringUtils";
 
 const URL = "/v1/studies/{studyId}/config/thematictrimming/form";
 

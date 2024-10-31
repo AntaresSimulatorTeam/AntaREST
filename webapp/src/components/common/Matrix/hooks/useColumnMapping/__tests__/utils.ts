@@ -14,9 +14,10 @@
 
 import { Item } from "@glideapps/glide-data-grid";
 import { renderHook } from "@testing-library/react";
+
+import { Column } from "../../../shared/constants";
 import type { ColumnType, EnhancedGridColumn } from "../../../shared/types";
 import { useColumnMapping } from "..";
-import { Column } from "../../../shared/constants";
 
 export const createCoordinate = (col: number, row: number): Item =>
   [col, row] as Item;

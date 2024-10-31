@@ -14,12 +14,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
+
 import { Box, styled } from "@mui/material";
+
 import { StudyMetadata, VariantTree } from "@/common/types";
-import { StudyTree, getTreeNodes } from "./utils";
+
 import {
   CIRCLE_RADIUS,
   colors,
+  CURVE_OFFSET,
   DCX,
   DCY,
   DEPTH_OFFSET,
@@ -36,8 +39,8 @@ import {
   TILE_SIZE_Y,
   TILE_SIZE_Y_2,
   ZOOM_OUT,
-  CURVE_OFFSET,
 } from "./treeconfig";
+import { getTreeNodes, StudyTree } from "./utils";
 
 export const SVGCircle = styled("circle")({
   cursor: "pointer",

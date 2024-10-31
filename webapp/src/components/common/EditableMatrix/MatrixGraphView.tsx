@@ -13,8 +13,10 @@
  */
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Plot from "react-plotly.js";
 import AutoSizer from "react-virtualized-auto-sizer";
+
 import {
   Box,
   Checkbox,
@@ -27,10 +29,12 @@ import {
   Select,
   SelectChangeEvent,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
+
 import { MatrixType } from "@/common/types";
-import "handsontable/dist/handsontable.min.css";
+
 import { formatDateFromIndex } from "./utils";
+
+import "handsontable/dist/handsontable.min.css";
 
 interface PropTypes {
   matrix: MatrixType;

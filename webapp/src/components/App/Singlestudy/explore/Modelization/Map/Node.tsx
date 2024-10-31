@@ -13,7 +13,9 @@
  */
 
 import AddLinkIcon from "@mui/icons-material/AddLink";
+
 import { StudyMapNode } from "@/redux/ducks/studyMaps";
+
 import { NodeContainer, NodeDefault, NodeHighlighted } from "./style";
 
 interface PropType {

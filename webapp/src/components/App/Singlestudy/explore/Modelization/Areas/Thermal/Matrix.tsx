@@ -13,13 +13,16 @@
  */
 
 import { useMemo, useState } from "react";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
+
+import Box from "@mui/material/Box";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+
 import { Cluster, StudyMetadata } from "@/common/types";
-import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "./utils";
 import Matrix from "@/components/common/Matrix";
+
+import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "./utils";
 
 interface Props {
   study: StudyMetadata;

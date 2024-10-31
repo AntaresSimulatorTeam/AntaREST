@@ -14,10 +14,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import AddDialog from "./AddDialog";
-import { BindingConstraint } from "./BindingConstView/utils";
 import PropertiesView from "@/components/common/PropertiesView";
+
 import ListElement from "../../common/ListElement";
+
+import { BindingConstraint } from "./BindingConstView/utils";
+import AddDialog from "./AddDialog";
 
 interface Props {
   list: BindingConstraint[];

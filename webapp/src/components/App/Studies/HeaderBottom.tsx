@@ -12,17 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { indigo, purple } from "@mui/material/colors";
 import { useUnmount } from "react-use";
+
+import { Box, Button, Chip, Divider } from "@mui/material";
+import { indigo, purple } from "@mui/material/colors";
+
+import { GroupDTO, UserDTO } from "@/common/types";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import { StudyFilters, updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getGroups, getStudyFilters, getUsers } from "@/redux/selectors";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { StudyFilters, updateStudyFilters } from "@/redux/ducks/studies";
-import { GroupDTO, UserDTO } from "@/common/types";
 import { displayVersionName } from "@/services/utils";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
 
 interface PropTypes {
   onOpenFilterClick: VoidFunction;

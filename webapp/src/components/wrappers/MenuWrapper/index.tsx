@@ -15,23 +15,19 @@
 import { FunctionComponent, ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
-import Box from "@mui/material/Box";
-import CssBaseline from "@mui/material/CssBaseline";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import StorageIcon from "@mui/icons-material/Storage";
+import { useMount } from "react-use";
+
+import ApiIcon from "@mui/icons-material/Api";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
-import ApiIcon from "@mui/icons-material/Api";
 import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import StorageIcon from "@mui/icons-material/Storage";
+import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import {
   keyframes,
   styled,
@@ -39,35 +35,42 @@ import {
   Tooltip,
   useTheme,
 } from "@mui/material";
-import { useMount } from "react-use";
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+
 import logo from "@/assets/img/logo.png";
+import topRightBackground from "@/assets/img/top-right-background.png";
+import NotificationBadge from "@/components/App/Tasks/NotificationBadge";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import { logout } from "@/redux/ducks/auth";
+import { fetchGroups } from "@/redux/ducks/groups";
 import { setMenuCollapse } from "@/redux/ducks/ui";
-import {
-  NavDrawer,
-  NavListItem,
-  NavExternalLink,
-  NavInternalLink,
-  NavListItemText,
-  NavListItemIcon,
-  Root,
-  TootlbarContent,
-  MenuContainer,
-  LogoContainer,
-} from "./styles";
-import { getConfig } from "@/services/config";
+import { fetchUsers } from "@/redux/ducks/users";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import {
   getCurrentStudyId,
   getMenuExtended,
   getWebSocketConnected,
 } from "@/redux/selectors";
-import { logout } from "@/redux/ducks/auth";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { fetchUsers } from "@/redux/ducks/users";
-import { fetchGroups } from "@/redux/ducks/groups";
-import NotificationBadge from "@/components/App/Tasks/NotificationBadge";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import topRightBackground from "@/assets/img/top-right-background.png";
+import { getConfig } from "@/services/config";
+
+import {
+  LogoContainer,
+  MenuContainer,
+  NavDrawer,
+  NavExternalLink,
+  NavInternalLink,
+  NavListItem,
+  NavListItemIcon,
+  NavListItemText,
+  Root,
+  TootlbarContent,
+} from "./styles";
 
 const pulsatingAnimation = keyframes`
   0% {

@@ -12,11 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { forwardRef } from "react";
 import { registerAllModules } from "handsontable/registry";
+import * as RA from "ramda-adjunct";
+
 import HotTable, { HotTableProps } from "@handsontable/react";
 import { styled } from "@mui/material";
-import { forwardRef } from "react";
-import * as RA from "ramda-adjunct";
+
 import { SECONDARY_MAIN_COLOR } from "@/theme";
 
 // Register Handsontable's modules

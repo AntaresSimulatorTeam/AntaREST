@@ -13,13 +13,15 @@
  */
 
 import { ReactNode, useEffect, useState } from "react";
-import * as R from "ramda";
 import { AxiosError } from "axios";
-import { Box, Button } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
 import debug from "debug";
 import _ from "lodash";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+
+import { Box, Button } from "@mui/material";
+
 import {
   FileStudyTreeConfigDTO,
   GenericInfo,
@@ -29,19 +31,20 @@ import {
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
 } from "@/common/types";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import {
-  exportStudy,
-  exportOuput as callExportOutput,
-  getStudyOutputs,
-  getStudySynthesis,
-  downloadOutput,
-} from "@/services/api/study";
-import ExportFilter from "./ExportFilter";
 import BasicDialog, {
   BasicDialogProps,
 } from "@/components/common/dialogs/BasicDialog";
 import SelectSingle from "@/components/common/SelectSingle";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import {
+  downloadOutput,
+  exportOuput as callExportOutput,
+  exportStudy,
+  getStudyOutputs,
+  getStudySynthesis,
+} from "@/services/api/study";
+
+import ExportFilter from "./ExportFilter";
 
 const logError = debug("antares:studies:card:error");
 

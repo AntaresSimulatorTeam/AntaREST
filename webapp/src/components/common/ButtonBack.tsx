@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
+
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Box, Button } from "@mui/material";
 
 interface Props {
   onClick: VoidFunction;

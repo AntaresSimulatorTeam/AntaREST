@@ -13,6 +13,7 @@
  */
 
 import { Aggregate, TimeFrequency } from "../constants";
+
 import { FormatTestCase } from "./types";
 
 export const BASE_DATA = {

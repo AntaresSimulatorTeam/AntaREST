@@ -15,6 +15,7 @@
 import { Area, Cluster, StudyMetadata } from "@/common/types";
 import client from "@/services/api/client";
 import type { PartialExceptFor } from "@/utils/tsUtils";
+
 import { ClusterWithCapacity } from "../common/clustersUtils";
 
 ////////////////////////////////////////////////////////////////

@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { styled, Box, Chip } from "@mui/material";
+import { Box, Chip, styled } from "@mui/material";
+
 import mapbackground from "@/assets/img/mapbackground.png";
+
 import { getTextColor, RGB } from "./utils";
 
 ////////////////////////////////////////////////////////////////

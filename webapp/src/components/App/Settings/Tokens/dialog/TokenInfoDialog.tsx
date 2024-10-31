@@ -12,15 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { BotDetailsDTO } from "@/common/types";
-import OkDialog, { OkDialogProps } from "@/components/common/dialogs/OkDialog";
-import { DialogContentText } from "@mui/material";
 import { useMemo } from "react";
 import { FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import TokenForm from "./TokenFormDialog/TokenForm";
-import Form from "@/components/common/Form";
+
 import { Info } from "@mui/icons-material";
+import { DialogContentText } from "@mui/material";
+
+import { BotDetailsDTO } from "@/common/types";
+import OkDialog, { OkDialogProps } from "@/components/common/dialogs/OkDialog";
+import Form from "@/components/common/Form";
+
+import TokenForm from "./TokenFormDialog/TokenForm";
 
 interface Props extends Omit<OkDialogProps, "title" | "titleIcon"> {
   token: BotDetailsDTO;

@@ -14,26 +14,29 @@
 
 import { AxiosRequestConfig } from "axios";
 import { isBoolean, trimCharsStart } from "ramda-adjunct";
-import client from "./client";
+
 import {
+  AreasConfig,
   FileStudyTreeConfigDTO,
   LaunchJob,
+  LaunchJobDTO,
+  LaunchOptions,
   MatrixAggregationResult,
-  StudyOutputDownloadDTO,
+  StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
-  StudyOutput,
-  StudyPublicMode,
-  AreasConfig,
-  LaunchJobDTO,
   StudyMetadataPatchDTO,
-  LaunchOptions,
-  StudyLayer,
+  StudyOutput,
+  StudyOutputDownloadDTO,
+  StudyPublicMode,
 } from "@/common/types";
+import { StudyMapDistrict } from "@/redux/ducks/studyMaps";
+
 import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
+
+import client from "./client";
 import { FileDownloadTask } from "./downloads";
-import { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies`);

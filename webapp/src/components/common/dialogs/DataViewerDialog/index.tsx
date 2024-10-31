@@ -12,17 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { Code } from "./styles";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+
 import { MatrixType } from "@/common/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import OkDialog from "@/OkDialog";
-import EditableMatrix from "@/EditableMatrix";
 import { getStudyMatrixIndex } from "@/services/api/matrix";
-import SimpleLoader from "@/loaders/SimpleLoader";
+
+import EditableMatrix from "../../EditableMatrix";
+import SimpleLoader from "../../loaders/SimpleLoader";
+import OkDialog from "../OkDialog";
+
+import { Code } from "./styles";
 
 type MatrixTypeWithId = MatrixType & { id?: string };
 

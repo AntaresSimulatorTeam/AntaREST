@@ -17,6 +17,7 @@
 ////////////////////////////////////////////////////////////////
 
 import { DeepPartial } from "redux";
+
 import { Area, StudyMetadata } from "@/common/types";
 import client from "@/services/api/client";
 

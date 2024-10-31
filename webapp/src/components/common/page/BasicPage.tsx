@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Divider } from "@mui/material";
 import { PropsWithChildren, ReactNode } from "react";
+
+import { Box, Divider } from "@mui/material";
 
 interface Props {
   header?: ReactNode;

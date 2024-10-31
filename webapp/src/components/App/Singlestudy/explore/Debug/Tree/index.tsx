@@ -13,9 +13,12 @@
  */
 
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import FileTreeItem from "./FileTreeItem";
+
 import { getParentPaths } from "@/utils/pathUtils";
+
 import { TreeFolder } from "../utils";
+
+import FileTreeItem from "./FileTreeItem";
 
 interface Props {
   data: TreeFolder;

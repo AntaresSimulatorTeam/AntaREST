@@ -12,16 +12,18 @@
  * This file is part of the Antares project.
  */
 
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { useMemo } from "react";
-import { ADEQUACY_PATCH_OPTIONS, PropertiesFormFields } from "./utils";
+
 import { StudyMetadata } from "@/common/types";
 import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
+
+import { ADEQUACY_PATCH_OPTIONS, PropertiesFormFields } from "./utils";
 
 function Fields() {
   const { t } = useTranslation();

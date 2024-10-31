@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import SettingsIcon from "@mui/icons-material/Settings";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { Box } from "@mui/material";
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
+
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from "./utils";
 
 interface Props {

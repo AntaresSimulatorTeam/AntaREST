@@ -14,11 +14,13 @@
 
 import { useEffect, useState } from "react";
 import * as React from "react";
+import { matchPath, Outlet, useLocation, useNavigate } from "react-router-dom";
+
 import { styled, SxProps, Theme } from "@mui/material";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
-import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+
 import { StudyMetadata } from "@/common/types";
 import { mergeSxProp } from "@/utils/muiUtils";
 

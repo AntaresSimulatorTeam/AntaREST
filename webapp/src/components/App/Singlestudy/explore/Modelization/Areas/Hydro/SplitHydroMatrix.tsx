@@ -13,9 +13,11 @@
  */
 
 import { Box } from "@mui/material";
+
+import SplitView, { SplitViewProps } from "@/components/common/SplitView";
+
 import HydroMatrix from "./HydroMatrix";
 import { HydroMatrixType } from "./utils";
-import SplitView, { SplitViewProps } from "@/components/common/SplitView";
 
 interface Props {
   types: [HydroMatrixType, HydroMatrixType];

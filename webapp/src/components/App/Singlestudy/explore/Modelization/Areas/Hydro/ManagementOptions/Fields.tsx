@@ -17,7 +17,8 @@ import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import { useFormContextPlus } from "@/components/common/Form";
-import { INITIALIZE_RESERVOIR_DATE_OPTIONS, HydroFormFields } from "./utils";
+
+import { HydroFormFields, INITIALIZE_RESERVOIR_DATE_OPTIONS } from "./utils";
 
 function Fields() {
   const { control, watch } = useFormContextPlus<HydroFormFields>();

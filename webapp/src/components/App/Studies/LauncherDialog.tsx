@@ -13,6 +13,12 @@
  */
 
 import { useState } from "react";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+import { shallowEqual } from "react-redux";
+import { useMountedState } from "react-use";
+
 import {
   Box,
   Button,
@@ -26,12 +32,17 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import * as R from "ramda";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import { useMountedState } from "react-use";
-import { shallowEqual } from "react-redux";
+
 import { LaunchOptions, StudyMetadata, StudyOutput } from "@/common/types";
+import BasicDialog from "@/components/common/dialogs/BasicDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import SelectSingle from "@/components/common/SelectSingle";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudy } from "@/redux/selectors";
 import {
   getLauncherCores,
   getLauncherTimeLimit,
@@ -39,16 +50,7 @@ import {
   getStudyOutputs,
   launchStudy,
 } from "@/services/api/study";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudy } from "@/redux/selectors";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { convertVersions } from "@/services/utils";
-import BasicDialog from "@/components/common/dialogs/BasicDialog";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
-import SelectSingle from "@/components/common/SelectSingle";
-import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 interface Props {
   open: boolean;

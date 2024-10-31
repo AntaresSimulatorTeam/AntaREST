@@ -12,17 +12,18 @@
  * This file is part of the Antares project.
  */
 
+import { useRef, useState } from "react";
+
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import LoadingButton, { type LoadingButtonProps } from "@mui/lab/LoadingButton";
 import Button from "@mui/material/Button";
 import ButtonGroup, { ButtonGroupProps } from "@mui/material/ButtonGroup";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Grow from "@mui/material/Grow";
-import Paper from "@mui/material/Paper";
-import Popper from "@mui/material/Popper";
 import MenuItem from "@mui/material/MenuItem";
 import MenuList from "@mui/material/MenuList";
-import { useRef, useState } from "react";
-import LoadingButton, { type LoadingButtonProps } from "@mui/lab/LoadingButton";
+import Paper from "@mui/material/Paper";
+import Popper from "@mui/material/Popper";
 
 interface OptionObj<Value extends string = string> {
   value: Value;

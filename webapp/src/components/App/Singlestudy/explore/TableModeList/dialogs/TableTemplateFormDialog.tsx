@@ -12,18 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
+import { useMemo } from "react";
 import { startCase } from "lodash";
 import { useTranslation } from "react-i18next";
-import FormDialog, { FormDialogProps } from "@/common/dialogs/FormDialog";
-import ListFE from "@/common/fieldEditors/ListFE";
-import SelectFE from "@/common/fieldEditors/SelectFE";
-import StringFE from "@/common/fieldEditors/StringFE";
-import { getTableColumnsForType, type TableTemplate } from "@/utils";
+
+import { Box } from "@mui/material";
+
+import FormDialog, {
+  FormDialogProps,
+} from "@/components/common/dialogs/FormDialog";
+import ListFE from "@/components/common/fieldEditors/ListFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
 import { TABLE_MODE_TYPES } from "@/services/api/studies/tableMode/constants";
-import { useMemo } from "react";
 import { validateArray } from "@/utils/validation/array";
 import { validateString } from "@/utils/validation/string";
+
+import { getTableColumnsForType, TableTemplate } from "../utils";
 
 export interface TableTemplateFormDialogProps
   extends Pick<

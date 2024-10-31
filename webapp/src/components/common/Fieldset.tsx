@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Box, BoxProps, Divider, SxProps, Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
+
+import { Box, BoxProps, Divider, SxProps, Theme } from "@mui/material";
+
 import { mergeSxProp } from "@/utils/muiUtils";
 
 interface FieldsetProps {

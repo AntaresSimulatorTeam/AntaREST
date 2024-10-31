@@ -13,13 +13,15 @@
  */
 
 import { useMemo, useState } from "react";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata, MatrixItem } from "@/common/types";
-import SplitView from "@/components/common/SplitView";
+
+import Box from "@mui/material/Box";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+
+import { MatrixItem, StudyMetadata } from "@/common/types";
 import Matrix from "@/components/common/Matrix";
+import SplitView from "@/components/common/SplitView";
 
 interface Props {
   study: StudyMetadata;

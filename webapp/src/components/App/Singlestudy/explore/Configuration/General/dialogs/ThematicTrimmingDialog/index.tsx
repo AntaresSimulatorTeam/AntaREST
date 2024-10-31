@@ -12,6 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { useState } from "react";
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
+import { useTranslation } from "react-i18next";
+
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
   AccordionDetails,
@@ -20,28 +26,28 @@ import {
   Divider,
   Grid2 as Grid,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import * as R from "ramda";
-import * as RA from "ramda-adjunct";
-import { useState } from "react";
+import Stack from "@mui/material/Stack";
+
 import { StudyMetadata } from "@/common/types";
-import SwitchFE from "@/common/fieldEditors/SwitchFE";
-import { SubmitHandlerPlus, UseFormReturnPlus } from "@/common/Form/types";
-import SearchFE from "@/common/fieldEditors/SearchFE";
-import { isSearchMatching } from "@/utils/stringUtils";
-import FormDialog from "@/common/dialogs/FormDialog";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import {
-  THEMATIC_TRIMMING_GROUPS,
-  getFieldLabelsForGroup,
-  type ThematicTrimmingGroup,
-} from "./utils";
-import type { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
+  SubmitHandlerPlus,
+  UseFormReturnPlus,
+} from "@/components/common/Form/types";
 import {
   getThematicTrimmingConfig,
   setThematicTrimmingConfig,
 } from "@/services/api/studies/config/thematicTrimming";
-import { useTranslation } from "react-i18next";
-import Stack from "@mui/material/Stack";
+import type { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
+import { isSearchMatching } from "@/utils/stringUtils";
+
+import {
+  getFieldLabelsForGroup,
+  THEMATIC_TRIMMING_GROUPS,
+  type ThematicTrimmingGroup,
+} from "./utils";
 
 interface Props {
   study: StudyMetadata;
