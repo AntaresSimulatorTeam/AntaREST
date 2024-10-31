@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-import os
 from typing import List
 
 from antarest.core.config import Config
@@ -44,7 +43,7 @@ class Explorer:
         for child in directory_path.iterdir():
             if child.is_dir() and not is_study_folder(child) and not should_ignore_folder_for_scan(child):
                 # we don't want to expose the full absolute path on the server
-                child_rel_path = os.path.relpath(child, workspace.path)
+                child_rel_path = child.relative_to(workspace.path)
                 directories.append(NonStudyFolder(path=child_rel_path, workspace=workspace_name, name=child.name))
         return directories
 
