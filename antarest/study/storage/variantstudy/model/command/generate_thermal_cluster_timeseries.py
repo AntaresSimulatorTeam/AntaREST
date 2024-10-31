@@ -26,6 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
+from antarest.study.storage.utils import TS_GEN_PREFIX, TS_GEN_SUFFIX
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -37,20 +38,6 @@ logger = logging.getLogger(__name__)
 MODULATION_CAPACITY_COLUMN = 2
 FO_RATE_COLUMN = 2
 PO_RATE_COLUMN = 3
-TS_GEN_PREFIX = "~"
-TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
-
-
-def is_ts_gen_tmp_dir(path: Path) -> bool:
-    """
-    Check if a path is a temporary directory used for thermal timeseries generation
-    Args:
-        path: the path to check
-
-    Returns:
-        True if the path is a temporary directory used for thermal timeseries generation
-    """
-    return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
 class GenerateThermalClusterTimeSeries(ICommand):
