@@ -12,7 +12,6 @@
 from pathlib import Path
 
 import pytest
-from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.study.model import NonStudyFolder, WorkspaceMetadata
@@ -56,6 +55,8 @@ def study_tree(tmp_path: Path) -> Path:
 
 
 def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path):
+    # Don't be confused here by the workspace name is "ext" being different from its folder name "ext_workspace"
+    # that's just how it's configured in the "client" fixture
     workspace = "ext"
 
     res = client.get(
