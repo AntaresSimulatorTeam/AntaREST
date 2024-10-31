@@ -17,7 +17,7 @@ from http import HTTPStatus
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Depends, Query
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -69,7 +69,6 @@ from antarest.study.business.correlation_management import (
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
-from antarest.study.business.load_management import LoadInfoDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -529,14 +528,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/{uuid}/{area_id}/load/series",
         tags=[APITag.study_data],
         summary="Get load series data",
-        response_model=LoadInfoDTO,
     )
     def get_load_series(
         uuid: str,
         area_id: str,
         matrix_format: MatrixFormat = MatrixFormat.JSON,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> LoadInfoDTO:
+    ) -> Response:
         logger.info(
             msg=f"Getting load series data for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
