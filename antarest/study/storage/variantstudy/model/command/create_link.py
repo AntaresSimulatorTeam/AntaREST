@@ -146,7 +146,7 @@ class CreateLink(ICommand):
         if not output.status:
             return output
 
-        validated_properties = LinkInternal.model_validate(self.parameters).model_dump(mode="json", by_alias=True, exclude_none=True)
+        validated_properties = LinkInternal.model_validate(self.parameters).model_dump(by_alias=True)
 
         area_from = data["area_from"]
         area_to = data["area_to"]
