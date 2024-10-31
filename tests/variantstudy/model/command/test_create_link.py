@@ -14,12 +14,13 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.business.link_management import LinkInternal
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_link import CreateLink, LinkProperties
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
@@ -257,7 +258,7 @@ def test_create_diff(command_context: CommandContext):
     assert base.create_diff(other_match) == [
         UpdateConfig(
             target="input/links/bar/properties/foo",
-            data=LinkProperties.model_validate({"hurdles_cost": "true"}).model_dump(by_alias=True, exclude_none=True),
+            data=LinkInternal.model_validate({"area1": "bar", "area2": "foo", "hurdles_cost": "true"}).model_dump(by_alias=True, exclude_none=True, exclude={"area1", "area2"}),
             command_context=command_context,
         ),
         ReplaceMatrix(

@@ -16,8 +16,9 @@ Object model used to read and update link configuration.
 
 import typing as t
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator, BeforeValidator, PlainSerializer
 
+from antarest.core.exceptions import LinkValidationError
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
     validate_color_rgb,
@@ -101,6 +102,35 @@ class FilterOption(EnumIgnoreCase):
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     ANNUAL = "annual"
+
+def validate_filters(
+    filter_value: t.Union[t.List[FilterOption], str], enum_cls: t.Type[FilterOption]
+) -> t.List[FilterOption]:
+    if filter_value is not None and isinstance(filter_value, str):
+        filter_accepted_values = [e for e in enum_cls]
+
+        options = filter_value.replace(" ", "").split(",")
+
+        invalid_options = [opt for opt in options if opt not in filter_accepted_values]
+        if invalid_options:
+            raise LinkValidationError(
+                f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
+                f"Allowed values are: {', '.join(filter_accepted_values)}."
+            )
+
+        return [enum_cls(opt) for opt in options]
+
+    return filter_value
+
+
+def join_with_comma(values: t.List[FilterOption]) -> str:
+    return ", ".join(value.name.lower() for value in values)
+
+comma_separated_enum_list = t.Annotated[
+    t.List[FilterOption],
+    BeforeValidator(lambda x: validate_filters(x, FilterOption)),
+    PlainSerializer(lambda x: join_with_comma(x)),
+]
 
 
 class LinkProperties(IniProperties):
