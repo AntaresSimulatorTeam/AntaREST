@@ -320,6 +320,25 @@ class StudyFolder:
     groups: t.List[Group]
 
 
+class NonStudyFolder(AntaresBaseModel):
+    """
+    DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
+    so the user can navigate in the hierarchy
+    """
+
+    path: Path
+    workspace: str
+    name: str
+
+
+class WorkspaceMetadata(AntaresBaseModel):
+    """
+    DTO used by the explorer to list all workspaces
+    """
+
+    name: str
+
+
 class PatchStudy(AntaresBaseModel):
     scenario: t.Optional[str] = None
     doc: t.Optional[str] = None

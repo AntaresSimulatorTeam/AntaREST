@@ -860,13 +860,17 @@ class StudyService:
         if ids:  # Check if ids is not empty
             self.repository.delete(*ids)
 
-    def sync_studies_on_disk(self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None) -> None:
+    def sync_studies_on_disk(
+        self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None, recursive: bool = True
+    ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
 
         Args:
             folders: list of studies currently present on folder
             directory: directory of studies that will be watched
+            recursive: if False, the delta will apply only to the studies in "directory", otherwise
+                it will apply to all studies having a path that descend from "directory".
 
         Returns:
 
@@ -875,11 +879,15 @@ class StudyService:
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
         if directory:
-            all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+            if recursive:
+                all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+            else:
+                all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
         studies_by_path = {study.path: study for study in all_studies}
 
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
+
         for study in all_studies:
             if (
                 isinstance(study, RawStudy)
@@ -902,7 +910,7 @@ class StudyService:
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
-                elif study.missing < clean_up_missing_studies_threshold:
+                if study.missing < clean_up_missing_studies_threshold:
                     logger.info(
                         "Study %s at %s is not present in disk and will be deleted",
                         study.id,
