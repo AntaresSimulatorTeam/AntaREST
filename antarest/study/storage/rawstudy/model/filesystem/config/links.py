@@ -16,7 +16,7 @@ Object model used to read and update link configuration.
 
 import typing as t
 
-from pydantic import Field, field_validator, model_validator, BeforeValidator, PlainSerializer
+from pydantic import BeforeValidator, Field, PlainSerializer, field_validator, model_validator
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -103,6 +103,7 @@ class FilterOption(EnumIgnoreCase):
     MONTHLY = "monthly"
     ANNUAL = "annual"
 
+
 def validate_filters(
     filter_value: t.Union[t.List[FilterOption], str], enum_cls: t.Type[FilterOption]
 ) -> t.List[FilterOption]:
@@ -125,6 +126,7 @@ def validate_filters(
 
 def join_with_comma(values: t.List[FilterOption]) -> str:
     return ", ".join(value.name.lower() for value in values)
+
 
 comma_separated_enum_list = t.Annotated[
     t.List[FilterOption],

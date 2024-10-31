@@ -258,7 +258,9 @@ def test_create_diff(command_context: CommandContext):
     assert base.create_diff(other_match) == [
         UpdateConfig(
             target="input/links/bar/properties/foo",
-            data=LinkInternal.model_validate({"area1": "bar", "area2": "foo", "hurdles_cost": "true"}).model_dump(by_alias=True, exclude_none=True, exclude={"area1", "area2"}),
+            data=LinkInternal.model_validate({"area1": "bar", "area2": "foo", "hurdles_cost": "true"}).model_dump(
+                by_alias=True, exclude_none=True, exclude={"area1", "area2"}
+            ),
             command_context=command_context,
         ),
         ReplaceMatrix(

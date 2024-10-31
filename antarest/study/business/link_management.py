@@ -52,9 +52,9 @@ class LinkManager:
                 link_tree_config: t.Dict[str, t.Any] = links_config[link]
                 link_tree_config.update({"area1": area_id, "area2": link})
 
-                link = LinkInternal.model_validate(link_tree_config)
+                link_internal = LinkInternal.model_validate(link_tree_config)
 
-                result.append(link.to_dto())
+                result.append(link_internal.to_dto())
 
         return result
 
@@ -67,7 +67,7 @@ class LinkManager:
         command = CreateLink(
             area1=link.area1,
             area2=link.area2,
-            parameters=link.model_dump(),
+            parameters=link.model_dump(exclude_none=True),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 

@@ -11,11 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import (
-    ValidationInfo,
-    field_validator,
-    model_validator
-)
+from pydantic import ValidationInfo, field_validator, model_validator
 
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
@@ -30,7 +26,6 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
 
 
 class CreateLink(ICommand):
@@ -146,7 +141,9 @@ class CreateLink(ICommand):
         if not output.status:
             return output
 
-        validated_properties = LinkInternal.model_validate(self.parameters).model_dump(by_alias=True)
+        validated_properties = LinkInternal.model_validate(self.parameters).model_dump(
+            by_alias=True, exclude={"area1", "area2"}
+        )
 
         area_from = data["area_from"]
         area_to = data["area_to"]
@@ -238,7 +235,9 @@ class CreateLink(ICommand):
         area_from, area_to = sorted([self.area1, self.area2])
         if self.parameters != other.parameters:
             properties = LinkInternal.model_validate(other.parameters or {})
-            link_property = properties.model_dump(mode="json", by_alias=True, exclude_none=True)
+            link_property = properties.model_dump(
+                mode="json", by_alias=True, exclude_none=True, exclude={"area1", "area2"}
+            )
             commands.append(
                 UpdateConfig(
                     target=f"input/links/{area_from}/properties/{area_to}",
