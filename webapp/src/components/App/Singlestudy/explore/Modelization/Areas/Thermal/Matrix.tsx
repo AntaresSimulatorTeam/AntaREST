@@ -17,13 +17,9 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import {
-  Cluster,
-  MatrixStats,
-  StudyMetadata,
-} from "../../../../../../../common/types";
-import MatrixInput from "../../../../../../common/MatrixInput";
+import { Cluster, StudyMetadata } from "../../../../../../../common/types";
 import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "./utils";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   study: StudyMetadata;
@@ -31,7 +27,7 @@ interface Props {
   clusterId: Cluster["id"];
 }
 
-function Matrix({ study, areaId, clusterId }: Props) {
+function ThermalMatrices({ study, areaId, clusterId }: Props) {
   const [t] = useTranslation();
   const [value, setValue] = useState("common");
   const studyVersion = Number(study.version);
@@ -62,6 +58,7 @@ function Matrix({ study, areaId, clusterId }: Props) {
     {
       url: `input/thermal/series/${areaId}/${clusterId}/series`,
       titleKey: "availability",
+      aggregates: "stats" as const, // avg, min, max
     },
     {
       url: `input/thermal/series/${areaId}/${clusterId}/fuelCost`,
@@ -111,15 +108,14 @@ function Matrix({ study, areaId, clusterId }: Props) {
       </Tabs>
       <Box sx={{ width: 1, height: 1 }}>
         {filteredMatrices.map(
-          ({ url, titleKey, columns }) =>
+          ({ url, titleKey, columns, aggregates }) =>
             value === titleKey && (
-              <MatrixInput
+              <Matrix
                 key={titleKey}
-                study={study}
-                computStats={MatrixStats.NOCOL}
                 url={url}
                 title={t(`study.modelization.clusters.matrix.${titleKey}`)}
-                columnsNames={columns}
+                customColumns={columns}
+                aggregateColumns={aggregates}
               />
             ),
         )}
@@ -128,4 +124,4 @@ function Matrix({ study, areaId, clusterId }: Props) {
   );
 }
 
-export default Matrix;
+export default ThermalMatrices;
