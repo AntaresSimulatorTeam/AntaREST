@@ -13,6 +13,7 @@ import typing as t
 from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, field_validator, model_validator
 
 from antarest.core.utils.utils import assert_this
@@ -94,12 +95,13 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         commands: List[ICommand] = []
         area_from, area_to = sorted([self.area1, self.area2])
         if self.parameters != other.parameters:
-            properties = LinkProperties.model_validate(other.parameters or {})
-            link_property = properties.model_dump(mode="json", by_alias=True, exclude_none=True)
+            properties = LinkInternal.model_validate(other.parameters or {}).model_dump(
+                mode="json", by_alias=True, exclude_none=True, exclude={"area1", "area2"}
+            )
             commands.append(
                 UpdateConfig(
                     target=f"input/links/{area_from}/properties/{area_to}",
-                    data=link_property,
+                    data=properties,
                     command_context=self.command_context,
                 )
             )
@@ -263,7 +265,7 @@ class CreateLink(AbstractLinkCommand):
         area_from = data["area_from"]
         area_to = data["area_to"]
 
-        study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
+        study_data.tree.save(validated_properties, ["input", "links", area_from, "properties", area_to])
 
         self.save_series(area_from, area_to, study_data, version)
         self.save_direct(area_from, area_to, study_data, version)

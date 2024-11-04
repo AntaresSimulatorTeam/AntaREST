@@ -105,7 +105,7 @@ class TestLink:
             )
             assert res.status_code == 500
             expected = {
-                "description": "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 1 validation error for LinkProperties\nwrong\n  Extra inputs are not permitted [type=extra_forbidden, input_value='parameter', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.8/v/extra_forbidden",
+                "description": "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 1 validation error for LinkInternal\nwrong\n  Extra inputs are not permitted [type=extra_forbidden, input_value='parameter', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.8/v/extra_forbidden",
                 "exception": "CommandApplicationError",
             }
             assert expected == res.json()
@@ -225,7 +225,7 @@ class TestLink:
         res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area1_id})
 
         assert res.status_code == 422, res.json()
-        expected = {"description": "Cannot create link on same area: area 1", "exception": "LinkValidationError"}
+        expected = {"description": "Area 1 and Area 2 can not be the same", "exception": "LinkValidationError"}
         assert expected == res.json()
 
         # Test create link with wrong value for enum

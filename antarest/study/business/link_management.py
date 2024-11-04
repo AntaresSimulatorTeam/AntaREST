@@ -75,59 +75,49 @@ class LinkManager:
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        return link_creation_dto
+        return link.to_dto()
 
-    def update_link(self, study: RawStudy, link_update_info: LinkInfoDTO) -> LinkInfoDTO:
+    def update_link(self, study: RawStudy, link_dto: LinkDTO) -> LinkDTO:
+        link = link_dto.to_internal(StudyVersion.parse(study.version))
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        self.check_attributes_coherence(file_study, StudyVersion.parse(study.version), link_update_info)
+        self.check_link_existence(file_study, link)
 
         command = UpdateLink(
-            area1=link_update_info.area1,
-            area2=link_update_info.area2,
-            parameters=link_update_info.model_dump(
-                mode="json", exclude={"area1", "area2"}, exclude_none=True, exclude_unset=True
+            area1=link.area1,
+            area2=link.area2,
+            parameters=link.model_dump(
+                include=link_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
             ),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
         )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        updated_link = self.get_updated_link(study, link_update_info)
+        updated_link = self.get_ini_link(study, link)
 
-        return updated_link
+        return updated_link.to_dto()
 
-    def check_attributes_coherence(
-        self, file_study: FileStudy, study_version: StudyVersion, link_creation_info: LinkInfoDTO
-    ) -> None:
-        if link_creation_info.area1 == link_creation_info.area2:
-            raise LinkValidationError("Area 1 and Area 2 can not be the same")
-
-        area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
+    def check_link_existence(self, file_study: FileStudy, link: LinkInternal) -> None:
+        area_from, area_to = sorted([link.area1, link.area2])
         try:
             file_study.tree.get(["input", "links", area_from, "properties", area_to])
         except KeyError:
             raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
 
-        if study_version < STUDY_VERSION_8_2:
-            if isinstance(link_creation_info, LinkInfoDTO820):
-                if (
-                    link_creation_info.filter_synthesis is not None
-                    or link_creation_info.filter_year_by_year is not None
-                ):
-                    raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
-
-    def get_updated_link(self, study: RawStudy, link_creation_info: LinkInfoDTO) -> LinkInfoDTO:
+    def get_ini_link(self, study: RawStudy, link: LinkInternal) -> LinkInternal:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
+        area_from, area_to = sorted([link.area1, link.area2])
         try:
             link_properties = file_study.tree.get(["input", "links", area_from, "properties", area_to])
         except KeyError:
             raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
 
-        updated_link = LinkInfoProperties.model_validate(link_properties)
-        return link_creation_info.model_copy(update=updated_link.model_dump())
+        link_properties.update({"area1": area_from, "area2": area_to})
+        updated_link = LinkInternal.model_validate(link_properties)
+
+        return link.model_copy(update=updated_link.model_dump())
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)

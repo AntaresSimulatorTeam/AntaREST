@@ -32,7 +32,7 @@ class Area(AntaresBaseModel):
     @model_validator(mode="after")
     def validate_areas(self) -> t.Self:
         if self.area1 == self.area2:
-            raise LinkValidationError(f"Cannot create link on same area: {self.area1}")
+            raise LinkValidationError(f"Area 1 and Area 2 can not be the same")
         return self
 
 

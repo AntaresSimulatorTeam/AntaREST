@@ -1897,13 +1897,13 @@ class StudyService:
     def update_link(
         self,
         uuid: str,
-        link_update_dto: LinkInfoDTO,
+        link_update_dto: LinkDTO,
         params: RequestParameters,
-    ) -> LinkInfoDTO:
+    ) -> LinkDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_link = self.links.update_link(study, link_update_dto)
+        updated_link = self.links_manager.update_link(study, link_update_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,

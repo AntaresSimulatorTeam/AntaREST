@@ -11,21 +11,13 @@
 # This file is part of the Antares project.
 import typing as t
 
-from antares.study.version import StudyVersion
-from pydantic import ValidationError
-
-from antarest.core.exceptions import LinkValidationError
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.business.model.link_model import LinkInternal
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.create_link import (
-    AbstractLinkCommand,
-    LinkInfoProperties,
-    LinkInfoProperties820,
-    LinkProperties,
-)
+from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -51,16 +43,17 @@ class UpdateLink(AbstractLinkCommand):
             {"area_from": area_from, "area_to": area_to},
         )
 
-    def _apply(self, study_data: FileStudy, *a: str) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
 
-        properties = LinkProperties.model_validate(self.parameters or {}).model_dump(exclude_unset=True, by_alias=True)
+        properties = study_data.tree.get(["input", "links", area_from, "properties", area_to])
 
-        current_parameters = study_data.tree.get(["input", "links", area_from, "properties", area_to])
-        current_parameters.update(properties)
+        new_properties = LinkInternal.model_validate(self.parameters).model_dump(include=self.parameters, by_alias=True)
 
-        study_data.tree.save(current_parameters, ["input", "links", area_from, "properties", area_to])
+        properties.update(new_properties)
+
+        study_data.tree.save(properties, ["input", "links", area_from, "properties", area_to])
 
         output, _ = self._apply_config(study_data.config)
 
