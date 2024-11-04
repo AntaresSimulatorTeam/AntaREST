@@ -14,17 +14,13 @@ import logging
 import re
 import tempfile
 from html import escape
-from http import HTTPStatus
-from http.client import HTTPException
 from pathlib import Path
 from time import sleep, time
 from typing import List, Optional
 
-from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 from filelock import FileLock
 
 from antarest.core.config import Config
-from antarest.core.exceptions import CannotScanInternalWorkspace
 from antarest.core.interfaces.service import IService
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult, TaskType
@@ -34,7 +30,11 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
 from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import is_ts_gen_tmp_dir
+from antarest.study.storage.utils import (
+    get_folder_from_workspace,
+    get_workspace_from_config,
+    should_ignore_folder_for_scan,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +47,6 @@ class _LogScanDuration:
 
     def __call__(self, duration: float) -> None:
         logger.info(f"Workspace {self.workspace_name} scanned in {duration}s")
-
-
-class WorkspaceNotFound(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class Watcher(IService):
@@ -128,28 +123,26 @@ class Watcher(IService):
         groups: List[Group],
         filter_in: List[str],
         filter_out: List[str],
+        max_depth: Optional[int] = None,
     ) -> List[StudyFolder]:
         try:
-            if (path / "AW_NO_SCAN").exists():
-                logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
-                return []
-
-            if is_temporary_upgrade_dir(path):
-                logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
-                return []
-
-            if is_ts_gen_tmp_dir(path):
-                logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
+            if should_ignore_folder_for_scan(path):
                 return []
 
             if (path / "study.antares").exists():
                 logger.debug(f"Study {path.name} found in {workspace}")
                 return [StudyFolder(path, workspace, groups)]
 
+            if max_depth is not None and max_depth <= 0:
+                logger.info(f"Scan was configured to not go any deeper, max _depth : {max_depth}")
+                return []
+
             else:
                 folders: List[StudyFolder] = list()
                 if path.is_dir():
                     for child in path.iterdir():
+                        if max_depth is not None:
+                            max_depth = max_depth - 1
                         try:
                             if (
                                 (child.is_dir())
@@ -157,11 +150,7 @@ class Watcher(IService):
                                 and not any([re.search(regex, child.name) for regex in filter_out])
                             ):
                                 folders = folders + self._rec_scan(
-                                    child,
-                                    workspace,
-                                    groups,
-                                    filter_in,
-                                    filter_out,
+                                    child, workspace, groups, filter_in, filter_out, max_depth
                                 )
                         except Exception as e:
                             logger.error(f"Failed to scan dir {child}", exc_info=e)
@@ -173,6 +162,7 @@ class Watcher(IService):
     def oneshot_scan(
         self,
         params: RequestParameters,
+        recursive: bool,
         workspace: Optional[str] = None,
         path: Optional[str] = None,
     ) -> str:
@@ -183,11 +173,12 @@ class Watcher(IService):
             params: user parameters
             workspace: workspace to scan
             path: relative path to folder to scan
+            recursive: if true, scan recursively all subfolders otherwise only the first level
         """
 
         # noinspection PyUnusedLocal
         def scan_task(notifier: ITaskNotifier) -> TaskResult:
-            self.scan(workspace, path)
+            self.scan(recursive, workspace, path)
             return TaskResult(success=True, message="Scan completed")
 
         return self.task_service.add_task(
@@ -202,34 +193,32 @@ class Watcher(IService):
 
     def scan(
         self,
+        recursive: bool = True,
         workspace_name: Optional[str] = None,
         workspace_directory_path: Optional[str] = None,
     ) -> None:
         """
         Scan recursively list of studies present on disk. Send updated list to study service.
+
+        Args:
+            recursive: if true, scan recursively all subfolders otherwise only the first level
         Returns:
 
         """
         stopwatch = StopWatch()
         studies: List[StudyFolder] = list()
         directory_path: Optional[Path] = None
+
+        # max depth when we call _rec_scan
+        max_depth = None if recursive else 1
+
         if workspace_directory_path is not None and workspace_name:
-            if workspace_name == DEFAULT_WORKSPACE_NAME:
-                raise CannotScanInternalWorkspace
-            try:
-                workspace = self.config.storage.workspaces[workspace_name]
-            except KeyError:
-                logger.error(f"Workspace {workspace_name} not found")
-                raise WorkspaceNotFound(f"Workspace {workspace_name} not found")
+            workspace = get_workspace_from_config(self.config, workspace_name)
+            directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
 
             groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
-            directory_path = workspace.path / workspace_directory_path
             studies = self._rec_scan(
-                directory_path,
-                workspace_name,
-                groups,
-                workspace.filter_in,
-                workspace.filter_out,
+                directory_path, workspace_name, groups, workspace.filter_in, workspace.filter_out, max_depth=max_depth
             )
         elif workspace_directory_path is None and workspace_name is None:
             for name, workspace in self.config.storage.workspaces.items():
@@ -237,11 +226,7 @@ class Watcher(IService):
                     path = Path(workspace.path)
                     groups = [Group(id=escape(g), name=escape(g)) for g in workspace.groups]
                     studies = studies + self._rec_scan(
-                        path,
-                        name,
-                        groups,
-                        workspace.filter_in,
-                        workspace.filter_out,
+                        path, name, groups, workspace.filter_in, workspace.filter_out, max_depth=max_depth
                     )
                     stopwatch.log_elapsed(_LogScanDuration(name))
         else:
@@ -250,7 +235,7 @@ class Watcher(IService):
             logger.info(f"Waiting for FileLock to synchronize {directory_path or 'all studies'}")
             with FileLock(Watcher.SCAN_LOCK):
                 logger.info(f"FileLock acquired to synchronize for {directory_path or 'all studies'}")
-                self.study_service.sync_studies_on_disk(studies, directory_path)
+                self.study_service.sync_studies_on_disk(studies, directory_path, recursive)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"{directory_path or 'All studies'} synchronized in {x}s"),
                     since_start=True,

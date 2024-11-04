@@ -30,6 +30,13 @@ export default defineConfig(({ mode }) => {
       // Not working in dev without `JSON.stringify`
       __BUILD_TIMESTAMP__: JSON.stringify(Date.now()),
     },
+    build: {
+      // Exclude test files and directories from production builds
+      // This improves build performance and reduces bundle size
+      rollupOptions: {
+        external: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+      },
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"), // Relative imports from the src directory

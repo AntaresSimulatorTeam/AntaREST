@@ -12,12 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import {
-  StudyMetadata,
-  Area,
-  MatrixType,
-} from "../../../../../../../../common/types";
+import { StudyMetadata, Area } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
+import { MatrixDataDTO } from "../../../../../../../common/Matrix/shared/types";
 import { AreaCoefficientItem } from "../utils";
 
 ////////////////////////////////////////////////////////////////
@@ -58,7 +55,7 @@ export async function setCorrelationFormFields(
 
 export async function getCorrelationMatrix(
   studyId: StudyMetadata["id"],
-): Promise<MatrixType> {
+): Promise<MatrixDataDTO> {
   const res = await client.get(
     `v1/studies/${studyId}/areas/hydro/correlation/matrix`,
   );

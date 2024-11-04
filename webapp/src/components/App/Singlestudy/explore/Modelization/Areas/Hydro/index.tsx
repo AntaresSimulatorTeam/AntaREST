@@ -50,7 +50,9 @@ function Hydro() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <TabWrapper study={study} tabList={tabList} />;
+  return (
+    <TabWrapper study={study} tabList={tabList} tabStyle="withoutBorder" />
+  );
 }
 
 export default Hydro;
