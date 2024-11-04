@@ -13,7 +13,7 @@ import io
 from typing import cast
 
 import pandas as pd
-from starlette.responses import Response, JSONResponse
+from starlette.responses import JSONResponse, Response
 
 from antarest.core.model import JSON
 from antarest.study.model import MatrixFormat, Study
@@ -21,6 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.storage_service import StudyStorageService
 
 LOAD_PATH = "input/load/series/load_{area_id}"
+
 
 class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
@@ -47,4 +48,4 @@ class LoadManager:
             matrix_df.to_feather(buffer, compression="uncompressed")
             return Response(content=buffer.getvalue(), media_type="application/octet-stream")
 
-        return Response(content="Unsupported format", status_code=400)
+        return Response(content="Unsupported format", status_code=422)
