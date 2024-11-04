@@ -27,18 +27,24 @@ class LoadManager:
         self.storage_service = storage_service
 
     def get_load_matrix(self, study: Study, area_id: str, matrix_format: MatrixFormat) -> Response:
-        load_path = LOAD_PATH.replace("{area_id}", area_id).split("/")
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
+        load_path = LOAD_PATH.format(area_id=area_id).split("/")
         node = file_study.tree.get_node(load_path)
 
-        if isinstance(node, InputSeriesMatrix):
-            if matrix_format == MatrixFormat.JSON:
-                matrix_json = cast(JSON, InputSeriesMatrix.parse(node))
-                return JSONResponse(content=matrix_json)
-            elif matrix_format == MatrixFormat.ARROW:
-                matrix_df: pd.DataFrame = cast(pd.DataFrame, InputSeriesMatrix.parse(node, return_dataframe=True))
-                with io.BytesIO() as buffer:
-                    matrix_df.columns = matrix_df.columns.map(str)
-                    matrix_df.to_feather(buffer, compression="uncompressed")
-                    return Response(content=buffer.getvalue(), media_type="application/octet-stream")
+        if not isinstance(node, InputSeriesMatrix):
+            return Response(content="Invalid node type", status_code=400)
+
+        matrix_data = InputSeriesMatrix.parse(node, return_dataframe=(matrix_format == MatrixFormat.ARROW))
+
+        if matrix_format == MatrixFormat.JSON:
+            return JSONResponse(content=cast(JSON, matrix_data))
+
+        if matrix_format == MatrixFormat.ARROW:
+            matrix_df = cast(pd.DataFrame, matrix_data)
+            matrix_df.columns = matrix_df.columns.map(str)
+            buffer = io.BytesIO()
+            matrix_df.to_feather(buffer, compression="uncompressed")
+            return Response(content=buffer.getvalue(), media_type="application/octet-stream")
+
+        return Response(content="Unsupported format", status_code=400)
