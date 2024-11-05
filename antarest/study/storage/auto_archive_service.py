@@ -84,10 +84,11 @@ class AutoArchiveService(IService):
                     f"Failed to auto archive study {study_id}",
                     exc_info=e,
                 )
-
-        self.study_service.storage_service.variant_study_service.clear_all_snapshots(
-            datetime.timedelta(days=self.config.storage.snapshot_retention_days)
-        )
+        with db():
+            self.study_service.storage_service.variant_study_service.clear_all_snapshots(
+                datetime.timedelta(days=self.config.storage.snapshot_retention_days),
+                params=RequestParameters(DEFAULT_ADMIN_USER)
+            )
 
     def _loop(self) -> None:
         while True:
