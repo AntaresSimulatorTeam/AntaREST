@@ -12,35 +12,39 @@
  * This file is part of the Antares project.
  */
 
-import Box from "@mui/material/Box";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Button, Skeleton } from "@mui/material";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MaterialReactTable,
+  type MRT_ColumnDef,
+  type MRT_RowSelectionState,
   MRT_ToggleFiltersButton,
   MRT_ToggleGlobalFilterButton,
   useMaterialReactTable,
-  type MRT_RowSelectionState,
-  type MRT_ColumnDef,
 } from "material-react-table";
-import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useRef, useState } from "react";
-import CreateDialog from "./CreateDialog";
-import ConfirmationDialog from "../dialogs/ConfirmationDialog";
-import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
-import DuplicateDialog from "./DuplicateDialog";
-import { translateWithColon } from "../../../utils/i18nUtils";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { PromiseAny } from "../../../utils/tsUtils";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
-import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
+import { useTranslation } from "react-i18next";
+
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { Button, Skeleton } from "@mui/material";
+import Box from "@mui/material/Box";
+
+import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useOperationInProgressCount from "@/hooks/useOperationInProgressCount";
+import { toError } from "@/utils/fnUtils";
+import { translateWithColon } from "@/utils/i18nUtils";
+import { PromiseAny } from "@/utils/tsUtils";
+
+import ConfirmationDialog from "../dialogs/ConfirmationDialog";
+
+import CreateDialog from "./CreateDialog";
+import DuplicateDialog from "./DuplicateDialog";
 import type { TRow } from "./types";
+import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
 
 export interface GroupedDataTableProps<
   TGroups extends string[],

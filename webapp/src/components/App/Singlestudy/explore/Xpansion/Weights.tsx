@@ -15,9 +15,10 @@
 import {
   addWeight,
   deleteWeight,
-  getWeight,
   getAllWeights,
-} from "../../../../../services/api/xpansion";
+  getWeight,
+} from "@/services/api/xpansion";
+
 import FileList from "./FileList";
 
 function Weights() {

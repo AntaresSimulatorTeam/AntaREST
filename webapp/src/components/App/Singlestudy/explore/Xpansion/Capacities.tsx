@@ -13,11 +13,12 @@
  */
 
 import {
-  getAllCapacities,
-  deleteCapacity,
-  getCapacity,
   addCapacity,
-} from "../../../../../services/api/xpansion";
+  deleteCapacity,
+  getAllCapacities,
+  getCapacity,
+} from "@/services/api/xpansion";
+
 import FileList from "./FileList";
 
 function Capacities() {

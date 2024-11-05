@@ -13,17 +13,20 @@
  */
 
 import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router-dom";
+
 import { Box, Paper } from "@mui/material";
-import { MatrixType, StudyMetadata } from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
-import FileTable from "../../../../common/FileTable";
+
+import { MatrixType, StudyMetadata } from "@/common/types";
+import DataViewerDialog from "@/components/common/dialogs/DataViewerDialog";
+import FileTable from "@/components/common/FileTable";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+
 import { Title } from "./share/styles";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 
 interface PropTypes {
   addResource: (studyId: string, file: File) => Promise<void>;

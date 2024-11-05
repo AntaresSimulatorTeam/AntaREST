@@ -12,16 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Toolbar,
-  alpha,
-  Typography,
-  Tooltip,
-  IconButton,
-  Fade,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslation } from "react-i18next";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import {
+  alpha,
+  Fade,
+  IconButton,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 
 interface Props {
   numSelected: number;

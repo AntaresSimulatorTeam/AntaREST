@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import { last } from "ramda";
+
+import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+
 import {
   AllClustersAndLinks,
   Area,
@@ -24,24 +26,25 @@ import {
   UserDetailsDTO,
 } from "../common/types";
 import { buildStudyTree } from "../components/App/Studies/utils";
-import { filterStudies, sortStudies } from "../utils/studiesUtils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
-import { AppState } from "./ducks";
+import { filterStudies, sortStudies } from "../utils/studiesUtils";
+
 import { AuthState } from "./ducks/auth";
 import { GroupsState } from "./ducks/groups";
 import { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
+import {
+  StudyMapLink,
+  StudyMapNode,
+  studyMapsAdapter,
+  StudyMapsState,
+} from "./ducks/studyMaps";
 import {
   studySynthesesAdapter,
   StudySynthesesState,
 } from "./ducks/studySyntheses";
 import { UIState } from "./ducks/ui";
 import { UsersState } from "./ducks/users";
-import {
-  StudyMapNode,
-  StudyMapLink,
-  studyMapsAdapter,
-  StudyMapsState,
-} from "./ducks/studyMaps";
+import { AppState } from "./ducks";
 import { makeLinkId } from "./utils";
 
 // TODO resultEqualityCheck

@@ -13,7 +13,8 @@
  */
 
 import type { AxiosRequestConfig } from "axios";
-import type { StudyMetadata } from "../../../../common/types";
+
+import type { StudyMetadata } from "@/common/types";
 
 export interface DownloadMatrixParams {
   studyId: StudyMetadata["id"];

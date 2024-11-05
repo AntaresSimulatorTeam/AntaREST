@@ -14,14 +14,13 @@
 
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import { StudyMetadata } from "../../../../../../../common/types";
-import {
-  setCurrentArea,
-  setCurrentLink,
-} from "../../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaLinks } from "../../../../../../../redux/selectors";
+
+import { StudyMetadata } from "@/common/types";
+import { setCurrentArea, setCurrentLink } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaLinks } from "@/redux/selectors";
+
 import {
   AreaLinkContainer,
   AreaLinkContent,

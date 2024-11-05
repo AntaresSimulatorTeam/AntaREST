@@ -14,7 +14,8 @@
 
 import FormDialog, {
   FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
+} from "@/components/common/dialogs/FormDialog";
+
 import TokenForm from "./TokenForm";
 
 export interface TokenFormDialogProps

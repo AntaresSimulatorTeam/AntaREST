@@ -14,10 +14,13 @@
 
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AllClustersAndLinks } from "../../../../../../../../common/types";
-import SelectSingle from "../../../../../../../common/SelectSingle";
-import { ConstraintTerm, generateTermId, isTermExist } from "../utils";
+
 import { Box } from "@mui/material";
+
+import { AllClustersAndLinks } from "@/common/types";
+import SelectSingle from "@/components/common/SelectSingle";
+
+import { ConstraintTerm, generateTermId, isTermExist } from "../utils";
 
 interface Option {
   id: string;

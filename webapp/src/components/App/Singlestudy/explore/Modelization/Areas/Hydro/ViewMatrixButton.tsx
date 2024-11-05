@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
+import { Button } from "@mui/material";
 
 interface Props {
   label: string;

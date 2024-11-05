@@ -14,31 +14,35 @@
 
 import { useMemo, useState } from "react";
 import { createMRTColumnHelper } from "material-react-table";
-import { Box } from "@mui/material";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
-import {
-  RENEWABLE_GROUPS,
-  RenewableGroup,
-  createRenewableCluster,
-  deleteRenewableClusters,
-  duplicateRenewableCluster,
-  getRenewableClusters,
-  type RenewableClusterWithCapacity,
-} from "./utils";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import GroupedDataTable from "../../../../../../common/GroupedDataTable";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+
+import { Box } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import GroupedDataTable from "@/components/common/GroupedDataTable";
+import BooleanCell from "@/components/common/GroupedDataTable/cellRenderers/BooleanCell";
+import { TRow } from "@/components/common/GroupedDataTable/types";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+
 import {
   addClusterCapacity,
   capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "../common/clustersUtils";
-import { TRow } from "../../../../../../common/GroupedDataTable/types";
-import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+
+import {
+  createRenewableCluster,
+  deleteRenewableClusters,
+  duplicateRenewableCluster,
+  getRenewableClusters,
+  RENEWABLE_GROUPS,
+  type RenewableClusterWithCapacity,
+  RenewableGroup,
+} from "./utils";
 
 const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 

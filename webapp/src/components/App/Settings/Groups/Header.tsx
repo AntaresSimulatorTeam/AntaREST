@@ -12,15 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { GroupDetailsDTO } from "../../../../common/types";
+import { useTranslation } from "react-i18next";
+
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import { Box, Button } from "@mui/material";
+
+import { GroupDetailsDTO } from "@/common/types";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isAuthUserAdmin } from "@/redux/selectors";
+
 import CreateGroupDialog from "./dialog/CreateGroupDialog";
-import { isAuthUserAdmin } from "../../../../redux/selectors";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import SearchFE from "../../../common/fieldEditors/SearchFE";
 
 interface Props {
   setSearchValue: (v: string) => void;

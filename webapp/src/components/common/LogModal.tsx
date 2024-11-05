@@ -13,26 +13,29 @@
  */
 
 import {
+  CSSProperties,
+  KeyboardEvent,
+  UIEvent,
   useCallback,
   useEffect,
-  useState,
   useRef,
-  UIEvent,
-  KeyboardEvent,
-  CSSProperties,
+  useState,
 } from "react";
-import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
 import DownloadIcon from "@mui/icons-material/Download";
-import { exportText } from "../../services/utils/index";
-import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
-import SimpleLoader from "./loaders/SimpleLoader";
-import BasicDialog from "./dialogs/BasicDialog";
+import { Box, Button, Typography } from "@mui/material";
+
+import { WSEvent, WSLogMessage, WSMessage } from "@/common/types";
+import { exportText } from "@/services/utils/index";
 import {
   addWsMessageListener,
   sendWsSubscribeMessage,
   WsChannel,
-} from "../../services/webSockets";
+} from "@/services/webSockets";
+
+import BasicDialog from "./dialogs/BasicDialog";
+import SimpleLoader from "./loaders/SimpleLoader";
 
 interface Props {
   isOpen: boolean;

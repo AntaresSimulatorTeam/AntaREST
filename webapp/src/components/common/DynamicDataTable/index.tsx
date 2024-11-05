@@ -12,15 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import Box from "@mui/material/Box";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
-import AddIcon from "@mui/icons-material/Add";
 import {
   ChangeEvent,
   FunctionComponent,
@@ -28,12 +19,23 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Button, Checkbox } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
+import AddIcon from "@mui/icons-material/Add";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import { Button, Checkbox } from "@mui/material";
+import Box from "@mui/material/Box";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+
 import TableRowGroup from "./TableRowGroup";
-import TableToolbar from "./TableToolbar";
 import TableRowItem from "./TableRowItem";
-import { Item, Column, AddItemDialogProps } from "./utils";
+import TableToolbar from "./TableToolbar";
+import { AddItemDialogProps, Column, Item } from "./utils";
 
 export interface DynamicDataTableProps {
   items: Item[];

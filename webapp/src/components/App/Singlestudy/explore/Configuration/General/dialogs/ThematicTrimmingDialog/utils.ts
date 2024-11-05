@@ -13,8 +13,9 @@
  */
 
 import * as R from "ramda";
-import { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
 import { O } from "ts-toolbelt";
+
+import { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
 
 export const THEMATIC_TRIMMING_GROUPS = [
   "general",

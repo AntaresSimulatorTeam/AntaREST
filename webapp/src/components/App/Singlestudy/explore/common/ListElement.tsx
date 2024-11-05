@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { useState } from "react";
+
+import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
 import {
   Box,
   ListItemButton,
@@ -23,10 +26,9 @@ import {
   Theme,
   Tooltip,
 } from "@mui/material";
-import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
-import { useState } from "react";
-import { IdType } from "../../../../../common/types";
-import { mergeSxProp } from "../../../../../utils/muiUtils";
+
+import { IdType } from "@/common/types";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 interface Props<T> {
   list: T[];

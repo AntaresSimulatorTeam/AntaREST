@@ -13,11 +13,13 @@
  */
 
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
-import { AllClustersAndLinks } from "../../../../../../../../../common/types";
-import { ConstraintTerm, isTermExist, generateTermId } from "../../utils";
+import { useTranslation } from "react-i18next";
+
+import { AllClustersAndLinks } from "@/common/types";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+
+import { ConstraintTerm, generateTermId, isTermExist } from "../../utils";
 
 interface Props {
   list: AllClustersAndLinks;

@@ -13,12 +13,14 @@
  */
 
 import { useEffect, useMemo } from "react";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../common/types";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+
+import { StudyMetadata } from "@/common/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+
 import TabWrapper from "../../TabWrapper";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../redux/selectors";
 
 interface Props {
   renewablesClustering: boolean;

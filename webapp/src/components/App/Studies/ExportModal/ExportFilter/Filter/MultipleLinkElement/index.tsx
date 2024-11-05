@@ -12,13 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Chip, ListItem } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import SelectSingle from "../../../../../../common/SelectSingle";
-import TextSeparator from "../../../../../../common/TextSeparator";
+
+import { Box, Chip, ListItem } from "@mui/material";
+
+import SelectSingle from "@/components/common/SelectSingle";
+import TextSeparator from "@/components/common/TextSeparator";
+
 import { AddIcon } from "../../TagSelect/style";
-import { FilterLinkContainer, Root, Container } from "./style";
+
+import { Container, FilterLinkContainer, Root } from "./style";
 
 interface FilterLink {
   area1: string;

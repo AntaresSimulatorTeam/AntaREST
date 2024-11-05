@@ -12,28 +12,31 @@
  * This file is part of the Antares project.
  */
 
-import Stepper from "@mui/material/Stepper";
-import Step from "@mui/material/Step";
-import StepLabel from "@mui/material/StepLabel";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import { useState } from "react";
+import { AxiosError } from "axios";
+import moment from "moment";
+import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { StepIconProps, Tooltip, Typography } from "@mui/material";
-import moment from "moment";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import { AxiosError } from "axios";
-import {
-  JobStatus,
-  LaunchJob,
-  LaunchJobsProgress,
-} from "../../../../../../common/types";
-import { convertUTCToLocalTime } from "../../../../../../services/utils";
-import { killStudy } from "../../../../../../services/api/study";
-import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import Step from "@mui/material/Step";
+import StepLabel from "@mui/material/StepLabel";
+import Stepper from "@mui/material/Stepper";
+
+import { JobStatus, LaunchJob, LaunchJobsProgress } from "@/common/types";
+import LaunchJobLogView from "@/components/App/Tasks/LaunchJobLogView";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { killStudy } from "@/services/api/study";
+import { convertUTCToLocalTime } from "@/services/utils";
+import type { EmptyObject } from "@/utils/tsUtils";
+
 import {
   CancelContainer,
   JobRoot,
@@ -42,17 +45,13 @@ import {
   StepLabelRoot,
   StepLabelRow,
 } from "./style";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
-import DigestDialog from "../../../../../common/dialogs/DigestDialog";
-import type { EmptyObject } from "../../../../../../utils/tsUtils";
 
 export const ColorStatus = {
   running: "warning.main",
   pending: "grey.400",
   success: "success.main",
   failed: "error.main",
-};
+} as const;
 
 const iconStyle = {
   m: 0.5,

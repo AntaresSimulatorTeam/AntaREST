@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
 import * as R from "ramda";
+
+import { ValidationReturn } from "@/common/types";
 
 interface ArrayValidationOptions {
   allowEmpty?: boolean;

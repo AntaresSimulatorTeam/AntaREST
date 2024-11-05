@@ -12,13 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
+import { Box } from "@mui/material";
+
+import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
+import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+
 import { DataType, Timestep } from "./utils";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
 
 interface Props {
   year: number;

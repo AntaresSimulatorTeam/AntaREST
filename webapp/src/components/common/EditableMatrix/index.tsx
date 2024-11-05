@@ -12,23 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import debug from "debug";
 import HT from "handsontable";
+
 import {
-  MatrixIndex,
   MatrixEditDTO,
-  MatrixType,
+  MatrixIndex,
   MatrixStats,
-} from "../../../common/types";
-import "handsontable/dist/handsontable.min.css";
+  MatrixType,
+} from "@/common/types";
+
+import Handsontable, { HotTableClass } from "../Handsontable";
+
 import { Root } from "./style";
 import {
+  cellChangesToMatrixEdits,
   computeStats,
   createDateFromIndex,
-  cellChangesToMatrixEdits,
 } from "./utils";
-import Handsontable, { HotTableClass } from "../Handsontable";
+
+import "handsontable/dist/handsontable.min.css";
 
 const logError = debug("antares:editablematrix:error");
 

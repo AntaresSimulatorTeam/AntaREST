@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { PropsWithChildren } from "react";
+
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import { Box } from "@mui/material";
-import { PropsWithChildren } from "react";
 
 interface Props {
   onRemove: () => void;

@@ -13,17 +13,20 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { Box, Tooltip } from "@mui/material";
-import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../../common/Form";
-import { STORAGE_GROUPS, Storage } from "./utils";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
+
+import { Box, Tooltip } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
 import { validateNumber } from "@/utils/validation/number";
+
+import { Storage, STORAGE_GROUPS } from "./utils";
 
 function Fields() {
   const [t] = useTranslation();

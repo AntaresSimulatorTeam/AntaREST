@@ -13,9 +13,12 @@
  */
 
 import axios from "axios";
-import client from "./client";
-import { RefreshDTO as UserTokensDTO } from "../../common/types";
+
+import { RefreshDTO as UserTokensDTO } from "@/common/types";
+
 import { Config } from "../config";
+
+import client from "./client";
 
 // instance sans crédentials et hooks pour l'authent
 const rawAxiosInstance = axios.create();

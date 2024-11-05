@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Tooltip, Typography, Chip, Button, Divider } from "@mui/material";
-import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { StudyMetadata, StudyType } from "../../../../common/types";
-import { toggleFavorite } from "../../../../redux/ducks/studies";
-import StarToggle from "../../../common/StarToggle";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isCurrentStudyFavorite } from "../../../../redux/selectors";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { Box, Button, Chip, Divider, Tooltip, Typography } from "@mui/material";
+
+import { StudyMetadata, StudyType } from "@/common/types";
+import StarToggle from "@/components/common/StarToggle";
+import { toggleFavorite } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isCurrentStudyFavorite } from "@/redux/selectors";
 
 interface Props {
   study: StudyMetadata | undefined;

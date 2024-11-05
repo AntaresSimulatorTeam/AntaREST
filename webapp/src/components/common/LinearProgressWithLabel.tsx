@@ -12,14 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import * as R from "ramda";
+
 import {
-  Tooltip,
   Box,
   LinearProgress,
-  Typography,
   LinearProgressProps,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import * as R from "ramda";
 
 const renderLoadColor = (val: number): LinearProgressProps["color"] =>
   R.cond([

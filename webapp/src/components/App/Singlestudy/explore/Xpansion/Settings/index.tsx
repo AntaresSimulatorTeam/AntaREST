@@ -13,28 +13,32 @@
  */
 
 import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
-import { useTranslation } from "react-i18next";
-import { Box, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { StudyMetadata } from "../../../../../../common/types";
-import { XpansionResourceType, XpansionSettings } from "../types";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router-dom";
+
+import { Box, Paper } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import DataViewerDialog from "@/components/common/dialogs/DataViewerDialog";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
-  getXpansionSettings,
-  getAllConstraints,
-  getConstraint,
-  updateXpansionSettings,
-  getAllWeights,
-  getWeight,
   getAllCandidates,
-} from "../../../../../../services/api/xpansion";
+  getAllConstraints,
+  getAllWeights,
+  getConstraint,
+  getWeight,
+  getXpansionSettings,
+  updateXpansionSettings,
+} from "@/services/api/xpansion";
+import { removeEmptyFields } from "@/services/utils/index";
+
+import { XpansionResourceType, XpansionSettings } from "../types";
+
 import SettingsForm from "./SettingsForm";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import { removeEmptyFields } from "../../../../../../services/utils/index";
-import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 
 const resourceContentFetcher = (
   resourceType: string,

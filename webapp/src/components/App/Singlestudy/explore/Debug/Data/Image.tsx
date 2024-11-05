@@ -13,10 +13,14 @@
  */
 
 import { useTranslation } from "react-i18next";
-import EmptyView from "../../../../../common/page/SimpleContent";
+
 import ImageIcon from "@mui/icons-material/Image";
+
+import EmptyView from "@/components/common/page/SimpleContent";
+
+import { DataCompProps } from "../utils";
+
 import { Filename, Flex, Menubar } from "./styles";
-import type { DataCompProps } from "../utils";
 
 function Image({ filename }: DataCompProps) {
   const { t } = useTranslation();

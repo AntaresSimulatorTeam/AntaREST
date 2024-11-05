@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Button, ButtonProps } from "@mui/material";
 import { useTranslation } from "react-i18next";
+
+import { Button, ButtonProps } from "@mui/material";
+
 import BasicDialog, { BasicDialogProps } from "./BasicDialog";
 
 export interface OkDialogProps extends Omit<BasicDialogProps, "actions"> {

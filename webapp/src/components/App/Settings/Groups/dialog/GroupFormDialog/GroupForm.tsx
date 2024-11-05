@@ -12,43 +12,45 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
 import { useMemo, useRef, useState } from "react";
+import { Controller, useFieldArray } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { v4 as uuidv4 } from "uuid";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import GroupIcon from "@mui/icons-material/Group";
 import {
-  TextField,
-  Typography,
-  Paper,
-  Select,
-  MenuItem,
   Box,
   Button,
-  InputLabel,
+  CircularProgress,
   FormControl,
-  ListItem,
   IconButton,
+  InputLabel,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  CircularProgress,
+  MenuItem,
+  Paper,
+  Select,
   SelectChangeEvent,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { Controller, useFieldArray } from "react-hook-form";
-import { v4 as uuidv4 } from "uuid";
-import DeleteIcon from "@mui/icons-material/Delete";
-import GroupIcon from "@mui/icons-material/Group";
+
 import {
   RESERVED_GROUP_NAMES,
   RESERVED_USER_NAMES,
   ROLE_TYPE_KEYS,
-} from "../../../utils";
-import { RoleType, UserDTO } from "../../../../../../common/types";
-import { roleToString, sortByName } from "../../../../../../services/utils";
-import usePromise from "../../../../../../hooks/usePromise";
-import { getGroups, getUsers } from "../../../../../../services/api/user";
-import { getAuthUser } from "../../../../../../redux/selectors";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { UseFormReturnPlus } from "../../../../../common/Form/types";
+} from "@/common/constants";
+import { RoleType, UserDTO } from "@/common/types";
+import { UseFormReturnPlus } from "@/components/common/Form/types";
+import usePromise from "@/hooks/usePromise";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { getGroups, getUsers } from "@/services/api/user";
+import { roleToString, sortByName } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 
 function GroupForm(props: UseFormReturnPlus) {

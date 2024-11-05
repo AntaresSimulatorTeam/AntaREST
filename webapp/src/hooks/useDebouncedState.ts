@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { useState } from "react";
 import {
   DebouncedFunc,
   DebouncedFuncLeading,
   DebounceSettingsLeading,
 } from "lodash";
-import { useState } from "react";
+
 import useDebounce, { UseDebounceParams } from "./useDebounce";
 
 type WaitOrParams = number | UseDebounceParams;

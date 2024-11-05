@@ -13,10 +13,14 @@
  */
 
 import { memo } from "react";
+import { areEqual, GridChildComponentProps } from "react-window";
+
 import { Box, Skeleton } from "@mui/material";
-import { GridChildComponentProps, areEqual } from "react-window";
-import { StudyMetadata } from "../../../../common/types";
+
+import { StudyMetadata } from "@/common/types";
+
 import StudyCard from "../StudyCard";
+
 import { StudiesListProps } from ".";
 
 type Props = GridChildComponentProps<{

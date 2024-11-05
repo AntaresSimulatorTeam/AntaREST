@@ -14,6 +14,7 @@
 
 import { SvgIconComponent } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
+
 import BasicPage from "./BasicPage";
 
 interface Props {

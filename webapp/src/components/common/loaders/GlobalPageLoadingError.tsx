@@ -13,7 +13,8 @@
  */
 
 import { Box, Typography } from "@mui/material";
-import topRightBackground from "../../../assets/img/top-right-background.png";
+
+import topRightBackground from "@/assets/img/top-right-background.png";
 
 function GlobalPageLoadingError() {
   return (

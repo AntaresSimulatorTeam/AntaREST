@@ -13,14 +13,17 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
-import { Operator } from "./utils";
-import SplitView from "../../../../../../common/SplitView";
+
 import { Box, Button } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
 import BasicDialog, {
   BasicDialogProps,
-} from "../../../../../../common/dialogs/BasicDialog";
-import Matrix from "../../../../../../common/Matrix";
+} from "@/components/common/dialogs/BasicDialog";
+import Matrix from "@/components/common/Matrix";
+import SplitView from "@/components/common/SplitView";
+
+import { Operator } from "./utils";
 
 interface Props {
   study: StudyMetadata;

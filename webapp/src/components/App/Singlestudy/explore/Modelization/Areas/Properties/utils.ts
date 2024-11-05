@@ -17,8 +17,9 @@
 ////////////////////////////////////////////////////////////////
 
 import { DeepPartial } from "redux";
-import { Area, StudyMetadata } from "../../../../../../../common/types";
-import client from "../../../../../../../services/api/client";
+
+import { Area, StudyMetadata } from "@/common/types";
+import client from "@/services/api/client";
 
 enum AdequacyPatchMode {
   Outside = "outside",

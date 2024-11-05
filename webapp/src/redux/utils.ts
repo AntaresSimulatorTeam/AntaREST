@@ -12,16 +12,19 @@
  * This file is part of the Antares project.
  */
 
+import * as R from "ramda";
+
 import {
-  createAction,
   ActionCreatorWithPayload,
+  createAction,
   EntityState,
 } from "@reduxjs/toolkit";
-import * as R from "ramda";
-import { AppState } from "./ducks";
-import { AppDispatch, AppThunk } from "./store";
+
 import packages from "../../package.json";
 import { LinkElement } from "../common/types";
+
+import { AppState } from "./ducks";
+import { AppDispatch, AppThunk } from "./store";
 
 export enum FetchStatus {
   Idle = "idle",

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import i18n from "../i18n";
+import i18n from "@/i18n";
 
 /**
  * Gets the current language used in the application.

@@ -13,19 +13,22 @@
  */
 
 import { useMemo, useState } from "react";
-import { Button, ButtonGroup } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 import * as R from "ramda";
-import { LinkCreationInfoDTO } from "../../../../../../common/types";
-import { XpansionCandidate } from "../types";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import Fieldset from "../../../../../common/Fieldset";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import { useTranslation } from "react-i18next";
+
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { Button, ButtonGroup } from "@mui/material";
+
+import { LinkCreationInfoDTO } from "@/common/types";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import Fieldset from "@/components/common/Fieldset";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { validateString } from "@/utils/validation/string";
+
+import { XpansionCandidate } from "../types";
 
 interface PropType {
   open: boolean;

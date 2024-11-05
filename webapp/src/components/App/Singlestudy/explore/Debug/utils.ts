@@ -12,14 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import DataObjectIcon from "@mui/icons-material/DataObject";
-import TextSnippetIcon from "@mui/icons-material/TextSnippet";
-import ImageIcon from "@mui/icons-material/Image";
-import FolderIcon from "@mui/icons-material/Folder";
-import DatasetIcon from "@mui/icons-material/Dataset";
-import { SvgIconComponent } from "@mui/icons-material";
 import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../common/types";
+
+import { SvgIconComponent } from "@mui/icons-material";
+import DataObjectIcon from "@mui/icons-material/DataObject";
+import DatasetIcon from "@mui/icons-material/Dataset";
+import FolderIcon from "@mui/icons-material/Folder";
+import ImageIcon from "@mui/icons-material/Image";
+import TextSnippetIcon from "@mui/icons-material/TextSnippet";
+
+import type { StudyMetadata } from "@/common/types";
 
 ////////////////////////////////////////////////////////////////
 // Types

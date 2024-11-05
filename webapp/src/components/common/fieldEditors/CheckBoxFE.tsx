@@ -20,7 +20,8 @@ import {
   FormControlLabelProps,
   FormHelperText,
 } from "@mui/material";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 
 export interface CheckBoxFEProps
   extends Omit<CheckboxProps, "checked" | "defaultChecked" | "defaultValue"> {

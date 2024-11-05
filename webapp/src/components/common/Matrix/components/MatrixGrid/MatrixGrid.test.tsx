@@ -12,15 +12,18 @@
  * This file is part of the Antares project.
  */
 
+import Box from "@mui/material/Box";
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Box from "@mui/material/Box";
-import MatrixGrid, { MatrixGridProps } from ".";
-import SplitView from "../../../SplitView";
-import type { EnhancedGridColumn } from "../../shared/types";
-import { mockGetBoundingClientRect } from "../../../../../tests/mocks/mockGetBoundingClientRect";
-import { mockHTMLCanvasElement } from "../../../../../tests/mocks/mockHTMLCanvasElement";
+
+import SplitView from "@/components/common/SplitView";
+import { mockGetBoundingClientRect } from "@/tests/mocks/mockGetBoundingClientRect";
+import { mockHTMLCanvasElement } from "@/tests/mocks/mockHTMLCanvasElement";
+
 import { Column } from "../../shared/constants";
+import { EnhancedGridColumn } from "../../shared/types";
+
+import MatrixGrid, { MatrixGridProps } from ".";
 
 interface RenderMatrixOptions {
   width?: string;

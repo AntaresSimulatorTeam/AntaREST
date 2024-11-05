@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import * as R from "ramda";
+
 import {
   createAction,
   createAsyncThunk,
@@ -19,7 +21,7 @@ import {
   createReducer,
   EntityState,
 } from "@reduxjs/toolkit";
-import * as R from "ramda";
+
 import {
   Area,
   AreaLayerColor,
@@ -29,16 +31,13 @@ import {
   StudyMetadata,
   UpdateAreaUi,
 } from "../../common/types";
-
-import { AppAsyncThunkConfig, AppDispatch } from "../store";
-import { makeActionName, makeLinkId, parseLinkId } from "../utils";
-import * as studyApi from "../../services/api/study";
 import {
   getNodeWidth,
   NODE_COLOR,
   NODE_HEIGHT,
 } from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
-import { AppState } from ".";
+import * as studyApi from "../../services/api/study";
+import * as studyDataApi from "../../services/api/studydata";
 import {
   getArea,
   getCurrentLayer,
@@ -46,12 +45,15 @@ import {
   getStudyMapLayersById,
   getStudySynthesis,
 } from "../selectors";
-import * as studyDataApi from "../../services/api/studydata";
+import { AppAsyncThunkConfig, AppDispatch } from "../store";
+import { makeActionName, makeLinkId, parseLinkId } from "../utils";
+
 import {
   createStudyLink,
   deleteStudyLink,
   setCurrentArea,
 } from "./studySyntheses";
+import { AppState } from ".";
 
 export interface StudyMapNode {
   id: string;

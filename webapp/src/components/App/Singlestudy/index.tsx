@@ -13,36 +13,33 @@
  */
 
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useCallback, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Box, Divider } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
 import { usePromise as usePromiseWrapper } from "react-use";
+
+import { Box, Divider } from "@mui/material";
+
 import {
   StudyMetadata,
   StudySummary,
   VariantTree,
   WSEvent,
   WSMessage,
-} from "../../../common/types";
-import { getStudyMetadata } from "../../../services/api/study";
-import NavHeader from "./NavHeader";
-import {
-  getVariantChildren,
-  getVariantParents,
-} from "../../../services/api/variant";
+} from "@/common/types";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import { fetchStudyVersions, setCurrentStudy } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { getStudyMetadata } from "@/services/api/study";
+import { getVariantChildren, getVariantParents } from "@/services/api/variant";
+import { findNodeInTree } from "@/services/utils";
+import { addWsMessageListener } from "@/services/webSockets";
+
 import TabWrapper from "./explore/TabWrapper";
-import HomeView from "./HomeView";
-import {
-  fetchStudyVersions,
-  setCurrentStudy,
-} from "../../../redux/ducks/studies";
-import { findNodeInTree } from "../../../services/utils";
 import CommandDrawer from "./Commands";
-import { addWsMessageListener } from "../../../services/webSockets";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
+import HomeView from "./HomeView";
+import NavHeader from "./NavHeader";
 
 const logError = debug("antares:singlestudy:error");
 

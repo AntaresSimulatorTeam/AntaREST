@@ -13,10 +13,11 @@
  */
 
 import { useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { Box, ButtonBase } from "@mui/material";
+import { useTranslation } from "react-i18next";
+
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import { Box, ButtonBase } from "@mui/material";
 
 interface PropTypes {
   onImport: (json: object) => void;

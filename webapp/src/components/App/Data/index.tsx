@@ -12,33 +12,36 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+
 import DeleteIcon from "@mui/icons-material/Delete";
-import StorageIcon from "@mui/icons-material/Storage";
-import { Box, Typography, IconButton, Tooltip } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
 import DownloadIcon from "@mui/icons-material/Download";
-import DataPropsView from "./DataPropsView";
+import EditIcon from "@mui/icons-material/Edit";
+import StorageIcon from "@mui/icons-material/Storage";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
+
+import { MatrixDataSetDTO, MatrixInfoDTO } from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import FileTable from "@/components/common/FileTable";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import RootPage from "@/components/common/page/RootPage";
+import SplitView from "@/components/common/SplitView";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
 import {
   deleteDataSet,
   exportMatrixDataset,
-  getMatrixList,
   getExportMatrixUrl,
-} from "../../../services/api/matrix";
-import { MatrixInfoDTO, MatrixDataSetDTO } from "../../../common/types";
+  getMatrixList,
+} from "@/services/api/matrix";
+
+import DataPropsView from "./DataPropsView";
 import DatasetCreationDialog from "./DatasetCreationDialog";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import RootPage from "../../common/page/RootPage";
 import MatrixDialog from "./MatrixDialog";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import FileTable from "../../common/FileTable";
-import { getAuthUser } from "../../../redux/selectors";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import SplitView from "../../common/SplitView";
 
 function Data() {
   const [t] = useTranslation();

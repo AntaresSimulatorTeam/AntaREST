@@ -12,12 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { IconButton, Tooltip } from "@mui/material";
 import { ReactElement } from "react";
-import { refresh } from "../../redux/ducks/auth";
-import useAppDispatch from "../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../redux/hooks/useAppSelector";
-import { getAuthUser } from "../../redux/selectors";
+
+import { IconButton, Tooltip } from "@mui/material";
+
+import { refresh } from "@/redux/ducks/auth";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
 
 interface Props {
   url: string;

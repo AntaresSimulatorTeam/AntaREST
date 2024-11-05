@@ -12,9 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
-import { mergeSxProp } from "../../utils/muiUtils";
 import * as R from "ramda";
+
+import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
+
+import { mergeSxProp } from "@/utils/muiUtils";
 
 export type TreeItemEnhancedProps = TreeItemProps;
 

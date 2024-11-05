@@ -12,6 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import { useEffect, useId, useState } from "react";
+import * as RA from "ramda-adjunct";
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  DropResult,
+} from "react-beautiful-dnd";
+import { FieldPath, FieldValues } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
+
+import DragHandleIcon from "@mui/icons-material/DragHandle";
+import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import {
   Autocomplete,
   Box,
@@ -28,23 +42,10 @@ import {
   setRef,
   Typography,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
-import { useEffect, useId, useState } from "react";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "react-beautiful-dnd";
-import DragHandleIcon from "@mui/icons-material/DragHandle";
-import * as RA from "ramda-adjunct";
-import { useUpdateEffect } from "react-use";
-import { FieldPath, FieldValues } from "react-hook-form";
-import StringFE from "../StringFE";
+
 import reactHookFormSupport, {
   ReactHookFormSupportProps,
-} from "../../../../hoc/reactHookFormSupport";
+} from "@/hoc/reactHookFormSupport";
 import {
   createFakeBlurEventHandler,
   createFakeChangeEventHandler,
@@ -52,7 +53,10 @@ import {
   FakeBlurEventHandler,
   FakeChangeEventHandler,
   InputObject,
-} from "../../../../utils/feUtils";
+} from "@/utils/feUtils";
+
+import StringFE from "../StringFE";
+
 import { makeLabel, makeListItems } from "./utils";
 
 interface ListFEProps<TItem, TOption> {

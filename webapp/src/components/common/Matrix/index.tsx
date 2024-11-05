@@ -12,19 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { Divider, Skeleton } from "@mui/material";
-import MatrixGrid from "./components/MatrixGrid";
-import { useMatrix } from "./hooks/useMatrix";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import ImportDialog from "../dialogs/ImportDialog";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../common/types";
-import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
-import MatrixActions from "./components/MatrixActions";
+
+import { Divider, Skeleton } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import { fetchMatrixFn } from "@/components/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+
+import ImportDialog from "../dialogs/ImportDialog";
 import EmptyView from "../page/SimpleContent";
-import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+
+import MatrixActions from "./components/MatrixActions";
+import MatrixGrid from "./components/MatrixGrid";
+import { useMatrix } from "./hooks/useMatrix";
 import { AggregateConfig } from "./shared/types";
+import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
 interface MatrixProps {
   url: string;

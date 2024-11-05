@@ -12,12 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Divider, IconButton, Tooltip } from "@mui/material";
-import SplitButton from "@/components/common/buttons/SplitButton";
-import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
-import { FileDownload, Save, Undo, Redo } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+
+import { FileDownload, Redo, Save, Undo } from "@mui/icons-material";
 import { LoadingButton } from "@mui/lab";
+import { Box, Divider, IconButton, Tooltip } from "@mui/material";
+
+import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
+import SplitButton from "@/components/common/buttons/SplitButton";
 
 interface MatrixActionsProps {
   onImport: VoidFunction;

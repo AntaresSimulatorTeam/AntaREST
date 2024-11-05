@@ -13,24 +13,28 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { Box, useTheme } from "@mui/material";
-import { getStudyData } from "../../../../../../services/api/study";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import {
   Light as SyntaxHighlighter,
   type SyntaxHighlighterProps,
 } from "react-syntax-highlighter";
-import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
-import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
+import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
+import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import type { DataCompProps } from "../utils";
-import DownloadButton from "../../../../../common/buttons/DownloadButton";
-import { downloadFile } from "../../../../../../utils/fileUtils";
+
+import { Box, useTheme } from "@mui/material";
+
+import DownloadButton from "@/components/common/buttons/DownloadButton";
+import UploadFileButton from "@/components/common/buttons/UploadFileButton";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getStudyData } from "@/services/api/study";
+import { downloadFile } from "@/utils/fileUtils";
+
+import { DataCompProps } from "../utils";
+
 import { Filename, Flex, Menubar } from "./styles";
-import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);

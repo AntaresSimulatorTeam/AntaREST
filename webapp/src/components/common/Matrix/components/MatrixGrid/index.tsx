@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import "@glideapps/glide-data-grid/dist/index.css";
+import { useMemo, useState } from "react";
+
 import DataEditor, {
   CompactSelection,
   EditableGridCell,
@@ -22,16 +23,19 @@ import DataEditor, {
   GridSelection,
   Item,
 } from "@glideapps/glide-data-grid";
+
+import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
-import { useMemo, useState } from "react";
+import { useMatrixPortal } from "../../hooks/useMatrixPortal";
 import {
   type EnhancedGridColumn,
   type GridUpdate,
   type MatrixAggregates,
 } from "../../shared/types";
-import { useColumnMapping } from "../../hooks/useColumnMapping";
-import { useMatrixPortal } from "../../hooks/useMatrixPortal";
+
 import { darkTheme, readOnlyDarkTheme } from "./styles";
+
+import "@glideapps/glide-data-grid/dist/index.css";
 
 export interface MatrixGridProps {
   data: number[][];

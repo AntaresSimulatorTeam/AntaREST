@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
 import { jwtDecode, type JwtPayload } from "jwt-decode";
+
+import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
+
 import { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";

@@ -13,6 +13,7 @@
  */
 
 import * as RA from "ramda-adjunct";
+
 import { AutoSubmitConfig, FormProps } from ".";
 
 export function toAutoSubmitConfig(

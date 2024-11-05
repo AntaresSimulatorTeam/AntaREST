@@ -13,21 +13,20 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import EmptyView from "../../../../../common/page/SimpleContent";
+
+import { StudyMetadata } from "@/common/types";
+import EmptyView from "@/components/common/page/SimpleContent";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import SplitView from "@/components/common/SplitView";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import { setCurrentArea } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getCurrentArea, getStudySynthesis } from "@/redux/selectors";
+
 import AreaPropsView from "./AreaPropsView";
 import AreasTab from "./AreasTab";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import {
-  getStudySynthesis,
-  getCurrentArea,
-} from "../../../../../../redux/selectors";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import SplitView from "../../../../../common/SplitView";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
 
 function Areas() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

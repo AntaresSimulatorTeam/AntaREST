@@ -13,17 +13,21 @@
  */
 
 import { ComponentType, useEffect, useMemo, useState } from "react";
+
 import { Box } from "@mui/material";
-import SplitView from "../../../../../../../common/SplitView";
-import PropertiesView from "../../../../../../../common/PropertiesView";
+
+import PropertiesView from "@/components/common/PropertiesView";
+import SplitView from "@/components/common/SplitView";
+
 import ListElement from "../../../../common/ListElement";
+
 import {
-  GenericScenarioConfig,
-  HandlerReturnTypes,
-  ScenarioType,
   ClustersHandlerReturn,
+  GenericScenarioConfig,
   getConfigByScenario,
+  HandlerReturnTypes,
   ScenarioConfig,
+  ScenarioType,
 } from "./utils";
 
 interface ScenarioTableProps {

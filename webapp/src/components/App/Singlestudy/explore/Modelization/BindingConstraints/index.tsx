@@ -12,25 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
-import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import EmptyView from "../../../../../common/page/SimpleContent";
-import BindingConstPropsView from "./BindingConstPropsView";
-import {
-  getBindingConst,
-  getCurrentBindingConstId,
-} from "../../../../../../redux/selectors";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
-import BindingConstView from "./BindingConstView";
-import usePromise from "../../../../../../hooks/usePromise";
-import { getBindingConstraintList } from "../../../../../../services/api/studydata";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import { useEffect } from "react";
-import SplitView from "../../../../../common/SplitView";
+import { useOutletContext } from "react-router";
+
+import { Box } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import EmptyView from "@/components/common/page/SimpleContent";
+import SplitView from "@/components/common/SplitView";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromise from "@/hooks/usePromise";
+import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getBindingConst, getCurrentBindingConstId } from "@/redux/selectors";
+import { getBindingConstraintList } from "@/services/api/studydata";
+
+import BindingConstPropsView from "./BindingConstPropsView";
+import BindingConstView from "./BindingConstView";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

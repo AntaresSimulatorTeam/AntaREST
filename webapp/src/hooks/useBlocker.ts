@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { History, Transition } from "history";
 import { useContext, useEffect } from "react";
+import { History, Transition } from "history";
 import { UNSAFE_NavigationContext as NavigationContext } from "react-router-dom";
+
 import useAutoUpdateRef from "./useAutoUpdateRef";
 
 // * Workaround until it will be supported by react-router v6.

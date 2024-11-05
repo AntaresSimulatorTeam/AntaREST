@@ -13,14 +13,15 @@
  */
 
 import { Column } from "../../../shared/constants";
+
+import { assertNumberCell, assertTextCell } from "./assertions";
 import {
-  createColumn,
   AGGREGATE_DATA,
-  MIXED_DATA,
+  createColumn,
   FORMAT_TEST_CASES,
+  MIXED_DATA,
 } from "./fixtures";
 import { createCoordinate, renderGridCellContent } from "./utils";
-import { assertNumberCell, assertTextCell } from "./assertions";
 
 describe("useGridCellContent", () => {
   describe("Aggregate columns", () => {

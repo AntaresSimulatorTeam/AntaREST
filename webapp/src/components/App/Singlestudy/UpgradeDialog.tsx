@@ -12,17 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../common/types";
-import { SubmitHandlerPlus } from "../../common/Form/types";
-import Fieldset from "../../common/Fieldset";
-import SelectFE from "../../common/fieldEditors/SelectFE";
-import FormDialog from "../../common/dialogs/FormDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudyVersionsFormatted } from "../../../redux/selectors";
-import { upgradeStudy } from "../../../services/api/study";
+
+import UpgradeIcon from "@mui/icons-material/Upgrade";
+
+import { StudyMetadata } from "@/common/types";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import Fieldset from "@/components/common/Fieldset";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyVersionsFormatted } from "@/redux/selectors";
+import { upgradeStudy } from "@/services/api/study";
 
 interface Props {
   study: StudyMetadata;

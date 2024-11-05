@@ -14,6 +14,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import axios from "axios";
+import clsx from "clsx";
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 import {
   DeepPartial,
   FieldPath,
@@ -26,7 +30,12 @@ import {
   UseFormProps,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import * as RA from "ramda-adjunct";
+import { useUpdateEffect } from "react-use";
+
+import RedoIcon from "@mui/icons-material/Redo";
+import SaveIcon from "@mui/icons-material/Save";
+import UndoIcon from "@mui/icons-material/Undo";
+import { LoadingButton, LoadingButtonProps } from "@mui/lab";
 import {
   Box,
   CircularProgress,
@@ -37,29 +46,23 @@ import {
   Theme,
   Tooltip,
 } from "@mui/material";
-import SaveIcon from "@mui/icons-material/Save";
-import { useUpdateEffect } from "react-use";
-import * as R from "ramda";
-import clsx from "clsx";
-import { LoadingButton, LoadingButtonProps } from "@mui/lab";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
-import axios from "axios";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import useDebounce from "../../../hooks/useDebounce";
+
+import useDebounce from "@/hooks/useDebounce";
+import useDebouncedState from "@/hooks/useDebouncedState";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePrompt from "@/hooks/usePrompt";
+import { mergeSxProp } from "@/utils/muiUtils";
+
+import FormContext from "./FormContext";
+import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
+import useFormApiPlus from "./useFormApiPlus";
+import useFormUndoRedo from "./useFormUndoRedo";
 import {
-  ROOT_ERROR_KEY,
   getDirtyValues,
+  ROOT_ERROR_KEY,
   stringToPath,
   toAutoSubmitConfig,
 } from "./utils";
-import useDebouncedState from "../../../hooks/useDebouncedState";
-import usePrompt from "../../../hooks/usePrompt";
-import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
-import FormContext from "./FormContext";
-import useFormApiPlus from "./useFormApiPlus";
-import useFormUndoRedo from "./useFormUndoRedo";
-import { mergeSxProp } from "../../../utils/muiUtils";
 
 export interface AutoSubmitConfig {
   enable: boolean;

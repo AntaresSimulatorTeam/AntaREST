@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import { useFormContextPlus } from "../../../../../../../common/Form";
-import { INITIALIZE_RESERVOIR_DATE_OPTIONS, HydroFormFields } from "./utils";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+
+import { HydroFormFields, INITIALIZE_RESERVOIR_DATE_OPTIONS } from "./utils";
 
 function Fields() {
   const { control, watch } = useFormContextPlus<HydroFormFields>();

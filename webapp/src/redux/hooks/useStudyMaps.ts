@@ -13,19 +13,21 @@
  */
 
 import { useState } from "react";
+
 import { StudyMetadata } from "../../common/types";
-import { AppState } from "../ducks";
-import useAppDispatch from "./useAppDispatch";
-import useAppSelector from "./useAppSelector";
-import { getStudyMap } from "../selectors";
-import {
-  createStudyMap,
-  fetchStudyMapLayers,
-  fetchStudyMapDistricts,
-} from "../ducks/studyMaps";
-import useStudySynthesis from "./useStudySynthesis";
 import { Response } from "../../components/common/utils/UsePromiseCond";
 import usePromise, { PromiseStatus } from "../../hooks/usePromise";
+import { AppState } from "../ducks";
+import {
+  createStudyMap,
+  fetchStudyMapDistricts,
+  fetchStudyMapLayers,
+} from "../ducks/studyMaps";
+import { getStudyMap } from "../selectors";
+
+import useAppDispatch from "./useAppDispatch";
+import useAppSelector from "./useAppSelector";
+import useStudySynthesis from "./useStudySynthesis";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];

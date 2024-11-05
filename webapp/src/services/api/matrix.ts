@@ -13,18 +13,21 @@
  */
 
 import { AxiosRequestConfig } from "axios";
-import client from "./client";
+
 import {
-  MatrixDTO,
   MatrixDataSetDTO,
-  MatrixInfoDTO,
   MatrixDataSetUpdateDTO,
-  MatrixIndex,
+  MatrixDTO,
   MatrixEditDTO,
-} from "../../common/types";
-import { FileDownloadTask } from "./downloads";
+  MatrixIndex,
+  MatrixInfoDTO,
+} from "@/common/types";
+import { MatrixUpdateDTO } from "@/components/common/Matrix/shared/types";
+
 import { getConfig } from "../config";
-import { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
+
+import client from "./client";
+import { FileDownloadTask } from "./downloads";
 
 export const getMatrixList = async (
   name = "",

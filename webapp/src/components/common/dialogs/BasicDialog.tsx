@@ -12,20 +12,22 @@
  * This file is part of the Antares project.
  */
 
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
+
+import { SvgIconComponent } from "@mui/icons-material";
 import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentProps,
   DialogContentText,
   DialogProps,
   DialogTitle,
   styled,
-  DialogContentProps,
 } from "@mui/material";
-import * as RA from "ramda-adjunct";
-import { SvgIconComponent } from "@mui/icons-material";
-import * as R from "ramda";
-import { mergeSxProp } from "../../../utils/muiUtils";
+
+import { mergeSxProp } from "@/utils/muiUtils";
 
 enum Alert {
   success,

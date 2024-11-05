@@ -13,21 +13,22 @@
  */
 
 import {
+  addDays,
+  addHours,
+  addMonths,
+  addWeeks,
+  addYears,
+  FirstWeekContainsDate,
+  format,
+  startOfWeek,
+} from "date-fns";
+import { t } from "i18next";
+
+import {
   DateIncrementFunction,
   FormatFunction,
   TimeFrequencyType,
 } from "./types";
-import {
-  addYears,
-  addMonths,
-  addWeeks,
-  startOfWeek,
-  FirstWeekContainsDate,
-  addDays,
-  addHours,
-  format,
-} from "date-fns";
-import { t } from "i18next";
 import { getLocale } from "./utils";
 
 ////////////////////////////////////////////////////////////////

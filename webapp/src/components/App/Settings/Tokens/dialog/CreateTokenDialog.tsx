@@ -12,24 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import TokenIcon from "@mui/icons-material/Token";
-import { IconButton, Paper, Tooltip } from "@mui/material";
-import { useSnackbar } from "notistack";
 import { useState } from "react";
+import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
+
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import {
-  BotCreateDTO,
-  BotDTO,
-  GroupDTO,
-  RoleType,
-} from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createBot } from "../../../../../services/api/user";
-import OkDialog from "../../../../common/dialogs/OkDialog";
+import TokenIcon from "@mui/icons-material/Token";
+import { IconButton, Paper, Tooltip } from "@mui/material";
+
+import { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "@/common/types";
+import OkDialog from "@/components/common/dialogs/OkDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createBot } from "@/services/api/user";
+
 import TokenFormDialog, { TokenFormDialogProps } from "./TokenFormDialog";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 

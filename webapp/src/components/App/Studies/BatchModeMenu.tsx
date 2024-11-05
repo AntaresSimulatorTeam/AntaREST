@@ -12,11 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import BoltIcon from "@mui/icons-material/Bolt";
-import { Box, Button, IconButton, Tooltip } from "@mui/material";
-import { t } from "i18next";
 import { useState } from "react";
+import { t } from "i18next";
+
+import BoltIcon from "@mui/icons-material/Bolt";
 import LibraryAddCheckIcon from "@mui/icons-material/LibraryAddCheck";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
+
 import LauncherDialog from "./LauncherDialog";
 
 interface Props {

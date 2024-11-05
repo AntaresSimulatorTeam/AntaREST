@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { SvgIconComponent } from "@mui/icons-material";
+import { Icon } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
-import Avatar from "@mui/material/Avatar";
-import { Icon } from "@mui/material";
-import { SvgIconComponent } from "@mui/icons-material";
+import ListItemText from "@mui/material/ListItemText";
 
 interface ListItem {
   content: React.ReactNode;

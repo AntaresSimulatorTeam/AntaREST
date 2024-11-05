@@ -12,19 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Chip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { LinkProperties } from "../../../../../../common/types";
-import {
-  StudyMapNode,
-  setCurrentLayer,
-} from "../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import {
-  getCurrentLayer,
-  getStudyMapLayersById,
-} from "../../../../../../redux/selectors";
+
+import { Box, Chip, Typography } from "@mui/material";
+
+import { LinkProperties } from "@/common/types";
+import { setCurrentLayer, StudyMapNode } from "@/redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentLayer, getStudyMapLayersById } from "@/redux/selectors";
 
 interface Props {
   links: LinkProperties[];

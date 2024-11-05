@@ -12,11 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { renderHook } from "@testing-library/react";
 import { type Item } from "@glideapps/glide-data-grid";
+import { renderHook } from "@testing-library/react";
+
 import { useColumnMapping } from "../../useColumnMapping";
-import { useGridCellContent } from "..";
 import type { RenderOptions } from "../types";
+import { useGridCellContent } from "..";
 
 export const createCoordinate = (col: number, row: number): Item =>
   [col, row] as Item;

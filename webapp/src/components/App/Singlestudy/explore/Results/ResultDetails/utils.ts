@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Area, LinkElement, Simulation } from "../../../../../../common/types";
+import { Area, LinkElement, Simulation } from "@/common/types";
 
 export enum OutputItemType {
   Areas = "areas",

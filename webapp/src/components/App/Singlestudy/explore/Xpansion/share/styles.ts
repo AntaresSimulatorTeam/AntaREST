@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography, Button, styled } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { Box, Button, styled, Typography } from "@mui/material";
 
 export const Fields = styled(Box)(({ theme }) => ({
   display: "flex",

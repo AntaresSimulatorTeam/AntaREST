@@ -12,11 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import debug from "debug";
 import axios from "axios";
+import debug from "debug";
 import moment from "moment";
-import { initAxiosClient } from "./api/client";
+
 import { initRawAxiosClient } from "./api/auth";
+import { initAxiosClient } from "./api/client";
 import { APIVersion, getVersion } from "./api/misc";
 
 const info = debug("antares:config:info");

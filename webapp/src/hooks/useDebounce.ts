@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { useEffect, useMemo, useRef } from "react";
 import {
   debounce,
   DebouncedFunc,
@@ -21,7 +22,6 @@ import {
 } from "lodash";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { useEffect, useMemo, useRef } from "react";
 import { F } from "ts-toolbelt";
 
 export interface UseDebounceParams extends DebounceSettings {

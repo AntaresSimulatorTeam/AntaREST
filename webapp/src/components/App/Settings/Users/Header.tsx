@@ -12,13 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
-import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import { Box, Button } from "@mui/material";
+
+import { UserDetailsDTO } from "@/common/types";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+
 import CreateUserDialog from "./dialog/CreateUserDialog";
-import { UserDetailsDTO } from "../../../../common/types";
-import SearchFE from "../../../common/fieldEditors/SearchFE";
 
 interface Props {
   setSearchValue: (v: string) => void;

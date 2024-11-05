@@ -12,13 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Tab } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
-import Layers from "./Layers";
+import { Box, Button, Tab } from "@mui/material";
+
 import Districts from "./Districts";
+import Layers from "./Layers";
 
 interface Props {
   onClose: () => void;

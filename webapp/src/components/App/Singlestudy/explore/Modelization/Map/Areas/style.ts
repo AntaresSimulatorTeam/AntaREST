@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { styled, Box } from "@mui/material";
 import { HuePicker } from "react-color";
+
 import DeleteIcon from "@mui/icons-material/Delete";
+import { Box, styled } from "@mui/material";
 
 export const AreasContainer = styled(Box)(() => ({
   width: "100%",

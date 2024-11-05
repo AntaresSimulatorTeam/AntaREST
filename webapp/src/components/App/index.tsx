@@ -12,63 +12,67 @@
  * This file is part of the Antares project.
  */
 
+import { SnackbarKey, SnackbarProvider, useSnackbar } from "notistack";
 import {
   BrowserRouter as Router,
   Navigate,
+  Outlet,
   Route,
   Routes,
-  Outlet,
 } from "react-router-dom";
+
+import CloseIcon from "@mui/icons-material/Close";
 import { CssBaseline, IconButton, ThemeProvider } from "@mui/material";
-import { SnackbarKey, SnackbarProvider, useSnackbar } from "notistack";
-import maintheme from "../../theme";
-import MenuWrapper from "../wrappers/MenuWrapper";
-import Studies from "./Studies";
-import Data from "./Data";
-import Tasks from "./Tasks";
-import Settings from "./Settings";
-import Api from "./Api";
+
+import maintheme from "@/theme";
+
 import LoginWrapper from "../wrappers/LoginWrapper";
 import MaintenanceWrapper from "../wrappers/MaintenanceWrapper";
-import SingleStudy from "./Singlestudy";
-import Modelization from "./Singlestudy/explore/Modelization";
-import Results from "./Singlestudy/explore/Results";
+import MenuWrapper from "../wrappers/MenuWrapper";
+
 import Configuration from "./Singlestudy/explore/Configuration";
-import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
-import Links from "./Singlestudy/explore/Modelization/Links";
-import Areas from "./Singlestudy/explore/Modelization/Areas";
-import Map from "./Singlestudy/explore/Modelization/Map";
 import Debug from "./Singlestudy/explore/Debug";
-import Xpansion from "./Singlestudy/explore/Xpansion";
-import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
-import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
-import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
-import Properties from "./Singlestudy/explore/Modelization/Areas/Properties";
-import Load from "./Singlestudy/explore/Modelization/Areas/Load";
+import Modelization from "./Singlestudy/explore/Modelization";
+import Areas from "./Singlestudy/explore/Modelization/Areas";
 import Hydro from "./Singlestudy/explore/Modelization/Areas/Hydro";
-import MiscGen from "./Singlestudy/explore/Modelization/Areas/MiscGen";
-import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
-import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
-import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
-import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
-import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
-import Weights from "./Singlestudy/explore/Xpansion/Weights";
-import TableModeList from "./Singlestudy/explore/TableModeList";
-import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
-import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
-import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
-import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
 import Allocation from "./Singlestudy/explore/Modelization/Areas/Hydro/Allocation";
 import Correlation from "./Singlestudy/explore/Modelization/Areas/Hydro/Correlation";
+import HydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/HydroMatrix";
+import ManagementOptions from "./Singlestudy/explore/Modelization/Areas/Hydro/ManagementOptions";
+import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
+import { HYDRO_ROUTES } from "./Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import Load from "./Singlestudy/explore/Modelization/Areas/Load";
+import MiscGen from "./Singlestudy/explore/Modelization/Areas/MiscGen";
+import Properties from "./Singlestudy/explore/Modelization/Areas/Properties";
+import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
+import RenewableForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
+import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
+import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
 import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/Form";
 import Thermal from "./Singlestudy/explore/Modelization/Areas/Thermal";
 import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
-import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
-import RenewableForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
-import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
-import CloseIcon from "@mui/icons-material/Close";
+import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
+import BindingConstraints from "./Singlestudy/explore/Modelization/BindingConstraints";
+import Links from "./Singlestudy/explore/Modelization/Links";
+import Map from "./Singlestudy/explore/Modelization/Map";
+import Districts from "./Singlestudy/explore/Modelization/Map/MapConfig/Districts";
+import Layers from "./Singlestudy/explore/Modelization/Map/MapConfig/Layers";
+import Results from "./Singlestudy/explore/Results";
+import ResultDetails from "./Singlestudy/explore/Results/ResultDetails";
+import TableModeList from "./Singlestudy/explore/TableModeList";
+import Xpansion from "./Singlestudy/explore/Xpansion";
+import Candidates from "./Singlestudy/explore/Xpansion/Candidates";
+import Capacities from "./Singlestudy/explore/Xpansion/Capacities";
+import Constraints from "./Singlestudy/explore/Xpansion/Constraints";
+import XpansionSettings from "./Singlestudy/explore/Xpansion/Settings";
+import Weights from "./Singlestudy/explore/Xpansion/Weights";
+import Api from "./Api";
+import Data from "./Data";
+import Settings from "./Settings";
+import SingleStudy from "./Singlestudy";
+import Studies from "./Studies";
+import Tasks from "./Tasks";
 
 // TODO: replace 'notistack' by 'sonner' (https://sonner.emilkowal.ski/)
 function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {

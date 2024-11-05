@@ -13,17 +13,19 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import EmptyView from "../../../../../common/page/SimpleContent";
+
+import { StudyMetadata } from "@/common/types";
+import EmptyView from "@/components/common/page/SimpleContent";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import SplitView from "@/components/common/SplitView";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import { setCurrentLink } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getCurrentLink } from "@/redux/selectors";
+
 import LinkPropsView from "./LinkPropsView";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import { getCurrentLink } from "../../../../../../redux/selectors";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
 import LinkView from "./LinkView";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import SplitView from "../../../../../common/SplitView";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
 
 function Links() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

@@ -12,15 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { Typography, Grid } from "@mui/material";
 import { FieldArrayWithId } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { CorrelationFormFields } from "./utils";
-import { useFormContextPlus } from "../../../../../../../common/Form";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentArea } from "../../../../../../../../redux/selectors";
+
+import { Grid, Typography } from "@mui/material";
+
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import { useFormContextPlus } from "@/components/common/Form";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentArea } from "@/redux/selectors";
 import { validateNumber } from "@/utils/validation/number";
+
+import { CorrelationFormFields } from "./utils";
 
 interface Props {
   field: FieldArrayWithId<CorrelationFormFields, "correlation">;

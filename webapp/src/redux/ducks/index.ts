@@ -14,13 +14,14 @@
 
 import { Action, combineReducers } from "redux";
 import { L } from "ts-toolbelt";
-import studies from "./studies";
-import users from "./users";
-import groups from "./groups";
+
 import auth, { logout } from "./auth";
-import ui from "./ui";
-import studySyntheses from "./studySyntheses";
+import groups from "./groups";
+import studies from "./studies";
 import studyMaps from "./studyMaps";
+import studySyntheses from "./studySyntheses";
+import ui from "./ui";
+import users from "./users";
 
 const appReducer = combineReducers({
   studies,

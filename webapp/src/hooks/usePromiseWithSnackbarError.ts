@@ -13,8 +13,9 @@
  */
 
 import { useEffect } from "react";
+
 import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
-import usePromise, { UsePromiseResponse, UsePromiseParams } from "./usePromise";
+import usePromise, { UsePromiseParams, UsePromiseResponse } from "./usePromise";
 
 export interface UsePromiseWithSnackbarErrorParams extends UsePromiseParams {
   errorMessage: string;

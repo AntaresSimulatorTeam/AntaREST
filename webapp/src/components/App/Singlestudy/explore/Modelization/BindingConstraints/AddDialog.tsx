@@ -13,29 +13,34 @@
  */
 
 import { useMemo } from "react";
-import { Box } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
+import { Control } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+
+import { Box } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { setCurrentBindingConst } from "@/redux/ducks/studySyntheses";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { createBindingConstraint } from "@/services/api/studydata";
+import { validateString } from "@/utils/validation/string";
+
 import {
   BindingConstraintOperator,
   TimeStep,
 } from "../../../Commands/Edition/commandTypes";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+
 import {
   BindingConstraint,
   OPERATORS,
   TIME_STEPS,
 } from "./BindingConstView/utils";
-import { createBindingConstraint } from "../../../../../../services/api/studydata";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import { StudyMetadata } from "../../../../../../common/types";
-import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { useOutletContext } from "react-router";
-import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;
@@ -138,7 +143,7 @@ function AddDialog({
       onCancel={onClose}
       open={open}
     >
-      {({ control }) => (
+      {({ control }: { control: Control<typeof defaultValues> }) => (
         <Box
           sx={{
             display: "flex",

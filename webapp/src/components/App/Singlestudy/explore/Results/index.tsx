@@ -12,6 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import { useMemo, useState } from "react";
+import { AxiosError } from "axios";
+import moment from "moment";
+import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext } from "react-router-dom";
+
+import ArchiveIcon from "@mui/icons-material/Archive";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import DownloadIcon from "@mui/icons-material/Download";
+import EqualizerIcon from "@mui/icons-material/Equalizer";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import {
   Box,
   CircularProgress,
@@ -26,21 +40,14 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import UnarchiveIcon from "@mui/icons-material/Unarchive";
-import DownloadIcon from "@mui/icons-material/Download";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import EqualizerIcon from "@mui/icons-material/Equalizer";
-import * as R from "ramda";
-import { useNavigate, useOutletContext } from "react-router-dom";
 import { grey } from "@mui/material/colors";
-import moment from "moment";
-import { AxiosError } from "axios";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+
+import { LaunchJob, StudyMetadata, StudyOutput } from "@/common/types";
+import LaunchJobLogView from "@/components/App/Tasks/LaunchJobLogView";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
   archiveOutput,
   deleteOutput,
@@ -48,18 +55,9 @@ import {
   getStudyJobs,
   getStudyOutputs,
   unarchiveOutput,
-} from "../../../../../services/api/study";
-import {
-  LaunchJob,
-  StudyMetadata,
-  StudyOutput,
-} from "../../../../../common/types";
-import { convertUTCToLocalTime } from "../../../../../services/utils";
-import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
-import type { EmptyObject } from "../../../../../utils/tsUtils";
-import DigestDialog from "../../../../common/dialogs/DigestDialog";
+} from "@/services/api/study";
+import { convertUTCToLocalTime } from "@/services/utils";
+import type { EmptyObject } from "@/utils/tsUtils";
 
 interface OutputDetail {
   name: string;

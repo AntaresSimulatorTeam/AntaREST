@@ -13,20 +13,23 @@
  */
 
 import { useState } from "react";
-import { Paper, Button, Box, Divider } from "@mui/material";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import { StudyMetadata, VariantTree } from "../../../../../common/types";
-import CreateVariantDialog from "./CreateVariantDialog";
-import LauncherHistory from "./LauncherHistory";
-import Notes from "./Notes";
-import LauncherDialog from "../../../Studies/LauncherDialog";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+
+import { Box, Button, Divider, Paper } from "@mui/material";
+
+import { StudyMetadata, VariantTree } from "@/common/types";
+import LauncherDialog from "@/components/App/Studies/LauncherDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   copyStudy,
   unarchiveStudy as callUnarchiveStudy,
-} from "../../../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+} from "@/services/api/study";
+
+import CreateVariantDialog from "./CreateVariantDialog";
+import LauncherHistory from "./LauncherHistory";
+import Notes from "./Notes";
 
 interface Props {
   study: StudyMetadata | undefined;

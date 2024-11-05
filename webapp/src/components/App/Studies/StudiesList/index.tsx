@@ -13,57 +13,58 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Box,
-  Typography,
-  Breadcrumbs,
-  Select,
-  MenuItem,
-  ListItemText,
-  SelectChangeEvent,
-  ListItemIcon,
-  Tooltip,
-  FormControl,
-  InputLabel,
-  IconButton,
-} from "@mui/material";
+import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import AutoSizer from "react-virtualized-auto-sizer";
-import HomeIcon from "@mui/icons-material/Home";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import FolderOffIcon from "@mui/icons-material/FolderOff";
-import RadarIcon from "@mui/icons-material/Radar";
 import { FixedSizeGrid, GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
-import { AxiosError } from "axios";
-import { StudyMetadata } from "../../../../common/types";
+
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import FolderOffIcon from "@mui/icons-material/FolderOff";
+import HomeIcon from "@mui/icons-material/Home";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import RadarIcon from "@mui/icons-material/Radar";
 import {
-  STUDIES_HEIGHT_HEADER,
-  STUDIES_LIST_HEADER_HEIGHT,
-} from "../../../../theme";
+  Box,
+  Breadcrumbs,
+  FormControl,
+  IconButton,
+  InputLabel,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import useDebounce from "@/hooks/useDebounce";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
   setStudyScrollPosition,
   StudiesSortConf,
   updateStudiesSortConf,
   updateStudyFilters,
-} from "../../../../redux/ducks/studies";
-import LauncherDialog from "../LauncherDialog";
-import useDebounce from "../../../../hooks/useDebounce";
+} from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import {
   getStudiesScrollPosition,
   getStudiesSortConf,
   getStudyFilters,
-} from "../../../../redux/selectors";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import StudyCardCell from "./StudyCardCell";
+} from "@/redux/selectors";
+import { scanFolder } from "@/services/api/study";
+import { STUDIES_HEIGHT_HEADER, STUDIES_LIST_HEADER_HEIGHT } from "@/theme";
+
 import BatchModeMenu from "../BatchModeMenu";
+import LauncherDialog from "../LauncherDialog";
 import RefreshButton from "../RefreshButton";
-import { scanFolder } from "../../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+
+import StudyCardCell from "./StudyCardCell";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;

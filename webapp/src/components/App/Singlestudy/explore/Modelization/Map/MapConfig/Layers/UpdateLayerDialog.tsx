@@ -12,25 +12,27 @@
  * This file is part of the Antares project.
  */
 
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+
 import { Delete, Edit } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
-import { useMemo, useState } from "react";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
+
+import { StudyMetadata } from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import Fieldset from "@/components/common/Fieldset";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
 import {
   deleteStudyMapLayer,
   updateStudyMapLayer,
-} from "../../../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+} from "@/redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyMapLayersById } from "@/redux/selectors";
 import { validateString } from "@/utils/validation/string";
 
 interface Props {

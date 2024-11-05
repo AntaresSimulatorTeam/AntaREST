@@ -12,9 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { render } from "@testing-library/react";
 import { Provider } from "react-redux";
+
 import { StyledEngineProvider } from "@mui/material";
+import { render } from "@testing-library/react";
+
 import App from "./components/App";
 import store from "./redux/store";
 

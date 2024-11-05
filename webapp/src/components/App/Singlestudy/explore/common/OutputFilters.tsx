@@ -15,9 +15,11 @@
 import { useMemo } from "react";
 import { FieldPath } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import SelectFE from "../../../../common/fieldEditors/SelectFE";
-import Fieldset from "../../../../common/Fieldset";
-import { ControlPlus } from "../../../../common/Form/types";
+
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import Fieldset from "@/components/common/Fieldset";
+import { ControlPlus } from "@/components/common/Form/types";
+
 import { FilteringType } from "./types";
 
 interface FilterFieldValues {

@@ -12,10 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useState, forwardRef, useCallback } from "react";
+import { forwardRef, useCallback, useState } from "react";
 import * as React from "react";
-import { useSnackbar, SnackbarContent } from "notistack";
 import axios from "axios";
+import { SnackbarContent, useSnackbar } from "notistack";
+
+import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Box,
   Card,
@@ -27,9 +31,6 @@ import {
   styled,
   Typography,
 } from "@mui/material";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const Snackbar = styled(SnackbarContent)(({ theme }) => ({
   [theme.breakpoints.up("sm")]: {

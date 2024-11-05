@@ -13,9 +13,11 @@
  */
 
 import React from "react";
-import { Grid, Divider, IconButton } from "@mui/material";
 import { t } from "i18next";
+
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import { Divider, Grid, IconButton } from "@mui/material";
+
 import SelectFE from "./fieldEditors/SelectFE";
 
 interface ListOption {

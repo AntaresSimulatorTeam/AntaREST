@@ -12,27 +12,26 @@
  * This file is part of the Antares project.
  */
 
+import { BaseSyntheticEvent } from "react";
 import { AxiosError } from "axios";
-import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { UseFieldArrayAppend } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { AllClustersAndLinks } from "@/common/types";
 import FormDialog, {
   FormDialogProps,
-} from "../../../../../../../common/dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  isLinkTerm,
-  type BindingConstraint,
-  type ConstraintTerm,
-} from "../utils";
+} from "@/components/common/dialogs/FormDialog";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getLinksAndClusters } from "@/redux/selectors";
+import { createConstraintTerm } from "@/services/api/studydata";
+
+import { BindingConstraint, ConstraintTerm, isLinkTerm } from "../utils";
+
 import AddConstraintTermForm from "./AddConstraintTermForm";
-import { createConstraintTerm } from "../../../../../../../../services/api/studydata";
-import { AllClustersAndLinks } from "../../../../../../../../common/types";
-import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
-import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
-import { BaseSyntheticEvent } from "react";
-import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
   studyId: string;

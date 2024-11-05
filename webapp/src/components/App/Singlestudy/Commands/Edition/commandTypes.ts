@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { CommandResultDTO } from "../../../../../common/types";
+import { CommandResultDTO } from "@/common/types";
 
 export interface CommandItem {
   id?: string;

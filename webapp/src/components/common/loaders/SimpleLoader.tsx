@@ -13,6 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
+
 import { Box, CircularProgress } from "@mui/material";
 
 interface PropTypes {

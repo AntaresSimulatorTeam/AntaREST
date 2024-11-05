@@ -12,22 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
-import { AxiosError } from "axios";
 import { useMemo } from "react";
+import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { editStudy } from "../../../../../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import Fieldset from "../../../../../../common/Fieldset";
-import { AutoSubmitHandler } from "../../../../../../common/Form/types";
-import { getLinkPath, LinkFields } from "./utils";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import LinkMatrixView from "./LinkMatrixView";
+
+import { Box } from "@mui/material";
+
+import { LinkElement, StudyMetadata } from "@/common/types";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+import { AutoSubmitHandler } from "@/components/common/Form/types";
+import Matrix from "@/components/common/Matrix";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { editStudy } from "@/services/api/study";
+
 import OutputFilters from "../../../common/OutputFilters";
-import { useFormContextPlus } from "../../../../../../common/Form";
-import Matrix from "../../../../../../common/Matrix";
+
+import LinkMatrixView from "./LinkMatrixView";
+import { getLinkPath, LinkFields } from "./utils";
 
 interface Props {
   link: LinkElement;

@@ -12,25 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import Divider from "@mui/material/Divider";
-import { Button, Drawer, List, ListItem, Typography } from "@mui/material";
 import { useEffect, useRef } from "react";
-import { STUDIES_FILTER_WIDTH } from "../../../theme";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { useTranslation } from "react-i18next";
+
+import { Button, Drawer, List, ListItem, Typography } from "@mui/material";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Toolbar from "@mui/material/Toolbar";
+
+import CheckboxesTagsFE from "@/components/common/fieldEditors/CheckboxesTagsFE";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import { StudyFilters, updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
 import {
   getGroups,
   getStudyFilters,
   getStudyVersions,
   getUsers,
-} from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { StudyFilters, updateStudyFilters } from "../../../redux/ducks/studies";
-import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import { displayVersionName } from "../../../services/utils";
-import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
+} from "@/redux/selectors";
+import { displayVersionName } from "@/services/utils";
+import { STUDIES_FILTER_WIDTH } from "@/theme";
 
 interface Props {
   open: boolean;

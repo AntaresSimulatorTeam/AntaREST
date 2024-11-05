@@ -13,12 +13,14 @@
  */
 
 import { useOutletContext } from "react-router";
-import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
-import usePromise from "../../../../../../../hooks/usePromise";
-import Form from "../../../../../../common/Form";
+
+import { LinkElement, StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromise from "@/hooks/usePromise";
+
 import LinkForm from "./LinkForm";
 import { getDefaultValues } from "./utils";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 interface Props {
   link: LinkElement;

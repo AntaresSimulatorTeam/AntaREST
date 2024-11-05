@@ -13,7 +13,7 @@
  */
 
 import { DependencyList } from "react";
-import { useNavigate, To } from "react-router-dom";
+import { To, useNavigate } from "react-router-dom";
 import { useUpdateEffect } from "react-use";
 
 interface UseNavigateOnConditionOptions {

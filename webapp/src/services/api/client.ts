@@ -16,9 +16,11 @@ import axios from "axios";
 import debug from "debug";
 import Cookies from "js-cookie";
 import * as R from "ramda";
+
+import { logout, refresh } from "@/redux/ducks/auth";
+import store from "@/redux/store";
+
 import { Config } from "../config";
-import store from "../../redux/store";
-import { logout, refresh } from "../../redux/ducks/auth";
 
 const logError = debug("antares:client:error");
 const logInfo = debug("antares:client:info");

@@ -12,19 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
+
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+
 import {
   GroupDetailsDTO,
   GroupDTO,
   RoleDetailsDTO,
   UserDTO,
-} from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createGroup, createRole } from "../../../../../services/api/user";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+} from "@/common/types";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { createGroup, createRole } from "@/services/api/user";
+
 import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";

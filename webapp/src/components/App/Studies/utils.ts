@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata } from "../../../common/types";
+import { StudyMetadata } from "@/common/types";
 
 export interface StudyTreeNode {
   name: string;

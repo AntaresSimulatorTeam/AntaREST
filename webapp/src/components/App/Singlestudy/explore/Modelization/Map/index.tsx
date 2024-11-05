@@ -13,45 +13,44 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { useTranslation } from "react-i18next";
-import { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import { AxiosError } from "axios";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
+import { Graph, GraphLink, GraphNode } from "react-d3-graph";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router-dom";
+import AutoSizer from "react-virtualized-auto-sizer";
+
+import { Box } from "@mui/material";
+
+import { LinkProperties, StudyMetadata, UpdateAreaUi } from "@/common/types";
+import SplitView from "@/components/common/SplitView";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import useDebouncedState from "@/hooks/useDebouncedState";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import {
-  LinkProperties,
-  StudyMetadata,
-  UpdateAreaUi,
-} from "../../../../../../common/types";
-import MapGraph from "./MapGraph";
-import Areas from "./Areas";
-import CreateAreaDialog from "./CreateAreaDialog";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getUpdatedNode, INITIAL_ZOOM, NODE_COLOR } from "./utils";
-import { MapContainer } from "./style";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+  createStudyMapNode,
+  StudyMapNode,
+  updateStudyMapNode,
+} from "@/redux/ducks/studyMaps";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useStudyMaps from "@/redux/hooks/useStudyMaps";
 import {
   getCurrentLayer,
   getCurrentStudyMapNode,
   getStudyMapLinks,
   getStudyMapNodes,
-} from "../../../../../../redux/selectors";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+} from "@/redux/selectors";
+
+import Areas from "./Areas";
+import CreateAreaDialog from "./CreateAreaDialog";
 import MapConfig from "./MapConfig";
-import useStudyMaps from "../../../../../../redux/hooks/useStudyMaps";
-import {
-  StudyMapNode,
-  createStudyMapNode,
-  updateStudyMapNode,
-} from "../../../../../../redux/ducks/studyMaps";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import MapHeader from "./MapHeader";
 import MapControlButtons from "./MapControlButtons";
-import useDebouncedState from "../../../../../../hooks/useDebouncedState";
-import SplitView from "../../../../../common/SplitView";
-import { Box } from "@mui/material";
+import MapGraph from "./MapGraph";
+import MapHeader from "./MapHeader";
+import { MapContainer } from "./style";
+import { getUpdatedNode, INITIAL_ZOOM, NODE_COLOR } from "./utils";
 
 function Map() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

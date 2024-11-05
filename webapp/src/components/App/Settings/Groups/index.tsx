@@ -12,6 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import { ReactNode, useMemo, useReducer, useState } from "react";
+import { produce } from "immer";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
+import { Action } from "redux";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import GroupIcon from "@mui/icons-material/Group";
 import {
   Box,
   CircularProgress,
@@ -24,28 +35,20 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import { produce } from "immer";
-import { ReactNode, useMemo, useReducer, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
-import { Action } from "redux";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import * as R from "ramda";
-import GroupIcon from "@mui/icons-material/Group";
-import { useSnackbar } from "notistack";
-import { GroupDetailsDTO } from "../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import { deleteGroup, getGroups } from "../../../../services/api/user";
-import { sortByName } from "../../../../services/utils";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import { RESERVED_GROUP_NAMES } from "../utils";
-import Header from "./Header";
+
+import { RESERVED_GROUP_NAMES } from "@/common/constants";
+import { GroupDetailsDTO } from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { deleteGroup, getGroups } from "@/services/api/user";
+import { sortByName } from "@/services/utils";
+import { isSearchMatching } from "@/utils/stringUtils";
+
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
-import { getAuthUser } from "../../../../redux/selectors";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isSearchMatching } from "../../../../utils/stringUtils";
+import Header from "./Header";
 
 enum GroupActionKind {
   ADD = "ADD",

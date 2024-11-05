@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import Form from "../../../../../../../common/Form";
+
+import { StudyMetadata } from "@/common/types";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+
 import {
-  type InflowStructureFields,
   getInflowStructureFields,
+  type InflowStructureFields,
   updateInflowStructureFields,
 } from "./utils";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { useTranslation } from "react-i18next";
 
 function InflowStructure() {
   const [t] = useTranslation();

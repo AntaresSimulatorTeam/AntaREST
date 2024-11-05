@@ -12,17 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { Skeleton } from "@mui/material";
-import OkDialog, { OkDialogProps } from "./OkDialog";
-import EditableMatrix from "../EditableMatrix";
-import UsePromiseCond from "../utils/UsePromiseCond";
-import type { LaunchJob } from "../../../common/types";
-import { getStudyData } from "../../../services/api/study";
-import usePromise from "../../../hooks/usePromise";
-import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import EmptyView from "../page/SimpleContent";
+import { useTranslation } from "react-i18next";
+
 import SearchOffIcon from "@mui/icons-material/SearchOff";
+import { Skeleton } from "@mui/material";
+
+import type { LaunchJob } from "@/common/types";
+import usePromise from "@/hooks/usePromise";
+import { getStudyData } from "@/services/api/study";
+
+import EditableMatrix from "../EditableMatrix";
+import EmptyView from "../page/SimpleContent";
+import UsePromiseCond from "../utils/UsePromiseCond";
+
+import OkDialog, { OkDialogProps } from "./OkDialog";
 
 // TODO: redesign DataViewerDialog to use path, then remove this component
 

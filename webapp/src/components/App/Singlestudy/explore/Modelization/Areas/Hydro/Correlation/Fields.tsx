@@ -14,15 +14,15 @@
 
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import {
-  getAreasById,
-  getCurrentArea,
-} from "../../../../../../../../redux/selectors";
-import DynamicList from "../../../../../../../common/DynamicList";
-import { useFormContextPlus } from "../../../../../../../common/Form";
+
+import { StudyMetadata } from "@/common/types";
+import DynamicList from "@/components/common/DynamicList";
+import { useFormContextPlus } from "@/components/common/Form";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreasById, getCurrentArea } from "@/redux/selectors";
+
 import { useAreasOptions } from "../hooks/useAreasOptions";
+
 import CorrelationField from "./CorrelationField";
 import { CorrelationFormFields } from "./utils";
 

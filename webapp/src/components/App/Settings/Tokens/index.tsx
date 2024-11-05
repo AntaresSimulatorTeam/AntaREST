@@ -12,6 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import { ReactNode, useMemo, useReducer, useState } from "react";
+import { produce } from "immer";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
+import { useTranslation } from "react-i18next";
+import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
+import { Action } from "redux";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import InfoIcon from "@mui/icons-material/Info";
+import TokenIcon from "@mui/icons-material/Token";
 import {
   Box,
   CircularProgress,
@@ -24,32 +35,19 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import { produce } from "immer";
-import { ReactNode, useMemo, useReducer, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
-import { Action } from "redux";
-import DeleteIcon from "@mui/icons-material/Delete";
-import InfoIcon from "@mui/icons-material/Info";
-import TokenIcon from "@mui/icons-material/Token";
-import * as R from "ramda";
-import { useSnackbar } from "notistack";
-import { BotDTO, BotDetailsDTO, UserDTO } from "../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import {
-  deleteBot,
-  getBots,
-  getUser,
-  getUsers,
-} from "../../../../services/api/user";
-import { isUserAdmin, sortByProp } from "../../../../services/utils";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import Header from "./Header";
-import { getAuthUser } from "../../../../redux/selectors";
+
+import { BotDetailsDTO, BotDTO, UserDTO } from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAuthUser } from "@/redux/selectors";
+import { deleteBot, getBots, getUser, getUsers } from "@/services/api/user";
+import { isUserAdmin, sortByProp } from "@/services/utils";
+import { isSearchMatching } from "@/utils/stringUtils";
+
 import TokenInfoDialog from "./dialog/TokenInfoDialog";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isSearchMatching } from "../../../../utils/stringUtils";
+import Header from "./Header";
 
 interface BotDetailsDtoWithUser extends BotDetailsDTO {
   user: UserDTO;

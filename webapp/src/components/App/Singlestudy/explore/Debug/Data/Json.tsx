@@ -12,18 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
-import { editStudy, getStudyData } from "../../../../../../services/api/study";
-import JSONEditor, { JSONEditorProps } from "../../../../../common/JSONEditor";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import type { DataCompProps } from "../utils";
-import DownloadButton from "../../../../../common/buttons/DownloadButton";
-import { downloadFile } from "../../../../../../utils/fileUtils";
 import { useEffect, useState } from "react";
+import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+
+import DownloadButton from "@/components/common/buttons/DownloadButton";
+import UploadFileButton from "@/components/common/buttons/UploadFileButton";
+import JSONEditor, { JSONEditorProps } from "@/components/common/JSONEditor";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { editStudy, getStudyData } from "@/services/api/study";
+import { downloadFile } from "@/utils/fileUtils";
+
+import { DataCompProps } from "../utils";
+
 import { Filename, Flex, Menubar } from "./styles";
-import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 
 function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const [t] = useTranslation();

@@ -12,15 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { StudyTreeNode } from "./utils";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudiesTree, getStudyFilters } from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { updateStudyFilters } from "../../../redux/ducks/studies";
-import TreeItemEnhanced from "../../common/TreeItemEnhanced";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { getParentPaths } from "../../../utils/pathUtils";
 import * as R from "ramda";
+
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+
+import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
+import { updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesTree, getStudyFilters } from "@/redux/selectors";
+import { getParentPaths } from "@/utils/pathUtils";
+
+import { StudyTreeNode } from "./utils";
 
 function StudyTree() {
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);

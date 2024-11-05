@@ -14,6 +14,7 @@
 
 import debug from "debug";
 import * as RA from "ramda-adjunct";
+
 import {
   GenericInfo,
   LaunchJobDTO,
@@ -21,18 +22,19 @@ import {
   UserInfo,
   WSEvent,
   WSMessage,
-} from "../common/types";
-import { getConfig } from "./config";
-import { isStringEmpty, isUserExpired } from "./utils";
-import { AppDispatch } from "../redux/store";
-import { refresh as refreshUser } from "../redux/ducks/auth";
-import { deleteStudy, setStudy } from "../redux/ducks/studies";
+} from "@/common/types";
+import { refresh as refreshUser } from "@/redux/ducks/auth";
+import { deleteStudy, setStudy } from "@/redux/ducks/studies";
+import { refreshStudySynthesis } from "@/redux/ducks/studySyntheses";
 import {
   setMaintenanceMode,
   setMessageInfo,
   setWebSocketConnected,
-} from "../redux/ducks/ui";
-import { refreshStudySynthesis } from "../redux/ducks/studySyntheses";
+} from "@/redux/ducks/ui";
+import { AppDispatch } from "@/redux/store";
+
+import { getConfig } from "./config";
+import { isStringEmpty, isUserExpired } from "./utils";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");

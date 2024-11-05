@@ -17,12 +17,12 @@ import {
   MatrixDataSetDTO,
   MatrixDataSetUpdateDTO,
   MatrixInfoDTO,
-} from "../../../common/types";
+} from "@/common/types";
 import {
+  createDataSet,
   createMatrixByImportation,
   updateDataSet,
-  createDataSet,
-} from "../../../services/api/matrix";
+} from "@/services/api/matrix";
 
 const updateMatrix = async (
   data: MatrixDataSetDTO,

@@ -14,18 +14,19 @@
 
 import { useEffect, useState } from "react";
 import { ColorResult, MaterialPicker } from "react-color";
-import { Box, TextField, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { LinkElement, UpdateAreaUi } from "../../../../../../../common/types";
-import AreaLinks from "./AreaLinks";
+
+import { Box, Divider, TextField } from "@mui/material";
+
+import { LinkElement, UpdateAreaUi } from "@/common/types";
+import { StudyMapNode } from "@/redux/ducks/studyMaps";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentLayer } from "@/redux/selectors";
 
 import AreaLink from "./AreaLink";
-
-import { AreaColorPicker, AreaHuePicker } from "./style";
+import AreaLinks from "./AreaLinks";
 import DeleteAreaDialog from "./DeleteAreaDialog";
-import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentLayer } from "../../../../../../../redux/selectors";
+import { AreaColorPicker, AreaHuePicker } from "./style";
 
 interface Props {
   node?: StudyMapNode;

@@ -14,38 +14,40 @@
 
 import { useCallback, useEffect, useState } from "react";
 import moment from "moment";
+import { useTranslation } from "react-i18next";
+import { useInterval } from "react-use";
+
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import {
+  Box,
+  Button,
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  MenuItem,
   Paper,
-  TableContainer,
+  Select,
+  SelectChangeEvent,
+  Skeleton,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Tooltip,
-  Button,
-  SelectChangeEvent,
-  Checkbox,
-  FormControlLabel,
   Typography,
-  Skeleton,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
-import { TaskView, TaskType } from "../../../common/types";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import { getLauncherMetrics } from "../../../services/api/study";
-import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
-import UsePromiseCond from "../../common/utils/UsePromiseCond";
-import { useInterval } from "react-use";
+
+import { TaskType, TaskView } from "@/common/types";
+import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getLauncherMetrics } from "@/services/api/study";
 
 interface PropType {
   content: TaskView[];

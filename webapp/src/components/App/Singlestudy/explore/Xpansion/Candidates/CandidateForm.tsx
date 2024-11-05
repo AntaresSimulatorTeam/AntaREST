@@ -12,33 +12,36 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { Title } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SaveIcon from "@mui/icons-material/Save";
 import {
   Box,
-  Divider,
-  Typography,
   Button,
   ButtonGroup,
+  Divider,
   Paper,
   TextField,
+  Typography,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import SaveIcon from "@mui/icons-material/Save";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
+
+import { LinkCreationInfoDTO } from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import SelectSingle from "@/components/common/SelectSingle";
+
 import {
-  Title,
-  Fields,
-  SelectFields,
-  HoverButton,
   ActiveButton,
-  StyledVisibilityIcon,
+  Fields,
+  HoverButton,
+  SelectFields,
   StyledDeleteIcon,
+  StyledVisibilityIcon,
 } from "../share/styles";
-import { LinkCreationInfoDTO } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
-import SelectSingle from "../../../../../common/SelectSingle";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 
 interface PropType {
   candidate: XpansionCandidate | undefined;

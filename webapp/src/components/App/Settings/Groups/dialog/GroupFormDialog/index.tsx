@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { RoleType, UserDTO } from "@/common/types";
 import FormDialog, {
   FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
-import { RoleType, UserDTO } from "../../../../../../common/types";
+} from "@/components/common/dialogs/FormDialog";
+
 import GroupForm from "./GroupForm";
 
 export interface GroupFormDialogProps

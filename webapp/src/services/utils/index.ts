@@ -12,20 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import moment from "moment";
 import debug from "debug";
 import i18n, { TFunction } from "i18next";
+import moment from "moment";
 import * as R from "ramda";
+
 import {
-  StudyMetadataDTO,
-  StudyMetadata,
-  JWTGroup,
-  UserInfo,
-  RoleType,
-  VariantTreeDTO,
-  VariantTree,
   GenericInfo,
-} from "../../common/types";
+  JWTGroup,
+  RoleType,
+  StudyMetadata,
+  StudyMetadataDTO,
+  UserInfo,
+  VariantTree,
+  VariantTreeDTO,
+} from "@/common/types";
+
 import { getMaintenanceMode, getMessageInfo } from "../api/maintenance";
 import { getConfig } from "../config";
 

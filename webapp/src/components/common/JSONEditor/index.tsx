@@ -13,22 +13,26 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import JSONEditorClass, {
-  type JSONEditorOptions,
-  type HistoryItem,
-} from "jsoneditor";
 import { useMemo, useRef } from "react";
-import { useDeepCompareEffect, useMount } from "react-use";
-import "jsoneditor/dist/jsoneditor.min.css";
-import "./dark-theme.css";
-import { PromiseAny } from "../../../utils/tsUtils";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
-import { createSaveButton } from "./utils";
+import JSONEditorClass, {
+  type HistoryItem,
+  type JSONEditorOptions,
+} from "jsoneditor";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
+import { useDeepCompareEffect, useMount } from "react-use";
+
 import { Box } from "@mui/material";
+
+import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
+import { PromiseAny } from "@/utils/tsUtils";
+
+import { createSaveButton } from "./utils";
+
+import "jsoneditor/dist/jsoneditor.min.css";
+import "./dark-theme.css";
 
 export interface JSONEditorProps extends JSONEditorOptions {
   json: any;

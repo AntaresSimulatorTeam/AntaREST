@@ -12,14 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { useOutletContext } from "react-router";
-import * as R from "ramda";
 import { useState } from "react";
-import { StudyMetadata } from "../../../../../../common/types";
-import Form from "../../../../../common/Form";
-import Fields from "./Fields";
-import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
+import * as R from "ramda";
+import { useOutletContext } from "react-router";
+
+import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+
+import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
 import ScenarioPlaylistDialog from "./dialogs/ScenarioPlaylistDialog";
+import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
+import Fields from "./Fields";
 import {
   GeneralFormFields,
   getGeneralFormFields,
@@ -28,8 +32,6 @@ import {
   SetDialogStateType,
   setGeneralFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
 
 function General() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

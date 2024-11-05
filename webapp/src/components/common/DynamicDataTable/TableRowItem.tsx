@@ -12,9 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { TableCell, Checkbox, Chip, TableRow } from "@mui/material";
 import { ChangeEvent, memo, useCallback } from "react";
-import { Item, Column } from "./utils";
+
+import { Checkbox, Chip, TableCell, TableRow } from "@mui/material";
+
+import { Column, Item } from "./utils";
 
 interface Props {
   item: Item;

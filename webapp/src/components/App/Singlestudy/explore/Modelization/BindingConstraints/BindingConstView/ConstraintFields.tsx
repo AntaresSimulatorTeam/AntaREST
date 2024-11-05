@@ -12,25 +12,27 @@
  * This file is part of the Antares project.
  */
 
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { Dataset } from "@mui/icons-material";
+import { Box, Button } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+import { validateString } from "@/utils/validation/string";
+
+import ConstraintMatrix from "./Matrix";
 import {
   BindingConstraint,
   OPERATORS,
   OUTPUT_FILTERS,
   TIME_STEPS,
 } from "./utils";
-
-import Fieldset from "../../../../../../common/Fieldset";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import { StudyMetadata } from "../../../../../../../common/types";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import { useFormContextPlus } from "../../../../../../common/Form";
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Box, Button } from "@mui/material";
-import { Dataset } from "@mui/icons-material";
-import { validateString } from "@/utils/validation/string";
-import ConstraintMatrix from "./Matrix";
 
 interface Props {
   study: StudyMetadata;

@@ -13,7 +13,8 @@
  */
 
 import { TextField, TextFieldProps } from "@mui/material";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+
+import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 
 export type StringFEProps = {
   value?: string;

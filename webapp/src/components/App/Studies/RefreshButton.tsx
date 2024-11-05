@@ -12,11 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Button, Tooltip } from "@mui/material";
-import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTranslation } from "react-i18next";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { fetchStudies } from "../../../redux/ducks/studies";
+
+import RefreshIcon from "@mui/icons-material/Refresh";
+import { Button, Tooltip } from "@mui/material";
+
+import { fetchStudies } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 
 interface Props {
   showLabel?: boolean;

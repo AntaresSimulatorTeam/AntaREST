@@ -13,17 +13,19 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { GenericInfo, VariantTree } from "../../../../../common/types";
-import { createVariant } from "../../../../../services/api/variant";
-import { createListFromTree } from "../../../../../services/utils";
-import FormDialog from "../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../common/fieldEditors/StringFE";
-import Fieldset from "../../../../common/Fieldset";
-import SelectFE from "../../../../common/fieldEditors/SelectFE";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+
+import { GenericInfo, VariantTree } from "@/common/types";
+import FormDialog from "@/components/common/dialogs/FormDialog";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import Fieldset from "@/components/common/Fieldset";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { createVariant } from "@/services/api/variant";
+import { createListFromTree } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 
 interface Props {

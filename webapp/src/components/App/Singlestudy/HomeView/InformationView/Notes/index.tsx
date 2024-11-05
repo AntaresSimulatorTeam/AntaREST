@@ -13,33 +13,37 @@
  */
 
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
 import { AxiosError } from "axios";
-import { Box, Divider, Skeleton, styled, Typography } from "@mui/material";
-import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
-import LinearScaleIcon from "@mui/icons-material/LinearScale";
-import StorageIcon from "@mui/icons-material/Storage";
-import HubIcon from "@mui/icons-material/Hub";
 import { Editor, EditorState } from "draft-js";
-import "draft-js/dist/Draft.css";
-import { LoadingButton } from "@mui/lab";
+import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+
 import EditIcon from "@mui/icons-material/Edit";
+import HubIcon from "@mui/icons-material/Hub";
+import LinearScaleIcon from "@mui/icons-material/LinearScale";
+import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
+import StorageIcon from "@mui/icons-material/Storage";
+import { LoadingButton } from "@mui/lab";
+import { Box, Divider, Skeleton, styled, Typography } from "@mui/material";
+
+import { StudyMetadata } from "@/common/types";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
+import { getAreas, getLinks } from "@/redux/selectors";
 import {
   editComments,
   getComments,
   getStudyDiskUsage,
-} from "../../../../../../services/api/study";
-import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
-import { StudyMetadata } from "../../../../../../common/types";
-import NoteEditorModal from "./NodeEditorModal";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+} from "@/services/api/study";
+
 import DetailsList from "./DetailsList";
-import { getAreas, getLinks } from "../../../../../../redux/selectors";
-import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import NoteEditorModal from "./NodeEditorModal";
+import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
+
+import "draft-js/dist/Draft.css";
 
 const Root = styled(Box)(() => ({
   flex: "0 0 40%",

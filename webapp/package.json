@@ -9,6 +9,7 @@
     "coverage": "vitest run --coverage",
     "dev": "vite",
     "lint": "tsc --noEmit && eslint . --ext ts,tsx --report-unused-disable-directives",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui"
@@ -114,6 +115,7 @@
     "eslint-plugin-react": "7.37.0",
     "eslint-plugin-react-hooks": "4.6.2",
     "eslint-plugin-react-refresh": "0.4.12",
+    "eslint-plugin-simple-import-sort": "12.1.1",
     "husky": "9.1.6",
     "jsdom": "25.0.1",
     "prettier": "3.3.3",

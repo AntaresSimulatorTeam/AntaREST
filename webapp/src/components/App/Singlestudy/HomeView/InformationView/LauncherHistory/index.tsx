@@ -12,12 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Paper, styled, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import HistoryIcon from "@mui/icons-material/History";
 import moment from "moment";
+import { useTranslation } from "react-i18next";
+
+import HistoryIcon from "@mui/icons-material/History";
+import { Box, Paper, styled, Typography } from "@mui/material";
+
 import {
   LaunchJob,
   LaunchJobDTO,
@@ -26,19 +28,17 @@ import {
   StudyMetadata,
   WSEvent,
   WSMessage,
-} from "../../../../../../common/types";
-import {
-  getStudyJobs,
-  mapLaunchJobDTO,
-} from "../../../../../../services/api/study";
+} from "@/common/types";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { getStudyJobs, mapLaunchJobDTO } from "@/services/api/study";
+import { getProgress } from "@/services/api/tasks";
 import {
   addWsMessageListener,
   sendWsSubscribeMessage,
   WsChannel,
-} from "../../../../../../services/webSockets";
+} from "@/services/webSockets";
+
 import JobStepper from "./JobStepper";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getProgress } from "../../../../../../services/api/tasks";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
   display: "flex",

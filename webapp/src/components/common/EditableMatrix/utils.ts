@@ -12,16 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import HT from "handsontable";
 import _ from "lodash";
 import moment, { DurationInputArg2 } from "moment";
-import HT from "handsontable";
+
 import {
   MatrixEditDTO,
   MatrixIndex,
   MatrixStats,
   Operator,
   StudyOutputDownloadLevelDTO,
-} from "../../../common/types";
+} from "@/common/types";
 
 export const formatDateFromIndex = (
   index: Array<string | number>,

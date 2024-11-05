@@ -14,14 +14,17 @@
 
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
-import { useFormContextPlus } from "../../../../../../../common/Form";
-import { AllocationFormFields } from "./utils";
-import AllocationField from "./AllocationField";
-import DynamicList from "../../../../../../../common/DynamicList";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getAreasById } from "../../../../../../../../redux/selectors";
-import { StudyMetadata } from "../../../../../../../../common/types";
+
+import { StudyMetadata } from "@/common/types";
+import DynamicList from "@/components/common/DynamicList";
+import { useFormContextPlus } from "@/components/common/Form";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getAreasById } from "@/redux/selectors";
+
 import { useAreasOptions } from "../hooks/useAreasOptions";
+
+import AllocationField from "./AllocationField";
+import { AllocationFormFields } from "./utils";
 
 function Fields() {
   const {

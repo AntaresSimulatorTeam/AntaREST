@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import Matrix from "../../../../../common/Matrix";
-import type { DataCompProps } from "../utils";
+import Matrix from "@/components/common/Matrix";
+
+import { DataCompProps } from "../utils";
 
 function DebugMatrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
   return <Matrix title={filename} url={filePath} isImportDisabled={!canEdit} />;

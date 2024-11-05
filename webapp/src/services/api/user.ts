@@ -13,19 +13,21 @@
  */
 
 import * as RA from "ramda-adjunct";
-import client from "./client";
+
 import {
-  UserDTO,
-  GroupDTO,
-  RoleCreationDTO,
-  UserToken,
-  GroupDetailsDTO,
   BotCreateDTO,
   BotDetailsDTO,
   BotDTO,
+  GroupDetailsDTO,
+  GroupDTO,
+  RoleCreationDTO,
   RoleDetailsDTO,
   UserDetailsDTO,
-} from "../../common/types";
+  UserDTO,
+  UserToken,
+} from "@/common/types";
+
+import client from "./client";
 
 ////////////////////////////////////////////////////////////////
 // Users

@@ -14,22 +14,24 @@
 
 import { ReactNode, useCallback, useEffect, useRef } from "react";
 import debug from "debug";
-import { Box, Typography } from "@mui/material";
+import { useSnackbar, VariantType } from "notistack";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
+
 import CircleIcon from "@mui/icons-material/Circle";
-import { useSnackbar, VariantType } from "notistack";
+import { Box, Typography } from "@mui/material";
 import { red } from "@mui/material/colors";
-import { TaskEventPayload, WSEvent, WSMessage } from "../../../common/types";
-import { getTask } from "../../../services/api/tasks";
-import { addWsMessageListener } from "../../../services/webSockets";
+
+import { TaskEventPayload, WSEvent, WSMessage } from "@/common/types";
 import {
   incrementTaskNotifications,
   resetTaskNotifications,
-} from "../../../redux/ducks/ui";
-import { getTaskNotificationsCount } from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+} from "@/redux/ducks/ui";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getTaskNotificationsCount } from "@/redux/selectors";
+import { getTask } from "@/services/api/tasks";
+import { addWsMessageListener } from "@/services/webSockets";
 
 const logError = debug("antares:downloadbadge:error");
 

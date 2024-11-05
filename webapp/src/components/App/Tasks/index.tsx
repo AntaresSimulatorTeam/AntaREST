@@ -13,76 +13,79 @@
  */
 
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AxiosError } from "axios";
 import debug from "debug";
-import { useTranslation } from "react-i18next";
-import AssignmentIcon from "@mui/icons-material/Assignment";
+import { debounce } from "lodash";
 import moment from "moment";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import BlockIcon from "@mui/icons-material/Block";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DownloadIcon from "@mui/icons-material/Download";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import InfoIcon from "@mui/icons-material/Info";
 import {
-  useTheme,
-  Typography,
   Box,
+  Chip,
   CircularProgress,
   Tooltip,
-  Chip,
+  Typography,
+  useTheme,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import { debounce } from "lodash";
-import BlockIcon from "@mui/icons-material/Block";
-import InfoIcon from "@mui/icons-material/Info";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import DownloadIcon from "@mui/icons-material/Download";
 import { grey, indigo } from "@mui/material/colors";
-import RootPage from "../../common/page/RootPage";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import DownloadLink from "../../common/DownloadLink";
-import LogModal from "../../common/LogModal";
+
 import {
-  addWsMessageListener,
-  sendWsSubscribeMessage,
-  WsChannel,
-} from "../../../services/webSockets";
-import JobTableView from "./JobTableView";
-import { convertUTCToLocalTime } from "../../../services/utils/index";
-import {
-  downloadJobOutput,
-  killStudy,
-  getStudyJobs,
-} from "../../../services/api/study";
+  LaunchJob,
+  LaunchJobProgressDTO,
+  LaunchJobsProgress,
+  TaskDTO,
+  TaskEventPayload,
+  TaskStatus,
+  TaskType,
+  WSEvent,
+  WSMessage,
+} from "@/common/types";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import DownloadLink from "@/components/common/DownloadLink";
+import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import LogModal from "@/components/common/LogModal";
+import RootPage from "@/components/common/page/RootPage";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { fetchStudies } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudies } from "@/redux/selectors";
 import {
   convertFileDownloadDTO,
   FileDownload,
-  getDownloadUrl,
   FileDownloadDTO,
   getDownloadsList,
-} from "../../../services/api/downloads";
-import { fetchStudies } from "../../../redux/ducks/studies";
+  getDownloadUrl,
+} from "@/services/api/downloads";
 import {
-  LaunchJob,
-  TaskDTO,
-  TaskEventPayload,
-  WSEvent,
-  WSMessage,
-  TaskType,
-  TaskStatus,
-  LaunchJobsProgress,
-  LaunchJobProgressDTO,
-} from "../../../common/types";
+  downloadJobOutput,
+  getStudyJobs,
+  killStudy,
+} from "@/services/api/study";
 import {
   getAllMiscRunningTasks,
   getProgress,
   getTask,
-} from "../../../services/api/tasks";
+} from "@/services/api/tasks";
+import { convertUTCToLocalTime } from "@/services/utils/index";
+import {
+  addWsMessageListener,
+  sendWsSubscribeMessage,
+  WsChannel,
+} from "@/services/webSockets";
+
+import JobTableView from "./JobTableView";
 import LaunchJobLogView from "./LaunchJobLogView";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { getStudies } from "../../../redux/selectors";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 
 const logError = debug("antares:studymanagement:error");
 

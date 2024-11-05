@@ -13,11 +13,13 @@
  */
 
 import { useEffect, useState } from "react";
-import PropertiesView from "../../../../../common/PropertiesView";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentLinkId, getLinks } from "../../../../../../redux/selectors";
+
+import { LinkElement } from "@/common/types";
+import PropertiesView from "@/components/common/PropertiesView";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentLinkId, getLinks } from "@/redux/selectors";
+
 import ListElement from "../../common/ListElement";
-import { LinkElement } from "../../../../../../common/types";
 
 interface PropsType {
   studyId: string;

@@ -13,11 +13,14 @@
  */
 
 import { ReactNode } from "react";
-import { Box, Button, SxProps, Theme } from "@mui/material";
-import SearchFE from "./fieldEditors/SearchFE";
-import { mergeSxProp } from "../../utils/muiUtils";
-import { Add } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+
+import { Add } from "@mui/icons-material";
+import { Box, Button, SxProps, Theme } from "@mui/material";
+
+import { mergeSxProp } from "@/utils/muiUtils";
+
+import SearchFE from "./fieldEditors/SearchFE";
 
 interface PropsType {
   topContent?: ReactNode;

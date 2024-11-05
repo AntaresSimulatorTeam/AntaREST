@@ -13,9 +13,11 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import Form from "../../../../../common/Form";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+
+import { StudyMetadata } from "@/common/types";
+import Form from "@/components/common/Form";
+import { SubmitHandlerPlus } from "@/components/common/Form/types";
+
 import Fields from "./Fields";
 import {
   getTimeSeriesFormFields,
@@ -30,7 +32,7 @@ function TimeSeriesManagement() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus<TSFormFields>) => {
+  const handleSubmit = (data: SubmitHandlerPlus<TSFormFields>) => {
     return setTimeSeriesFormFields(study.id, data.dirtyValues);
   };
 

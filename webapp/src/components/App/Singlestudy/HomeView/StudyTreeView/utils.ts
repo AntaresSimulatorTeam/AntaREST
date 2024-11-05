@@ -13,11 +13,7 @@
  */
 
 /* eslint-disable no-param-reassign */
-import {
-  GenericInfo,
-  StudyMetadata,
-  VariantTree,
-} from "../../../../../common/types";
+import { GenericInfo, StudyMetadata, VariantTree } from "@/common/types";
 
 export interface StudyTree {
   name: string;

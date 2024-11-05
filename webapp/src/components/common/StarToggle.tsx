@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Tooltip } from "@mui/material";
-import StarPurple500OutlinedIcon from "@mui/icons-material/StarPurple500Outlined";
 import StarOutlineOutlinedIcon from "@mui/icons-material/StarOutlineOutlined";
+import StarPurple500OutlinedIcon from "@mui/icons-material/StarPurple500Outlined";
+import { Tooltip } from "@mui/material";
 
 interface Props {
   isActive: boolean;

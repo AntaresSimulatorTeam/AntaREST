@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import Matrix from "../../../../../common/Matrix";
+import Matrix from "@/components/common/Matrix";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
 
 function Load() {
   const currentArea = useAppSelector(getCurrentAreaId);

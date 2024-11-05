@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Chip } from "@mui/material";
 import type { MRT_Cell, MRT_RowData } from "material-react-table";
 import { useTranslation } from "react-i18next";
+
+import { Chip } from "@mui/material";
 
 interface Props<T extends MRT_RowData> {
   cell: MRT_Cell<T, boolean>;

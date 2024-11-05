@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { renderHook, act, waitFor } from "@testing-library/react";
-import { useMatrix } from "../useMatrix";
-import * as apiMatrix from "@/services/api/matrix";
-import * as apiStudy from "@/services/api/study";
-import * as rawStudy from "@/services/api/studies/raw";
+import { GridCellKind } from "@glideapps/glide-data-grid";
+import { act, renderHook, waitFor } from "@testing-library/react";
+
 import {
   MatrixEditDTO,
   MatrixIndex,
   Operator,
   StudyOutputDownloadLevelDTO,
 } from "@/common/types";
+import * as apiMatrix from "@/services/api/matrix";
+import * as rawStudy from "@/services/api/studies/raw";
+import * as apiStudy from "@/services/api/study";
+
 import { GridUpdate, MatrixDataDTO } from "../../shared/types";
-import { GridCellKind } from "@glideapps/glide-data-grid";
+import { useMatrix } from "../useMatrix";
 
 vi.mock("@/services/api/matrix");
 vi.mock("@/services/api/study");

@@ -13,11 +13,12 @@
  */
 
 import {
-  getAllConstraints,
-  deleteConstraints,
-  getConstraint,
   addConstraints,
-} from "../../../../../services/api/xpansion";
+  deleteConstraints,
+  getAllConstraints,
+  getConstraint,
+} from "@/services/api/xpansion";
+
 import FileList from "./FileList";
 
 function Constraints() {

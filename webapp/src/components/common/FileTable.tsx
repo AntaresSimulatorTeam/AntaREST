@@ -13,31 +13,34 @@
  */
 
 import { ReactNode, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Box,
+  Button,
   Divider,
-  TableContainer,
+  IconButton,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
   Tooltip,
-  IconButton,
   Typography,
-  Button,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DownloadIcon from "@mui/icons-material/Download";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+
+import { GenericInfo } from "@/common/types";
+
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
-import { GenericInfo } from "../../common/types";
-import DownloadLink from "./DownloadLink";
 import ImportDialog from "./dialogs/ImportDialog";
+import DownloadLink from "./DownloadLink";
 
 interface PropType {
   title: ReactNode;
