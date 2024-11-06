@@ -69,7 +69,7 @@ from antarest.study.business.correlation_management import (
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
-from antarest.study.business.load_management import LoadDTO
+from antarest.study.business.model.load_model import LoadDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
