@@ -43,7 +43,7 @@ const BLOCKING_TASK_TYPES = [
 ] as const;
 
 const PROGRESS_INDETERMINATE = -1;
-const PROGRESS_COMPLETED = 100;
+const PROGRESS_COMPLETE = 100;
 
 function getChannel(id: TaskDTO["id"]) {
   return WsChannel.Task + id;
@@ -64,7 +64,7 @@ function FreezeStudy({ studyId }: Props) {
   const [blockingTasks, setBlockingTasks] = useState<BlockingTask[]>([]);
   const { t } = useTranslation();
   const hasLoadingTask = !!blockingTasks.find(
-    (task) => task.progress !== PROGRESS_COMPLETED && task.error === undefined,
+    (task) => task.progress !== PROGRESS_COMPLETE && task.error === undefined,
   );
   const blockingTasksRef = useAutoUpdateRef(blockingTasks);
 
@@ -144,7 +144,7 @@ function FreezeStudy({ studyId }: Props) {
           const { id } = event.payload;
           setBlockingTasks((tasks) =>
             tasks.map((task) =>
-              task.id === id ? { ...task, progress: PROGRESS_COMPLETED } : task,
+              task.id === id ? { ...task, progress: PROGRESS_COMPLETE } : task,
             ),
           );
           unsubscribeWsChannels(getChannel(id));
