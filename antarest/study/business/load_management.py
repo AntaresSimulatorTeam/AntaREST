@@ -13,14 +13,28 @@ import io
 from typing import cast
 
 import pandas as pd
+from pydantic import ConfigDict
 from starlette.responses import JSONResponse, Response
 
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
+from antarest.core.utils.string import to_camel_case
 from antarest.study.model import MatrixFormat, Study
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.storage_service import StudyStorageService
 
 LOAD_PATH = "input/load/series/load_{area_id}"
+
+
+class LoadDTO(AntaresBaseModel):
+    matrix: JSON | bytes
+
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+class LoadProperties(AntaresBaseModel):
+    matrix: JSON | bytes
+
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
 
 class LoadManager:
@@ -49,3 +63,7 @@ class LoadManager:
             return Response(content=buffer.getvalue(), media_type="application/octet-stream")
 
         return Response(content="Unsupported format", status_code=422)
+
+    def update_load_matrix(self, study: Study, area_id: str, load_dto: LoadDTO) -> LoadDTO:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+

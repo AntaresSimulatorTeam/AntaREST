@@ -69,6 +69,7 @@ from antarest.study.business.correlation_management import (
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.business.load_management import LoadDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -542,6 +543,21 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.load_manager.get_load_matrix(study, area_id, matrix_format)
+
+    @bp.put(
+        "/{uuid}/{area_id}/load/series",
+        tags=[APITag.study_data],
+        summary="Update load series data",
+    )
+    def update_load_series(
+        uuid: str,
+        area_id: str,
+        load_dto: LoadDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> LoadDTO:
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.load_manager.update_load_matrix(study, area_id, load_dto)
 
     @bp.put(
         "/studies/{uuid}/matrix",
