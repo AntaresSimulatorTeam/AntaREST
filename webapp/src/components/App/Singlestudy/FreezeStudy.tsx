@@ -13,7 +13,7 @@
  */
 
 import { StudyMetadata } from "@/common/types";
-import { getTasks } from "@/services/api/tasks";
+import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
 import type { TaskDTO, TTaskType } from "@/services/api/tasks/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
@@ -35,6 +35,7 @@ import {
 import { useEffect, useState } from "react";
 import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
 import { useTranslation } from "react-i18next";
+import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
 
 const BLOCKING_TASK_TYPES = [
   TaskType.UpgradeStudy,
@@ -65,7 +66,9 @@ function FreezeStudy({ studyId }: Props) {
   const hasLoadingTask = !!blockingTasks.find(
     (task) => task.progress !== PROGRESS_COMPLETED && task.error === undefined,
   );
+  const blockingTasksRef = useAutoUpdateRef(blockingTasks);
 
+  // Fetch blocking tasks and subscribe to their WebSocket channels
   useEffect(() => {
     let ignore = false; // Prevent race condition
 
@@ -87,6 +90,14 @@ function FreezeStudy({ studyId }: Props) {
       }
     });
 
+    return () => {
+      ignore = true;
+      unsubscribeWsChannels();
+    };
+  }, [studyId]);
+
+  // WebSockets listener
+  useEffect(() => {
     const listener = (event: WsEvent) => {
       switch (event.type) {
         case WsEventType.TaskAdded: {
@@ -103,6 +114,9 @@ function FreezeStudy({ studyId }: Props) {
 
             // For getting other events
             subscribeWsChannels(getChannel(id));
+
+            // Workaround to fix an issue with WebSocket: see comment below
+            forceUpdate(id);
           }
           break;
         }
@@ -141,10 +155,42 @@ function FreezeStudy({ studyId }: Props) {
 
     addWsEventListener(listener);
 
+    // Workaround to fix an issue with WebSocket: the subscribe to the task channel
+    // may be made after the completion of the task when it end quickly
+
+    function forceUpdate(taskId: BlockingTask["id"]) {
+      getTask({ id: taskId }).then((task) => {
+        if (task.status === TaskStatus.Failed) {
+          listener({
+            type: WsEventType.TaskFailed,
+            payload: {
+              id: task.id,
+              message: "",
+              type: task.type!,
+            },
+          });
+        } else if (task.status === TaskStatus.Completed) {
+          listener({
+            type: WsEventType.TaskCompleted,
+            payload: {
+              id: task.id,
+              message: "",
+              type: task.type!,
+            },
+          });
+        }
+      });
+    }
+
+    const intervalId = window.setInterval(
+      () => blockingTasksRef.current.forEach(({ id }) => forceUpdate(id)),
+      15000,
+    );
+
     return () => {
-      ignore = true;
       removeWsEventListener(listener);
       unsubscribeWsChannels();
+      window.clearInterval(intervalId);
     };
   }, [studyId]);
 
