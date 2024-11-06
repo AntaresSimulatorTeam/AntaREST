@@ -17,45 +17,67 @@ import {
   Box,
   LinearProgress,
   Typography,
-  LinearProgressProps,
+  type LinearProgressProps,
+  type SxProps,
+  type Theme,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import * as R from "ramda";
+import { mergeSxProp } from "@/utils/muiUtils";
 
-const renderLoadColor = (val: number): LinearProgressProps["color"] =>
-  R.cond([
-    [(v: number) => v > 90, () => "error" as const],
-    [(v: number) => v > 75, () => "primary" as const],
-    [R.T, () => "success" as const],
-  ])(val);
-
-interface PropsType {
-  indicator: number;
-  size?: string;
-  tooltip: string;
-  gradiant?: boolean;
+function getColor(value = 0, error = false) {
+  if (error) {
+    return "error";
+  }
+  if (value === 100) {
+    return "success";
+  }
+  return "primary";
 }
 
-function LinearProgressWithLabel(props: PropsType) {
-  const { indicator, size = "100%", tooltip, gradiant = false } = props;
+interface LinearProgressWithLabelProps {
+  value?: LinearProgressProps["value"];
+  variant?: LinearProgressProps["variant"];
+  tooltip?: string;
+  error?: boolean | string;
+  sx?: SxProps<Theme>;
+}
 
-  return (
-    <Tooltip title={tooltip}>
-      <Box sx={{ display: "flex", alignItems: "center", width: size }}>
-        <Box sx={{ width: "100%", mr: 1 }}>
-          <LinearProgress
-            color={gradiant ? renderLoadColor(indicator) : "inherit"}
-            variant="determinate"
-            value={indicator > 100 ? 100 : indicator}
-          />
-        </Box>
-        <Box sx={{ minWidth: 35 }}>
-          <Typography variant="body2" color="text.secondary">{`${Math.round(
-            indicator || 0,
-          )}%`}</Typography>
-        </Box>
+function LinearProgressWithLabel(props: LinearProgressWithLabelProps) {
+  const { value, variant, tooltip, error, sx } = props;
+  const progress = R.clamp(0, 100, value || 0);
+  const hasError = error !== undefined;
+
+  const content = (
+    <Box
+      sx={mergeSxProp(
+        { display: "flex", alignItems: "center", height: 22 },
+        sx,
+      )}
+    >
+      <Box sx={{ width: "100%", mr: 1 }}>
+        <LinearProgress
+          value={progress}
+          variant={hasError ? "determinate" : variant}
+          color={getColor(value, hasError)}
+        />
       </Box>
-    </Tooltip>
+      {(variant === "determinate" || hasError) && (
+        <Box sx={{ minWidth: 35, display: "flex", gap: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {`${Math.round(progress)}%`}
+          </Typography>
+          {typeof error === "string" && (
+            <Tooltip title={error}>
+              <InfoIcon fontSize="small" />
+            </Tooltip>
+          )}
+        </Box>
+      )}
+    </Box>
   );
+
+  return tooltip ? <Tooltip title={tooltip}>{content}</Tooltip> : content;
 }
 
 export default LinearProgressWithLabel;

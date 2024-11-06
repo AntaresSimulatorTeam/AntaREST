@@ -18,11 +18,11 @@ import {
   FileStudyTreeConfigDTO,
   StudyMetadata,
   StudyMetadataDTO,
-  TaskDTO,
   VariantTree,
 } from "../../common/types";
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
 import { FileDownloadTask } from "./downloads";
+import type { TaskDTO } from "./tasks/types";
 
 export const getVariantChildren = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);
