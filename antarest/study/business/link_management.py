@@ -29,7 +29,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 
 _ALL_LINKS_PATH = "input/links"
-
+LINK_PATH = "input/links/{area_from}/properties/{area_to}"
 
 @all_optional_model
 @camel_case_model
