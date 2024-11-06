@@ -36,7 +36,7 @@ import {
   createThunk,
 } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
-import type { StudyPayload } from "@/services/webSocket/types";
+import type { StudyEventPayload } from "@/services/webSocket/types";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -194,7 +194,7 @@ export const createStudy = createAsyncThunk<
 
 export const setStudy = createAsyncThunk<
   StudyMetadata,
-  StudyPayload,
+  StudyEventPayload,
   AppAsyncThunkConfig
 >(n("SET_STUDY"), ({ id }) => api.getStudyMetadata(id));
 
@@ -205,7 +205,7 @@ interface StudyDeleteInfo {
 
 export const deleteStudy = createAsyncThunk<
   StudyMetadata["id"],
-  StudyDeleteInfo | StudyPayload,
+  StudyDeleteInfo | StudyEventPayload,
   AppAsyncThunkConfig
 >(n("DELETE_STUDY"), async (arg, { dispatch, getState, rejectWithValue }) => {
   let studyId: string;

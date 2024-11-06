@@ -44,13 +44,13 @@ export type TWsEventType = O.UnionOf<typeof WsEventType>;
 // Payloads
 ////////////////////////////////////////////////////////////////
 
-export interface StudyPayload {
+export interface StudyEventPayload {
   id: string;
   name: string;
   workspace: string;
 }
 
-export interface StudyJobLogUpdatePayload {
+export interface StudyJobLogUpdateEventPayload {
   log: string;
   job_id: string;
   study_id: StudyMetadata["id"];
@@ -63,72 +63,94 @@ export interface TaskEventPayload {
   study_id?: StudyMetadata["id"];
 }
 
-export interface TsGenerationProgressPayload {
+export interface TsGenerationProgressEventPayload {
   task_id: TaskDTO["id"];
   progress: number;
 }
 
 ////////////////////////////////////////////////////////////////
-// Event
+// Events
 ////////////////////////////////////////////////////////////////
 
+interface StudyJobEvent {
+  type:
+    | typeof WsEventType.StudyJobStarted
+    | typeof WsEventType.StudyJobCompleted
+    | typeof WsEventType.StudyJobStatusUpdate;
+  payload: LaunchJobDTO;
+}
+
+interface StudyEvent {
+  type:
+    | typeof WsEventType.StudyCreated
+    | typeof WsEventType.StudyEdited
+    | typeof WsEventType.StudyDeleted;
+  payload: StudyEventPayload;
+}
+
+interface StudyDataEvent {
+  type: typeof WsEventType.StudyDataEdited;
+  payload: GenericInfo;
+}
+
+interface MaintenanceModeEvent {
+  type: typeof WsEventType.MaintenanceMode;
+  payload: boolean;
+}
+
+interface MessageInfoEvent {
+  type: typeof WsEventType.MessageInfo;
+  payload: string;
+}
+
+interface StudyVariantGenerationCommandResultEvent {
+  type: typeof WsEventType.StudyVariantGenerationCommandResult;
+  payload: CommandResultDTO;
+}
+
+interface TaskEvent {
+  type:
+    | typeof WsEventType.TaskAdded
+    | typeof WsEventType.TaskCompleted
+    | typeof WsEventType.TaskFailed;
+  payload: TaskEventPayload;
+}
+
+interface StudyJobLogUpdateEvent {
+  type: typeof WsEventType.StudyJobLogUpdate;
+  payload: StudyJobLogUpdateEventPayload;
+}
+
+interface LaunchProgressEvent {
+  type: typeof WsEventType.LaunchProgress;
+  payload: LaunchJobProgressDTO;
+}
+
+interface DownloadEvent {
+  type:
+    | typeof WsEventType.DownloadCreated
+    | typeof WsEventType.DownloadReady
+    | typeof WsEventType.DownloadFailed
+    | typeof WsEventType.DownloadExpired;
+  payload: FileDownloadDTO;
+}
+
+interface TsGenerationProgressEvent {
+  type: typeof WsEventType.TsGenerationProgress;
+  payload: TsGenerationProgressEventPayload;
+}
+
 export type WsEvent =
-  | {
-      type:
-        | typeof WsEventType.StudyJobStarted
-        | typeof WsEventType.StudyJobCompleted
-        | typeof WsEventType.StudyJobStatusUpdate;
-      payload: LaunchJobDTO;
-    }
-  | {
-      type:
-        | typeof WsEventType.StudyCreated
-        | typeof WsEventType.StudyEdited
-        | typeof WsEventType.StudyDeleted;
-      payload: StudyPayload;
-    }
-  | {
-      type: typeof WsEventType.StudyDataEdited;
-      payload: GenericInfo;
-    }
-  | {
-      type: typeof WsEventType.MaintenanceMode;
-      payload: boolean;
-    }
-  | {
-      type: typeof WsEventType.MessageInfo;
-      payload: string;
-    }
-  | {
-      type: typeof WsEventType.StudyVariantGenerationCommandResult;
-      payload: CommandResultDTO;
-    }
-  | {
-      type:
-        | typeof WsEventType.TaskAdded
-        | typeof WsEventType.TaskCompleted
-        | typeof WsEventType.TaskFailed;
-      payload: TaskEventPayload;
-    }
-  | {
-      type: typeof WsEventType.StudyJobLogUpdate;
-      payload: StudyJobLogUpdatePayload;
-    }
-  | {
-      type: typeof WsEventType.LaunchProgress;
-      payload: LaunchJobProgressDTO;
-    }
-  | {
-      type:
-        | typeof WsEventType.DownloadCreated
-        | typeof WsEventType.DownloadReady
-        | typeof WsEventType.DownloadFailed
-        | typeof WsEventType.DownloadExpired;
-      payload: FileDownloadDTO;
-    }
-  | {
-      type: typeof WsEventType.TsGenerationProgress;
-      payload: TsGenerationProgressPayload;
-    };
+  | StudyJobEvent
+  | StudyEvent
+  | StudyDataEvent
+  | MaintenanceModeEvent
+  | MessageInfoEvent
+  | StudyVariantGenerationCommandResultEvent
+  | TaskEvent
+  | StudyJobLogUpdateEvent
+  | LaunchProgressEvent
+  | DownloadEvent
+  | TsGenerationProgressEvent;
 
 export type WsEventListener = (message: WsEvent) => void;
