@@ -53,9 +53,9 @@ class LoadManager:
 
     def update_load_matrix(self, study: Study, area_id: str, load_dto: LoadDTO) -> LoadDTO:
         load_properties = load_dto.to_properties()
+        load_path = LOAD_PATH.format(area_id=area_id).split("/")
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        load_path = LOAD_PATH.format(area_id=area_id).split("/")
 
         file_study.tree.save(load_properties.matrix, load_path)
 
