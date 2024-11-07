@@ -83,6 +83,7 @@
   "global.time.annual": "Annual",
   "global.time.weekShort": "W.",
   "global.update.success": "Update successful",
+  "global.error": "Error",
   "global.errorLogs": "Error logs",
   "global.error.emptyName": "Name cannot be empty",
   "global.error.failedtoretrievejobs": "Failed to retrieve job information",
