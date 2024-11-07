@@ -119,8 +119,6 @@ describe("Matrix Utils", () => {
           id: `custom${index + 1}`,
           title: titles[index],
           type: Column.Number,
-          style: "normal",
-          width,
           editable: true,
         });
       });
