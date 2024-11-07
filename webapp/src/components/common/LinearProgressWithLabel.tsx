@@ -24,6 +24,7 @@ import {
 import InfoIcon from "@mui/icons-material/Info";
 import * as R from "ramda";
 import { mergeSxProp } from "@/utils/muiUtils";
+import { useTranslation } from "react-i18next";
 
 function getColor(value = 0, error = false) {
   if (error) {
@@ -47,6 +48,7 @@ function LinearProgressWithLabel(props: LinearProgressWithLabelProps) {
   const { value, variant, tooltip, error, sx } = props;
   const progress = R.clamp(0, 100, value || 0);
   const hasError = error !== undefined;
+  const { t } = useTranslation();
 
   const content = (
     <Box
@@ -68,7 +70,7 @@ function LinearProgressWithLabel(props: LinearProgressWithLabelProps) {
             {`${Math.round(progress)}%`}
           </Typography>
           {typeof error === "string" && (
-            <Tooltip title={error}>
+            <Tooltip title={error || t("global.error")}>
               <InfoIcon fontSize="small" />
             </Tooltip>
           )}
