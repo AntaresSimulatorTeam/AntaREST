@@ -37,6 +37,17 @@ import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel
 import { useTranslation } from "react-i18next";
 import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
 
+interface BlockingTask {
+  id: TaskDTO["id"];
+  type: TTaskType;
+  progress: number;
+  error?: string;
+}
+
+interface FreezeStudyProps {
+  studyId: StudyMetadata["id"];
+}
+
 const BLOCKING_TASK_TYPES = [
   TaskType.UpgradeStudy,
   TaskType.ThermalClusterSeriesGeneration,
@@ -49,23 +60,14 @@ function getChannel(id: TaskDTO["id"]) {
   return WsChannel.Task + id;
 }
 
-interface BlockingTask {
-  id: TaskDTO["id"];
-  type: TTaskType;
-  progress: number;
-  error?: string;
+function isLoadingTask(task: BlockingTask) {
+  return task.progress !== PROGRESS_COMPLETE && task.error === undefined;
 }
 
-interface Props {
-  studyId: StudyMetadata["id"];
-}
-
-function FreezeStudy({ studyId }: Props) {
+function FreezeStudy({ studyId }: FreezeStudyProps) {
   const [blockingTasks, setBlockingTasks] = useState<BlockingTask[]>([]);
   const { t } = useTranslation();
-  const hasLoadingTask = !!blockingTasks.find(
-    (task) => task.progress !== PROGRESS_COMPLETE && task.error === undefined,
-  );
+  const hasLoadingTask = !!blockingTasks.find(isLoadingTask);
   const blockingTasksRef = useAutoUpdateRef(blockingTasks);
 
   // Fetch blocking tasks and subscribe to their WebSocket channels
@@ -160,32 +162,27 @@ function FreezeStudy({ studyId }: Props) {
 
     function forceUpdate(taskId: BlockingTask["id"]) {
       getTask({ id: taskId }).then((task) => {
+        const payload = {
+          id: task.id,
+          message: task.result?.message || "",
+          type: task.type!,
+        };
+
         if (task.status === TaskStatus.Failed) {
-          listener({
-            type: WsEventType.TaskFailed,
-            payload: {
-              id: task.id,
-              message: "",
-              type: task.type!,
-            },
-          });
+          listener({ type: WsEventType.TaskFailed, payload });
         } else if (task.status === TaskStatus.Completed) {
-          listener({
-            type: WsEventType.TaskCompleted,
-            payload: {
-              id: task.id,
-              message: "",
-              type: task.type!,
-            },
-          });
+          listener({ type: WsEventType.TaskCompleted, payload });
         }
       });
     }
 
-    const intervalId = window.setInterval(
-      () => blockingTasksRef.current.forEach(({ id }) => forceUpdate(id)),
-      15000,
-    );
+    const intervalId = window.setInterval(() => {
+      blockingTasksRef.current.forEach((task) => {
+        if (isLoadingTask(task)) {
+          forceUpdate(task.id);
+        }
+      });
+    }, 15000);
 
     return () => {
       removeWsEventListener(listener);
