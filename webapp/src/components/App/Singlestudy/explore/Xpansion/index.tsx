@@ -113,7 +113,7 @@ function Xpansion() {
     >
       <UsePromiseCond
         response={res}
-        ifResolved={(data) =>
+        ifFulfilled={(data) =>
           !data && !exist ? (
             <Button
               color="primary"

@@ -115,7 +115,7 @@ function Debug() {
       <Box sx={{ px: 1, overflow: "auto" }}>
         <UsePromiseCond
           response={res}
-          ifResolved={(data) => (
+          ifFulfilled={(data) => (
             <DebugContext.Provider value={contextValue}>
               <Tree
                 data={data}
