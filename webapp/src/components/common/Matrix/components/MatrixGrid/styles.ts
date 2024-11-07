@@ -67,7 +67,7 @@ export const aggregatesTheme: Partial<Theme> = {
   bgCellMedium: "#383A5C",
   textDark: "#FFFFFF",
   fontFamily: "Inter, sans-serif",
-  baseFontStyle: "bold 13px",
+  baseFontStyle: "13px",
   editorFontSize: "13px",
   headerFontStyle: "bold 11px",
 };

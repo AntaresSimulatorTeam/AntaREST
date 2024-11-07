@@ -61,6 +61,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
       allowOverlay: true,
       decimalSeparator: ".",
       thousandSeparator: " ",
+      contentAlign: "right",
     };
   },
   [Column.Aggregate]: (row, col, column, data, dateTime, aggregates) => {
@@ -74,6 +75,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
       allowOverlay: false,
       decimalSeparator: ".",
       thousandSeparator: " ",
+      contentAlign: "right",
     };
   },
 };
