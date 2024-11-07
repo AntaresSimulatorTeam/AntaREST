@@ -122,7 +122,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           }
           break;
         }
-        case WsEventType.TsGenerationProgress: {
+        case WsEventType.TaskProgress: {
           setBlockingTasks((tasks) =>
             tasks.map((task) =>
               task.id === event.payload.task_id
