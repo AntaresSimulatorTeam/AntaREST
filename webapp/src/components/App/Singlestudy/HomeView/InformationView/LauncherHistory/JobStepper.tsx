@@ -195,9 +195,9 @@ export default function VerticalLinearStepper(props: Props) {
                   {job.status === "running" && (
                     <CancelContainer>
                       <LinearProgressWithLabel
-                        indicator={jobsProgress[job.id] as number}
+                        value={jobsProgress[job.id] as number}
                         tooltip="Progression"
-                        size="30%"
+                        sx={{ width: "30%" }}
                       />
                       <Tooltip title={t("study.killStudy") as string}>
                         <BlockIcon
