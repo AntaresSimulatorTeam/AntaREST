@@ -39,7 +39,7 @@ function LinkView(props: Props) {
   return (
     <UsePromiseCond
       response={res}
-      ifResolved={(data) => (
+      ifFulfilled={(data) => (
         <Form autoSubmit config={{ defaultValues: data }}>
           <LinkForm link={link} study={study} />
         </Form>

@@ -62,7 +62,7 @@ function Areas() {
       <ViewWrapper>
         <UsePromiseCond
           response={res}
-          ifResolved={(renewablesClustering) =>
+          ifFulfilled={(renewablesClustering) =>
             currentArea ? (
               <AreasTab
                 renewablesClustering={renewablesClustering !== "aggregated"}
