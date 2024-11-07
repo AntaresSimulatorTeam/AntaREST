@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ReactNode } from "react";
+import type { TTaskType } from "../services/api/tasks/types";
 
 export type IdType = number | string;
 
@@ -28,12 +28,6 @@ export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 export interface GenericInfo {
   id: IdType;
   name: string;
-}
-
-export interface StudySummary {
-  id: string;
-  name: string;
-  workspace: string;
 }
 
 export interface SynthesisSummary {
@@ -314,98 +308,12 @@ export interface CommandDTO {
   args: object;
 }
 
-export enum WSEvent {
-  STUDY_CREATED = "STUDY_CREATED",
-  STUDY_DELETED = "STUDY_DELETED",
-  STUDY_EDITED = "STUDY_EDITED",
-  STUDY_DATA_EDITED = "STUDY_DATA_EDITED",
-  STUDY_JOB_STARTED = "STUDY_JOB_STARTED",
-  STUDY_JOB_LOG_UPDATE = "STUDY_JOB_LOG_UPDATE",
-  STUDY_JOB_COMPLETED = "STUDY_JOB_COMPLETED",
-  STUDY_JOB_STATUS_UPDATE = "STUDY_JOB_STATUS_UPDATE",
-  STUDY_VARIANT_GENERATION_COMMAND_RESULT = "STUDY_VARIANT_GENERATION_COMMAND_RESULT",
-  TASK_ADDED = "TASK_ADDED",
-  TASK_RUNNING = "TASK_RUNNING",
-  TASK_COMPLETED = "TASK_COMPLETED",
-  TASK_FAILED = "TASK_FAILED",
-  DOWNLOAD_CREATED = "DOWNLOAD_CREATED",
-  DOWNLOAD_READY = "DOWNLOAD_READY",
-  DOWNLOAD_EXPIRED = "DOWNLOAD_EXPIRED",
-  DOWNLOAD_FAILED = "DOWNLOAD_FAILED",
-  MESSAGE_INFO = "MESSAGE_INFO",
-  MAINTENANCE_MODE = "MAINTENANCE_MODE",
-  LAUNCH_PROGRESS = "LAUNCH_PROGRESS",
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface WSMessage<T = any> {
-  type: string;
-  payload: T;
-}
-
-export interface WSLogMessage {
-  log: string;
-  job_id: string;
-  study_id: string;
-}
-
-export type Components = Record<string, () => ReactNode>;
+export type Components = Record<string, () => React.ReactNode>;
 
 export interface CommandResultDTO {
   study_id: string;
   id: string;
   success: boolean;
-  message: string;
-}
-
-export interface TaskResult {
-  success: boolean;
-  message: string;
-  return_value?: string;
-}
-
-export interface TaskLogDTO {
-  id: string;
-  message: string;
-}
-
-export enum TaskStatus {
-  PENDING = 1,
-  RUNNING = 2,
-  COMPLETED = 3,
-  FAILED = 4,
-  TIMEOUT = 5,
-  CANCELLED = 6,
-}
-
-export enum TaskType {
-  LAUNCH = "LAUNCH",
-  EXPORT = "EXPORT",
-  VARIANT_GENERATION = "VARIANT_GENERATION",
-  COPY = "COPY",
-  ARCHIVE = "ARCHIVE",
-  UNARCHIVE = "UNARCHIVE",
-  DOWNLOAD = "DOWNLOAD",
-  SCAN = "SCAN",
-  UPGRADE_STUDY = "UPGRADE_STUDY",
-  UNKNOWN = "UNKNOWN",
-}
-
-export interface TaskDTO extends IdentityDTO<string> {
-  id: string;
-  name: string;
-  owner?: number;
-  status: TaskStatus;
-  creation_date_utc: string;
-  completion_date_utc?: string;
-  result?: TaskResult;
-  logs?: TaskLogDTO[];
-  type?: TaskType;
-  ref_id?: string;
-}
-
-export interface TaskEventPayload {
-  id: string;
   message: string;
 }
 
@@ -652,11 +560,11 @@ export interface AreaInfoDTO extends AreaCreationDTO {
 
 export interface TaskView {
   id: string;
-  name: ReactNode;
-  dateView: ReactNode;
-  action: ReactNode;
+  name: React.ReactNode;
+  dateView: React.ReactNode;
+  action: React.ReactNode;
   date: string;
-  type: TaskType;
+  type: TTaskType | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
 }
 

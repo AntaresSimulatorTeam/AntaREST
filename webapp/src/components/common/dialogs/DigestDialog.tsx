@@ -69,7 +69,7 @@ function DigestDialog({
           }
           return <EmptyView title={error?.toString()} />;
         }}
-        ifResolved={(matrix) =>
+        ifFulfilled={(matrix) =>
           matrix && (
             <EditableMatrix
               matrix={matrix}

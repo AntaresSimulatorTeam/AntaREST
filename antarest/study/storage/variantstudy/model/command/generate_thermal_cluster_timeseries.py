@@ -121,7 +121,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 results = generator.generate_time_series(cluster, nb_years)
                 generated_matrix = results.available_power
                 # 9- Write the matrix inside the input folder.
-                df = pd.DataFrame(data=generated_matrix, dtype=int)
+                df = pd.DataFrame(data=generated_matrix)
+                df = df[list(df.columns)].astype(int)
                 target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
                 dump_dataframe(df, target_path, None)
                 # 10- Notify the progress to the notifier
