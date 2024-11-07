@@ -28,6 +28,7 @@ export const WsEventType = {
     "STUDY_VARIANT_GENERATION_COMMAND_RESULT",
   TaskAdded: "TASK_ADDED",
   TaskRunning: "TASK_RUNNING",
+  TaskProgress: "TASK_PROGRESS",
   TaskCompleted: "TASK_COMPLETED",
   TaskFailed: "TASK_FAILED",
   TaskCancelRequest: "TASK_CANCEL_REQUEST",
@@ -41,7 +42,6 @@ export const WsEventType = {
   WorkerTaskStarted: "WORKER_TASK_STARTED",
   WorkerTaskEnded: "WORKER_TASK_ENDED",
   LaunchProgress: "LAUNCH_PROGRESS",
-  TsGenerationProgress: "TS_GENERATION_PROGRESS",
 } as const;
 
 export const WsChannel = {
