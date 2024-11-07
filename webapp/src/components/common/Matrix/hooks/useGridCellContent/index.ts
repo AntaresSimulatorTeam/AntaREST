@@ -102,8 +102,8 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
  * @param dateTime - Optional array of date-time strings for date columns.
  * @param aggregates - Optional object mapping column IDs to arrays of aggregated values.
  * @param rowHeaders - Optional array of row header labels.
- * @param isReadOnly - Whether the grid is read-only (default is false).
- * @param isPercentDisplayEnabled - Whether to display number values as percentages (default is false).
+ * @param readOnly - Whether the grid is read-only (default is false).
+ * @param showPercent - Whether to display number values as percentages (default is false).
  * @returns A function that accepts a grid item and returns the configured grid cell content.
  */
 export function useGridCellContent(
@@ -113,8 +113,8 @@ export function useGridCellContent(
   dateTime?: string[],
   aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
-  isReadOnly = false,
-  isPercentDisplayEnabled = false,
+  readOnly = false,
+  showPercent = false,
 ): (cell: Item) => GridCell {
   const columnMap = useMemo(() => {
     return new Map(columns.map((column, index) => [index, column]));
@@ -173,17 +173,17 @@ export function useGridCellContent(
       );
 
       // Display number values as percentages if enabled
-      if (isPercentDisplayEnabled && gridCell.kind === GridCellKind.Number) {
+      if (showPercent && gridCell.kind === GridCellKind.Number) {
         return {
           ...gridCell,
           displayData: `${gridCell.data}%`,
           // If ReadOnly is enabled, we don't want to allow overlay
-          allowOverlay: !isReadOnly,
+          allowOverlay: !readOnly,
         };
       }
 
       // Prevent updates for read-only grids
-      if (isReadOnly) {
+      if (readOnly) {
         return {
           ...gridCell,
           allowOverlay: false,
@@ -199,8 +199,8 @@ export function useGridCellContent(
       dateTime,
       aggregates,
       rowHeaders,
-      isReadOnly,
-      isPercentDisplayEnabled,
+      readOnly,
+      showPercent,
     ],
   );
 

@@ -25,15 +25,14 @@ import MatrixActions from "./components/MatrixActions";
 import EmptyView from "../page/SimpleContent";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { AggregateConfig } from "./shared/types";
-import { FileDownload, GridOff } from "@mui/icons-material";
-import SplitButton from "../buttons/SplitButton";
+import { GridOff } from "@mui/icons-material";
 
 interface MatrixProps {
   url: string;
   title?: string;
   customRowHeaders?: string[];
-  enableDateTimeColumn?: boolean;
-  enableTimeSeriesColumns?: boolean;
+  dateTimeColumn?: boolean;
+  timeSeriesColumns?: boolean;
   aggregateColumns?: AggregateConfig;
   rowHeaders?: boolean;
   showPercent?: boolean;
@@ -41,15 +40,15 @@ interface MatrixProps {
   customColumns?: string[] | readonly string[];
   colWidth?: number;
   fetchMatrixData?: fetchMatrixFn;
-  isImportDisabled?: boolean;
+  canImport?: boolean;
 }
 
 function Matrix({
   url,
   title = "global.timeSeries",
   customRowHeaders = [],
-  enableDateTimeColumn = true,
-  enableTimeSeriesColumns = true,
+  dateTimeColumn = true,
+  timeSeriesColumns = true,
   aggregateColumns = false,
   rowHeaders = customRowHeaders.length > 0,
   showPercent = false,
@@ -57,7 +56,7 @@ function Matrix({
   customColumns,
   colWidth,
   fetchMatrixData,
-  isImportDisabled = false,
+  canImport = false,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -83,8 +82,8 @@ function Matrix({
   } = useMatrix(
     study.id,
     url,
-    enableDateTimeColumn,
-    enableTimeSeriesColumns,
+    dateTimeColumn,
+    timeSeriesColumns,
     rowHeaders,
     aggregateColumns,
     customColumns,
@@ -120,7 +119,7 @@ function Matrix({
           redo={redo}
           canUndo={canUndo}
           canRedo={canRedo}
-          isImportDisabled={isImportDisabled}
+          canImport={canImport}
         />
       </MatrixHeader>
       <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
@@ -136,8 +135,8 @@ function Matrix({
           dateTime={dateTime}
           onCellEdit={handleCellEdit}
           onMultipleCellsEdit={handleMultipleCellsEdit}
-          isReadOnly={isSubmitting || readOnly}
-          isPercentDisplayEnabled={showPercent}
+          readOnly={isSubmitting || readOnly}
+          showPercent={showPercent}
         />
       )}
       {openImportDialog && (

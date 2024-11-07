@@ -185,14 +185,14 @@ export function generateCustomColumns({
 /**
  * Generates an array of data columns for a matrix grid.
  *
- * @param enableTimeSeriesColumns - A boolean indicating whether to enable time series columns.
+ * @param timeSeriesColumns - A boolean indicating whether to enable time series columns.
  * @param columnCount - The number of columns to generate.
  * @param customColumns - An optional array of custom column titles.
  * @param colWidth - The width of each column.
  * @returns An array of EnhancedGridColumn objects representing the generated data columns.
  */
 export function generateDataColumns(
-  enableTimeSeriesColumns: boolean,
+  timeSeriesColumns: boolean,
   columnCount: number,
   customColumns?: string[] | readonly string[],
   colWidth?: number,
@@ -203,7 +203,7 @@ export function generateDataColumns(
   }
 
   // Else, generate time series columns if enabled
-  if (enableTimeSeriesColumns) {
+  if (timeSeriesColumns) {
     return generateTimeSeriesColumns({ count: columnCount });
   }
 
