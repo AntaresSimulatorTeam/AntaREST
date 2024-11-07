@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import typing as t
 
-from antarest.study.business.link_management import LINK_PATH
 from antarest.study.business.model.link_model import LinkInternal
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -47,15 +46,14 @@ class UpdateLink(AbstractLinkCommand):
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
-        link_path = LINK_PATH.format(area_from=area_from, area_to=area_to).split("/")
 
-        properties = study_data.tree.get(link_path)
+        properties = study_data.tree.get(["input", "links", area_from, "properties", area_to])
 
         new_properties = LinkInternal.model_validate(self.parameters).model_dump(include=self.parameters, by_alias=True)
 
         properties.update(new_properties)
 
-        study_data.tree.save(properties, link_path)
+        study_data.tree.save(properties, ["input", "links", area_from, "properties", area_to])
 
         output, _ = self._apply_config(study_data.config)
 

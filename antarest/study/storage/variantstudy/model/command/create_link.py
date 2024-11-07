@@ -18,7 +18,6 @@ from pydantic import ValidationInfo, field_validator, model_validator
 
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.link_management import LINK_PATH
 from antarest.study.business.model.link_model import LinkInternal
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
@@ -26,8 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -266,9 +263,7 @@ class CreateLink(AbstractLinkCommand):
         area_from = data["area_from"]
         area_to = data["area_to"]
 
-        link_path = LINK_PATH.format(area_from=area_from, area_to=area_to).split("/")
-
-        study_data.tree.save(validated_properties, link_path)
+        study_data.tree.save(validated_properties, ["input", "links", area_from, "properties", area_to])
 
         self.save_series(area_from, area_to, study_data, version)
         self.save_direct(area_from, area_to, study_data, version)
