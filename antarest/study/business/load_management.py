@@ -23,7 +23,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 
 LOAD_PATH = "input/load/series/load_{area_id}"
 
-
+# faire des validations sur la shape, convertir en objet panda (avec from ...) et voila
 class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
@@ -56,6 +56,12 @@ class LoadManager:
         load_path = LOAD_PATH.format(area_id=area_id).split("/")
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        if isinstance(load_properties.matrix, JSON):
+            df = pd.DataFrame.from_dict(load_properties.matrix)
+        elif isinstance(load_properties.matrix, bytes):
+            df = pd.read_feather(io.BytesIO(load_properties.matrix))
+
 
         file_study.tree.save(load_properties.matrix, load_path)
 

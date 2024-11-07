@@ -526,7 +526,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.hydro_manager.update_inflow_structure(study, area_id, values)
 
     @bp.get(
-        "/{uuid}/{area_id}/load/series",
+        "/studies/{uuid}/{area_id}/load/series",
         tags=[APITag.study_data],
         summary="Get load series data",
     )
@@ -545,7 +545,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.load_manager.get_load_matrix(study, area_id, matrix_format)
 
     @bp.put(
-        "/{uuid}/{area_id}/load/series",
+        "/studies/{uuid}/{area_id}/load/series",
         tags=[APITag.study_data],
         summary="Update load series data",
     )
