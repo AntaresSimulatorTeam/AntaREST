@@ -145,8 +145,8 @@ function Map() {
     if (updatedNode) {
       const { layerX, layerY, layerColor } = updatedNode;
       updateUI(id, {
-        x,
-        y,
+        x: Math.round(x),
+        y: Math.round(y),
         color_rgb: layerColor[currentLayerId]
           ? layerColor[currentLayerId].split(",").map(Number)
           : NODE_COLOR.slice(4, -1).split(",").map(Number),
