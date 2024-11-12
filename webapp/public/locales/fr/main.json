@@ -83,6 +83,7 @@
   "global.time.annual": "Annuel",
   "global.time.weekShort": "S.",
   "global.update.success": "Mise à jour réussie",
+  "global.error": "Erreur",
   "global.errorLogs": "Logs d'erreurs",
   "global.error.emptyName": "Le nom ne peut pas être vide",
   "global.error.failedtoretrievejobs": "Échec de la récupération des tâches",
