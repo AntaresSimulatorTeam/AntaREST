@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
-from antares.tsgen.ts_generator import ThermalCluster, ThermalDataGenerator
+from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluster, TimeseriesGenerator
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
@@ -75,7 +75,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
         nb_years = general_data["general"]["nbtimeseriesthermal"]
         # 2 - Build the generator
         rng = MersenneTwisterRNG(seed=thermal_seed)
-        generator = ThermalDataGenerator(rng=rng, days=365)
+        generator = TimeseriesGenerator(rng=rng, days=365)
         # 3- Do a first loop to know how many operations will be performed
         total_generations = sum(len(area.thermals) for area in study_data.config.areas.values())
         # 4- Loop through areas in alphabetical order
@@ -102,10 +102,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     np.array(matrix_df[i], dtype=float if i in [FO_RATE_COLUMN, PO_RATE_COLUMN] else int)
                     for i in matrix_df.columns
                 ]
-                cluster = ThermalCluster(
+                generation_params = OutageGenerationParameters(
                     unit_count=thermal.unit_count,
-                    nominal_power=thermal.nominal_capacity,
-                    modulation=modulation_capacity,
                     fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
                     fo_volatility=thermal.volatility_forced,
                     po_law=ProbabilityLaw(thermal.law_planned.value.upper()),
@@ -117,8 +115,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     npo_min=npo_min,
                     npo_max=npo_max,
                 )
+                cluster = ThermalCluster(
+                    outage_gen_params=generation_params,
+                    nominal_power=thermal.nominal_capacity,
+                    modulation=modulation_capacity,
+                )
                 # 8- Generate the time-series
-                results = generator.generate_time_series(cluster, nb_years)
+                results = generator.generate_time_series_for_clusters(cluster, nb_years)
                 generated_matrix = results.available_power
                 # 9- Write the matrix inside the input folder.
                 df = pd.DataFrame(data=generated_matrix)
