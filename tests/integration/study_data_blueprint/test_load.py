@@ -30,26 +30,8 @@ class TestLink:
 
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
 
-        # Test simple get JSON
-
-        res = client.get(f"/v1/{study_id}/{area1_id}/load/series?matrix_format=json")
-        assert res.status_code == 200
-        assert res.headers["content-type"] == "application/json"
-        assert pd.DataFrame(data=res.json()["data"], columns=res.json()["columns"]).shape == (8760, 1)
-
         # Test simple get ARROW
 
-        res = client.get(f"/v1/{study_id}/{area1_id}/load/series?matrix_format=arrow")
+        res = client.get(f"/v1/studies/{study_id}/{area1_id}/load/series?matrix_format=arrow")
         assert res.status_code == 200
-        assert res.headers["content-type"] == "application/octet-stream"
-
-        # Test get wrong format
-
-        res = client.get(f"/v1/{study_id}/{area1_id}/load/series?matrix_format=wrong_format")
-        assert res.status_code == 422
-        expected = {
-            "body": None,
-            "description": "Input should be 'json' or 'arrow'",
-            "exception": "RequestValidationError",
-        }
-        assert res.json() == expected
+        assert res.headers["content-type"] == "application/vnd.apache.arrow.file"

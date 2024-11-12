@@ -11,13 +11,12 @@
 # This file is part of the Antares project.
 from pydantic import ConfigDict
 
-from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case, to_kebab_case
 
 
 class LoadDTO(AntaresBaseModel):
-    matrix: JSON | bytes
+    matrix: bytes
 
     model_config = ConfigDict(alias_generator=to_camel_case, extra="forbid")
 
@@ -26,7 +25,7 @@ class LoadDTO(AntaresBaseModel):
 
 
 class LoadProperties(AntaresBaseModel):
-    matrix: JSON | bytes
+    matrix: bytes
 
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid")
 

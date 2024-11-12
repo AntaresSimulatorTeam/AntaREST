@@ -13,11 +13,10 @@ import io
 from typing import cast
 
 import pandas as pd
-from starlette.responses import JSONResponse, Response
+from starlette.responses import Response
 
-from antarest.core.model import JSON
 from antarest.study.business.model.load_model import LoadDTO
-from antarest.study.model import MatrixFormat, Study
+from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.storage_service import StudyStorageService
 
@@ -28,7 +27,7 @@ class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_load_matrix(self, study: Study, area_id: str, matrix_format: MatrixFormat) -> Response:
+    def get_load_matrix(self, study: Study, area_id: str) -> Response:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         load_path = LOAD_PATH.format(area_id=area_id).split("/")
@@ -37,19 +36,13 @@ class LoadManager:
         if not isinstance(node, InputSeriesMatrix):
             return Response(content="Invalid node type", status_code=400)
 
-        matrix_data = InputSeriesMatrix.parse(node, return_dataframe=(matrix_format == MatrixFormat.ARROW))
+        matrix_data = InputSeriesMatrix.parse(node, return_dataframe=True)
 
-        if matrix_format == MatrixFormat.JSON:
-            return JSONResponse(content=cast(JSON, matrix_data))
-
-        if matrix_format == MatrixFormat.ARROW:
-            matrix_df = cast(pd.DataFrame, matrix_data)
-            matrix_df.columns = matrix_df.columns.map(str)
-            buffer = io.BytesIO()
-            matrix_df.to_feather(buffer, compression="uncompressed")
-            return Response(content=buffer.getvalue(), media_type="application/octet-stream")
-
-        return Response(content="Unsupported format", status_code=422)
+        matrix_df = cast(pd.DataFrame, matrix_data)
+        matrix_df.columns = matrix_df.columns.map(str)
+        buffer = io.BytesIO()
+        matrix_df.to_feather(buffer, compression="uncompressed")
+        return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
     def update_load_matrix(self, study: Study, area_id: str, load_dto: LoadDTO) -> LoadDTO:
         load_properties = load_dto.to_properties()
@@ -57,11 +50,9 @@ class LoadManager:
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        if isinstance(load_properties.matrix, JSON):
-            df = pd.DataFrame.from_dict(load_properties.matrix)
-        elif isinstance(load_properties.matrix, bytes):
-            df = pd.read_feather(io.BytesIO(load_properties.matrix))
+        df = pd.read_feather(io.BytesIO(load_properties.matrix))
 
+        # test shape
 
         file_study.tree.save(load_properties.matrix, load_path)
 

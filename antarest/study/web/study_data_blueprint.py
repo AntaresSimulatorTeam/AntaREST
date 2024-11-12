@@ -533,7 +533,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def get_load_series(
         uuid: str,
         area_id: str,
-        matrix_format: MatrixFormat = MatrixFormat.JSON,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Response:
         logger.info(
@@ -542,7 +541,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.load_manager.get_load_matrix(study, area_id, matrix_format)
+        return study_service.load_manager.get_load_matrix(study, area_id)
 
     @bp.put(
         "/studies/{uuid}/{area_id}/load/series",
