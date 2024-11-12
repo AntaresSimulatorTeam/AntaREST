@@ -23,6 +23,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 LOAD_PATH = "input/load/series/load_{area_id}"
 
 
+# faire des validations sur la shape, convertir en objet panda (avec from ...) et voila
 class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
