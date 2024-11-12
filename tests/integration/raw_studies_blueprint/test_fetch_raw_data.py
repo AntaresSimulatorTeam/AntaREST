@@ -57,7 +57,8 @@ class TestFetchRawData:
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
             study_dir = pathlib.Path(study.path)
-        headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        raw_url = f"/v1/studies/{internal_study_id}/raw"
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
@@ -69,11 +70,7 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/folder")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir).as_posix()
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": rel_path, "depth": 1},
-                headers=headers,
-            )
+            res = client.get(raw_url, params={"path": rel_path, "depth": 1})
             assert res.status_code == 200, res.json()
             if file_path.suffix == ".json":
                 # special case for JSON files
@@ -95,22 +92,14 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/unknown")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": f"/{rel_path.as_posix()}", "depth": 1},
-                headers=headers,
-            )
+            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
             assert res.status_code == 200, res.json()
             actual = res.content
             expected = file_path.read_bytes()
             assert actual == expected
 
         # If you try to retrieve a file that doesn't exist, we should have a 404 error
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "user/somewhere/something.txt"},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": "user/somewhere/something.txt"})
         assert res.status_code == 404, res.json()
         assert res.json() == {
             "description": "'somewhere' not a child of User",
@@ -120,10 +109,7 @@ class TestFetchRawData:
         # If you want to update an existing resource, you can use PUT method.
         # But, if the resource doesn't exist, you should have a 404 Not Found error.
         res = client.put(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "user/somewhere/something.txt"},
-            headers=headers,
-            files={"file": io.BytesIO(b"Goodbye World!")},
+            raw_url, params={"path": "user/somewhere/something.txt"}, files={"file": io.BytesIO(b"Goodbye World!")}
         )
         assert res.status_code == 404, res.json()
         assert res.json() == {
@@ -134,9 +120,8 @@ class TestFetchRawData:
         # To create a resource, you can use PUT method and the `create_missing` flag.
         # The expected status code should be 204 No Content.
         res = client.put(
-            f"/v1/studies/{internal_study_id}/raw",
+            raw_url,
             params={"path": "user/somewhere/something.txt", "create_missing": True},
-            headers=headers,
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
         )
         assert res.status_code == 204, res.json()
@@ -144,29 +129,31 @@ class TestFetchRawData:
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
         # The expected status code should be 204 No Content.
         res = client.put(
-            f"/v1/studies/{internal_study_id}/raw",
+            raw_url,
             params={"path": "user/somewhere/something.txt", "create_missing": True},
-            headers=headers,
             files={"file": io.BytesIO(b"This is the end!")},
         )
         assert res.status_code == 204, res.json()
 
         # You can check that the resource has been created or updated.
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "user/somewhere/something.txt"},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": "user/somewhere/something.txt"})
         assert res.status_code == 200, res.json()
         assert res.content == b"This is the end!"
 
+        # You can import a csv or a tsv file inside a matrix
+        matrix_path = "input/load/series/load_de"
+        for content, delimiter in zip(
+            [b"1.20000\n3.400000\n", b"1.4\t0.5\n0.0\t0.4\n", b"1.2,1.3\n1.4,1.5\n"], ["\t", "\t", ","]
+        ):
+            res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(content)})
+            assert res.status_code == 204, res.json()
+            res = client.get(raw_url, params={"path": matrix_path})
+            written_data = res.json()["data"]
+            assert written_data == np.loadtxt(io.BytesIO(content), delimiter=delimiter, ndmin=2).tolist()
+
         # If we ask for properties, we should have a JSON content
         rel_path = "/input/links/de/properties/fr"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": rel_path, "depth": 2},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": rel_path, "depth": 2})
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert actual == {
@@ -187,22 +174,14 @@ class TestFetchRawData:
 
         # If we ask for a matrix, we should have a JSON content if formatted is True
         rel_path = "/input/links/de/fr"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": rel_path, "formatted": True},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": rel_path, "formatted": True})
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert actual == {"index": ANY, "columns": ANY, "data": ANY}
 
         # If we ask for a matrix, we should have a CSV content if formatted is False
         rel_path = "/input/links/de/fr"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": rel_path, "formatted": False},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": rel_path, "formatted": False})
         assert res.status_code == 200, res.json()
         actual = res.text
         actual_lines = actual.splitlines()
@@ -210,20 +189,12 @@ class TestFetchRawData:
         assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
 
         # If ask for an empty matrix, we should have an empty binary content
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False})
         assert res.status_code == 200, res.json()
         assert res.content == b""
 
         # But, if we use formatted = True, we should have a JSON objet representing and empty matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
         assert res.status_code == 200, res.json()
         assert res.json() == {"index": [], "columns": [], "data": []}
 
@@ -231,39 +202,23 @@ class TestFetchRawData:
         user_folder_dir = study_dir.joinpath("user/bad")
         for file_path in user_folder_dir.glob("*.*"):
             rel_path = file_path.relative_to(study_dir)
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": f"/{rel_path.as_posix()}", "depth": 1},
-                headers=headers,
-            )
+            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
             assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
 
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "/input/areas/list", "depth": 1},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": "/input/areas/list", "depth": 1})
         assert res.status_code == 200, res.json()
         assert res.json() == ["DE", "ES", "FR", "IT"]
 
         # asserts that the GET /raw endpoint is able to read matrix containing NaN values
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"},
-            headers=headers,
-        )
+        res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"})
         assert res.status_code == 200
         assert np.isnan(res.json()["data"][0]).any()
 
         # Iterate over all possible combinations of path and depth
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/raw",
-                params={"path": path, "depth": depth},
-                headers=headers,
-            )
+            res = client.get(raw_url, params={"path": path, "depth": depth})
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
 
 
