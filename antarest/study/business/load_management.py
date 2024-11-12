@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import io
+from io import BytesIO
 from typing import cast
 
 import pandas as pd
@@ -22,7 +22,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 
 LOAD_PATH = "input/load/series/load_{area_id}"
 
-# faire des validations sur la shape, convertir en objet panda (avec from ...) et voila
+
 class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
@@ -40,7 +40,7 @@ class LoadManager:
 
         matrix_df = cast(pd.DataFrame, matrix_data)
         matrix_df.columns = matrix_df.columns.map(str)
-        buffer = io.BytesIO()
+        buffer = BytesIO()
         matrix_df.to_feather(buffer, compression="uncompressed")
         return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
@@ -50,9 +50,10 @@ class LoadManager:
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        df = pd.read_feather(io.BytesIO(load_properties.matrix))
+        df = pd.read_feather(BytesIO(load_properties.matrix))
 
-        # test shape
+        if df.shape[1] != 2:
+            pass
 
         file_study.tree.save(load_properties.matrix, load_path)
 
