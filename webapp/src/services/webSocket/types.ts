@@ -63,7 +63,7 @@ export interface TaskEventPayload {
   study_id?: StudyMetadata["id"];
 }
 
-export interface TsGenerationProgressEventPayload {
+export interface TaskProgressEventPayload {
   task_id: TaskDTO["id"];
   progress: number;
 }
@@ -135,9 +135,9 @@ interface DownloadEvent {
   payload: FileDownloadDTO;
 }
 
-interface TsGenerationProgressEvent {
-  type: typeof WsEventType.TsGenerationProgress;
-  payload: TsGenerationProgressEventPayload;
+interface TaskProgressEvent {
+  type: typeof WsEventType.TaskProgress;
+  payload: TaskProgressEventPayload;
 }
 
 export type WsEvent =
@@ -151,6 +151,6 @@ export type WsEvent =
   | StudyJobLogUpdateEvent
   | LaunchProgressEvent
   | DownloadEvent
-  | TsGenerationProgressEvent;
+  | TaskProgressEvent;
 
 export type WsEventListener = (message: WsEvent) => void;
