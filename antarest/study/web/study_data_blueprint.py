@@ -535,6 +535,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Response:
+        """Return the load matrix in ARROW format."""
         logger.info(
             msg=f"Getting load series data for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
@@ -554,6 +555,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         load_dto: LoadDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> LoadDTO:
+        """Replace the existing load matrix."""
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.load_manager.update_load_matrix(study, area_id, load_dto)

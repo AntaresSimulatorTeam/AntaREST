@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from io import BytesIO
+
 import pandas as pd
 import pytest
 from starlette.testclient import TestClient
