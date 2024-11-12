@@ -299,6 +299,66 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
     assert "the given path doesn't exist" in res.json()["description"]
 
 
+def test_create_folder(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    raw_url = f"/v1/studies/{internal_study_id}/raw"
+
+    # =============================
+    # NOMINAL CASES
+    # =============================
+
+    res = client.post(raw_url, params={"path": "user/folder_1", "file": False})
+    assert res.status_code == 204
+
+    # same case with different writing should succeed
+    res = client.post(raw_url, params={"path": "/user/folder_2", "file": False})
+    assert res.status_code == 204
+
+    # checks debug view to see that folders were created
+    res = client.get(f"/v1/studies/{internal_study_id}/raw?path=&depth=-1")
+    assert res.status_code == 200
+    tree = res.json()["user"]
+    assert list(tree.keys()) == ["expansion", "folder_1", "folder_2"]
+
+    # =============================
+    #  ERRORS
+    # =============================
+
+    # asserts it doesn't work without specifying it's a folder
+    res = client.post(raw_url, params={"path": "/user/folder_3"})
+    assert res.status_code == 404
+    assert res.json()["exception"] == "ChildNotFoundError"
+    assert res.json()["description"] == "'folder_3' not a child of User"
+
+    # try to create a folder outside `user` folder
+    wrong_folder = "input/wrong_folder"
+    res = client.post(raw_url, params={"path": wrong_folder, "file": False})
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FolderCreationNotAllowed"
+    assert f"the given path isn't inside the 'User' folder: {wrong_folder}" in res.json()["description"]
+
+    # try to create a folder inside the 'expansion` folder
+    expansion_folder = "user/expansion/wrong_folder"
+    res = client.post(raw_url, params={"path": expansion_folder, "file": False})
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FolderCreationNotAllowed"
+    assert f"the given path shouldn't be inside the 'expansion' folder: {expansion_folder}" in res.json()["description"]
+
+    # try to create an already existing folder
+    existing_folder = "user/folder_1"
+    res = client.post(raw_url, params={"path": existing_folder, "file": False})
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FolderCreationNotAllowed"
+    assert f"the given folder already exists: {existing_folder}" in res.json()["description"]
+
+    # try to create a folder inside a non-existing folder
+    too_deep_folder = "user/folder_x/folder_1"
+    res = client.post(raw_url, params={"path": too_deep_folder, "file": False})
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FolderCreationNotAllowed"
+    assert f"the given folder parent doesn't exist: {too_deep_folder}" in res.json()["description"]
+
+
 def test_retrieve_from_archive(client: TestClient, user_access_token: str) -> None:
     # client headers
     client.headers = {"Authorization": f"Bearer {user_access_token}"}

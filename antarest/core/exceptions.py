@@ -353,6 +353,16 @@ class FileDeletionNotAllowed(HTTPException):
         super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 
+class FolderCreationNotAllowed(HTTPException):
+    """
+    Exception raised when creating a folder which isn't inside the 'User' folder.
+    """
+
+    def __init__(self, message: str) -> None:
+        msg = f"Folder creation failed because {message}"
+        super().__init__(HTTPStatus.FORBIDDEN, msg)
+
+
 class ReferencedObjectDeletionNotAllowed(HTTPException):
     """
     Exception raised when a binding constraint is not allowed to be deleted because it references

@@ -476,12 +476,13 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
-        summary="Update data by posting formatted data",
+        summary="Update study by posting formatted data",
     )
     def edit_study(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         data: SUB_JSON = Body(default=""),
+        file: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -493,16 +494,18 @@ def create_raw_study_routes(
 
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
-        - `data`: The formatted data to be posted. Defaults to an empty string.
-          The data could be a JSON object, or a simple string.
+        - `data`: The formatted data to be posted. Could be a JSON object, or a string. Defaults to an empty string.
+        - `file`: If True (default value), writes the data inside the given file. Else, creates an empty folder at the given path.
+
         """
-        logger.info(
-            f"Editing data at {path} for study {uuid}",
-            extra={"user": current_user.id},
-        )
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, data, params)
+        if file:
+            logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
+            study_service.edit_study(uuid, path, data, params)
+        else:
+            logger.info(f"Creating folder {path} for study {uuid}", extra={"user": current_user.id})
+            study_service.create_folder(uuid, path, current_user)
 
     @bp.put(
         "/studies/{uuid}/raw",
