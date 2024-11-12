@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 
 from antarest.core.exceptions import FileTooLargeError, MCRootNotHandled, OutputNotFound, OutputSubFolderNotFound
-from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
     rename_unnamed,
@@ -27,7 +26,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 MC_TEMPLATE_PARTS = "output/{sim_id}/economy/{mc_root}"
-HORIZON_TEMPLATE = "output/{sim_id}/about-the-study/parameters.ini"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
@@ -37,8 +35,6 @@ LINK_COL = "link"
 """Column name for the link."""
 TIME_ID_COL = "timeId"
 """Column name for the time index."""
-TIME_COL = "time"
-"""Column name for the timestamp."""
 CLUSTER_ID_COL = "cluster"
 """Column name for the cluster id."""
 MC_YEAR_INDEX = 0
@@ -97,11 +93,11 @@ def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, 
         org_cols = [col for col in org_cols if col != CLUSTER_ID_COL and col != TIME_ID_COL]
     if mc_root == MCRoot.MC_IND:
         new_column_order = (
-            [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [MCYEAR_COL, TIME_ID_COL, TIME_COL] + org_cols
+            [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [MCYEAR_COL, TIME_ID_COL] + org_cols
         )
     elif mc_root == MCRoot.MC_ALL:
-        org_cols = [col for col in org_cols if col not in {column_name, MCYEAR_COL, TIME_COL}]
-        new_column_order = [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [TIME_ID_COL, TIME_COL] + org_cols
+        org_cols = [col for col in org_cols if col not in {column_name, MCYEAR_COL}]
+        new_column_order = [column_name] + ([CLUSTER_ID_COL] if is_details else []) + [TIME_ID_COL] + org_cols
     else:
         raise MCRootNotHandled(f"Unknown Monte Carlo root: {mc_root}")
 
@@ -332,7 +328,7 @@ class AggregatorManager:
             # just extract the data frame from the file by just merging the columns components
             return self._parse_output_file(file_path)
 
-    def _build_dataframe(self, files: t.Sequence[Path], horizon: int) -> pd.DataFrame:
+    def _build_dataframe(self, files: t.Sequence[Path]) -> pd.DataFrame:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [
@@ -379,8 +375,6 @@ class AggregatorManager:
 
             # add a column for the time id
             df[TIME_ID_COL] = _infer_time_id(df, is_details)
-            # add horizon column
-            df[TIME_COL] = horizon
             # Reorganize the columns
             df = df.reindex(columns=pd.Index(new_column_order))
 
@@ -418,16 +412,11 @@ class AggregatorManager:
         # filters files to consider
         all_output_files = sorted(self._gather_all_files_to_consider())
 
-        # Retrieves the horizon from the study output
-        horizon_path = self.study_path / HORIZON_TEMPLATE.format(sim_id=self.output_id)
-        launching_config = IniReader().read(horizon_path)
-        horizon = launching_config.get("general", {}).get("horizon", 2018)
-
         logger.info(
             f"Parsing {len(all_output_files)} {self.frequency.value} files"
             f"to build the aggregated output for study `{self.study_path.name}`"
         )
         # builds final dataframe
-        final_df = self._build_dataframe(all_output_files, horizon)
+        final_df = self._build_dataframe(all_output_files)
 
         return final_df
