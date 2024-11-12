@@ -2657,12 +2657,19 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
+        # Gets the data and checks given path existence
         matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
-        if set(matrix_obj) != {"data", "index", "columns"}:
+
+        # Checks that the provided path refers to a matrix
+        url = path.split("/")
+        parent_dir = self.get(study_id, "/".join(url[:-1]), depth=3, formatted=True, params=parameters)
+        target_path = parent_dir[url[-1]]
+        if not isinstance(target_path, str) or not target_path.startswith(("matrix://", "matrixfile://")):
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+
+        # Builds the dataframe
         if not matrix_obj["data"]:
             return pd.DataFrame()
-
         df_matrix = pd.DataFrame(**matrix_obj)
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
