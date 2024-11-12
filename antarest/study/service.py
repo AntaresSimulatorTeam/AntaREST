@@ -13,6 +13,7 @@
 import base64
 import collections
 import contextlib
+import csv
 import http
 import io
 import logging
@@ -1537,7 +1538,12 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
+                try:
+                    delimiter = csv.Sniffer().sniff(data.decode("utf-8"), delimiters=r"[,;\t]").delimiter
+                except csv.Error:
+                    # Can happen with data with only one column. In this case, we don't care about the delimiter.
+                    delimiter = "\t"
+                matrix = np.loadtxt(io.BytesIO(data), delimiter=delimiter, dtype=np.float64, ndmin=2)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url,
