@@ -531,21 +531,6 @@ export interface UpdateAreaUi {
   layerColor: AreaLayerColor;
 }
 
-export interface LinkUIInfoDTO {
-  color: string;
-  style: string;
-  width: number;
-}
-
-export interface LinkCreationInfoDTO {
-  area1: string;
-  area2: string;
-}
-
-export interface LinkInfoWithUI extends LinkCreationInfoDTO {
-  ui: LinkUIInfoDTO;
-}
-
 export interface AreaCreationDTO {
   name: string;
   type: object;

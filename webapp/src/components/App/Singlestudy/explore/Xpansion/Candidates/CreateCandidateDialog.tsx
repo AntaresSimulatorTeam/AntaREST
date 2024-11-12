@@ -17,7 +17,6 @@ import { Button, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import * as R from "ramda";
-import { LinkCreationInfoDTO } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
@@ -26,10 +25,11 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import { validateString } from "@/utils/validation/string";
+import type { LinkInfoDTO } from "@/services/api/studies/links/types";
 
 interface PropType {
   open: boolean;
-  links: LinkCreationInfoDTO[];
+  links: LinkInfoDTO[];
   onClose: () => void;
   onSave: (candidate: XpansionCandidate) => void;
   candidates: XpansionCandidate[];

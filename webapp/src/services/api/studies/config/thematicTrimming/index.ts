@@ -26,8 +26,8 @@ export async function getThematicTrimmingConfig({
   studyId,
 }: GetThematicTrimmingConfigParams) {
   const url = format(URL, { studyId });
-  const res = await client.get<ThematicTrimmingConfig>(url);
-  return res.data;
+  const { data } = await client.get<ThematicTrimmingConfig>(url);
+  return data;
 }
 
 export async function setThematicTrimmingConfig({

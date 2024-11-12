@@ -35,14 +35,14 @@ import {
   StyledVisibilityIcon,
   StyledDeleteIcon,
 } from "../share/styles";
-import { LinkCreationInfoDTO } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import SelectSingle from "../../../../../common/SelectSingle";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+import type { LinkInfoDTO } from "@/services/api/studies/links/types";
 
 interface PropType {
   candidate: XpansionCandidate | undefined;
-  links: LinkCreationInfoDTO[];
+  links: LinkInfoDTO[];
   capacities: string[];
   deleteCandidate: (name: string | undefined) => Promise<void>;
   updateCandidate: (
