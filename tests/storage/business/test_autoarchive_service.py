@@ -95,5 +95,5 @@ def test_auto_archival(tmp_path: Path):
 
     # Check if the `clear_all_snapshots` method was called with default values
     study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
-        datetime.timedelta(days=1), params=RequestParameters(DEFAULT_ADMIN_USER)
+        datetime.timedelta(days=7), params=RequestParameters(DEFAULT_ADMIN_USER)
     )
