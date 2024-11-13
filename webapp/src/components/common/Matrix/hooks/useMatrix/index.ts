@@ -55,8 +55,8 @@ interface DataState {
 export function useMatrix(
   studyId: string,
   url: string,
-  enableDateTimeColumn: boolean,
-  enableTimeSeriesColumns: boolean,
+  dateTimeColumn: boolean,
+  timeSeriesColumns: boolean,
   enableRowHeaders?: boolean,
   aggregatesConfig?: AggregateConfig,
   customColumns?: string[] | readonly string[],
@@ -143,7 +143,7 @@ export function useMatrix(
 
     const baseColumns: EnhancedGridColumn[] = [];
 
-    if (enableDateTimeColumn) {
+    if (dateTimeColumn) {
       baseColumns.push({
         id: "date",
         title: "Date",
@@ -163,7 +163,7 @@ export function useMatrix(
     }
 
     const dataColumns = generateDataColumns(
-      enableTimeSeriesColumns,
+      timeSeriesColumns,
       columnCount,
       customColumns,
       colWidth,
@@ -185,9 +185,9 @@ export function useMatrix(
     return [...baseColumns, ...dataColumns, ...aggregatesColumns];
   }, [
     currentState.data,
-    enableDateTimeColumn,
+    dateTimeColumn,
     enableRowHeaders,
-    enableTimeSeriesColumns,
+    timeSeriesColumns,
     columnCount,
     customColumns,
     colWidth,

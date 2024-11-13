@@ -152,7 +152,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def get_links(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> t.List[LinkDTO]:
         logger.info(
             f"Fetching link list for study {uuid}",
             extra={"user": current_user.id},

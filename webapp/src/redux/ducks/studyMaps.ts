@@ -47,11 +47,14 @@ import {
   getStudySynthesis,
 } from "../selectors";
 import * as studyDataApi from "../../services/api/studydata";
+import * as linksApi from "../../services/api/studies/links";
 import {
   createStudyLink,
   deleteStudyLink,
   setCurrentArea,
 } from "./studySyntheses";
+import type { TLinkStyle } from "@/services/api/studies/links/types";
+import tinycolor from "tinycolor2";
 
 export interface StudyMapNode {
   id: string;
@@ -167,11 +170,11 @@ export const setLayers = createAction<
 
 type LinkStyle = [number[], string];
 
-const makeLinkStyle = R.cond<[string], LinkStyle>([
-  [R.equals("dot"), (): LinkStyle => [[1, 5], "round"]],
-  [R.equals("dash"), (): LinkStyle => [[16, 8], "square"]],
-  [R.equals("dotdash"), (): LinkStyle => [[10, 6, 1, 6], "square"]],
-  [R.T, (): LinkStyle => [[0], "butt"]],
+const makeLinkStyle = R.cond<[TLinkStyle], LinkStyle>([
+  [(v) => v === "dot", () => [[1, 5], "round"]],
+  [(v) => v === "dash", () => [[16, 8], "square"]],
+  [(v) => v === "dotdash", () => [[10, 6, 1, 6], "square"]],
+  [R.T, () => [[0], "butt"]],
 ]);
 
 const initStudyMapLayers = (
@@ -217,17 +220,21 @@ export const fetchStudyMapLayers = createAsyncThunk<
 async function getLinks(
   studyId: StudyMap["studyId"],
 ): Promise<StudyMap["links"]> {
-  const links = await studyDataApi.getAllLinks({ uuid: studyId, withUi: true });
+  const links = await linksApi.getLinks({ studyId });
   return links.reduce(
     (acc, link) => {
-      const [style, linecap] = makeLinkStyle(link.ui?.style);
+      const [style, linecap] = makeLinkStyle(link.linkStyle);
       const id = makeLinkId(link.area1, link.area2);
       acc[id] = {
         id,
-        color: `rgb(${link.ui?.color}`,
+        color: tinycolor({
+          r: link.colorr,
+          g: link.colorg,
+          b: link.colorb,
+        }).toRgbString(),
         strokeDasharray: style,
         strokeLinecap: linecap,
-        strokeWidth: link.ui?.width < 2 ? 2 : link.ui?.width,
+        strokeWidth: link.linkWidth < 2 ? 2 : link.linkWidth,
       };
       return acc;
     },
@@ -398,7 +405,7 @@ export const createStudyMapLink = createAsyncThunk<
   );
 
   try {
-    await studyDataApi.createLink(studyId, { area1, area2 });
+    await linksApi.createLink({ studyId, area1, area2 });
   } catch (err) {
     dispatch(deleteStudyLink({ studyId, area1, area2 }));
     dispatch(deleteStudyMapLinkTemp({ studyId, linkId }));
@@ -425,7 +432,11 @@ export const deleteStudyMapLink = createAsyncThunk<
       dispatch(deleteStudyLink({ studyId, area1, area2 }));
 
       try {
-        await studyDataApi.deleteLink(studyId, area1, area2);
+        await linksApi.deleteLink({
+          studyId,
+          areaFrom: area1,
+          areaTo: area2,
+        });
       } catch (err) {
         dispatch(createStudyLink({ ...link, studyId, area1, area2 }));
 

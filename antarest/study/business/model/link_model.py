@@ -56,9 +56,9 @@ class LinkDTO(Area):
     transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
     asset_type: AssetType = AssetType.AC
     display_comments: bool = True
-    colorr: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
-    colorb: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
-    colorg: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
+    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
 
@@ -101,9 +101,9 @@ class LinkInternal(AntaresBaseModel):
     transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
     asset_type: AssetType = AssetType.AC
     display_comments: bool = True
-    colorr: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
-    colorb: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
-    colorg: int = Field(default=DEFAULT_COLOR, gt=0, lt=255)
+    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
     filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES

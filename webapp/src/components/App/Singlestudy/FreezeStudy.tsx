@@ -40,7 +40,7 @@ import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
 interface BlockingTask {
   id: TaskDTO["id"];
   type: TTaskType;
-  progress: number;
+  progress?: number;
   error?: string;
 }
 
@@ -53,7 +53,6 @@ const BLOCKING_TASK_TYPES = [
   TaskType.ThermalClusterSeriesGeneration,
 ] as const;
 
-const PROGRESS_INDETERMINATE = -1;
 const PROGRESS_COMPLETE = 100;
 
 function getChannel(id: TaskDTO["id"]) {
@@ -84,7 +83,6 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           tasks.map((task) => ({
             id: task.id,
             type: task.type!,
-            progress: PROGRESS_INDETERMINATE,
           })),
         );
 
@@ -106,13 +104,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           const { id, type, study_id: taskStudyId } = event.payload;
 
           if (taskStudyId === studyId && BLOCKING_TASK_TYPES.includes(type)) {
-            setBlockingTasks((tasks) => [
-              ...tasks,
-              {
-                ...event.payload,
-                progress: PROGRESS_INDETERMINATE,
-              },
-            ]);
+            setBlockingTasks((tasks) => [...tasks, event.payload]);
 
             // For getting other events
             subscribeWsChannels(getChannel(id));
@@ -167,8 +159,17 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           message: task.result?.message || "",
           type: task.type!,
         };
-
-        if (task.status === TaskStatus.Failed) {
+        if (task.status === TaskStatus.Running) {
+          if (typeof task.progress === "number") {
+            listener({
+              type: WsEventType.TaskProgress,
+              payload: {
+                task_id: task.id,
+                progress: task.progress,
+              },
+            });
+          }
+        } else if (task.status === TaskStatus.Failed) {
           listener({ type: WsEventType.TaskFailed, payload });
         } else if (task.status === TaskStatus.Completed) {
           listener({ type: WsEventType.TaskCompleted, payload });
@@ -199,15 +200,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
             <ListItem key={id}>
               <ListItemText
                 primary={
-                  <LinearProgressWithLabel
-                    variant={
-                      progress === PROGRESS_INDETERMINATE
-                        ? "indeterminate"
-                        : "determinate"
-                    }
-                    value={progress}
-                    error={error}
-                  />
+                  <LinearProgressWithLabel value={progress} error={error} />
                 }
                 secondary={t(`tasks.type.${type}`)}
               />

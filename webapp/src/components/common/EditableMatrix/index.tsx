@@ -41,7 +41,7 @@ interface PropTypes {
   columnsNames?: string[] | readonly string[];
   rowNames?: string[];
   computStats?: MatrixStats;
-  isPercentDisplayEnabled?: boolean;
+  showPercent?: boolean;
 }
 
 type CellType = Array<number | string | boolean>;
@@ -68,7 +68,7 @@ function EditableMatrix(props: PropTypes) {
     columnsNames,
     rowNames,
     computStats,
-    isPercentDisplayEnabled = false,
+    showPercent = false,
   } = props;
   const { data = [], columns = [], index = [] } = matrix;
   const prependIndex = index.length > 0 && matrixTime;
@@ -96,7 +96,7 @@ function EditableMatrix(props: PropTypes) {
       const edits = cellChangesToMatrixEdits(
         filteredChanges,
         matrixTime,
-        isPercentDisplayEnabled,
+        showPercent,
       );
 
       onUpdate(edits, source);
@@ -151,7 +151,7 @@ function EditableMatrix(props: PropTypes) {
         );
       }
 
-      if (isPercentDisplayEnabled) {
+      if (showPercent) {
         tmpRow = tmpRow.map((cell) => {
           if (typeof cell === "number") {
             return cell * 100;
@@ -173,7 +173,7 @@ function EditableMatrix(props: PropTypes) {
     readOnly,
     matrixIndex,
     computStats,
-    isPercentDisplayEnabled,
+    showPercent,
   ]);
 
   const matrixRowNames =

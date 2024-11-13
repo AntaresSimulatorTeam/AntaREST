@@ -12,11 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import Matrix from "../../../../../common/Matrix";
-import type { DataCompProps } from "../utils";
+export const TransmissionCapacity = {
+  Infinite: "infinite",
+  Ignore: "ignore",
+  Enabled: "enabled",
+} as const;
 
-function DebugMatrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
-  return <Matrix title={filename} url={filePath} canImport={!canEdit} />;
-}
+export const AssetType = {
+  AC: "ac",
+  DC: "dc",
+  Gaz: "gaz",
+  Virt: "virt",
+  Other: "other",
+} as const;
 
-export default DebugMatrix;
+export const LinkStyle = {
+  Dot: "dot",
+  Plain: "plain",
+  Dash: "dash",
+  DotDash: "dotdash",
+  Other: "other",
+} as const;

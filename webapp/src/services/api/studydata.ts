@@ -12,11 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
-  LinkCreationInfoDTO,
-  LinkInfoWithUI,
-  UpdateAreaUi,
-} from "../../common/types";
+import { UpdateAreaUi } from "../../common/types";
 import {
   BindingConstraint,
   ConstraintTerm,
@@ -33,14 +29,6 @@ export const createArea = async (
     name,
     type: "AREA",
   });
-  return res.data;
-};
-
-export const createLink = async (
-  uuid: string,
-  linkCreationInfo: LinkCreationInfoDTO,
-): Promise<string> => {
-  const res = await client.post(`/v1/studies/${uuid}/links`, linkCreationInfo);
   return res.data;
 };
 
@@ -62,17 +50,6 @@ export const deleteArea = async (
   areaId: string,
 ): Promise<string> => {
   const res = await client.delete(`/v1/studies/${uuid}/areas/${areaId}`);
-  return res.data;
-};
-
-export const deleteLink = async (
-  uuid: string,
-  areaIdFrom: string,
-  areaIdTo: string,
-): Promise<string> => {
-  const res = await client.delete(
-    `/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}`,
-  );
   return res.data;
 };
 
@@ -161,23 +138,5 @@ export const createBindingConstraint = async (
     `/v1/studies/${studyId}/bindingconstraints`,
     data,
   );
-  return res.data;
-};
-
-interface GetAllLinksParams {
-  uuid: string;
-  withUi?: boolean;
-}
-
-type LinkTypeFromParams<T extends GetAllLinksParams> = T["withUi"] extends true
-  ? LinkInfoWithUI
-  : LinkCreationInfoDTO;
-
-export const getAllLinks = async <T extends GetAllLinksParams>(
-  params: T,
-): Promise<Array<LinkTypeFromParams<T>>> => {
-  const { uuid, withUi } = params;
-  const withUiStr = withUi ? "with_ui=true" : "";
-  const res = await client.get(`/v1/studies/${uuid}/links?${withUiStr}`);
   return res.data;
 };
