@@ -19,6 +19,7 @@ import shutil
 from unittest.mock import ANY
 
 import numpy as np
+import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
@@ -143,13 +144,26 @@ class TestFetchRawData:
         # You can import a csv or a tsv file inside a matrix
         matrix_path = "input/load/series/load_de"
         for content, delimiter in zip(
-            [b"1.20000\n3.400000\n", b"1.4\t0.5\n0.0\t0.4\n", b"1.2,1.3\n1.4,1.5\n"], ["\t", "\t", ","]
+            [
+                b"1.20000\n3.400000\n",
+                b"1.4\t0.5\n0.0\t0.4\n",
+                b"1.2,1.3\n1.4,1.5\n",
+                b"",
+                b"\xef\xbb\xbf1;1;1;1;1\r\n1;1;1;1;1",
+                b"1;1;1;1;1\r1;1;1;1;1",
+            ],
+            ["\t", "\t", ",", "\t", ";", ";"],
         ):
             res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(content)})
             assert res.status_code == 204, res.json()
             res = client.get(raw_url, params={"path": matrix_path})
             written_data = res.json()["data"]
-            assert written_data == np.loadtxt(io.BytesIO(content), delimiter=delimiter, ndmin=2).tolist()
+            if not content.decode("utf-8"):
+                # For some reason the `GET` returns the default matrix when it's empty
+                expected = 8760 * [[0]]
+            else:
+                expected = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).to_numpy().tolist()
+            assert written_data == expected
 
         # If we ask for properties, we should have a JSON content
         rel_path = "/input/links/de/properties/fr"

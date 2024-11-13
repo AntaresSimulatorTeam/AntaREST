@@ -31,7 +31,7 @@ interface MatrixActionsProps {
   redo: VoidFunction;
   canUndo: boolean;
   canRedo: boolean;
-  isImportDisabled?: boolean;
+  canImport?: boolean;
 }
 
 function MatrixActions({
@@ -46,7 +46,7 @@ function MatrixActions({
   redo,
   canUndo,
   canRedo,
-  isImportDisabled = false,
+  canImport = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
 
@@ -99,7 +99,7 @@ function MatrixActions({
         ButtonProps={{
           startIcon: <FileDownload />,
         }}
-        disabled={isSubmitting || isImportDisabled}
+        disabled={isSubmitting || canImport}
       >
         {t("global.import")}
       </SplitButton>
