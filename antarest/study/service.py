@@ -86,8 +86,9 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.link_management import LinkInfoDTO, LinkManager
+from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
+from antarest.study.business.model.link_model import LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -358,7 +359,7 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service, self.repository)
         self.district_manager = DistrictManager(self.storage_service)
-        self.links = LinkManager(self.storage_service)
+        self.links_manager = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
         self.general_manager = GeneralManager(self.storage_service)
         self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
@@ -380,7 +381,7 @@ class StudyService:
         self.correlation_manager = CorrelationManager(self.storage_service)
         self.table_mode_manager = TableModeManager(
             self.areas,
-            self.links,
+            self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
             self.st_storage_manager,
@@ -1867,12 +1868,11 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-        with_ui: bool,
         params: RequestParameters,
-    ) -> t.List[LinkInfoDTO]:
+    ) -> t.List[LinkDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.links.get_all_links(study, with_ui)
+        return self.links_manager.get_all_links(study)
 
     def create_area(
         self,
@@ -1896,13 +1896,13 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkInfoDTO,
+        link_creation_dto: LinkDTO,
         params: RequestParameters,
-    ) -> LinkInfoDTO:
+    ) -> LinkDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_link = self.links.create_link(study, link_creation_dto)
+        new_link = self.links_manager.create_link(study, link_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2018,7 +2018,7 @@ class StudyService:
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
-        self.links.delete_link(study, area_from, area_to)
+        self.links_manager.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
