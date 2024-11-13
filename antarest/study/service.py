@@ -2767,7 +2767,7 @@ class StudyService:
         if url[1] == "expansion":
             raise FolderCreationNotAllowed(f"the given path shouldn't be inside the 'expansion' folder: {path}")
 
-        study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree
+        study_tree = self.storage_service.get_storage(study).get_raw(study, True).tree
         try:
             study_tree.get_node(url)
         except ChildNotFoundError:

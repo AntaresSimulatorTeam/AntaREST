@@ -315,8 +315,22 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
     assert "the given path doesn't exist" in res.json()["description"]
 
 
-def test_create_folder(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+@pytest.mark.parametrize("study_type", ["raw", "variant"])
+def test_create_folder(client: TestClient, user_access_token: str, internal_study_id: str, study_type: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    if study_type == "variant":
+        # Copies the study, to convert it into a managed one.
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/copy",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"dest": "default", "with_outputs": False, "use_task": False},
+        )
+        assert res.status_code == 201
+        parent_id = res.json()
+        res = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant 1"})
+        internal_study_id = res.json()
+
     raw_url = f"/v1/studies/{internal_study_id}/raw"
 
     # =============================
