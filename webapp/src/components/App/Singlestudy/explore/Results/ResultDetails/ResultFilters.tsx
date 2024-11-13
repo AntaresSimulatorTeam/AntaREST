@@ -45,7 +45,30 @@ function ResultFilters({
 }: Props) {
   const { t } = useTranslation();
 
-  const filters = [
+  const handleYearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.value;
+
+    // Allow empty string (when backspacing)
+    if (newValue === "") {
+      setYear(1); // Reset to minimum value
+      return;
+    }
+
+    const numValue = Number(newValue);
+
+    // Validate the number is within bounds
+    if (!isNaN(numValue)) {
+      if (numValue < 1) {
+        setYear(1);
+      } else if (numValue > maxYear) {
+        setYear(maxYear);
+      } else {
+        setYear(numValue);
+      }
+    }
+  };
+
+  const FILTERS = [
     {
       label: `${t("study.results.mc")}:`,
       field: (
@@ -70,9 +93,7 @@ function ResultFilters({
                 min: 1,
                 max: maxYear,
               }}
-              onChange={(event) => {
-                setYear(Number(event.target.value));
-              }}
+              onChange={handleYearChange}
             />
           )}
         </>
@@ -135,7 +156,7 @@ function ResultFilters({
         py: 1,
       }}
     >
-      {filters.map(({ label, field }) => (
+      {FILTERS.map(({ label, field }) => (
         <Box
           key={label}
           sx={{

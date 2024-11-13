@@ -59,6 +59,7 @@ export const readOnlyDarkTheme: Partial<Theme> = {
   accentLight: "rgba(74, 76, 102, 0.2)",
   borderColor: "rgba(255, 255, 255, 0.08)",
   drilldownBorder: "rgba(255, 255, 255, 0.2)",
+  headerFontStyle: "bold 11px",
 };
 
 export const aggregatesTheme: Partial<Theme> = {
@@ -66,7 +67,7 @@ export const aggregatesTheme: Partial<Theme> = {
   bgCellMedium: "#383A5C",
   textDark: "#FFFFFF",
   fontFamily: "Inter, sans-serif",
-  baseFontStyle: "bold 13px",
+  baseFontStyle: "13px",
   editorFontSize: "13px",
   headerFontStyle: "bold 11px",
 };

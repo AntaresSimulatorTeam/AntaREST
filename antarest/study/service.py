@@ -1538,12 +1538,16 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
+                str_data = data.decode("utf-8")
                 try:
-                    delimiter = csv.Sniffer().sniff(data.decode("utf-8"), delimiters=r"[,;\t]").delimiter
+                    delimiter = csv.Sniffer().sniff(str_data, delimiters=r"[,;\t]").delimiter
                 except csv.Error:
                     # Can happen with data with only one column. In this case, we don't care about the delimiter.
                     delimiter = "\t"
-                matrix = np.loadtxt(io.BytesIO(data), delimiter=delimiter, dtype=np.float64, ndmin=2)
+                if not str_data:
+                    matrix = np.zeros(shape=(0, 0))
+                else:
+                    matrix = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).to_numpy(dtype=np.float64)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url,

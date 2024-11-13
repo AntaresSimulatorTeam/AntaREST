@@ -27,6 +27,7 @@ export interface TaskDTO extends IdentityDTO<string> {
   ref_id?: string;
   creation_date_utc: string;
   completion_date_utc?: string;
+  progress?: number;
   result?: {
     success: boolean;
     message: string;
