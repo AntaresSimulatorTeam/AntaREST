@@ -26,7 +26,6 @@ import GridOffIcon from "@mui/icons-material/GridOff";
 import {
   Area,
   LinkElement,
-  MatrixType,
   StudyMetadata,
 } from "../../../../../../common/types";
 import usePromise from "../../../../../../hooks/usePromise";
@@ -57,6 +56,7 @@ import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index
 import {
   generateCustomColumns,
   generateDateTime,
+  generateResultColumns,
   groupResultColumns,
 } from "../../../../../common/Matrix/shared/utils.ts";
 import { Column } from "@/components/common/Matrix/shared/constants.ts";
@@ -65,6 +65,7 @@ import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";
 import EmptyView from "../../../../../common/page/SimpleContent.tsx";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
+import { ResultMatrixDTO } from "@/components/common/Matrix/shared/types.ts";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -82,6 +83,7 @@ function ResultDetails() {
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
+  const [filteredColHeaders, setFilteredColHeaders] = useState<string[][]>([]);
   const isSynthesis = itemType === OutputItemType.Synthesis;
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -133,25 +135,42 @@ function ResultDetails() {
     return "";
   }, [output, selectedItem, isSynthesis, dataType, timestep, year]);
 
-  const matrixRes = usePromise<MatrixType | null>(
+  const matrixRes = usePromise<ResultMatrixDTO | undefined>(
     async () => {
-      if (path) {
-        const res = await getStudyData(study.id, path);
-        if (typeof res === "string") {
-          const fixed = res
-            .replace(/NaN/g, '"NaN"')
-            .replace(/Infinity/g, '"Infinity"');
-
-          return JSON.parse(fixed);
-        }
-        return res;
+      if (!path) {
+        return undefined;
       }
-      return null;
+
+      const res = await getStudyData(study.id, path);
+      // TODO add backend parse
+      if (typeof res === "string") {
+        const fixed = res
+          .replace(/NaN/g, '"NaN"')
+          .replace(/Infinity/g, '"Infinity"');
+
+        return JSON.parse(fixed);
+      }
+
+      return res;
     },
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
       deps: [study.id, path],
+    },
+  );
+
+  const synthesisRes = usePromise(
+    () => {
+      if (outputId && selectedItem && isSynthesis) {
+        const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
+        return getStudyData(study.id, path);
+      }
+
+      return Promise.resolve(null);
+    },
+    {
+      deps: [study.id, outputId, selectedItem],
     },
   );
 
@@ -164,18 +183,26 @@ function ResultDetails() {
 
   const dateTime = dateTimeMetadata && generateDateTime(dateTimeMetadata);
 
-  const synthesisRes = usePromise(
-    () => {
-      if (outputId && selectedItem && isSynthesis) {
-        const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
-        return getStudyData(study.id, path);
-      }
-      return Promise.resolve(null);
-    },
-    {
-      deps: [study.id, outputId, selectedItem],
-    },
-  );
+  const resultColumns = useMemo(() => {
+    if (!matrixRes.data) {
+      return [];
+    }
+
+    const columns =
+      filteredColHeaders?.length > 0
+        ? filteredColHeaders
+        : matrixRes.data.columns;
+
+    return groupResultColumns([
+      {
+        id: "date",
+        title: "Date",
+        type: Column.DateTime,
+        editable: false,
+      },
+      ...generateResultColumns(columns),
+    ]);
+  }, [matrixRes.data, filteredColHeaders]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -241,20 +268,9 @@ function ResultDetails() {
         sx={{
           display: "flex",
           flexDirection: "column",
-          p: 2,
+          p: 1,
         }}
       >
-        <ResultFilters
-          year={year}
-          setYear={setYear}
-          dataType={dataType}
-          setDataType={setDataType}
-          timestep={timestep}
-          setTimestep={setTimestep}
-          maxYear={maxYear}
-          studyId={study.id}
-          path={path}
-        />
         {isSynthesis ? (
           <UsePromiseCond
             response={synthesisRes}
@@ -273,41 +289,49 @@ function ResultDetails() {
             }
           />
         ) : (
-          <UsePromiseCond
-            response={mergeResponses(outputRes, matrixRes)}
-            ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-            ifFulfilled={([, matrix]) =>
-              matrix && (
-                <MatrixGrid
-                  data={matrix.data}
-                  rows={matrix.data.length}
-                  columns={groupResultColumns([
-                    {
-                      id: "date",
-                      title: "Date",
-                      type: Column.DateTime,
-                      editable: false,
-                    },
-                    ...generateCustomColumns({
-                      titles: matrix.columns,
-                    }),
-                  ])}
-                  dateTime={dateTime}
-                  readOnly
+          <>
+            <ResultFilters
+              year={year}
+              setYear={setYear}
+              dataType={dataType}
+              setDataType={setDataType}
+              timestep={timestep}
+              setTimestep={setTimestep}
+              maxYear={maxYear}
+              studyId={study.id}
+              path={path}
+              colHeaders={matrixRes.data?.columns || []}
+              onfilteredColHeadersChange={setFilteredColHeaders}
+            />
+            <UsePromiseCond
+              response={mergeResponses(outputRes, matrixRes)}
+              ifPending={() => (
+                <Skeleton sx={{ height: 1, transform: "none" }} />
+              )}
+              ifFulfilled={([, matrix]) =>
+                matrix && (
+                  <MatrixGrid
+                    key={`grid-${filteredColHeaders.length}`}
+                    data={matrix.data}
+                    rows={matrix.data.length}
+                    columns={resultColumns}
+                    dateTime={dateTime}
+                    readOnly
+                  />
+                )
+              }
+              ifRejected={(err) => (
+                <EmptyView
+                  title={
+                    toError(err).message.includes("404")
+                      ? t("study.results.noData")
+                      : t("data.error.matrix")
+                  }
+                  icon={GridOffIcon}
                 />
-              )
-            }
-            ifRejected={(err) => (
-              <EmptyView
-                title={
-                  toError(err).message.includes("404")
-                    ? t("study.results.noData")
-                    : t("data.error.matrix")
-                }
-                icon={GridOffIcon}
-              />
-            )}
-          />
+              )}
+            />
+          </>
         )}
       </Box>
     </SplitView>
