@@ -38,16 +38,18 @@ function getColor(value = 0, error = false) {
 
 interface LinearProgressWithLabelProps {
   value?: LinearProgressProps["value"];
-  variant?: LinearProgressProps["variant"];
   tooltip?: string;
   error?: boolean | string;
   sx?: SxProps<Theme>;
 }
 
 function LinearProgressWithLabel(props: LinearProgressWithLabelProps) {
-  const { value, variant, tooltip, error, sx } = props;
+  const { value, tooltip, error, sx } = props;
   const progress = R.clamp(0, 100, value || 0);
-  const hasError = error !== undefined;
+  const hasError = error === true || typeof error === "string";
+  const variant =
+    typeof value === "number" || hasError ? "determinate" : "indeterminate";
+
   const { t } = useTranslation();
 
   const content = (
@@ -60,17 +62,17 @@ function LinearProgressWithLabel(props: LinearProgressWithLabelProps) {
       <Box sx={{ width: "100%", mr: 1 }}>
         <LinearProgress
           value={progress}
-          variant={hasError ? "determinate" : variant}
+          variant={variant}
           color={getColor(value, hasError)}
         />
       </Box>
-      {(variant === "determinate" || hasError) && (
+      {variant === "determinate" && (
         <Box sx={{ minWidth: 35, display: "flex", gap: 1 }}>
           <Typography variant="body2" color="text.secondary">
             {`${Math.round(progress)}%`}
           </Typography>
           {typeof error === "string" && (
-            <Tooltip title={error || t("global.error")}>
+            <Tooltip title={error || t("global.error")} placement="top">
               <InfoIcon fontSize="small" />
             </Tooltip>
           )}

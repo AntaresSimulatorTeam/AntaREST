@@ -130,6 +130,18 @@ class TestGenerateThermalClusterTimeseries:
         data = res.json()["data"]
         assert data == 8760 * [[4]]
 
+        # Puts 1 as PO rate and 1 as FO rate
+        modulation_matrix = np.ones(shape=(365, 6)).tolist()
+        res = client.post(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/thermal/prepro/{area1_id}/{cluster_name.lower()}/data"},
+            json=modulation_matrix,
+        )
+        assert res.status_code == 204
+        # Timeseries generation should succeed
+        task = self._generate_timeseries(client, user_access_token, study_id)
+        assert task.status == TaskStatus.COMPLETED
+
     def test_advanced_results(self, client: TestClient, user_access_token: str) -> None:
         # Study Preparation
         client.headers = {"Authorization": f"Bearer {user_access_token}"}

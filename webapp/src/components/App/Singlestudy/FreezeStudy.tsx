@@ -31,6 +31,7 @@ import {
   ListItem,
   ListItemText,
   Paper,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
@@ -40,7 +41,7 @@ import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
 interface BlockingTask {
   id: TaskDTO["id"];
   type: TTaskType;
-  progress: number;
+  progress?: number;
   error?: string;
 }
 
@@ -53,7 +54,6 @@ const BLOCKING_TASK_TYPES = [
   TaskType.ThermalClusterSeriesGeneration,
 ] as const;
 
-const PROGRESS_INDETERMINATE = -1;
 const PROGRESS_COMPLETE = 100;
 
 function getChannel(id: TaskDTO["id"]) {
@@ -84,7 +84,6 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           tasks.map((task) => ({
             id: task.id,
             type: task.type!,
-            progress: PROGRESS_INDETERMINATE,
           })),
         );
 
@@ -106,13 +105,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           const { id, type, study_id: taskStudyId } = event.payload;
 
           if (taskStudyId === studyId && BLOCKING_TASK_TYPES.includes(type)) {
-            setBlockingTasks((tasks) => [
-              ...tasks,
-              {
-                ...event.payload,
-                progress: PROGRESS_INDETERMINATE,
-              },
-            ]);
+            setBlockingTasks((tasks) => [...tasks, event.payload]);
 
             // For getting other events
             subscribeWsChannels(getChannel(id));
@@ -122,7 +115,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           }
           break;
         }
-        case WsEventType.TsGenerationProgress: {
+        case WsEventType.TaskProgress: {
           setBlockingTasks((tasks) =>
             tasks.map((task) =>
               task.id === event.payload.task_id
@@ -167,8 +160,17 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           message: task.result?.message || "",
           type: task.type!,
         };
-
-        if (task.status === TaskStatus.Failed) {
+        if (task.status === TaskStatus.Running) {
+          if (typeof task.progress === "number") {
+            listener({
+              type: WsEventType.TaskProgress,
+              payload: {
+                task_id: task.id,
+                progress: task.progress,
+              },
+            });
+          }
+        } else if (task.status === TaskStatus.Failed) {
           listener({ type: WsEventType.TaskFailed, payload });
         } else if (task.status === TaskStatus.Completed) {
           listener({ type: WsEventType.TaskCompleted, payload });
@@ -193,30 +195,52 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
 
   return (
     <Backdrop open={blockingTasks.length > 0} sx={{ position: "absolute" }}>
-      <Paper sx={{ width: 500 }}>
-        <List dense>
+      <Paper
+        sx={{
+          width: 500,
+          maxHeight: "90%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <List dense sx={{ overflow: "auto" }}>
           {blockingTasks.map(({ id, type, progress, error }) => (
             <ListItem key={id}>
               <ListItemText
                 primary={
-                  <LinearProgressWithLabel
-                    variant={
-                      progress === PROGRESS_INDETERMINATE
-                        ? "indeterminate"
-                        : "determinate"
-                    }
-                    value={progress}
-                    error={error}
-                  />
+                  <LinearProgressWithLabel value={progress} error={!!error} />
                 }
-                secondary={t(`tasks.type.${type}`)}
+                secondary={
+                  <>
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      color="textPrimary"
+                    >
+                      {t(`tasks.type.${type}`)}
+                    </Typography>
+                    {error && (
+                      <Typography
+                        component="div"
+                        variant="body2"
+                        color="error"
+                        sx={{
+                          maxHeight: 120,
+                          overflow: "auto",
+                        }}
+                      >
+                        {error}
+                      </Typography>
+                    )}
+                  </>
+                }
               />
             </ListItem>
           ))}
         </List>
         {!hasLoadingTask && (
           <Button
-            sx={{ m: 1, float: "right" }}
+            sx={{ m: 1, float: "right", alignSelf: "flex-end" }}
             onClick={() => setBlockingTasks([])}
           >
             {t("global.close")}

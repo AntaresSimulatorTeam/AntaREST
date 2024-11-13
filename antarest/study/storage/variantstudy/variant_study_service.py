@@ -1082,7 +1082,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             return False
 
-    def clear_all_snapshots(self, retention_time: timedelta, params: t.Optional[RequestParameters] = None) -> str:
+    def clear_all_snapshots(self, retention_time: timedelta, params: RequestParameters) -> str:
         """
         Admin command that clear all variant snapshots older than `retention_hours` (in hours).
         Only available for admin users.
