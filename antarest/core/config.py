@@ -155,7 +155,7 @@ class StorageConfig:
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
     auto_archive_max_parallel: int = 5
-    snapshot_retention_days: int = 7
+    snapshot_retention_days: int = 1
 
     @classmethod
     def from_dict(cls, data: JSON) -> "StorageConfig":
