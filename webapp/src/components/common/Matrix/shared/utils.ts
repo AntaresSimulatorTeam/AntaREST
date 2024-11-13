@@ -21,6 +21,7 @@ import {
   type AggregateConfig,
   type DateTimeMetadataDTO,
   type FormatGridNumberOptions,
+  type ResultColumn,
 } from "./types";
 import { parseISO, Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -318,46 +319,68 @@ export function calculateMatrixAggregates(
  * // Both columns will be grouped under "OV. COST (Euro)"
  * ```
  */
+
 export function groupResultColumns(
-  columns: EnhancedGridColumn[],
+  columns: Array<EnhancedGridColumn | ResultColumn>,
 ): EnhancedGridColumn[] {
-  return columns.map((column) => {
-    try {
-      const titles = Array.isArray(column.title)
-        ? column.title
-        : [String(column.title)];
+  return columns.map((column): EnhancedGridColumn => {
+    const titles = Array.isArray(column.title)
+      ? column.title
+      : [String(column.title)];
 
-      // Extract and validate components
-      // [0]: Variable name (e.g., "OV. COST")
-      // [1]: Unit (e.g., "Euro")
-      // [2]: Statistic type (e.g., "MIN", "MAX", "STD")
-      const [variable, unit, stat] = titles.map((t) => String(t).trim());
+    // Extract and validate components
+    // [0]: Variable name (e.g., "OV. COST")
+    // [1]: Unit (e.g., "Euro")
+    // [2]: Statistic type (e.g., "MIN", "MAX", "STD")
+    const [variable, unit, stat] = titles.map((t) => String(t).trim());
 
-      // Create group name:
-      // - If unit exists and is not empty/whitespace, add it in parentheses
-      // - If no unit or empty unit, use variable name alone
-      const hasUnit = unit && unit.trim().length > 0;
-      const title = hasUnit ? `${variable} (${unit})` : variable;
+    // Create group name:
+    // - If unit exists and is not empty/whitespace, add it in parentheses
+    // - If no unit or empty unit, use variable name alone
+    const hasUnit = unit && unit.trim().length > 0;
+    const title = hasUnit ? `${variable} (${unit})` : variable;
 
-      // If no stats, it does not make sense to group columns
-      if (!stat) {
-        return {
-          ...column,
-          title,
-        };
-      }
-
+    // If no stats, it does not make sense to group columns
+    if (!stat) {
       return {
         ...column,
-        group: title, // Group header title
-        title: stat.toLowerCase(), // Sub columns title
-        themeOverride: {
-          bgHeader: "#2D2E40", // Sub columns bg color
-        },
+        title,
       };
-    } catch (error) {
-      console.error(`Error processing column ${column.id}:`, error);
-      return column;
     }
+
+    return {
+      ...column,
+      group: title, // Group header title
+      title: stat.toLowerCase(), // Sub columns title,
+
+      themeOverride: {
+        bgHeader: "#2D2E40", // Sub columns bg color
+      },
+    };
   });
+}
+
+/**
+ * Generates an array of ResultColumn objects from a 2D array of column titles.
+ * Each title array should follow the format [variable, unit, stat] as used in result matrices.
+ 
+ * This function is designed to work in conjunction with groupResultColumns()
+ * to create properly formatted and grouped result matrix columns.
+ *
+ * @param titles - 2D array of string arrays, where each inner array contains:
+ *   - [0]: Variable name (e.g., "OV. COST")
+ *   - [1]: Unit (e.g., "Euro", "MW")
+ *   - [2]: Statistic type (e.g., "MIN", "MAX", "STD")
+ *
+ * @returns Array of ResultColumn objects ready for use in result matrices
+ *
+ * @see groupResultColumns - Use this function to apply grouping to the generated columns
+ */
+export function generateResultColumns(titles: string[][]): ResultColumn[] {
+  return titles.map((title, index) => ({
+    id: `custom${index + 1}`,
+    title: title,
+    type: Column.Number,
+    editable: true,
+  }));
 }

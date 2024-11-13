@@ -12,13 +12,41 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { DataType, Timestep } from "./utils";
+import { DataType, matchesSearchTerm, Timestep } from "./utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import { clamp, equals } from "ramda";
+import { useState, useMemo, useEffect } from "react";
+import { FilterListOff } from "@mui/icons-material";
+
+interface ColumnHeader {
+  variable: string;
+  unit: string;
+  stat: string;
+  original: string[];
+}
+
+interface Filters {
+  search: string;
+  exp: boolean;
+  min: boolean;
+  max: boolean;
+  std: boolean;
+}
+
+const defaultFilters = {
+  search: "",
+  exp: true,
+  min: true,
+  max: true,
+  std: true,
+} as const;
 
 interface Props {
   year: number;
@@ -30,6 +58,8 @@ interface Props {
   maxYear: number;
   studyId: string;
   path: string;
+  colHeaders: string[][];
+  onfilteredColHeadersChange: (colHeaders: string[][]) => void;
 }
 
 function ResultFilters({
@@ -42,33 +72,178 @@ function ResultFilters({
   maxYear,
   studyId,
   path,
+  colHeaders,
+  onfilteredColHeadersChange,
 }: Props) {
   const { t } = useTranslation();
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+
+  const filtersApplied = useMemo(() => {
+    return !equals(filters, defaultFilters);
+  }, [filters]);
+
+  const parsedHeaders = useMemo(() => {
+    return colHeaders.map(
+      (header): ColumnHeader => ({
+        variable: String(header[0] || "").trim(),
+        unit: String(header[1] || "").trim(),
+        stat: String(header[2] || "").trim(),
+        original: header,
+      }),
+    );
+  }, [colHeaders]);
+
+  useEffect(() => {
+    const filteredHeaders = parsedHeaders.filter((header) => {
+      // Apply search filters
+      if (filters.search) {
+        const matchesVariable = matchesSearchTerm(
+          header.variable,
+          filters.search,
+        );
+
+        const matchesUnit = matchesSearchTerm(header.unit, filters.search);
+
+        if (!matchesVariable && !matchesUnit) {
+          return false;
+        }
+      }
+
+      // Apply stat filters
+      if (header.stat) {
+        const stat = header.stat.toLowerCase();
+
+        if (!filters.exp && stat.includes("exp")) {
+          return false;
+        }
+        if (!filters.min && stat.includes("min")) {
+          return false;
+        }
+        if (!filters.max && stat.includes("max")) {
+          return false;
+        }
+        if (!filters.std && stat.includes("std")) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    onfilteredColHeadersChange(filteredHeaders.map((h) => h.original));
+  }, [filters, parsedHeaders, onfilteredColHeadersChange]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleYearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.value;
+    const value = Number(event.target.value);
 
-    // Allow empty string (when backspacing)
-    if (newValue === "") {
-      setYear(1); // Reset to minimum value
-      return;
-    }
-
-    const numValue = Number(newValue);
-
-    // Validate the number is within bounds
-    if (!isNaN(numValue)) {
-      if (numValue < 1) {
-        setYear(1);
-      } else if (numValue > maxYear) {
-        setYear(maxYear);
-      } else {
-        setYear(numValue);
-      }
+    if (!isNaN(value)) {
+      const clampedYear = clamp(1, maxYear, value);
+      setYear(clampedYear);
     }
   };
 
-  const FILTERS = [
+  const handleSearchChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, search: value }));
+  };
+
+  const handleStatFilterChange = (stat: keyof Omit<Filters, "search">) => {
+    setFilters((prev) => ({ ...prev, [stat]: !prev[stat] }));
+  };
+
+  const handleReset = () => {
+    setFilters(defaultFilters);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  // Local filters (immediately applied on columns headers)
+  const COLUMN_FILTERS = [
+    {
+      id: "search",
+      label: "",
+      field: (
+        <Box sx={{ width: 200 }}>
+          <SearchFE
+            value={filters.search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            size="small"
+          />
+        </Box>
+      ),
+    },
+    {
+      id: "exp",
+      label: "Exp",
+      field: (
+        <CheckBoxFE
+          defaultValue={filters.exp}
+          value={filters.exp}
+          onChange={() => handleStatFilterChange("exp")}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "min",
+      label: "Min",
+      field: (
+        <CheckBoxFE
+          defaultValue={filters.min}
+          value={filters.min}
+          onChange={() => handleStatFilterChange("min")}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "max",
+      label: "Max",
+      field: (
+        <CheckBoxFE
+          defaultValue={filters.max}
+          value={filters.max}
+          onChange={() => handleStatFilterChange("max")}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "std",
+      label: "Std",
+      field: (
+        <CheckBoxFE
+          defaultValue={filters.std}
+          value={filters.std}
+          onChange={() => handleStatFilterChange("std")}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "reset",
+      label: "",
+      field: (
+        <IconButton
+          color="primary"
+          size="small"
+          onClick={handleReset}
+          disabled={!filtersApplied}
+          sx={{ ml: 1 }}
+        >
+          <FilterListOff />
+        </IconButton>
+      ),
+    },
+  ] as const;
+
+  // Data filters (requiring API calls, refetch new result)
+  const RESULT_FILTERS = [
     {
       label: `${t("study.results.mc")}:`,
       field: (
@@ -79,9 +254,7 @@ function ResultFilters({
             falseText="Year by year"
             size="small"
             variant="outlined"
-            onChange={(event) => {
-              setYear(event?.target.value ? -1 : 1);
-            }}
+            onChange={(event) => setYear(event?.target.value ? -1 : 1)}
           />
           {year > 0 && (
             <NumberFE
@@ -113,9 +286,7 @@ function ResultFilters({
           ]}
           size="small"
           variant="outlined"
-          onChange={(event) => {
-            setDataType(event?.target.value as DataType);
-          }}
+          onChange={(event) => setDataType(event?.target.value as DataType)}
         />
       ),
     },
@@ -133,13 +304,11 @@ function ResultFilters({
           ]}
           size="small"
           variant="outlined"
-          onChange={(event) => {
-            setTimestep(event?.target.value as Timestep);
-          }}
+          onChange={(event) => setTimestep(event?.target.value as Timestep)}
         />
       ),
     },
-  ];
+  ] as const;
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -150,27 +319,59 @@ function ResultFilters({
       sx={{
         display: "flex",
         alignItems: "center",
-        justifyContent: "flex-end",
-        gap: 2,
+        justifyContent: "space-between",
+        width: "100%",
         flexWrap: "wrap",
-        py: 1,
       }}
     >
-      {FILTERS.map(({ label, field }) => (
-        <Box
-          key={label}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
-            {label}
+      {/* Column Filters Group */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+        }}
+      >
+        {COLUMN_FILTERS.map(({ id, label, field }) => (
+          <Box
+            key={id}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
+              {label}
+            </Box>
+            {field}
           </Box>
-          {field}
-        </Box>
-      ))}
-      <DownloadMatrixButton studyId={studyId} path={path} />
+        ))}
+      </Box>
+
+      {/* Result Filters Group with Download Button */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+        }}
+      >
+        {RESULT_FILTERS.map(({ label, field }) => (
+          <Box
+            key={label}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
+              {label}
+            </Box>
+            {field}
+          </Box>
+        ))}
+        <DownloadMatrixButton studyId={studyId} path={path} />
+      </Box>
     </Box>
   );
 }
