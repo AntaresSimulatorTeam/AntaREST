@@ -159,8 +159,17 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           message: task.result?.message || "",
           type: task.type!,
         };
-
-        if (task.status === TaskStatus.Failed) {
+        if (task.status === TaskStatus.Running) {
+          if (typeof task.progress === "number") {
+            listener({
+              type: WsEventType.TaskProgress,
+              payload: {
+                task_id: task.id,
+                progress: task.progress,
+              },
+            });
+          }
+        } else if (task.status === TaskStatus.Failed) {
           listener({ type: WsEventType.TaskFailed, payload });
         } else if (task.status === TaskStatus.Completed) {
           listener({ type: WsEventType.TaskCompleted, payload });
