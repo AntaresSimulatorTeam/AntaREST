@@ -57,6 +57,7 @@ import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index
 import {
   generateCustomColumns,
   generateDateTime,
+  groupResultColumns,
 } from "../../../../../common/Matrix/shared/utils.ts";
 import { Column } from "@/components/common/Matrix/shared/constants.ts";
 import SplitView from "../../../../../common/SplitView/index.tsx";
@@ -266,7 +267,7 @@ function ResultDetails() {
                   columns={generateCustomColumns({
                     titles: matrix.columns,
                   })}
-                  isReadOnly
+                  readOnly
                 />
               )
             }
@@ -280,7 +281,7 @@ function ResultDetails() {
                 <MatrixGrid
                   data={matrix.data}
                   rows={matrix.data.length}
-                  columns={[
+                  columns={groupResultColumns([
                     {
                       id: "date",
                       title: "Date",
@@ -290,9 +291,9 @@ function ResultDetails() {
                     ...generateCustomColumns({
                       titles: matrix.columns,
                     }),
-                  ]}
+                  ])}
                   dateTime={dateTime}
-                  isReadOnly
+                  readOnly
                 />
               )
             }

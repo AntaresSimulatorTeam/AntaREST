@@ -39,7 +39,7 @@ function HydroMatrix({ type }: Props) {
         customColumns={hydroMatrix.columns}
         customRowHeaders={hydroMatrix.rowHeaders}
         aggregateColumns={hydroMatrix.aggregates}
-        enableDateTimeColumn={hydroMatrix.enableDateTimeColumn}
+        dateTimeColumn={hydroMatrix.dateTimeColumn}
         readOnly={hydroMatrix.readOnly}
         showPercent={hydroMatrix.showPercent}
         fetchMatrixData={hydroMatrix.fetchFn}
