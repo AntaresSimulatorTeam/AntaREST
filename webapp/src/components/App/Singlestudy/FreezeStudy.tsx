@@ -31,6 +31,7 @@ import {
   ListItem,
   ListItemText,
   Paper,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
@@ -194,22 +195,52 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
 
   return (
     <Backdrop open={blockingTasks.length > 0} sx={{ position: "absolute" }}>
-      <Paper sx={{ width: 500 }}>
-        <List dense>
+      <Paper
+        sx={{
+          width: 500,
+          maxHeight: "90%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <List dense sx={{ overflow: "auto" }}>
           {blockingTasks.map(({ id, type, progress, error }) => (
             <ListItem key={id}>
               <ListItemText
                 primary={
-                  <LinearProgressWithLabel value={progress} error={error} />
+                  <LinearProgressWithLabel value={progress} error={!!error} />
                 }
-                secondary={t(`tasks.type.${type}`)}
+                secondary={
+                  <>
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      color="textPrimary"
+                    >
+                      {t(`tasks.type.${type}`)}
+                    </Typography>
+                    {error && (
+                      <Typography
+                        component="div"
+                        variant="body2"
+                        color="error"
+                        sx={{
+                          maxHeight: 120,
+                          overflow: "auto",
+                        }}
+                      >
+                        {error}
+                      </Typography>
+                    )}
+                  </>
+                }
               />
             </ListItem>
           ))}
         </List>
         {!hasLoadingTask && (
           <Button
-            sx={{ m: 1, float: "right" }}
+            sx={{ m: 1, float: "right", alignSelf: "flex-end" }}
             onClick={() => setBlockingTasks([])}
           >
             {t("global.close")}
