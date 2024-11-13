@@ -140,7 +140,7 @@ class TestLink:
         assert res.status_code == 422, res.json()
         expected = {
             "body": {"area1": "area 1", "area2": "area 2", "colorr": 260},
-            "description": "Input should be less than 255",
+            "description": "Input should be less than or equal to 255",
             "exception": "RequestValidationError",
         }
         assert expected == res.json()
