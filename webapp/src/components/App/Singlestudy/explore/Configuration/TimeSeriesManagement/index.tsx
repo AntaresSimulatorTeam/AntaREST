@@ -44,7 +44,7 @@ function TimeSeriesManagement() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<TSFormFields>) => {
-    return setTimeSeriesFormFields(study.id, data.dirtyValues);
+    return setTimeSeriesFormFields(study.id, data.values);
   };
 
   const handleSubmitSuccessful = async () => {
