@@ -2733,35 +2733,44 @@ class StudyService:
             current_user: User that called the endpoint
 
         Raises:
-            FileDeletionNotAllowed: if the path does not comply with the above rules
+            ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
-        study = self.get_study(study_id)
-        assert_permission(current_user, study, StudyPermissionType.WRITE)
-
-        context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study = self.storage_service.get_storage(study).get_raw(study, True)
-        command = RemoveUserResource(path=path, command_context=context)
-        try:
-            execute_or_add_commands(study, file_study, [command], self.storage_service)
-        except CommandApplicationError as e:
-            raise ResourceDeletionNotAllowed(e.detail) from e
-
-        # update cache
-        cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
-        updated_tree = file_study.tree.get()
-        self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
+        self._alter_user_folder(study_id, path, current_user, RemoveUserResource, ResourceDeletionNotAllowed)
 
     def create_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+        """
+        Creates a folder inside the study.
+        The data must be located inside the 'User' folder.
+        Also, it can not be inside the 'expansion' folder.
+
+        Args:
+            study_id: UUID of the concerned study
+            path: Path corresponding to the resource to be deleted
+            current_user: User that called the endpoint
+
+        Raises:
+            FolderCreationNotAllowed: if the path does not comply with the above rules
+        """
+        self._alter_user_folder(study_id, path, current_user, CreateUserFolder, FolderCreationNotAllowed)
+
+    def _alter_user_folder(
+        self,
+        study_id: str,
+        path: str,
+        current_user: JWTUser,
+        command_class: t.Type[t.Union[CreateUserFolder, RemoveUserResource]],
+        exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]],
+    ) -> None:
         study = self.get_study(study_id)
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
         context = self.storage_service.variant_study_service.command_factory.command_context
-        command = CreateUserFolder(path=path, command_context=context)
+        command = command_class(path=path, command_context=context)
         file_study = self.storage_service.get_storage(study).get_raw(study, True)
         try:
             execute_or_add_commands(study, file_study, [command], self.storage_service)
         except CommandApplicationError as e:
-            raise FolderCreationNotAllowed(e.detail) from e
+            raise exception_class(e.detail) from e
 
         # update cache
         cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"

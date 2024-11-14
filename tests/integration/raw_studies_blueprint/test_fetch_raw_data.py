@@ -324,21 +324,18 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
 
     # try to delete expansion folder
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
-    assert res.status_code == 403
-    assert res.json()["exception"] == "ResourceDeletionNotAllowed"
-    assert "you are not allowed to delete this resource" in res.json()["description"]
+    expected_msg = "you are not allowed to delete this resource"
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
 
     # try to delete a file which isn't inside the 'User' folder
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/input/thermal")
-    assert res.status_code == 403
-    assert res.json()["exception"] == "ResourceDeletionNotAllowed"
-    assert "the targeted data isn't inside the 'User' folder" in res.json()["description"]
+    expected_msg = "the targeted data isn't inside the 'User' folder"
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
 
     # With a path that doesn't exist
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
-    assert res.status_code == 403
-    assert res.json()["exception"] == "ResourceDeletionNotAllowed"
-    assert "the given path doesn't exist" in res.json()["description"]
+    expected_msg = "the given path doesn't exist"
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
 
 
 @pytest.mark.parametrize("study_type", ["raw", "variant"])
