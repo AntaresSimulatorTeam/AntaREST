@@ -59,16 +59,16 @@ class CreateUserFolder(ICommand):
             for key in url:
                 current[key] = {}
                 current = current[key]
-            study_data.tree.save(result)
+            study_tree.save(result)
         else:
             return CommandOutput(status=False, message=f"the given folder already exists: {self.path}")
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={"path": str(self.path)})
+        return CommandDTO(action=self.command_name.value, args={"path": self.path})
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + str(self.path))
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateUserFolder):

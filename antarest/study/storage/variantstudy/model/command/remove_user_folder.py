@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import typing as t
-from pathlib import Path
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -60,10 +59,10 @@ class RemoveUserResource(ICommand):
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={"path": str(self.path)})
+        return CommandDTO(action=self.command_name.value, args={"path": self.path})
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + str(self.path))
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveUserResource):
