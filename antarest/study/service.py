@@ -1605,6 +1605,7 @@ class StudyService:
         file_path = study_service.get_study_path(study).joinpath(file_relpath)
         create_missing &= not file_path.exists()
         if create_missing:
+            # todo: create a command here instead of doing this.
             # IMPORTANT: We prohibit deep file system changes in private directories.
             # - File and directory creation is only possible for the "user" directory,
             #   because the "input" and "output" directories are managed by Antares.
