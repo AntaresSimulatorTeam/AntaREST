@@ -394,16 +394,17 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     # =============================
     # NOMINAL CASES
     # =============================
+    additional_params = {"is_folder": True, "create_missing": True}
 
-    res = client.post(raw_url, params={"path": "user/folder_1", "file": False})
+    res = client.put(raw_url, params={"path": "user/folder_1", **additional_params})
     assert res.status_code == 204
 
     # same case with different writing should succeed
-    res = client.post(raw_url, params={"path": "/user/folder_2", "file": False})
+    res = client.put(raw_url, params={"path": "/user/folder_2", **additional_params})
     assert res.status_code == 204
 
     # create a folder within a non-existing one
-    res = client.post(raw_url, params={"path": "/user/folder_x/folder_y", "file": False})
+    res = client.put(raw_url, params={"path": "/user/folder_x/folder_y", **additional_params})
     assert res.status_code == 204
 
     # checks debug view to see that folders were created
@@ -418,7 +419,7 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     # =============================
 
     # asserts it doesn't work without specifying it's a folder
-    res = client.post(raw_url, params={"path": "/user/folder_3"})
+    res = client.put(raw_url, params={"path": "/user/folder_3"})
     assert res.status_code == 404
     assert res.json()["exception"] == "ChildNotFoundError"
     assert res.json()["description"] == "'folder_3' not a child of User"
@@ -426,19 +427,19 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     # try to create a folder outside `user` folder
     wrong_folder = "input/wrong_folder"
     expected_msg = f"the given path isn't inside the 'User' folder: {wrong_folder}"
-    res = client.post(raw_url, params={"path": wrong_folder, "file": False})
+    res = client.put(raw_url, params={"path": wrong_folder, **additional_params})
     _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
     # try to create a folder inside the 'expansion` folder
     expansion_folder = "user/expansion/wrong_folder"
     expected_msg = f"the given path shouldn't be inside the 'expansion' folder: {expansion_folder}"
-    res = client.post(raw_url, params={"path": expansion_folder, "file": False})
+    res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
     _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
     # try to create an already existing folder
     existing_folder = "user/folder_1"
     expected_msg = f"the given resource already exists: {existing_folder}"
-    res = client.post(raw_url, params={"path": existing_folder, "file": False})
+    res = client.put(raw_url, params={"path": existing_folder, **additional_params})
     _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
 

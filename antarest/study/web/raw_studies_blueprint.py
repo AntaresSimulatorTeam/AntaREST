@@ -482,7 +482,6 @@ def create_raw_study_routes(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         data: SUB_JSON = Body(default=""),
-        file: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -495,17 +494,12 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
         - `data`: The formatted data to be posted. Could be a JSON object, or a string. Defaults to an empty string.
-        - `file`: If True (default value), writes the data inside the given file. Else, creates an empty folder at the given path.
 
         """
+        logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        if file:
-            logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
-            study_service.edit_study(uuid, path, data, params)
-        else:
-            logger.info(f"Creating folder {path} for study {uuid}", extra={"user": current_user.id})
-            study_service.create_folder(uuid, path, current_user)
+        study_service.edit_study(uuid, path, data, params)
 
     @bp.put(
         "/studies/{uuid}/raw",
@@ -516,11 +510,12 @@ def create_raw_study_routes(
     def replace_study_file(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
-        file: bytes = File(...),
+        file: bytes = File(default=b""),
         create_missing: bool = Query(
             False,
             description="Create file or parent directories if missing.",
         ),  # type: ignore
+        is_folder: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -531,15 +526,18 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
         - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
-        - `create_missing`: Flag to indicate whether to create file or parent directories if missing.
+        - `create_missing`: Flag to indicate whether to create file and parent directories if missing.
+        - `is_folder`: When True and `create_missing` is True, creates a folder. Else (default value), it's ignored.
+
         """
-        logger.info(
-            f"Uploading new data file at {path} for study {uuid}",
-            extra={"user": current_user.id},
-        )
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
+        if is_folder and create_missing:
+            logger.info(f"Creating folder {path} for study {uuid}", extra={"user": current_user.id})
+            study_service.create_folder(uuid, path, current_user)
+        else:
+            logger.info(f"Uploading new data file at {path} for study {uuid}", extra={"user": current_user.id})
+            study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
 
     @bp.get(
         "/studies/{uuid}/raw/validate",
