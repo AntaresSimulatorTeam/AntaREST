@@ -1585,7 +1585,7 @@ class StudyService:
         data: SUB_JSON,
         *,
         create_missing: bool = False,
-    ) -> ICommand:
+    ) -> t.List[ICommand]:
         """
         Replace data on disk with new, using variant commands.
 
@@ -1600,55 +1600,30 @@ class StudyService:
         """
         study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
+        commands: t.List[ICommand] = []
 
         file_relpath = PurePosixPath(url.strip().strip("/"))
         file_path = study_service.get_study_path(study).joinpath(file_relpath)
         create_missing &= not file_path.exists()
         if create_missing:
-            # todo: create a command here instead of doing this.
-            # IMPORTANT: We prohibit deep file system changes in private directories.
-            # - File and directory creation is only possible for the "user" directory,
-            #   because the "input" and "output" directories are managed by Antares.
-            # - We also prohibit writing files in the "user/expansion" folder which currently
-            #   contains the Xpansion tool configuration.
-            #   This configuration should be moved to the "input/expansion" directory in the future.
-            if file_relpath and file_relpath.parts[0] == "user" and file_relpath.parts[1] != "expansion":
-                # In the case of variants, we must write the file directly in the study's snapshot folder,
-                # because the "user" folder is not managed by the command mechanism.
-                file_path.parent.mkdir(parents=True, exist_ok=True)
-                file_path.touch()
-
-        # A 404 Not Found error is raised if the file does not exist.
-        tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
-
-        command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            cmd_1 = CreateUserResource(path=str(file_relpath), file=True, command_context=context)
+            assert isinstance(data, bytes)
+            cmd_2 = UpdateRawFile(target=url, b64Data=base64.b64encode(data).decode("utf-8"), command_context=context)
+            commands.extend([cmd_1, cmd_2])
+        else:
+            # A 404 Not Found error is raised if the file does not exist.
+            tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
+            commands.append(self._create_edit_study_command(tree_node=tree_node, url=url, data=data))
 
         if isinstance(study_service, RawStudyService):
-            res = command.apply(study_data=file_study)
-            if not is_managed(study):
-                tree_node.denormalize()
-            if not res.status:
-                raise CommandApplicationError(res.message)
-
-            # noinspection SpellCheckingInspection
             url = "study/antares/lastsave"
             last_save_node = file_study.tree.get_node(url.split("/"))
             cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time.time()))
-            cmd.apply(file_study)
+            commands.append(cmd)
 
-            self.storage_service.variant_study_service.invalidate_cache(study)
-
-        elif isinstance(study_service, VariantStudyService):
-            study_service.append_command(
-                study_id=file_study.config.study_id,
-                command=command.to_dto(),
-                params=RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-
-        else:  # pragma: no cover
-            raise TypeError(repr(type(study_service)))
-
-        return command  # for testing purpose
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        return commands  # for testing purpose
 
     def apply_commands(
         self, uuid: str, commands: t.List[CommandDTO], params: RequestParameters

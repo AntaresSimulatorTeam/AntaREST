@@ -41,7 +41,7 @@ def _check_endpoint_response(
         assert res.json()["exception"] == exception
         assert expected_msg in res.json()["description"]
     else:
-        assert res.status_code == 204
+        res.raise_for_status()
         task_id = client.put(f"/v1/studies/{study_id}/generate").json()
         res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
         task = res.json()
@@ -164,12 +164,28 @@ class TestFetchRawData:
 
         # To create a resource, you can use PUT method and the `create_missing` flag.
         # The expected status code should be 204 No Content.
+        file_to_create = "user/somewhere/something.txt"
         res = client.put(
             raw_url,
-            params={"path": "user/somewhere/something.txt", "create_missing": True},
+            params={"path": file_to_create, "create_missing": True},
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
         )
         assert res.status_code == 204, res.json()
+        if study_type == "variant":
+            # Asserts the generation succeeds
+            task_id = client.put(f"/v1/studies/{internal_study_id}/generate?from_scratch=True").json()
+            res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+            task = res.json()
+            assert task["status"] == TaskStatus.COMPLETED.value
+            assert task["result"]["success"]
+            # Checks created commands
+            res = client.get(f"/v1/studies/{internal_study_id}/commands")
+            commands = res.json()
+            # First command is created automatically to respect owners, we ignore it.
+            assert commands[1]["action"] == "create_user_resource"
+            assert commands[1]["args"] == [{"path": file_to_create, "file": True}]
+            assert commands[2]["action"] == "update_file"
+            assert commands[2]["args"] == [{"target": file_to_create, "b64Data": "R29vZGJ5ZSBDcnVlbCBXb3JsZCE="}]
 
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
         # The expected status code should be 204 No Content.
