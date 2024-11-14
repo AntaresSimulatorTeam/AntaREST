@@ -382,7 +382,7 @@ COMMANDS: List[CommandDTO] = [
     ),
     CommandDTO(
         action=CommandName.CREATE_USER_RESOURCE.value,
-        args=[{"path": "user/folder_1"}],
+        args=[{"path": "user/folder_1", "file": False}],
     ),
     CommandDTO(
         action=CommandName.REMOVE_USER_RESOURCE.value,

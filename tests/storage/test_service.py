@@ -80,6 +80,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
@@ -1288,8 +1289,8 @@ def test_edit_study_with_command() -> None:
         repository=Mock(),
         config=Mock(),
     )
-    command = Mock()
-    service._create_edit_study_command = Mock(return_value=command)
+    command = Mock(spec=ICommand)
+    service._create_edit_study_command = Mock(return_value=[command])
     file_study = Mock()
     file_study.config.study_id = study_id
     study_service = Mock(spec=RawStudyService)
