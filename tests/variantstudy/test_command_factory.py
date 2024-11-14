@@ -380,6 +380,18 @@ COMMANDS: List[CommandDTO] = [
         action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
         args=[{}],
     ),
+    CommandDTO(
+        action=CommandName.CREATE_USER_FOLDER.value,
+        args=[{"path": "user/folder_1"}],
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_USER_FOLDER.value,
+        args=[{"path": "user/folder_1"}],
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_USER_FILE.value,
+        args=[{"path": "user/file_1.txt"}],
+    ),
 ]
 
 
