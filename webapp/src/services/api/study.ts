@@ -56,8 +56,8 @@ export const getFolders = async (
   const res = await client.get(
     `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderName)}`,
   );
-  return res.data.map((folder: any) => {
-    let parentPath = [
+  return res.data.map((folder: NonStudyFolder) => {
+    const parentPath = [
       "",
       folder.workspace,
       ...folder.path
