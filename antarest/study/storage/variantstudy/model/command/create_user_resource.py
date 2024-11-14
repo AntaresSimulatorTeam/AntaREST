@@ -36,6 +36,7 @@ class CreateUserResource(ICommand):
     # ==================
 
     path: str
+    file: bool
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
@@ -53,7 +54,8 @@ class CreateUserResource(ICommand):
         try:
             study_tree.get_node(url)
         except ChildNotFoundError:
-            # Creates the tree recursively to be able to create a folder inside a non-existing one.
+            # todo: adapt the code according to the value of self.file
+            # Creates the tree recursively to be able to create a resource inside a non-existing folder.
             result: JSON = {}
             current = result
             for key in url:
@@ -61,19 +63,21 @@ class CreateUserResource(ICommand):
                 current = current[key]
             study_tree.save(result)
         else:
-            return CommandOutput(status=False, message=f"the given folder already exists: {self.path}")
+            return CommandOutput(status=False, message=f"the given resource already exists: {self.path}")
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={"path": self.path})
+        return CommandDTO(action=self.command_name.value, args={"path": self.path, "file": self.file})
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path)
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path + MATCH_SIGNATURE_SEPARATOR + str(self.file)
+        )
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateUserResource):
             return False
-        return self.path == other.path
+        return self.path == other.path and self.file == other.file
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]

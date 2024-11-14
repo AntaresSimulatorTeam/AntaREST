@@ -2736,7 +2736,8 @@ class StudyService:
         Raises:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
-        self._alter_user_folder(study_id, path, current_user, RemoveUserResource, ResourceDeletionNotAllowed)
+        args = {"path": path}
+        self._alter_user_folder(study_id, args, current_user, RemoveUserResource, ResourceDeletionNotAllowed)
 
     def create_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
         """
@@ -2752,12 +2753,13 @@ class StudyService:
         Raises:
             FolderCreationNotAllowed: if the path does not comply with the above rules
         """
-        self._alter_user_folder(study_id, path, current_user, CreateUserResource, FolderCreationNotAllowed)
+        args = {"path": path, "file": False}
+        self._alter_user_folder(study_id, args, current_user, CreateUserResource, FolderCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
-        path: str,
+        args: t.Dict[str, t.Any],
         current_user: JWTUser,
         command_class: t.Type[t.Union[CreateUserResource, RemoveUserResource]],
         exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]],
@@ -2765,8 +2767,8 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
-        context = self.storage_service.variant_study_service.command_factory.command_context
-        command = command_class(path=path, command_context=context)
+        args["command_context"] = self.storage_service.variant_study_service.command_factory.command_context
+        command = command_class(**args)
         file_study = self.storage_service.get_storage(study).get_raw(study, True)
         try:
             execute_or_add_commands(study, file_study, [command], self.storage_service)
