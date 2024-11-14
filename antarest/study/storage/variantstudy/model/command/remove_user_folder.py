@@ -23,15 +23,15 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class RemoveUserFolder(ICommand):
+class RemoveUserResource(ICommand):
     """
-    Command used to delete a folder inside the `user` folder.
+    Command used to delete a resource inside the `user` folder.
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.REMOVE_USER_FOLDER
+    command_name: CommandName = CommandName.REMOVE_USER_RESOURCE
     version: int = 1
 
     # Command parameters
@@ -66,7 +66,7 @@ class RemoveUserFolder(ICommand):
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + str(self.path))
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveUserFolder):
+        if not isinstance(other, RemoveUserResource):
             return False
         return self.path == other.path
 

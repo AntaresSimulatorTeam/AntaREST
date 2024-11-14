@@ -35,15 +35,14 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
-    FileDeletionNotAllowed,
     FolderCreationNotAllowed,
-    FolderDeletionNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
     OutputNotFound,
     ReferencedObjectDeletionNotAllowed,
+    ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -138,7 +137,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
@@ -156,8 +154,7 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
     GenerateThermalClusterTimeSeries,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_user_file import RemoveUserFile
-from antarest.study.storage.variantstudy.model.command.remove_user_folder import RemoveUserFolder
+from antarest.study.storage.variantstudy.model.command.remove_user_folder import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -2743,19 +2740,11 @@ class StudyService:
 
         context = self.storage_service.variant_study_service.command_factory.command_context
         file_study = self.storage_service.get_storage(study).get_raw(study, True)
-        command: ICommand
-        exception_class: type[HTTPException]
-        if Path(path).is_dir():
-            command = RemoveUserFolder(path=path, command_context=context)
-            exception_class = FolderDeletionNotAllowed
-        else:
-            command = RemoveUserFile(path=path, command_context=context)
-            exception_class = FileDeletionNotAllowed
-
+        command = RemoveUserResource(path=path, command_context=context)
         try:
             execute_or_add_commands(study, file_study, [command], self.storage_service)
         except CommandApplicationError as e:
-            raise exception_class(e.detail) from e  # type: ignore
+            raise ResourceDeletionNotAllowed(e.detail) from e
 
         # update cache
         cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"

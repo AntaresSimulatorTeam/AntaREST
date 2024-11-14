@@ -37,8 +37,7 @@ from antarest.study.storage.variantstudy.model.command.remove_district import Re
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
-from antarest.study.storage.variantstudy.model.command.remove_user_file import RemoveUserFile
-from antarest.study.storage.variantstudy.model.command.remove_user_folder import RemoveUserFolder
+from antarest.study.storage.variantstudy.model.command.remove_user_folder import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -75,8 +74,7 @@ COMMAND_MAPPING = {
     CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
     CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenerateThermalClusterTimeSeries,
     CommandName.CREATE_USER_FOLDER.value: CreateUserFolder,
-    CommandName.REMOVE_USER_FOLDER.value: RemoveUserFolder,
-    CommandName.REMOVE_USER_FILE.value: RemoveUserFile,
+    CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
 }
 
 
