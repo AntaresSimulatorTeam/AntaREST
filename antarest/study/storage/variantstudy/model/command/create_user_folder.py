@@ -12,7 +12,7 @@
 import typing as t
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -53,12 +53,13 @@ class CreateUserFolder(ICommand):
         try:
             study_tree.get_node(url)
         except ChildNotFoundError:
-            # "/".join(url) differs from path as we remove the prefix "/" that could be used by users
-            folder_node = BucketNode(context=study_tree.context, config=study_tree.config.next_file("/".join(url)))
-            try:
-                folder_node.save(data={})
-            except FileNotFoundError:
-                return CommandOutput(status=False, message=f"the given folder parent doesn't exist: {self.path}")
+            # Creates the tree recursively to be able to create a folder inside a non-existing one.
+            result: JSON = {}
+            current = result
+            for key in url:
+                current[key] = {}
+                current = current[key]
+            study_data.tree.save(result)
         else:
             return CommandOutput(status=False, message=f"the given folder already exists: {self.path}")
         return CommandOutput(status=True, message="ok")

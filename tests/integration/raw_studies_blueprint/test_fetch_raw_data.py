@@ -367,11 +367,16 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     res = client.post(raw_url, params={"path": "/user/folder_2", "file": False})
     assert res.status_code == 204
 
+    # create a folder within a non-existing one
+    res = client.post(raw_url, params={"path": "/user/folder_x/folder_y", "file": False})
+    assert res.status_code == 204
+
     # checks debug view to see that folders were created
     res = client.get(f"/v1/studies/{internal_study_id}/raw?path=&depth=-1")
     assert res.status_code == 200
     tree = res.json()["user"]
-    assert list(tree.keys()) == ["expansion", "folder_1", "folder_2"]
+    assert list(tree.keys()) == ["expansion", "folder_1", "folder_2", "folder_x"]
+    assert tree["folder_x"] == {"folder_y": {}}
 
     # =============================
     #  ERRORS
@@ -399,12 +404,6 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     existing_folder = "user/folder_1"
     expected_msg = f"the given folder already exists: {existing_folder}"
     res = client.post(raw_url, params={"path": existing_folder, "file": False})
-    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
-
-    # try to create a folder inside a non-existing folder
-    too_deep_folder = "user/folder_x/folder_1"
-    expected_msg = f"the given folder parent doesn't exist: {too_deep_folder}"
-    res = client.post(raw_url, params={"path": too_deep_folder, "file": False})
     _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
 
