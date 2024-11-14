@@ -49,3 +49,6 @@ class CommandName(Enum):
     UPDATE_PLAYLIST = "update_playlist"
     UPDATE_SCENARIO_BUILDER = "update_scenario_builder"
     GENERATE_THERMAL_CLUSTER_TIMESERIES = "generate_thermal_cluster_timeseries"
+    CREATE_USER_FOLDER = "create_user_folder"
+    REMOVE_USER_FOLDER = "remove_user_folder"
+    REMOVE_USER_FILE = "remove_user_file"
