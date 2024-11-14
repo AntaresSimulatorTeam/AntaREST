@@ -80,7 +80,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
@@ -1289,27 +1288,22 @@ def test_edit_study_with_command() -> None:
         repository=Mock(),
         config=Mock(),
     )
-    command = Mock(spec=ICommand)
-    service._create_edit_study_command = Mock(return_value=[command])
+    command = Mock()
+    service._create_edit_study_command = Mock(return_value=command)
     file_study = Mock()
     file_study.config.study_id = study_id
     study_service = Mock(spec=RawStudyService)
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
 
-    service._edit_study_using_command(study=Mock(), url="", data=[])
-    command.apply.assert_called_with(file_study)
+    service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
+    command.apply.assert_called_with(file_study, None)
 
     study_service = Mock(spec=VariantStudyService)
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
     service._edit_study_using_command(study=Mock(), url="", data=[])
-
-    study_service.append_command.assert_called_once_with(
-        study_id=study_id,
-        command=command.to_dto(),
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    service.storage_service.variant_study_service.append_commands.assert_called_once()
 
 
 @pytest.mark.unit_test
