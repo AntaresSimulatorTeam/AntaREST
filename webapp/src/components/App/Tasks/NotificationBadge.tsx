@@ -49,11 +49,13 @@ function NotificationBadge(props: Props) {
   const dispatch = useAppDispatch();
 
   const newNotification = useCallback(
-    (message: string, variantType?: VariantType) => {
+    (message?: string, variantType?: VariantType) => {
       if (location.pathname !== "/tasks") {
         dispatch(incrementTaskNotifications());
       }
-      enqueueSnackbar(t(message), { variant: variantType || "info" });
+      if (message) {
+        enqueueSnackbar(t(message), { variant: variantType || "info" });
+      }
     },
     [dispatch, enqueueSnackbar, location.pathname, t],
   );
@@ -77,6 +79,11 @@ function NotificationBadge(props: Props) {
             newNotification("studies.studyunarchiving");
           } else if (task.type === TaskType.Scan) {
             newNotification("studies.success.scanFolder");
+          } else if (
+            task.type === TaskType.UpgradeStudy ||
+            task.type === TaskType.ThermalClusterSeriesGeneration
+          ) {
+            newNotification();
           }
         } catch (error) {
           logError(error);

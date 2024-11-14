@@ -46,7 +46,7 @@ interface LinearProgressWithLabelProps {
 function LinearProgressWithLabel(props: LinearProgressWithLabelProps) {
   const { value, tooltip, error, sx } = props;
   const progress = R.clamp(0, 100, value || 0);
-  const hasError = error !== undefined;
+  const hasError = error === true || typeof error === "string";
   const variant =
     typeof value === "number" || hasError ? "determinate" : "indeterminate";
 
