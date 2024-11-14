@@ -107,7 +107,7 @@ class FilterOption(EnumIgnoreCase):
 def validate_filters(
     filter_value: t.Union[t.List[FilterOption], str], enum_cls: t.Type[FilterOption]
 ) -> t.List[FilterOption]:
-    if filter_value is not None and isinstance(filter_value, str):
+    if isinstance(filter_value, str):
         filter_accepted_values = [e for e in enum_cls]
 
         options = filter_value.replace(" ", "").split(",")
@@ -226,18 +226,3 @@ class LinkProperties(IniProperties):
     @model_validator(mode="before")
     def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         return validate_colors(values)
-
-    # noinspection SpellCheckingInspection
-    def to_ini(self, version: int) -> t.Dict[str, t.Any]:
-        """
-        Convert the object to a dictionary for writing to a configuration file.
-        """
-        excludes = set() if version >= 820 else {"filter_synthesis", "filter_year_by_year"}
-        obj = self.model_dump(mode="json", exclude_none=True, by_alias=True, exclude=excludes)
-        color_rgb = obj.pop("colorRgb", "#707070")
-        return {
-            "colorr": int(color_rgb[1:3], 16),
-            "colorg": int(color_rgb[3:5], 16),
-            "colorb": int(color_rgb[5:7], 16),
-            **obj,
-        }

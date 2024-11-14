@@ -141,8 +141,12 @@ class CreateLink(ICommand):
         if not output.status:
             return output
 
+        to_exclude = {"area1", "area2"}
+        if version < STUDY_VERSION_8_2:
+            to_exclude.update("filter-synthesis", "filter-year-by-year")
+
         validated_properties = LinkInternal.model_validate(self.parameters).model_dump(
-            by_alias=True, exclude={"area1", "area2"}
+            by_alias=True, exclude=to_exclude
         )
 
         area_from = data["area_from"]

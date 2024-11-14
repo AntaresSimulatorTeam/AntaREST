@@ -116,7 +116,10 @@ class TestLink:
         res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area1_id})
 
         assert res.status_code == 422, res.json()
-        expected = {"description": "Cannot create link on same area: area 1", "exception": "LinkValidationError"}
+        expected = {
+            "description": "Cannot create a link that goes from and to the same single area: area 1",
+            "exception": "LinkValidationError",
+        }
         assert expected == res.json()
 
         # Test create link with wrong value for enum
