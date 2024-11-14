@@ -37,6 +37,7 @@ from antarest.core.exceptions import (
     CommandApplicationError,
     FileDeletionNotAllowed,
     FolderCreationNotAllowed,
+    FolderDeletionNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
     OutputAlreadyArchived,
@@ -155,6 +156,8 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
     GenerateThermalClusterTimeSeries,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_user_file import RemoveUserFile
+from antarest.study.storage.variantstudy.model.command.remove_user_folder import RemoveUserFolder
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -2738,23 +2741,25 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
-        url = [item for item in path.split("/") if item]
-        if len(url) < 2 or url[0] != "user":
-            raise FileDeletionNotAllowed(f"the targeted data isn't inside the 'User' folder: {path}")
-
-        study_tree = self.storage_service.get_storage(study).get_raw(study, True).tree
-        user_node = t.cast(User, study_tree.get_node(["user"]))
-        if url[1] in [file.filename for file in user_node.registered_files]:
-            raise FileDeletionNotAllowed(f"you are not allowed to delete this resource : {path}")
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study = self.storage_service.get_storage(study).get_raw(study, True)
+        command: ICommand
+        exception_class: type[HTTPException]
+        if Path(path).is_dir():
+            command = RemoveUserFolder(path=path, command_context=context)
+            exception_class = FolderDeletionNotAllowed
+        else:
+            command = RemoveUserFile(path=path, command_context=context)
+            exception_class = FileDeletionNotAllowed
 
         try:
-            user_node.delete(url[1:])
-        except ChildNotFoundError as e:
-            raise FileDeletionNotAllowed("the given path doesn't exist") from e
+            execute_or_add_commands(study, file_study, [command], self.storage_service)
+        except CommandApplicationError as e:
+            raise exception_class(e.detail) from e  # type: ignore
 
         # update cache
         cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
-        updated_tree = study_tree.get()
+        updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
     def create_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
