@@ -34,6 +34,7 @@ import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
 import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
+import { NonStudyFolder } from "@/components/App/Studies/utils";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies`);
@@ -45,6 +46,29 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   return Object.keys(rawStudyList).map((sid) => {
     const study = rawStudyList[sid];
     return convertStudyDtoToMetadata(sid, study);
+  });
+};
+
+export const getFolders = async (
+  workspace: string,
+  folder_name: string,
+): Promise<NonStudyFolder[]> => {
+  const res = await client.get(
+    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folder_name)}`,
+  );
+  return res.data.map((folder: any) => {
+    let parentPath = [
+      "",
+      folder.workspace,
+      ...folder.path
+        .split("/")
+        .filter((elm: string) => elm !== "")
+        .slice(0, -1),
+    ].join("/");
+    return {
+      ...folder,
+      parentPath,
+    };
   });
 };
 

@@ -20,6 +20,13 @@ export interface StudyTreeNode {
   children: StudyTreeNode[];
 }
 
+export interface NonStudyFolder {
+  name: string;
+  path: string;
+  workspace: string;
+  parentPath: string;
+}
+
 const nodeProcess = (
   tree: StudyTreeNode,
   path: string[],
