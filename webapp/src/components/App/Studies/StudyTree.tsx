@@ -45,7 +45,7 @@ function mergeStudyTreeAndFolder(
   folder: NonStudyFolder,
 ): StudyTreeNode {
   if (folder.parentPath == studiesTree.path) {
-    for (let child of studiesTree.children) {
+    for (const child of studiesTree.children) {
       if (child.name == folder.name) {
         // parent path is the same, folder name is the same
         // we don't override the existing folder
@@ -65,14 +65,19 @@ function mergeStudyTreeAndFolder(
         },
       ],
     };
+  } else if (folder.parentPath.startsWith(studiesTree.path)) {
+    // recursively walk though the tree
+    // recursively merge in each child
+    return {
+      ...studiesTree,
+      children: studiesTree.children.map((child) =>
+        mergeStudyTreeAndFolder(child, folder),
+      ),
+    };
+  } else {
+    // folder isn't part of this hierarchy
+    return studiesTree;
   }
-  // try to recursively merge in each childen
-  return {
-    ...studiesTree,
-    children: studiesTree.children.map((child) =>
-      mergeStudyTreeAndFolder(child, folder),
-    ),
-  };
 }
 
 /**
@@ -86,10 +91,30 @@ export function mergeStudyTreeAndFolders(
   studiesTree: StudyTreeNode,
   folders: NonStudyFolder[],
 ): StudyTreeNode {
-  for (let folder of folders) {
+  for (const folder of folders) {
     studiesTree = mergeStudyTreeAndFolder(studiesTree, folder);
   }
   return studiesTree;
+}
+
+async function fetchAndMergeSubfolders(
+  path: string,
+  studiesTree: StudyTreeNode,
+): Promise<StudyTreeNode> {
+  if (path === "root") {
+    // Under root there're workspaces not subfolders
+    return studiesTree;
+  }
+  const pathParts = path.split("/");
+  if (pathParts.length < 2) {
+    return studiesTree;
+  }
+  // path parts should be ["root", workspace, "foler1", ...]
+  const workspace = pathParts[1];
+  const subPath = pathParts.slice(2).join("/");
+  const subFolders = await api.getFolders(workspace, subPath);
+  const nextStudiesTree = mergeStudyTreeAndFolders(studiesTree, subFolders);
+  return nextStudiesTree;
 }
 
 function StudyTree() {
@@ -113,17 +138,9 @@ function StudyTree() {
 
   const handleTreeItemClick = (itemId: string) => {
     dispatch(updateStudyFilters({ folder: itemId }));
-    // dispatch the action to fetch folders
-    if (itemId === "root") {
-      // Under root there're workspaces not subfolders
-      return;
-    }
-    const [_, workspace, ...other] = itemId.split("/");
-    const subPath = other.join("/");
-    api.getFolders(workspace, subPath).then((res) => {
-      const nextStudiesTree = mergeStudyTreeAndFolders(studiesTree, res);
-      setStudiesTree(nextStudiesTree);
-    });
+    fetchAndMergeSubfolders(itemId, studiesTree).then((nextStudiesTree) =>
+      setStudiesTree(nextStudiesTree),
+    );
   };
 
   ////////////////////////////////////////////////////////////////

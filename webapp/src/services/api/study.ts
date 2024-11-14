@@ -51,10 +51,10 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
 
 export const getFolders = async (
   workspace: string,
-  folder_name: string,
+  folderName: string,
 ): Promise<NonStudyFolder[]> => {
   const res = await client.get(
-    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folder_name)}`,
+    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderName)}`,
   );
   return res.data.map((folder: any) => {
     let parentPath = [
