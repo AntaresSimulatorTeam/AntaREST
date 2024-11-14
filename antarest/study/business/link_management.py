@@ -14,12 +14,12 @@ import typing as t
 
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
+from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.link_model import LinkDTO, LinkInternal
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -58,7 +58,7 @@ class LinkManager:
 
         return result
 
-    def create_link(self, study: RawStudy, link_creation_dto: LinkDTO) -> LinkDTO:
+    def create_link(self, study: Study, link_creation_dto: LinkDTO) -> LinkDTO:
         link = link_creation_dto.to_internal(StudyVersion.parse(study.version))
 
         storage_service = self.storage_service.get_storage(study)
