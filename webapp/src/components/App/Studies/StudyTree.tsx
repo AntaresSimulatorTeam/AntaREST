@@ -91,10 +91,11 @@ export function mergeStudyTreeAndFolders(
   studiesTree: StudyTreeNode,
   folders: NonStudyFolder[],
 ): StudyTreeNode {
+  let mergedStudyTree = studiesTree;
   for (const folder of folders) {
-    studiesTree = mergeStudyTreeAndFolder(studiesTree, folder);
+    mergedStudyTree = mergeStudyTreeAndFolder(mergedStudyTree, folder);
   }
-  return studiesTree;
+  return mergedStudyTree;
 }
 
 async function fetchAndMergeSubfolders(
