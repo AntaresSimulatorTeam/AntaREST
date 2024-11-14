@@ -61,12 +61,8 @@ class TestFetchRawData:
     Check the retrieval of Raw Data from Study: JSON, Text, or File Attachment.
     """
 
-    def test_get_study(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-    ):
+    @pytest.mark.parametrize("study_type", ["raw", "variant"])
+    def test_get_study(self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str):
         """
         Test the `get_study` endpoint for fetching raw data from a study.
 
@@ -80,18 +76,40 @@ class TestFetchRawData:
         4. Uses the API to download files from the "user/unknown" directory.
         5. Checks for a 415 error when the extension of a file is unknown.
         """
+
+        # =============================
+        #  SET UP
+        # =============================
+
         # First copy the user resources in the Study directory
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
             study_dir = pathlib.Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        raw_url = f"/v1/studies/{internal_study_id}/raw"
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
             study_dir.joinpath("user"),
             dirs_exist_ok=True,
         )
+
+        if study_type == "variant":
+            # Copies the study, to convert it into a managed one.
+            res = client.post(
+                f"/v1/studies/{internal_study_id}/copy",
+                headers={"Authorization": f"Bearer {user_access_token}"},
+                params={"dest": "default", "with_outputs": False, "use_task": False},
+            )
+            assert res.status_code == 201
+            parent_id = res.json()
+            res = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant 1"})
+            internal_study_id = res.json()
+
+        raw_url = f"/v1/studies/{internal_study_id}/raw"
+
+        # =============================
+        #  NOMINAL CASES
+        # =============================
 
         # Then, use the API to download the files from the "user/folder" directory
         user_folder_dir = study_dir.joinpath("user/folder")
@@ -186,7 +204,7 @@ class TestFetchRawData:
             written_data = res.json()["data"]
             if not content.decode("utf-8"):
                 # For some reason the `GET` returns the default matrix when it's empty
-                expected = 8760 * [[0]]
+                expected = 8760 * [[0]] if study_type == "raw" else [[]]
             else:
                 expected = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).to_numpy().tolist()
             assert written_data == expected
@@ -252,9 +270,10 @@ class TestFetchRawData:
         assert res.json() == ["DE", "ES", "FR", "IT"]
 
         # asserts that the GET /raw endpoint is able to read matrix containing NaN values
-        res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"})
-        assert res.status_code == 200
-        assert np.isnan(res.json()["data"][0]).any()
+        if study_type == "raw":
+            res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"})
+            assert res.status_code == 200
+            assert np.isnan(res.json()["data"][0]).any()
 
         # Iterate over all possible combinations of path and depth
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
