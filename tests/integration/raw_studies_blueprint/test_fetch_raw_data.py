@@ -21,12 +21,38 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
+from httpx import Response
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
+
+
+def _check_endpoint_response(
+    study_type: str, res: Response, client: TestClient, study_id: str, expected_msg: str, exception: str
+):
+    # The command will only fail when applied so on raw studies only.
+    # So we have to differentiate the test based on the study type.
+    if study_type == "raw":
+        assert res.status_code == 403
+        assert res.json()["exception"] == exception
+        assert expected_msg in res.json()["description"]
+    else:
+        assert res.status_code == 204
+        task_id = client.put(f"/v1/studies/{study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        task = res.json()
+        assert task["status"] == TaskStatus.FAILED.value
+        assert not task["result"]["success"]
+        assert expected_msg in task["result"]["message"]
+        # We have to delete the command to make the variant "clean" again.
+        res = client.get(f"/v1/studies/{study_id}/commands")
+        cmd_id = res.json()[-1]["id"]
+        res = client.delete(f"/v1/studies/{study_id}/commands/{cmd_id}")
+        res.raise_for_status()
 
 
 @pytest.mark.integration_test
@@ -362,31 +388,27 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
 
     # try to create a folder outside `user` folder
     wrong_folder = "input/wrong_folder"
+    expected_msg = f"the given path isn't inside the 'User' folder: {wrong_folder}"
     res = client.post(raw_url, params={"path": wrong_folder, "file": False})
-    assert res.status_code == 403
-    assert res.json()["exception"] == "FolderCreationNotAllowed"
-    assert f"the given path isn't inside the 'User' folder: {wrong_folder}" in res.json()["description"]
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
     # try to create a folder inside the 'expansion` folder
     expansion_folder = "user/expansion/wrong_folder"
+    expected_msg = f"the given path shouldn't be inside the 'expansion' folder: {expansion_folder}"
     res = client.post(raw_url, params={"path": expansion_folder, "file": False})
-    assert res.status_code == 403
-    assert res.json()["exception"] == "FolderCreationNotAllowed"
-    assert f"the given path shouldn't be inside the 'expansion' folder: {expansion_folder}" in res.json()["description"]
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
     # try to create an already existing folder
     existing_folder = "user/folder_1"
+    expected_msg = f"the given folder already exists: {existing_folder}"
     res = client.post(raw_url, params={"path": existing_folder, "file": False})
-    assert res.status_code == 403
-    assert res.json()["exception"] == "FolderCreationNotAllowed"
-    assert f"the given folder already exists: {existing_folder}" in res.json()["description"]
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
     # try to create a folder inside a non-existing folder
     too_deep_folder = "user/folder_x/folder_1"
+    expected_msg = f"the given folder parent doesn't exist: {too_deep_folder}"
     res = client.post(raw_url, params={"path": too_deep_folder, "file": False})
-    assert res.status_code == 403
-    assert res.json()["exception"] == "FolderCreationNotAllowed"
-    assert f"the given folder parent doesn't exist: {too_deep_folder}" in res.json()["description"]
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
 
 def test_retrieve_from_archive(client: TestClient, user_access_token: str) -> None:

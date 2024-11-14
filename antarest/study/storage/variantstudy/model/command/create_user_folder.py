@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from pathlib import Path
 
+from antarest.core.exceptions import ChildNotFoundError
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -34,13 +35,32 @@ class CreateUserFolder(ICommand):
     # Command parameters
     # ==================
 
-    path: Path
+    path: str
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        # todo
+        url = [item for item in self.path.split("/") if item]
+        if len(url) < 2 or url[0] != "user":
+            return CommandOutput(status=False, message=f"the given path isn't inside the 'User' folder: {self.path}")
+        if url[1] == "expansion":
+            return CommandOutput(
+                status=False, message=f"the given path shouldn't be inside the 'expansion' folder: {self.path}"
+            )
+
+        study_tree = study_data.tree
+        try:
+            study_tree.get_node(url)
+        except ChildNotFoundError:
+            # "/".join(url) differs from path as we remove the prefix "/" that could be used by users
+            folder_node = BucketNode(context=study_tree.context, config=study_tree.config.next_file("/".join(url)))
+            try:
+                folder_node.save(data={})
+            except FileNotFoundError:
+                return CommandOutput(status=False, message=f"the given folder parent doesn't exist: {self.path}")
+        else:
+            return CommandOutput(status=False, message=f"the given folder already exists: {self.path}")
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:

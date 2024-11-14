@@ -130,7 +130,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
@@ -151,6 +150,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.model.command.create_user_folder import CreateUserFolder
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -2761,26 +2761,15 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
-        url = [item for item in path.split("/") if item]
-        if len(url) < 2 or url[0] != "user":
-            raise FolderCreationNotAllowed(f"the given path isn't inside the 'User' folder: {path}")
-        if url[1] == "expansion":
-            raise FolderCreationNotAllowed(f"the given path shouldn't be inside the 'expansion' folder: {path}")
-
-        study_tree = self.storage_service.get_storage(study).get_raw(study, True).tree
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        command = CreateUserFolder(path=path, command_context=context)
+        file_study = self.storage_service.get_storage(study).get_raw(study, True)
         try:
-            study_tree.get_node(url)
-        except ChildNotFoundError:
-            # "/".join(url) differs from path as we remove the prefix "/" that could be used by users
-            folder_node = BucketNode(context=study_tree.context, config=study_tree.config.next_file("/".join(url)))
-            try:
-                folder_node.save(data={})
-            except FileNotFoundError:
-                raise FolderCreationNotAllowed(f"the given folder parent doesn't exist: {path}")
-        else:
-            raise FolderCreationNotAllowed(f"the given folder already exists: {path}")
+            execute_or_add_commands(study, file_study, [command], self.storage_service)
+        except CommandApplicationError as e:
+            raise FolderCreationNotAllowed(e.detail) from e
 
         # update cache
         cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
-        updated_tree = study_tree.get()
+        updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
