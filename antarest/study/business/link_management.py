@@ -41,7 +41,7 @@ class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(self, study: RawStudy) -> t.List[LinkDTO]:
+    def get_all_links(self, study: Study) -> t.List[LinkDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result: t.List[LinkDTO] = []
 

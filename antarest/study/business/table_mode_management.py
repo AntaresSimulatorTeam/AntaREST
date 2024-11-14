@@ -15,6 +15,7 @@ import typing as t
 
 import numpy as np
 import pandas as pd
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
@@ -98,7 +99,7 @@ class TableModeManager:
             data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links_props(study)
-            excludes = set() if int(study.version) >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
+            excludes = set() if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
             data = {
                 f"{area1_id} / {area2_id}": link.model_dump(mode="json", by_alias=True, exclude=excludes)
                 for (area1_id, area2_id), link in links_map.items()
