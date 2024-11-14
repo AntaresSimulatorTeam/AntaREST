@@ -149,7 +149,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_user_folder import CreateUserFolder
+from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -2752,14 +2752,14 @@ class StudyService:
         Raises:
             FolderCreationNotAllowed: if the path does not comply with the above rules
         """
-        self._alter_user_folder(study_id, path, current_user, CreateUserFolder, FolderCreationNotAllowed)
+        self._alter_user_folder(study_id, path, current_user, CreateUserResource, FolderCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
         path: str,
         current_user: JWTUser,
-        command_class: t.Type[t.Union[CreateUserFolder, RemoveUserResource]],
+        command_class: t.Type[t.Union[CreateUserResource, RemoveUserResource]],
         exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]],
     ) -> None:
         study = self.get_study(study_id)

@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class CreateUserFolder(ICommand):
+class CreateUserResource(ICommand):
     """
     Command used to create a folder inside the `user` folder.
     """
@@ -29,7 +29,7 @@ class CreateUserFolder(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.CREATE_USER_FOLDER
+    command_name: CommandName = CommandName.CREATE_USER_RESOURCE
     version: int = 1
 
     # Command parameters
@@ -71,7 +71,7 @@ class CreateUserFolder(ICommand):
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateUserFolder):
+        if not isinstance(other, CreateUserResource):
             return False
         return self.path == other.path
 

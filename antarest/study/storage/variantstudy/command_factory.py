@@ -25,7 +25,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
-from antarest.study.storage.variantstudy.model.command.create_user_folder import CreateUserFolder
+from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -73,7 +73,7 @@ COMMAND_MAPPING = {
     CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,
     CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
     CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenerateThermalClusterTimeSeries,
-    CommandName.CREATE_USER_FOLDER.value: CreateUserFolder,
+    CommandName.CREATE_USER_RESOURCE.value: CreateUserResource,
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
 }
 

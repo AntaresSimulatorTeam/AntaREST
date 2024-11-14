@@ -381,7 +381,7 @@ COMMANDS: List[CommandDTO] = [
         args=[{}],
     ),
     CommandDTO(
-        action=CommandName.CREATE_USER_FOLDER.value,
+        action=CommandName.CREATE_USER_RESOURCE.value,
         args=[{"path": "user/folder_1"}],
     ),
     CommandDTO(

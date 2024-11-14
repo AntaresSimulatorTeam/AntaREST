@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
-from antarest.study.storage.variantstudy.model.command.create_user_folder import CreateUserFolder
+from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -341,10 +341,10 @@ class CommandReverter:
         raise NotImplementedError("The revert function for GenerateThermalClusterTimeSeries is not available")
 
     @staticmethod
-    def _revert_create_user_folder(
-        base_command: CreateUserFolder, history: t.List["ICommand"], base: FileStudy
+    def _revert_create_user_resource(
+        base_command: CreateUserResource, history: t.List["ICommand"], base: FileStudy
     ) -> t.List[ICommand]:
-        raise NotImplementedError("The revert function for CreateUserFolder is not available")
+        raise NotImplementedError("The revert function for CreateUserResource is not available")
 
     @staticmethod
     def _revert_remove_user_resource(
