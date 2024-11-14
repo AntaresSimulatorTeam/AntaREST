@@ -344,7 +344,7 @@ class CommandReverter:
     def _revert_create_user_resource(
         base_command: CreateUserResource, history: t.List["ICommand"], base: FileStudy
     ) -> t.List[ICommand]:
-        raise NotImplementedError("The revert function for CreateUserResource is not available")
+        return [RemoveUserResource(path=base_command.path, command_context=base_command.command_context)]
 
     @staticmethod
     def _revert_remove_user_resource(

@@ -23,7 +23,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class CreateUserResource(ICommand):
     """
-    Command used to create a folder inside the `user` folder.
+    Command used to create a resource inside the `user` folder.
     """
 
     # Overloaded metadata
