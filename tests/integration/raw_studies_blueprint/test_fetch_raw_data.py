@@ -402,7 +402,7 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
 
     # try to create an already existing folder
     existing_folder = "user/folder_1"
-    expected_msg = f"the given folder already exists: {existing_folder}"
+    expected_msg = f"the given resource already exists: {existing_folder}"
     res = client.post(raw_url, params={"path": existing_folder, "file": False})
     _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 

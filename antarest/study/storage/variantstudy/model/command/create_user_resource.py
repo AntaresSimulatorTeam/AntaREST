@@ -12,7 +12,6 @@
 import typing as t
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -54,14 +53,17 @@ class CreateUserResource(ICommand):
         try:
             study_tree.get_node(url)
         except ChildNotFoundError:
-            # todo: adapt the code according to the value of self.file
+            # todo: refactor this
+            last_value = f"file://{url[-1]}" if self.file else {}
+            path_parts = url[:-1] if self.file else url
             # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-            result: JSON = {}
-            current = result
-            for key in url:
-                current[key] = {}
-                current = current[key]
-            study_tree.save(result)
+            nested_dict = {}
+            for k, key in enumerate(reversed(path_parts)):
+                if k == 0:
+                    nested_dict = {key: last_value}
+                else:
+                    nested_dict = {key: nested_dict}
+            study_tree.save(nested_dict)
         else:
             return CommandOutput(status=False, message=f"the given resource already exists: {self.path}")
         return CommandOutput(status=True, message="ok")
