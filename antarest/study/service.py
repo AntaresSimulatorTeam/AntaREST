@@ -154,7 +154,7 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
     GenerateThermalClusterTimeSeries,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_user_folder import RemoveUserResource
+from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig

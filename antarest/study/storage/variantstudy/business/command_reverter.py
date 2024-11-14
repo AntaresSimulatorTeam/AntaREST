@@ -40,7 +40,7 @@ from antarest.study.storage.variantstudy.model.command.remove_district import Re
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
-from antarest.study.storage.variantstudy.model.command.remove_user_folder import RemoveUserResource
+from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
