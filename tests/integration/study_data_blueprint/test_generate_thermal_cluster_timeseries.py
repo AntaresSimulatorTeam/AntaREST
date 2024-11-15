@@ -112,7 +112,7 @@ class TestGenerateThermalClusterTimeseries:
         # Timeseries generation fails because there's no nominal power
         task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.FAILED
-        assert "Nominal power must be strictly positive, got 0.0" in task.result.message
+        assert f"Area {area1_id}, cluster {cluster_name.lower()}: Nominal power must be strictly positive, got 0.0" in task.result.message
 
         # Puts the nominal power as a float
         body = {"nominalCapacity": 4.4}
