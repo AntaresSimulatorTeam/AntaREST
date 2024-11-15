@@ -201,7 +201,11 @@ class TableModeManager:
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkOutput(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links_props(study, links_map)  # type: ignore
-            excludes = set() if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
+            excludes = (
+                set()
+                if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
+                else {"filter_synthesis", "filter_year_by_year"}
+            )
             data = {
                 f"{area1_id} / {area2_id}": link.model_dump(by_alias=True, exclude=excludes)
                 for (area1_id, area2_id), link in updated_map.items()

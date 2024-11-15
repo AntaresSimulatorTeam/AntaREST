@@ -68,7 +68,10 @@ class TestLink:
             },
         )
         assert res.status_code == 422
-        expected = {"description": "Area 1 and Area 2 can not be the same", "exception": "LinkValidationError"}
+        expected = {
+            "description": "Cannot create a link that goes from and to the same single area: area 1",
+            "exception": "LinkValidationError",
+        }
         assert expected == res.json()
 
         # Test update link with non existing area
