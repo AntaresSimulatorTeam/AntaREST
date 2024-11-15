@@ -135,7 +135,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                         progress = int(100 * generation_performed / total_generations)
                         listener.notify_progress(progress)
                 except Exception as e:
-                    e.args = [f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0]]
+                    e.args = (f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0],)
                     raise
 
     def to_dto(self) -> CommandDTO:
