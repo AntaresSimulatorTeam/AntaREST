@@ -15,11 +15,14 @@ import typing as t
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
+from antares.study.version import StudyVersion
+
+from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.link_model import LinkDTO, LinkInternal
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -43,7 +46,7 @@ class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(self, study: RawStudy) -> t.List[LinkDTO]:
+    def get_all_links(self, study: Study) -> t.List[LinkDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result: t.List[LinkDTO] = []
 
@@ -60,7 +63,7 @@ class LinkManager:
 
         return result
 
-    def create_link(self, study: RawStudy, link_creation_dto: LinkDTO) -> LinkDTO:
+    def create_link(self, study: Study, link_creation_dto: LinkDTO) -> LinkDTO:
         link = link_creation_dto.to_internal(StudyVersion.parse(study.version))
 
         storage_service = self.storage_service.get_storage(study)
@@ -118,6 +121,7 @@ class LinkManager:
         updated_link = LinkInternal.model_validate(link_properties)
 
         return link.model_copy(update=updated_link.model_dump())
+
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)

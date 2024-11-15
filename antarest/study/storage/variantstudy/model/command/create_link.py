@@ -25,6 +25,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -256,14 +258,22 @@ class CreateLink(AbstractLinkCommand):
         if not output.status:
             return output
 
+        to_exclude = {"area1", "area2"}
+        if version < STUDY_VERSION_8_2:
+            to_exclude.update("filter-synthesis", "filter-year-by-year")
+
         validated_properties = LinkInternal.model_validate(self.parameters).model_dump(
-            by_alias=True, exclude={"area1", "area2"}
+            by_alias=True, exclude=to_exclude
         )
 
         area_from = data["area_from"]
         area_to = data["area_to"]
 
         study_data.tree.save(validated_properties, ["input", "links", area_from, "properties", area_to])
+
+        self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
+        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
+        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
         self.save_series(area_from, area_to, study_data, version)
         self.save_direct(area_from, area_to, study_data, version)

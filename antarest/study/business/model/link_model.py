@@ -43,7 +43,7 @@ class Area(AntaresBaseModel):
     @model_validator(mode="after")
     def validate_areas(self) -> t.Self:
         if self.area1 == self.area2:
-            raise LinkValidationError(f"Area 1 and Area 2 can not be the same")
+            raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
         return self
 
 
@@ -66,28 +66,16 @@ class LinkDTO(Area):
     filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
 
     def to_internal(self, version: StudyVersion) -> "LinkInternal":
-        if version < STUDY_VERSION_8_2 and (
-            "filter_synthesis" in self.model_fields_set or "filter_year_by_year" in self.model_fields_set
-        ):
+        if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
-        return LinkInternal(
-            area1=self.area1,
-            area2=self.area2,
-            hurdles_cost=self.hurdles_cost,
-            loop_flow=self.loop_flow,
-            use_phase_shifter=self.use_phase_shifter,
-            transmission_capacities=self.transmission_capacities,
-            asset_type=self.asset_type,
-            display_comments=self.display_comments,
-            colorr=self.colorr,
-            colorb=self.colorb,
-            colorg=self.colorg,
-            link_width=self.link_width,
-            link_style=self.link_style,
-            filter_synthesis=self.filter_synthesis if version >= STUDY_VERSION_8_2 else None,
-            filter_year_by_year=self.filter_year_by_year if version >= STUDY_VERSION_8_2 else None,
-        )
+        data = self.model_dump()
+
+        if version < STUDY_VERSION_8_2:
+            data["filter_synthesis"] = None
+            data["filter_year_by_year"] = None
+
+        return LinkInternal(**data)
 
 
 class LinkInternal(AntaresBaseModel):
@@ -110,20 +98,5 @@ class LinkInternal(AntaresBaseModel):
     filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
 
     def to_dto(self) -> LinkDTO:
-        return LinkDTO(
-            area1=self.area1,
-            area2=self.area2,
-            hurdles_cost=self.hurdles_cost,
-            loop_flow=self.loop_flow,
-            use_phase_shifter=self.use_phase_shifter,
-            transmission_capacities=self.transmission_capacities,
-            asset_type=self.asset_type,
-            display_comments=self.display_comments,
-            colorr=self.colorr,
-            colorb=self.colorb,
-            colorg=self.colorg,
-            link_width=self.link_width,
-            link_style=self.link_style,
-            filter_synthesis=self.filter_synthesis,
-            filter_year_by_year=self.filter_year_by_year,
-        )
+        data = self.model_dump()
+        return LinkDTO(**data)

@@ -103,7 +103,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # noinspection PyArgumentList
     study = RawStudy(
         id=study_id,
-        version="-1",
+        version="820",
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
     )
@@ -136,7 +136,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     }
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
-    study.version = 820
+
     link_manager.create_link(
         study,
         LinkDTO(
@@ -145,7 +145,6 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         ),
     )
     assert empty_study.config.areas["test"].links.get("test2") is not None
-    study.version = -1
 
     link_manager.delete_link(study, "test", "test2")
     assert empty_study.config.areas["test"].links.get("test2") is None
@@ -158,7 +157,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # noinspection PyArgumentList
     study = VariantStudy(
         id=variant_id,
-        version="-1",
+        version="820",
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
     )
@@ -227,7 +226,6 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     )
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
-    study.version = 880
     link_manager.create_link(
         study,
         LinkDTO(
@@ -265,6 +263,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
+
     study.version = 810
     link_manager.create_link(
         study,
