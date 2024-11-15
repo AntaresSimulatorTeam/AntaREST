@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import i18n from "../i18n";
+import { L } from "ts-toolbelt";
+import i18n, { SUPPORTED_LANGUAGES } from "../i18n";
+
+type Lang = L.UnionOf<typeof SUPPORTED_LANGUAGES>;
 
 /**
  * Gets the current language used in the application.
@@ -20,7 +23,22 @@ import i18n from "../i18n";
  * @returns The current language.
  */
 export function getCurrentLanguage() {
-  return i18n.language;
+  return i18n.languages[0] as Lang;
+}
+
+/**
+ * Changes the language used in the application.
+ * The value is automatically saved in the local storage.
+ *
+ * @param lang - The language to change to.
+ * @returns A promise that resolves when the language has been loaded.
+ */
+export function changeLanguage(lang: Lang) {
+  return new Promise<void>((resolve, reject) => {
+    i18n.changeLanguage(lang, (err) => {
+      err ? reject(err) : resolve();
+    });
+  });
 }
 
 /**
