@@ -27,7 +27,7 @@ def migrate_matrix(matrix_path_as_str: str) -> None:
     data = np.loadtxt(matrix_path, delimiter="\t", dtype=np.float64, ndmin=2)
     data = data.reshape((1, 0)) if data.size == 0 else data
     df = pd.DataFrame(data=data)
-    df.to_hdf(str(hdf_path), "data")
+    df.to_hdf(str(hdf_path), key="data")
     old_lock_path = matrix_path.with_suffix(".tsv.lock")
     new_lock_path = hdf_path.with_suffix(".hdf.lock")
     new_lock_path.touch()

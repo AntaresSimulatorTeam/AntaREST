@@ -20,8 +20,8 @@ from typing import List, Optional, Set, Union, cast
 from zipfile import ZipFile
 
 import numpy as np
-from antares.study.version import StudyVersion
 import pandas as pd
+from antares.study.version import StudyVersion
 from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache

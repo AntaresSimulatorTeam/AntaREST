@@ -230,7 +230,7 @@ class MatrixContentRepository:
                     matrix_file.touch()
                 else:
                     df = pd.DataFrame(matrix)
-                    df.to_hdf(str(matrix_file), "data")
+                    df.to_hdf(str(matrix_file), key="data")
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
