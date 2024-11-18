@@ -87,11 +87,9 @@ class RemoteVariantGenerator(IVariantGenerator):
         logger.info("Uploading matrices")
         matrix_dataset: List[str] = []
         for matrix_file in matrices_dir.iterdir():
-            if matrix_file.stat().st_size == 0:
-                matrix_data: List[List[int]] = [[]]
-            else:
-                matrix = cast(pd.DataFrame, pd.read_hdf(matrix_file))
-                matrix_data = matrix.values.tolist()
+            matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+            matrix_data = matrix.tolist()
             res = self.session.post(self.build_url("/v1/matrix"), json=matrix_data)
             res.raise_for_status()
             matrix_id = res.json()
@@ -307,7 +305,7 @@ def generate_diff(
     needed_matrices: Set[str] = set()
     for command in diff_commands:
         for matrix in command.get_inner_matrices():
-            needed_matrices.add(f"{matrix}.hdf")
+            needed_matrices.add(f"{matrix}.tsv")
     for matrix_file in os.listdir(matrices_dir):
         if matrix_file not in needed_matrices:
             os.unlink(matrices_dir / matrix_file)
