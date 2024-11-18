@@ -43,7 +43,7 @@ import { importFile } from "../../../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import usePrompt from "../../../../../hooks/usePrompt";
 import { Aggregate, Column, Operation } from "../../shared/constants";
-import { aggregatesTheme } from "../../components/MatrixGrid/styles";
+import { aggregatesTheme } from "../../styles";
 
 interface DataState {
   data: MatrixDataDTO["data"];
