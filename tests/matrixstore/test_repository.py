@@ -20,6 +20,7 @@ import pytest
 from numpy import typing as npt
 from sqlalchemy.orm import Session  # type: ignore
 
+from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixDataSet, MatrixDataSetRelation
@@ -41,7 +42,7 @@ class TestMatrixRepository:
             assert repo.get(m.id) is None
 
     def test_bucket_lifecycle(self, tmp_path: Path) -> None:
-        repo = MatrixContentRepository(tmp_path)
+        repo = MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV)
 
         a: ArrayData = [[1, 2], [3, 4]]
         b: ArrayData = [[5, 6], [7, 8]]

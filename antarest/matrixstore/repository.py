@@ -141,7 +141,7 @@ class MatrixContentRepository:
 
     This class provides methods to get, check existence,
     save, and delete the content of matrices stored in a directory.
-    The matrices can be stored in various format (described in InternalMatrixFormat) and
+    The matrices are stored in various format (described in InternalMatrixFormat) and
     are accessed and modified using their SHA256 hash as their unique identifier.
 
     Attributes:
@@ -163,10 +163,11 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
+        storage_format: t.Optional[InternalMatrixFormat] = None
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_path.exists():
-                storage_format: InternalMatrixFormat = internal_format
+                storage_format = internal_format
                 break
         if not storage_format:
             raise MatrixNotFound(path=str(matrix_path.with_suffix("")))
@@ -194,10 +195,7 @@ class MatrixContentRepository:
 
     def save(self, content: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
-        Saves the content of a matrix as an HDF file in the bucket directory
-        and returns its SHA256 hash.
-
-        The matrix content will be saved in an HDF file format, where each row represents
+        The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
         in the bucket directory using a unique filename. The SHA256 hash of the NumPy array
         is returned as a string.
@@ -208,7 +206,7 @@ class MatrixContentRepository:
                 or a NumPy array of type np.float64.
 
         Returns:
-            The SHA256 hash of the saved HDF file.
+            The SHA256 hash of the saved matrix file.
 
         Raises:
             ValueError:
@@ -259,7 +257,7 @@ class MatrixContentRepository:
             matrix_hash: The SHA256 hash of the matrix.
 
         Raises:
-            FileNotFoundError: If the HDF file does not exist.
+            FileNotFoundError: If the matrix file does not exist.
 
         Note:
             This method also deletes any abandoned lock file.
