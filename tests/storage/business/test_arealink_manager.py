@@ -25,7 +25,7 @@ from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkDTO, LinkManager
-from antarest.study.model import STUDY_VERSION_8_8, Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
+from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -106,7 +106,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         id=study_id,
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
-        version=str(study_version),
+        version="820",
     )
     db.session.add(study)
     db.session.commit()
@@ -160,7 +160,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         id=variant_id,
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
-        version=str(study_version),
+        version="820",
     )
     variant_study_service.get_raw.return_value = empty_study
     area_manager.create_area(
@@ -256,6 +256,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
                     },
                 },
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
