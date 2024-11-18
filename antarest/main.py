@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import argparse
-import asyncio
 import copy
 import logging
 from contextlib import asynccontextmanager
