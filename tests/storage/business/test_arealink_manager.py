@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -79,9 +80,7 @@ def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
     """
     matrix_path = tmp_path.joinpath("matrix-store")
     matrix_path.mkdir()
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrix_path,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
