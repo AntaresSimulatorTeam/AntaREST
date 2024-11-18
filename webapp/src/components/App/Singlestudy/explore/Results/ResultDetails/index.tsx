@@ -188,11 +188,6 @@ function ResultDetails() {
       return [];
     }
 
-    const columns =
-      filteredColHeaders?.length > 0
-        ? filteredColHeaders
-        : matrixRes.data.columns;
-
     return groupResultColumns([
       {
         id: "date",
@@ -200,7 +195,7 @@ function ResultDetails() {
         type: Column.DateTime,
         editable: false,
       },
-      ...generateResultColumns(columns),
+      ...generateResultColumns(filteredColHeaders),
     ]);
   }, [matrixRes.data, filteredColHeaders]);
 
@@ -220,6 +215,8 @@ function ResultDetails() {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+
+  console.log("filteredColHeaders", filteredColHeaders);
 
   return (
     <SplitView id="results" sizes={[15, 85]}>
@@ -310,14 +307,23 @@ function ResultDetails() {
               )}
               ifFulfilled={([, matrix]) =>
                 matrix && (
-                  <MatrixGrid
-                    key={`grid-${filteredColHeaders.length}`}
-                    data={matrix.data}
-                    rows={matrix.data.length}
-                    columns={resultColumns}
-                    dateTime={dateTime}
-                    readOnly
-                  />
+                  <>
+                    {filteredColHeaders.length === 0 ? (
+                      <EmptyView
+                        title={t("study.results.noData")}
+                        icon={GridOffIcon}
+                      />
+                    ) : (
+                      <MatrixGrid
+                        key={`grid-${filteredColHeaders.length}`}
+                        data={matrix.data}
+                        rows={matrix.data.length}
+                        columns={resultColumns}
+                        dateTime={dateTime}
+                        readOnly
+                      />
+                    )}
+                  </>
                 )
               }
               ifRejected={(err) => (
