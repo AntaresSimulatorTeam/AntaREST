@@ -14,7 +14,6 @@ import logging
 from functools import partial
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from antarest.core.config import InternalMatrixFormat
@@ -22,17 +21,13 @@ from antarest.core.config import InternalMatrixFormat
 logger = logging.getLogger(__name__)
 
 
-def migrate_matrix(matrix_path: Path, format: InternalMatrixFormat) -> None:
-    new_path = matrix_path.parent.joinpath(matrix_path.stem + f".{format.value}")
-    data = format.load_matrix(matrix_path)
+def migrate_matrix(matrix_path: Path, matrix_format: InternalMatrixFormat) -> None:
+    new_path = matrix_path.parent.joinpath(matrix_path.stem + f".{matrix_format.value}")
+    old_format = InternalMatrixFormat(matrix_path.suffix[1:])  # remove the "."
+    data = old_format.load_matrix(matrix_path)
     data = data.reshape((1, 0)) if data.size == 0 else data
     df = pd.DataFrame(data=data)
-    format.save_matrix(df, new_path)
-    old_lock_path = matrix_path.with_suffix(f"{matrix_path.suffix}.lock")
-    if old_lock_path.exists():
-        new_lock_path = new_path.with_suffix(f".{format.value}.lock")
-        new_lock_path.touch()
-        old_lock_path.rename(new_lock_path)
+    matrix_format.save_matrix(df, new_path)
     matrix_path.unlink()
 
 
@@ -48,7 +43,7 @@ def migrate_matrixstore(matrix_store_path: Path, format: InternalMatrixFormat) -
         import multiprocessing
         from multiprocessing import Pool
 
-        migrate_with_format = partial(migrate_matrix, format=format)
+        migrate_with_format = partial(migrate_matrix, matrix_format=format)
         with Pool(processes=multiprocessing.cpu_count()) as pool:
             pool.map(migrate_with_format, matrices)
 
