@@ -23,7 +23,6 @@ from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.config import InternalMatrixFormat
-from antarest.core.exceptions import MatrixNotFound
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
 
@@ -170,8 +169,9 @@ class MatrixContentRepository:
                 storage_format = internal_format
                 break
         if not storage_format:
-            raise MatrixNotFound(path=str(matrix_path.with_suffix("")))
+            raise FileNotFoundError(str(matrix_path.with_suffix("")))
         matrix = storage_format.load_matrix(matrix_path)
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         data = matrix.tolist()
         index = list(range(matrix.shape[0]))
         columns = list(range(matrix.shape[1]))

@@ -47,8 +47,3 @@ def matrix_service_fixture(matrix_repo, dataset_repo, content_repo) -> MatrixSer
         config=unittest.mock.Mock(),
         user_service=unittest.mock.Mock(),
     )
-
-
-@pytest.fixture(name="matrix_content_repo")
-def matrix_content_repo_fixture(tmp_path) -> MatrixContentRepository:
-    yield MatrixContentRepository(bucket_dir=tmp_path.joinpath("matrix-store"), format=DEFAULT_INTERNAL_FORMAT)

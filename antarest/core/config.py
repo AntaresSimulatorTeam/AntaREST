@@ -56,7 +56,7 @@ class InternalMatrixFormat(StrEnum):
         elif self == InternalMatrixFormat.HDF:
             dataframe.to_hdf(str(path), key="data")
         elif self == InternalMatrixFormat.PARQUET:
-            dataframe.to_parquet(path)
+            dataframe.to_parquet(path, compression=None)
         else:
             raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
