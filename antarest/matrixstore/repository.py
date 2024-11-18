@@ -229,7 +229,9 @@ class MatrixContentRepository:
             # Avoid having to save the matrix again (that's the whole point of using a hash).
             return matrix_hash
 
-        lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
+        lock_file = matrix_path.parent.joinpath(
+            f"{matrix_hash}.tsv.lock"
+        )  # use tsv lock to stay consistent with old data
         for internal_format in InternalMatrixFormat:
             matrix_in_another_format_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_in_another_format_path.exists():
@@ -280,5 +282,5 @@ class MatrixContentRepository:
 
         # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
         # Abandoned lock files are deleted here to maintain consistent behavior.
-        lock_file = matrix_path.with_suffix(".tsv.lock")
+        lock_file = matrix_path.parent.joinpath(f"{matrix_hash}.tsv.lock")
         lock_file.unlink(missing_ok=True)
