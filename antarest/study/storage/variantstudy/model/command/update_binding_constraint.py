@@ -184,7 +184,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        props = create_binding_constraint_config(study_version, **self.model_dump())
+        props = create_binding_constraint_config(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
         updated_cfg = binding_constraints[index]
@@ -210,7 +210,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             if key in matrices:
                 json_command[key] = matrix_service.get_matrix_id(json_command[key])
 
-        return CommandDTO(action=self.command_name.value, args=json_command, version=self.version)
+        return CommandDTO(
+            action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
+        )
 
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)

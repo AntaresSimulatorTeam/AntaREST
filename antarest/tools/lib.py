@@ -38,7 +38,7 @@ from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_extractor import VariantCommandsExtractor
 from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 
@@ -273,10 +273,11 @@ def generate_diff(
             )
     stopwatch.log_elapsed(lambda x: logger.info(f"Variant input matrix copied in {x}s"))
 
+    study_version = empty_study.config.version
     extractor = VariantCommandsExtractor(local_matrix_service, patch_service=PatchService())
     diff_commands = extractor.diff(
-        base=parse_commands(base_command_file),
-        variant=parse_commands(variant_command_file),
+        base=parse_commands(base_command_file, study_version),
+        variant=parse_commands(variant_command_file, study_version),
         empty_study=empty_study,
     )
 
@@ -293,14 +294,16 @@ def generate_diff(
             os.unlink(matrices_dir / matrix_file)
 
 
-def parse_commands(file: Path) -> List[CommandDTO]:
+def parse_commands(file: Path, study_version: StudyVersion) -> List[CommandDTO]:
     stopwatch = StopWatch()
     logger.info("Parsing commands script")
     with open(file, "r") as fh:
         json_commands = json.load(fh)
     stopwatch.log_elapsed(lambda x: logger.info(f"Script file read in {x}s"))
 
-    commands: List[CommandDTO] = [CommandDTO(**command) for command in json_commands]
+    commands: List[CommandDTO] = [
+        CommandDTO.model_validate({"study_version": study_version, **command}) for command in json_commands
+    ]
     stopwatch.log_elapsed(lambda x: logger.info(f"Script commands parsed in {x}s"))
 
     return commands
@@ -351,5 +354,5 @@ def generate_study(
         matrix_dir.mkdir()
     if not command_file.exists():
         raise FileNotFoundError(f"Missing {COMMAND_FILE}")
-    commands = parse_commands(command_file)
+    commands = parse_commands(command_file, study_version)
     return generator.apply_commands(commands, matrix_dir)

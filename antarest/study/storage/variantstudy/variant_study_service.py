@@ -21,6 +21,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import humanize
+from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from filelock import FileLock
 
@@ -64,6 +65,7 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
+    CommandDTOAPI,
     CommandResultDTO,
     GenerationResultInfoDTO,
     VariantTreeDTO,
@@ -104,7 +106,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
 
-    def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTO:
+    def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTOAPI:
         """
         Get command lists
         Args:
@@ -117,11 +119,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         try:
             index = [command.id for command in study.commands].index(command_id)  # Maybe add Try catch for this
-            return t.cast(CommandDTO, study.commands[index].to_dto())
+            return t.cast(CommandDTOAPI, study.commands[index].to_dto().to_api())
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
-    def get_commands(self, study_id: str, params: RequestParameters) -> t.List[CommandDTO]:
+    def get_commands(self, study_id: str, params: RequestParameters) -> t.List[CommandDTOAPI]:
         """
         Get command lists
         Args:
@@ -130,7 +132,17 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: List of commands
         """
         study = self._get_variant_study(study_id, params)
-        return [command.to_dto() for command in study.commands]
+        return [command.to_dto().to_api() for command in study.commands]
+
+    def convert_commands(
+        self, study_id: str, api_commands: t.List[CommandDTOAPI], params: RequestParameters
+    ) -> t.List[CommandDTO]:
+        study = self._get_variant_study(study_id, params, raw_study_accepted=True)
+        study_version = StudyVersion.parse(study.version)
+        return [
+            CommandDTO.model_validate({"study_version": study_version, **command.model_dump(mode="json")})
+            for command in api_commands
+        ]
 
     def _check_commands_validity(self, study_id: str, commands: t.List[CommandDTO]) -> t.List[ICommand]:
         command_objects: t.List[ICommand] = []
@@ -196,6 +208,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 args=to_json_string(command.args),
                 index=(first_index + i),
                 version=command.version,
+                study_version=str(command.study_version),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -230,7 +243,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         validated_commands = transform_command_to_dto(command_objs, commands)
         # noinspection PyArgumentList
         study.commands = [
-            CommandBlock(command=command.action, args=to_json_string(command.args), index=i, version=command.version)
+            CommandBlock(
+                command=command.action,
+                args=to_json_string(command.args),
+                index=i,
+                version=command.version,
+                study_version=str(command.study_version),
+            )
             for i, command in enumerate(validated_commands)
         ]
         self.invalidate_cache(study, invalidate_self_snapshot=True)
@@ -873,6 +892,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 args=command.args,
                 index=command.index,
                 version=command.version,
+                study_version=str(command.study_version),
             )
             for command in src_meta.commands
         ]

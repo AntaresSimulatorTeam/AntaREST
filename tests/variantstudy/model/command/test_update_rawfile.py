@@ -31,6 +31,7 @@ def test_update_rawfile(empty_study: FileStudy, command_context: CommandContext)
         target="settings/resources/study",
         b64Data=data,
         command_context=command_context,
+        study_version=empty_study.config.version,
     )
 
     reverted_commands = CommandReverter().revert(command, [], empty_study)
@@ -40,6 +41,7 @@ def test_update_rawfile(empty_study: FileStudy, command_context: CommandContext)
         target="settings/resources/study",
         b64Data="",
         command_context=command_context,
+        study_version=empty_study.config.version,
     )
     reverted_commands = CommandReverter().revert(command, [alt_command], empty_study)
     assert cast(UpdateRawFile, reverted_commands[0]).b64Data == ""

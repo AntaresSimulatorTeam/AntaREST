@@ -18,9 +18,11 @@ from zipfile import ZipFile
 
 import numpy as np
 import numpy.typing as npt
+from antares.study.version import StudyVersion
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.study.model import STUDY_VERSION_7_2
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
@@ -71,10 +73,11 @@ def generate_study_with_server(
 
 def test_variant_manager(app: FastAPI, tmp_path: str) -> None:
     client = TestClient(app, raise_server_exceptions=False)
-    commands = parse_commands(ASSETS_DIR / "commands1.json")
+    study_version = STUDY_VERSION_7_2
+    commands = parse_commands(ASSETS_DIR / "commands1.json", study_version)
     matrix_dir = tmp_path / "empty_matrix_store"
     matrix_dir.mkdir(parents=True, exist_ok=True)
-    res, study_id = generate_study_with_server(client, "test", "720", commands, matrix_dir)
+    res, study_id = generate_study_with_server(client, "test", f"{study_version:ddd}", commands, matrix_dir)
     assert res is not None and res.success
 
 
@@ -91,9 +94,10 @@ def test_parse_commands(tmp_path: str, app: FastAPI) -> None:
     client = TestClient(app, raise_server_exceptions=False)
 
     extract_commands(study_path, output_dir)
-    commands = [CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "all areas"})] + parse_commands(
-        output_dir / COMMAND_FILE
-    )
+    study_version = StudyVersion.parse(version)
+    commands = [
+        CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "all areas"}, study_version=study_version)
+    ] + parse_commands(output_dir / COMMAND_FILE, study_version)
     res, study_id = generate_study_with_server(client, name, version, commands, output_dir / MATRIX_STORE_DIR)
     assert res is not None and res.success
     generated_study_path = tmp_path / "internal_workspace" / study_id / "snapshot"

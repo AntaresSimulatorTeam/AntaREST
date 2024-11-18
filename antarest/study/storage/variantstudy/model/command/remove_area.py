@@ -287,6 +287,7 @@ class RemoveArea(ICommand):
             args={
                 "id": self.id,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

@@ -12,11 +12,13 @@
 
 import configparser
 import re
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
@@ -42,11 +44,13 @@ class TestCreateCluster:
             command_context=command_context,
             prepro=prepro,
             modulation=modulation,
+            study_version=STUDY_VERSION_8_8,
         )
 
         # Check the command metadata
         assert cl.command_name == CommandName.CREATE_THERMAL_CLUSTER
         assert cl.version == 1
+        assert cl.study_version == STUDY_VERSION_8_8
         assert cl.command_context is command_context
 
         # Check the command data
@@ -60,14 +64,32 @@ class TestCreateCluster:
 
     def test_validate_cluster_name(self, command_context: CommandContext):
         with pytest.raises(ValidationError, match="cluster_name"):
-            CreateCluster(area_id="fr", cluster_name="%", command_context=command_context, parameters={})
+            CreateCluster(
+                area_id="fr",
+                cluster_name="%",
+                command_context=command_context,
+                parameters={},
+                study_version=STUDY_VERSION_8_8,
+            )
 
     def test_validate_prepro(self, command_context: CommandContext):
-        cl = CreateCluster(area_id="fr", cluster_name="C1", command_context=command_context, parameters={})
+        cl = CreateCluster(
+            area_id="fr",
+            cluster_name="C1",
+            command_context=command_context,
+            parameters={},
+            study_version=STUDY_VERSION_8_8,
+        )
         assert cl.prepro == command_context.generator_matrix_constants.get_thermal_prepro_data()
 
     def test_validate_modulation(self, command_context: CommandContext):
-        cl = CreateCluster(area_id="fr", cluster_name="C1", command_context=command_context, parameters={})
+        cl = CreateCluster(
+            area_id="fr",
+            cluster_name="C1",
+            command_context=command_context,
+            parameters={},
+            study_version=STUDY_VERSION_8_8,
+        )
         assert cl.modulation == command_context.generator_matrix_constants.get_thermal_prepro_modulation()
 
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
@@ -77,7 +99,9 @@ class TestCreateCluster:
         cluster_name = "Cluster-1"
         cluster_id = transform_name_to_id(cluster_name, lower=True)
 
-        CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
+        CreateArea(area_name=area_name, command_context=command_context, study_version=STUDY_VERSION_8_8).apply(
+            empty_study
+        )
 
         parameters = {
             "group": "Other",
@@ -96,6 +120,7 @@ class TestCreateCluster:
             prepro=prepro,
             modulation=modulation,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         )
 
         output = command.apply(empty_study)
@@ -125,6 +150,7 @@ class TestCreateCluster:
             prepro=prepro,
             modulation=modulation,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ).apply(empty_study)
         assert output.status is False
         assert re.match(
@@ -140,6 +166,7 @@ class TestCreateCluster:
             prepro=prepro,
             modulation=modulation,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ).apply(empty_study)
         assert output.status is False
         assert re.match(
@@ -158,6 +185,7 @@ class TestCreateCluster:
             command_context=command_context,
             prepro=prepro,
             modulation=modulation,
+            study_version=STUDY_VERSION_8_8,
         )
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
@@ -173,6 +201,7 @@ class TestCreateCluster:
             },
             "id": None,
             "version": 1,
+            "study_version": STUDY_VERSION_8_8,
         }
 
 
@@ -186,6 +215,7 @@ def test_match(command_context: CommandContext):
         prepro=prepro,
         modulation=modulation,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_match = CreateCluster(
         area_id="foo",
@@ -194,6 +224,7 @@ def test_match(command_context: CommandContext):
         prepro=prepro,
         modulation=modulation,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_not_match = CreateCluster(
         area_id="foo",
@@ -202,8 +233,11 @@ def test_match(command_context: CommandContext):
         prepro=prepro,
         modulation=modulation,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
-    other_other = RemoveCluster(area_id="id", cluster_id="id", command_context=command_context)
+    other_other = RemoveCluster(
+        area_id="id", cluster_id="id", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -226,13 +260,12 @@ def test_revert(command_context: CommandContext):
         cluster_name="foo",
         parameters={},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
-    assert CommandReverter().revert(base, [], None) == [
-        RemoveCluster(
-            area_id="foo",
-            cluster_id="foo",
-            command_context=command_context,
-        )
+    file_study = Mock(spec=FileStudy)
+    file_study.config.version = STUDY_VERSION_8_8
+    assert CommandReverter().revert(base, [], file_study) == [
+        RemoveCluster(area_id="foo", cluster_id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
     ]
 
 
@@ -246,6 +279,7 @@ def test_create_diff(command_context: CommandContext):
         prepro=prepro_a,
         modulation=modulation_a,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
 
     prepro_b = GEN.random((365, 6)).tolist()
@@ -257,6 +291,7 @@ def test_create_diff(command_context: CommandContext):
         prepro=prepro_b,
         modulation=modulation_b,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
 
     assert base.create_diff(other_match) == [
@@ -264,15 +299,18 @@ def test_create_diff(command_context: CommandContext):
             target="input/thermal/prepro/foo/foo/data",
             matrix=prepro_b,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ),
         ReplaceMatrix(
             target="input/thermal/prepro/foo/foo/modulation",
             matrix=modulation_b,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ),
         UpdateConfig(
             target="input/thermal/clusters/foo/list/foo",
             data={"nominalcapacity": "2400"},
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ),
     ]

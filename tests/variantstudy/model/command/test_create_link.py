@@ -10,11 +10,15 @@
 #
 # This file is part of the Antares project.
 
+import configparser
+from unittest.mock import Mock
+
 import numpy as np
 import pytest
 from pydantic import ValidationError
 
 from antarest.study.business.link_management import LinkInternal
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -35,17 +39,11 @@ class TestCreateLink:
         area2 = "Area2"
 
         CreateArea.model_validate(
-            {
-                "area_name": area1,
-                "command_context": command_context,
-            }
+            {"area_name": area1, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
         ).apply(empty_study)
 
         CreateArea.model_validate(
-            {
-                "area_name": area2,
-                "command_context": command_context,
-            }
+            {"area_name": area2, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
         ).apply(empty_study)
 
         with pytest.raises(ValidationError):
@@ -55,9 +53,11 @@ class TestCreateLink:
                 parameters={},
                 command_context=command_context,
                 series=[[0]],
+                study_version=STUDY_VERSION_8_8,
             )
 
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+        study_version = empty_study.config.version
         study_path = empty_study.config.study_path
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
@@ -69,24 +69,15 @@ class TestCreateLink:
         area3_id = transform_name_to_id(area3)
 
         CreateArea.model_validate(
-            {
-                "area_name": area1,
-                "command_context": command_context,
-            }
+            {"area_name": area1, "command_context": command_context, "study_version": study_version}
         ).apply(empty_study)
 
         CreateArea.model_validate(
-            {
-                "area_name": area2,
-                "command_context": command_context,
-            }
+            {"area_name": area2, "command_context": command_context, "study_version": study_version}
         ).apply(empty_study)
 
         CreateArea.model_validate(
-            {
-                "area_name": area3,
-                "command_context": command_context,
-            }
+            {"area_name": area3, "command_context": command_context, "study_version": study_version}
         ).apply(empty_study)
 
         create_link_command: ICommand = CreateLink(
@@ -95,6 +86,7 @@ class TestCreateLink:
             parameters={},
             command_context=command_context,
             series=[[0]],
+            study_version=study_version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
@@ -125,6 +117,7 @@ class TestCreateLink:
             parameters={},
             command_context=command_context,
             series=[[0]],
+            study_version=study_version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
@@ -145,6 +138,7 @@ class TestCreateLink:
                 "parameters": {},
                 "series": [[0]],
                 "command_context": command_context,
+                "study_version": study_version,
             }
         ).apply(study_data=empty_study)
 
@@ -173,6 +167,7 @@ class TestCreateLink:
                 "parameters": parameters,
                 "series": [[0]],
                 "command_context": command_context,
+                "study_version": study_version,
             }
         )
         output = create_link_command.apply(
@@ -208,15 +203,22 @@ class TestCreateLink:
             parameters={},
             series=[[0]],
             command_context=command_context,
+            study_version=study_version,
         ).apply(empty_study)
         assert not output.status
 
 
 def test_match(command_context: CommandContext):
-    base = CreateLink(area1="foo", area2="bar", series=[[0]], command_context=command_context)
-    other_match = CreateLink(area1="foo", area2="bar", series=[[0]], command_context=command_context)
-    other_not_match = CreateLink(area1="foo", area2="baz", command_context=command_context)
-    other_other = RemoveArea(id="id", command_context=command_context)
+    base = CreateLink(
+        area1="foo", area2="bar", series=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_match = CreateLink(
+        area1="foo", area2="bar", series=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_not_match = CreateLink(
+        area1="foo", area2="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -227,23 +229,20 @@ def test_match(command_context: CommandContext):
 
 
 def test_revert(command_context: CommandContext):
-    base = CreateLink(area1="foo", area2="bar", series=[[0]], command_context=command_context)
-    assert CommandReverter().revert(base, [], None) == [
-        RemoveLink(
-            area1="foo",
-            area2="bar",
-            command_context=command_context,
-        )
+    base = CreateLink(
+        area1="foo", area2="bar", series=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    file_study = Mock(spec=FileStudy)
+    file_study.config.version = STUDY_VERSION_8_8
+    assert CommandReverter().revert(base, [], file_study) == [
+        RemoveLink(area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
     ]
 
 
 def test_create_diff(command_context: CommandContext):
     series_a = np.random.rand(8760, 8).tolist()
     base = CreateLink(
-        area1="foo",
-        area2="bar",
-        series=series_a,
-        command_context=command_context,
+        area1="foo", area2="bar", series=series_a, command_context=command_context, study_version=STUDY_VERSION_8_8
     )
 
     series_b = np.random.rand(8760, 8).tolist()
@@ -253,6 +252,7 @@ def test_create_diff(command_context: CommandContext):
         parameters={"hurdles_cost": "true"},
         series=series_b,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
 
     assert base.create_diff(other_match) == [
@@ -262,10 +262,12 @@ def test_create_diff(command_context: CommandContext):
                 by_alias=True, exclude_none=True, exclude={"area1", "area2"}
             ),
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ),
         ReplaceMatrix(
             target="@links_series/bar/foo",
             matrix=series_b,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ),
     ]

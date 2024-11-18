@@ -96,6 +96,7 @@ class ReplaceMatrix(ICommand):
                 "target": self.target,
                 "matrix": strip_matrix_protocol(self.matrix),
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
