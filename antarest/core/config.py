@@ -40,19 +40,13 @@ class InternalMatrixFormat(StrEnum):
     PARQUET = "parquet"
 
     def load_matrix(self, path: Path) -> npt.NDArray[np.float64]:
-        if self == InternalMatrixFormat.TSV:
+        if self == InternalMatrixFormat.TSV or path.stat().st_size == 0:
             return np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2)
         elif self == InternalMatrixFormat.HDF:
-            if path.stat().st_size == 0:
-                return [[]]  # todo: change to return np array
-            else:
-                df = cast(pd.DataFrame, pd.read_hdf(path))
-                return df.to_numpy(dtype=np.float64)
+            df = cast(pd.DataFrame, pd.read_hdf(path))
+            return df.to_numpy(dtype=np.float64)
         elif self == InternalMatrixFormat.PARQUET:
-            if path.stat().st_size == 0:
-                return [[]]  # todo: change to return np array
-            else:
-                return pd.read_parquet(path).to_numpy(dtype=np.float64)
+            return pd.read_parquet(path).to_numpy(dtype=np.float64)
         else:
             raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
