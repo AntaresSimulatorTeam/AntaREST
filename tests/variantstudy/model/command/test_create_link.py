@@ -10,19 +10,17 @@
 #
 # This file is part of the Antares project.
 
-import configparser
-
 import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.business.link_management import LinkInternal
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_link import CreateLink, LinkProperties
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
@@ -34,8 +32,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 class TestCreateLink:
     def test_validation(self, empty_study: FileStudy, command_context: CommandContext):
         area1 = "Area1"
-        area1_id = transform_name_to_id(area1)
-
         area2 = "Area2"
 
         CreateArea.model_validate(
@@ -54,8 +50,8 @@ class TestCreateLink:
 
         with pytest.raises(ValidationError):
             CreateLink(
-                area1=area1_id,
-                area2=area1_id,
+                area1=area1,
+                area2=area1,
                 parameters={},
                 command_context=command_context,
                 series=[[0]],
@@ -110,19 +106,17 @@ class TestCreateLink:
 
         link = IniReader()
         link_data = link.read(study_path / "input" / "links" / area1_id / "properties.ini")
-        assert link_data[area2_id]["hurdles-cost"] == LinkProperties.HURDLES_COST
-        assert link_data[area2_id]["loop-flow"] == LinkProperties.LOOP_FLOW
-        assert link_data[area2_id]["use-phase-shifter"] == LinkProperties.USE_PHASE_SHIFTER
-        assert str(link_data[area2_id]["transmission-capacities"]) == LinkProperties.TRANSMISSION_CAPACITIES
-        assert str(link_data[area2_id]["asset-type"]) == LinkProperties.ASSET_TYPE
-        assert str(link_data[area2_id]["link-style"]) == LinkProperties.LINK_STYLE
-        assert int(link_data[area2_id]["link-width"]) == LinkProperties.LINK_WIDTH
-        assert int(link_data[area2_id]["colorr"]) == LinkProperties.COLORR
-        assert int(link_data[area2_id]["colorg"]) == LinkProperties.COLORG
-        assert int(link_data[area2_id]["colorb"]) == LinkProperties.COLORB
-        assert link_data[area2_id]["display-comments"] == LinkProperties.DISPLAY_COMMENTS
-        assert str(link_data[area2_id]["filter-synthesis"]) == FilteringOptions.FILTER_SYNTHESIS
-        assert str(link_data[area2_id]["filter-year-by-year"]) == FilteringOptions.FILTER_YEAR_BY_YEAR
+        assert link_data[area2_id]["hurdles-cost"] is False
+        assert link_data[area2_id]["loop-flow"] is False
+        assert link_data[area2_id]["use-phase-shifter"] is False
+        assert link_data[area2_id]["transmission-capacities"] == "enabled"
+        assert link_data[area2_id]["asset-type"] == "ac"
+        assert link_data[area2_id]["link-style"] == "plain"
+        assert int(link_data[area2_id]["link-width"]) == 1
+        assert int(link_data[area2_id]["colorr"]) == 112
+        assert int(link_data[area2_id]["colorg"]) == 112
+        assert int(link_data[area2_id]["colorb"]) == 112
+        assert link_data[area2_id]["display-comments"] is True
 
         empty_study.config.version = 820
         create_link_command: ICommand = CreateLink(
@@ -157,17 +151,17 @@ class TestCreateLink:
         assert not output.status
 
         parameters = {
-            "hurdles-cost": "true",
-            "loop-flow": "true",
-            "use-phase-shifter": "true",
-            "transmission-capacities": "disabled",
+            "hurdles-cost": True,
+            "loop-flow": True,
+            "use-phase-shifter": True,
+            "transmission-capacities": "ignore",
             "asset-type": "dc",
             "link-style": "other",
             "link-width": 12,
             "colorr": 120,
             "colorg": 120,
             "colorb": 120,
-            "display-comments": "true",
+            "display-comments": True,
             "filter-synthesis": "hourly",
             "filter-year-by-year": "hourly",
         }
@@ -189,21 +183,19 @@ class TestCreateLink:
 
         assert (study_path / "input" / "links" / area1_id / f"{area3_id}.txt.link").exists()
 
-        link = configparser.ConfigParser()
-        link.read(study_path / "input" / "links" / area1_id / "properties.ini")
-        assert str(link[area3_id]["hurdles-cost"]) == parameters["hurdles-cost"]
-        assert str(link[area3_id]["loop-flow"]) == parameters["loop-flow"]
-        assert str(link[area3_id]["use-phase-shifter"]) == parameters["use-phase-shifter"]
-        assert str(link[area3_id]["transmission-capacities"]) == parameters["transmission-capacities"]
-        assert str(link[area3_id]["asset-type"]) == parameters["asset-type"]
-        assert str(link[area3_id]["link-style"]) == parameters["link-style"]
-        assert int(link[area3_id]["link-width"]) == parameters["link-width"]
-        assert int(link[area3_id]["colorr"]) == parameters["colorr"]
-        assert int(link[area3_id]["colorg"]) == parameters["colorg"]
-        assert int(link[area3_id]["colorb"]) == parameters["colorb"]
-        assert str(link[area3_id]["display-comments"]) == parameters["display-comments"]
-        assert str(link[area3_id]["filter-synthesis"]) == parameters["filter-synthesis"]
-        assert str(link[area3_id]["filter-year-by-year"]) == parameters["filter-year-by-year"]
+        link = IniReader()
+        link_data = link.read(study_path / "input" / "links" / area1_id / "properties.ini")
+        assert link_data[area3_id]["hurdles-cost"] == parameters["hurdles-cost"]
+        assert link_data[area3_id]["loop-flow"] == parameters["loop-flow"]
+        assert link_data[area3_id]["use-phase-shifter"] == parameters["use-phase-shifter"]
+        assert link_data[area3_id]["transmission-capacities"] == parameters["transmission-capacities"]
+        assert link_data[area3_id]["asset-type"] == parameters["asset-type"]
+        assert link_data[area3_id]["link-style"] == parameters["link-style"]
+        assert int(link_data[area3_id]["link-width"]) == parameters["link-width"]
+        assert int(link_data[area3_id]["colorr"]) == parameters["colorr"]
+        assert int(link_data[area3_id]["colorg"]) == parameters["colorg"]
+        assert int(link_data[area3_id]["colorb"]) == parameters["colorb"]
+        assert link_data[area3_id]["display-comments"] == parameters["display-comments"]
 
         output = create_link_command.apply(
             study_data=empty_study,
@@ -258,7 +250,7 @@ def test_create_diff(command_context: CommandContext):
     other_match = CreateLink(
         area1="foo",
         area2="bar",
-        parameters={"hurdles-cost": "true"},
+        parameters={"hurdles_cost": "true"},
         series=series_b,
         command_context=command_context,
     )
@@ -266,7 +258,9 @@ def test_create_diff(command_context: CommandContext):
     assert base.create_diff(other_match) == [
         UpdateConfig(
             target="input/links/bar/properties/foo",
-            data=CreateLink.generate_link_properties({"hurdles-cost": "true"}),
+            data=LinkInternal.model_validate({"area1": "bar", "area2": "foo", "hurdles_cost": "true"}).model_dump(
+                by_alias=True, exclude_none=True, exclude={"area1", "area2"}
+            ),
             command_context=command_context,
         ),
         ReplaceMatrix(

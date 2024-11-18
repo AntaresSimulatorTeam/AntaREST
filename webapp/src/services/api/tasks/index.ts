@@ -16,7 +16,7 @@ import client from "../client";
 import type { GetTaskParams, GetTasksParams, TaskDTO } from "./types";
 
 export async function getTasks(params: GetTasksParams) {
-  const res = await client.post<TaskDTO[]>("/v1/tasks", {
+  const { data } = await client.post<TaskDTO[]>("/v1/tasks", {
     status: params.status,
     type: params.type,
     name: params.name,
@@ -27,13 +27,13 @@ export async function getTasks(params: GetTasksParams) {
     to_completion_date_utc: params.toCompletionDateUtc,
   });
 
-  return res.data;
+  return data;
 }
 
 export async function getTask(params: GetTaskParams) {
   const { id, ...queryParams } = params;
 
-  const res = await client.get<TaskDTO>(`/v1/tasks/${id}`, {
+  const { data } = await client.get<TaskDTO>(`/v1/tasks/${id}`, {
     params: {
       wait_for_completion: queryParams.waitForCompletion,
       with_logs: queryParams.withLogs,
@@ -41,5 +41,5 @@ export async function getTask(params: GetTaskParams) {
     },
   });
 
-  return res.data;
+  return data;
 }
