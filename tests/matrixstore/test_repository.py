@@ -236,15 +236,6 @@ class TestMatrixContentRepository:
             other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.{matrix_format}")
             assert set(matrix_files) == {matrix_file, other_matrix_file}
 
-    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet"])
-    def test_save_and_retrieve_empty_matrix(self, tmp_path: str, matrix_format: str) -> None:
-        """
-        Test saving and retrieving empty matrices in different formats. In all cases the file must be empty.
-        """
-        matrix_format = InternalMatrixFormat(matrix_format)
-        with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
-            bucket_dir = matrix_content_repo.bucket_dir
-
             # Test with an empty matrix
             empty_array: ArrayData = []
             matrix_hash = matrix_content_repo.save(empty_array)
@@ -264,7 +255,7 @@ class TestMatrixContentRepository:
             assert retrieved_matrix.data == [[]]
 
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet"])
-    def test_get_and_exists(self, tmp_path: str, matrix_format: str) -> None:
+    def test_get_exists_and_delete(self, tmp_path: str, matrix_format: str) -> None:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
         """
