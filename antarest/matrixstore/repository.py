@@ -22,6 +22,8 @@ from numpy import typing as npt
 from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
+from antarest.core.config import InternalMatrixFormat
+from antarest.core.exceptions import MatrixNotFound
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
 
@@ -146,9 +148,10 @@ class MatrixContentRepository:
         bucket_dir: The directory path where the matrices are stored.
     """
 
-    def __init__(self, bucket_dir: Path) -> None:
+    def __init__(self, bucket_dir: Path, format: InternalMatrixFormat) -> None:
         self.bucket_dir = bucket_dir
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
+        self.format = format
 
     def get(self, matrix_hash: str) -> MatrixContent:
         """
@@ -160,17 +163,17 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
-
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
-        if matrix_file.stat().st_size == 0:  # hdf5 doesn't support reading empty files.
-            data: t.List[t.List[int]] = [[]]
-            columns = []
-            index = [0]
-        else:
-            df = t.cast(pd.DataFrame, pd.read_hdf(matrix_file))
-            data = df.values.tolist()
-            index = list(range(df.shape[0]))
-            columns = list(range(df.shape[1]))
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_path.exists():
+                storage_format: InternalMatrixFormat = internal_format
+                break
+        if not storage_format:
+            raise MatrixNotFound(path=str(matrix_path.with_suffix("")))
+        matrix = storage_format.load_matrix(matrix_path)
+        data = matrix.tolist()
+        index = list(range(matrix.shape[0]))
+        columns = list(range(matrix.shape[1]))
         return MatrixContent.construct(data=data, columns=columns, index=index)
 
     def exists(self, matrix_hash: str) -> bool:
@@ -183,8 +186,11 @@ class MatrixContentRepository:
         Returns:
             `True` if the matrix exist else `None`.
         """
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
-        return matrix_file.exists()
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_path.exists():
+                return True
+        return False
 
     def save(self, content: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
@@ -220,17 +226,23 @@ class MatrixContentRepository:
         # for a non-mutable NumPy Array.
         matrix = content if isinstance(content, np.ndarray) else np.array(content, dtype=np.float64)
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
-        # Avoid having to save the matrix again (that's the whole point of using a hash).
-        if not matrix_file.exists():
-            # Ensure exclusive access to the matrix file between multiple processes (or threads).
-            lock_file = matrix_file.with_suffix(".hdf.lock")
-            with FileLock(lock_file, timeout=15):
-                if matrix.size == 0:
-                    matrix_file.touch()
-                else:
-                    df = pd.DataFrame(matrix)
-                    df.to_hdf(str(matrix_file), key="data")
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_path.exists():
+                # Avoid having to save the matrix again (that's the whole point of using a hash).
+                return matrix_hash
+
+        # If the matrix doesn't exist, we'll save it in the given format.
+        matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
+
+        # Ensure exclusive access to the matrix file between multiple processes (or threads).
+        lock_file = matrix_path.with_suffix(f".{self.format}.lock")
+        with FileLock(lock_file, timeout=15):
+            if matrix.size == 0:
+                matrix_path.touch()
+            else:
+                df = pd.DataFrame(matrix)
+                self.format.save_matrix(df, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
@@ -241,7 +253,7 @@ class MatrixContentRepository:
 
     def delete(self, matrix_hash: str) -> None:
         """
-        Deletes the HDF file containing the content of a matrix with the given SHA256 hash.
+        Deletes the matrix file containing the content of a matrix with the given SHA256 hash.
 
         Parameters:
             matrix_hash: The SHA256 hash of the matrix.
@@ -252,10 +264,11 @@ class MatrixContentRepository:
         Note:
             This method also deletes any abandoned lock file.
         """
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.hdf")
-        matrix_file.unlink()
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            matrix_path.unlink(missing_ok=True)
 
-        # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
-        # Abandoned lock files are deleted here to maintain consistent behavior.
-        lock_file = matrix_file.with_suffix(".hdf.lock")
-        lock_file.unlink(missing_ok=True)
+            # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
+            # Abandoned lock files are deleted here to maintain consistent behavior.
+            lock_file = matrix_path.with_suffix(f".{internal_format}.lock")
+            lock_file.unlink(missing_ok=True)

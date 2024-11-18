@@ -24,7 +24,7 @@ from antares.study.version import StudyVersion
 from httpx import Client
 
 from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.config import CacheConfig
+from antarest.core.config import CacheConfig, InternalMatrixFormat
 from antarest.core.serialization import from_json, to_json_string
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import StopWatch, get_local_path
@@ -45,6 +45,7 @@ from antarest.study.storage.variantstudy.variant_command_generator import Varian
 logger = logging.getLogger(__name__)
 COMMAND_FILE = "commands.json"
 MATRIX_STORE_DIR = "matrices"
+DEFAULT_INTERNAL_FORMAT = InternalMatrixFormat.TSV
 
 
 class IVariantGenerator(ABC):
@@ -141,9 +142,7 @@ class LocalVariantGenerator(IVariantGenerator):
 
     def apply_commands(self, commands: List[CommandDTO], matrices_dir: Path) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
-        matrix_content_repository = MatrixContentRepository(
-            bucket_dir=matrices_dir,
-        )
+        matrix_content_repository = MatrixContentRepository(bucket_dir=matrices_dir, format=DEFAULT_INTERNAL_FORMAT)
         matrix_service = SimpleMatrixService(
             matrix_content_repository=matrix_content_repository,
         )
@@ -184,27 +183,15 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
         commands_output_dir.mkdir(parents=True)
     matrices_dir = commands_output_dir / MATRIX_STORE_DIR
     matrices_dir.mkdir()
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrices_dir,
-    )
-    matrix_service = SimpleMatrixService(
-        matrix_content_repository=matrix_content_repository,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=matrices_dir, format=DEFAULT_INTERNAL_FORMAT)
+    matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     matrix_resolver = UriResolverService(matrix_service)
     cache = LocalCache(CacheConfig())
-    study_factory = StudyFactory(
-        matrix=matrix_service,
-        resolver=matrix_resolver,
-        cache=cache,
-    )
+    study_factory = StudyFactory(matrix=matrix_service, resolver=matrix_resolver, cache=cache)
 
     study = study_factory.create_from_fs(study_path, str(study_path), use_cache=False)
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrices_dir,
-    )
-    local_matrix_service = SimpleMatrixService(
-        matrix_content_repository=matrix_content_repository,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=matrices_dir, format=DEFAULT_INTERNAL_FORMAT)
+    local_matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     extractor = VariantCommandsExtractor(local_matrix_service, patch_service=PatchService())
     command_list = extractor.extract(study)
 
@@ -247,12 +234,8 @@ def generate_diff(
     study_id = "empty_base"
     path_study = output_dir / study_id
 
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrices_dir,
-    )
-    local_matrix_service = SimpleMatrixService(
-        matrix_content_repository=matrix_content_repository,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=matrices_dir, format=DEFAULT_INTERNAL_FORMAT)
+    local_matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     resolver = UriResolverService(matrix_service=local_matrix_service)
 
     cache = LocalCache()
