@@ -239,6 +239,7 @@ class MatrixContentRepository:
                     data = internal_format.load_matrix(matrix_in_another_format_path)
                     df = pd.DataFrame(data)
                     self.format.save_matrix(df, matrix_path)
+                    matrix_in_another_format_path.unlink()
                 return matrix_hash
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
