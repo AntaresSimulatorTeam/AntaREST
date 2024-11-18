@@ -16,11 +16,10 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Set, Union, cast
+from typing import List, Optional, Set, Union
 from zipfile import ZipFile
 
 import numpy as np
-import pandas as pd
 from antares.study.version import StudyVersion
 from httpx import Client
 
