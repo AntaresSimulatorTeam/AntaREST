@@ -139,7 +139,7 @@ class MatrixContentRepository:
 
     This class provides methods to get, check existence,
     save, and delete the content of matrices stored in a directory.
-    The matrices are stored as Hierarchical Data Format (HDF) files and
+    The matrices can be stored in various format (described in InternalMatrixFormat) and
     are accessed and modified using their SHA256 hash as their unique identifier.
 
     Attributes:
