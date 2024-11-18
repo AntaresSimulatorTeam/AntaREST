@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { mergeStudyTreeAndFolders } from "./StudyTree";
-import { StudyTreeNode, NonStudyFolder } from "./utils";
+import { mergeStudyTreeAndFolders } from ".";
+import { StudyTreeNode, NonStudyFolder } from "../utils";
 
 describe("mergeStudyTreeAndFolder", () => {
   test("should merge study tree and folder correctly", () => {
