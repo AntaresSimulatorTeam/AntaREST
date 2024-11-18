@@ -22,8 +22,9 @@ import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixBu
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
 import { clamp, equals } from "ramda";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, ChangeEvent } from "react";
 import { FilterListOff } from "@mui/icons-material";
+import { useDebouncedField } from "@/hooks/useDebouncedField";
 
 interface ColumnHeader {
   variable: string;
@@ -38,6 +39,7 @@ interface Filters {
   min: boolean;
   max: boolean;
   std: boolean;
+  values: boolean;
 }
 
 const defaultFilters = {
@@ -46,6 +48,7 @@ const defaultFilters = {
   min: true,
   max: true,
   std: true,
+  values: true,
 } as const;
 
 interface Props {
@@ -59,7 +62,7 @@ interface Props {
   studyId: string;
   path: string;
   colHeaders: string[][];
-  onfilteredColHeadersChange: (colHeaders: string[][]) => void;
+  onColHeadersChange: (colHeaders: string[][]) => void;
 }
 
 function ResultFilters({
@@ -73,10 +76,18 @@ function ResultFilters({
   studyId,
   path,
   colHeaders,
-  onfilteredColHeadersChange,
+  onColHeadersChange,
 }: Props) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
+
+  const { localValue: localYear, handleChange: debouncedYearChange } =
+    useDebouncedField({
+      value: year,
+      onChange: setYear,
+      delay: 500,
+      transformValue: (value: number) => clamp(1, maxYear, value),
+    });
 
   const filtersApplied = useMemo(() => {
     return !equals(filters, defaultFilters);
@@ -85,9 +96,9 @@ function ResultFilters({
   const parsedHeaders = useMemo(() => {
     return colHeaders.map(
       (header): ColumnHeader => ({
-        variable: String(header[0] || "").trim(),
-        unit: String(header[1] || "").trim(),
-        stat: String(header[2] || "").trim(),
+        variable: String(header[0]).trim(),
+        unit: String(header[1]).trim(),
+        stat: String(header[2]).trim(),
         original: header,
       }),
     );
@@ -125,25 +136,24 @@ function ResultFilters({
         if (!filters.std && stat.includes("std")) {
           return false;
         }
+        if (!filters.values && stat.includes("values")) {
+          return false;
+        }
       }
 
       return true;
     });
 
-    onfilteredColHeadersChange(filteredHeaders.map((h) => h.original));
-  }, [filters, parsedHeaders, onfilteredColHeadersChange]);
+    onColHeadersChange(filteredHeaders.map((h) => h.original));
+  }, [filters, parsedHeaders, onColHeadersChange]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleYearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleYearChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
-
-    if (!isNaN(value)) {
-      const clampedYear = clamp(1, maxYear, value);
-      setYear(clampedYear);
-    }
+    debouncedYearChange(value);
   };
 
   const handleSearchChange = (value: string) => {
@@ -182,7 +192,6 @@ function ResultFilters({
       label: "Exp",
       field: (
         <CheckBoxFE
-          defaultValue={filters.exp}
           value={filters.exp}
           onChange={() => handleStatFilterChange("exp")}
           size="small"
@@ -194,7 +203,6 @@ function ResultFilters({
       label: "Min",
       field: (
         <CheckBoxFE
-          defaultValue={filters.min}
           value={filters.min}
           onChange={() => handleStatFilterChange("min")}
           size="small"
@@ -206,7 +214,6 @@ function ResultFilters({
       label: "Max",
       field: (
         <CheckBoxFE
-          defaultValue={filters.max}
           value={filters.max}
           onChange={() => handleStatFilterChange("max")}
           size="small"
@@ -218,9 +225,19 @@ function ResultFilters({
       label: "Std",
       field: (
         <CheckBoxFE
-          defaultValue={filters.std}
           value={filters.std}
           onChange={() => handleStatFilterChange("std")}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: "values",
+      label: "Values",
+      field: (
+        <CheckBoxFE
+          value={filters.values}
+          onChange={() => handleStatFilterChange("values")}
           size="small"
         />
       ),
@@ -256,11 +273,11 @@ function ResultFilters({
             variant="outlined"
             onChange={(event) => setYear(event?.target.value ? -1 : 1)}
           />
-          {year > 0 && (
+          {localYear > 0 && (
             <NumberFE
               size="small"
               variant="outlined"
-              value={year}
+              value={localYear}
               sx={{ m: 0, ml: 1, width: 80 }}
               inputProps={{
                 min: 1,
@@ -320,8 +337,8 @@ function ResultFilters({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        width: "100%",
         flexWrap: "wrap",
+        py: 1,
       }}
     >
       {/* Column Filters Group */}
@@ -329,7 +346,6 @@ function ResultFilters({
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 1,
         }}
       >
         {COLUMN_FILTERS.map(({ id, label, field }) => (
@@ -340,9 +356,7 @@ function ResultFilters({
               alignItems: "center",
             }}
           >
-            <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
-              {label}
-            </Box>
+            <Box sx={{ opacity: 0.7 }}>{label}</Box>
             {field}
           </Box>
         ))}
@@ -353,7 +367,6 @@ function ResultFilters({
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 1,
         }}
       >
         {RESULT_FILTERS.map(({ label, field }) => (
@@ -362,11 +375,10 @@ function ResultFilters({
             sx={{
               display: "flex",
               alignItems: "center",
+              mr: 1,
             }}
           >
-            <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
-              {label}
-            </Box>
+            <Box sx={{ opacity: 0.7, mr: 1 }}>{label}</Box>
             {field}
           </Box>
         ))}

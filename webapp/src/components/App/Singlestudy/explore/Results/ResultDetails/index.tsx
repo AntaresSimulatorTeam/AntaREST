@@ -83,7 +83,7 @@ function ResultDetails() {
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
-  const [filteredColHeaders, setFilteredColHeaders] = useState<string[][]>([]);
+  const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const isSynthesis = itemType === OutputItemType.Synthesis;
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -188,11 +188,6 @@ function ResultDetails() {
       return [];
     }
 
-    const columns =
-      filteredColHeaders?.length > 0
-        ? filteredColHeaders
-        : matrixRes.data.columns;
-
     return groupResultColumns([
       {
         id: "date",
@@ -200,9 +195,9 @@ function ResultDetails() {
         type: Column.DateTime,
         editable: false,
       },
-      ...generateResultColumns(columns),
+      ...generateResultColumns(resultColHeaders),
     ]);
-  }, [matrixRes.data, filteredColHeaders]);
+  }, [matrixRes.data, resultColHeaders]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -301,7 +296,7 @@ function ResultDetails() {
               studyId={study.id}
               path={path}
               colHeaders={matrixRes.data?.columns || []}
-              onfilteredColHeadersChange={setFilteredColHeaders}
+              onColHeadersChange={setResultColHeaders}
             />
             <UsePromiseCond
               response={mergeResponses(outputRes, matrixRes)}
@@ -310,14 +305,23 @@ function ResultDetails() {
               )}
               ifFulfilled={([, matrix]) =>
                 matrix && (
-                  <MatrixGrid
-                    key={`grid-${filteredColHeaders.length}`}
-                    data={matrix.data}
-                    rows={matrix.data.length}
-                    columns={resultColumns}
-                    dateTime={dateTime}
-                    readOnly
-                  />
+                  <>
+                    {resultColHeaders.length === 0 ? (
+                      <EmptyView
+                        title={t("study.results.noData")}
+                        icon={GridOffIcon}
+                      />
+                    ) : (
+                      <MatrixGrid
+                        key={`grid-${resultColHeaders.length}`}
+                        data={matrix.data}
+                        rows={matrix.data.length}
+                        columns={resultColumns}
+                        dateTime={dateTime}
+                        readOnly
+                      />
+                    )}
+                  </>
                 )
               }
               ifRejected={(err) => (

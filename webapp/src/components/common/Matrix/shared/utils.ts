@@ -381,6 +381,6 @@ export function generateResultColumns(titles: string[][]): ResultColumn[] {
     id: `custom${index + 1}`,
     title: title,
     type: Column.Number,
-    editable: true,
+    editable: false,
   }));
 }
