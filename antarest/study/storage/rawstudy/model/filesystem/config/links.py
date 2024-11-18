@@ -16,8 +16,9 @@ Object model used to read and update link configuration.
 
 import typing as t
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import BeforeValidator, Field, PlainSerializer, field_validator, model_validator
 
+from antarest.core.exceptions import LinkValidationError
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
     validate_color_rgb,
@@ -64,6 +65,74 @@ class TransmissionCapacity(EnumIgnoreCase):
     INFINITE = "infinite"
     IGNORE = "ignore"
     ENABLED = "enabled"
+
+
+class LinkStyle(EnumIgnoreCase):
+    """
+    Enum representing the style of a link in a network visualization.
+
+    Attributes:
+        DOT: Represents a dotted line style.
+        PLAIN: Represents a solid line style.
+        DASH: Represents a dashed line style.
+        DOT_DASH: Represents a line style with alternating dots and dashes.
+    """
+
+    DOT = "dot"
+    PLAIN = "plain"
+    DASH = "dash"
+    DOT_DASH = "dotdash"
+    OTHER = "other"
+
+
+class FilterOption(EnumIgnoreCase):
+    """
+    Enum representing the time filter options for data visualization or analysis in Antares Web.
+
+    Attributes:
+        HOURLY: Represents filtering data by the hour.
+        DAILY: Represents filtering data by the day.
+        WEEKLY: Represents filtering data by the week.
+        MONTHLY: Represents filtering data by the month.
+        ANNUAL: Represents filtering data by the year.
+    """
+
+    HOURLY = "hourly"
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    ANNUAL = "annual"
+
+
+def validate_filters(
+    filter_value: t.Union[t.List[FilterOption], str], enum_cls: t.Type[FilterOption]
+) -> t.List[FilterOption]:
+    if isinstance(filter_value, str):
+        filter_accepted_values = [e for e in enum_cls]
+
+        options = filter_value.replace(" ", "").split(",")
+
+        invalid_options = [opt for opt in options if opt not in filter_accepted_values]
+        if invalid_options:
+            raise LinkValidationError(
+                f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
+                f"Allowed values are: {', '.join(filter_accepted_values)}."
+            )
+
+        return [enum_cls(opt) for opt in options]
+
+    return filter_value
+
+
+def join_with_comma(values: t.List[FilterOption]) -> str:
+    return ", ".join(value.name.lower() for value in values)
+
+
+comma_separated_enum_list = t.Annotated[
+    t.List[FilterOption],
+    BeforeValidator(lambda x: validate_filters(x, FilterOption)),
+    PlainSerializer(lambda x: join_with_comma(x)),
+]
 
 
 class LinkProperties(IniProperties):
@@ -157,17 +226,3 @@ class LinkProperties(IniProperties):
     @model_validator(mode="before")
     def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         return validate_colors(values)
-
-    # noinspection SpellCheckingInspection
-    def to_config(self) -> t.Dict[str, t.Any]:
-        """
-        Convert the object to a dictionary for writing to a configuration file.
-        """
-        obj = dict(super().to_config())
-        color_rgb = obj.pop("colorRgb", "#707070")
-        return {
-            "colorr": int(color_rgb[1:3], 16),
-            "colorg": int(color_rgb[3:5], 16),
-            "colorb": int(color_rgb[5:7], 16),
-            **obj,
-        }

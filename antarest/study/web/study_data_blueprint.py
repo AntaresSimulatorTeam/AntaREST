@@ -68,7 +68,7 @@ from antarest.study.business.correlation_management import (
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.link_management import LinkInfoDTO
+from antarest.study.business.model.link_model import LinkDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -147,19 +147,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Get all links",
-        response_model=t.List[LinkInfoDTO],
+        response_model=t.List[LinkDTO],
     )
     def get_links(
         uuid: str,
-        with_ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> t.List[LinkDTO]:
         logger.info(
             f"Fetching link list for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        areas_list = study_service.get_all_links(uuid, with_ui, params)
+        areas_list = study_service.get_all_links(uuid, params)
         return areas_list
 
     @bp.post(
@@ -184,13 +183,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Create a link",
-        response_model=LinkInfoDTO,
+        response_model=LinkDTO,
     )
     def create_link(
         uuid: str,
-        link_creation_info: LinkInfoDTO,
+        link_creation_info: LinkDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> LinkDTO:
         logger.info(
             f"Creating new link for study {uuid}",
             extra={"user": current_user.id},
