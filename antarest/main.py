@@ -115,20 +115,13 @@ def fastapi_app(
 
     logger.info("Initiating application")
 
-    async def set_default_executor() -> None:
+    @asynccontextmanager
+    async def set_default_executor(app: FastAPI) -> AsyncGenerator[None, None]:
+        import asyncio
         from concurrent.futures import ThreadPoolExecutor
 
         loop = asyncio.get_running_loop()
         loop.set_default_executor(ThreadPoolExecutor(max_workers=config.server.worker_threadpool_size))
-
-    @asynccontextmanager
-    async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-        """
-        Everything before the `yield` will be executed before running the app.
-        Everything after will be executed just before the app shutdowns.
-        """
-        migrate_matrixstore(config.storage.matrixstore.resolve())
-        await set_default_executor()
         yield
 
     application = FastAPI(
@@ -137,7 +130,7 @@ def fastapi_app(
         docs_url=None,
         root_path=config.root_path,
         openapi_tags=tags_metadata,
-        lifespan=lifespan,
+        lifespan=set_default_executor,
         openapi_url=f"{config.api_prefix}/openapi.json",
     )
 

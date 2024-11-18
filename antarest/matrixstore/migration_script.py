@@ -10,45 +10,46 @@
 #
 # This file is part of the Antares project.
 
-import glob
 import logging
-import os
+from functools import partial
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from antarest.core.config import InternalMatrixFormat
+
 logger = logging.getLogger(__name__)
 
 
-def migrate_matrix(matrix_path_as_str: str) -> None:
-    matrix_path = Path(matrix_path_as_str)
-    hdf_path = matrix_path.parent.joinpath(matrix_path.stem + ".hdf")
-    data = np.loadtxt(matrix_path, delimiter="\t", dtype=np.float64, ndmin=2)
+def migrate_matrix(matrix_path: Path, format: InternalMatrixFormat) -> None:
+    new_path = matrix_path.parent.joinpath(matrix_path.stem + f".{format.value}")
+    data = format.load_matrix(matrix_path)
     data = data.reshape((1, 0)) if data.size == 0 else data
     df = pd.DataFrame(data=data)
-    df.to_hdf(str(hdf_path), key="data")
-    old_lock_path = matrix_path.with_suffix(".tsv.lock")
-    new_lock_path = hdf_path.with_suffix(".hdf.lock")
-    new_lock_path.touch()
+    format.save_matrix(df, new_path)
+    old_lock_path = matrix_path.with_suffix(f"{matrix_path.suffix}.lock")
     if old_lock_path.exists():
+        new_lock_path = new_path.with_suffix(f".{format.value}.lock")
+        new_lock_path.touch()
         old_lock_path.rename(new_lock_path)
     matrix_path.unlink()
 
 
-def migrate_matrixstore(matrix_store_path: Path) -> None:
+def migrate_matrixstore(matrix_store_path: Path, format: InternalMatrixFormat) -> None:
     """
-    Migrates matrices inside the matrixstore from tsv files to hdf ones.
-    Does nothing if all files are already hdf ones.
+    Migrates all matrices inside the matrixstore to a given format
+    Does nothing if all files are already in the right format.
     """
-    matrices = glob.glob(os.path.join(str(matrix_store_path), "*.tsv"))
+    matrices = [f for f in matrix_store_path.glob("*") if f.suffixes[-1] != ".lock" and f.suffixes[0] != format.value]
     if matrices:
         logger.info("Matrix store migration starts")
 
         import multiprocessing
         from multiprocessing import Pool
 
+        migrate_with_format = partial(migrate_matrix, format=format)
         with Pool(processes=multiprocessing.cpu_count()) as pool:
-            pool.map(migrate_matrix, matrices)
+            pool.map(migrate_with_format, matrices)
 
         logger.info("Matrix store migration ended successfully")
