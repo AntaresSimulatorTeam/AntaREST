@@ -263,67 +263,36 @@ class TestMatrixContentRepository:
             assert not matrix_file.read_bytes()
             assert retrieved_matrix.data == [[]]
 
-    def test_get(self) -> None:
+    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet"])
+    def test_get_and_exists(self, tmp_path: str, matrix_format: str) -> None:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
         """
-        matrix_content_repo = MatrixContentRepository(
-            bucket_dir=tmp_path.joinpath("matrix-store"), format=InternalMatrixFormat.TSV
-        )
+        matrix_format = InternalMatrixFormat(matrix_format)
+        with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
+            # when the data is saved in the repo
+            data: ArrayData = [[1, 2, 3], [4, 5, 6]]
+            matrix_hash = matrix_content_repo.save(data)
+            # then the saved matrix object exists
+            assert matrix_content_repo.exists(matrix_hash)
+            # and it can be retrieved
+            content = matrix_content_repo.get(matrix_hash)
+            assert content.index == list(range(len(data)))
+            assert content.columns == list(range(len(data[0])))
+            assert content.data == data
 
-        # when the data is saved in the repo
-        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_content_repo.save(data)
-        # then the saved matrix object can be retrieved
-        content = matrix_content_repo.get(matrix_hash)
-        assert content.index == list(range(len(data)))
-        assert content.columns == list(range(len(data[0])))
-        assert content.data == data
+            # we can delete the data that was previously saved
+            matrix_content_repo.delete(matrix_hash)
+            # and the file doesn't exist anymore
+            matrix_files = list(matrix_content_repo.bucket_dir.glob("*.hdf"))
+            assert not matrix_files
 
-        # when the data is missing (wrong SHA256)
-        # then a `FileNotFoundError` is raised
-        with pytest.raises(FileNotFoundError):
+            # when the data is missing (wrong SHA256)
+            # then the saved matrix object doesn't exist and a `FileNotFoundError` is raised
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
-            matrix_content_repo.get(missing_hash)
-
-    def test_exists(self) -> None:
-        """
-        Checks if a matrix with a given SHA256 hash exists in the directory.
-        """
-        matrix_content_repo = MatrixContentRepository(
-            bucket_dir=tmp_path.joinpath("matrix-store"), format=InternalMatrixFormat.TSV
-        )
-
-        # when the data is saved in the repo
-        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_content_repo.save(data)
-        # then the saved matrix object exists
-        assert matrix_content_repo.exists(matrix_hash)
-
-        # when the data is missing (wrong SHA256)
-        # then the saved matrix object doesn't exist
-        missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
-        assert not matrix_content_repo.exists(missing_hash)
-
-    def test_delete(self) -> None:
-        """
-        Deletes the matrix file containing the content of a matrix with a given SHA256 hash.
-        """
-        matrix_content_repo = MatrixContentRepository(
-            bucket_dir=tmp_path.joinpath("matrix-store"), format=InternalMatrixFormat.TSV
-        )
-
-        # when the data is saved in the repo
-        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_content_repo.save(data)
-        # then the saved matrix object can be deleted
-        matrix_content_repo.delete(matrix_hash)
-        # and the file doesn't exist anymore
-        matrix_files = list(matrix_content_repo.bucket_dir.glob("*.hdf"))
-        assert not matrix_files
-
-        # when the data is missing (wrong SHA256)
-        # then a `FileNotFoundError` is raised
-        with pytest.raises(FileNotFoundError):
-            missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
-            matrix_content_repo.delete(missing_hash)
+            assert not matrix_content_repo.exists(missing_hash)
+            with pytest.raises(FileNotFoundError):
+                matrix_content_repo.get(missing_hash)
+            # it cannot be deleted
+            with pytest.raises(FileNotFoundError):
+                matrix_content_repo.delete(missing_hash)

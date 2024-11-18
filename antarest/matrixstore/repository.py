@@ -270,6 +270,10 @@ class MatrixContentRepository:
         Note:
             This method also deletes any abandoned lock file.
         """
+        possible_paths = [self.bucket_dir.joinpath(f"{matrix_hash}.{f}") for f in InternalMatrixFormat]
+        if not any(path.exists() for path in possible_paths):
+            raise FileNotFoundError(f"The matrix {matrix_hash} does not exist.")
+
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             matrix_path.unlink(missing_ok=True)
