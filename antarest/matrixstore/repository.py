@@ -224,17 +224,24 @@ class MatrixContentRepository:
         # for a non-mutable NumPy Array.
         matrix = content if isinstance(content, np.ndarray) else np.array(content, dtype=np.float64)
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
+        matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
+        if matrix_path.exists():
+            # Avoid having to save the matrix again (that's the whole point of using a hash).
+            return matrix_hash
+
+        lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
         for internal_format in InternalMatrixFormat:
-            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
-            if matrix_path.exists():
-                # Avoid having to save the matrix again (that's the whole point of using a hash).
+            matrix_in_another_format_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_in_another_format_path.exists():
+                # We want to migrate the old matrix in the given repository format.
+                # Ensure exclusive access to the matrix file between multiple processes (or threads).
+                with FileLock(lock_file, timeout=15):
+                    data = internal_format.load_matrix(matrix_in_another_format_path)
+                    df = pd.DataFrame(data)
+                    self.format.save_matrix(df, matrix_path)
                 return matrix_hash
 
-        # If the matrix doesn't exist, we'll save it in the given format.
-        matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
-
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
-        lock_file = matrix_path.with_suffix(f".{self.format}.lock")
         with FileLock(lock_file, timeout=15):
             if matrix.size == 0:
                 matrix_path.touch()
@@ -266,7 +273,7 @@ class MatrixContentRepository:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             matrix_path.unlink(missing_ok=True)
 
-            # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
-            # Abandoned lock files are deleted here to maintain consistent behavior.
-            lock_file = matrix_path.with_suffix(f".{internal_format}.lock")
-            lock_file.unlink(missing_ok=True)
+        # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
+        # Abandoned lock files are deleted here to maintain consistent behavior.
+        lock_file = matrix_path.with_suffix(".tsv.lock")
+        lock_file.unlink(missing_ok=True)
