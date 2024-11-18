@@ -8,7 +8,7 @@ A local build allows using Antares Web as a desktop application.
 
 Requirements:
 
-- python : 3.8.x
+- python : 3.11.x
 - node : 18.16.1
 
 Then perform the following steps:

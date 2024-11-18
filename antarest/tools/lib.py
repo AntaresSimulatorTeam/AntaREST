@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import List, Optional, Set, Union, cast
 from zipfile import ZipFile
 
+import numpy as np
+from antares.study.version import StudyVersion
 import pandas as pd
 from httpx import Client
 
@@ -131,7 +133,7 @@ class LocalVariantGenerator(IVariantGenerator):
     def __init__(self, output_path: Path):
         self.output_path = output_path
 
-    def render_template(self, study_version: str = NEW_DEFAULT_STUDY_VERSION) -> None:
+    def render_template(self, study_version: StudyVersion = NEW_DEFAULT_STUDY_VERSION) -> None:
         version_template = STUDY_REFERENCE_TEMPLATES[study_version]
         empty_study_zip = get_local_path() / "resources" / version_template
         with ZipFile(empty_study_zip) as zip_output:
@@ -218,7 +220,7 @@ def generate_diff(
     base: Path,
     variant: Path,
     output_dir: Path,
-    study_version: str = NEW_DEFAULT_STUDY_VERSION,
+    study_version: StudyVersion = NEW_DEFAULT_STUDY_VERSION,
 ) -> None:
     """
     Generate variant script commands from two variant script directories.
@@ -330,7 +332,7 @@ def generate_study(
     output: Optional[str] = None,
     host: Optional[str] = None,
     session: Optional[Client] = None,
-    study_version: str = NEW_DEFAULT_STUDY_VERSION,
+    study_version: StudyVersion = NEW_DEFAULT_STUDY_VERSION,
 ) -> GenerationResultInfoDTO:
     """
     Generate a new study or update an existing study by applying commands.

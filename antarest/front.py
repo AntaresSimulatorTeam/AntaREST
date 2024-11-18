@@ -22,16 +22,16 @@ This includes:
 
 import re
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 from fastapi import FastAPI
-from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 
 
@@ -46,7 +46,8 @@ class RedirectMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         dispatch: Optional[DispatchFunction] = None,
-        route_paths: Sequence[str] = (),
+        protected_roots: Optional[List[str]] = None,
+        protected_paths: Optional[List[str]] = None,
     ) -> None:
         """
         Initializes an instance of the URLRewriterMiddleware.
@@ -54,15 +55,26 @@ class RedirectMiddleware(BaseHTTPMiddleware):
         Args:
             app: The ASGI application to which the middleware is applied.
             dispatch: The dispatch function to use.
-            route_paths: The known route paths of the application.
-                Requests that do not match any of these paths will be rewritten to the root path.
+            protected_roots: URL starting at those roots will not be redirected
+            protected_paths: those URLs will not be redirected
 
         Note:
             The `route_paths` should contain all the known endpoints of the application.
         """
         dispatch = self.dispatch if dispatch is None else dispatch
         super().__init__(app, dispatch)
-        self.known_prefixes = {re.findall(r"/(?:(?!/).)*", p)[0] for p in route_paths if p != "/"}
+
+        self.protected_paths = protected_paths or []
+        protected_roots = protected_roots or []
+        self.protected_roots = [r.rstrip("/") for r in protected_roots]
+
+    def _path_matches_protected_paths(self, path: str) -> bool:
+        if path in self.protected_paths:
+            return True
+        for root in self.protected_roots:
+            if path == root or path.startswith(f"{root}/"):
+                return True
+        return False
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Any:
         """
@@ -72,12 +84,12 @@ class RedirectMiddleware(BaseHTTPMiddleware):
         url_path = request.scope["path"]
         if url_path in {"", "/"}:
             pass
-        elif not any(url_path.startswith(ep) for ep in self.known_prefixes):
+        elif not self._path_matches_protected_paths(url_path):
             request.scope["path"] = "/"
         return await call_next(request)
 
 
-class BackEndConfig(BaseModel):
+class BackEndConfig(AntaresBaseModel):
     """
     Configuration about backend URLs served to the frontend.
     """
@@ -112,8 +124,9 @@ def add_front_app(application: FastAPI, resources_dir: Path, api_prefix: str) ->
     front_app_dir = resources_dir / "webapp"
 
     # Serve front-end files
+    static_files_root = "/static"
     application.mount(
-        "/static",
+        static_files_root,
         StaticFiles(directory=front_app_dir),
         name="static",
     )
@@ -132,8 +145,6 @@ def add_front_app(application: FastAPI, resources_dir: Path, api_prefix: str) ->
     # is served at the `/static` entry point. Any requests that are not API
     # requests should be redirected to the `index.html` file, which will handle
     # the route provided by the URL.
-    route_paths = [r.path for r in application.routes]  # type: ignore
     application.add_middleware(
-        RedirectMiddleware,
-        route_paths=route_paths,
+        RedirectMiddleware, protected_roots=[static_files_root, api_prefix], protected_paths=["/config.json"]
     )

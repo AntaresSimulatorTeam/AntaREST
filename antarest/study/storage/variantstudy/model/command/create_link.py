@@ -17,11 +17,13 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -204,7 +206,7 @@ class CreateLink(ICommand):
             {"area_from": area_from, "area_to": area_to},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
         output, data = self._apply_config(study_data.config)
         if not output.status:
@@ -221,7 +223,7 @@ class CreateLink(ICommand):
         self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
         assert type(self.series) is str
-        if version < 820:
+        if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
         else:
             study_data.tree.save(

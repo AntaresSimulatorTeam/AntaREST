@@ -13,6 +13,7 @@
 import base64
 import collections
 import contextlib
+import csv
 import http
 import io
 import logging
@@ -34,8 +35,12 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
+    FileDeletionNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
+    OutputAlreadyArchived,
+    OutputAlreadyUnarchived,
+    OutputNotFound,
     ReferencedObjectDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -46,14 +51,15 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache
+from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
+from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
@@ -130,11 +136,18 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
-from antarest.study.storage.utils import assert_permission, get_start_date, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission,
+    get_start_date,
+    is_managed,
+    is_output_archived,
+    remove_from_cache,
+)
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
@@ -144,6 +157,7 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -157,7 +171,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 def get_disk_usage(path: t.Union[str, Path]) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
-    if path.suffix.lower() in {".zip", ".7z"}:
+    if is_archive_format(path.suffix.lower()):
         return os.path.getsize(path)
     total_size = 0
     with os.scandir(path) as it:
@@ -167,6 +181,14 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
             elif entry.is_dir():
                 total_size += get_disk_usage(path=str(entry.path))
     return total_size
+
+
+class TaskProgressRecorder(ICommandListener):
+    def __init__(self, notifier: ITaskNotifier) -> None:
+        self.notifier = notifier
+
+    def notify_progress(self, progress: int) -> None:
+        return self.notifier.notify_progress(progress)
 
 
 class ThermalClusterTimeSeriesGeneratorTask:
@@ -186,14 +208,29 @@ class ThermalClusterTimeSeriesGeneratorTask:
         self.storage_service = storage_service
         self.event_bus = event_bus
 
-    def _generate_timeseries(self) -> None:
+    def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries(command_context=command_context)
+        command = GenerateThermalClusterTimeSeries.model_construct(command_context=command_context)
+        listener = TaskProgressRecorder(notifier=notifier)
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(study, file_study, [command], self.storage_service)
+            execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
+
+            if isinstance(file_study, VariantStudy):
+                # In this case we only added the command to the list.
+                # It means the generation will really be executed in the next snapshot generation.
+                # We don't want this, we want this task to generate the matrices no matter the study.
+                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
+                variant_service = self.storage_service.variant_study_service
+                task_service = variant_service.task_service
+                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                task_service.await_task(generation_task_id)
+                result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
+                if not result.result or not result.result.success:
+                    raise ValueError(f"Failed to generate variant study {self._study_id}")
+
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
@@ -202,12 +239,12 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 )
             )
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
-        notifier(msg)
-        self._generate_timeseries()
+        notifier.notify_message(msg)
+        self._generate_timeseries(notifier)
         msg = f"Successfully generated thermal timeseries for study '{self._study_id}'"
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
@@ -273,7 +310,7 @@ class StudyUpgraderTask:
                     file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                     file_study.tree.normalize()
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
         Run the study upgrade task.
 
@@ -286,10 +323,10 @@ class StudyUpgraderTask:
         # The call to `_upgrade_study` may raise an exception, which will be
         # handled in the task service (see: `TaskJobService._run_task`)
         msg = f"Upgrade study '{self._study_id}' to version {self._target_version}"
-        notifier(msg)
+        notifier.notify_message(msg)
         self._upgrade_study()
         msg = f"Successfully upgraded study '{self._study_id}' to version {self._target_version}"
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     # Make `StudyUpgraderTask` object is callable
@@ -742,7 +779,7 @@ class StudyService:
             path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=version or NEW_DEFAULT_STUDY_VERSION,
+            version=version or f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author),
         )
 
@@ -822,13 +859,17 @@ class StudyService:
         if ids:  # Check if ids is not empty
             self.repository.delete(*ids)
 
-    def sync_studies_on_disk(self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None) -> None:
+    def sync_studies_on_disk(
+        self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None, recursive: bool = True
+    ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
 
         Args:
             folders: list of studies currently present on folder
             directory: directory of studies that will be watched
+            recursive: if False, the delta will apply only to the studies in "directory", otherwise
+                it will apply to all studies having a path that descend from "directory".
 
         Returns:
 
@@ -837,11 +878,15 @@ class StudyService:
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
         if directory:
-            all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+            if recursive:
+                all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+            else:
+                all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
         studies_by_path = {study.path: study for study in all_studies}
 
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
+
         for study in all_studies:
             if (
                 isinstance(study, RawStudy)
@@ -864,7 +909,7 @@ class StudyService:
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
-                elif study.missing < clean_up_missing_studies_threshold:
+                if study.missing < clean_up_missing_studies_threshold:
                     logger.info(
                         "Study %s at %s is not present in disk and will be deleted",
                         study.id,
@@ -954,7 +999,7 @@ class StudyService:
         assert_permission(params.user, src_study, StudyPermissionType.READ)
         self._assert_study_unarchived(src_study)
 
-        def copy_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study,
@@ -989,11 +1034,12 @@ class StudyService:
                 f"Study {src_study.name} ({src_uuid}) copy",
                 task_type=TaskType.COPY,
                 ref_id=src_study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
         else:
-            res = copy_task(noop_notifier)
+            res = copy_task(NoopNotifier())
             task_or_study_id = res.return_value or ""
 
         return task_or_study_id
@@ -1034,12 +1080,12 @@ class StudyService:
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}.zip", export_name, params.user
+            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name, params.user
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
                 self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
@@ -1054,6 +1100,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1098,14 +1145,14 @@ class StudyService:
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
         export_name = f"Study output {study.name}/{output_uuid} export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{study_uuid}-{output_uuid}.zip",
+            f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}",
             export_name,
             params.user,
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(study_uuid)
                 self.storage_service.get_storage(target_study).export_output(
@@ -1127,6 +1174,7 @@ class StudyService:
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -1196,7 +1244,7 @@ class StudyService:
             self.storage_service.get_storage(study).delete(study)
         else:
             if isinstance(study, RawStudy):
-                os.unlink(self.storage_service.raw_study_service.get_archive_path(study))
+                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 
@@ -1268,7 +1316,7 @@ class StudyService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(_notifier: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_notifier: ITaskNotifier) -> TaskResult:
                 try:
                     _study = self.get_study(study_id)
                     _stopwatch = StopWatch()
@@ -1298,6 +1346,7 @@ class StudyService:
                 export_name,
                 task_type=TaskType.EXPORT,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -1329,7 +1378,7 @@ class StudyService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = to_json(matrix.model_dump())
+                json_response = to_json(matrix.model_dump(mode="json"))
                 return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:
@@ -1454,7 +1503,7 @@ class StudyService:
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         logger.info("output added to study %s by user %s", uuid, params.get_user_id())
 
-        if output_id and isinstance(output, Path) and output.suffix == ".zip" and auto_unzip:
+        if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
             self.unarchive_output(uuid, output_id, not is_managed(study), params)
 
         return output_id
@@ -1488,7 +1537,16 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
+                str_data = data.decode("utf-8")
+                try:
+                    delimiter = csv.Sniffer().sniff(str_data, delimiters=r"[,;\t]").delimiter
+                except csv.Error:
+                    # Can happen with data with only one column. In this case, we don't care about the delimiter.
+                    delimiter = "\t"
+                if not str_data:
+                    matrix = np.zeros(shape=(0, 0))
+                else:
+                    matrix = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).to_numpy(dtype=np.float64)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url,
@@ -1992,7 +2050,7 @@ class StudyService:
         ):
             raise TaskAlreadyRunning()
 
-        def archive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def archive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.archive(study_to_archive)
             study_to_archive.archived = True
@@ -2011,6 +2069,7 @@ class StudyService:
             f"Study {study.name} archiving",
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2035,12 +2094,12 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
 
-        def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
-            os.unlink(self.storage_service.raw_study_service.get_archive_path(study_to_archive))
+            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
             self.repository.save(study_to_archive)
             self.event_bus.push(
                 Event(
@@ -2057,6 +2116,7 @@ class StudyService:
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2152,7 +2212,7 @@ class StudyService:
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> t.List[str]:
-        return list(STUDY_REFERENCE_TEMPLATES)
+        return [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
 
     def create_xpansion_configuration(
         self,
@@ -2320,6 +2380,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
+        output_path = Path(study.path) / "output" / output_id
+        if is_output_archived(output_path):
+            raise OutputAlreadyArchived(output_id)
+        if not output_path.exists():
+            raise OutputNotFound(output_id)
+
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
         task_name = archive_task_names[0]
 
@@ -2336,9 +2402,7 @@ class StudyService:
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
 
-        def archive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()
@@ -2360,6 +2424,7 @@ class StudyService:
             task_name,
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2377,6 +2442,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
 
+        output_path = Path(study.path) / "output" / output_id
+        if not is_output_archived(output_path):
+            if not output_path.exists():
+                raise OutputNotFound(output_id)
+            raise OutputAlreadyUnarchived(output_id)
+
         archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
         task_name = archive_task_names[1]
 
@@ -2391,9 +2462,7 @@ class StudyService:
         if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
             raise TaskAlreadyRunning()
 
-        def unarchive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def unarchive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()
@@ -2416,7 +2485,7 @@ class StudyService:
         workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         if workspace != DEFAULT_WORKSPACE_NAME:
             dest = Path(study.path) / "output" / output_id
-            src = Path(study.path) / "output" / f"{output_id}.zip"
+            src = Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}"
             task_id = self.task_service.add_worker_task(
                 TaskType.UNARCHIVE,
                 f"unarchive_{workspace}",
@@ -2424,7 +2493,7 @@ class StudyService:
                     src=str(src),
                     dest=str(dest),
                     remove_src=not keep_src_zip,
-                ).model_dump(),
+                ).model_dump(mode="json"),
                 name=task_name,
                 ref_id=study.id,
                 request_params=params,
@@ -2436,6 +2505,7 @@ class StudyService:
                 task_name,
                 task_type=TaskType.UNARCHIVE,
                 ref_id=study.id,
+                progress=None,
                 custom_event_messages=None,
                 request_params=params,
             )
@@ -2467,6 +2537,7 @@ class StudyService:
             task_name,
             task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
             ref_id=study.id,
+            progress=0,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2526,6 +2597,7 @@ class StudyService:
             task_name,
             task_type=TaskType.UPGRADE_STUDY,
             ref_id=study.id,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )
@@ -2593,12 +2665,19 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
+        # Gets the data and checks given path existence
         matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
-        if set(matrix_obj) != {"data", "index", "columns"}:
+
+        # Checks that the provided path refers to a matrix
+        url = path.split("/")
+        parent_dir = self.get(study_id, "/".join(url[:-1]), depth=3, formatted=True, params=parameters)
+        target_path = parent_dir[url[-1]]
+        if not isinstance(target_path, str) or not target_path.startswith(("matrix://", "matrixfile://")):
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+
+        # Builds the dataframe
         if not matrix_obj["data"]:
             return pd.DataFrame()
-
         df_matrix = pd.DataFrame(**matrix_obj)
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
@@ -2639,3 +2718,39 @@ class StudyService:
             if ref_bcs:
                 binding_ids = [bc.id for bc in ref_bcs]
                 raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
+
+    def delete_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+        """
+        Deletes a file or a folder of the study.
+        The data must be located inside the 'User' folder.
+        Also, it can not be inside the 'expansion' folder.
+
+        Args:
+            study_id: UUID of the concerned study
+            path: Path corresponding to the resource to be deleted
+            current_user: User that called the endpoint
+
+        Raises:
+            FileDeletionNotAllowed: if the path does not comply with the above rules
+        """
+        study = self.get_study(study_id)
+        assert_permission(current_user, study, StudyPermissionType.WRITE)
+
+        url = [item for item in path.split("/") if item]
+        if len(url) < 2 or url[0] != "user":
+            raise FileDeletionNotAllowed(f"the targeted data isn't inside the 'User' folder: {path}")
+
+        study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree
+        user_node = t.cast(User, study_tree.get_node(["user"]))
+        if url[1] in [file.filename for file in user_node.registered_files]:
+            raise FileDeletionNotAllowed(f"you are not allowed to delete this resource : {path}")
+
+        try:
+            user_node.delete(url[1:])
+        except ChildNotFoundError as e:
+            raise FileDeletionNotAllowed("the given path doesn't exist") from e
+
+        # update cache
+        cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
+        updated_tree = study_tree.get()
+        self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore

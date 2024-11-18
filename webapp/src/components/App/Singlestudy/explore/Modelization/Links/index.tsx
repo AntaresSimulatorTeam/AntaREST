@@ -54,7 +54,7 @@ function Links() {
       <ViewWrapper>
         <UsePromiseCond
           response={res}
-          ifResolved={(currentLink) =>
+          ifFulfilled={(currentLink) =>
             currentLink ? (
               <LinkView link={currentLink} />
             ) : (

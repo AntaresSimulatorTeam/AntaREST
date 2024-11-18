@@ -17,20 +17,12 @@ import { useCallback } from "react";
 import { L } from "ts-toolbelt";
 import SnackErrorMessage from "../components/common/SnackErrorMessage";
 
-/**
- * Types
- */
-
 type EnqueueErrorType = ProviderContext["enqueueSnackbar"];
 
 type EnqueueErrorSnackbarType = (
   message: L.Head<Parameters<EnqueueErrorType>>,
   details: string | Error,
 ) => ReturnType<EnqueueErrorType>;
-
-/**
- * Hook
- */
 
 function useEnqueueErrorSnackbar(): EnqueueErrorSnackbarType {
   const { enqueueSnackbar } = useSnackbar();

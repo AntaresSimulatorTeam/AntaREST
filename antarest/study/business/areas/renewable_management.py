@@ -13,6 +13,7 @@
 import collections
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import field_validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
@@ -64,7 +65,7 @@ class RenewableClusterInput(RenewableProperties):
                 unit_count=100,
                 nominal_capacity=1000.0,
                 ts_interpretation="power-generation",
-            ).model_dump()
+            ).model_dump(mode="json")
 
 
 class RenewableClusterCreation(RenewableClusterInput):
@@ -82,7 +83,7 @@ class RenewableClusterCreation(RenewableClusterInput):
             raise ValueError("name must not be empty")
         return name
 
-    def to_config(self, study_version: t.Union[str, int]) -> RenewableConfigType:
+    def to_config(self, study_version: StudyVersion) -> RenewableConfigType:
         values = self.model_dump(by_alias=False, exclude_none=True)
         return create_renewable_config(study_version=study_version, **values)
 
@@ -109,11 +110,11 @@ class RenewableClusterOutput(RenewableConfig):
 
 
 def create_renewable_output(
-    study_version: t.Union[str, int],
+    study_version: str,
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "RenewableClusterOutput":
-    obj = create_renewable_config(study_version=study_version, **config, id=cluster_id)
+    obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id)
     kwargs = obj.model_dump(by_alias=False)
     return RenewableClusterOutput(**kwargs)
 
@@ -182,12 +183,11 @@ class RenewableManager:
         except KeyError:
             raise RenewableClusterConfigNotFound(path)
 
-        study_version = study.version
         renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterOutput]]
         renewables_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                renewables_by_areas[area_id][cluster_id] = create_renewable_output(study_version, cluster_id, cluster)
+                renewables_by_areas[area_id][cluster_id] = create_renewable_output(study.version, cluster_id, cluster)
 
         return renewables_by_areas
 
@@ -206,7 +206,7 @@ class RenewableManager:
             The newly created cluster.
         """
         file_study = self._get_file_study(study)
-        cluster = cluster_data.to_config(study.version)
+        cluster = cluster_data.to_config(StudyVersion.parse(study.version))
         command = self._make_create_cluster_cmd(area_id, cluster)
         execute_or_add_commands(
             study,
@@ -272,7 +272,7 @@ class RenewableManager:
             RenewableClusterNotFound: If the cluster to update is not found.
         """
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
 
@@ -356,7 +356,7 @@ class RenewableManager:
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
         creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study.version)
+        new_config = creation_form.to_config(StudyVersion.parse(study.version))
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition
@@ -395,7 +395,7 @@ class RenewableManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_renewable_config(
-                    study.version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
+                    StudyVersion.parse(study.version), **new_cluster.model_dump(by_alias=False, exclude_none=True)
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
                 cmd = UpdateConfig(

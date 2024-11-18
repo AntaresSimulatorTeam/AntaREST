@@ -13,6 +13,7 @@
 import typing as t
 
 from antarest.core.model import JSON
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
@@ -29,10 +30,11 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     create_binding_constraint_config,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def _update_matrices_names(
+def update_matrices_names(
     file_study: FileStudy,
     bc_id: str,
     existing_operator: BindingConstraintOperator,
@@ -149,7 +151,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                 return str(index), binding_config
         return None
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         # When all BC of a given group are removed, the group should be removed from the scenario builder
@@ -164,24 +166,24 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         index, actual_cfg = index_and_cfg
 
+        study_version = study_data.config.version
         # rename matrices if the operator has changed for version >= 870
-        if self.operator and study_data.config.version >= 870:
-            existing_operator = BindingConstraintOperator(actual_cfg.get("operator"))
+        if self.operator and study_version >= STUDY_VERSION_8_7:
+            existing_operator = BindingConstraintOperator(actual_cfg["operator"])
             new_operator = self.operator
-            _update_matrices_names(study_data, self.id, existing_operator, new_operator)
+            update_matrices_names(study_data, self.id, existing_operator, new_operator)
 
         self._apply_config(study_data.config)
 
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
         ]
-        study_version = study_data.config.version
-        time_step = self.time_step or BindingConstraintFrequency(actual_cfg.get("type"))
+
+        time_step = self.time_step or BindingConstraintFrequency(actual_cfg["type"])
         self.validates_and_fills_matrices(
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        study_version = study_data.config.version
         props = create_binding_constraint_config(study_version, **self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 

@@ -154,8 +154,4 @@ function NoteEditorModal(props: Props) {
   );
 }
 
-NoteEditorModal.defaultProps = {
-  content: undefined,
-};
-
 export default NoteEditorModal;

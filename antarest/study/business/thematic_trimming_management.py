@@ -12,6 +12,8 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields, get_fields_info
 from antarest.study.business.utils import GENERAL_DATA_PATH, execute_or_add_commands
 from antarest.study.model import Study
@@ -34,13 +36,13 @@ class ThematicTrimmingManager:
         include_vars = trimming_config.get("select_var +") or []
         selected_vars_reset = trimming_config.get("selected_vars_reset", True)
 
-        def get_value(field_info: t.Mapping[str, t.Any]) -> t.Any:
+        def get_value(field_info: t.Mapping[str, t.Any]) -> bool:
             if selected_vars_reset is None:
-                return field_info["default_value"]
+                return t.cast(bool, field_info["default_value"])
             var_name = field_info["path"]
             return var_name not in exclude_vars if selected_vars_reset else var_name in include_vars
 
-        fields_info = get_fields_info(int(study.version))
+        fields_info = get_fields_info(StudyVersion.parse(study.version))
         fields_values = {name: get_value(info) for name, info in fields_info.items()}
         return ThematicTrimmingFormFields(**fields_values)
 
@@ -49,10 +51,10 @@ class ThematicTrimmingManager:
         Set Thematic Trimming config from the webapp form
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        field_values_dict = field_values.model_dump()
+        field_values_dict = field_values.model_dump(mode="json")
 
         keys_by_bool: t.Dict[bool, t.List[t.Any]] = {True: [], False: []}
-        fields_info = get_fields_info(int(study.version))
+        fields_info = get_fields_info(StudyVersion.parse(study.version))
         for name, info in fields_info.items():
             keys_by_bool[field_values_dict[name]].append(info["path"])
 

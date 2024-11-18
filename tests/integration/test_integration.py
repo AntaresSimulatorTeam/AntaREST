@@ -109,28 +109,6 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     )
     assert res.status_code == 200, res.json()
 
-    # playlist
-    res = client.post(
-        f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/nbyears",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-        json=5,
-    )
-    assert res.status_code == 204
-
-    res = client.put(
-        f"/v1/studies/{study_id}/config/playlist",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-        json={"playlist": [1, 2], "weights": {1: 8.0, 3: 9.0}},
-    )
-    assert res.status_code == 200
-
-    res = client.get(
-        f"/v1/studies/{study_id}/config/playlist",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
-    )
-    assert res.status_code == 200
-    assert res.json() == {"1": 8.0, "2": 1.0}
-
     # Update the active ruleset
     active_ruleset_name = "ruleset test"
     res = client.post(
@@ -276,7 +254,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {fred_credentials["refresh_token"]}'},
     )
     fred_credentials = res.json()
-    res = client.post(
+    client.post(
         f"/v1/studies?name=bar&groups={group_id}",
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
@@ -475,7 +453,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 "args": {
                     "area_id": "area 2",
                     "cluster_name": "cluster 2",
-                    "parameters": {},
+                    "parameters": {"nominalcapacity": 2.5},
                 },
             }
         ],
@@ -588,7 +566,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "min-stable-power": None,
                     "min-up-time": None,
                     "name": "cluster 2",
-                    "nominalcapacity": 0,
+                    "nominalcapacity": 2.5,
                     "spinning": None,
                     "spread-cost": None,
                     "type": None,
@@ -628,15 +606,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     res.raise_for_status()
-    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump()]
+    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
 
     res = client.post(f"/v1/studies/{study_id}/layers?name=test")
     assert res.json() == "1"
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
-        LayerInfoDTO(id="1", name="test", areas=[]).model_dump(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        LayerInfoDTO(id="1", name="test", areas=[]).model_dump(mode="json"),
     ]
 
     res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2")
@@ -647,8 +625,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code in {200, 201}, res.json()
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
-        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).model_dump(),
+        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).model_dump(mode="json"),
     ]
 
     # Delete the layer '1' that has 1 area
@@ -1488,7 +1466,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "min-stable-power": None,
                     "min-up-time": None,
                     "name": "cluster 2",
-                    "nominalcapacity": 0,
+                    "nominalcapacity": 2.5,
                     "spinning": None,
                     "spread-cost": None,
                     "type": None,
@@ -1508,8 +1486,58 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     ]
 
 
-def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # =============================
+    # OUTPUT PART
+    # =============================
+
+    res = client.get(f"/v1/studies/{internal_study_id}/outputs")
+    outputs = res.json()
+    fake_output = "fake_output"
+    unarchived_outputs = [output["name"] for output in outputs if not output["archived"]]
+    usual_output = unarchived_outputs[0]
+
+    # Archive
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{fake_output}/_archive")
+    assert res.json()["exception"] == "OutputNotFound"
+    assert res.json()["description"] == f"Output '{fake_output}' not found"
+    assert res.status_code == 404
+
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_archive")
+    assert res.status_code == 200
+    task_id = res.json()
+    wait_for(
+        lambda: client.get(
+            f"/v1/tasks/{task_id}",
+        ).json()["status"]
+        == 3
+    )
+
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_archive")
+    assert res.json()["exception"] == "OutputAlreadyArchived"
+    assert res.json()["description"] == f"Output '{usual_output}' is already archived"
+    assert res.status_code == 417
+
+    # Unarchive
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{fake_output}/_unarchive")
+    assert res.json()["exception"] == "OutputNotFound"
+    assert res.json()["description"] == f"Output '{fake_output}' not found"
+    assert res.status_code == 404
+
+    unarchived_output = unarchived_outputs[1]
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{unarchived_output}/_unarchive")
+    assert res.json()["exception"] == "OutputAlreadyUnarchived"
+    assert res.json()["description"] == f"Output '{unarchived_output}' is already unarchived"
+    assert res.status_code == 417
+
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_unarchive")
+    assert res.status_code == 200
+
+    # =============================
+    #  STUDY PART
+    # =============================
 
     study_res = client.post("/v1/studies?name=foo")
     study_id = study_res.json()
@@ -1526,7 +1554,7 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path) ->
 
     res = client.get(f"/v1/studies/{study_id}")
     assert res.json()["archived"]
-    assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
     res = client.put(f"/v1/studies/{study_id}/unarchive")
 
@@ -1535,12 +1563,12 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path) ->
         lambda: client.get(
             f"/v1/tasks/{task_id}",
         ).json()["status"]
-        == 3
+        == 3,
     )
 
     res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
-    assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
+    assert not (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:

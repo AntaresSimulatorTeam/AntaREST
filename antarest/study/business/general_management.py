@@ -17,7 +17,7 @@ from pydantic import PositiveInt, StrictBool, ValidationInfo, conint, model_vali
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -87,6 +87,32 @@ class GeneralFormFields(FormFieldsBaseModel):
     geographic_trimming: StrictBool
     thematic_trimming: StrictBool
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "mode": "Economy",
+                    "first_day": 1,
+                    "last_day": 365,
+                    "horizon": "2020",
+                    "first_month": "january",
+                    "first_week_day": "Monday",
+                    "first_january": "Monday",
+                    "leap_year": True,
+                    "nb_years": 5,
+                    "building_mode": "Automatic",
+                    "selection_mode": True,
+                    "year_by_year": True,
+                    "simulation_synthesis": True,
+                    "mc_scenario": True,
+                    "filtering": True,
+                    "geographic_trimming": True,
+                    "thematic_trimming": True,
+                }
+            ]
+        }
+    }
+
     @model_validator(mode="before")
     def day_fields_validation(cls, values: Union[Dict[str, Any], ValidationInfo]) -> Dict[str, Any]:
         new_values = values if isinstance(values, dict) else values.data
@@ -121,7 +147,6 @@ OUTPUT = "output"
 GENERAL_PATH = f"{GENERAL_DATA_PATH}/{GENERAL}"
 OUTPUT_PATH = f"{GENERAL_DATA_PATH}/{OUTPUT}"
 BUILDING_MODE = "building_mode"
-
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
     "mode": {
@@ -175,17 +200,17 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "filtering": {
         "path": f"{GENERAL_PATH}/filtering",
         "default_value": False,
-        "end_version": 710,
+        "end_version": STUDY_VERSION_7_1,
     },
     "geographic_trimming": {
         "path": f"{GENERAL_PATH}/geographic-trimming",
         "default_value": False,
-        "start_version": 710,
+        "start_version": STUDY_VERSION_7_1,
     },
     "thematic_trimming": {
         "path": f"{GENERAL_PATH}/thematic-trimming",
         "default_value": False,
-        "start_version": 710,
+        "start_version": STUDY_VERSION_7_1,
     },
     "simulation_synthesis": {
         "path": f"{OUTPUT_PATH}/synthesis",
@@ -277,7 +302,7 @@ class GeneralManager:
         return [
             UpdateConfig(
                 target=f"{GENERAL_PATH}/custom-scenario"
-                if file_study.config.version >= 800
+                if file_study.config.version >= STUDY_VERSION_8
                 else f"{GENERAL_PATH}/custom-ts-numbers",
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,

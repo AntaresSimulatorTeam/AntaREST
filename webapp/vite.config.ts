@@ -14,6 +14,7 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import path from "path";
 
 const SERVER_URL = "http://localhost:8080";
 
@@ -24,6 +25,23 @@ export default defineConfig(({ mode }) => {
   return {
     // Serve the web app at the `/static` entry point on Desktop mode (cf. 'antarest/main.py')
     base: isDesktopMode ? "/static/" : "/",
+    // Entries will be defined as globals during dev and statically replaced during build
+    define: {
+      // Not working in dev without `JSON.stringify`
+      __BUILD_TIMESTAMP__: JSON.stringify(Date.now()),
+    },
+    build: {
+      // Exclude test files and directories from production builds
+      // This improves build performance and reduces bundle size
+      rollupOptions: {
+        external: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+      },
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"), // Relative imports from the src directory
+      },
+    },
     esbuild: {
       // Remove logs safely when building production bundle
       // https://esbuild.github.io/api/#pure

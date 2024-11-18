@@ -25,14 +25,14 @@ import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
 import { exportText } from "../../services/utils/index";
-import { WSEvent, WSLogMessage, WSMessage } from "../../common/types";
 import SimpleLoader from "./loaders/SimpleLoader";
 import BasicDialog from "./dialogs/BasicDialog";
 import {
-  addWsMessageListener,
-  sendWsSubscribeMessage,
-  WsChannel,
-} from "../../services/webSockets";
+  addWsEventListener,
+  subscribeWsChannels,
+} from "../../services/webSocket/ws";
+import { WsEvent } from "@/services/webSocket/types";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 interface Props {
   isOpen: boolean;
@@ -53,8 +53,8 @@ function LogModal(props: Props) {
   const [t] = useTranslation();
 
   const updateLog = useCallback(
-    (ev: WSMessage<WSLogMessage>) => {
-      if (ev.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
+    (ev: WsEvent) => {
+      if (ev.type === WsEventType.StudyJobLogUpdate) {
         const logEvent = ev.payload;
         if (logEvent.job_id === jobId) {
           setLogDetail((logDetail || "") + logEvent.log);
@@ -115,10 +115,10 @@ function LogModal(props: Props) {
   useEffect(() => {
     if (followLogs) {
       if (jobId) {
-        const removeSubscription = sendWsSubscribeMessage(
+        const removeSubscription = subscribeWsChannels(
           WsChannel.JobLogs + jobId,
         );
-        const removeMessageListener = addWsMessageListener(updateLog);
+        const removeMessageListener = addWsEventListener(updateLog);
         return () => {
           removeSubscription();
           removeMessageListener();
@@ -209,13 +209,5 @@ function LogModal(props: Props) {
     </BasicDialog>
   );
 }
-
-LogModal.defaultProps = {
-  content: undefined,
-  jobId: undefined,
-  followLogs: false,
-  loading: false,
-  style: {},
-};
 
 export default LogModal;

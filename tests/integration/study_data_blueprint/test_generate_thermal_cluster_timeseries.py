@@ -13,7 +13,7 @@
 import numpy as np
 from starlette.testclient import TestClient
 
-from antarest.core.tasks.model import TaskStatus
+from antarest.core.tasks.model import TaskDTO, TaskStatus
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.prepare_proxy import PreparerProxy
 from tests.integration.utils import wait_task_completion
@@ -22,6 +22,15 @@ TIMESERIES_ASSETS_DIR = ASSETS_DIR.joinpath("timeseries_generation")
 
 
 class TestGenerateThermalClusterTimeseries:
+    @staticmethod
+    def _generate_timeseries(client: TestClient, user_access_token: str, study_id: str) -> TaskDTO:
+        res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
+        assert res.status_code == 200
+        task_id = res.json()
+        assert task_id
+        task = wait_task_completion(client, user_access_token, task_id)
+        return task
+
     def test_lifecycle_nominal(self, client: TestClient, user_access_token: str) -> None:
         # Study preparation
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
@@ -61,11 +70,7 @@ class TestGenerateThermalClusterTimeseries:
         assert res.status_code == 204
 
         # Timeseries generation should succeed
-        res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
-        assert res.status_code == 200
-        task_id = res.json()
-        assert task_id
-        task = wait_task_completion(client, user_access_token, task_id)
+        task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.COMPLETED
 
         # Check matrices
@@ -94,7 +99,7 @@ class TestGenerateThermalClusterTimeseries:
         data = res.json()["data"]
         assert data == [[]]  # no generation c.f. gen-ts parameter
 
-    def test_errors(self, client: TestClient, user_access_token: str) -> None:
+    def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str) -> None:
         # Study Preparation
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         preparer = PreparerProxy(client, user_access_token)
@@ -105,13 +110,40 @@ class TestGenerateThermalClusterTimeseries:
         cluster_name = "Cluster 1"
         preparer.create_thermal(study_id, area1_id, name=cluster_name, group="Lignite")
         # Timeseries generation fails because there's no nominal power
-        res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
-        assert res.status_code == 200
-        task_id = res.json()
-        assert task_id
-        task = wait_task_completion(client, user_access_token, task_id)
+        task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.FAILED
-        assert "Nominal power must be strictly positive, got 0.0" in task.result.message
+        assert (
+            f"Area {area1_id}, cluster {cluster_name.lower()}: Nominal power must be strictly positive, got 0.0"
+            in task.result.message
+        )
+
+        # Puts the nominal power as a float
+        body = {"nominalCapacity": 4.4}
+        res = client.patch(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal/{cluster_name}", json=body)
+        assert res.status_code in {200, 201}
+        # Timeseries generation should succeed and produce results as int.
+        task = self._generate_timeseries(client, user_access_token, study_id)
+        assert task.status == TaskStatus.COMPLETED
+        # Check matrix contains 4 instead of 4.4
+        res = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/thermal/series/{area1_id}/{cluster_name.lower()}/series"},
+        )
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert data == 8760 * [[4]]
+
+        # Puts 1 as PO rate and 1 as FO rate
+        modulation_matrix = np.ones(shape=(365, 6)).tolist()
+        res = client.post(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/thermal/prepro/{area1_id}/{cluster_name.lower()}/data"},
+            json=modulation_matrix,
+        )
+        assert res.status_code == 204
+        # Timeseries generation should succeed
+        task = self._generate_timeseries(client, user_access_token, study_id)
+        assert task.status == TaskStatus.COMPLETED
 
     def test_advanced_results(self, client: TestClient, user_access_token: str) -> None:
         # Study Preparation
@@ -197,11 +229,7 @@ class TestGenerateThermalClusterTimeseries:
             expected_matrix = np.loadtxt(TIMESERIES_ASSETS_DIR.joinpath(f"{test_case}.txt"), delimiter="\t").tolist()
 
             # Generate timeseries
-            res = client.put(f"/v1/studies/{study_id}/timeseries/generate")
-            assert res.status_code == 200
-            task_id = res.json()
-            assert task_id
-            task = wait_task_completion(client, user_access_token, task_id)
+            task = self._generate_timeseries(client, user_access_token, study_id)
             assert task.status == TaskStatus.COMPLETED
 
             # Compare results

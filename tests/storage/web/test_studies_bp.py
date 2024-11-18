@@ -356,29 +356,6 @@ def test_edit_study() -> None:
     mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"}, PARAMS)
 
 
-# @pytest.mark.unit_test
-# def test_edit_study_fail() -> None:
-#     mock_storage_service = Mock()
-#
-#     app = FastAPI(title=__name__)
-#     build_study_service(
-#         app,
-#         cache=Mock(),
-#         task_service=Mock(),
-#         file_transfer_manager=Mock(),
-#         study_service=mock_storage_service,
-#         config=CONFIG,
-#         user_service=Mock(),
-#         matrix_service=Mock(spec=MatrixService),
-#     )
-#     client = TestClient(app, raise_server_exceptions=False)
-#     res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
-#
-#     assert res.status_code == 400
-#
-#     mock_storage_service.edit_study.assert_not_called()
-
-
 @pytest.mark.unit_test
 def test_validate() -> None:
     mock_service = Mock()
@@ -553,4 +530,4 @@ def test_get_study_versions(tmp_path: Path) -> None:
     client = create_test_client(Mock(), raise_server_exceptions=False)
 
     result = client.get("/v1/studies/_versions")
-    assert result.json() == list(STUDY_REFERENCE_TEMPLATES.keys())
+    assert result.json() == [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]

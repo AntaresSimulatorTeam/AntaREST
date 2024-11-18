@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import re
+import time
 
 import numpy as np
 import pandas as pd
@@ -22,7 +23,6 @@ from antarest.study.business.binding_constraint_management import ClusterTerm, C
 from tests.integration.prepare_proxy import PreparerProxy
 
 MATRIX_SIZES = {"hourly": 8784, "daily": 366, "weekly": 366}
-
 
 REQUIRED_MATRICES = {
     "less": {"lt"},
@@ -97,9 +97,85 @@ class TestBindingConstraints:
     Test the end points related to binding constraints.
     """
 
+    def test_update_multiple_binding_constraints(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        preparer = PreparerProxy(client, user_access_token)
+        study_id = preparer.create_study("foo", version=880)
+        body = {}
+        # Creates 50 BCs
+        for k in range(50):
+            bc_id = f"bc_{k}"
+            client.post(
+                f"/v1/studies/{study_id}/commands",
+                json=[{"action": "create_binding_constraint", "args": {"name": bc_id}}],
+            )
+            body[bc_id] = {"filterSynthesis": "hourly"}
+        # Modify all of them with the table-mode endpoints
+        start = time.time()
+        res = client.put(f"/v1/studies/{study_id}/table-mode/binding-constraints", json=body)
+        assert res.status_code in {200, 201}
+        end = time.time()
+        duration = end - start
+        # due to new code this should be extremely fast.
+        assert duration < 0.2
+        # asserts the changes are effective.
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
+        assert res.status_code == 200
+        for bc in res.json():
+            assert bc["filterSynthesis"] == "hourly"
+        # create a variant from the study
+        study_id = preparer.create_variant(study_id, name="var_1")
+        # Update 10 BCs
+        body = {}
+        for k in range(10):
+            body[f"bc_{k}"] = {"enabled": False}
+        res = client.put(f"/v1/studies/{study_id}/table-mode/binding-constraints", json=body)
+        assert res.status_code in {200, 201}
+        # asserts changes are effective
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
+        assert res.status_code == 200
+        for bc in res.json():
+            bc_id = bc["id"]
+            if int(bc_id[3:]) < 10:
+                assert not bc["enabled"]
+            else:
+                assert bc["enabled"]
+        # asserts commands used are update_binding_constraint
+        res = client.get(f"/v1/studies/{study_id}/commands")
+        assert res.status_code == 200
+        json_result = res.json()
+        assert len(json_result) == 10
+        for cmd in json_result:
+            assert cmd["action"] == "update_binding_constraint"
+        # create another variant from the parent study
+        study_id = preparer.create_variant(study_id, name="var_1")
+        # update 50 BCs
+        body = {}
+        for k in range(49):
+            body[f"bc_{k}"] = {"comments": "New comment !"}
+        body["bc_49"] = {"time_step": "daily"}
+        res = client.put(f"/v1/studies/{study_id}/table-mode/binding-constraints", json=body)
+        assert res.status_code in {200, 201}
+        # asserts changes are effective
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
+        assert res.status_code == 200
+        for bc in res.json():
+            bc_id = bc["id"]
+            if int(bc_id[3:]) < 49:
+                assert bc["comments"] == "New comment !"
+            else:
+                assert bc["timeStep"] == "daily"
+        # asserts commands used are update_config and replace_matrix
+        res = client.get(f"/v1/studies/{study_id}/commands")
+        assert res.status_code == 200
+        json_result = res.json()
+        assert len(json_result) == 2
+        assert json_result[0]["action"] == "replace_matrix"
+        assert json_result[1]["action"] == "update_config"
+
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # =============================
         #  STUDY PREPARATION

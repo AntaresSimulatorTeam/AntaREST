@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import datetime
 import logging
 from typing import List, Optional, Union
 
+import humanize
 from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
@@ -415,5 +416,34 @@ def create_study_variant_routes(
         )
         params = RequestParameters(user=current_user)
         raise NotImplementedError()
+
+    @bp.put(
+        "/studies/variants/clear-snapshots",
+        tags=[APITag.study_variant_management],
+        summary="Clear variant snapshots",
+        responses={
+            200: {
+                "description": "Delete snapshots older than a specific number of hours. By default, this number is 24."
+            }
+        },
+    )
+    def clear_variant_snapshots(
+        hours: int = 24,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> str:
+        """
+        Endpoint that clear snapshots of variant which were updated or accessed `hours` hours ago.
+
+        Args: hours (int, optional): Number of hours to clear. Defaults to 24.
+
+        Returns: ID of the task running the snapshot clearing.
+        """
+        retention_hours = datetime.timedelta(hours=hours)
+        logger.info(
+            f"Delete all variant snapshots older than {humanize.precisedelta(retention_hours)}.",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return variant_study_service.clear_all_snapshots(retention_hours, params)
 
     return bp

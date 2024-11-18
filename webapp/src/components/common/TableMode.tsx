@@ -29,6 +29,7 @@ import TableForm from "./TableForm";
 import UsePromiseCond from "./utils/UsePromiseCond";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import EmptyView from "./page/SimpleContent";
+import { useTranslation } from "react-i18next";
 
 export interface TableModeProps<T extends TableModeType = TableModeType> {
   studyId: StudyMetadata["id"];
@@ -39,6 +40,7 @@ export interface TableModeProps<T extends TableModeType = TableModeType> {
 function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
   const { studyId, type, columns } = props;
   const [filteredColumns, setFilteredColumns] = useState(columns);
+  const { t } = useTranslation();
 
   const res = usePromise(
     () => getTableMode({ studyId, tableType: type, columns }),
@@ -80,7 +82,7 @@ function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
   return (
     <UsePromiseCond
       response={res}
-      ifResolved={(data) =>
+      ifFulfilled={(data) =>
         filteredColumns.length > 0 ? (
           <TableForm
             defaultValues={data}
@@ -89,7 +91,7 @@ function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
             autoSubmit={false}
           />
         ) : (
-          <EmptyView icon={GridOffIcon} title="study.results.noData" />
+          <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
         )
       }
     />

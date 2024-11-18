@@ -12,12 +12,11 @@
 
 import dataclasses
 import logging
-from enum import Enum
+from enum import StrEnum
 from http import HTTPStatus
 from typing import List, Optional
 
 from fastapi import Depends, HTTPException, Query
-from pydantic import BaseModel
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.application import AppBuildContext
@@ -26,19 +25,19 @@ from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
-from antarest.core.serialization import to_json_string
+from antarest.core.serialization import AntaresBaseModel, to_json_string
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
 
-class WebsocketMessageAction(str, Enum):
+class WebsocketMessageAction(StrEnum):
     SUBSCRIBE = "SUBSCRIBE"
     UNSUBSCRIBE = "UNSUBSCRIBE"
 
 
-class WebsocketMessage(BaseModel):
+class WebsocketMessage(AntaresBaseModel):
     action: WebsocketMessageAction
     payload: str
 

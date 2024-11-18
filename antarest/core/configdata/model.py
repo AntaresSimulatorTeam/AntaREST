@@ -10,16 +10,16 @@
 #
 # This file is part of the Antares project.
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Optional
 
-from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization import AntaresBaseModel
 
 
-class ConfigDataDTO(BaseModel):
+class ConfigDataDTO(AntaresBaseModel):
     key: str
     value: Optional[str]
 
@@ -43,6 +43,6 @@ class ConfigData(Base):  # type: ignore
 
 
 # APP MAIN CONFIG KEYS
-class ConfigDataAppKeys(str, Enum):
+class ConfigDataAppKeys(StrEnum):
     MAINTENANCE_MODE = "MAINTENANCE_MODE"
     MESSAGE_INFO = "MESSAGE_INFO"

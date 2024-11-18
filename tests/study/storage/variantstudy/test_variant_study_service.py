@@ -12,16 +12,19 @@
 
 import datetime
 import re
+import typing
 from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Group, User
+from antarest.core.utils.utils import sanitize_uuid
+from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
@@ -239,3 +242,188 @@ class TestVariantStudyService:
         else:
             expected = EXPECTED_DENORMALIZED
         assert res_study_files == expected
+
+    @with_db_context
+    def test_clear_all_snapshots(
+        self,
+        tmp_path: Path,
+        variant_study_service: VariantStudyService,
+        raw_study_service: RawStudyService,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """
+        - Test return value in case the user is not allowed to call the function,
+        - Test return value in case the user give a bad argument (negative
+        integer or other type than integer)
+        - Test deletion of an old snapshot and a recent one
+
+        In order to test date and time of objects, a FakeDateTime class is defined and used
+        by a monkeypatch context
+        """
+
+        class FakeDatetime:
+            """
+            Class that handle fake timestamp creation/update of variant
+            """
+
+            fake_time: datetime.datetime
+
+            @classmethod
+            def now(cls) -> datetime.datetime:
+                """Method used to get the custom timestamp"""
+                return datetime.datetime(2023, 12, 31)
+
+            @classmethod
+            def utcnow(cls) -> datetime.datetime:
+                """Method used while a variant is created"""
+                return cls.now()
+
+        # =============================
+        #  SET UP
+        # =============================
+        # Create two users
+        # an admin user
+        # noinspection PyArgumentList
+        admin_user = User(id=ADMIN_ID, name=ADMIN_NAME)
+        db.session.add(admin_user)
+        db.session.commit()
+
+        regular_user = User(id=99, name="regular")
+        db.session.add(regular_user)
+        db.session.commit()
+
+        # noinspection PyArgumentList
+        group = Group(id="my-group", name="group")
+        db.session.add(group)
+        db.session.commit()
+
+        # Create a raw study (root of the variant)
+        raw_study_path = tmp_path / "My RAW Study"
+        # noinspection PyArgumentList
+        raw_study = RawStudy(
+            id="my_raw_study",
+            name=raw_study_path.name,
+            version="860",
+            author="John Smith",
+            created_at=datetime.datetime(2023, 7, 15, 16, 45),
+            updated_at=datetime.datetime(2023, 7, 19, 8, 15),
+            last_access=datetime.datetime.utcnow(),
+            public_mode=PublicMode.FULL,
+            owner=admin_user,
+            groups=[group],
+            path=str(raw_study_path),
+            additional_data=StudyAdditionalData(author="John Smith"),
+        )
+
+        db.session.add(raw_study)
+        db.session.commit()
+
+        # Set up the Raw Study
+        raw_study_service.create(raw_study)
+
+        # Variant studies
+        variant_list = []
+
+        # For each variant created
+        with monkeypatch.context() as m:
+            # Set the system date older to create older variants
+            m.setattr("antarest.study.storage.variantstudy.variant_study_service.datetime", FakeDatetime)
+            m.setattr("antarest.study.service.datetime", FakeDatetime)
+
+            for index in range(3):
+                variant_list.append(
+                    variant_study_service.create_variant_study(
+                        raw_study.id,
+                        "Variant{}".format(str(index)),
+                        params=Mock(
+                            spec=RequestParameters,
+                            user=DEFAULT_ADMIN_USER,
+                        ),
+                    )
+                )
+
+                # Generate a snapshot for each variant
+                variant_study_service.generate(
+                    sanitize_uuid(variant_list[index].id),
+                    False,
+                    False,
+                    params=Mock(
+                        spec=RequestParameters,
+                        user=Mock(spec=JWTUser, id=regular_user.id, impersonator=regular_user.id),
+                    ),
+                )
+
+                variant_study_service.get(variant_list[index])
+
+        variant_study_path = Path(tmp_path).joinpath("internal_studies")
+
+        # Check if everything was correctly initialized
+        assert len(list(variant_study_path.iterdir())) == 3
+
+        for variant in variant_study_path.iterdir():
+            assert variant.is_dir()
+            assert list(variant.iterdir())[0].name == "snapshot"
+
+        # =============================
+        #  TEST
+        # =============================
+        # A user without rights cannot clear snapshots
+        with pytest.raises(UserHasNotPermissionError):
+            variant_study_service.clear_all_snapshots(
+                datetime.timedelta(1),
+                params=Mock(
+                    spec=RequestParameters,
+                    user=Mock(
+                        spec=JWTUser,
+                        id=regular_user.id,
+                        is_site_admin=Mock(return_value=False),
+                        is_admin_token=Mock(return_value=False),
+                    ),
+                ),
+            )
+
+        # At this point, variants was not accessed yet
+        # Thus snapshot directories must exist still
+        for variant in variant_study_path.iterdir():
+            assert variant.is_dir()
+            assert list(variant.iterdir())
+
+        # Simulate access for two old snapshots
+        variant_list[0].last_access = datetime.datetime.utcnow() - datetime.timedelta(days=60)
+        variant_list[1].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=6)
+
+        # Simulate access for a recent one
+        variant_list[2].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        db.session.commit()
+
+        # Clear old snapshots
+        task_id = variant_study_service.clear_all_snapshots(
+            datetime.timedelta(hours=5),
+            Mock(
+                spec=RequestParameters,
+                user=DEFAULT_ADMIN_USER,
+            ),
+        )
+        variant_study_service.task_service.await_task(task_id)
+
+        # Check if old snapshots was successfully cleared
+        nb_snapshot_dir = 0  # after the for iterations, must equal 1
+        for variant_path in variant_study_path.iterdir():
+            if variant_path.joinpath("snapshot").exists():
+                nb_snapshot_dir += 1
+        assert nb_snapshot_dir == 1
+
+        # Clear most recent snapshots
+        task_id = variant_study_service.clear_all_snapshots(
+            datetime.timedelta(hours=-1),
+            Mock(
+                spec=RequestParameters,
+                user=DEFAULT_ADMIN_USER,
+            ),
+        )
+        variant_study_service.task_service.await_task(task_id)
+
+        # Check if all snapshots were cleared
+        nb_snapshot_dir = 0  # after the for iterations, must equal 0
+        for variant_path in variant_study_path.iterdir():
+            assert not variant_path.joinpath("snapshot").exists()

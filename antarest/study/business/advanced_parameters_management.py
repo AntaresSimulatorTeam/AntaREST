@@ -12,6 +12,7 @@
 
 from typing import Any, Dict, List
 
+from antares.study.version import StudyVersion
 from pydantic import field_validator
 from pydantic.types import StrictInt, StrictStr
 
@@ -19,7 +20,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_8, Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
@@ -255,7 +256,7 @@ class AdvancedParamsManager:
                 if (
                     field_name == "unit_commitment_mode"
                     and value == UnitCommitmentMode.MILP
-                    and int(study.version) < 880
+                    and StudyVersion.parse(study.version) < STUDY_VERSION_8_8
                 ):
                     raise InvalidFieldForVersionError("Unit commitment mode `MILP` only exists in v8.8+ studies")
 

@@ -10,14 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from pydantic import BaseModel
-
+from antarest.core.serialization import AntaresBaseModel
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
-class CommandContext(BaseModel):
+class CommandContext(AntaresBaseModel):
     generator_matrix_constants: GeneratorMatrixConstants
     matrix_service: ISimpleMatrixService
     patch_service: PatchService

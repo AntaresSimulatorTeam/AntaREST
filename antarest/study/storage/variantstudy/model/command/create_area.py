@@ -15,6 +15,7 @@ import typing as t
 from pydantic import Field
 
 from antarest.core.model import JSON
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     EnrModelling,
@@ -24,6 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -104,7 +106,7 @@ class CreateArea(ICommand):
             {"area_id": area_id},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         config = study_data.config
 
         output, data = self._apply_config(config)
@@ -247,7 +249,7 @@ class CreateArea(ICommand):
         new_correlation.setdefault("annual", {})
         new_area_data["input"]["hydro"]["prepro"]["correlation"] = new_correlation
 
-        if version > 650:
+        if version > STUDY_VERSION_6_5:
             hydro_config.setdefault("initialize reservoir date", {})[area_id] = 0
             hydro_config.setdefault("leeway low", {})[area_id] = 1
             hydro_config.setdefault("leeway up", {})[area_id] = 1
@@ -261,16 +263,16 @@ class CreateArea(ICommand):
             ] = self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
             new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
 
-        has_renewables = config.version >= 810 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
+        has_renewables = version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         if has_renewables:
             new_area_data["input"]["renewables"] = {"clusters": {area_id: {"list": {}}}}
 
-        if version >= 830:
+        if version >= STUDY_VERSION_8_3:
             new_area_data["input"]["areas"][area_id]["adequacy_patch"] = {
                 "adequacy-patch": {"adequacy-patch-mode": "outside"}
             }
 
-        if version >= 860:
+        if version >= STUDY_VERSION_8_6:
             new_area_data["input"]["st-storage"] = {"clusters": {area_id: {"list": {}}}}
             new_area_data["input"]["hydro"]["series"][area_id]["mingen"] = null_matrix
 

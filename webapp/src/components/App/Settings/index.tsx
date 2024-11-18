@@ -22,16 +22,13 @@ import Groups from "./Groups";
 import Maintenance from "./Maintenance";
 import Tokens from "./Tokens";
 import Users from "./Users";
+import General from "./General";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import {
   isAuthUserAdmin,
   isAuthUserInGroupAdmin,
 } from "../../../redux/selectors";
 import { tuple } from "../../../utils/tsUtils";
-
-/**
- * Component
- */
 
 function Settings() {
   const [tabValue, setTabValue] = useState("1");
@@ -41,6 +38,7 @@ function Settings() {
 
   const tabList = useMemo(() => {
     return [
+      tuple(t("global.general"), () => <General />),
       isUserAdmin && tuple(t("global.users"), () => <Users />),
       (isUserAdmin || isUserInGroupAdmin) &&
         tuple(t("global.group"), () => <Groups />),

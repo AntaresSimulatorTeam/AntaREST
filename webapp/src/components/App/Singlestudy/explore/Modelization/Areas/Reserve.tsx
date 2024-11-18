@@ -12,33 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import { useOutletContext } from "react-router";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
-import { MatrixStats, StudyMetadata } from "../../../../../../common/types";
-import MatrixInput from "../../../../../common/MatrixInput";
-import { Root } from "./style";
+import Matrix from "../../../../../common/Matrix";
 
 function Reserve() {
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const currentArea = useAppSelector(getCurrentAreaId);
   const url = `input/reserves/${currentArea}`;
-  const colmunsNames = [
+  const columns = [
     "Primary Res. (draft)",
     "Strategic Res. (draft)",
     "DSM",
     "Day Ahead",
   ];
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <Root>
-      <MatrixInput
-        study={study}
-        url={url}
-        columnsNames={colmunsNames}
-        computStats={MatrixStats.TOTAL}
-      />
-    </Root>
+    <Matrix url={url} customColumns={columns} aggregateColumns={["total"]} />
   );
 }
 

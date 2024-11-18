@@ -13,17 +13,16 @@
 import logging
 from typing import List, Optional
 
-from pydantic import BaseModel
 from redis.client import Redis
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import JSON
-from antarest.core.serialization import from_json
+from antarest.core.serialization import AntaresBaseModel, from_json
 
 logger = logging.getLogger(__name__)
 
 
-class RedisCacheElement(BaseModel):
+class RedisCacheElement(AntaresBaseModel):
     duration: int
     data: JSON
 

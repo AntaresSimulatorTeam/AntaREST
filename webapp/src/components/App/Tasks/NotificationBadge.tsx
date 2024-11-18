@@ -20,9 +20,8 @@ import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, VariantType } from "notistack";
 import { red } from "@mui/material/colors";
-import { TaskEventPayload, WSEvent, WSMessage } from "../../../common/types";
 import { getTask } from "../../../services/api/tasks";
-import { addWsMessageListener } from "../../../services/webSockets";
+import { addWsEventListener } from "../../../services/webSocket/ws";
 import {
   incrementTaskNotifications,
   resetTaskNotifications,
@@ -30,6 +29,9 @@ import {
 import { getTaskNotificationsCount } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { TaskType } from "../../../services/api/tasks/constants";
+import { WsEventType } from "@/services/webSocket/constants";
+import { WsEvent } from "@/services/webSocket/types";
 
 const logError = debug("antares:downloadbadge:error");
 
@@ -47,37 +49,41 @@ function NotificationBadge(props: Props) {
   const dispatch = useAppDispatch();
 
   const newNotification = useCallback(
-    (message: string, variantType?: VariantType) => {
+    (message?: string, variantType?: VariantType) => {
       if (location.pathname !== "/tasks") {
         dispatch(incrementTaskNotifications());
       }
-      enqueueSnackbar(t(message), { variant: variantType || "info" });
+      if (message) {
+        enqueueSnackbar(t(message), { variant: variantType || "info" });
+      }
     },
     [dispatch, enqueueSnackbar, location.pathname, t],
   );
 
   useEffect(() => {
-    const listener = async (ev: WSMessage) => {
-      if (ev.type === WSEvent.DOWNLOAD_CREATED) {
+    const listener = async (ev: WsEvent) => {
+      if (ev.type === WsEventType.DownloadCreated) {
         newNotification("downloads.newDownload");
-      } else if (ev.type === WSEvent.DOWNLOAD_READY) {
+      } else if (ev.type === WsEventType.DownloadReady) {
         newNotification("downloads.downloadReady");
-      } else if (ev.type === WSEvent.DOWNLOAD_FAILED) {
+      } else if (ev.type === WsEventType.DownloadFailed) {
         newNotification("study.error.exportOutput", "error");
-      } else if (ev.type === WSEvent.TASK_ADDED) {
-        const taskId = (ev.payload as TaskEventPayload).id;
+      } else if (ev.type === WsEventType.TaskAdded) {
         try {
-          const task = await getTask(taskId);
-          if (task.type === "COPY") {
+          const task = await getTask({ id: ev.payload.id });
+          if (task.type === TaskType.Copy) {
             newNotification("studies.studycopying");
-          } else if (task.type === "ARCHIVE") {
+          } else if (task.type === TaskType.Archive) {
             newNotification("studies.studyarchiving");
-          } else if (task.type === "UNARCHIVE") {
+          } else if (task.type === TaskType.Unarchive) {
             newNotification("studies.studyunarchiving");
-          } else if (task.type === "SCAN") {
+          } else if (task.type === TaskType.Scan) {
             newNotification("studies.success.scanFolder");
-          } else if (task.type === "UPGRADE_STUDY") {
-            newNotification("study.message.upgradeInProgress");
+          } else if (
+            task.type === TaskType.UpgradeStudy ||
+            task.type === TaskType.ThermalClusterSeriesGeneration
+          ) {
+            newNotification();
           }
         } catch (error) {
           logError(error);
@@ -85,7 +91,7 @@ function NotificationBadge(props: Props) {
       }
     };
 
-    return addWsMessageListener(listener);
+    return addWsEventListener(listener);
   }, [newNotification]);
 
   useEffect(() => {
