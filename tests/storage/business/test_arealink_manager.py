@@ -101,11 +101,12 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # Check `AreaManager` behaviour with a RAW study
     study_id = str(uuid.uuid4())
     # noinspection PyArgumentList
+    study_version = empty_study.config.version
     study = RawStudy(
         id=study_id,
-        version="820",
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
+        version="820",
     )
     db.session.add(study)
     db.session.commit()
@@ -157,9 +158,9 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # noinspection PyArgumentList
     study = VariantStudy(
         id=variant_id,
-        version="820",
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
+        version="820",
     )
     variant_study_service.get_raw.return_value = empty_study
     area_manager.create_area(
@@ -168,12 +169,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     )
     variant_study_service.append_commands.assert_called_with(
         variant_id,
-        [
-            CommandDTO(
-                action=CommandName.CREATE_AREA.value,
-                args={"area_name": "test"},
-            )
-        ],
+        [CommandDTO(action=CommandName.CREATE_AREA.value, args={"area_name": "test"}, study_version=study_version)],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
     assert (empty_study.config.study_path / "patch.json").exists()
@@ -220,6 +216,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "data": "255,0,100",
                     },
                 ],
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -259,6 +256,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
                     },
                 },
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -296,6 +294,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "link_style": LinkStyle.PLAIN,
                     },
                 },
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -307,6 +306,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
             CommandDTO(
                 action=CommandName.REMOVE_LINK.value,
                 args={"area1": "test", "area2": "test2"},
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -315,7 +315,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
-            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}),
+            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}, study_version=study_version),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
     )

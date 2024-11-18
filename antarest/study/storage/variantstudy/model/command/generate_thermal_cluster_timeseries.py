@@ -139,7 +139,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     raise
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={})
+        return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
 
     def match_signature(self) -> str:
         return str(self.command_name.value)

@@ -74,6 +74,7 @@ class PlaylistManager:
                     weights=weights,
                     active=True,
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 )
             ],
             self.storage_service,

@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from pydantic import field_serializer, field_validator
+from pydantic import BeforeValidator, PlainSerializer, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -64,6 +64,10 @@ STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
 STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
+
+StudyVersionStr = t.Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
+StudyVersionInt = t.Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
+
 
 STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
     STUDY_VERSION_6_0: "empty_study_613.zip",
@@ -380,7 +384,7 @@ class OwnerInfo(AntaresBaseModel):
 class StudyMetadataDTO(AntaresBaseModel):
     id: str
     name: str
-    version: StudyVersion
+    version: StudyVersionInt
     created: str
     updated: str
     type: str
@@ -397,18 +401,10 @@ class StudyMetadataDTO(AntaresBaseModel):
     folder: t.Optional[str] = None
     tags: t.List[str] = []
 
-    @field_serializer("version")
-    def serialize_version(self, version: StudyVersion) -> int:
-        return version.__int__()
-
     @field_validator("horizon", mode="before")
     def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
         # horizon can be an int.
         return str(val) if val else val  # type: ignore
-
-    @field_validator("version", mode="before")
-    def _validate_version(cls, v: t.Any) -> StudyVersion:
-        return StudyVersion.parse(v)
 
 
 class StudyMetadataPatchDTO(AntaresBaseModel):

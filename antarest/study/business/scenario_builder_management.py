@@ -212,7 +212,7 @@ class ScenarioBuilderManager:
         execute_or_add_commands(
             study,
             file_study,
-            [UpdateScenarioBuilder(data=sections, command_context=context)],
+            [UpdateScenarioBuilder(data=sections, command_context=context, study_version=file_study.config.version)],
             self.storage_service,
         )
 
@@ -236,7 +236,9 @@ class ScenarioBuilderManager:
         ruleset_name = _get_active_ruleset_name(file_study)
         data = {ruleset_name: ruleset.get_rules(allow_nan=True)}
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        update_scenario = UpdateScenarioBuilder(data=data, command_context=command_context)
+        update_scenario = UpdateScenarioBuilder(
+            data=data, command_context=command_context, study_version=file_study.config.version
+        )
         execute_or_add_commands(study, file_study, [update_scenario], self.storage_service)
 
         # Extract the updated table form for the given scenario type

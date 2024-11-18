@@ -17,7 +17,7 @@ import typing_extensions as te
 
 from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
-from antarest.study.model import StudyMetadataDTO
+from antarest.study.model import StudyMetadataDTO, StudyVersionStr
 
 LegacyDetailsDTO = t.Tuple[str, bool, str]
 """
@@ -58,9 +58,9 @@ class GenerationResultInfoDTO(AntaresBaseModel):
     details: t.MutableSequence[DetailsDTO]
 
 
-class CommandDTO(AntaresBaseModel):
+class CommandDTOAPI(AntaresBaseModel):
     """
-    This class represents a command.
+    This class exposes a command inside the API.
 
     Attributes:
         id: The unique identifier of the command.
@@ -73,6 +73,28 @@ class CommandDTO(AntaresBaseModel):
     action: str
     args: t.Union[t.MutableSequence[JSON], JSON]
     version: int = 1
+
+
+class CommandDTO(AntaresBaseModel):
+    """
+    This class represents a command internally.
+
+    Attributes:
+        id: The unique identifier of the command.
+        action: The action to be performed by the command.
+        args: The arguments for the command action.
+        version: The version of the command.
+        study_version: The version of the study associated to the command.
+    """
+
+    id: t.Optional[str] = None
+    action: str
+    args: t.Union[t.MutableSequence[JSON], JSON]
+    version: int = 1
+    study_version: StudyVersionStr
+
+    def to_api(self) -> CommandDTOAPI:
+        return CommandDTOAPI.model_validate(self.model_dump(mode="json", exclude={"study_version"}))
 
 
 class CommandResultDTO(AntaresBaseModel):

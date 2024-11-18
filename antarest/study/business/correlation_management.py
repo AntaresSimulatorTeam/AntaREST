@@ -224,6 +224,7 @@ class CorrelationManager:
             target="/".join(self.url),
             data=correlation_cfg,
             command_context=command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 

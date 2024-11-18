@@ -76,19 +76,18 @@ class CommandExtractor(ICommandExtractor):
         ui_data = study_tree.get(["input", "areas", area_id, "ui"])
 
         study_commands: t.List[ICommand] = [
-            CreateArea(
-                area_name=area.name,
-                command_context=self.command_context,
-            ),
+            CreateArea(area_name=area.name, command_context=self.command_context, study_version=study_config.version),
             UpdateConfig(
                 target=f"input/areas/{area_id}/optimization",
                 data=optimization_data,
                 command_context=self.command_context,
+                study_version=study_config.version,
             ),
             UpdateConfig(
                 target=f"input/areas/{area_id}/ui",
                 data=ui_data,
                 command_context=self.command_context,
+                study_version=study_config.version,
             ),
         ]
         stopwatch.log_elapsed(lambda x: logger.info(f"Area command extraction done in {x}s"))
@@ -156,11 +155,9 @@ class CommandExtractor(ICommandExtractor):
         links_data: t.Optional[JSON] = None,
     ) -> t.List[ICommand]:
         study_tree = study.tree
+        study_version = study.config.version
         link_command = CreateLink(
-            area1=area1,
-            area2=area2,
-            parameters={},
-            command_context=self.command_context,
+            area1=area1, area2=area2, parameters={}, command_context=self.command_context, study_version=study_version
         )
         link_data = (
             links_data.get(area2)
@@ -171,10 +168,11 @@ class CommandExtractor(ICommandExtractor):
             target=f"input/links/{area1}/properties/{area2}",
             data=link_data,
             command_context=self.command_context,
+            study_version=study_version,
         )
         null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
         commands: t.List[ICommand] = [link_command, link_config_command]
-        if study.config.version < STUDY_VERSION_8_2:
+        if study_version < STUDY_VERSION_8_2:
             commands.append(
                 self.generate_replace_matrix(
                     study_tree,
@@ -226,6 +224,7 @@ class CommandExtractor(ICommandExtractor):
                 cluster_name=cluster.id,
                 parameters=cluster.model_dump(by_alias=True, exclude_defaults=True, exclude={"id"}),
                 command_context=self.command_context,
+                study_version=study_tree.config.version,
             ),
             self.generate_replace_matrix(
                 study_tree,
@@ -333,6 +332,7 @@ class CommandExtractor(ICommandExtractor):
                 output=district_config.output,
                 comments=district_fetched_config.get("comments", None),
                 command_context=self.command_context,
+                study_version=study_config.version,
             )
         )
         return study_commands
@@ -341,7 +341,11 @@ class CommandExtractor(ICommandExtractor):
         study_tree = study.tree
         content = t.cast(bytes, study_tree.get(["settings", "comments"]))
         comments = content.decode("utf-8")
-        return [UpdateComments(comments=comments, command_context=self.command_context)]
+        return [
+            UpdateComments(
+                comments=comments, command_context=self.command_context, study_version=study_tree.config.version
+            )
+        ]
 
     def extract_binding_constraint(
         self,
@@ -350,6 +354,7 @@ class CommandExtractor(ICommandExtractor):
         bindings_data: t.Optional[JSON] = None,
     ) -> t.List[ICommand]:
         study_tree = study.tree
+        study_version = study.config.version
 
         # Retrieve binding constraint properties from the study tree,
         # so, field names follow the same convention as the INI file.
@@ -368,7 +373,7 @@ class CommandExtractor(ICommandExtractor):
                 del binding[term_id]
 
         # Extract the matrices associated with the binding constraint
-        if study.config.version < STUDY_VERSION_8_7:
+        if study_version < STUDY_VERSION_8_7:
             urls = {"values": ["input", "bindingconstraints", bc_id]}
         else:
             urls = {
@@ -384,14 +389,25 @@ class CommandExtractor(ICommandExtractor):
                 matrices[name] = matrix["data"]
 
         # Create the command to create the binding constraint
-        kwargs = {**binding, **matrices, "coeffs": terms, "command_context": self.command_context}
+        kwargs = {
+            **binding,
+            **matrices,
+            "coeffs": terms,
+            "command_context": self.command_context,
+            "study_version": study_version,
+        }
         create_cmd = CreateBindingConstraint.model_validate(kwargs)
 
         return [create_cmd]
 
     def generate_update_config(self, study_tree: FileStudyTree, url: t.List[str]) -> ICommand:
         data = study_tree.get(url)
-        return UpdateConfig(target="/".join(url), data=data, command_context=self.command_context)
+        return UpdateConfig(
+            target="/".join(url),
+            data=data,
+            command_context=self.command_context,
+            study_version=study_tree.config.version,
+        )
 
     def generate_update_raw_file(self, study_tree: FileStudyTree, url: t.List[str]) -> ICommand:
         data = study_tree.get(url)
@@ -399,6 +415,7 @@ class CommandExtractor(ICommandExtractor):
             target="/".join(url),
             b64Data=base64.b64encode(t.cast(bytes, data)).decode("utf-8"),
             command_context=self.command_context,
+            study_version=study_tree.config.version,
         )
 
     def generate_update_comments(
@@ -408,8 +425,7 @@ class CommandExtractor(ICommandExtractor):
         content = t.cast(bytes, study_tree.get(["settings", "comments"]))
         comments = content.decode("utf-8")
         return UpdateComments(
-            comments=comments,
-            command_context=self.command_context,
+            comments=comments, command_context=self.command_context, study_version=study_tree.config.version
         )
 
     def generate_update_playlist(
@@ -424,6 +440,7 @@ class CommandExtractor(ICommandExtractor):
             active=bool(playlist and len(playlist) > 0),
             reverse=False,
             command_context=self.command_context,
+            study_version=study_tree.config.version,
         )
 
     def generate_replace_matrix(
@@ -445,6 +462,7 @@ class CommandExtractor(ICommandExtractor):
             target="/".join(url),
             matrix=matrix,
             command_context=self.command_context,
+            study_version=study_tree.config.version,
         )
 
     def generate_update_district(
@@ -464,4 +482,5 @@ class CommandExtractor(ICommandExtractor):
             output=district_config.output,
             comments=district_fetched_config.get("comments", None),
             command_context=self.command_context,
+            study_version=study_tree.config.version,
         )

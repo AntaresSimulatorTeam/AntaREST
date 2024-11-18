@@ -173,9 +173,7 @@ class PropertiesManager:
 
                 commands.append(
                     UpdateConfig(
-                        target=target,
-                        data=data,
-                        command_context=context,
+                        target=target, data=data, command_context=context, study_version=file_study.config.version
                     )
                 )
 
