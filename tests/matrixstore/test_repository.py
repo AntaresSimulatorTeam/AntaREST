@@ -304,7 +304,7 @@ class TestMatrixContentRepository:
                     associated_hash = "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
                     matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.{saved_format}")
                     saved_format.save_matrix(df, matrix_path)
-                    lock_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.tsv.lock")
+                    lock_path = matrix_path.with_suffix(".tsv.lock")
                     lock_path.touch()
 
                     # asserts the saved matrix object exists
@@ -331,5 +331,5 @@ class TestMatrixContentRepository:
                     assert not saved_matrix_files
                     repo_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{repository_format}"))
                     assert len(repo_matrix_files) == 1
-                    new_matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.{repository_format}")
+                    new_matrix_path = matrix_content_repo.bucket_dir.with_suffix(f".{repository_format}")
                     assert repo_matrix_files[0] == new_matrix_path
