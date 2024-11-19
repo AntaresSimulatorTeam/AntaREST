@@ -15,6 +15,9 @@ import typing as t
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
+from antares.study.version import StudyVersion
+
+from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.link_model import LinkDTO, LinkInternal
@@ -75,7 +78,7 @@ class LinkManager:
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        return link.to_dto()
+        return link_creation_dto
 
     def update_link(self, study: RawStudy, link_dto: LinkDTO) -> LinkDTO:
         link = link_dto.to_internal(StudyVersion.parse(study.version))
@@ -118,6 +121,7 @@ class LinkManager:
         updated_link = LinkInternal.model_validate(link_properties)
 
         return link.model_copy(update=updated_link.model_dump())
+
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
