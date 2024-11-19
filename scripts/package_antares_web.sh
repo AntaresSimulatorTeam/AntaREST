@@ -74,7 +74,7 @@ fi
 
 echo "INFO: Copying basic configuration files..."
 rm -rf "${DIST_DIR}/examples" # in case of replay
-cp -r "${RESOURCES_DIR}"/deploy/* "${DIST_DIR}"
+cp -r "${RESOURCES_DIR}"/antares-desktop-fs/* "${DIST_DIR}"
 if [[ "$OSTYPE" == "msys"* ]]; then
   sed -i "s/VER: ANTARES_SOLVER_PATH/$ANTARES_SOLVER_VERSION_INT: .\/AntaresWeb\/antares_solver\/antares-$ANTARES_SOLVER_VERSION-solver.exe/g" "${DIST_DIR}/config.yaml"
 else
@@ -92,7 +92,8 @@ else
 fi
 
 echo "INFO: Unzipping example study..."
-cd "${DIST_DIR}/examples/studies" || exit
+cp -r "${RESOURCES_DIR}/deploy/examples/studies/"* "${DIST_DIR}/studies"
+cd "${DIST_DIR}/studies" || exit
 if [[ "$OSTYPE" == "msys"* ]]; then
   7z x example_study.zip
 else
