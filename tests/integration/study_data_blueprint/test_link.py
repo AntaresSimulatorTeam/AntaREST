@@ -162,6 +162,33 @@ class TestLink:
         }
         assert expected == res.json()
 
+        # Test create link with empty filters
+
+        res = client.post(
+            f"/v1/studies/{study_id}/links",
+            json={"area1": area1_id, "area2": area2_id, "filterSynthesis": ""},
+        )
+
+        assert res.status_code == 200, res.json()
+        expected = {
+            "area1": "area 1",
+            "area2": "area 2",
+            "assetType": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "displayComments": True,
+            "filterSynthesis": "",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
+        }
+        assert expected == res.json()
+
     def test_create_link_810(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
