@@ -24,6 +24,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -65,10 +67,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         for attr in MATRIX_ATTRIBUTES:
             if value := getattr(self, attr, None):
                 args[attr] = strip_matrix_protocol(value)
-        return CommandDTO(
-            action=self.command_name.value,
-            args=args,
-        )
+        return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateLink):
@@ -86,8 +85,6 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateLink, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         commands: List[ICommand] = []
         area_from, area_to = sorted([self.area1, self.area2])
@@ -100,6 +97,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
                     target=f"input/links/{area_from}/properties/{area_to}",
                     data=properties,
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         if self.series != other.series:
@@ -108,6 +106,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
                     target=f"@links_series/{area_from}/{area_to}",
                     matrix=strip_matrix_protocol(other.series),
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         return commands

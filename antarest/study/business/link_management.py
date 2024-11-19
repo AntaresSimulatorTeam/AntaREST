@@ -91,6 +91,7 @@ class LinkManager:
                 include=link_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
             ),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
