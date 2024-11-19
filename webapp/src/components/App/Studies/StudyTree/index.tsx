@@ -23,6 +23,7 @@ import { getParentPaths } from "../../../../utils/pathUtils";
 import * as R from "ramda";
 import { useEffect, useState } from "react";
 import * as api from "../../../../services/api/study";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 
 /**
  * Add a folder that was returned by the explorer into the study tree view.
@@ -108,7 +109,7 @@ async function fetchAndMergeSubfolders(
   if (pathParts.length < 2) {
     return studiesTree;
   }
-  // path parts should be ["root", workspace, "foler1", ...]
+  // path parts should be ["root", workspace, "folder1", ...]
   const workspace = pathParts[1];
   const subPath = pathParts.slice(2).join("/");
   const subFolders = await api.getFolders(workspace, subPath);
@@ -116,52 +117,61 @@ async function fetchAndMergeSubfolders(
   return nextStudiesTree;
 }
 
+async function fetchAndMergeSubfoldersForPathsV4( // reduce no try catch (
+  paths: string[],
+  studiesTree: StudyTreeNode,
+): Promise<[StudyTreeNode, string[]]> {
+  const emptyTree: StudyTreeNode = { name: "Root", path: "/", children: [] };
+  const results: [StudyTreeNode, string][] = await Promise.all(
+    paths.map(async (path): Promise<[StudyTreeNode, string]> => {
+      try {
+        return [await fetchAndMergeSubfolders(path, studiesTree), ""];
+      } catch (error) {
+        console.error("failed to load path ", path, error);
+        return [emptyTree, path];
+      }
+    }),
+  );
+  const finalTree = results
+    .filter((r) => r[0] !== emptyTree)
+    .map((r) => r[0])
+    .reduce((acc, tree) => R.mergeDeepRight(acc, tree), studiesTree);
+  const failedPaths = results.map((r) => r[1]).filter((p) => p);
+  return [finalTree, failedPaths];
+}
+
+function getStudyTreeNode(
+  path: string,
+  stydyTree: StudyTreeNode,
+): StudyTreeNode | null {
+  // path always start with root
+  const studyTreePath = `root${stydyTree.path}`;
+  if (studyTreePath === path) {
+    return stydyTree;
+  }
+  let result: StudyTreeNode | null = null;
+  for (const child of stydyTree.children) {
+    result = getStudyTreeNode(path, child);
+    if (result) {
+      return result;
+    }
+  }
+  return null;
+}
+
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
-  // const [initializedFlag, setInitializedFlag] = useState(false);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
-
-  // useEffect(() => {
-  //   if (!initializedFlag) {
-  //     setStudiesTree(initialStudiesTree);
-  //     setInitializedFlag(true);
-  //   }
-  // }, [studiesTree]);
 
   // Initialize folders once we have the tree
   useEffect(() => {
     if (!folder || !initialStudiesTree.children.length) {
       return;
     }
-
-    // extract folder paths excluding root
-    const getFolderPaths = (path: string): string[] =>
-      path.split("/").reduce<string[]>((acc, _, i, parts) => {
-        const currentPath = parts.slice(0, i + 1).join("/");
-        return currentPath !== "root" ? [...acc, currentPath] : acc;
-      }, []);
-
-    // sequential folder fetching with error handling
-    const updateFolderTree = async () => {
-      try {
-        const finalTree = await getFolderPaths(folder).reduce(
-          async (treePromise, path) => {
-            const tree = await treePromise;
-            return fetchAndMergeSubfolders(path, tree);
-          },
-          Promise.resolve(initialStudiesTree),
-        );
-
-        setStudiesTree(finalTree);
-      } catch (error) {
-        // here you can use a snackback error component if needed
-        console.error("Failed to initialize folders:", error);
-      }
-    };
-
-    updateFolderTree();
+    setStudiesTree(initialStudiesTree);
   }, [folder, initialStudiesTree]);
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -169,7 +179,23 @@ function StudyTree() {
 
   const handleTreeItemClick = (itemId: string) => {
     dispatch(updateStudyFilters({ folder: itemId }));
-    fetchAndMergeSubfolders(itemId, studiesTree).then(setStudiesTree);
+    const currentNode = getStudyTreeNode(itemId, studiesTree);
+    if (!currentNode) {
+      console.error("Clicked on a non existing node", itemId);
+      return;
+    }
+    const chidrenPaths = currentNode.children.map(
+      (child) => `root${child.path}`,
+    );
+    fetchAndMergeSubfoldersForPathsV4(chidrenPaths, studiesTree).then((r) => {
+      setStudiesTree(r[0]);
+      for (const path of r[1]) {
+        enqueueErrorSnackbar(
+          `Failed to initialize folders for : ${path}`,
+          "details in console.error",
+        );
+      }
+    });
   };
 
   ////////////////////////////////////////////////////////////////
