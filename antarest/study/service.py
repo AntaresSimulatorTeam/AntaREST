@@ -1538,7 +1538,7 @@ class StudyService:
                 if not str_data:
                     matrix = np.zeros(shape=(0, 0))
                 else:
-                    size_to_check = min(len(str_data) - 1, 64)  # sniff a chunk only to speed up the code
+                    size_to_check = min(len(str_data), 64)  # sniff a chunk only to speed up the code
                     try:
                         delimiter = csv.Sniffer().sniff(str_data[:size_to_check], delimiters=r"[,;\t]").delimiter
                     except csv.Error:
