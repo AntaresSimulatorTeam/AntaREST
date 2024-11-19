@@ -17,6 +17,7 @@ from unittest import mock
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
@@ -36,6 +37,7 @@ class TestCreateRenewablesCluster:
             cluster_name="Cluster1",
             parameters={"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400},
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         )
 
         # Check the command metadata
@@ -50,17 +52,24 @@ class TestCreateRenewablesCluster:
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError, match="cluster_name"):
-            CreateRenewablesCluster(area_id="fr", cluster_name="%", command_context=command_context, parameters={})
+            CreateRenewablesCluster(
+                area_id="fr",
+                cluster_name="%",
+                command_context=command_context,
+                parameters={},
+                study_version=STUDY_VERSION_8_8,
+            )
 
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
         empty_study.config.enr_modelling = str(EnrModelling.CLUSTERS)
-        empty_study.config.version = 810
+        study_version = STUDY_VERSION_8_1
+        empty_study.config.version = study_version
         study_path = empty_study.config.study_path
         area_name = "DE"
         area_id = transform_name_to_id(area_name, lower=True)
         cluster_name = "Cluster-1"
 
-        CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(empty_study)
 
         parameters = {
             "name": cluster_name,
@@ -72,6 +81,7 @@ class TestCreateRenewablesCluster:
             cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
+            study_version=study_version,
         )
 
         output = command.apply(empty_study)
@@ -92,6 +102,7 @@ class TestCreateRenewablesCluster:
             cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
+            study_version=study_version,
         ).apply(empty_study)
         assert not output.status
 
@@ -100,6 +111,7 @@ class TestCreateRenewablesCluster:
             cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
+            study_version=study_version,
         ).apply(empty_study)
         assert output.status is False
 
@@ -114,6 +126,7 @@ class TestCreateRenewablesCluster:
             cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
+            study_version=study_version,
         ).apply(empty_study)
         assert output.status is False
         assert re.match(
@@ -129,6 +142,7 @@ class TestCreateRenewablesCluster:
             cluster_name="Cluster1",
             parameters={"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400},
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         )
         dto = command.to_dto()
         assert dto.model_dump() == {
@@ -140,6 +154,7 @@ class TestCreateRenewablesCluster:
             },
             "id": None,
             "version": 1,
+            "study_version": STUDY_VERSION_8_8,
         }
 
 
@@ -149,20 +164,25 @@ def test_match(command_context: CommandContext) -> None:
         cluster_name="foo",
         parameters={},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_match = CreateRenewablesCluster(
         area_id="foo",
         cluster_name="foo",
         parameters={},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_not_match = CreateRenewablesCluster(
         area_id="foo",
         cluster_name="bar",
         parameters={},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
-    other_other = RemoveRenewablesCluster(area_id="id", cluster_id="id", command_context=command_context)
+    other_other = RemoveRenewablesCluster(
+        area_id="id", cluster_id="id", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -181,14 +201,14 @@ def test_revert(command_context: CommandContext) -> None:
         cluster_name="cl1",
         parameters={},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     file_study = mock.MagicMock(spec=FileStudy)
+    file_study.config.version = STUDY_VERSION_8_8
     revert_cmd = CommandReverter().revert(base, [], file_study)
     assert revert_cmd == [
         RemoveRenewablesCluster(
-            area_id="area_foo",
-            cluster_id="cl1",
-            command_context=command_context,
+            area_id="area_foo", cluster_id="cl1", command_context=command_context, study_version=STUDY_VERSION_8_8
         )
     ]
 
@@ -199,17 +219,20 @@ def test_create_diff(command_context: CommandContext) -> None:
         cluster_name="foo",
         parameters={},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_match = CreateRenewablesCluster(
         area_id="foo",
         cluster_name="foo",
         parameters={"a": "b"},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     assert base.create_diff(other_match) == [
         UpdateConfig(
             target="input/renewables/clusters/foo/list/foo",
             data={"a": "b"},
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         ),
     ]

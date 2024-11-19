@@ -71,6 +71,7 @@ class LinkManager:
             area2=link.area2,
             parameters=link.model_dump(exclude_none=True),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
@@ -125,6 +126,7 @@ class LinkManager:
             area1=area1_id,
             area2=area2_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -184,6 +186,7 @@ class LinkManager:
                 target=path,
                 data=properties.to_config(),
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                study_version=file_study.config.version,
             )
             commands.append(cmd)
 

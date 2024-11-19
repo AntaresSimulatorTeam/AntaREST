@@ -61,7 +61,7 @@ class CommandReverter:
     @staticmethod
     def _revert_create_area(base_command: CreateArea, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
         area_id = transform_name_to_id(base_command.area_name)
-        return [RemoveArea(id=area_id, command_context=base_command.command_context)]
+        return [RemoveArea(id=area_id, command_context=base_command.command_context, study_version=base.config.version)]
 
     @staticmethod
     def _revert_remove_area(base_command: RemoveArea, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
@@ -74,7 +74,11 @@ class CommandReverter:
         base: FileStudy,
     ) -> t.List[ICommand]:
         district_id = transform_name_to_id(base_command.name)
-        return [RemoveDistrict(id=district_id, command_context=base_command.command_context)]
+        return [
+            RemoveDistrict(
+                id=district_id, command_context=base_command.command_context, study_version=base.config.version
+            )
+        ]
 
     @staticmethod
     def _revert_remove_district(
@@ -91,6 +95,7 @@ class CommandReverter:
                 area1=base_command.area1,
                 area2=base_command.area2,
                 command_context=base_command.command_context,
+                study_version=base.config.version,
             )
         ]
 
@@ -109,7 +114,11 @@ class CommandReverter:
         base: FileStudy,
     ) -> t.List[ICommand]:
         bind_id = transform_name_to_id(base_command.name)
-        return [RemoveBindingConstraint(id=bind_id, command_context=base_command.command_context)]
+        return [
+            RemoveBindingConstraint(
+                id=bind_id, command_context=base_command.command_context, study_version=base.config.version
+            )
+        ]
 
     @staticmethod
     def _revert_update_binding_constraint(
@@ -131,6 +140,7 @@ class CommandReverter:
                     "filter_synthesis": command.filter_synthesis,
                     "comments": command.comments,
                     "command_context": command.command_context,
+                    "study_version": base.config.version,
                 }
 
                 matrix_service = command.command_context.matrix_service
@@ -170,6 +180,7 @@ class CommandReverter:
                 area_id=base_command.area_id,
                 cluster_id=cluster_id,
                 command_context=base_command.command_context,
+                study_version=base.config.version,
             )
         ]
 
@@ -191,6 +202,7 @@ class CommandReverter:
                 area_id=base_command.area_id,
                 cluster_id=cluster_id,
                 command_context=base_command.command_context,
+                study_version=base.config.version,
             )
         ]
 
@@ -214,6 +226,7 @@ class CommandReverter:
                 area_id=base_command.area_id,
                 storage_id=storage_id,
                 command_context=base_command.command_context,
+                study_version=base.config.version,
             )
         ]
 

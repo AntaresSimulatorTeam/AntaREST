@@ -15,6 +15,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -50,16 +51,19 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 @pytest.mark.parametrize("empty_study", ["empty_study_720.zip", "empty_study_870.zip"], indirect=True)
 def test_manage_binding_constraint(empty_study: FileStudy, command_context: CommandContext):
     study_path = empty_study.config.study_path
+    study_version = empty_study.config.version
 
     area1 = "area1"
     area2 = "area2"
     cluster = "cluster"
-    CreateArea(area_name=area1, command_context=command_context).apply(empty_study)
-    CreateArea(area_name=area2, command_context=command_context).apply(empty_study)
-    CreateLink(area1=area1, area2=area2, command_context=command_context).apply(empty_study)
-    CreateCluster(area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context).apply(
+    CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(empty_study)
+    CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(empty_study)
+    CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(
         empty_study
     )
+    CreateCluster(
+        area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context, study_version=study_version
+    ).apply(empty_study)
 
     output = CreateBindingConstraint(
         name="BD 1",
@@ -68,6 +72,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         coeffs={"area1%area2": [800, 30]},
         comments="Hello",
         command_context=command_context,
+        study_version=study_version,
     ).apply(empty_study)
     assert output.status, output.message
 
@@ -78,6 +83,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         operator=BindingConstraintOperator.BOTH,
         coeffs={"area1.cluster": [50]},
         command_context=command_context,
+        study_version=study_version,
     ).apply(empty_study)
     assert output.status, output.message
 
@@ -116,19 +122,19 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "operator": "both",
         "type": "daily",
     }
-    if empty_study.config.version >= 830:
+    if study_version >= 830:
         expected_bd_1["filter-year-by-year"] = ""
         expected_bd_1["filter-synthesis"] = ""
         expected_bd_2["filter-year-by-year"] = ""
         expected_bd_2["filter-synthesis"] = ""
-    if empty_study.config.version >= 870:
+    if study_version >= 870:
         expected_bd_1["group"] = "default"
         expected_bd_2["group"] = "default"
 
     assert bd_config.get("0") == expected_bd_1
     assert bd_config.get("1") == expected_bd_2
 
-    if empty_study.config.version < 870:
+    if study_version < 870:
         weekly_values = default_bc_weekly_daily.tolist()
         values = weekly_values
         less_term_matrix = None
@@ -149,6 +155,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         less_term_matrix=less_term_matrix,
         greater_term_matrix=greater_term_matrix,
         command_context=command_context,
+        study_version=study_version,
     ).apply(empty_study)
     assert output.status, output.message
 
@@ -162,25 +169,26 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "operator": "both",
         "type": "weekly",
     }
-    if empty_study.config.version >= 830:
+    if study_version >= 830:
         expected_bd_1["filter-year-by-year"] = ""
         expected_bd_1["filter-synthesis"] = ""
-    if empty_study.config.version >= 870:
+    if study_version >= 870:
         expected_bd_1["group"] = "default"
     assert bd_config.get("0") == expected_bd_1
 
-    if empty_study.config.version >= 870:
+    if study_version >= 870:
         # Add scenario builder data
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": {"bc,default,0": 1}},
-            command_context=command_context,
+            data={"Default Ruleset": {"bc,default,0": 1}}, command_context=command_context, study_version=study_version
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
-    output = RemoveBindingConstraint(id="bd 1", command_context=command_context).apply(empty_study)
+    output = RemoveBindingConstraint(id="bd 1", command_context=command_context, study_version=study_version).apply(
+        empty_study
+    )
     assert output.status, output.message
 
-    if empty_study.config.version >= 870:
+    if study_version >= 870:
         # Check that the scenario builder is not yet updated, because "BD 2" is still present
         rulesets = empty_study.tree.get(["settings", "scenariobuilder"])
         assert rulesets == {"Default Ruleset": {"bc,default,0": 1}}
@@ -205,17 +213,19 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         "operator": "both",
         "type": "daily",
     }
-    if empty_study.config.version >= 830:
+    if study_version >= 830:
         expected_bd_2["filter-year-by-year"] = ""
         expected_bd_2["filter-synthesis"] = ""
-    if empty_study.config.version >= 870:
+    if study_version >= 870:
         expected_bd_2["group"] = "default"
     assert bd_config.get("0") == expected_bd_2
 
-    output = RemoveBindingConstraint(id="bd 2", command_context=command_context).apply(empty_study)
+    output = RemoveBindingConstraint(id="bd 2", command_context=command_context, study_version=study_version).apply(
+        empty_study
+    )
     assert output.status, output.message
 
-    if empty_study.config.version >= 870:
+    if study_version >= 870:
         # Check that the scenario builder is updated
         rulesets = empty_study.tree.get(["settings", "scenariobuilder"])
         assert rulesets == {"Default Ruleset": {}}
@@ -227,16 +237,19 @@ def test_scenario_builder(empty_study: FileStudy, command_context: CommandContex
     Test that the scenario builder is updated when a binding constraint group is renamed or removed
     """
     # This test requires a study with version >= 870, which support "scenarised" binding constraints.
-    assert empty_study.config.version >= 870
+    study_version = empty_study.config.version
+    assert study_version >= 870
 
     # Create two areas and a link between them:
     areas = {name: transform_name_to_id(name) for name in ["Area X", "Area Y"]}
     for area in areas.values():
-        output = CreateArea(area_name=area, command_context=command_context).apply(empty_study)
+        output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
+            empty_study
+        )
         assert output.status, output.message
-    output = CreateLink(area1=areas["Area X"], area2=areas["Area Y"], command_context=command_context).apply(
-        empty_study
-    )
+    output = CreateLink(
+        area1=areas["Area X"], area2=areas["Area Y"], command_context=command_context, study_version=study_version
+    ).apply(empty_study)
     assert output.status, output.message
     link_id = f"{areas['Area X']}%{areas['Area Y']}"
 
@@ -250,6 +263,7 @@ def test_scenario_builder(empty_study: FileStudy, command_context: CommandContex
         coeffs={link_id: [0.3]},
         group=bc_group,
         command_context=command_context,
+        study_version=study_version,
     ).apply(empty_study)
     assert output.status, output.message
 
@@ -257,6 +271,7 @@ def test_scenario_builder(empty_study: FileStudy, command_context: CommandContex
     output = UpdateScenarioBuilder(
         data={"Default Ruleset": {f"bc,{bc_group.lower()},0": 1}},  # group name in lowercase
         command_context=command_context,
+        study_version=study_version,
     ).apply(study_data=empty_study)
     assert output.status, output.message
 
@@ -264,9 +279,7 @@ def test_scenario_builder(empty_study: FileStudy, command_context: CommandContex
     # and a rule in the scenario builder for this group.
     # If we update the group name in the BC, the scenario builder should be updated
     output = UpdateBindingConstraint(
-        id="bd 1",
-        group="Group 2",
-        command_context=command_context,
+        id="bd 1", group="Group 2", command_context=command_context, study_version=study_version
     ).apply(empty_study)
     assert output.status, output.message
 
@@ -285,6 +298,7 @@ def test_match(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_match = CreateBindingConstraint(
         name="foo",
@@ -294,6 +308,7 @@ def test_match(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_not_match = CreateBindingConstraint(
         name="bar",
@@ -302,8 +317,9 @@ def test_match(command_context: CommandContext):
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
-    other_other = RemoveArea(id="id", command_context=command_context)
+    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -320,6 +336,7 @@ def test_match(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_match = UpdateBindingConstraint(
         id="foo",
@@ -329,6 +346,7 @@ def test_match(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_not_match = UpdateBindingConstraint(
         id="bar",
@@ -337,8 +355,9 @@ def test_match(command_context: CommandContext):
         operator=BindingConstraintOperator.BOTH,
         coeffs={"a": [0.3]},
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
-    other_other = RemoveArea(id="id", command_context=command_context)
+    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -347,10 +366,12 @@ def test_match(command_context: CommandContext):
     matrix_id = command_context.matrix_service.create(values)
     assert base.get_inner_matrices() == [matrix_id]
 
-    base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    other_match = RemoveBindingConstraint(id="foo", command_context=command_context)
-    other_not_match = RemoveBindingConstraint(id="bar", command_context=command_context)
-    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context)
+    base = RemoveBindingConstraint(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = RemoveBindingConstraint(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_not_match = RemoveBindingConstraint(
+        id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -362,6 +383,8 @@ def test_revert(command_context: CommandContext):
     hourly_values = default_bc_hourly.tolist()
     daily_values = default_bc_weekly_daily.tolist()
     weekly_values = default_bc_weekly_daily.tolist()
+    file_study = Mock(spec=FileStudy)
+    file_study.config.version = STUDY_VERSION_8_8
     base = CreateBindingConstraint(
         name="foo",
         enabled=False,
@@ -370,9 +393,10 @@ def test_revert(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=daily_values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
-    assert CommandReverter().revert(base, [], Mock(spec=FileStudy)) == [
-        RemoveBindingConstraint(id="foo", command_context=command_context)
+    assert CommandReverter().revert(base, [], file_study) == [
+        RemoveBindingConstraint(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
     ]
 
     base = UpdateBindingConstraint(
@@ -383,6 +407,7 @@ def test_revert(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=daily_values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     mock_command_extractor = Mock(spec=CommandExtractor)
     object.__setattr__(
@@ -401,6 +426,7 @@ def test_revert(command_context: CommandContext):
                 coeffs={"a": [0.3]},
                 values=weekly_values,
                 command_context=command_context,
+                study_version=STUDY_VERSION_8_8,
             ),
             UpdateBindingConstraint(
                 id="foo",
@@ -410,9 +436,10 @@ def test_revert(command_context: CommandContext):
                 coeffs={"a": [0.3]},
                 values=hourly_values,
                 command_context=command_context,
+                study_version=STUDY_VERSION_8_8,
             ),
         ],
-        Mock(spec=FileStudy),
+        file_study,
     ) == [
         UpdateBindingConstraint(
             id="foo",
@@ -422,6 +449,7 @@ def test_revert(command_context: CommandContext):
             coeffs={"a": [0.3]},
             values=hourly_values,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         )
     ]
     # check the matrices links
@@ -437,6 +465,7 @@ def test_revert(command_context: CommandContext):
                 coeffs={"a": [0.3]},
                 values=weekly_values,
                 command_context=command_context,
+                study_version=STUDY_VERSION_8_8,
             ),
             CreateBindingConstraint(
                 name="foo",
@@ -446,9 +475,10 @@ def test_revert(command_context: CommandContext):
                 coeffs={"a": [0.3]},
                 values=hourly_values,
                 command_context=command_context,
+                study_version=STUDY_VERSION_8_8,
             ),
         ],
-        Mock(spec=FileStudy),
+        file_study,
     ) == [
         UpdateBindingConstraint(
             id="foo",
@@ -460,6 +490,7 @@ def test_revert(command_context: CommandContext):
             coeffs={"a": [0.3]},
             values=hourly_matrix_id,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         )
     ]
     study = FileStudy(config=Mock(), tree=Mock())
@@ -477,6 +508,7 @@ def test_create_diff(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=values_a,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
 
     values_b = np.random.rand(8784, 3).tolist()
@@ -489,6 +521,7 @@ def test_create_diff(command_context: CommandContext):
         coeffs={"b": [0.3]},
         values=matrix_b_id,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     assert base.create_diff(other_match) == [
         UpdateBindingConstraint(
@@ -499,6 +532,7 @@ def test_create_diff(command_context: CommandContext):
             coeffs={"b": [0.3]},
             values=matrix_b_id,
             command_context=command_context,
+            study_version=STUDY_VERSION_8_8,
         )
     ]
 
@@ -511,6 +545,7 @@ def test_create_diff(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     other_match = UpdateBindingConstraint(
         id="foo",
@@ -520,11 +555,12 @@ def test_create_diff(command_context: CommandContext):
         coeffs={"a": [0.3]},
         values=values,
         command_context=command_context,
+        study_version=STUDY_VERSION_8_8,
     )
     assert base.create_diff(other_match) == [other_match]
 
-    base = RemoveBindingConstraint(id="foo", command_context=command_context)
-    other_match = RemoveBindingConstraint(id="foo", command_context=command_context)
+    base = RemoveBindingConstraint(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = RemoveBindingConstraint(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.create_diff(other_match) == []
 
 
@@ -557,6 +593,7 @@ def test__update_matrices_names(
     new_operator: BindingConstraintOperator,
 ):
     study_path = empty_study.config.study_path
+    study_version = empty_study.config.version
 
     all_file_templates = {"{bc_id}_eq.txt.link", "{bc_id}_gt.txt.link", "{bc_id}_lt.txt.link"}
 
@@ -570,12 +607,14 @@ def test__update_matrices_names(
     area1 = "area1"
     area2 = "area2"
     cluster = "cluster"
-    CreateArea(area_name=area1, command_context=command_context).apply(empty_study)
-    CreateArea(area_name=area2, command_context=command_context).apply(empty_study)
-    CreateLink(area1=area1, area2=area2, command_context=command_context).apply(empty_study)
-    CreateCluster(area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context).apply(
+    CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(empty_study)
+    CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(empty_study)
+    CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(
         empty_study
     )
+    CreateCluster(
+        area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context, study_version=study_version
+    ).apply(empty_study)
 
     # create a binding constraint
     _ = CreateBindingConstraint(
@@ -584,6 +623,7 @@ def test__update_matrices_names(
         operator=existing_operator,
         coeffs={"area1%area2": [800, 30]},
         command_context=command_context,
+        study_version=study_version,
     ).apply(empty_study)
 
     # check that the matrices are created

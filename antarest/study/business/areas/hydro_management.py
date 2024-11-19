@@ -145,6 +145,7 @@ class HydroManager:
                         target="/".join([info["path"], area_id]),
                         data=value,
                         command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                        study_version=study.version,
                     )
                 )
 
@@ -181,10 +182,11 @@ class HydroManager:
         """
         # NOTE: Updates only "intermonthly-correlation" due to current model scope.
         path = INFLOW_PATH.format(area_id=area_id)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         command = UpdateConfig(
             target=path,
             data={"intermonthly-correlation": values.inter_monthly_correlation},
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
-        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)

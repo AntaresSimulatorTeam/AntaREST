@@ -268,7 +268,11 @@ class GeneralManager:
                     commands.extend(GeneralManager.__get_building_mode_update_cmds(value, file_study, cmd_cx))
                     continue
 
-                commands.append(UpdateConfig(target=info["path"], data=value, command_context=cmd_cx))
+                commands.append(
+                    UpdateConfig(
+                        target=info["path"], data=value, command_context=cmd_cx, study_version=file_study.config.version
+                    )
+                )
 
         if commands:
             execute_or_add_commands(study, file_study, commands, self.storage_service)
@@ -290,26 +294,27 @@ class GeneralManager:
         file_study: FileStudy,
         cmd_context: CommandContext,
     ) -> List[UpdateConfig]:
+        study_version = file_study.config.version
         if new_value == BuildingMode.DERATED:
             return [
                 UpdateConfig(
                     target=f"{GENERAL_PATH}/derated",
                     data=True,
                     command_context=cmd_context,
+                    study_version=study_version,
                 )
             ]
 
         return [
             UpdateConfig(
                 target=f"{GENERAL_PATH}/custom-scenario"
-                if file_study.config.version >= STUDY_VERSION_8
+                if study_version >= STUDY_VERSION_8
                 else f"{GENERAL_PATH}/custom-ts-numbers",
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,
+                study_version=study_version,
             ),
             UpdateConfig(
-                target=f"{GENERAL_PATH}/derated",
-                data=False,
-                command_context=cmd_context,
+                target=f"{GENERAL_PATH}/derated", data=False, command_context=cmd_context, study_version=study_version
             ),
         ]

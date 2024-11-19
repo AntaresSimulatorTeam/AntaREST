@@ -21,6 +21,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session  # type: ignore
 from starlette.responses import Response
 
@@ -1344,7 +1345,9 @@ def test_create_command(
         ),
     )
 
-    command = service._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+    command = service._create_edit_study_command(
+        tree_node=tree_node, url=url, data=data, study_version=StudyVersion.parse("880")
+    )
 
     assert command.command_name.value == expected_name
 

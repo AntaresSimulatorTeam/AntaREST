@@ -134,6 +134,7 @@ class AdequacyPatchManager:
                         target=info["path"],
                         data=value,
                         command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                        study_version=study.version,
                     )
                 )
 

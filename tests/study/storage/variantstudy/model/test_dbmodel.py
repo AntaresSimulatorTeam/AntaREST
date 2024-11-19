@@ -17,6 +17,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.model import PublicMode
@@ -144,6 +145,7 @@ class TestCommandBlock:
                 command=command,
                 version=version,
                 args=args,
+                study_version="860",
             )
             db_session.add(block)
             db_session.commit()
@@ -169,6 +171,7 @@ class TestCommandBlock:
             "action": command,
             "args": json.loads(args),
             "version": 42,
+            "study_version": StudyVersion.parse("860"),
         }
 
 

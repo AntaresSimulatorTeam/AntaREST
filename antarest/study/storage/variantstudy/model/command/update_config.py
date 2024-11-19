@@ -85,6 +85,7 @@ class UpdateConfig(ICommand):
                 "target": self.target,
                 "data": self.data,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

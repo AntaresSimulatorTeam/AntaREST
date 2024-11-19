@@ -22,6 +22,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants
@@ -784,14 +785,17 @@ class TestSnapshotGenerator:
             name = "my-variant"
             params = RequestParameters(user=jwt_user)
             variant_study = variant_study_service.create_variant_study(root_study_id, name, params=params)
+            study_version = StudyVersion.parse(variant_study.version)
 
             # Append some commands
             variant_study_service.append_commands(
                 variant_study.id,
                 [
-                    CommandDTO(action="create_area", args={"area_name": "North"}),
-                    CommandDTO(action="create_area", args={"area_name": "South"}),
-                    CommandDTO(action="create_link", args={"area1": "north", "area2": "south"}),
+                    CommandDTO(action="create_area", args={"area_name": "North"}, study_version=study_version),
+                    CommandDTO(action="create_area", args={"area_name": "South"}, study_version=study_version),
+                    CommandDTO(
+                        action="create_link", args={"area1": "north", "area2": "south"}, study_version=study_version
+                    ),
                     CommandDTO(
                         action="create_cluster",
                         args={
@@ -799,6 +803,7 @@ class TestSnapshotGenerator:
                             "cluster_name": "gas_cluster",
                             "parameters": {"group": "Gas", "unitcount": 1, "nominalcapacity": 500},
                         },
+                        study_version=study_version,
                     ),
                 ],
                 params=params,
@@ -1119,10 +1124,11 @@ class TestSnapshotGenerator:
         """
         # Append an invalid command to the variant study.
         params = RequestParameters(user=jwt_user)
+        study_version = StudyVersion.parse(variant_study.version)
         variant_study_service.append_commands(
             variant_study.id,
             [
-                CommandDTO(action="create_area", args={"area_name": "North"}),  # duplicate
+                CommandDTO(action="create_area", args={"area_name": "North"}, study_version=study_version),  # duplicate
             ],
             params=params,
         )
@@ -1253,10 +1259,11 @@ class TestSnapshotGenerator:
         new_variant = variant_study_service.create_variant_study(variant_study.id, "my-variant", params=params)
 
         # Append some commands to the new variant.
+        study_version = StudyVersion.parse(new_variant.version)
         variant_study_service.append_commands(
             new_variant.id,
             [
-                CommandDTO(action="create_area", args={"area_name": "East"}),
+                CommandDTO(action="create_area", args={"area_name": "East"}, study_version=study_version),
             ],
             params=params,
         )
