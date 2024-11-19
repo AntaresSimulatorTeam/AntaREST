@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -125,7 +126,7 @@ class RemoveLink(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Update the configuration and the study data by removing the link between the source and target areas.
 
@@ -155,6 +156,7 @@ class RemoveLink(ICommand):
         return CommandDTO(
             action=CommandName.REMOVE_LINK.value,
             args={"area1": self.area1, "area2": self.area2},
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

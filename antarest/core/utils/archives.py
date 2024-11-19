@@ -15,7 +15,7 @@ import shutil
 import tempfile
 import typing as t
 import zipfile
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import py7zr
@@ -25,7 +25,7 @@ from antarest.core.exceptions import BadArchiveContent, ShouldNotHappenException
 logger = logging.getLogger(__name__)
 
 
-class ArchiveFormat(str, Enum):
+class ArchiveFormat(StrEnum):
     ZIP = ".zip"
     SEVEN_ZIP = ".7z"
 

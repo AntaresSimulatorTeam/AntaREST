@@ -21,6 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import cr
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -100,7 +101,7 @@ class CreateRenewablesCluster(ICommand):
             {"cluster_id": cluster.id},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -140,6 +141,7 @@ class CreateRenewablesCluster(ICommand):
                 "cluster_name": self.cluster_name,
                 "parameters": self.parameters,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
@@ -170,6 +172,7 @@ class CreateRenewablesCluster(ICommand):
                     target=f"input/renewables/clusters/{self.area_id}/list/{self.cluster_name}",
                     data=other.parameters,
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         return commands

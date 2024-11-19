@@ -294,6 +294,7 @@ class MatrixManager:
                 target=path,
                 matrix=strip_matrix_protocol(new_matrix_id),
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                study_version=file_study.config.version,
             )
         ]
 

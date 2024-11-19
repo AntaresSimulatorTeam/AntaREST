@@ -121,10 +121,7 @@ class TestRawStudyService:
             patch_service=patch_service,
         )
 
-        create_area_fr = CreateArea(
-            command_context=command_context,
-            area_name="fr",
-        )
+        create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
 
         # noinspection SpellCheckingInspection
         pmax_injection = np.random.rand(8760, 1)
@@ -146,6 +143,7 @@ class TestRawStudyService:
             ),
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
+            study_version=raw_study.version,
         )
 
         execute_or_add_commands(

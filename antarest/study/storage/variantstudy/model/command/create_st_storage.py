@@ -25,6 +25,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # noinspection SpellCheckingInspection
@@ -214,7 +215,7 @@ class CreateSTStorage(ICommand):
             {"storage_id": self.storage_id},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -263,6 +264,7 @@ class CreateSTStorage(ICommand):
                 "parameters": parameters,
                 **{attr: strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES},
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
@@ -315,6 +317,7 @@ class CreateSTStorage(ICommand):
                 target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{attr}",
                 matrix=strip_matrix_protocol(getattr(other, attr)),
                 command_context=self.command_context,
+                study_version=self.study_version,
             )
             for attr in _MATRIX_NAMES
             if getattr(self, attr) != getattr(other, attr)
@@ -326,6 +329,7 @@ class CreateSTStorage(ICommand):
                     target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
                     data=data,
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         return commands

@@ -30,6 +30,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 logger = logging.getLogger(__name__)
@@ -222,7 +223,7 @@ class RemoveArea(ICommand):
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     # noinspection SpellCheckingInspection
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])
@@ -286,6 +287,7 @@ class RemoveArea(ICommand):
             args={
                 "id": self.id,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

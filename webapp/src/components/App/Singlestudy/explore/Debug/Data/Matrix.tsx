@@ -12,20 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { MatrixStats } from "../../../../../../common/types";
-import MatrixInput from "../../../../../common/MatrixInput";
+import Matrix from "../../../../../common/Matrix";
 import type { DataCompProps } from "../utils";
 
-function Matrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
-  return (
-    <MatrixInput
-      title={filename}
-      study={studyId}
-      url={filePath}
-      computStats={MatrixStats.NOCOL}
-      disableImport={!canEdit}
-    />
-  );
+function DebugMatrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
+  return <Matrix title={filename} url={filePath} canImport={!canEdit} />;
 }
 
-export default Matrix;
+export default DebugMatrix;

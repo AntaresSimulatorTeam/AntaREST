@@ -11,14 +11,14 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Awaitable, Callable, List, Optional
 
 from antarest.core.model import PermissionInfo
 from antarest.core.serialization import AntaresBaseModel
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     ANY = "_ANY"
     STUDY_CREATED = "STUDY_CREATED"
     STUDY_DELETED = "STUDY_DELETED"
@@ -33,6 +33,7 @@ class EventType(str, Enum):
     STUDY_VARIANT_GENERATION_COMMAND_RESULT = "STUDY_VARIANT_GENERATION_COMMAND_RESULT"
     TASK_ADDED = "TASK_ADDED"
     TASK_RUNNING = "TASK_RUNNING"
+    TASK_PROGRESS = "TASK_PROGRESS"
     TASK_COMPLETED = "TASK_COMPLETED"
     TASK_FAILED = "TASK_FAILED"
     TASK_CANCEL_REQUEST = "TASK_CANCEL_REQUEST"
@@ -46,7 +47,6 @@ class EventType(str, Enum):
     WORKER_TASK_STARTED = "WORKER_TASK_STARTED"
     WORKER_TASK_ENDED = "WORKER_TASK_ENDED"
     LAUNCH_PROGRESS = "LAUNCH_PROGRESS"
-    TS_GENERATION_PROGRESS = "TS_GENERATION_PROGRESS"
 
 
 class EventChannelDirectory:
@@ -137,6 +137,9 @@ class IEventBus(ABC):
 
 
 class DummyEventBusService(IEventBus):
+    def __init__(self) -> None:
+        self.events: List[Event] = []
+
     def queue(self, event: Event, queue: str) -> None:
         # Noop
         pass
@@ -150,7 +153,7 @@ class DummyEventBusService(IEventBus):
 
     def push(self, event: Event) -> None:
         # Noop
-        pass
+        self.events.append(event)
 
     def add_listener(
         self,

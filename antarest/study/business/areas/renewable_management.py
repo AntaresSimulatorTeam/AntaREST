@@ -65,7 +65,7 @@ class RenewableClusterInput(RenewableProperties):
                 unit_count=100,
                 nominal_capacity=1000.0,
                 ts_interpretation="power-generation",
-            ).model_dump()
+            ).model_dump(mode="json")
 
 
 class RenewableClusterCreation(RenewableClusterInput):
@@ -207,7 +207,7 @@ class RenewableManager:
         """
         file_study = self._get_file_study(study)
         cluster = cluster_data.to_config(StudyVersion.parse(study.version))
-        command = self._make_create_cluster_cmd(area_id, cluster)
+        command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
         execute_or_add_commands(
             study,
             file_study,
@@ -217,12 +217,15 @@ class RenewableManager:
         output = self.get_cluster(study, area_id, cluster.id)
         return output
 
-    def _make_create_cluster_cmd(self, area_id: str, cluster: RenewableConfigType) -> CreateRenewablesCluster:
+    def _make_create_cluster_cmd(
+        self, area_id: str, cluster: RenewableConfigType, study_version: StudyVersion
+    ) -> CreateRenewablesCluster:
         command = CreateRenewablesCluster(
             area_id=area_id,
             cluster_name=cluster.id,
             parameters=cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=study_version,
         )
         return command
 
@@ -298,7 +301,9 @@ class RenewableManager:
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         commands = [
-            UpdateConfig(target=f"{path}/{key}", data=value, command_context=command_context)
+            UpdateConfig(
+                target=f"{path}/{key}", data=value, command_context=command_context, study_version=study_version
+            )
             for key, value in data.items()
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
@@ -319,7 +324,12 @@ class RenewableManager:
         command_context = self.storage_service.variant_study_service.command_factory.command_context
 
         commands = [
-            RemoveRenewablesCluster(area_id=area_id, cluster_id=cluster_id, command_context=command_context)
+            RemoveRenewablesCluster(
+                area_id=area_id,
+                cluster_id=cluster_id,
+                command_context=command_context,
+                study_version=file_study.config.version,
+            )
             for cluster_id in cluster_ids
         ]
 
@@ -352,11 +362,12 @@ class RenewableManager:
             raise DuplicateRenewableCluster(area_id, new_id)
 
         # Cluster duplication
+        study_version = StudyVersion.parse(study.version)
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
         creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(StudyVersion.parse(study.version))
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
+        new_config = creation_form.to_config(study_version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
         lower_source_id = source_id.lower()
@@ -367,7 +378,9 @@ class RenewableManager:
         storage_service = self.storage_service.get_storage(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         current_matrix = storage_service.get(study, source_path)["data"]
-        replace_matrix_cmd = ReplaceMatrix(target=new_path, matrix=current_matrix, command_context=command_context)
+        replace_matrix_cmd = ReplaceMatrix(
+            target=new_path, matrix=current_matrix, command_context=command_context, study_version=study_version
+        )
         commands = [create_cluster_cmd, replace_matrix_cmd]
 
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
@@ -384,6 +397,7 @@ class RenewableManager:
 
         # Prepare the commands to update the renewable clusters.
         commands = []
+        study_version = StudyVersion.parse(study.version)
         for area_id, update_renewables_by_ids in update_renewables_by_areas.items():
             old_renewables_by_ids = old_renewables_by_areas[area_id]
             for renewable_id, update_cluster in update_renewables_by_ids.items():
@@ -395,13 +409,14 @@ class RenewableManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_renewable_config(
-                    StudyVersion.parse(study.version), **new_cluster.model_dump(by_alias=False, exclude_none=True)
+                    study_version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
                 cmd = UpdateConfig(
                     target=path,
                     data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=study_version,
                 )
                 commands.append(cmd)
 

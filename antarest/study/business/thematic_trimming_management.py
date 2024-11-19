@@ -51,7 +51,7 @@ class ThematicTrimmingManager:
         Set Thematic Trimming config from the webapp form
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        field_values_dict = field_values.model_dump()
+        field_values_dict = field_values.model_dump(mode="json")
 
         keys_by_bool: t.Dict[bool, t.List[t.Any]] = {True: [], False: []}
         fields_info = get_fields_info(StudyVersion.parse(study.version))
@@ -78,6 +78,7 @@ class ThematicTrimmingManager:
                     target="settings/generaldata/variables selection",
                     data=config_data,
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 )
             ],
             self.storage_service,

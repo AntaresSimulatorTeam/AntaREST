@@ -13,6 +13,7 @@
 import base64
 import collections
 import contextlib
+import csv
 import http
 import io
 import logging
@@ -25,6 +26,7 @@ from uuid import uuid4
 
 import numpy as np
 import pandas as pd
+from antares.study.version import StudyVersion
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -57,7 +59,7 @@ from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, Stud
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier, noop_notifier
+from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
@@ -85,8 +87,9 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.link_management import LinkInfoDTO, LinkManager
+from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
+from antarest.study.business.model.link_model import LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -156,6 +159,7 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -181,6 +185,14 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
     return total_size
 
 
+class TaskProgressRecorder(ICommandListener):
+    def __init__(self, notifier: ITaskNotifier) -> None:
+        self.notifier = notifier
+
+    def notify_progress(self, progress: int) -> None:
+        return self.notifier.notify_progress(progress)
+
+
 class ThermalClusterTimeSeriesGeneratorTask:
     """
     Task to generate thermal clusters time series
@@ -198,14 +210,30 @@ class ThermalClusterTimeSeriesGeneratorTask:
         self.storage_service = storage_service
         self.event_bus = event_bus
 
-    def _generate_timeseries(self) -> None:
+    def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries(command_context=command_context)
+        listener = TaskProgressRecorder(notifier=notifier)
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(study, file_study, [command], self.storage_service)
+            command = GenerateThermalClusterTimeSeries(
+                command_context=command_context, study_version=file_study.config.version
+            )
+            execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
+
+            if isinstance(file_study, VariantStudy):
+                # In this case we only added the command to the list.
+                # It means the generation will really be executed in the next snapshot generation.
+                # We don't want this, we want this task to generate the matrices no matter the study.
+                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
+                variant_service = self.storage_service.variant_study_service
+                task_service = variant_service.task_service
+                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                task_service.await_task(generation_task_id)
+                result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
+                if not result.result or not result.result.success:
+                    raise ValueError(f"Failed to generate variant study {self._study_id}")
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
@@ -214,12 +242,12 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 )
             )
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
-        notifier(msg)
-        self._generate_timeseries()
+        notifier.notify_message(msg)
+        self._generate_timeseries(notifier)
         msg = f"Successfully generated thermal timeseries for study '{self._study_id}'"
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     # Make `ThermalClusterTimeSeriesGeneratorTask` object callable
@@ -285,7 +313,7 @@ class StudyUpgraderTask:
                     file_study = self.storage_service.get_storage(study_to_upgrade).get_raw(study_to_upgrade)
                     file_study.tree.normalize()
 
-    def run_task(self, notifier: TaskUpdateNotifier) -> TaskResult:
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
         Run the study upgrade task.
 
@@ -298,10 +326,10 @@ class StudyUpgraderTask:
         # The call to `_upgrade_study` may raise an exception, which will be
         # handled in the task service (see: `TaskJobService._run_task`)
         msg = f"Upgrade study '{self._study_id}' to version {self._target_version}"
-        notifier(msg)
+        notifier.notify_message(msg)
         self._upgrade_study()
         msg = f"Successfully upgraded study '{self._study_id}' to version {self._target_version}"
-        notifier(msg)
+        notifier.notify_message(msg)
         return TaskResult(success=True, message=msg)
 
     # Make `StudyUpgraderTask` object is callable
@@ -333,7 +361,7 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service, self.repository)
         self.district_manager = DistrictManager(self.storage_service)
-        self.links = LinkManager(self.storage_service)
+        self.links_manager = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
         self.general_manager = GeneralManager(self.storage_service)
         self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
@@ -355,7 +383,7 @@ class StudyService:
         self.correlation_manager = CorrelationManager(self.storage_service)
         self.table_mode_manager = TableModeManager(
             self.areas,
-            self.links,
+            self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
             self.st_storage_manager,
@@ -553,6 +581,7 @@ class StudyService:
                     target="settings/comments",
                     b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
                     command_context=variant_study_service.command_factory.command_context,
+                    study_version=study.version,
                 )
             ]
             variant_study_service.append_commands(
@@ -834,13 +863,17 @@ class StudyService:
         if ids:  # Check if ids is not empty
             self.repository.delete(*ids)
 
-    def sync_studies_on_disk(self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None) -> None:
+    def sync_studies_on_disk(
+        self, folders: t.List[StudyFolder], directory: t.Optional[Path] = None, recursive: bool = True
+    ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
 
         Args:
             folders: list of studies currently present on folder
             directory: directory of studies that will be watched
+            recursive: if False, the delta will apply only to the studies in "directory", otherwise
+                it will apply to all studies having a path that descend from "directory".
 
         Returns:
 
@@ -849,11 +882,15 @@ class StudyService:
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
         if directory:
-            all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+            if recursive:
+                all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+            else:
+                all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
         studies_by_path = {study.path: study for study in all_studies}
 
         # delete orphan studies on database
         paths = [str(f.path) for f in folders]
+
         for study in all_studies:
             if (
                 isinstance(study, RawStudy)
@@ -876,7 +913,7 @@ class StudyService:
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
-                elif study.missing < clean_up_missing_studies_threshold:
+                if study.missing < clean_up_missing_studies_threshold:
                     logger.info(
                         "Study %s at %s is not present in disk and will be deleted",
                         study.id,
@@ -966,7 +1003,7 @@ class StudyService:
         assert_permission(params.user, src_study, StudyPermissionType.READ)
         self._assert_study_unarchived(src_study)
 
-        def copy_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study,
@@ -1006,7 +1043,7 @@ class StudyService:
                 request_params=params,
             )
         else:
-            res = copy_task(noop_notifier)
+            res = copy_task(NoopNotifier())
             task_or_study_id = res.return_value or ""
 
         return task_or_study_id
@@ -1052,7 +1089,7 @@ class StudyService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
                 self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
@@ -1119,7 +1156,7 @@ class StudyService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(study_uuid)
                 self.storage_service.get_storage(target_study).export_output(
@@ -1283,7 +1320,7 @@ class StudyService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(_notifier: TaskUpdateNotifier) -> TaskResult:
+            def export_task(_notifier: ITaskNotifier) -> TaskResult:
                 try:
                     _study = self.get_study(study_id)
                     _stopwatch = StopWatch()
@@ -1345,7 +1382,7 @@ class StudyService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = to_json(matrix.model_dump())
+                json_response = to_json(matrix.model_dump(mode="json"))
                 return Response(content=json_response, media_type="application/json")
 
     def get_study_sim_result(self, study_id: str, params: RequestParameters) -> t.List[StudySimResultDTO]:
@@ -1476,10 +1513,7 @@ class StudyService:
         return output_id
 
     def _create_edit_study_command(
-        self,
-        tree_node: INode[JSON, SUB_JSON, JSON],
-        url: str,
-        data: SUB_JSON,
+        self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
     ) -> ICommand:
         """
         Create correct command to edit study
@@ -1496,41 +1530,38 @@ class StudyService:
 
         if isinstance(tree_node, IniFileNode):
             assert not isinstance(data, (bytes, list))
-            return UpdateConfig(
-                target=url,
-                data=data,
-                command_context=context,
-            )
+            return UpdateConfig(target=url, data=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                matrix = np.loadtxt(io.BytesIO(data), delimiter="\t", dtype=np.float64, ndmin=2)
+                str_data = data.decode("utf-8")
+                try:
+                    delimiter = csv.Sniffer().sniff(str_data, delimiters=r"[,;\t]").delimiter
+                except csv.Error:
+                    # Can happen with data with only one column. In this case, we don't care about the delimiter.
+                    delimiter = "\t"
+                if not str_data:
+                    matrix = np.zeros(shape=(0, 0))
+                else:
+                    matrix = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).to_numpy(dtype=np.float64)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
-                    target=url,
-                    matrix=matrix.tolist(),
-                    command_context=context,
+                    target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
                 )
             assert isinstance(data, (list, str))
-            return ReplaceMatrix(
-                target=url,
-                matrix=data,
-                command_context=context,
-            )
+            return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 assert isinstance(data, str)
-                return UpdateComments(
-                    comments=data,
-                    command_context=context,
-                )
+                return UpdateComments(comments=data, command_context=context, study_version=study_version)
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
                     b64Data=base64.b64encode(data).decode("utf-8"),
                     command_context=context,
+                    study_version=study_version,
                 )
         raise NotImplementedError()
 
@@ -1576,7 +1607,8 @@ class StudyService:
         # A 404 Not Found error is raised if the file does not exist.
         tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
 
-        command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+        study_version = file_study.config.version
+        command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data, study_version=study_version)
 
         if isinstance(study_service, RawStudyService):
             res = command.apply(study_data=file_study)
@@ -1588,7 +1620,9 @@ class StudyService:
             # noinspection SpellCheckingInspection
             url = "study/antares/lastsave"
             last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time.time()))
+            cmd = self._create_edit_study_command(
+                tree_node=last_save_node, url=url, data=int(time.time()), study_version=study_version
+            )
             cmd.apply(file_study)
 
             self.storage_service.variant_study_service.invalidate_cache(study)
@@ -1827,12 +1861,11 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-        with_ui: bool,
         params: RequestParameters,
-    ) -> t.List[LinkInfoDTO]:
+    ) -> t.List[LinkDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.links.get_all_links(study, with_ui)
+        return self.links_manager.get_all_links(study)
 
     def create_area(
         self,
@@ -1856,13 +1889,13 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkInfoDTO,
+        link_creation_dto: LinkDTO,
         params: RequestParameters,
-    ) -> LinkInfoDTO:
+    ) -> LinkDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_link = self.links.create_link(study, link_creation_dto)
+        new_link = self.links_manager.create_link(study, link_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -1978,7 +2011,7 @@ class StudyService:
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
-        self.links.delete_link(study, area_from, area_to)
+        self.links_manager.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2010,7 +2043,7 @@ class StudyService:
         ):
             raise TaskAlreadyRunning()
 
-        def archive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def archive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.archive(study_to_archive)
             study_to_archive.archived = True
@@ -2054,7 +2087,7 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
 
-        def unarchive_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
@@ -2362,9 +2395,7 @@ class StudyService:
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
 
-        def archive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()
@@ -2424,9 +2455,7 @@ class StudyService:
         if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
             raise TaskAlreadyRunning()
 
-        def unarchive_output_task(
-            notifier: TaskUpdateNotifier,
-        ) -> TaskResult:
+        def unarchive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 study = self.get_study(study_id)
                 stopwatch = StopWatch()
@@ -2457,7 +2486,7 @@ class StudyService:
                     src=str(src),
                     dest=str(dest),
                     remove_src=not keep_src_zip,
-                ).model_dump(),
+                ).model_dump(mode="json"),
                 name=task_name,
                 ref_id=study.id,
                 request_params=params,
@@ -2629,12 +2658,19 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
+        # Gets the data and checks given path existence
         matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
-        if set(matrix_obj) != {"data", "index", "columns"}:
+
+        # Checks that the provided path refers to a matrix
+        url = path.split("/")
+        parent_dir = self.get(study_id, "/".join(url[:-1]), depth=3, formatted=True, params=parameters)
+        target_path = parent_dir[url[-1]]
+        if not isinstance(target_path, str) or not target_path.startswith(("matrix://", "matrixfile://")):
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+
+        # Builds the dataframe
         if not matrix_obj["data"]:
             return pd.DataFrame()
-
         df_matrix = pd.DataFrame(**matrix_obj)
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)

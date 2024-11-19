@@ -13,7 +13,7 @@
 import logging
 from http import HTTPStatus
 from http.client import HTTPException
-from typing import Any, List
+from typing import List
 
 from fastapi import APIRouter, Depends
 
@@ -56,8 +56,9 @@ def create_watcher_routes(
     )
     def scan_dir(
         path: str,
+        recursive: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> str:
         params = RequestParameters(user=current_user)
         if path:
             # The front actually sends <workspace>/<path/to/folder>
@@ -82,6 +83,6 @@ def create_watcher_routes(
             )
             relative_path = None
             workspace = None
-        return watcher.oneshot_scan(params=params, workspace=workspace, path=relative_path)
+        return watcher.oneshot_scan(params=params, recursive=recursive, workspace=workspace, path=relative_path)
 
     return bp

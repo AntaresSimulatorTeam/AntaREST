@@ -36,7 +36,6 @@ import {
   removeEmptyFields,
 } from "../../../../../../services/utils/index";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getAllLinks } from "../../../../../../services/api/studydata";
 import XpansionPropsView from "./XpansionPropsView";
 import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
@@ -44,6 +43,7 @@ import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithS
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import EmptyView from "../../../../../common/page/SimpleContent";
 import SplitView from "../../../../../common/SplitView";
+import { getLinks } from "@/services/api/studies/links";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -104,7 +104,7 @@ function Candidates() {
       if (exist) {
         return {
           capacities: await getAllCapacities(study.id),
-          links: await getAllLinks({ uuid: study.id }),
+          links: await getLinks({ studyId: study.id }),
         };
       }
       return {};

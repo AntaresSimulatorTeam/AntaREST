@@ -13,7 +13,7 @@
 import multiprocessing
 import tempfile
 from dataclasses import asdict, dataclass, field
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -25,7 +25,7 @@ from antarest.core.roles import RoleType
 DEFAULT_WORKSPACE_NAME = "default"
 
 
-class Launcher(str, Enum):
+class Launcher(StrEnum):
     SLURM = "slurm"
     LOCAL = "local"
     DEFAULT = "default"
@@ -155,7 +155,7 @@ class StorageConfig:
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
     auto_archive_max_parallel: int = 5
-    snapshot_retention_days: int = 1
+    snapshot_retention_days: int = 7
 
     @classmethod
     def from_dict(cls, data: JSON) -> "StorageConfig":

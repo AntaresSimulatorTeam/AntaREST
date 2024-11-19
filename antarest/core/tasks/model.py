@@ -13,7 +13,7 @@
 import typing as t
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
@@ -28,7 +28,7 @@ if t.TYPE_CHECKING:
     from antarest.study.model import Study
 
 
-class TaskType(str, Enum):
+class TaskType(StrEnum):
     EXPORT = "EXPORT"
     VARIANT_GENERATION = "VARIANT_GENERATION"
     COPY = "COPY"
@@ -78,6 +78,8 @@ class CustomTaskEventMessages(AntaresBaseModel, extra="forbid"):
 class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
+    type: TaskType
+    study_id: t.Optional[str] = None
 
 
 class TaskDTO(AntaresBaseModel, extra="forbid"):

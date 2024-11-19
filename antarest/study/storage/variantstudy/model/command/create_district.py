@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Distri
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -80,7 +81,7 @@ class CreateDistrict(ICommand):
             "item_key": item_key,
         }
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -109,6 +110,7 @@ class CreateDistrict(ICommand):
                 "output": self.output,
                 "comments": self.comments,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
@@ -147,6 +149,7 @@ class CreateDistrict(ICommand):
                     "comments": other.comments,
                 },
                 command_context=self.command_context,
+                study_version=self.study_version,
             )
         ]
 

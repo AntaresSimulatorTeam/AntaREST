@@ -22,6 +22,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -104,7 +105,7 @@ class RemoveCluster(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update thermal cluster configurations and saves the changes:
         remove corresponding the configuration and remove the attached time series.
@@ -149,6 +150,7 @@ class RemoveCluster(ICommand):
         return CommandDTO(
             action=self.command_name.value,
             args={"area_id": self.area_id, "cluster_id": self.cluster_id},
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:

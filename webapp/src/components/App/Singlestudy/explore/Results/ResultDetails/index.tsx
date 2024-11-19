@@ -22,7 +22,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
-import axios from "axios";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import {
   Area,
@@ -39,9 +38,7 @@ import {
 } from "../../../../../../redux/selectors";
 import { getStudyData } from "../../../../../../services/api/study";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import EditableMatrix from "../../../../../common/EditableMatrix";
 import PropertiesView from "../../../../../common/PropertiesView";
-import SplitLayoutView from "../../../../../common/SplitLayoutView";
 import ListElement from "../../common/ListElement";
 import {
   createPath,
@@ -56,11 +53,18 @@ import UsePromiseCond, {
 } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import ButtonBack from "../../../../../common/ButtonBack";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import moment from "moment";
-import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton.tsx";
+import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index.tsx";
+import {
+  generateCustomColumns,
+  generateDateTime,
+  groupResultColumns,
+} from "../../../../../common/Matrix/shared/utils.ts";
+import { Column } from "@/components/common/Matrix/shared/constants.ts";
+import SplitView from "../../../../../common/SplitView/index.tsx";
+import ResultFilters from "./ResultFilters.tsx";
+import { toError } from "../../../../../../utils/fnUtils.ts";
+import EmptyView from "../../../../../common/page/SimpleContent.tsx";
+import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -151,6 +155,15 @@ function ResultDetails() {
     },
   );
 
+  const { data: dateTimeMetadata } = usePromise(
+    () => getStudyMatrixIndex(study.id, path),
+    {
+      deps: [study.id, path],
+    },
+  );
+
+  const dateTime = dateTimeMetadata && generateDateTime(dateTimeMetadata);
+
   const synthesisRes = usePromise(
     () => {
       if (outputId && selectedItem && isSynthesis) {
@@ -163,47 +176,6 @@ function ResultDetails() {
       deps: [study.id, outputId, selectedItem],
     },
   );
-
-  // !NOTE: Workaround to display the date in the correct format, to be replaced by a proper solution.
-  const dateTimeFromIndex = useMemo(() => {
-    if (!matrixRes.data) {
-      return [];
-    }
-
-    // Annual format has a static string
-    if (timestep === Timestep.Annual) {
-      return ["Annual"];
-    }
-
-    // Directly use API's week index (handles 53 weeks) as no formatting is required.
-    // !NOTE: Suboptimal: Assumes API consistency, lacks flexibility.
-    if (timestep === Timestep.Weekly) {
-      return matrixRes.data.index.map((weekNumber) => weekNumber.toString());
-    }
-
-    // Original date/time format mapping for moment parsing
-    const parseFormat = {
-      [Timestep.Hourly]: "MM/DD HH:mm",
-      [Timestep.Daily]: "MM/DD",
-      [Timestep.Monthly]: "MM",
-    }[timestep];
-
-    // Output formats for each timestep to match legacy UI requirements
-    const outputFormat = {
-      [Timestep.Hourly]: "DD MMM HH:mm  I",
-      [Timestep.Daily]: "DD MMM  I",
-      [Timestep.Monthly]: "MMM",
-    }[timestep];
-
-    const needsIndex =
-      timestep === Timestep.Hourly || timestep === Timestep.Daily;
-
-    return matrixRes.data.index.map((dateTime, i) =>
-      moment(dateTime, parseFormat).format(
-        outputFormat.replace("I", needsIndex ? ` - ${i + 1}` : ""),
-      ),
-    );
-  }, [matrixRes.data, timestep]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -223,16 +195,12 @@ function ResultDetails() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitLayoutView
-      left={
+    <SplitView id="results" sizes={[15, 85]}>
+      {/* Left */}
+      <Box>
         <PropertiesView
           topContent={
-            <Box
-              sx={{
-                width: 1,
-                px: 1,
-              }}
-            >
+            <Box sx={{ width: 1, px: 1 }}>
               <ButtonBack onClick={() => navigate("..")} />
             </Box>
           }
@@ -267,188 +235,82 @@ function ResultDetails() {
           }
           onSearchFilterChange={setSearchValue}
         />
-      }
-      right={
-        isSynthesis ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              height: 1,
-              width: 1,
-              overflow: "auto",
-            }}
-          >
-            <UsePromiseCond
-              response={synthesisRes}
-              ifPending={() => (
-                <Skeleton sx={{ height: 1, transform: "none" }} />
-              )}
-              ifResolved={(matrix) =>
-                matrix && (
-                  <EditableMatrix
-                    matrix={matrix}
-                    columnsNames={matrix.columns}
-                    matrixTime={false}
-                    readOnly
-                  />
-                )
-              }
-            />
-          </Box>
+      </Box>
+      {/* Right */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 2,
+        }}
+      >
+        <ResultFilters
+          year={year}
+          setYear={setYear}
+          dataType={dataType}
+          setDataType={setDataType}
+          timestep={timestep}
+          setTimestep={setTimestep}
+          maxYear={maxYear}
+          studyId={study.id}
+          path={path}
+        />
+        {isSynthesis ? (
+          <UsePromiseCond
+            response={synthesisRes}
+            ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+            ifFulfilled={(matrix) =>
+              matrix && (
+                <MatrixGrid
+                  data={matrix.data}
+                  rows={matrix.data.length}
+                  columns={generateCustomColumns({
+                    titles: matrix.columns,
+                  })}
+                  readOnly
+                />
+              )
+            }
+          />
         ) : (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              height: 1,
-              width: 1,
-              gap: 1,
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              {(
-                [
-                  [
-                    `${t("study.results.mc")}:`,
-                    () => (
-                      <>
-                        <BooleanFE
-                          value={year <= 0}
-                          trueText="Synthesis"
-                          falseText="Year by year"
-                          size="small"
-                          variant="outlined"
-                          onChange={(event) => {
-                            setYear(event?.target.value ? -1 : 1);
-                          }}
-                        />
-                        {year > 0 && (
-                          <NumberFE
-                            size="small"
-                            variant="outlined"
-                            value={year}
-                            sx={{ m: 0, ml: 1, width: 80 }}
-                            inputProps={{
-                              min: 1,
-                              max: maxYear,
-                            }}
-                            onChange={(event) => {
-                              setYear(Number(event.target.value));
-                            }}
-                          />
-                        )}
-                      </>
-                    ),
-                  ],
-                  [
-                    `${t("study.results.display")}:`,
-                    () => (
-                      <SelectFE
-                        value={dataType}
-                        options={[
-                          { value: DataType.General, label: "General values" },
-                          { value: DataType.Thermal, label: "Thermal plants" },
-                          { value: DataType.Renewable, label: "Ren. clusters" },
-                          { value: DataType.Record, label: "RecordYears" },
-                          { value: DataType.STStorage, label: "ST Storages" },
-                        ]}
-                        size="small"
-                        variant="outlined"
-                        onChange={(event) => {
-                          setDataType(event?.target.value as DataType);
-                        }}
-                      />
-                    ),
-                  ],
-                  [
-                    `${t("study.results.temporality")}:`,
-                    () => (
-                      <SelectFE
-                        value={timestep}
-                        options={[
-                          { value: Timestep.Hourly, label: "Hourly" },
-                          { value: Timestep.Daily, label: "Daily" },
-                          { value: Timestep.Weekly, label: "Weekly" },
-                          { value: Timestep.Monthly, label: "Monthly" },
-                          { value: Timestep.Annual, label: "Annual" },
-                        ]}
-                        size="small"
-                        variant="outlined"
-                        onChange={(event) => {
-                          setTimestep(event?.target.value as Timestep);
-                        }}
-                      />
-                    ),
-                  ],
-                ] as const
-              ).map(([label, Field]) => (
-                <Box
-                  key={label}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <Box component="span" sx={{ opacity: 0.7, mr: 1 }}>
-                    {label}
-                  </Box>
-                  <Field />
-                </Box>
-              ))}
-              <DownloadMatrixButton studyId={study.id} path={path} />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <UsePromiseCond
-                response={mergeResponses(outputRes, matrixRes)}
-                ifPending={() => (
-                  <Skeleton sx={{ height: 1, transform: "none" }} />
-                )}
-                ifResolved={([, matrix]) =>
-                  matrix && (
-                    <EditableMatrix
-                      matrix={matrix}
-                      matrixTime={false}
-                      rowNames={dateTimeFromIndex}
-                      readOnly
-                    />
-                  )
+          <UsePromiseCond
+            response={mergeResponses(outputRes, matrixRes)}
+            ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+            ifFulfilled={([, matrix]) =>
+              matrix && (
+                <MatrixGrid
+                  data={matrix.data}
+                  rows={matrix.data.length}
+                  columns={groupResultColumns([
+                    {
+                      id: "date",
+                      title: "Date",
+                      type: Column.DateTime,
+                      editable: false,
+                    },
+                    ...generateCustomColumns({
+                      titles: matrix.columns,
+                    }),
+                  ])}
+                  dateTime={dateTime}
+                  readOnly
+                />
+              )
+            }
+            ifRejected={(err) => (
+              <EmptyView
+                title={
+                  toError(err).message.includes("404")
+                    ? t("study.results.noData")
+                    : t("data.error.matrix")
                 }
-                ifRejected={(err) => (
-                  <Box
-                    sx={{
-                      height: 1,
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      flexDirection: "column",
-                      gap: 1,
-                    }}
-                  >
-                    {axios.isAxiosError(err) && err.response?.status === 404 ? (
-                      <>
-                        <GridOffIcon sx={{ fontSize: "80px" }} />
-                        {t("study.results.noData")}
-                      </>
-                    ) : (
-                      t("data.error.matrix")
-                    )}
-                  </Box>
-                )}
+                icon={GridOffIcon}
               />
-            </Box>
-          </Box>
-        )
-      }
-    />
+            )}
+          />
+        )}
+      </Box>
+    </SplitView>
   );
 }
 

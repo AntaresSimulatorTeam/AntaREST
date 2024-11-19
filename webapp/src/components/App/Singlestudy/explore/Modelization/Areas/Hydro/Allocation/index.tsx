@@ -27,7 +27,7 @@ import {
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import HydroMatrixDialog from "../HydroMatrixDialog";
-import { HydroMatrixType } from "../utils";
+import { HydroMatrix } from "../utils";
 import { FormBox, FormPaper } from "../style";
 import ViewMatrixButton from "../ViewMatrixButton";
 
@@ -84,7 +84,7 @@ function Allocation() {
       </FormPaper>
       {matrixDialogOpen && (
         <HydroMatrixDialog
-          type={HydroMatrixType.Allocation}
+          type={HydroMatrix.Allocation}
           open={matrixDialogOpen}
           onClose={() => setMatrixDialogOpen(false)}
         />

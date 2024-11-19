@@ -28,7 +28,7 @@ SUB_JSON = Union[ELEMENT, JSON, List[Any], None]
 LowerCaseStr = te.Annotated[str, StringConstraints(to_lower=True)]
 
 
-class PublicMode(str, enum.Enum):
+class PublicMode(enum.StrEnum):
     NONE = "NONE"
     READ = "READ"
     EXECUTE = "EXECUTE"
@@ -36,7 +36,7 @@ class PublicMode(str, enum.Enum):
     FULL = "FULL"
 
 
-class StudyPermissionType(str, enum.Enum):
+class StudyPermissionType(enum.StrEnum):
     """
     User permission belongs to Study
     """

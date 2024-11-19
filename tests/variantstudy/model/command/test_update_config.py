@@ -16,6 +16,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -29,20 +30,19 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 @pytest.mark.unit_test
 def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     study_path = empty_study.config.study_path
+    study_version = empty_study.config.version
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 
     CreateArea.model_validate(
-        {
-            "area_name": area1,
-            "command_context": command_context,
-        }
+        {"area_name": area1, "command_context": command_context, "study_version": study_version}
     ).apply(empty_study)
 
     update_settings_command = UpdateConfig(
         target="settings/generaldata/optimization/simplex-range",
         data="day",
         command_context=command_context,
+        study_version=study_version,
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
@@ -54,6 +54,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
         target=f"input/areas/{area1_id}/optimization/nodal optimization/other-dispatchable-power",
         data=False,
         command_context=command_context,
+        study_version=study_version,
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
@@ -63,18 +64,14 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     # test UpdateConfig with byte object which is necessary with the API PUT /v1/studies/{uuid}/raw
     data = json.dumps({"first_layer": {"0": "Nothing"}}).encode("utf-8")
     command = UpdateConfig(
-        target="layers/layers",
-        data=data,
-        command_context=command_context,
+        target="layers/layers", data=data, command_context=command_context, study_version=study_version
     )
     command.apply(empty_study)
     layers = IniReader().read(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"0": "Nothing"}}
     new_data = json.dumps({"1": False}).encode("utf-8")
     command = UpdateConfig(
-        target="layers/layers/first_layer",
-        data=new_data,
-        command_context=command_context,
+        target="layers/layers/first_layer", data=new_data, command_context=command_context, study_version=study_version
     )
     command.apply(empty_study)
     layers = IniReader().read(study_path / "layers/layers.ini")
@@ -82,10 +79,14 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
 
 
 def test_match(command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context)
-    other_match = UpdateConfig(target="foo", data="bar", command_context=command_context)
-    other_not_match = UpdateConfig(target="hello", data="bar", command_context=command_context)
-    other_other = RemoveArea(id="id", command_context=command_context)
+    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = UpdateConfig(
+        target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_not_match = UpdateConfig(
+        target="hello", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -94,7 +95,7 @@ def test_match(command_context: CommandContext):
 
 @patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_update_config")
 def test_revert(mock_generate_update_config, command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context)
+    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
     study = FileStudy(config=Mock(), tree=Mock())
     mock_generate_update_config.side_effect = ChildNotFoundError("")
     res = CommandReverter().revert(base, [], study)
@@ -103,12 +104,14 @@ def test_revert(mock_generate_update_config, command_context: CommandContext):
 
     assert CommandReverter().revert(
         base,
-        [UpdateConfig(target="foo", data="baz", command_context=command_context)],
+        [UpdateConfig(target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8)],
         study,
-    ) == [UpdateConfig(target="foo", data="baz", command_context=command_context)]
+    ) == [UpdateConfig(target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8)]
 
 
 def test_create_diff(command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context)
-    other_match = UpdateConfig(target="foo", data="baz", command_context=command_context)
+    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = UpdateConfig(
+        target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
     assert base.create_diff(other_match) == [other_match]

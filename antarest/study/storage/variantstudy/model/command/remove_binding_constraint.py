@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_8_7
@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -43,7 +44,7 @@ class RemoveBindingConstraint(ICommand):
         study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
         return CommandOutput(status=True), {}
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.config.bindings]:
             return CommandOutput(status=False, message=f"Binding constraint not found: '{self.id}'")
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
@@ -81,6 +82,7 @@ class RemoveBindingConstraint(ICommand):
             args={
                 "id": self.id,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
