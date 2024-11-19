@@ -39,6 +39,7 @@ from antarest.study.business.aggregator_management import (
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
 try:
     import tables  # type: ignore
@@ -198,7 +199,7 @@ def create_raw_study_routes(
     ) -> t.Any:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}", extra={"user": current_user.id})
-        study_service.delete_file_or_folder(uuid, path, current_user)
+        study_service.delete_user_file_or_folder(uuid, path, current_user)
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
@@ -515,7 +516,7 @@ def create_raw_study_routes(
             False,
             description="Create file or parent directories if missing.",
         ),  # type: ignore
-        is_folder: bool = False,
+        resource_type: ResourceType = ResourceType.FILE,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -527,14 +528,14 @@ def create_raw_study_routes(
         - `path`: The path to the data to update. Defaults to "/".
         - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
         - `create_missing`: Flag to indicate whether to create file and parent directories if missing.
-        - `is_folder`: When True and `create_missing` is True, creates a folder. Else (default value), it's ignored.
+        - `resource_type`: When set to "folder" and `create_missing` is True, creates a folder. Else (default value), it's ignored.
 
         """
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        if is_folder and create_missing:
+        if resource_type == ResourceType.FOLDER and create_missing:
             logger.info(f"Creating folder {path} for study {uuid}", extra={"user": current_user.id})
-            study_service.create_folder(uuid, path, current_user)
+            study_service.create_user_folder(uuid, path, current_user)
         else:
             logger.info(f"Uploading new data file at {path} for study {uuid}", extra={"user": current_user.id})
             study_service.edit_study(uuid, path, file, params, create_missing=create_missing)

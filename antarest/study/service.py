@@ -151,7 +151,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
+from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource, ResourceType
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -1597,8 +1597,9 @@ class StudyService:
         create_missing &= not file_path.exists()
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
+            user_path = self._get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
             cmd_1 = CreateUserResource(
-                path=str(file_relpath), file=True, command_context=context, study_version=version
+                path=user_path, resource_type=ResourceType.FILE, command_context=context, study_version=version
             )
             assert isinstance(data, bytes)
             cmd_2 = UpdateRawFile(
@@ -2693,7 +2694,7 @@ class StudyService:
                 binding_ids = [bc.id for bc in ref_bcs]
                 raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
 
-    def delete_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+    def delete_user_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
         """
         Deletes a file or a folder of the study.
         The data must be located inside the 'User' folder.
@@ -2707,10 +2708,10 @@ class StudyService:
         Raises:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
-        args = {"path": path}
+        args = {"path": self._get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
         self._alter_user_folder(study_id, args, current_user, RemoveUserResource, ResourceDeletionNotAllowed)
 
-    def create_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+    def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
         """
         Creates a folder inside the study.
         The data must be located inside the 'User' folder.
@@ -2724,8 +2725,19 @@ class StudyService:
         Raises:
             FolderCreationNotAllowed: if the path does not comply with the above rules
         """
-        args = {"path": path, "file": False}
+        args = {
+            "path": self._get_path_inside_user_folder(path, FolderCreationNotAllowed),
+            "resource_type": ResourceType.FOLDER,
+        }
         self._alter_user_folder(study_id, args, current_user, CreateUserResource, FolderCreationNotAllowed)
+
+    def _get_path_inside_user_folder(
+        self, path: str, exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]]
+    ) -> str:
+        url = [item for item in path.split("/") if item]
+        if len(url) < 2 or url[0] != "user":
+            raise exception_class(f"the given path isn't inside the 'User' folder: {path}")
+        return "/".join(url[1:])
 
     def _alter_user_folder(
         self,

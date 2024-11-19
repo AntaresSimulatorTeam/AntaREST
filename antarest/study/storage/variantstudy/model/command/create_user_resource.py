@@ -10,15 +10,22 @@
 #
 # This file is part of the Antares project.
 import typing as t
+from enum import StrEnum
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, is_url_writeable
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+class ResourceType(StrEnum):
+    FILE = "file"
+    FOLDER = "folder"
 
 
 class CreateUserResource(ICommand):
@@ -36,26 +43,22 @@ class CreateUserResource(ICommand):
     # ==================
 
     path: str
-    file: bool
+    resource_type: ResourceType
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         url = [item for item in self.path.split("/") if item]
-        if len(url) < 2 or url[0] != "user":
-            return CommandOutput(status=False, message=f"the given path isn't inside the 'User' folder: {self.path}")
-        if url[1] == "expansion":
-            return CommandOutput(
-                status=False, message=f"the given path shouldn't be inside the 'expansion' folder: {self.path}"
-            )
-
         study_tree = study_data.tree
+        user_node = t.cast(User, study_tree.get_node(["user"]))
+        if not is_url_writeable(user_node, url):
+            return CommandOutput(status=False, message=f"you are not allowed to create a resource here: {self.path}")
         try:
             study_tree.get_node(url)
         except ChildNotFoundError:
             # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-            last_value = b"" if self.file else {}
+            last_value = b"" if self.resource_type == ResourceType.FILE else {}
             nested_dict: JSON = {url[-1]: last_value}
             for key in reversed(url[:-1]):
                 nested_dict = {key: nested_dict}
@@ -67,19 +70,23 @@ class CreateUserResource(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"path": self.path, "file": self.file},
+            args={"path": self.path, "resource_type": self.resource_type},
             study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
         return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path + MATCH_SIGNATURE_SEPARATOR + str(self.file)
+            self.command_name.value
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.path
+            + MATCH_SIGNATURE_SEPARATOR
+            + self.resource_type.value
         )
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateUserResource):
             return False
-        return self.path == other.path and self.file == other.file
+        return self.path == other.path and self.resource_type == other.resource_type
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]

@@ -16,7 +16,7 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, is_url_writeable
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -43,16 +43,13 @@ class RemoveUserResource(ICommand):
 
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         url = [item for item in self.path.split("/") if item]
-        if len(url) < 2 or url[0] != "user":
-            return CommandOutput(status=False, message=f"the targeted data isn't inside the 'User' folder: {self.path}")
-
         study_tree = study_data.tree
         user_node = t.cast(User, study_tree.get_node(["user"]))
-        if url[1] in [file.filename for file in user_node.registered_files]:
+        if not is_url_writeable(user_node, url):
             return CommandOutput(status=False, message=f"you are not allowed to delete this resource : {self.path}")
 
         try:
-            user_node.delete(url[1:])
+            user_node.delete(url)
         except ChildNotFoundError:
             return CommandOutput(status=False, message="the given path doesn't exist")
 
