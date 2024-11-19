@@ -151,12 +151,19 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource, ResourceType
+from antarest.study.storage.variantstudy.model.command.create_user_resource import (
+    CreateUserResource,
+    CreateUserResourceData,
+    ResourceType,
+)
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
+from antarest.study.storage.variantstudy.model.command.remove_user_resource import (
+    RemoveUserResource,
+    RemoveUserResourceData,
+)
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -185,6 +192,20 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
             elif entry.is_dir():
                 total_size += get_disk_usage(path=str(entry.path))
     return total_size
+
+
+def _get_path_inside_user_folder(
+    path: str, exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]]
+) -> str:
+    """
+    Retrieves the path inside the `user` folder for a given user path
+
+    Raises exception_class if the path is not located inside the `user` folder
+    """
+    url = [item for item in path.split("/") if item]
+    if len(url) < 2 or url[0] != "user":
+        raise exception_class(f"the given path isn't inside the 'User' folder: {path}")
+    return "/".join(url[1:])
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -1597,7 +1618,7 @@ class StudyService:
         create_missing &= not file_path.exists()
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
-            user_path = self._get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
+            user_path = _get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
             cmd_1 = CreateUserResource(
                 path=user_path, resource_type=ResourceType.FILE, command_context=context, study_version=version
             )
@@ -2708,8 +2729,8 @@ class StudyService:
         Raises:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
-        args = {"path": self._get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
-        self._alter_user_folder(study_id, args, current_user, RemoveUserResource, ResourceDeletionNotAllowed)
+        cmd_data = RemoveUserResourceData(**{"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)})
+        self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed, current_user)
 
     def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
         """
@@ -2726,33 +2747,29 @@ class StudyService:
             FolderCreationNotAllowed: if the path does not comply with the above rules
         """
         args = {
-            "path": self._get_path_inside_user_folder(path, FolderCreationNotAllowed),
+            "path": _get_path_inside_user_folder(path, FolderCreationNotAllowed),
             "resource_type": ResourceType.FOLDER,
         }
-        self._alter_user_folder(study_id, args, current_user, CreateUserResource, FolderCreationNotAllowed)
-
-    def _get_path_inside_user_folder(
-        self, path: str, exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]]
-    ) -> str:
-        url = [item for item in path.split("/") if item]
-        if len(url) < 2 or url[0] != "user":
-            raise exception_class(f"the given path isn't inside the 'User' folder: {path}")
-        return "/".join(url[1:])
+        command_data = CreateUserResourceData.model_validate(args)
+        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed, current_user)
 
     def _alter_user_folder(
         self,
         study_id: str,
-        args: t.Dict[str, t.Any],
-        current_user: JWTUser,
+        command_data: t.Union[CreateUserResourceData, RemoveUserResourceData],
         command_class: t.Type[t.Union[CreateUserResource, RemoveUserResource]],
         exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]],
+        current_user: JWTUser,
     ) -> None:
         study = self.get_study(study_id)
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
-        args["command_context"] = self.storage_service.variant_study_service.command_factory.command_context
-        args["study_version"] = StudyVersion.parse(study.version)
-        command = command_class(**args)
+        args = {
+            **command_data.model_dump(mode="json"),
+            "study_version": StudyVersion.parse(study.version),
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+        }
+        command = command_class.model_validate(args)
         file_study = self.storage_service.get_storage(study).get_raw(study, True)
         try:
             execute_or_add_commands(study, file_study, [command], self.storage_service)

@@ -13,6 +13,7 @@
 import typing as t
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
@@ -22,7 +23,11 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class RemoveUserResource(ICommand):
+class RemoveUserResourceData(AntaresBaseModel):
+    path: str
+
+
+class RemoveUserResource(ICommand, RemoveUserResourceData):
     """
     Command used to delete a resource inside the `user` folder.
     """
@@ -32,11 +37,6 @@ class RemoveUserResource(ICommand):
 
     command_name: CommandName = CommandName.REMOVE_USER_RESOURCE
     version: int = 1
-
-    # Command parameters
-    # ==================
-
-    path: str
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}

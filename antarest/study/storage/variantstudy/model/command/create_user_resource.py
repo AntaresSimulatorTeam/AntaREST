@@ -14,6 +14,7 @@ from enum import StrEnum
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
@@ -28,7 +29,12 @@ class ResourceType(StrEnum):
     FOLDER = "folder"
 
 
-class CreateUserResource(ICommand):
+class CreateUserResourceData(AntaresBaseModel):
+    path: str
+    resource_type: ResourceType
+
+
+class CreateUserResource(ICommand, CreateUserResourceData):
     """
     Command used to create a resource inside the `user` folder.
     """
@@ -38,12 +44,6 @@ class CreateUserResource(ICommand):
 
     command_name: CommandName = CommandName.CREATE_USER_RESOURCE
     version: int = 1
-
-    # Command parameters
-    # ==================
-
-    path: str
-    resource_type: ResourceType
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
