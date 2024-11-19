@@ -218,7 +218,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             file_study = self.storage_service.get_storage(study).get_raw(study)
             execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
 
-            if isinstance(file_study, VariantStudy):
+            if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
                 # It means the generation will really be executed in the next snapshot generation.
                 # We don't want this, we want this task to generate the matrices no matter the study.
@@ -228,8 +228,9 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 generation_task_id = variant_service.generate_task(study, True, False, listener)
                 task_service.await_task(generation_task_id)
                 result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
-                if not result.result or not result.result.success:
-                    raise ValueError(f"Failed to generate variant study {self._study_id}")
+                assert result.result is not None
+                if not result.result.success:
+                    raise ValueError(result.result.message)
 
             self.event_bus.push(
                 Event(
