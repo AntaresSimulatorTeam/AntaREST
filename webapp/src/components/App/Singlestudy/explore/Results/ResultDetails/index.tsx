@@ -65,6 +65,7 @@ import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";
 import EmptyView from "../../../../../common/page/SimpleContent.tsx";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
+import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
 import { ResultMatrixDTO } from "@/components/common/Matrix/shared/types.ts";
 
 function ResultDetails() {
@@ -272,13 +273,11 @@ function ResultDetails() {
             ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
             ifFulfilled={(matrix) =>
               matrix && (
-                <MatrixGrid
+                <MatrixGridSynthesis
                   data={matrix.data}
-                  rows={matrix.data.length}
                   columns={generateCustomColumns({
                     titles: matrix.columns,
                   })}
-                  readOnly
                 />
               )
             }
