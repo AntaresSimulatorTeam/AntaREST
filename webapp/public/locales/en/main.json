@@ -76,6 +76,7 @@
   "global.close": "Close",
   "global.replace": "Replace",
   "global.status": "Status",
+  "global.semicolon": "Semicolon",
   "global.language": "Language",
   "global.time.hourly": "Hourly",
   "global.time.daily": "Daily",
