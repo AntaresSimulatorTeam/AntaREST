@@ -108,6 +108,9 @@ def validate_filters(
     filter_value: t.Union[t.List[FilterOption], str], enum_cls: t.Type[FilterOption]
 ) -> t.List[FilterOption]:
     if isinstance(filter_value, str):
+        if not filter_value.strip():
+            return []
+
         filter_accepted_values = [e for e in enum_cls]
 
         options = filter_value.replace(" ", "").split(",")
