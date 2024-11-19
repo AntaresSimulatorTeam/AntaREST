@@ -65,7 +65,11 @@ class CreateUserResource(ICommand):
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={"path": self.path, "file": self.file})
+        return CommandDTO(
+            action=self.command_name.value,
+            args={"path": self.path, "file": self.file},
+            study_version=self.study_version,
+        )
 
     def match_signature(self) -> str:
         return str(

@@ -59,7 +59,7 @@ class RemoveUserResource(ICommand):
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={"path": self.path})
+        return CommandDTO(action=self.command_name.value, args={"path": self.path}, study_version=self.study_version)
 
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path)

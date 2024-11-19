@@ -240,7 +240,9 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             if matrix_attr is not None:
                 args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
 
-        return CommandDTO(action=self.command_name.value, args=args, version=self.version)
+        return CommandDTO(
+            action=self.command_name.value, args=args, version=self.version, study_version=self.study_version
+        )
 
     def get_inner_matrices(self) -> t.List[str]:
         matrix_service = self.command_context.matrix_service
@@ -431,7 +433,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
 
         study_version = study_data.config.version
-        props = create_binding_constraint_config(study_version, **self.model_dump())
+        props = create_binding_constraint_config(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True)
 
         new_binding = {"id": bd_id, "name": self.name, **obj}
@@ -456,7 +458,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
         other = t.cast(CreateBindingConstraint, other)
         bd_id = transform_name_to_id(self.name)
-        args = {"id": bd_id, "command_context": other.command_context}
+        args = {"id": bd_id, "command_context": other.command_context, "study_version": other.study_version}
 
         excluded_fields = set(ICommand.model_fields)
         self_command = self.model_dump(mode="json", exclude=excluded_fields)

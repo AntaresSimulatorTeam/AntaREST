@@ -65,11 +65,18 @@ class CommandBlock(Base):  # type: ignore
     command: str = Column(String(255))
     version: int = Column(Integer)
     args: str = Column(String())
+    study_version: str = Column(String(36))
 
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
         version = self.version or 1
-        return CommandDTO(id=self.id, action=self.command, args=from_json(self.args), version=version)
+        return CommandDTO(
+            id=self.id,
+            action=self.command,
+            args=from_json(self.args),
+            version=version,
+            study_version=self.study_version,
+        )
 
     def __str__(self) -> str:
         return (
@@ -79,6 +86,7 @@ class CommandBlock(Base):  # type: ignore
             f" command={self.command!r},"
             f" version={self.version!r},"
             f" args={self.args!r})"
+            f" study_version={self.study_version!r}"
         )
 
 

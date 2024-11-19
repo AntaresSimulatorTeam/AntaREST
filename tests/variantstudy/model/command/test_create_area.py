@@ -14,7 +14,9 @@ import configparser
 from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -38,7 +40,8 @@ class TestCreateArea:
         enr_modelling: EnrModelling,
     ) -> None:
         empty_study.config.enr_modelling = enr_modelling.value
-        empty_study.config.version = version
+        study_version = StudyVersion.parse(version)
+        empty_study.config.version = study_version
 
         study_path = empty_study.config.study_path
         area_name = "Area"
@@ -47,17 +50,14 @@ class TestCreateArea:
         # Reset the configuration to check that the "unserverdenergycost" and "spilledenergycost" sections
         # are dynamically created when the new area is added to the study.
         output = UpdateConfig(
-            target="input/thermal/areas",
-            data={},
-            command_context=command_context,
+            target="input/thermal/areas", data={}, command_context=command_context, study_version=study_version
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
         # When the CreateArea command is applied
-        output = CreateArea(
-            area_name=area_name,
-            command_context=command_context,
-        ).apply(study_data=empty_study)
+        output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
+            study_data=empty_study
+        )
         assert output.status, output.message
 
         # Then, check the study structure
@@ -165,16 +165,18 @@ class TestCreateArea:
 
         assert output.status, output.message
 
-        create_area_command: ICommand = CreateArea(area_name=area_name, command_context=command_context, metadata={})
+        create_area_command: ICommand = CreateArea(
+            area_name=area_name, command_context=command_context, metadata={}, study_version=study_version
+        )
         output = create_area_command.apply(study_data=empty_study)
         assert not output.status
 
 
 def test_match(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context)
-    other_match = CreateArea(area_name="foo", command_context=command_context)
-    other_not_match = CreateArea(area_name="bar", command_context=command_context)
-    other_other = RemoveArea(id="id", command_context=command_context)
+    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_not_match = CreateArea(area_name="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
 
     assert base.match(other_match)
     assert not base.match(other_not_match)
@@ -184,12 +186,14 @@ def test_match(command_context: CommandContext) -> None:
 
 
 def test_revert(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context)
-    actual = CommandReverter().revert(base, [], Mock(spec=FileStudy))
-    assert actual == [RemoveArea(id="foo", command_context=command_context)]
+    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    file_study = Mock(spec=FileStudy)
+    file_study.config.version = STUDY_VERSION_8_8
+    actual = CommandReverter().revert(base, [], file_study)
+    assert actual == [RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)]
 
 
 def test_create_diff(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context)
-    other_match = CreateArea(area_name="foo", command_context=command_context)
+    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.create_diff(other_match) == []

@@ -26,6 +26,7 @@ from uuid import uuid4
 
 import numpy as np
 import pandas as pd
+from antares.study.version import StudyVersion
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
@@ -87,8 +88,9 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
-from antarest.study.business.link_management import LinkInfoDTO, LinkManager
+from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
+from antarest.study.business.model.link_model import LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -213,11 +215,13 @@ class ThermalClusterTimeSeriesGeneratorTask:
     def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = GenerateThermalClusterTimeSeries.model_construct(command_context=command_context)
         listener = TaskProgressRecorder(notifier=notifier)
         with db():
             study = self.repository.one(self._study_id)
             file_study = self.storage_service.get_storage(study).get_raw(study)
+            command = GenerateThermalClusterTimeSeries(
+                command_context=command_context, study_version=file_study.config.version
+            )
             execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
 
             if isinstance(file_study, VariantStudy):
@@ -232,7 +236,6 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
                 if not result.result or not result.result.success:
                     raise ValueError(f"Failed to generate variant study {self._study_id}")
-
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
@@ -360,7 +363,7 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service, self.repository)
         self.district_manager = DistrictManager(self.storage_service)
-        self.links = LinkManager(self.storage_service)
+        self.links_manager = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
         self.general_manager = GeneralManager(self.storage_service)
         self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
@@ -382,7 +385,7 @@ class StudyService:
         self.correlation_manager = CorrelationManager(self.storage_service)
         self.table_mode_manager = TableModeManager(
             self.areas,
-            self.links,
+            self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
             self.st_storage_manager,
@@ -580,6 +583,7 @@ class StudyService:
                     target="settings/comments",
                     b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
                     command_context=variant_study_service.command_factory.command_context,
+                    study_version=study.version,
                 )
             ]
             variant_study_service.append_commands(
@@ -1511,10 +1515,7 @@ class StudyService:
         return output_id
 
     def _create_edit_study_command(
-        self,
-        tree_node: INode[JSON, SUB_JSON, JSON],
-        url: str,
-        data: SUB_JSON,
+        self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
     ) -> ICommand:
         """
         Create correct command to edit study
@@ -1531,11 +1532,7 @@ class StudyService:
 
         if isinstance(tree_node, IniFileNode):
             assert not isinstance(data, (bytes, list))
-            return UpdateConfig(
-                target=url,
-                data=data,
-                command_context=context,
-            )
+            return UpdateConfig(target=url, data=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
@@ -1551,30 +1548,22 @@ class StudyService:
                     matrix = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).to_numpy(dtype=np.float64)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
-                    target=url,
-                    matrix=matrix.tolist(),
-                    command_context=context,
+                    target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
                 )
             assert isinstance(data, (list, str))
-            return ReplaceMatrix(
-                target=url,
-                matrix=data,
-                command_context=context,
-            )
+            return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 assert isinstance(data, str)
-                return UpdateComments(
-                    comments=data,
-                    command_context=context,
-                )
+                return UpdateComments(comments=data, command_context=context, study_version=study_version)
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
                     b64Data=base64.b64encode(data).decode("utf-8"),
                     command_context=context,
+                    study_version=study_version,
                 )
         raise NotImplementedError()
 
@@ -1600,6 +1589,7 @@ class StudyService:
         """
         study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
+        version = file_study.config.version
         commands: t.List[ICommand] = []
 
         file_relpath = PurePosixPath(url.strip().strip("/"))
@@ -1607,19 +1597,26 @@ class StudyService:
         create_missing &= not file_path.exists()
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
-            cmd_1 = CreateUserResource(path=str(file_relpath), file=True, command_context=context)
+            cmd_1 = CreateUserResource(
+                path=str(file_relpath), file=True, command_context=context, study_version=version
+            )
             assert isinstance(data, bytes)
-            cmd_2 = UpdateRawFile(target=url, b64Data=base64.b64encode(data).decode("utf-8"), command_context=context)
+            cmd_2 = UpdateRawFile(
+                target=url,
+                b64Data=base64.b64encode(data).decode("utf-8"),
+                command_context=context,
+                study_version=version,
+            )
             commands.extend([cmd_1, cmd_2])
         else:
             # A 404 Not Found error is raised if the file does not exist.
             tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
-            commands.append(self._create_edit_study_command(tree_node=tree_node, url=url, data=data))
+            commands.append(self._create_edit_study_command(tree_node, url, data, version))
 
         if isinstance(study_service, RawStudyService):
             url = "study/antares/lastsave"
             last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(tree_node=last_save_node, url=url, data=int(time.time()))
+            cmd = self._create_edit_study_command(last_save_node, url, int(time.time()), version)
             commands.append(cmd)
 
         execute_or_add_commands(study, file_study, commands, self.storage_service)
@@ -1845,12 +1842,11 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-        with_ui: bool,
         params: RequestParameters,
-    ) -> t.List[LinkInfoDTO]:
+    ) -> t.List[LinkDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.links.get_all_links(study, with_ui)
+        return self.links_manager.get_all_links(study)
 
     def create_area(
         self,
@@ -1874,13 +1870,13 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkInfoDTO,
+        link_creation_dto: LinkDTO,
         params: RequestParameters,
-    ) -> LinkInfoDTO:
+    ) -> LinkDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_link = self.links.create_link(study, link_creation_dto)
+        new_link = self.links_manager.create_link(study, link_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -1996,7 +1992,7 @@ class StudyService:
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
-        self.links.delete_link(study, area_from, area_to)
+        self.links_manager.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,

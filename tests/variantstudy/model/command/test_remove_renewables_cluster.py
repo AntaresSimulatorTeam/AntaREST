@@ -9,9 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from antares.study.version import StudyVersion
 from checksumdir import dirhash
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -26,13 +27,16 @@ from tests.variantstudy.model.command.helpers import reset_line_separator
 class TestRemoveRenewablesCluster:
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
         empty_study.config.enr_modelling = str(EnrModelling.CLUSTERS)
-        empty_study.config.version = 810
+        study_version = StudyVersion.parse(810)
+        empty_study.config.version = study_version
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster Name"
         cluster_id = transform_name_to_id(cluster_name, lower=False)
 
-        output = CreateArea(area_name=area_name, command_context=command_context).apply(empty_study)
+        output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
+            empty_study
+        )
         assert output.status, output.message
 
         ################################################################################################
@@ -49,19 +53,19 @@ class TestRemoveRenewablesCluster:
                 "ts-interpretation": "power-generation",
             },
             command_context=command_context,
+            study_version=study_version,
         ).apply(empty_study)
 
         # Add scenario builder data
         output = UpdateScenarioBuilder(
             data={"Default Ruleset": {f"r,{area_id},0,{cluster_name.lower()}": 1}},
             command_context=command_context,
+            study_version=study_version,
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
         output = RemoveRenewablesCluster(
-            area_id=area_id,
-            cluster_id=cluster_id,
-            command_context=command_context,
+            area_id=area_id, cluster_id=cluster_id, command_context=command_context, study_version=study_version
         ).apply(empty_study)
 
         assert output.status, output.message
@@ -71,6 +75,7 @@ class TestRemoveRenewablesCluster:
             area_id="non_existent_area",
             cluster_id=cluster_id,
             command_context=command_context,
+            study_version=study_version,
         ).apply(empty_study)
         assert not output.status
 
@@ -78,15 +83,22 @@ class TestRemoveRenewablesCluster:
             area_id=area_name,
             cluster_id="non_existent_cluster",
             command_context=command_context,
+            study_version=study_version,
         ).apply(empty_study)
         assert not output.status
 
 
 def test_match(command_context: CommandContext) -> None:
-    base = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
-    other_match = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
-    other_not_match = RemoveRenewablesCluster(area_id="foo", cluster_id="baz", command_context=command_context)
-    other_other = RemoveArea(id="id", command_context=command_context)
+    base = RemoveRenewablesCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_match = RemoveRenewablesCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_not_match = RemoveRenewablesCluster(
+        area_id="foo", cluster_id="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -95,6 +107,10 @@ def test_match(command_context: CommandContext) -> None:
 
 
 def test_create_diff(command_context: CommandContext) -> None:
-    base = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
-    other_match = RemoveRenewablesCluster(area_id="foo", cluster_id="bar", command_context=command_context)
+    base = RemoveRenewablesCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
+    other_match = RemoveRenewablesCluster(
+        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+    )
     assert base.create_diff(other_match) == []

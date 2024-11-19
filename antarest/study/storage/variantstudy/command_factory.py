@@ -13,6 +13,8 @@
 import copy
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
@@ -95,7 +97,9 @@ class CommandFactory:
             patch_service=patch_service,
         )
 
-    def _to_single_command(self, action: str, args: JSON, version: int, command_id: t.Optional[str]) -> ICommand:
+    def _to_single_command(
+        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: t.Optional[str]
+    ) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
             command_class = COMMAND_MAPPING[action]
@@ -104,6 +108,7 @@ class CommandFactory:
                 command_context=self.command_context,
                 version=version,
                 command_id=command_id,
+                study_version=study_version,
             )
         raise NotImplementedError(action)
 
@@ -125,11 +130,19 @@ class CommandFactory:
             # In some cases, pydantic can modify inplace the given args.
             # We don't want that so before doing so we copy the dictionnary.
             new_args = copy.deepcopy(args)
-            return [self._to_single_command(command_dto.action, new_args, command_dto.version, command_dto.id)]
+            return [
+                self._to_single_command(
+                    command_dto.action, new_args, command_dto.version, command_dto.study_version, command_dto.id
+                )
+            ]
         elif isinstance(args, list):
             return [
                 self._to_single_command(
-                    command_dto.action, copy.deepcopy(argument), command_dto.version, command_dto.id
+                    command_dto.action,
+                    copy.deepcopy(argument),
+                    command_dto.version,
+                    command_dto.study_version,
+                    command_dto.id,
                 )
                 for argument in args
             ]

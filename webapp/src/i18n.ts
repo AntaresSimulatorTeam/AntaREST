@@ -17,33 +17,37 @@ import Backend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
+export const SUPPORTED_LANGUAGES = ["en", "fr"] as const;
+
 i18n
-  // load translation using xhr -> see /public/locales
-  // learn more: https://github.com/i18next/i18next-xhr-backend
+  // Learn more: https://github.com/i18next/i18next-http-backend
   .use(Backend)
-  // detect user language
-  // learn more: https://github.com/i18next/i18next-browser-languageDetector
+  // Learn more: https://github.com/i18next/i18next-browser-languageDetector
   .use(LanguageDetector)
-  // pass the i18n instance to react-i18next.
+  // Learn more: https://react.i18next.com/latest/i18next-instance
   .use(initReactI18next)
-  // init i18next
-  // for all options read: https://www.i18next.com/overview/configuration-options
+  // For all options read: https://www.i18next.com/overview/configuration-options
   .init({
+    supportedLngs: SUPPORTED_LANGUAGES,
     fallbackLng: "en",
+    load: "languageOnly",
+    cleanCode: true,
+    ns: ["main"], // TODO: Add more namespaces https://www.i18next.com/principles/namespaces
+    defaultNS: "main",
+    // i18next-http-backend
     backend: {
       loadPath: `${
         import.meta.env.BASE_URL
       }locales/{{lng}}/{{ns}}.json?id=${__BUILD_TIMESTAMP__}`,
     },
+    // i18next-browser-languagedetector
+    detection: {
+      convertDetectedLanguage: (lng) => lng.split("-")[0], // Remove region code (e.g. en-US -> en)
+    },
+    // react-i18next
     react: {
       useSuspense: false,
     },
-    interpolation: {
-      escapeValue: false, // not needed for react as it escapes by default
-    },
-    ns: ["main"],
-    defaultNS: "main",
-    returnNull: false,
   });
 
 export default i18n;
