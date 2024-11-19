@@ -207,7 +207,6 @@ class TestMatrixContentRepository:
             # then a file is created in the repo directory
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             assert matrix_file.exists()
-            assert bucket_dir.joinpath(f"{matrix_hash}.tsv.lock").exists()
             array = matrix_format.load_matrix(matrix_file)
             assert array.tolist() == data
             modif_time = matrix_file.stat().st_mtime
@@ -304,8 +303,6 @@ class TestMatrixContentRepository:
                     associated_hash = "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
                     matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.{saved_format}")
                     saved_format.save_matrix(df, matrix_path)
-                    lock_path = matrix_path.with_suffix(".tsv.lock")
-                    lock_path.touch()
 
                     # asserts the saved matrix object exists
                     assert matrix_content_repo.exists(associated_hash)
@@ -323,13 +320,11 @@ class TestMatrixContentRepository:
 
                     # Recreates the matrix
                     saved_format.save_matrix(df, matrix_path)
-                    lock_path.touch()
                     # saving the same matrix will migrate its format to the repository one.
                     matrix_content_repo.save(data)
-                    assert lock_path.exists()
                     saved_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{matrix_format}"))
                     assert not saved_matrix_files
                     repo_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{repository_format}"))
                     assert len(repo_matrix_files) == 1
-                    new_matrix_path = matrix_content_repo.bucket_dir.with_suffix(f".{repository_format}")
+                    new_matrix_path = matrix_path.with_suffix(f".{repository_format}")
                     assert repo_matrix_files[0] == new_matrix_path
