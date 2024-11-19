@@ -2751,6 +2751,7 @@ class StudyService:
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
         args["command_context"] = self.storage_service.variant_study_service.command_factory.command_context
+        args["study_version"] = StudyVersion.parse(study.version)
         command = command_class(**args)
         file_study = self.storage_service.get_storage(study).get_raw(study, True)
         try:

@@ -17,7 +17,6 @@ from typing import List, Set
 from unittest.mock import Mock
 
 import pytest
-from antares.study.version import StudyVersion
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import STUDY_VERSION_8_8
@@ -389,15 +388,14 @@ COMMANDS: List[CommandDTO] = [
     ),
     CommandDTO(
         action=CommandName.CREATE_USER_RESOURCE.value,
-        args=[{"path": "user/folder_1", "file": False}],
+        args=[{"path": "folder_1", "resource_type": "folder"}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
-        action=CommandName.REMOVE_USER_RESOURCE.value,
-        args=[{"path": "user/folder_1"}],
+        action=CommandName.REMOVE_USER_RESOURCE.value, args=[{"path": "folder_1"}], study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
-        action=CommandName.REMOVE_USER_RESOURCE.value,
-        args=[{"path": "user/file_1.txt"}],
+        action=CommandName.REMOVE_USER_RESOURCE.value, args=[{"path": "file_1.txt"}], study_version=STUDY_VERSION_8_8
     ),
 ]
 

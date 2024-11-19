@@ -55,14 +55,14 @@ class CreateUserResource(ICommand):
         if not is_url_writeable(user_node, url):
             return CommandOutput(status=False, message=f"you are not allowed to create a resource here: {self.path}")
         try:
-            study_tree.get_node(url)
+            study_tree.get_node(["user"] + url)
         except ChildNotFoundError:
             # Creates the tree recursively to be able to create a resource inside a non-existing folder.
             last_value = b"" if self.resource_type == ResourceType.FILE else {}
             nested_dict: JSON = {url[-1]: last_value}
             for key in reversed(url[:-1]):
                 nested_dict = {key: nested_dict}
-            study_tree.save(nested_dict)
+            study_tree.save({"user": nested_dict})
         else:
             return CommandOutput(status=False, message=f"the given resource already exists: {self.path}")
         return CommandOutput(status=True, message="ok")

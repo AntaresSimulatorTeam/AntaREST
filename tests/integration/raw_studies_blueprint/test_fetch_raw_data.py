@@ -183,7 +183,7 @@ class TestFetchRawData:
             commands = res.json()
             # First command is created automatically to respect owners, we ignore it.
             assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == [{"path": file_to_create, "file": True}]
+            assert commands[1]["args"] == [{"path": "somewhere/something.txt", "resource_type": "file"}]
             assert commands[2]["action"] == "update_file"
             assert commands[2]["args"] == [{"target": file_to_create, "b64Data": "R29vZGJ5ZSBDcnVlbCBXb3JsZCE="}]
 
@@ -191,13 +191,13 @@ class TestFetchRawData:
         # The expected status code should be 204 No Content.
         res = client.put(
             raw_url,
-            params={"path": "user/somewhere/something.txt", "create_missing": True},
+            params={"path": file_to_create, "create_missing": True},
             files={"file": io.BytesIO(b"This is the end!")},
         )
         assert res.status_code == 204, res.json()
 
         # You can check that the resource has been created or updated.
-        res = client.get(raw_url, params={"path": "user/somewhere/something.txt"})
+        res = client.get(raw_url, params={"path": file_to_create})
         assert res.status_code == 200, res.json()
         assert res.content == b"This is the end!"
 
@@ -254,7 +254,6 @@ class TestFetchRawData:
         assert actual == {"index": ANY, "columns": ANY, "data": ANY}
 
         # If we ask for a matrix, we should have a CSV content if formatted is False
-        rel_path = "/input/links/de/fr"
         res = client.get(raw_url, params={"path": rel_path, "formatted": False})
         assert res.status_code == 200, res.json()
         actual = res.text
@@ -364,8 +363,10 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
 
     # try to delete a file which isn't inside the 'User' folder
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/input/thermal")
-    expected_msg = "the targeted data isn't inside the 'User' folder"
-    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
+    expected_msg = "the given path isn't inside the 'User' folder"
+    assert res.status_code == 403
+    assert res.json()["exception"] == "ResourceDeletionNotAllowed"
+    assert expected_msg in res.json()["description"]
 
     # With a path that doesn't exist
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
@@ -394,7 +395,7 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     # =============================
     # NOMINAL CASES
     # =============================
-    additional_params = {"is_folder": True, "create_missing": True}
+    additional_params = {"resource_type": "folder", "create_missing": True}
 
     res = client.put(raw_url, params={"path": "user/folder_1", **additional_params})
     assert res.status_code == 204
@@ -428,17 +429,19 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     wrong_folder = "input/wrong_folder"
     expected_msg = f"the given path isn't inside the 'User' folder: {wrong_folder}"
     res = client.put(raw_url, params={"path": wrong_folder, **additional_params})
-    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
+    assert res.status_code == 403
+    assert res.json()["exception"] == "FolderCreationNotAllowed"
+    assert expected_msg in res.json()["description"]
 
     # try to create a folder inside the 'expansion` folder
     expansion_folder = "user/expansion/wrong_folder"
-    expected_msg = f"the given path shouldn't be inside the 'expansion' folder: {expansion_folder}"
+    expected_msg = "you are not allowed to create a resource here"
     res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
     _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
     # try to create an already existing folder
     existing_folder = "user/folder_1"
-    expected_msg = f"the given resource already exists: {existing_folder}"
+    expected_msg = "the given resource already exists"
     res = client.put(raw_url, params={"path": existing_folder, **additional_params})
     _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
