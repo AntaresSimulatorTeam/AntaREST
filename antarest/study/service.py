@@ -1535,15 +1535,17 @@ class StudyService:
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
                 str_data = data.decode("utf-8")
-                try:
-                    delimiter = csv.Sniffer().sniff(str_data, delimiters=r"[,;\t]").delimiter
-                except csv.Error:
-                    # Can happen with data with only one column. In this case, we don't care about the delimiter.
-                    delimiter = "\t"
                 if not str_data:
                     matrix = np.zeros(shape=(0, 0))
                 else:
-                    matrix = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).to_numpy(dtype=np.float64)
+                    size_to_check = min(len(str_data) - 1, 64)  # sniff a chunk only to speed up the code
+                    try:
+                        delimiter = csv.Sniffer().sniff(str_data[:size_to_check], delimiters=r"[,;\t]").delimiter
+                    except csv.Error:
+                        # Can happen with data with only one column. In this case, we don't care about the delimiter.
+                        delimiter = "\t"
+                    df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+                    matrix = df.to_numpy(dtype=np.float64)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
