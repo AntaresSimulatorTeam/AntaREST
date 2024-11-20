@@ -1645,17 +1645,15 @@ class StudyService:
         self, uuid: str, commands: t.List[CommandDTO], params: RequestParameters
     ) -> t.Optional[t.List[str]]:
         study = self.get_study(uuid)
-        parsed_commands: t.List[ICommand] = []
-        # Round trip to do some validation (goes through commands validators) before appending cmd to the variant
-        for command in commands:
-            parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
         if isinstance(study, VariantStudy):
-            all_dtos = [icmd.to_dto() for icmd in parsed_commands]
-            return self.storage_service.variant_study_service.append_commands(uuid, all_dtos, params)
+            return self.storage_service.variant_study_service.append_commands(uuid, commands, params)
         else:
             file_study = self.storage_service.raw_study_service.get_raw(study)
             assert_permission(params.user, study, StudyPermissionType.WRITE)
             self._assert_study_unarchived(study)
+            parsed_commands: t.List[ICommand] = []
+            for command in commands:
+                parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
             execute_or_add_commands(
                 study,
                 file_study,

@@ -19,7 +19,7 @@ In the near future, this set of classes may be used for solar, wind and hydro cl
 import functools
 import typing as t
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serialization import AntaresBaseModel
