@@ -11,6 +11,7 @@
  *
  * This file is part of the Antares project.
  */
+
 import { mergeStudyTreeAndFolders } from ".";
 import { NonStudyFolder, StudyTreeNode } from "../utils";
 import { FIXTURES } from "./fixtures";

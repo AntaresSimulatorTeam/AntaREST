@@ -11,6 +11,7 @@
  *
  * This file is part of the Antares project.
  */
+
 export const FIXTURES = {
   basicTree: {
     name: "Basic tree with single level",
