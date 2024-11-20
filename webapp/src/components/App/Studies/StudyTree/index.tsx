@@ -55,8 +55,9 @@ function mergeStudyTreeAndFolder(
     const folderExists = studiesTree.children.some(
       (child) => child.name === folder.name,
     );
-    if (folderExists) return studiesTree;
-
+    if (folderExists) {
+      return studiesTree;
+    }
     // parent path is the same, but no folder with the same name at this level
     return {
       ...studiesTree,
