@@ -24,7 +24,6 @@ import * as R from "ramda";
 import { useEffect, useState } from "react";
 import * as api from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { set } from "lodash";
 
 /**
  * Add a folder that was returned by the explorer into the study tree view.
