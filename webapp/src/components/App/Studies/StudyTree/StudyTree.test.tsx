@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { mergeStudyTreeAndFolders } from ".";
+import { insertFoldersIfNotExist, insertWorkspacesIfNotExist } from ".";
 import { NonStudyFolder, StudyTreeNode } from "../utils";
 import { FIXTURES } from "./fixtures";
 
@@ -21,7 +21,7 @@ describe("StudyTree Utils", () => {
     test.each(Object.values(FIXTURES))(
       "$name",
       ({ studyTree, folders, expected }) => {
-        const result = mergeStudyTreeAndFolders(studyTree, folders);
+        const result = insertFoldersIfNotExist(studyTree, folders);
         expect(result).toEqual(expected);
       },
     );
@@ -32,7 +32,7 @@ describe("StudyTree Utils", () => {
         path: "/",
         children: [],
       };
-      const result = mergeStudyTreeAndFolders(emptyTree, []);
+      const result = insertFoldersIfNotExist(emptyTree, []);
       expect(result).toEqual(emptyTree);
     });
 
@@ -42,7 +42,7 @@ describe("StudyTree Utils", () => {
         path: "/",
         children: [{ name: "a", path: "/a", children: [] }],
       };
-      const result = mergeStudyTreeAndFolders(tree, []);
+      const result = insertFoldersIfNotExist(tree, []);
       expect(result).toEqual(tree);
     });
 
@@ -58,8 +58,56 @@ describe("StudyTree Utils", () => {
         workspace: "nonexistent",
         parentPath: "/nonexistent",
       };
-      const result = mergeStudyTreeAndFolders(tree, [invalidFolder]);
+      const result = insertFoldersIfNotExist(tree, [invalidFolder]);
       expect(result).toEqual(tree);
+    });
+
+    test("should handle empty workspaces", () => {
+      const tree: StudyTreeNode = {
+        name: "Root",
+        path: "/",
+        children: [
+          {
+            name: "a",
+            path: "/a",
+            children: [{ name: "suba", path: "/a/suba", children: [] }],
+          },
+        ],
+      };
+      const workspaces: string[] = [];
+      const result = insertWorkspacesIfNotExist(tree, workspaces);
+      expect(result).toEqual(tree);
+    });
+
+    test("should merge workspaces", () => {
+      const tree: StudyTreeNode = {
+        name: "Root",
+        path: "/",
+        children: [
+          {
+            name: "a",
+            path: "/a",
+            children: [{ name: "suba", path: "/a/suba", children: [] }],
+          },
+        ],
+      };
+      const expected: StudyTreeNode = {
+        name: "Root",
+        path: "/",
+        children: [
+          {
+            name: "a",
+            path: "/a",
+            children: [{ name: "suba", path: "/a/suba", children: [] }],
+          },
+          { name: "workspace1", path: "/workspace1", children: [] },
+          { name: "workspace2", path: "/workspace2", children: [] },
+        ],
+      };
+
+      const workspaces: string[] = ["a", "workspace1", "workspace2"];
+      const result = insertWorkspacesIfNotExist(tree, workspaces);
+      expect(result).toEqual(expected);
     });
   });
 });
