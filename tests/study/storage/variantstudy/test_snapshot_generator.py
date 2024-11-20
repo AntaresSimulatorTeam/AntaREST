@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import configparser
 import datetime
 import json
 import logging
@@ -38,6 +37,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from study.storage.rawstudy.ini_reader import IniReader
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import AnyUUID, with_db_context
 
@@ -920,18 +920,46 @@ class TestSnapshotGenerator:
         assert snapshot_dir.exists()
         assert (snapshot_dir / "study.antares").exists()
         assert (snapshot_dir / "input/areas/list.txt").read_text().splitlines(keepends=False) == ["North", "South"]
-        config = configparser.RawConfigParser()
-        config.read(snapshot_dir / "input/links/north/properties.ini")
-        assert config.sections() == ["south"]
-        assert config["south"], "The 'south' section must exist in the 'properties.ini' file."
-        config = configparser.RawConfigParser()
-        config.read(snapshot_dir / "input/thermal/clusters/south/list.ini")
-        assert config.sections() == ["gas_cluster"]
-        assert config["gas_cluster"] == {  # type: ignore
+        reader = IniReader()
+        properties = reader.read(snapshot_dir / "input/links/north/properties.ini")
+        assert list(properties.keys()) == ["south"]
+        reader = IniReader()
+        cluster_props = reader.read(snapshot_dir / "input/thermal/clusters/south/list.ini")
+        assert list(cluster_props.keys()) == ["gas_cluster"]
+        assert cluster_props["gas_cluster"] == {
+            "co2": 0.0,
+            "enabled": True,
+            "fixed-cost": 0.0,
+            "gen-ts": "use global",
             "group": "gas",
-            "unitcount": "1",
-            "nominalcapacity": "500",
+            "law.forced": "uniform",
+            "law.planned": "uniform",
+            "marginal-cost": 0.0,
+            "market-bid-cost": 0.0,
+            "min-down-time": 1,
+            "min-stable-power": 0.0,
+            "min-up-time": 1,
+            "must-run": False,
             "name": "gas_cluster",
+            "nh3": 0.0,
+            "nmvoc": 0.0,
+            "nominalcapacity": 500.0,
+            "nox": 0.0,
+            "op1": 0.0,
+            "op2": 0.0,
+            "op3": 0.0,
+            "op4": 0.0,
+            "op5": 0.0,
+            "pm10": 0.0,
+            "pm2_5": 0.0,
+            "pm5": 0.0,
+            "so2": 0.0,
+            "spinning": 0.0,
+            "spread-cost": 0.0,
+            "startup-cost": 0.0,
+            "unitcount": 1,
+            "volatility.forced": 0.0,
+            "volatility.planned": 0.0,
         }
 
         # Check: the matrices are not denormalized (we should have links to matrices).

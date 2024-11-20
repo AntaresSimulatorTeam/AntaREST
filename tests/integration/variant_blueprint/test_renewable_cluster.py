@@ -277,6 +277,8 @@ class TestRenewableCluster:
                         "name": cluster_fr1.lower(),
                         "nominalcapacity": 2500,
                         "ts-interpretation": "power-generation",
+                        "unitcount": 1,
+                        "enabled": True,
                     },
                 }
             },
@@ -288,6 +290,7 @@ class TestRenewableCluster:
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
+                        "enabled": True,
                     }
                 }
             },
@@ -321,6 +324,7 @@ class TestRenewableCluster:
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
+                        "enabled": True,
                     }
                 }
             },
