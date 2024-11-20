@@ -20,6 +20,7 @@ from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -29,7 +30,6 @@ from antarest.study.storage.variantstudy.model.command.remove_cluster import Rem
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties
 
 GEN = np.random.default_rng(1000)
 

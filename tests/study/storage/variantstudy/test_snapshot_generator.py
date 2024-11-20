@@ -32,12 +32,12 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, Study, StudyAdditionalData
+from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from study.storage.rawstudy.ini_reader import IniReader
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import AnyUUID, with_db_context
 
