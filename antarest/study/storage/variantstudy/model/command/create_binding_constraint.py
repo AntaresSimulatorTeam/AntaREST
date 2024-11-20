@@ -343,8 +343,8 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                 elif "." in link_or_cluster:
                     # Cluster IDs are stored in lower case in the binding constraints file.
                     area, cluster_id = link_or_cluster.split(".")
-                    thermal_ids = {thermal.id.lower() for thermal in study_data.config.areas[area].thermals}
-                    if area not in study_data.config.areas or cluster_id.lower() not in thermal_ids:
+                    thermal_ids = {thermal.id for thermal in study_data.config.areas[area].thermals}
+                    if area not in study_data.config.areas or cluster_id not in thermal_ids:
                         return CommandOutput(
                             status=False,
                             message=f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",

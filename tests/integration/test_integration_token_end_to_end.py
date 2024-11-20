@@ -96,7 +96,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
                 "cluster_name": "mycluster",
                 "parameters": {
                     "group": "Gas",
-                    "unitCount": 1,
+                    "unitcount": 1,
                     "marginal_cost": 50,
                 },
             },
