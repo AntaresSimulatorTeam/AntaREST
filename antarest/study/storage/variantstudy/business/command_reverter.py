@@ -216,7 +216,7 @@ class CommandReverter:
         history: t.List["ICommand"],
         base: FileStudy,
     ) -> t.List[ICommand]:
-        storage_id = base_command.parameters.id
+        storage_id = base_command.storage_id
         return [
             RemoveSTStorage(
                 area_id=base_command.area_id,

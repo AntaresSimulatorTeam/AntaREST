@@ -82,7 +82,7 @@ class ThermalClusterGroup(EnumIgnoreCase):
             # noinspection PyUnresolvedReferences
             if any(value.lower() == group.value for group in cls):
                 return t.cast(ThermalClusterGroup, super()._missing_(value))
-            raise ValidationError(f"Unknown group: {value}")
+            return cls.OTHER1
         return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
 
 
@@ -402,6 +402,7 @@ class Thermal870Config(Thermal870Properties, LowerCaseIdentifier):
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
 ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
+ThermalPropertiesType = t.Union[Thermal870Properties, Thermal860Properties, ThermalProperties]
 
 
 def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
@@ -422,13 +423,26 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
         return ThermalConfig
 
 
-def get_fields_to_exclude(study_version: StudyVersion) -> t.Set[str]:
+def create_thermal_properties(study_version: StudyVersion, **kwargs: t.Any) -> ThermalPropertiesType:
+    """
+    Factory method to create thermal properties.
+
+    Args:
+        study_version: The version of the study.
+        **kwargs: The properties to be used to initialize the model.
+
+    Returns:
+        The thermal properties.
+
+    Raises:
+        ValueError: If the study version is not supported.
+    """
     if study_version >= 870:
-        return set()
-    fields_870 = set(Thermal870Config.model_fields.keys())
-    if study_version == 860:
-        return fields_870 - set(Thermal860Config.model_fields.keys())
-    return fields_870 - set(ThermalConfig.model_fields.keys())
+        return Thermal870Properties.model_validate(kwargs)
+    elif study_version == 860:
+        return Thermal860Properties.model_validate(kwargs)
+    else:
+        return ThermalProperties.model_validate(kwargs)
 
 
 def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:

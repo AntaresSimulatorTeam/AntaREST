@@ -28,15 +28,17 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from study.storage.rawstudy.model.filesystem.config.renewable import RenewableProperties
 
 
 class TestCreateRenewablesCluster:
     # noinspection SpellCheckingInspection
     def test_init(self, command_context: CommandContext) -> None:
+        parameters = {"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400}
         cl = CreateRenewablesCluster(
             area_id="foo",
             cluster_name="Cluster1",
-            parameters={"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=parameters,
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         )
@@ -49,10 +51,12 @@ class TestCreateRenewablesCluster:
         # Check the command data
         assert cl.area_id == "foo"
         assert cl.cluster_name == "cluster1"
-        assert cl.parameters == {"group": "solar thermal", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.parameters.model_dump(by_alias=True) == RenewableProperties.model_validate(
+            {"name": "cluster1", **parameters}
+        ).model_dump(by_alias=True)
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
-        with pytest.raises(ValidationError, match="cluster_name"):
+        with pytest.raises(ValidationError, match="name"):
             CreateRenewablesCluster(
                 area_id="fr",
                 cluster_name="%",
@@ -138,10 +142,11 @@ class TestCreateRenewablesCluster:
 
     # noinspection SpellCheckingInspection
     def test_to_dto(self, command_context: CommandContext) -> None:
+        parameters = {"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400}
         command = CreateRenewablesCluster(
             area_id="foo",
             cluster_name="Cluster1",
-            parameters={"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=parameters,
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         )
@@ -151,7 +156,9 @@ class TestCreateRenewablesCluster:
             "args": {
                 "area_id": "foo",
                 "cluster_name": "cluster1",
-                "parameters": {"group": "solar thermal", "nominalcapacity": 2400, "unitcount": 2},
+                "parameters": RenewableProperties.model_validate({"name": "cluster1", **parameters}).model_dump(
+                    by_alias=True
+                ),
             },
             "id": None,
             "version": 1,
@@ -222,17 +229,20 @@ def test_create_diff(command_context: CommandContext) -> None:
         command_context=command_context,
         study_version=STUDY_VERSION_8_8,
     )
+    parameters = {"nominal_capacity": 1.2}
     other_match = CreateRenewablesCluster(
         area_id="foo",
         cluster_name="foo",
-        parameters={"a": "b"},
+        parameters=parameters,
         command_context=command_context,
         study_version=STUDY_VERSION_8_8,
     )
     assert base.create_diff(other_match) == [
         UpdateConfig(
             target="input/renewables/clusters/foo/list/foo",
-            data={"a": "b"},
+            data=RenewableProperties.model_validate({"name": "foo", **parameters}).model_dump(
+                mode="json", by_alias=True
+            ),
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         ),

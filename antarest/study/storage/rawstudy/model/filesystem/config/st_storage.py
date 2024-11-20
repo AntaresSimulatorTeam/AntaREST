@@ -161,6 +161,28 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
 # NOTE: In the following Union, it is important to place the older version first,
 # because otherwise, creating a short term storage always creates a v8.8 one.
 STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
+STStoragePropertiesType = t.Union[STStorageProperties, STStorage880Properties]
+
+
+def create_st_storage_properties(study_version: StudyVersion, **kwargs: t.Any) -> STStoragePropertiesType:
+    """
+    Factory method to create st_storage properties.
+
+    Args:
+        study_version: The version of the study.
+        **kwargs: The properties to be used to initialize the model.
+
+    Returns:
+        The short term storage properties.
+
+    Raises:
+        ValueError: If the study version is not supported.
+    """
+    if study_version >= STUDY_VERSION_8_8:
+        return STStorage880Properties.model_validate(kwargs)
+    elif study_version >= STUDY_VERSION_8_6:
+        return STStorageProperties.model_validate(kwargs)
+    raise ValueError(f"Unsupported study version: {study_version}")
 
 
 def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageConfigType]:

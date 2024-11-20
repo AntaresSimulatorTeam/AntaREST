@@ -14,19 +14,16 @@ import typing as t
 
 from pydantic import Field, model_validator
 
-from antarest.core.model import JSON
+from antarest.core.model import JSON, LowerCaseStr
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
-    transform_name_to_id,
-    validate_id_against_name,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    ThermalConfigType,
+    ThermalPropertiesType,
     create_thermal_config,
-    get_fields_to_exclude,
+    create_thermal_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -51,16 +48,16 @@ class CreateCluster(ICommand):
     # ==================
 
     area_id: str
-    cluster_name: str
-    parameters: ThermalConfigType
+    cluster_name: LowerCaseStr
+    parameters: ThermalPropertiesType
     prepro: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
     modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
 
     @model_validator(mode="before")
     def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        # Validate name
-        values["cluster_name"] = validate_id_against_name(values["cluster_name"])
-        values["parameters"]["name"] = values["cluster_name"]
+        # Validate parameters
+        args = {"name": values["cluster_name"], **values["parameters"]}
+        values["parameters"] = create_thermal_properties(values["study_version"], **args)
 
         # Validate prepro
         if "prepro" in values:
@@ -119,8 +116,7 @@ class CreateCluster(ICommand):
 
         cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
-        excludes = {"id"} | get_fields_to_exclude(version)
-        config[cluster_id] = self.parameters.model_dump(mode="json", by_alias=True, exclude=excludes)
+        config[cluster_id] = self.parameters.model_dump(mode="json", by_alias=True)
 
         # Series identifiers are in lower case.
         series_id = cluster_id.lower()
@@ -154,7 +150,7 @@ class CreateCluster(ICommand):
             args={
                 "area_id": self.area_id,
                 "cluster_name": self.cluster_name,
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude={"id"}),
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
                 "prepro": strip_matrix_protocol(self.prepro),
                 "modulation": strip_matrix_protocol(self.modulation),
             },
@@ -176,9 +172,11 @@ class CreateCluster(ICommand):
         simple_match = self.area_id == other.area_id and self.cluster_name == other.cluster_name
         if not equal:
             return simple_match
+        self_params = self.parameters.model_dump(mode="json", by_alias=True)
+        other_params = other.parameters.model_dump(mode="json", by_alias=True)
         return (
             simple_match
-            and self.parameters == other.parameters
+            and self_params == other_params
             and self.prepro == other.prepro
             and self.modulation == other.modulation
         )
@@ -209,11 +207,13 @@ class CreateCluster(ICommand):
                     study_version=self.study_version,
                 )
             )
-        if self.parameters != other.parameters:
+        self_params = self.parameters.model_dump(mode="json", by_alias=True)
+        other_params = other.parameters.model_dump(mode="json", by_alias=True)
+        if self_params != other_params:
             commands.append(
                 UpdateConfig(
                     target=f"input/thermal/clusters/{self.area_id}/list/{self.cluster_name}",
-                    data=other.parameters.model_dump(mode="json", by_alias=True, exclude={"id"}),
+                    data=other_params,
                     command_context=self.command_context,
                     study_version=self.study_version,
                 )

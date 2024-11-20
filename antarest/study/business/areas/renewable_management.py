@@ -370,8 +370,7 @@ class RenewableManager:
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
-        lower_source_id = source_id.lower()
-        source_path = f"input/renewables/series/{area_id}/{lower_source_id}/series"
+        source_path = f"input/renewables/series/{area_id}/{source_id}/series"
         new_path = f"input/renewables/series/{area_id}/{new_id}/series"
 
         # Prepare and execute commands
@@ -401,7 +400,6 @@ class RenewableManager:
         for area_id, update_renewables_by_ids in update_renewables_by_areas.items():
             old_renewables_by_ids = old_renewables_by_areas[area_id]
             for renewable_id, update_cluster in update_renewables_by_ids.items():
-                renewable_id = renewable_id.lower()
                 # Update the renewable cluster properties.
                 old_cluster = old_renewables_by_ids[renewable_id]
                 new_cluster = old_cluster.copy(update=update_cluster.model_dump(by_alias=False, exclude_none=True))

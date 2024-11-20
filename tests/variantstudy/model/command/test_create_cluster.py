@@ -66,7 +66,7 @@ class TestCreateCluster:
         assert cl.modulation == f"matrix://{modulation_id}"
 
     def test_validate_cluster_name(self, command_context: CommandContext):
-        with pytest.raises(ValidationError, match="Cluster name"):
+        with pytest.raises(ValidationError, match="name"):
             CreateCluster(
                 area_id="fr",
                 cluster_name="%",
@@ -107,7 +107,7 @@ class TestCreateCluster:
         )
 
         parameters = {
-            "group": "RAGDOL",
+            "group": "nuclear",
             "unitcount": "1",
             "nominalcapacity": "1000000",
             "marginal-cost": "30",
@@ -116,20 +116,7 @@ class TestCreateCluster:
 
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
-        args = {
-            "area_id": area_id,
-            "cluster_name": cluster_name,
-            "parameters": parameters,
-            "prepro": prepro,
-            "modulation": modulation,
-            "command_context": command_context,
-        }
 
-        with pytest.raises(ValidationError, match="group"):
-            CreateCluster(**args)
-
-        parameters["group"] = "nuclear"
-        command = CreateCluster(**args)
         command = CreateCluster(
             area_id=area_id,
             cluster_name=cluster_name,
@@ -208,14 +195,15 @@ class TestCreateCluster:
         )
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
-        del parameters["id"]
         dto = command.to_dto()
         assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
                 "cluster_name": "cluster1",
-                "parameters": Thermal870Properties.model_validate(parameters).model_dump(mode="json", by_alias=True),
+                "parameters": Thermal870Properties.model_validate({"name": "cluster1", **parameters}).model_dump(
+                    mode="json", by_alias=True
+                ),
                 "prepro": prepro_id,
                 "modulation": modulation_id,
             },

@@ -65,7 +65,7 @@ class RenewableClusterGroup(EnumIgnoreCase):
         if isinstance(value, str):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
-            if any(value.upper() == group.value.upper() for group in cls):
+            if any(value.lower() == group.value for group in cls):
                 return t.cast(RenewableClusterGroup, super()._missing_(value))
             # If a group is not found, return the default group ('OTHER1' by default).
             return cls.OTHER1

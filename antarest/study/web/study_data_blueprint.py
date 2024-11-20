@@ -2557,6 +2557,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         else:  # pragma: no cover
             raise NotImplementedError(f"Cluster type {cluster_type} not implemented")
 
-        return manager.duplicate_cluster(study, area_id, source_cluster_id, new_cluster_name)
+        return manager.duplicate_cluster(study, area_id, source_cluster_id.lower(), new_cluster_name)
 
     return bp
