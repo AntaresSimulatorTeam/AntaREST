@@ -33,38 +33,35 @@ class UpdateLink(AbstractLinkCommand):
     version: int = 1
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        area_from, area_to = sorted([self.area1, self.area2])
-
         return (
             CommandOutput(
                 status=True,
                 message=f"Link between '{self.area1}' and '{self.area2}' updated",
             ),
-            {"area_from": area_from, "area_to": area_to},
+            {},
         )
 
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
-        area_from, area_to = sorted([self.area1, self.area2])
 
-        properties = study_data.tree.get(["input", "links", area_from, "properties", area_to])
+        properties = study_data.tree.get(["input", "links", self.area1, "properties", self.area2])
 
         new_properties = LinkInternal.model_validate(self.parameters).model_dump(include=self.parameters, by_alias=True)
 
         properties.update(new_properties)
 
-        study_data.tree.save(properties, ["input", "links", area_from, "properties", area_to])
+        study_data.tree.save(properties, ["input", "links", self.area1, "properties", self.area2])
 
         output, _ = self._apply_config(study_data.config)
 
         if self.series:
-            self.save_series(area_from, area_to, study_data, version)
+            self.save_series(self.area1, self.area2, study_data, version)
 
         if self.direct:
-            self.save_direct(area_from, area_to, study_data, version)
+            self.save_direct(self.area1, self.area2, study_data, version)
 
         if self.indirect:
-            self.save_indirect(area_from, area_to, study_data, version)
+            self.save_indirect(self.area1, self.area2, study_data, version)
 
         return output
 
@@ -72,9 +69,7 @@ class UpdateLink(AbstractLinkCommand):
         return super().to_dto()
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
-        )
+        return super().match_signature()
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return super()._create_diff(other)

@@ -205,16 +205,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def update_link(
         uuid: str,
-        link_creation_info: LinkDTO,
+        link_update_info: LinkDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
-        area_from, area_to = sorted([link_creation_info.area1, link_creation_info.area2])
         logger.info(
-            f"Updating link {area_from} -> {area_to} for study {uuid}",
+            f"Updating link {link_update_info.area1} -> {link_update_info.area2} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        return study_service.update_link(uuid, link_creation_info, params)
+        return study_service.update_link(uuid, link_update_info, params)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/ui",

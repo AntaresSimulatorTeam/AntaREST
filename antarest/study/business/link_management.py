@@ -14,7 +14,7 @@ import typing as t
 
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import ConfigFileNotFound, LinkValidationError
+from antarest.core.exceptions import ConfigFileNotFound, LinkNotFound, LinkValidationError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.link_model import LinkDTO, LinkInternal
@@ -96,7 +96,7 @@ class LinkManager:
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-        updated_link = self.get_ini_link(study, link)
+        updated_link = self.get_internal_link(study, link)
 
         return updated_link.to_dto()
 
@@ -105,9 +105,9 @@ class LinkManager:
         try:
             file_study.tree.get(["input", "links", area_from, "properties", area_to])
         except KeyError:
-            raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
+            raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
 
-    def get_ini_link(self, study: RawStudy, link: LinkInternal) -> LinkInternal:
+    def get_internal_link(self, study: RawStudy, link: LinkInternal) -> LinkInternal:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         area_from, area_to = sorted([link.area1, link.area2])
@@ -119,7 +119,7 @@ class LinkManager:
         link_properties.update({"area1": area_from, "area2": area_to})
         updated_link = LinkInternal.model_validate(link_properties)
 
-        return link.model_copy(update=updated_link.model_dump())
+        return updated_link
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)

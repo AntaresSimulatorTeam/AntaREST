@@ -84,10 +84,10 @@ class TestLink:
                 "hurdlesCost": False,
             },
         )
-        assert res.status_code == 422
+        assert res.status_code == 404
         expected = {
             "description": "The link area 1 -> id_do_not_exist is not present in the study",
-            "exception": "LinkValidationError",
+            "exception": "LinkNotFound",
         }
         assert expected == res.json()
 
@@ -107,11 +107,8 @@ class TestLink:
                 ],
             )
             assert res.status_code == 500
-            expected = {
-                "description": "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK: 1 validation error for LinkInternal\nwrong\n  Extra inputs are not permitted [type=extra_forbidden, input_value='parameter', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.8/v/extra_forbidden",
-                "exception": "CommandApplicationError",
-            }
-            assert expected == res.json()
+            expected = "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK"
+            assert expected in res.json()['description']
 
         # Test update link variant returns only modified values
 

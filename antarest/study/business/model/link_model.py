@@ -44,6 +44,9 @@ class Area(AntaresBaseModel):
     def validate_areas(self) -> t.Self:
         if self.area1 == self.area2:
             raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
+        area_from, area_to = sorted([self.area1, self.area2])
+        self.area1 = area_from
+        self.area2 = area_to
         return self
 
 

@@ -70,7 +70,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateLink):
+        if not isinstance(other, self.__class__):
             return False
         simple_match = self.area1 == other.area1 and self.area2 == other.area2
         if not equal:
@@ -83,8 +83,13 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             and self.indirect == other.indirect
         )
 
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
+        )
+
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        other = cast(CreateLink, other)
+        other = cast(AbstractLinkCommand, other)
 
         commands: List[ICommand] = []
         area_from, area_to = sorted([self.area1, self.area2])
@@ -120,7 +125,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         return list_matrices
 
     def save_series(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
+        self.series = self.command_context.generator_matrix_constants.get_link(version=version)
         assert isinstance(self.series, str)
         if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
@@ -129,13 +134,11 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
                 self.series,
                 ["input", "links", area_from, f"{area_to}_parameters"],
             )
-            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
 
     def save_direct(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
+        self.direct = self.command_context.generator_matrix_constants.get_link_direct()
         assert isinstance(self.direct, str)
         if version >= STUDY_VERSION_8_2:
-            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
             study_data.tree.save(
                 self.direct,
                 [
@@ -148,10 +151,9 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             )
 
     def save_indirect(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
+        self.indirect = self.command_context.generator_matrix_constants.get_link_indirect()
         assert isinstance(self.indirect, str)
         if version >= STUDY_VERSION_8_2:
-            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
             study_data.tree.save(
                 self.indirect,
                 [
@@ -281,9 +283,7 @@ class CreateLink(AbstractLinkCommand):
         return super().to_dto()
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
-        )
+        return super().match_signature()
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         return super().match(other, equal)
