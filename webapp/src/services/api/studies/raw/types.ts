@@ -14,11 +14,15 @@
 
 import type { AxiosRequestConfig } from "axios";
 import type { StudyMetadata } from "../../../../common/types";
+import { O } from "ts-toolbelt";
+import { TableExportFormat } from "./constants";
+
+export type TTableExportFormat = O.UnionOf<typeof TableExportFormat>;
 
 export interface DownloadMatrixParams {
   studyId: StudyMetadata["id"];
   path: string;
-  format?: "tsv" | "xlsx";
+  format?: TTableExportFormat;
   header?: boolean;
   index?: boolean;
 }

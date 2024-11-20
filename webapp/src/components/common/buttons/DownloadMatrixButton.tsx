@@ -17,6 +17,7 @@ import { downloadFile } from "../../../utils/fileUtils";
 import { StudyMetadata } from "../../../common/types";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
+import type { TTableExportFormat } from "@/services/api/studies/raw/types";
 
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
@@ -25,39 +26,44 @@ export interface DownloadMatrixButtonProps {
   label?: string;
 }
 
-const EXPORT_OPTIONS = [
-  { label: "TSV", value: "tsv" },
-  { label: "Excel", value: "xlsx" },
-] as const;
-
-type ExportFormat = (typeof EXPORT_OPTIONS)[number]["value"];
-
 function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   const { t } = useTranslation();
   const { studyId, path, disabled, label = t("global.export") } = props;
+
+  const options: Array<{ label: string; value: TTableExportFormat }> = [
+    { label: "CSV", value: "csv" },
+    {
+      label: `CSV (${t("global.semicolon").toLowerCase()})`,
+      value: "csv (semicolon)",
+    },
+    { label: "TSV", value: "tsv" },
+    { label: "XLSX", value: "xlsx" },
+  ];
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async (format: ExportFormat) => {
+  const handleDownload = async (format: TTableExportFormat) => {
     if (!path) {
       return;
     }
 
-    const isExcel = format === "xlsx";
+    const isXlsx = format === "xlsx";
 
     const res = await downloadMatrix({
       studyId,
       path,
       format,
-      header: isExcel,
-      index: isExcel,
+      header: isXlsx,
+      index: isXlsx,
     });
+
+    const extension = format === "csv (semicolon)" ? "csv" : format;
 
     return downloadFile(
       res,
-      `matrix_${studyId}_${path.replace("/", "_")}.${format}`,
+      `matrix_${studyId}_${path.replace("/", "_")}.${extension}`,
     );
   };
 
@@ -67,7 +73,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
 
   return (
     <DownloadButton
-      formatOptions={[...EXPORT_OPTIONS]}
+      formatOptions={options}
       onClick={handleDownload}
       disabled={!path || disabled}
     >
