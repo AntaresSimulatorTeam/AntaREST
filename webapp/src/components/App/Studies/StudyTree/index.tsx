@@ -38,11 +38,12 @@ import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
  * they shoudln't wait for a long running scan to complete before they're able to
  * a folder in the hierarchy.
  *
- * @param studiesTree study tree to merge the folder into
- * @param folder folder to merge into the tree
- * @returns
+ * @param studiesTree study tree to insert the folder into
+ * @param folder folder to inert into the tree
+ * @returns study tree with the folder inserted if it wasn't already there.
+ * New branch is created if it contain the folder otherwise the branch is left unchanged.
  */
-function mergeStudyTreeAndFolder(
+function insertFolderIfNotExist(
   studiesTree: StudyTreeNode,
   folder: NonStudyFolder,
 ): StudyTreeNode {
@@ -77,49 +78,65 @@ function mergeStudyTreeAndFolder(
   return {
     ...studiesTree,
     children: studiesTree.children.map((child) =>
-      mergeStudyTreeAndFolder(child, folder),
+      insertFolderIfNotExist(child, folder),
     ),
   };
 }
 
 /**
- * Merge several folders in the study tree.
+ * Insert several folders in the study tree if they don't exist already in the tree.
  *
- * @param studiesTree
- * @param folders
- * @returns
+ * @param studiesTree study tree to insert the folder into
+ * @param folders folders to inert into the tree
+ * @param studiesTree study tree to insert the folder into
+ * @param folder folder to inert into the tree
+ * @returns study tree with the folder inserted if it wasn't already there.
+ * New branch is created if it contain the folder otherwise the branch is left unchanged.
  */
-export function mergeStudyTreeAndFolders(
+export function insertFoldersIfNotExist(
   studiesTree: StudyTreeNode,
   folders: NonStudyFolder[],
 ): StudyTreeNode {
   return folders.reduce(
-    (tree, folder) => mergeStudyTreeAndFolder(tree, folder),
+    (tree, folder) => insertFolderIfNotExist(tree, folder),
     studiesTree,
   );
 }
 
-async function fetchAndMergeSubfolders(
-  path: string,
-  studiesTree: StudyTreeNode,
-): Promise<StudyTreeNode> {
+/**
+ * Call the explorer api to fetch the subfolders under the given path.
+ *
+ * @param path path of the subfolder to fetch, should sart with root, e.g. root/workspace/folder1
+ * @returns list of subfolders under the given path
+ */
+async function fetchSubfolders(path: string): Promise<NonStudyFolder[]> {
   if (path === "root") {
     // Under root there're workspaces not subfolders
-    return studiesTree;
+    return [];
   }
+  // less than 2 parts means we're at the root level
   const pathParts = path.split("/");
   if (pathParts.length < 2) {
-    return studiesTree;
+    return [];
   }
   // path parts should be ["root", workspace, "folder1", ...]
   const workspace = pathParts[1];
   const subPath = pathParts.slice(2).join("/");
-  const subFolders = await api.getFolders(workspace, subPath);
-  const nextStudiesTree = mergeStudyTreeAndFolders(studiesTree, subFolders);
-  return nextStudiesTree;
+  return await api.getFolders(workspace, subPath);
 }
 
-async function fetchAndMergeSubfoldersForPaths(
+/**
+ * Fetch and insert the subfolders under the given paths into the study tree.
+ *
+ * This function is used to fill the study tree when the user clicks on a folder.
+ *
+ * Subfolders are inserted only if they don't exist already in the tree.
+ *
+ * @param paths list of paths to fetch the subfolders for
+ * @param studiesTree study tree to insert the subfolders into
+ * @returns study tree with the subfolders inserted if they weren't already there.
+ */
+async function fetchAndInsertSubfolders(
   paths: string[],
   studiesTree: StudyTreeNode,
 ): Promise<[StudyTreeNode, string[]]> {
@@ -127,7 +144,8 @@ async function fetchAndMergeSubfoldersForPaths(
     async (acc, path) => {
       const [accTree, accFailedPaths] = await acc;
       try {
-        return [await fetchAndMergeSubfolders(path, accTree), accFailedPaths];
+        const subfolders = await fetchSubfolders(path);
+        return [insertFoldersIfNotExist(accTree, subfolders), accFailedPaths];
       } catch (error) {
         console.error("failed to load path ", path, error);
         return [accTree, [...accFailedPaths, path]];
@@ -137,7 +155,17 @@ async function fetchAndMergeSubfoldersForPaths(
   );
 }
 
-function mergeNewWorkspace(workspace: string, stydyTree: StudyTreeNode) {
+/**
+ * Insert a workspace into the study tree if it doesn't exist already.
+ *
+ * @param workspace key of the workspace
+ * @param stydyTree study tree to insert the workspace into
+ * @returns study tree with the empty workspace inserted if it wasn't already there.
+ */
+function insertWorkspaceIfNotExist(
+  stydyTree: StudyTreeNode,
+  workspace: string,
+) {
   const emptyNode = { name: workspace, path: `/${workspace}`, children: [] };
   if (stydyTree.children.some((child) => child.name === workspace)) {
     return stydyTree;
@@ -148,39 +176,32 @@ function mergeNewWorkspace(workspace: string, stydyTree: StudyTreeNode) {
   };
 }
 
-function mergeNewWorkspaces(
-  workspaces: string[],
+/**
+ * Insert several workspaces into the study tree if they don't exist already in the tree.
+ *
+ * @param workspaces workspaces to insert into the tree
+ * @param stydyTree study tree to insert the workspaces into
+ * @returns study tree with the empty workspaces inserted if they weren't already there.
+ */
+export function insertWorkspacesIfNotExist(
   stydyTree: StudyTreeNode,
+  workspaces: string[],
 ): StudyTreeNode {
   return workspaces.reduce((acc, workspace) => {
-    return mergeNewWorkspace(workspace, acc);
+    return insertWorkspaceIfNotExist(acc, workspace);
   }, stydyTree);
 }
 
-async function fetchAndMergeWorkspace(
+/**
+ * fetch and insert the workspaces into the study tree.
+ * @param studyTree study tree to insert the workspaces into
+ * @returns study tree with the workspaces inserted if they weren't already there.
+ */
+async function fetchAndInsertWorkspaces(
   studyTree: StudyTreeNode,
 ): Promise<StudyTreeNode> {
   const workspaces = await api.getWorkspaces();
-  return mergeNewWorkspaces(workspaces, studyTree);
-}
-
-function getStudyTreeNode(
-  path: string,
-  stydyTree: StudyTreeNode,
-): StudyTreeNode | null {
-  // path always start with root
-  const studyTreePath = `root${stydyTree.path}`;
-  if (studyTreePath === path) {
-    return stydyTree;
-  }
-  let result: StudyTreeNode | null = null;
-  for (const child of stydyTree.children) {
-    result = getStudyTreeNode(path, child);
-    if (result) {
-      return result;
-    }
-  }
-  return null;
+  return insertWorkspacesIfNotExist(studyTree, workspaces);
 }
 
 function StudyTree() {
@@ -192,7 +213,7 @@ function StudyTree() {
 
   // Initialize folders once we have the tree
   useUpdateEffectOnce(() => {
-    fetchAndMergeWorkspace(initialStudiesTree)
+    fetchAndInsertWorkspaces(initialStudiesTree)
       .then(setStudiesTree)
       .catch((error) => {
         enqueueErrorSnackbar("Failed to load list workspaces", error);
@@ -203,17 +224,15 @@ function StudyTree() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleTreeItemClick = (itemId: string) => {
+  const handleTreeItemClick = (
+    itemId: string,
+    studyTreeNode: StudyTreeNode,
+  ) => {
     dispatch(updateStudyFilters({ folder: itemId }));
-    const currentNode = getStudyTreeNode(itemId, studiesTree);
-    if (!currentNode) {
-      console.error("Clicked on a non existing node", itemId);
-      return;
-    }
-    const chidrenPaths = currentNode.children.map(
+    const chidrenPaths = studyTreeNode.children.map(
       (child) => `root${child.path}`,
     );
-    fetchAndMergeSubfoldersForPaths(chidrenPaths, studiesTree).then((r) => {
+    fetchAndInsertSubfolders(chidrenPaths, studiesTree).then((r) => {
       setStudiesTree(r[0]);
       for (const path of r[1]) {
         enqueueErrorSnackbar(
@@ -237,7 +256,7 @@ function StudyTree() {
           key={id}
           itemId={id}
           label={elm.name}
-          onClick={() => handleTreeItemClick(id)}
+          onClick={() => handleTreeItemClick(id, elm)}
         >
           {buildTree(elm.children, id)}
         </TreeItemEnhanced>
