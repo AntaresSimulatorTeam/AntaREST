@@ -229,6 +229,14 @@ function StudyTree() {
     studyTreeNode: StudyTreeNode,
   ) => {
     dispatch(updateStudyFilters({ folder: itemId }));
+    if (itemId === "root") {
+      fetchAndInsertWorkspaces(studiesTree)
+        .then(setStudiesTree)
+        .catch((error) => {
+          enqueueErrorSnackbar("Failed to load list workspaces", error);
+        });
+      return;
+    }
     const chidrenPaths = studyTreeNode.children.map(
       (child) => `root${child.path}`,
     );
