@@ -1945,7 +1945,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id.lower(), cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
@@ -2129,7 +2129,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id.lower(), cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",

@@ -19,6 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableProperties,
     create_renewable_config,
+    create_renewable_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -49,7 +50,7 @@ class CreateRenewablesCluster(ICommand):
     def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         # Validate parameters
         args = {"name": values["cluster_name"], **values["parameters"]}
-        values["parameters"] = RenewableProperties.model_validate(args)
+        values["parameters"] = create_renewable_properties(values["study_version"], **args)
         return values
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:

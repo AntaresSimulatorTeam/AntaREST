@@ -33,7 +33,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
     Thermal870Properties,
     ThermalConfigType,
-    ThermalPropertiesType,
     create_thermal_config,
     create_thermal_properties,
 )
@@ -350,7 +349,6 @@ class ThermalManager:
             ThermalClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
             in the provided cluster_data.
         """
-
         study_version = StudyVersion.parse(study.version)
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
@@ -359,19 +357,19 @@ class ThermalManager:
         except KeyError:
             raise ThermalClusterNotFound(path, cluster_id) from None
         else:
-            old_config = create_thermal_config(study_version, **values)
+            old_properties = create_thermal_properties(study_version, **values)
 
         # Use Python values to synchronize Config and Form values
         new_values = cluster_data.model_dump(mode="json", by_alias=False, exclude_none=True)
-        new_config = old_config.copy(exclude={"id"}, update=new_values)
-        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
+        new_properties = old_properties.copy(exclude={"id"}, update=new_values)
 
         # create the dict containing the new values using aliases
         data: t.Dict[str, t.Any] = {}
-        for field_name, field in new_config.model_fields.items():
-            if field_name in new_values:
-                name = field.alias if field.alias else field_name
-                data[name] = new_data[name]
+        for updated_field, updated_value in new_values.items():
+            if updated_field in old_properties.model_fields:
+                field_info = old_properties.model_fields[updated_field]
+                field_name = field_info.alias if field_info.alias else updated_field
+                data[field_name] = updated_value
 
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -383,7 +381,7 @@ class ThermalManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = {**new_config.model_dump(mode="json", by_alias=False), "id": cluster_id}
+        values = {**new_properties.model_dump(mode="json", by_alias=False), "id": cluster_id}
         return ThermalClusterOutput.model_validate(values)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:

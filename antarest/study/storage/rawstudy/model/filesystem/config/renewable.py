@@ -110,6 +110,7 @@ class RenewableConfig(RenewableProperties, LowerCaseIdentifier):
 
 
 RenewableConfigType = RenewableConfig
+RenewablePropertiesType = RenewableProperties
 
 
 def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableConfig]:
@@ -124,6 +125,25 @@ def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableCon
     """
     if study_version >= STUDY_VERSION_8_1:
         return RenewableConfig
+    raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
+
+
+def create_renewable_properties(study_version: StudyVersion, **kwargs: t.Any) -> RenewablePropertiesType:
+    """
+    Factory method to create renewable properties.
+
+    Args:
+        study_version: The version of the study.
+        **kwargs: The properties to be used to initialize the model.
+
+    Returns:
+        The renewable properties.
+
+    Raises:
+        ValueError: If the study version is not supported.
+    """
+    if study_version >= STUDY_VERSION_8_1:
+        return RenewableProperties.model_validate(kwargs)
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 
 
