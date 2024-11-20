@@ -21,7 +21,7 @@ import TreeItemEnhanced from "../../../common/TreeItemEnhanced";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import * as R from "ramda";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import * as api from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
