@@ -24,11 +24,12 @@ import * as R from "ramda";
 import { useEffect, useState } from "react";
 import * as api from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 
 /**
  * Add a folder that was returned by the explorer into the study tree view.
  *
- * This folder isn't a study, otherwise it would'nt be
+ * This folder isn't a study, otherwise it wouldn't be
  * returned by the explorer API, but this folder can have study in it
  * and still not be in the initial study tree that's parsed from the study
  * list, this happen when the studies in the folder aren't scanned yet.
@@ -118,15 +119,13 @@ async function fetchAndMergeSubfolders(
   return nextStudiesTree;
 }
 
-async function fetchAndMergeSubfoldersForPaths( // reduce try catch (
+async function fetchAndMergeSubfoldersForPaths(
   paths: string[],
   studiesTree: StudyTreeNode,
 ): Promise<[StudyTreeNode, string[]]> {
-  return paths.reduce<Promise<[StudyTreeNode, string[]]>>(
+  return paths.reduce(
     async (acc, path) => {
-      const accRes = await acc;
-      const accTree: StudyTreeNode = accRes[0];
-      const accFailedPaths: string[] = accRes[1];
+      const [accTree, accFailedPaths] = await acc;
       try {
         return [await fetchAndMergeSubfolders(path, accTree), accFailedPaths];
       } catch (error) {
@@ -134,7 +133,7 @@ async function fetchAndMergeSubfoldersForPaths( // reduce try catch (
         return [accTree, [...accFailedPaths, path]];
       }
     },
-    Promise.resolve([studiesTree, []]),
+    Promise.resolve<[StudyTreeNode, string[]]>([studiesTree, []]),
   );
 }
 
@@ -156,6 +155,13 @@ function mergeNewWorkspaces(
   return workspaces.reduce((acc, workspace) => {
     return mergeNewWorkspace(workspace, acc);
   }, stydyTree);
+}
+
+async function fetchAndMergeWorkspace(
+  studyTree: StudyTreeNode,
+): Promise<StudyTreeNode> {
+  const workspaces = await api.getWorkspaces();
+  return mergeNewWorkspaces(workspaces, studyTree);
 }
 
 function getStudyTreeNode(
@@ -185,20 +191,14 @@ function StudyTree() {
   const dispatch = useAppDispatch();
 
   // Initialize folders once we have the tree
-  useEffect(() => {
-    if (!folder || !initialStudiesTree.children.length) {
-      return;
-    }
-    api
-      .getWorkspaces()
-      .then((workspaces) => {
-        setStudiesTree(mergeNewWorkspaces(workspaces, initialStudiesTree));
-      })
+  useUpdateEffectOnce(() => {
+    fetchAndMergeWorkspace(initialStudiesTree)
+      .then(setStudiesTree)
       .catch((error) => {
         enqueueErrorSnackbar("Failed to load list workspaces", error);
         setStudiesTree(initialStudiesTree);
       });
-  }, [folder, initialStudiesTree]);
+  }, [initialStudiesTree]);
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////

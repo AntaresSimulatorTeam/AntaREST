@@ -11,175 +11,54 @@
  *
  * This file is part of the Antares project.
  */
-
 import { mergeStudyTreeAndFolders } from ".";
-import { StudyTreeNode, NonStudyFolder } from "../utils";
+import { NonStudyFolder, StudyTreeNode } from "../utils";
+import { FIXTURES } from "./fixtures";
 
-describe("mergeStudyTreeAndFolder", () => {
-  test("should merge study tree and folder correctly", () => {
-    const studyTree: StudyTreeNode = {
-      name: "Root",
-      path: "/",
-      children: [
-        { name: "a", path: "/a", children: [] },
-        { name: "b", path: "/b", children: [] },
-      ],
-    };
-    const folder: NonStudyFolder = {
-      name: "folder1",
-      path: "folder1",
-      workspace: "a",
-      parentPath: "/a",
-    };
-
-    const result = mergeStudyTreeAndFolders(studyTree, [folder]);
-
-    expect(result).toEqual({
-      name: "Root",
-      path: "/",
-      children: [
-        {
-          name: "a",
-          path: "/a",
-          children: [{ name: "folder1", path: "/a/folder1", children: [] }],
-        },
-        { name: "b", path: "/b", children: [] },
-      ],
-    });
-  });
-
-  //   test("should handle empty study tree", () => {
-  //     const studyTree: StudyTreeNode = { name: "Root", path: "/", children: [] };
-  //     const folder: NonStudyFolder = {
-  //       name: "folder1",
-  //       path: "folder1",
-  //       workspace: "a",
-  //       parentPath: "/",
-  //     };
-
-  //     const result = mergeStudyTreeAndFolders(studyTree, [folder]);
-
-  //     expect(result).toEqual({
-  //       name: "Root",
-  //       path: "/",
-  //       children: [{ name: "folder1", path: "/folder1", children: [] }],
-  //     });
-  //   });
-
-  test("should handle nested study tree and folder correctly", () => {
-    const studyTree: StudyTreeNode = {
-      name: "Root",
-      path: "/",
-      children: [
-        {
-          name: "a",
-          path: "/a",
-          children: [{ name: "suba", path: "/a/suba", children: [] }],
-        },
-      ],
-    };
-    const folder: NonStudyFolder = {
-      name: "folder1",
-      path: "suba/folder1",
-      workspace: "a",
-      parentPath: "/a/suba",
-    };
-
-    const result = mergeStudyTreeAndFolders(studyTree, [folder]);
-
-    expect(result).toEqual({
-      name: "Root",
-      path: "/",
-      children: [
-        {
-          name: "a",
-          path: "/a",
-          children: [
-            {
-              name: "suba",
-              path: "/a/suba",
-              children: [
-                { name: "folder1", path: "/a/suba/folder1", children: [] },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-  });
-
-  test("should not add duplicate folders", () => {
-    const studyTree: StudyTreeNode = {
-      name: "Root",
-      path: "/",
-      children: [
-        {
-          name: "a",
-          path: "/a",
-          children: [{ name: "folder1", path: "/a/folder1", children: [] }],
-        },
-      ],
-    };
-    const folder: NonStudyFolder = {
-      name: "folder1",
-      path: "/folder1",
-      workspace: "a",
-      parentPath: "/a",
-    };
-
-    const result = mergeStudyTreeAndFolders(studyTree, [folder]);
-
-    expect(result).toEqual({
-      name: "Root",
-      path: "/",
-      children: [
-        {
-          name: "a",
-          path: "/a",
-          children: [{ name: "folder1", path: "/a/folder1", children: [] }],
-        },
-      ],
-    });
-  });
-});
-
-describe("mergeStudyTreeAndFolders", () => {
-  test("should merge multiple folders correctly", () => {
-    const studyTree: StudyTreeNode = {
-      name: "Root",
-      path: "/",
-      children: [{ name: "a", path: "/a", children: [] }],
-    };
-    const folders: NonStudyFolder[] = [
-      {
-        name: "folder1",
-        path: "/folder1",
-        workspace: "a",
-        parentPath: "/a",
+describe("StudyTree Utils", () => {
+  describe("mergeStudyTreeAndFolders", () => {
+    test.each(Object.values(FIXTURES))(
+      "$name",
+      ({ studyTree, folders, expected }) => {
+        const result = mergeStudyTreeAndFolders(studyTree, folders);
+        expect(result).toEqual(expected);
       },
-      {
-        name: "folder2",
-        path: "/folder2",
-        workspace: "a",
-        parentPath: "/a",
-      },
-    ];
+    );
 
-    const result = mergeStudyTreeAndFolders(studyTree, folders);
+    test("should handle empty study tree", () => {
+      const emptyTree: StudyTreeNode = {
+        name: "Root",
+        path: "/",
+        children: [],
+      };
+      const result = mergeStudyTreeAndFolders(emptyTree, []);
+      expect(result).toEqual(emptyTree);
+    });
 
-    expect(result).toEqual({
-      name: "Root",
-      path: "/",
-      children: [
-        {
-          name: "a",
-          path: "/a",
-          children: [
-            { name: "folder1", path: "/a/folder1", children: [] },
-            { name: "folder2", path: "/a/folder2", children: [] },
-          ],
-        },
-      ],
+    test("should handle empty folders array", () => {
+      const tree: StudyTreeNode = {
+        name: "Root",
+        path: "/",
+        children: [{ name: "a", path: "/a", children: [] }],
+      };
+      const result = mergeStudyTreeAndFolders(tree, []);
+      expect(result).toEqual(tree);
+    });
+
+    test("should handle invalid parent paths", () => {
+      const tree: StudyTreeNode = {
+        name: "Root",
+        path: "/",
+        children: [{ name: "a", path: "/a", children: [] }],
+      };
+      const invalidFolder: NonStudyFolder = {
+        name: "invalid",
+        path: "/invalid",
+        workspace: "nonexistent",
+        parentPath: "/nonexistent",
+      };
+      const result = mergeStudyTreeAndFolders(tree, [invalidFolder]);
+      expect(result).toEqual(tree);
     });
   });
 });

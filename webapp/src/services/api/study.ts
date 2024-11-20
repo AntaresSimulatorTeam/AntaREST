@@ -65,10 +65,7 @@ export const getFolders = async (
     const parentPath = [
       "",
       folder.workspace,
-      ...folder.path
-        .split("/")
-        .filter((elm: string) => elm !== "")
-        .slice(0, -1),
+      ...folder.path.split("/").filter(Boolean).slice(0, -1),
     ].join("/");
     return {
       ...folder,
