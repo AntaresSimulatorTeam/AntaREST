@@ -24,6 +24,7 @@ import * as R from "ramda";
 import { useEffect, useState } from "react";
 import * as api from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { set } from "lodash";
 
 /**
  * Add a folder that was returned by the explorer into the study tree view.
@@ -117,27 +118,44 @@ async function fetchAndMergeSubfolders(
   return nextStudiesTree;
 }
 
-async function fetchAndMergeSubfoldersForPathsV4( // reduce no try catch (
+async function fetchAndMergeSubfoldersForPaths( // reduce try catch (
   paths: string[],
   studiesTree: StudyTreeNode,
 ): Promise<[StudyTreeNode, string[]]> {
-  const emptyTree: StudyTreeNode = { name: "Root", path: "/", children: [] };
-  const results: [StudyTreeNode, string][] = await Promise.all(
-    paths.map(async (path): Promise<[StudyTreeNode, string]> => {
+  return paths.reduce<Promise<[StudyTreeNode, string[]]>>(
+    async (acc, path) => {
+      const accRes = await acc;
+      const accTree: StudyTreeNode = accRes[0];
+      const accFailedPaths: string[] = accRes[1];
       try {
-        return [await fetchAndMergeSubfolders(path, studiesTree), ""];
+        return [await fetchAndMergeSubfolders(path, accTree), accFailedPaths];
       } catch (error) {
         console.error("failed to load path ", path, error);
-        return [emptyTree, path];
+        return [accTree, [...accFailedPaths, path]];
       }
-    }),
+    },
+    Promise.resolve([studiesTree, []]),
   );
-  const finalTree = results
-    .filter((r) => r[0] !== emptyTree)
-    .map((r) => r[0])
-    .reduce((acc, tree) => R.mergeDeepRight(acc, tree), studiesTree);
-  const failedPaths = results.map((r) => r[1]).filter((p) => p);
-  return [finalTree, failedPaths];
+}
+
+function mergeNewWorkspace(workspace: string, stydyTree: StudyTreeNode) {
+  const emptyNode = { name: workspace, path: `/${workspace}`, children: [] };
+  if (stydyTree.children.some((child) => child.name === workspace)) {
+    return stydyTree;
+  }
+  return {
+    ...stydyTree,
+    children: [...stydyTree.children, emptyNode],
+  };
+}
+
+function mergeNewWorkspaces(
+  workspaces: string[],
+  stydyTree: StudyTreeNode,
+): StudyTreeNode {
+  return workspaces.reduce((acc, workspace) => {
+    return mergeNewWorkspace(workspace, acc);
+  }, stydyTree);
 }
 
 function getStudyTreeNode(
@@ -171,7 +189,15 @@ function StudyTree() {
     if (!folder || !initialStudiesTree.children.length) {
       return;
     }
-    setStudiesTree(initialStudiesTree);
+    api
+      .getWorkspaces()
+      .then((workspaces) => {
+        setStudiesTree(mergeNewWorkspaces(workspaces, initialStudiesTree));
+      })
+      .catch((error) => {
+        enqueueErrorSnackbar("Failed to load list workspaces", error);
+        setStudiesTree(initialStudiesTree);
+      });
   }, [folder, initialStudiesTree]);
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -187,7 +213,7 @@ function StudyTree() {
     const chidrenPaths = currentNode.children.map(
       (child) => `root${child.path}`,
     );
-    fetchAndMergeSubfoldersForPathsV4(chidrenPaths, studiesTree).then((r) => {
+    fetchAndMergeSubfoldersForPaths(chidrenPaths, studiesTree).then((r) => {
       setStudiesTree(r[0]);
       for (const path of r[1]) {
         enqueueErrorSnackbar(

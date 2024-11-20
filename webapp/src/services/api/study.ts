@@ -49,6 +49,11 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   });
 };
 
+export const getWorkspaces = async (): Promise<string[]> => {
+  const res = await client.get(`/v1/private/explorer/_list_workspaces`);
+  return res.data.map((folder: { name: string }) => folder.name);
+};
+
 export const getFolders = async (
   workspace: string,
   folderName: string,
