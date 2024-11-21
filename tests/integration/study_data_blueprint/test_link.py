@@ -108,7 +108,7 @@ class TestLink:
             )
             assert res.status_code == 500
             expected = "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK"
-            assert expected in res.json()['description']
+            assert expected in res.json()["description"]
 
         # Test update link variant returns only modified values
 

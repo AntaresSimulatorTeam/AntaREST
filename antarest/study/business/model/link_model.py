@@ -101,20 +101,5 @@ class LinkInternal(AntaresBaseModel):
     filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
 
     def to_dto(self) -> LinkDTO:
-        return LinkDTO(
-            area1=self.area1,
-            area2=self.area2,
-            hurdles_cost=self.hurdles_cost,
-            loop_flow=self.loop_flow,
-            use_phase_shifter=self.use_phase_shifter,
-            transmission_capacities=self.transmission_capacities,
-            asset_type=self.asset_type,
-            display_comments=self.display_comments,
-            colorr=self.colorr,
-            colorb=self.colorb,
-            colorg=self.colorg,
-            link_width=self.link_width,
-            link_style=self.link_style,
-            filter_synthesis=self.filter_synthesis,
-            filter_year_by_year=self.filter_year_by_year,
-        )
+        data = self.model_dump()
+        return LinkDTO(**data)
