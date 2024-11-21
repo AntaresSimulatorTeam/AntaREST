@@ -184,7 +184,7 @@ def run_systray_app(config_file: Path) -> None:
     open_app()
     try:
         systray_app.app.exec_()
-    except: # catch QT error
+    except:  # catch QT error
         pass
     finally:
         server.kill()
