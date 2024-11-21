@@ -20,46 +20,45 @@ export interface StudyTreeNode {
   children: StudyTreeNode[];
 }
 
-const nodeProcess = (
-  tree: StudyTreeNode,
-  path: string[],
-  folderPath: string,
-): void => {
-  const { children } = tree;
-  if (path.length === 1) {
-    return;
-  }
-  const element = path.pop() || "";
-  const index = children.findIndex(
-    (elm: StudyTreeNode) => elm.name === element,
-  );
-  const newFolderPath = `${folderPath}/${element}`;
-  if (index < 0) {
-    children.push({ name: element, children: [], path: newFolderPath });
-    nodeProcess(
-      children[children.length - 1] as StudyTreeNode,
-      path,
-      newFolderPath,
-    );
-  } else {
-    nodeProcess(children[index] as StudyTreeNode, path, newFolderPath);
-  }
-};
-
-export const buildStudyTree = (studies: StudyMetadata[]): StudyTreeNode => {
+/**
+ * Builds a tree structure from a list of study metadata.
+ *
+ * @param studies - Array of study metadata objects.
+ * @returns A tree structure representing the studies.
+ */
+export function buildStudyTree(studies: StudyMetadata[]) {
   const tree: StudyTreeNode = { name: "root", children: [], path: "" };
-  let path: string[] = [];
+
   for (const study of studies) {
-    if (study.folder !== undefined && study.folder !== null) {
-      path = [
-        study.workspace,
-        ...(study.folder as string).split("/").filter((elm) => elm !== ""),
-      ];
-    } else {
-      path = [study.workspace];
+    const path =
+      typeof study.folder === "string"
+        ? [study.workspace, ...study.folder.split("/").filter(Boolean)]
+        : [study.workspace];
+
+    let current = tree;
+
+    for (let i = 0; i < path.length; i++) {
+      // Skip the last folder, as it represents the study itself
+      if (i === path.length - 1) {
+        break;
+      }
+
+      const folderName = path[i];
+      let child = current.children.find((child) => child.name === folderName);
+
+      if (!child) {
+        child = {
+          name: folderName,
+          children: [],
+          path: current.path ? `${current.path}/${folderName}` : folderName,
+        };
+
+        current.children.push(child);
+      }
+
+      current = child;
     }
-    path.reverse();
-    nodeProcess(tree, path, "");
   }
+
   return tree;
-};
+}
