@@ -99,5 +99,4 @@ class DigestSynthesis(OutputSynthesis):
 
             # Returns a DataFrame from the data (do not convert values to float)
             df = pd.DataFrame(data=data, columns=[str(i) for i in range(max_cols)], dtype=object)
-            df.fillna("", inplace=True)  # replace NaN values for the front-end
             return df
