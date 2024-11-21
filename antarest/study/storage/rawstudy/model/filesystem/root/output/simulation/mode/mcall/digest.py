@@ -43,7 +43,7 @@ def _get_flow_quadratic(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
 
 def _get_flow(df: pd.DataFrame, keyword: str) -> t.Optional[DigestMatrixDTO]:
     first_column = df["1"].tolist()
-    index = next((k for k, v in enumerate(first_column) if v == keyword), None)
+    index = next((k for k, v in enumerate(first_column) if v == keyword))
     if not index:
         return None
     df_index_start = index + 2
@@ -53,6 +53,18 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> t.Optional[DigestMatrixDTO]:
     area_names = flow_df.iloc[0, 1:].tolist()
     data = flow_df.iloc[1:, 1:].to_numpy().tolist()
     return DigestMatrixDTO(index=area_names, columns=area_names, data=data)
+
+
+def _get_area(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
+    first_row = 7
+    first_area_row = df.iloc[first_row, 2:].tolist()
+    col_number = next((k for k, v in enumerate(first_area_row) if v == ""), df.shape[1])
+    first_column = df["1"].tolist()
+    final_index = first_column[first_row:].index("") + first_row
+    data = df.iloc[first_row:final_index, 2 : col_number + 1].to_numpy().tolist()
+    index = first_column[first_row:final_index]
+    # todo: see with Hatim for columns
+    return DigestMatrixDTO(index=index, columns=[], data=data)
 
 
 class DigestSynthesis(OutputSynthesis):
@@ -76,8 +88,8 @@ class DigestSynthesis(OutputSynthesis):
         df = self._parse_digest_file()
         flow_linear = _get_flow_linear(df)
         flow_quadratic = _get_flow_quadratic(df)
-        # todo: add area parsing
-        return DigestDTO(area=None, flow_linear=flow_linear, flow_quadratic=flow_quadratic)
+        area = _get_area(df)
+        return DigestDTO(area=area, flow_linear=flow_linear, flow_quadratic=flow_quadratic)
 
     def _parse_digest_file(self) -> pd.DataFrame:
         """
