@@ -54,14 +54,20 @@ export const getWorkspaces = async (): Promise<string[]> => {
   return res.data.map((folder: { name: string }) => folder.name);
 };
 
+/**
+ * Call the explorer API to get the list of folders in a workspace
+ * @param workspace workspace name
+ * @param folderPath path starting from the workspace root (not including the workspace name)
+ * @returns
+ */
 export const getFolders = async (
   workspace: string,
-  folderName: string,
+  folderPath: string,
 ): Promise<NonStudyFolder[]> => {
-  const res = await client.get(
-    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderName)}`,
+  const res = await client.get<NonStudyFolder[]>(
+    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderPath)}`,
   );
-  return res.data.map((folder: NonStudyFolder) => {
+  return res.data.map((folder) => {
     const parentPath = [
       "",
       folder.workspace,
