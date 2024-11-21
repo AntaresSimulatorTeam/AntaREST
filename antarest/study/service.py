@@ -138,6 +138,10 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.grid import (
+    DigestDTO,
+    DigestSynthesis,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
@@ -2747,3 +2751,12 @@ class StudyService:
         cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
         updated_tree = study_tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
+
+    def get_digest_file(self, study_id: str, output_id: str, params: RequestParameters) -> DigestDTO:
+        # todo: add doc
+        study = self.get_study(study_id)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
+        assert isinstance(digest_node, DigestSynthesis)
+        return digest_node.get_dto()
