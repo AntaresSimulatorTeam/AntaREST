@@ -214,7 +214,19 @@ function StudyTree() {
   // Initialize folders once we have the tree
   useUpdateEffectOnce(() => {
     fetchAndInsertWorkspaces(initialStudiesTree)
-      .then(setStudiesTree)
+      .then((tree) => {
+        // once we get the workspaces we intialize the first level of folders
+        const chidrenPaths = tree.children.map((child) => `root${child.path}`);
+        fetchAndInsertSubfolders(chidrenPaths, tree).then((r) => {
+          setStudiesTree(r[0]);
+          for (const path of r[1]) {
+            enqueueErrorSnackbar(
+              `Failed to initialize folders for : ${path}`,
+              "details in console.error",
+            );
+          }
+        });
+      })
       .catch((error) => {
         enqueueErrorSnackbar("Failed to load list workspaces", error);
         setStudiesTree(initialStudiesTree);
@@ -235,11 +247,11 @@ function StudyTree() {
         .catch((error) => {
           enqueueErrorSnackbar("Failed to load list workspaces", error);
         });
-      return;
     }
     const chidrenPaths = studyTreeNode.children.map(
       (child) => `root${child.path}`,
     );
+    // children paths and current element path
     fetchAndInsertSubfolders(chidrenPaths, studiesTree).then((r) => {
       setStudiesTree(r[0]);
       for (const path of r[1]) {
