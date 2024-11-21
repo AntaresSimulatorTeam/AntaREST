@@ -46,10 +46,10 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> t.Optional[DigestMatrixDTO]:
     index = next((k for k, v in enumerate(first_column) if v == keyword))
     if not index:
         return None
-    df_index_start = index + 2
+    index_start = index + 2
     df_col_start = 1
-    df_size = next((k for k, v in enumerate(first_column[index + 2 :]) if v == ""), len(first_column) - df_index_start)
-    flow_df = df.iloc[df_index_start : df_index_start + df_size, df_col_start : df_col_start + df_size]
+    df_size = next((k for k, v in enumerate(first_column[index_start:]) if v == ""), len(first_column) - index_start)
+    flow_df = df.iloc[index_start : index_start + df_size, df_col_start : df_col_start + df_size]
     area_names = flow_df.iloc[0, 1:].tolist()
     data = flow_df.iloc[1:, 1:].to_numpy().tolist()
     return DigestMatrixDTO(index=area_names, columns=area_names, data=data)
