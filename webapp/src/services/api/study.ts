@@ -13,7 +13,7 @@
  */
 
 import { AxiosRequestConfig } from "axios";
-import { isBoolean, trimCharsStart } from "ramda-adjunct";
+import { isBoolean } from "ramda-adjunct";
 import client from "./client";
 import {
   FileStudyTreeConfigDTO,
@@ -163,11 +163,10 @@ export const copyStudy = async (
   return res.data;
 };
 
-export const moveStudy = async (sid: string, folder: string): Promise<void> => {
-  const folderWithId = trimCharsStart("/", `${folder.trim()}/${sid}`);
-  await client.put(
-    `/v1/studies/${sid}/move?folder_dest=${encodeURIComponent(folderWithId)}`,
-  );
+export const moveStudy = async (sid: string, folder: string) => {
+  await client.put(`/v1/studies/${sid}/move`, null, {
+    params: { folder_dest: folder },
+  });
 };
 
 export const archiveStudy = async (sid: string): Promise<void> => {
