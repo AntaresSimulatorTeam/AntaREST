@@ -138,7 +138,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.grid import (
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestDTO,
     DigestSynthesis,
 )

@@ -43,7 +43,7 @@ from antarest.study.model import (
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.grid import DigestDTO
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestDTO
 
 logger = logging.getLogger(__name__)
 
