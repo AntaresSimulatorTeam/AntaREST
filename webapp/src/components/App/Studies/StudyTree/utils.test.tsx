@@ -13,7 +13,7 @@
  */
 
 import { insertFoldersIfNotExist, insertWorkspacesIfNotExist } from "./utils";
-import { NonStudyFolder, StudyTreeNode } from "../utils";
+import { NonStudyFolderDTO, StudyTreeNode } from "../utils";
 import { FIXTURES } from "./fixtures";
 
 describe("StudyTree Utils", () => {
@@ -52,7 +52,7 @@ describe("StudyTree Utils", () => {
         path: "/",
         children: [{ name: "a", path: "/a", children: [] }],
       };
-      const invalidFolder: NonStudyFolder = {
+      const invalidFolder: NonStudyFolderDTO = {
         name: "invalid",
         path: "/invalid",
         workspace: "nonexistent",
