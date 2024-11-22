@@ -30,7 +30,8 @@ Run the following command to launch the server:
 
 ## Accessing the Web Server
 
-Once the Antares Web server is running, you can access it using a web browser.
+Once the Antares Web server is running, the default web browser will automatically open to the application home page.
+You can also manually access by following these steps:
 
 1. Open a web browser.
 2. Enter the following URL in the address bar:
@@ -56,4 +57,4 @@ The tool has the following subcommands:
 - `generate-script-diff`:  Generate variant script commands from two variant script directories
 - `upgrade-study`:         Upgrades study version
 
-Further instructions can be found in the online help. Use the `--help' option.
+Further instructions can be found in the online help. Use the `--help` option.

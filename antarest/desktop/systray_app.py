@@ -182,5 +182,8 @@ def run_systray_app(config_file: Path) -> None:
     wait_for_server_start()
     notification_popup("Antares Web Server started, you can manage the application within the system tray.")
     open_app()
-    systray_app.app.exec_()
-    server.kill()
+    try:
+        systray_app.app.exec_()
+    finally:
+        # Kill server also on exception, in particular on keyboard interrupt
+        server.kill()
