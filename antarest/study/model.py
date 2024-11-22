@@ -340,7 +340,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
 
         This field is also aliased as parentPath to match the front-end naming convention.
 
-        Returns: the parent path of the current directory. Starting with the workspace as a root directory.
+        Returns: the parent path of the current directory. Starting with the workspace as a root directory (we want /workspafe/folder1/sub... and not workspace/folder1/fsub... ).
         """
         workspace_path = Path(f"/{self.workspace}")
         full_path = workspace_path.joinpath(self.path)
