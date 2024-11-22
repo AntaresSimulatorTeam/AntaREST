@@ -36,6 +36,10 @@ import { FileDownloadTask } from "./downloads";
 import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import { NonStudyFolder } from "@/components/App/Studies/utils";
 
+interface Workspace {
+  name: string;
+}
+
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies`);
   return res.data;
@@ -50,8 +54,10 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
 };
 
 export const getWorkspaces = async (): Promise<string[]> => {
-  const res = await client.get(`/v1/private/explorer/_list_workspaces`);
-  return res.data.map((folder: { name: string }) => folder.name);
+  const res = await client.get<Workspace[]>(
+    `/v1/private/explorer/_list_workspaces`,
+  );
+  return res.data.map((folder) => folder.name);
 };
 
 /**
