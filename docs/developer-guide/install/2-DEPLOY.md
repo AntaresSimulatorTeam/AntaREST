@@ -78,8 +78,9 @@ The build is directly available in the [release](https://github.com/AntaresSimul
 
 You can download the latest version here:
 
-- [For Windows](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.5.0/AntaresWeb-windows-latest.zip)
-- [For Ubuntu](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.5.0/AntaresWeb-ubuntu-latest.zip)
+- [For Windows](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.17.6/AntaresWeb-windows-v2.17.6.zip)
+- [For Ubuntu 20.04 ](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.17.6/AntaresWeb-ubuntu_20.04-v2.17.6.zip)
+- [For Ubuntu 22.04](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.17.6/AntaresWeb-ubuntu_22.04-v2.17.6.zip)
 
 The local application contains an installer program that you can use to manage the installation. 
 This program will keep your local data while updating the functional parts of the server.

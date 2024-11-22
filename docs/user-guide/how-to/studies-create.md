@@ -24,7 +24,7 @@ This guide will walk you through the steps to create a new study, from initial s
 Navigate to the "Studies" pages to display the list of studies.
 Click on the "Create" button to open the "Create Study" dialog box.
 
-![List of studies](../assets/media/how-to/study-create-button.png)
+![List of studies](../../assets/media/how-to/study-create-button.png)
 
 ## Fill in Study Properties
 
@@ -40,7 +40,7 @@ In the "Create Study" dialog, you will be prompted to enter details about your s
     - **Tag**: Add tags to your study to help categorize and organize it (enter each tag, and presse Ctrl+Enter to add
       it).
 
-![Create Study Form](../assets/media/how-to/study-create-form.png)
+![Create Study Form](../../assets/media/how-to/study-create-form.png)
 
 Validate the form by clicking the "Save" button.
 
@@ -54,7 +54,7 @@ metadata.
 Select the `default` folder to display the list of studies in this folder.
 Click on the "More options" button of your study to access the "Properties" and "Move" options.
 
-![Other Options Menu](../assets/media/how-to/study-create-other-options.png)
+![Other Options Menu](../../assets/media/how-to/study-create-other-options.png)
 
 ### Move Study in a Subfolder
 
@@ -63,7 +63,7 @@ The "Move Study" dialog opens, allowing you to select the destination folder.
 
 Enter the name of the subfolder and validate by clicking the "Save" button.
 
-![Move Study Dialog](../assets/media/how-to/study-creation-move-to-subfolder.png)
+![Move Study Dialog](../../assets/media/how-to/study-creation-move-to-subfolder.png)
 
 If the subfolder does not exist, it will be created automatically.
 
@@ -81,7 +81,7 @@ The "Edit Study" dialog opens, allowing you to modify the study name, permission
     - **Tag**: Add tags to your study to help categorize and organize it (enter each tag, and presse Ctrl+Enter to add
       it).
 
-![Edit Study Dialog](../assets/media/how-to/study-creation-edit-properties.png)
+![Edit Study Dialog](../../assets/media/how-to/study-creation-edit-properties.png)
 
 Validate the form by clicking the "Save" button.
 
@@ -151,7 +151,7 @@ Here is a breakdown of what each part of the code does:
 
 See also:
 
-- ["User account & api tokens"](../user-guide/1-interface.md#user-account-and-api-tokens) in the user guide.
+- ["User account & api tokens"](../1-interface.md#user-account-and-api-tokens) in the user guide.
 
 ## See also
 

@@ -18,7 +18,11 @@ tags:
 
 # User interface
 
-## What's new (2.5.0)
+## What's new (2.17.6)
+- redesign of the debug view, with the possibility of importing files into the user folder. See more details [here](./study/05-debug.md)
+- new api for economy/mc-all aggregation. See [apidoc](#api-documentation) for more details.
+
+## Main features of the interface
 
 - [Launch batch mode](#launch-batch-mode)
 - [Strict folder filtering](#strict-folder-filtering)
