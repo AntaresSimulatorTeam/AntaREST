@@ -22,9 +22,10 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 
 class DigestMatrixDTO(AntaresBaseModel):
-    rowHeaders: t.List[str]  # todo: see with Hatim if we have to rename it
+    rowHeaders: t.List[str]
     columns: t.List[str]
     data: t.List[t.List[t.Any]]
+    grouped_columns: bool
 
 
 class DigestDTO(AntaresBaseModel):
@@ -46,14 +47,14 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> DigestMatrixDTO:
     first_column = df["1"].tolist()
     index = next((k for k, v in enumerate(first_column) if v == keyword))
     if not index:
-        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[])
+        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], grouped_columns=False)
     index_start = index + 2
     df_col_start = 1
     df_size = next((k for k, v in enumerate(first_column[index_start:]) if v == ""), len(first_column) - index_start)
     flow_df = df.iloc[index_start : index_start + df_size, df_col_start : df_col_start + df_size]
     area_names = flow_df.iloc[0, 1:].tolist()
     data = flow_df.iloc[1:, 1:].to_numpy().tolist()
-    return DigestMatrixDTO(rowHeaders=area_names, columns=area_names, data=data)
+    return DigestMatrixDTO(rowHeaders=area_names, columns=area_names, data=data, grouped_columns=False)
 
 
 def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
@@ -65,12 +66,12 @@ def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
     data = df.iloc[first_row:final_index, 2 : col_number + 1].to_numpy().tolist()
     index = first_column[first_row:final_index]
     # todo: see with Hatim for columns
-    return DigestMatrixDTO(rowHeaders=index, columns=[], data=data)
+    return DigestMatrixDTO(rowHeaders=index, columns=[], data=data, grouped_columns=True)
 
 
 def _get_district(df: pd.DataFrame) -> DigestMatrixDTO:
     # todo: add district parsing
-    return DigestMatrixDTO(rowHeaders=[], columns=[], data=[])
+    return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], grouped_columns=True)
 
 
 class DigestSynthesis(OutputSynthesis):
