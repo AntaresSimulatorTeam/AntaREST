@@ -22,7 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 
 class DigestMatrixDTO(AntaresBaseModel):
-    index: t.List[str]  # todo: see with Hatim if we have to rename it
+    rowHeaders: t.List[str]  # todo: see with Hatim if we have to rename it
     columns: t.List[str]
     data: t.List[t.List[t.Any]]
 
@@ -34,11 +34,11 @@ class DigestDTO(AntaresBaseModel):
     flow_quadratic: DigestMatrixDTO
 
 
-def _get_flow_linear(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
+def _get_flow_linear(df: pd.DataFrame) -> DigestMatrixDTO:
     return _get_flow(df, "Links (FLOW LIN.)")
 
 
-def _get_flow_quadratic(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
+def _get_flow_quadratic(df: pd.DataFrame) -> DigestMatrixDTO:
     return _get_flow(df, "Links (FLOW QUAD.)")
 
 
@@ -46,14 +46,14 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> DigestMatrixDTO:
     first_column = df["1"].tolist()
     index = next((k for k, v in enumerate(first_column) if v == keyword))
     if not index:
-        return DigestMatrixDTO(index=[], columns=[], data=[])
+        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[])
     index_start = index + 2
     df_col_start = 1
     df_size = next((k for k, v in enumerate(first_column[index_start:]) if v == ""), len(first_column) - index_start)
     flow_df = df.iloc[index_start : index_start + df_size, df_col_start : df_col_start + df_size]
     area_names = flow_df.iloc[0, 1:].tolist()
     data = flow_df.iloc[1:, 1:].to_numpy().tolist()
-    return DigestMatrixDTO(index=area_names, columns=area_names, data=data)
+    return DigestMatrixDTO(rowHeaders=area_names, columns=area_names, data=data)
 
 
 def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
@@ -65,12 +65,12 @@ def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
     data = df.iloc[first_row:final_index, 2 : col_number + 1].to_numpy().tolist()
     index = first_column[first_row:final_index]
     # todo: see with Hatim for columns
-    return DigestMatrixDTO(index=index, columns=[], data=data)
+    return DigestMatrixDTO(rowHeaders=index, columns=[], data=data)
 
 
 def _get_district(df: pd.DataFrame) -> DigestMatrixDTO:
     # todo: add district parsing
-    return DigestMatrixDTO(index=[], columns=[], data= [])
+    return DigestMatrixDTO(rowHeaders=[], columns=[], data=[])
 
 
 class DigestSynthesis(OutputSynthesis):
