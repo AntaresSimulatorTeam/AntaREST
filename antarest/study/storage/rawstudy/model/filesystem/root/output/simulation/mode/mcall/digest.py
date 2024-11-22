@@ -45,7 +45,7 @@ def _get_flow_quadratic(df: pd.DataFrame) -> DigestMatrixDTO:
 
 def _get_flow(df: pd.DataFrame, keyword: str) -> DigestMatrixDTO:
     first_column = df["1"].tolist()
-    index = next((k for k, v in enumerate(first_column) if v == keyword))
+    index = next((k for k, v in enumerate(first_column) if v == keyword), None)
     if not index:
         return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], grouped_columns=False)
     index_start = index + 2
@@ -57,11 +57,10 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> DigestMatrixDTO:
     return DigestMatrixDTO(rowHeaders=area_names, columns=area_names, data=data, grouped_columns=False)
 
 
-def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
-    first_row = 7
+def _build_areas_and_districts(df: pd.DataFrame, first_row: int) -> DigestMatrixDTO:
+    first_column = df["1"].tolist()
     first_area_row = df.iloc[first_row, 2:].tolist()
     col_number = next((k for k, v in enumerate(first_area_row) if v == ""), df.shape[1])
-    first_column = df["1"].tolist()
     final_index = first_column[first_row:].index("") + first_row
     data = df.iloc[first_row:final_index, 2 : col_number + 1].to_numpy().tolist()
     index = first_column[first_row:final_index]
@@ -69,9 +68,16 @@ def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
     return DigestMatrixDTO(rowHeaders=index, columns=[], data=data, grouped_columns=True)
 
 
+def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
+    return _build_areas_and_districts(df, 7)
+
+
 def _get_district(df: pd.DataFrame) -> DigestMatrixDTO:
-    # todo: add district parsing
-    return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], grouped_columns=True)
+    first_column = df["1"].tolist()
+    first_row = next((k for k, v in enumerate(first_column) if "@" in v), None)
+    if not first_row:
+        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], grouped_columns=False)
+    return _build_areas_and_districts(df, first_row)
 
 
 class DigestSynthesis(OutputSynthesis):
