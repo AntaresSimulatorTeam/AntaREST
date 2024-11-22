@@ -29,6 +29,7 @@ class DigestMatrixDTO(AntaresBaseModel):
 
 class DigestDTO(AntaresBaseModel):
     area: DigestMatrixDTO
+    districts: DigestMatrixDTO
     flow_linear: DigestMatrixDTO
     flow_quadratic: DigestMatrixDTO
 
@@ -41,7 +42,7 @@ def _get_flow_quadratic(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
     return _get_flow(df, "Links (FLOW QUAD.)")
 
 
-def _get_flow(df: pd.DataFrame, keyword: str) -> t.Optional[DigestMatrixDTO]:
+def _get_flow(df: pd.DataFrame, keyword: str) -> DigestMatrixDTO:
     first_column = df["1"].tolist()
     index = next((k for k, v in enumerate(first_column) if v == keyword))
     if not index:
@@ -55,7 +56,7 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> t.Optional[DigestMatrixDTO]:
     return DigestMatrixDTO(index=area_names, columns=area_names, data=data)
 
 
-def _get_area(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
+def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
     first_row = 7
     first_area_row = df.iloc[first_row, 2:].tolist()
     col_number = next((k for k, v in enumerate(first_area_row) if v == ""), df.shape[1])
@@ -65,6 +66,11 @@ def _get_area(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
     index = first_column[first_row:final_index]
     # todo: see with Hatim for columns
     return DigestMatrixDTO(index=index, columns=[], data=data)
+
+
+def _get_district(df: pd.DataFrame) -> DigestMatrixDTO:
+    # todo: add district parsing
+    return DigestMatrixDTO(index=[], columns=[], data= [])
 
 
 class DigestSynthesis(OutputSynthesis):
@@ -89,7 +95,8 @@ class DigestSynthesis(OutputSynthesis):
         flow_linear = _get_flow_linear(df)
         flow_quadratic = _get_flow_quadratic(df)
         area = _get_area(df)
-        return DigestDTO(area=area, flow_linear=flow_linear, flow_quadratic=flow_quadratic)
+        districts = _get_district(df)
+        return DigestDTO(area=area, districts=districts, flow_linear=flow_linear, flow_quadratic=flow_quadratic)
 
     def _parse_digest_file(self) -> pd.DataFrame:
         """
