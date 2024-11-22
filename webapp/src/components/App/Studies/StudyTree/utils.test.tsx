@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { insertFoldersIfNotExist, insertWorkspacesIfNotExist } from ".";
+import { insertFoldersIfNotExist, insertWorkspacesIfNotExist } from "./utils";
 import { NonStudyFolder, StudyTreeNode } from "../utils";
 import { FIXTURES } from "./fixtures";
 
