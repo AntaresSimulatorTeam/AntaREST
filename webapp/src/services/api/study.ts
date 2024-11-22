@@ -62,9 +62,10 @@ export const getWorkspaces = async (): Promise<string[]> => {
 
 /**
  * Call the explorer API to get the list of folders in a workspace
- * @param workspace workspace name
- * @param folderPath path starting from the workspace root (not including the workspace name)
- * @returns
+ *
+ * @param workspace - workspace name
+ * @param folderPath - path starting from the workspace root (not including the workspace name)
+ * @returns list of folders that are not studies, under the given path
  */
 export const getFolders = async (
   workspace: string,
