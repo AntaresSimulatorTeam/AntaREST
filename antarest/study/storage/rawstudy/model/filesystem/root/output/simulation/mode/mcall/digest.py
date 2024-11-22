@@ -64,8 +64,9 @@ def _build_areas_and_districts(df: pd.DataFrame, first_row: int) -> DigestMatrix
     final_index = first_column[first_row:].index("") + first_row
     data = df.iloc[first_row:final_index, 2 : col_number + 1].to_numpy().tolist()
     index = first_column[first_row:final_index]
-    # todo: retrun columns the same way the GET /raw does it
-    return DigestMatrixDTO(rowHeaders=index, columns=[], data=data, grouped_columns=True)
+    cols_raw = df.iloc[first_row - 3 : first_row, 2 : col_number + 1].to_numpy().tolist()
+    columns = [[a, b, c] for a, b, c in zip(cols_raw[0], cols_raw[1], cols_raw[2])]
+    return DigestMatrixDTO(rowHeaders=index, columns=columns, data=data, grouped_columns=True)
 
 
 def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
