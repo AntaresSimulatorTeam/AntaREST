@@ -99,6 +99,10 @@ class DigestSynthesis(OutputSynthesis):
         return t.cast(JSON, output)
 
     def get_dto(self) -> DigestDTO:
+        """
+        Parse a digest file and returns it as 4 separated matrices.
+        One for areas, one for the districts, one for linear flow and the last one for quadratic flow.
+        """
         df = self._parse_digest_file()
         flow_linear = _get_flow_linear(df)
         flow_quadratic = _get_flow_quadratic(df)

@@ -2753,7 +2753,10 @@ class StudyService:
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
     def get_digest_file(self, study_id: str, output_id: str, params: RequestParameters) -> DigestDTO:
-        # todo: add doc
+        """
+        Returns the digest file as 4 separated intelligible matrices.
+        Raises ChildNotFoundError if the output_id doesn't exist or if the digest file wasn't generated
+        """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
         file_study = self.storage_service.get_storage(study).get_raw(study)
