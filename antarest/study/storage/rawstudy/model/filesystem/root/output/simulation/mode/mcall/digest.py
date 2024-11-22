@@ -28,9 +28,9 @@ class DigestMatrixDTO(AntaresBaseModel):
 
 
 class DigestDTO(AntaresBaseModel):
-    area: t.Optional[DigestMatrixDTO] = None
-    flow_linear: t.Optional[DigestMatrixDTO] = None
-    flow_quadratic: t.Optional[DigestMatrixDTO] = None
+    area: DigestMatrixDTO
+    flow_linear: DigestMatrixDTO
+    flow_quadratic: DigestMatrixDTO
 
 
 def _get_flow_linear(df: pd.DataFrame) -> t.Optional[DigestMatrixDTO]:
@@ -45,7 +45,7 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> t.Optional[DigestMatrixDTO]:
     first_column = df["1"].tolist()
     index = next((k for k, v in enumerate(first_column) if v == keyword))
     if not index:
-        return None
+        return DigestMatrixDTO(index=[], columns=[], data=[])
     index_start = index + 2
     df_col_start = 1
     df_size = next((k for k, v in enumerate(first_column[index_start:]) if v == ""), len(first_column) - index_start)
