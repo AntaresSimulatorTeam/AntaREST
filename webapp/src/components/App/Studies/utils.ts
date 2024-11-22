@@ -24,9 +24,6 @@ export interface NonStudyFolderDTO {
   name: string;
   path: string;
   workspace: string;
-}
-
-export interface NonStudyFolder extends NonStudyFolderDTO {
   parentPath: string;
 }
 

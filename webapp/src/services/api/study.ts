@@ -34,7 +34,7 @@ import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
 import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
-import { NonStudyFolder } from "@/components/App/Studies/utils";
+import { NonStudyFolderDTO } from "@/components/App/Studies/utils";
 
 interface Workspace {
   name: string;
@@ -69,21 +69,11 @@ export const getWorkspaces = async (): Promise<string[]> => {
 export const getFolders = async (
   workspace: string,
   folderPath: string,
-): Promise<NonStudyFolder[]> => {
-  const res = await client.get<NonStudyFolder[]>(
+): Promise<NonStudyFolderDTO[]> => {
+  const res = await client.get<NonStudyFolderDTO[]>(
     `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderPath)}`,
   );
-  return res.data.map((folder) => {
-    const parentPath = [
-      "",
-      folder.workspace,
-      ...folder.path.split("/").filter(Boolean).slice(0, -1),
-    ].join("/");
-    return {
-      ...folder,
-      parentPath,
-    };
-  });
+  return res.data;
 };
 
 export const getStudyVersions = async (): Promise<string[]> => {

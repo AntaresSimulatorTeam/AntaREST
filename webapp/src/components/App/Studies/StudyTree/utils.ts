@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { NonStudyFolder, StudyTreeNode } from "../utils";
+import { NonStudyFolderDTO, StudyTreeNode } from "../utils";
 import * as api from "../../../../services/api/study";
 
 /**
@@ -34,7 +34,7 @@ import * as api from "../../../../services/api/study";
  */
 function insertFolderIfNotExist(
   studiesTree: StudyTreeNode,
-  folder: NonStudyFolder,
+  folder: NonStudyFolderDTO,
 ): StudyTreeNode {
   // Early return if folder doesn't belong in this branch
   if (!folder.parentPath.startsWith(studiesTree.path)) {
@@ -84,7 +84,7 @@ function insertFolderIfNotExist(
  */
 export function insertFoldersIfNotExist(
   studiesTree: StudyTreeNode,
-  folders: NonStudyFolder[],
+  folders: NonStudyFolderDTO[],
 ): StudyTreeNode {
   return folders.reduce(
     (tree, folder) => insertFolderIfNotExist(tree, folder),
@@ -98,7 +98,7 @@ export function insertFoldersIfNotExist(
  * @param path path of the subfolder to fetch, should sart with root, e.g. root/workspace/folder1
  * @returns list of subfolders under the given path
  */
-async function fetchSubfolders(path: string): Promise<NonStudyFolder[]> {
+async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
   if (path === "root") {
     // Under root there're workspaces not subfolders
     return [];
