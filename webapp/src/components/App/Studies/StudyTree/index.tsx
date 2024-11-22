@@ -52,7 +52,10 @@ function StudyTree() {
         setStudiesTree(updatedTree);
         failedPaths.forEach((path) => {
           enqueueErrorSnackbar(
-            t("studies.tree.error.failToFetchFolder", { path }),
+            t("studies.tree.error.failToFetchFolder", {
+              path,
+              interpolation: { escapeValue: false },
+            }),
             t("studies.tree.error.detailsInConsole"),
           );
         });
@@ -92,7 +95,10 @@ function StudyTree() {
       setStudiesTree(r[0]);
       for (const path of r[1]) {
         enqueueErrorSnackbar(
-          t("studies.tree.error.failToFetchFolder", { path }),
+          t("studies.tree.error.failToFetchFolder", {
+            path,
+            interpolation: { escapeValue: false },
+          }),
           t("studies.tree.error.detailsInConsole"),
         );
       }
