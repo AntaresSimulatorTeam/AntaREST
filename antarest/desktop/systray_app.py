@@ -184,7 +184,6 @@ def run_systray_app(config_file: Path) -> None:
     open_app()
     try:
         systray_app.app.exec_()
-    except:  # catch QT error
-        pass
     finally:
+        # Kill server also on exception, in particular on keyboard interrupt
         server.kill()
