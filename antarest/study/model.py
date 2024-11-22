@@ -334,7 +334,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
     name: str
 
     @computed_field(alias="parentPath")
-    def parent_path(self) -> str:
+    def parent_path(self) -> Path:
         """
         This computed field is convenient for the front.
 
