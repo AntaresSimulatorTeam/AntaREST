@@ -817,7 +817,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         return content
 
     @bp.get(
-        "/studies/{study_id}/outputs/{output_id}/digest",
+        "/private/studies/{study_id}/outputs/{output_id}/digest",
         tags=[APITag.study_outputs],
         summary="Get an output digest file",
         response_model=DigestDTO,
