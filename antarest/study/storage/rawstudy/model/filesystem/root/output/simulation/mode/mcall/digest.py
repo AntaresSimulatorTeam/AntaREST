@@ -64,7 +64,7 @@ def _build_areas_and_districts(df: pd.DataFrame, first_row: int) -> DigestMatrix
     final_index = first_column[first_row:].index("") + first_row
     data = df.iloc[first_row:final_index, 2 : col_number + 1].to_numpy().tolist()
     index = first_column[first_row:final_index]
-    # todo: see with Hatim for columns
+    # todo: retrun columns the same way the GET /raw does it
     return DigestMatrixDTO(rowHeaders=index, columns=[], data=data, grouped_columns=True)
 
 
