@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any, Dict
 
 from antares.study.version import StudyVersion
 
@@ -82,7 +83,7 @@ class LinkManager:
         link = link_dto.to_internal(StudyVersion.parse(study.version))
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        self.check_link_existence(file_study, link)
+        self.get_link_if_exists(file_study, link)
 
         command = UpdateLink(
             area1=link.area1,
@@ -100,23 +101,18 @@ class LinkManager:
 
         return updated_link.to_dto()
 
-    def check_link_existence(self, file_study: FileStudy, link: LinkInternal) -> None:
-        area_from, area_to = sorted([link.area1, link.area2])
+    def get_link_if_exists(self, file_study: FileStudy, link: LinkInternal) -> dict[str, Any]:
         try:
-            file_study.tree.get(["input", "links", area_from, "properties", area_to])
+            return file_study.tree.get(["input", "links", link.area1, "properties", link.area2])
         except KeyError:
-            raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
+            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
 
     def get_internal_link(self, study: RawStudy, link: LinkInternal) -> LinkInternal:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        area_from, area_to = sorted([link.area1, link.area2])
-        try:
-            link_properties = file_study.tree.get(["input", "links", area_from, "properties", area_to])
-        except KeyError:
-            raise LinkValidationError(f"The link {area_from} -> {area_to} is not present in the study")
+        link_properties = self.get_link_if_exists(file_study, link)
 
-        link_properties.update({"area1": area_from, "area2": area_to})
+        link_properties.update({"area1": link.area1, "area2": link.area2})
         updated_link = LinkInternal.model_validate(link_properties)
 
         return updated_link
