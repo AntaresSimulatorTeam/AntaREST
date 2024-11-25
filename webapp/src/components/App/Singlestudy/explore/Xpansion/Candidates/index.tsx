@@ -44,7 +44,6 @@ import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithS
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import EmptyView from "../../../../../common/page/SimpleContent";
 import SplitView from "../../../../../common/SplitView";
-import { getLinks } from "@/services/api/studies/links";
 import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 function Candidates() {

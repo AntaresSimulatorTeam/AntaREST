@@ -94,7 +94,10 @@ function DataViewerDialog({
             <MatrixGrid
               data={content.data}
               rows={content.data.length}
-              columns={generateDataColumns(true, content.columns.length)}
+              columns={generateDataColumns({
+                timeSeriesColumns: true,
+                count: content.columns.length,
+              })}
               readOnly
             />
           )}

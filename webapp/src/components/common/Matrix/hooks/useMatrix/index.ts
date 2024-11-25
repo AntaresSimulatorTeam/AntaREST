@@ -162,12 +162,12 @@ export function useMatrix(
       });
     }
 
-    const dataColumns = generateDataColumns(
+    const dataColumns = generateDataColumns({
       timeSeriesColumns,
-      columnCount,
+      count: columnCount,
       customColumns,
-      colWidth,
-    );
+      width: colWidth,
+    });
 
     const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map(
       (aggregateType) => ({

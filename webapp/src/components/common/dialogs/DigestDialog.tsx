@@ -22,8 +22,8 @@ import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import EmptyView from "../page/SimpleContent";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
-import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
 import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
+import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
 
 export interface DigestDialogProps
   extends Pick<OkDialogProps, "open" | "onOk" | "onClose"> {
@@ -45,8 +45,6 @@ function DigestDialog({
       deps: [studyId, outputId],
     },
   );
-
-  console.log("synthesisRes", synthesisRes);
 
   return (
     <OkDialog
@@ -74,9 +72,12 @@ function DigestDialog({
           matrix && (
             <MatrixGridSynthesis
               data={matrix.data}
-              rows={matrix.length}
-              columns={generateDataColumns(true, matrix.columns.length)}
-              readOnly
+              columns={generateDataColumns({
+                timeSeriesColumns: false,
+                count: matrix.columns.length,
+                customColumns: matrix.columns,
+                width: 100,
+              })}
             />
           )
         }

@@ -41,7 +41,12 @@ function MatrixContent({ matrix, onBack }: MatrixContentProps) {
 
   const matrixColumns = useMemo(
     () =>
-      matrixData ? generateDataColumns(true, matrixData.columns.length) : [],
+      matrixData
+        ? generateDataColumns({
+            timeSeriesColumns: true,
+            count: matrixData.columns.length,
+          })
+        : [],
     [matrixData],
   );
 
