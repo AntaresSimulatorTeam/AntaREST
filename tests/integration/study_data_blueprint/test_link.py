@@ -15,6 +15,9 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.study.storage.rawstudy.model.filesystem.config.links import TransmissionCapacity
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.integration.prepare_proxy import PreparerProxy
 
 

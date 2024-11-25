@@ -17,6 +17,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from antarest.core.exceptions import LinkValidationError
 from antarest.study.business.link_management import LinkInternal
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
@@ -52,7 +53,6 @@ class TestCreateLink:
                 area2=area1,
                 parameters={},
                 command_context=command_context,
-                series=[[0]],
                 study_version=STUDY_VERSION_8_8,
             )
 
@@ -85,7 +85,6 @@ class TestCreateLink:
             area2=area2_id,
             parameters={},
             command_context=command_context,
-            series=[[0]],
             study_version=study_version,
         )
         output = create_link_command.apply(
@@ -116,8 +115,7 @@ class TestCreateLink:
             area2=area3_id,
             parameters={},
             command_context=command_context,
-            series=[[0]],
-            study_version=study_version,
+            study_version=empty_study.config.version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
@@ -136,9 +134,8 @@ class TestCreateLink:
                 "area1": area1_id,
                 "area2": area2_id,
                 "parameters": {},
-                "series": [[0]],
                 "command_context": command_context,
-                "study_version": study_version,
+                "study_version": empty_study.config.version,
             }
         ).apply(study_data=empty_study)
 
@@ -165,7 +162,6 @@ class TestCreateLink:
                 "area1": area3_id,
                 "area2": area1_id,
                 "parameters": parameters,
-                "series": [[0]],
                 "command_context": command_context,
                 "study_version": study_version,
             }
@@ -175,6 +171,17 @@ class TestCreateLink:
         )
 
         assert output.status
+        with pytest.raises(LinkValidationError):
+            CreateLink.model_validate(
+                {
+                    "area1": area3_id,
+                    "area2": area1_id,
+                    "parameters": parameters,
+                    "series": [[0]],
+                    "command_context": command_context,
+                    "study_version": study_version,
+                }
+            )
 
         assert (study_path / "input" / "links" / area1_id / f"{area3_id}.txt.link").exists()
 
@@ -201,7 +208,6 @@ class TestCreateLink:
             area1="does_not_exist",
             area2=area2_id,
             parameters={},
-            series=[[0]],
             command_context=command_context,
             study_version=study_version,
         ).apply(empty_study)

@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, field_validator, model_validator
 
+from antarest.core.exceptions import LinkValidationError
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.link_model import LinkInternal
@@ -56,6 +57,14 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
     def validate_areas(self) -> "AbstractLinkCommand":
         if self.area1 == self.area2:
             raise ValueError("Cannot create link on same node")
+
+        if StudyVersion.parse(self.study_version) < STUDY_VERSION_8_2 and (
+            self.series is not None or self.direct is not None or self.indirect is not None
+        ):
+            raise LinkValidationError(
+                "The fields 'series', 'direct', and 'indirect' cannot be provided when the version is less than 820."
+            )
+
         return self
 
     def to_dto(self) -> CommandDTO:
