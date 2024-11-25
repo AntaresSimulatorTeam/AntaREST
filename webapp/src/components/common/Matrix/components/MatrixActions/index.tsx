@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
 
 interface MatrixActionsProps {
-  onImport: VoidFunction;
+  onImport: (_: unknown, index: unknown) => void;
   onSave: VoidFunction;
   studyId: string;
   path: string;

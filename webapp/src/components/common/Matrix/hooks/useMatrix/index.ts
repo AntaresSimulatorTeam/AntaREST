@@ -319,5 +319,6 @@ export function useMatrix(
     redo: handleRedo,
     canUndo: canUndoChanges,
     canRedo,
+    reload: fetchMatrix,
   };
 }

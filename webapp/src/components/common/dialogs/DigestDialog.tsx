@@ -14,7 +14,6 @@
 
 import { Skeleton } from "@mui/material";
 import OkDialog, { OkDialogProps } from "./OkDialog";
-import EditableMatrix from "../EditableMatrix";
 import UsePromiseCond from "../utils/UsePromiseCond";
 import type { LaunchJob } from "../../../common/types";
 import { getStudyData } from "../../../services/api/study";
@@ -23,8 +22,8 @@ import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import EmptyView from "../page/SimpleContent";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
-
-// TODO: redesign DataViewerDialog to use path, then remove this component
+import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
+import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
 
 export interface DigestDialogProps
   extends Pick<OkDialogProps, "open" | "onOk" | "onClose"> {
@@ -46,6 +45,8 @@ function DigestDialog({
       deps: [studyId, outputId],
     },
   );
+
+  console.log("synthesisRes", synthesisRes);
 
   return (
     <OkDialog
@@ -71,10 +72,10 @@ function DigestDialog({
         }}
         ifFulfilled={(matrix) =>
           matrix && (
-            <EditableMatrix
-              matrix={matrix}
-              columnsNames={matrix.columns}
-              matrixTime={false}
+            <MatrixGridSynthesis
+              data={matrix.data}
+              rows={matrix.length}
+              columns={generateDataColumns(true, matrix.columns.length)}
               readOnly
             />
           )

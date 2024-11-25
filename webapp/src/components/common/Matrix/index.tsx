@@ -17,7 +17,6 @@ import MatrixGrid from "./components/MatrixGrid";
 import { useMatrix } from "./hooks/useMatrix";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import ImportDialog from "../dialogs/ImportDialog";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../common/types";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
@@ -26,6 +25,7 @@ import EmptyView from "../page/SimpleContent";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { AggregateConfig } from "./shared/types";
 import { GridOff } from "@mui/icons-material";
+import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
 
 interface MatrixProps {
   url: string;
@@ -60,8 +60,11 @@ function Matrix({
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [openImportDialog, setOpenImportDialog] = useState(false);
+  const [uploadType, setUploadType] = useState<"file" | "database" | null>(
+    null,
+  );
 
+  // TODO: split `useMatrix` into smaller units
   const {
     data,
     aggregates,
@@ -79,6 +82,7 @@ function Matrix({
     redo,
     canUndo,
     canRedo,
+    reload,
   } = useMatrix(
     study.id,
     url,
@@ -108,7 +112,9 @@ function Matrix({
       <MatrixHeader>
         <MatrixTitle>{t(title)}</MatrixTitle>
         <MatrixActions
-          onImport={() => setOpenImportDialog(true)}
+          onImport={(_, index) => {
+            setUploadType(index === 0 ? "file" : "database");
+          }}
           onSave={handleSaveUpdates}
           studyId={study.id}
           path={url}
@@ -139,14 +145,23 @@ function Matrix({
           showPercent={showPercent}
         />
       )}
-      {openImportDialog && (
-        <ImportDialog
-          open={openImportDialog}
-          title={t("matrix.importNewMatrix")}
-          dropzoneText={t("matrix.message.importHint")}
-          onCancel={() => setOpenImportDialog(false)}
-          onImport={handleImport}
-          accept={{ "text/*": [".csv", ".tsv", ".txt"] }}
+      {uploadType && (
+        <MatrixUpload
+          studyId={study.id}
+          path={url}
+          type={uploadType}
+          open={!!uploadType}
+          onClose={() => {
+            setUploadType(null);
+            if (uploadType === "database") {
+              reload();
+            }
+          }}
+          onFileUpload={handleImport}
+          fileOptions={{
+            accept: { "text/*": [".csv", ".tsv", ".txt"] },
+            dropzoneText: t("matrix.message.importHint"),
+          }}
         />
       )}
     </MatrixContainer>

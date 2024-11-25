@@ -43,7 +43,7 @@ interface PropType {
   title: ReactNode;
   content: GenericInfo[];
   onDelete?: (id: string) => Promise<void>;
-  onRead: (id: string) => Promise<void>;
+  onRead: (id: string) => Promise<void> | void;
   uploadFile?: (file: File) => Promise<void>;
   onFileDownload?: (id: string) => string;
   onAssign?: (id: string) => Promise<void>;
