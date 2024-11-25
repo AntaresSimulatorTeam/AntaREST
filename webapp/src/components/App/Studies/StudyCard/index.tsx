@@ -24,10 +24,6 @@ import {
   CardContent,
   Button,
   Typography,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
   Tooltip,
   Chip,
   Divider,
@@ -37,37 +33,31 @@ import { indigo } from "@mui/material/colors";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import BoltIcon from "@mui/icons-material/Bolt";
-import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import debug from "debug";
 import { areEqual } from "react-window";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { StudyMetadata, StudyType } from "../../../common/types";
+import { StudyMetadata, StudyType } from "../../../../common/types";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   displayVersionName,
-} from "../../../services/utils";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import ExportModal from "./ExportModal";
-import StarToggle from "../../common/StarToggle";
-import MoveStudyDialog from "./MoveStudyDialog";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy, isStudyFavorite } from "../../../redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { deleteStudy, toggleFavorite } from "../../../redux/ducks/studies";
-import * as studyApi from "../../../services/api/study";
-import PropertiesDialog from "../Singlestudy/PropertiesDialog";
+} from "../../../../services/utils";
+import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
+import ExportModal from "../ExportModal";
+import StarToggle from "../../../common/StarToggle";
+import MoveStudyDialog from "../MoveStudyDialog";
+import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import { getStudy, isStudyFavorite } from "../../../../redux/selectors";
+import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
+import { deleteStudy, toggleFavorite } from "../../../../redux/ducks/studies";
+import PropertiesDialog from "../../Singlestudy/PropertiesDialog";
+import ActionsMenu from "./ActionsMenu";
+import type { DialogsType } from "./types";
 
 const logError = debug("antares:studieslist:error");
 
@@ -100,15 +90,19 @@ const StudyCard = memo((props: Props) => {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openMenu, setOpenMenu] = useState("");
-  const [openPropertiesDialog, setOpenPropertiesDialog] = useState(false);
-  const [openConfirmDeleteDialog, setOpenConfirmDeleteDialog] = useState(false);
-  const [openExportModal, setOpenExportModal] = useState(false);
-  const [openMoveDialog, setOpenMoveDialog] = useState(false);
+  const [openDialog, setOpenDialog] = useState<DialogsType | null>(null);
   const study = useAppSelector((state) => getStudy(state, id));
   const isFavorite = useAppSelector((state) => isStudyFavorite(state, id));
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const closeDialog = () => {
+    setOpenDialog(null);
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -116,17 +110,10 @@ const StudyCard = memo((props: Props) => {
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
-    setOpenMenu(event.currentTarget.id);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    setOpenMenu("");
-  };
-
-  const handleLaunchClick = () => {
-    setStudyToLaunch(id);
-    handleMenuClose();
   };
 
   const handleFavoriteToggle = () => {
@@ -140,28 +127,8 @@ const StudyCard = memo((props: Props) => {
         enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);
         logError("Failed to delete study", study, err);
       });
-    setOpenConfirmDeleteDialog(false);
-  };
 
-  const handleUnarchiveClick = () => {
-    studyApi.unarchiveStudy(id).catch((err) => {
-      enqueueErrorSnackbar(
-        t("studies.error.unarchive", { studyname: study?.name }),
-        err,
-      );
-      logError("Failed to unarchive study", study, err);
-    });
-  };
-
-  const handleArchiveClick = () => {
-    studyApi.archiveStudy(id).catch((err) => {
-      enqueueErrorSnackbar(
-        t("studies.error.archive", { studyname: study?.name }),
-        err,
-      );
-      logError("Failed to archive study", study, err);
-    });
-    handleMenuClose();
+    setOpenDialog("delete");
   };
 
   const handleCopyId = () => {
@@ -176,16 +143,6 @@ const StudyCard = memo((props: Props) => {
         enqueueErrorSnackbar(t("study.error.studyIdCopy"), err);
         logError("Failed to copy id", study, err);
       });
-  };
-
-  const handleCopyClick = () => {
-    studyApi
-      .copyStudy(id, `${study?.name} (${t("studies.copySuffix")})`, false)
-      .catch((err) => {
-        enqueueErrorSnackbar(t("studies.error.copyStudy"), err);
-        logError("Failed to copy study", study, err);
-      });
-    handleMenuClose();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -432,8 +389,6 @@ const StudyCard = memo((props: Props) => {
         <Tooltip title={t("studies.moreActions")}>
           <Button
             size="small"
-            aria-controls="menu-elements"
-            aria-haspopup="true"
             id="menu"
             color="primary"
             sx={{ width: "auto", minWidth: 0, p: 0 }}
@@ -442,172 +397,38 @@ const StudyCard = memo((props: Props) => {
             <MoreVertIcon />
           </Button>
         </Tooltip>
-        <Menu
-          id="menu-elements"
+        <ActionsMenu
           anchorEl={anchorEl}
-          keepMounted
-          open={openMenu === "menu"}
           onClose={handleMenuClose}
-        >
-          {study.archived ? (
-            <MenuItem onClick={handleUnarchiveClick}>
-              <ListItemIcon>
-                <UnarchiveOutlinedIcon
-                  sx={{
-                    color: "action.active",
-                    width: "24px",
-                    height: "24px",
-                  }}
-                />
-              </ListItemIcon>
-              <ListItemText>{t("global.unarchive")}</ListItemText>
-            </MenuItem>
-          ) : (
-            <div>
-              <MenuItem onClick={handleLaunchClick}>
-                <ListItemIcon>
-                  <BoltIcon
-                    sx={{
-                      color: "action.active",
-                      width: "24px",
-                      height: "24px",
-                    }}
-                  />
-                </ListItemIcon>
-                <ListItemText>{t("global.launch")}</ListItemText>
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  setOpenPropertiesDialog(true);
-                  handleMenuClose();
-                }}
-              >
-                <ListItemIcon>
-                  <EditOutlinedIcon
-                    sx={{
-                      color: "action.active",
-                      width: "24px",
-                      height: "24px",
-                    }}
-                  />
-                </ListItemIcon>
-                <ListItemText>{t("study.properties")}</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={handleCopyClick}>
-                <ListItemIcon>
-                  <FileCopyOutlinedIcon
-                    sx={{
-                      color: "action.active",
-                      width: "24px",
-                      height: "24px",
-                    }}
-                  />
-                </ListItemIcon>
-                <ListItemText>{t("global.copy")}</ListItemText>
-              </MenuItem>
-              {study.managed && (
-                <MenuItem
-                  onClick={() => {
-                    setOpenMoveDialog(true);
-                    handleMenuClose();
-                  }}
-                >
-                  <ListItemIcon>
-                    <DriveFileMoveIcon
-                      sx={{
-                        color: "action.active",
-                        width: "24px",
-                        height: "24px",
-                      }}
-                    />
-                  </ListItemIcon>
-                  <ListItemText>{t("studies.moveStudy")}</ListItemText>
-                </MenuItem>
-              )}
-              <MenuItem
-                onClick={() => {
-                  setOpenExportModal(true);
-                  handleMenuClose();
-                }}
-              >
-                <ListItemIcon>
-                  <DownloadOutlinedIcon
-                    sx={{
-                      color: "action.active",
-                      width: "24px",
-                      height: "24px",
-                    }}
-                  />
-                </ListItemIcon>
-                <ListItemText>{t("global.export")}</ListItemText>
-              </MenuItem>
-              {study.managed && (
-                <MenuItem onClick={handleArchiveClick}>
-                  <ListItemIcon>
-                    <ArchiveOutlinedIcon
-                      sx={{
-                        color: "action.active",
-                        width: "24px",
-                        height: "24px",
-                      }}
-                    />
-                  </ListItemIcon>
-                  <ListItemText>{t("global.archive")}</ListItemText>
-                </MenuItem>
-              )}
-            </div>
-          )}
-          {study.managed && (
-            <MenuItem
-              onClick={() => {
-                setOpenConfirmDeleteDialog(true);
-                handleMenuClose();
-              }}
-            >
-              <ListItemIcon>
-                <DeleteOutlinedIcon
-                  sx={{ color: "error.light", width: "24px", height: "24px" }}
-                />
-              </ListItemIcon>
-              <ListItemText sx={{ color: "error.light" }}>
-                {t("global.delete")}
-              </ListItemText>
-            </MenuItem>
-          )}
-        </Menu>
+          study={study}
+          setStudyToLaunch={setStudyToLaunch}
+          setOpenDialog={setOpenDialog}
+        />
       </CardActions>
-      {openPropertiesDialog && study && (
-        <PropertiesDialog
-          open={openPropertiesDialog}
-          onClose={() => setOpenPropertiesDialog(false)}
-          study={study}
-        />
-      )}
-      {openConfirmDeleteDialog && (
-        <ConfirmationDialog
-          title={t("dialog.title.confirmation")}
-          onCancel={() => setOpenConfirmDeleteDialog(false)}
-          onConfirm={handleDelete}
-          alert="warning"
-          open
-        >
-          {t("studies.question.delete")}
-        </ConfirmationDialog>
-      )}
-      {openExportModal && (
-        <ExportModal
-          open={openExportModal}
-          onClose={() => setOpenExportModal(false)}
-          study={study}
-        />
-      )}
-      {openMoveDialog && (
-        <MoveStudyDialog
-          open={openMoveDialog}
-          onClose={() => setOpenMoveDialog(false)}
-          study={study}
-        />
-      )}
+      <PropertiesDialog
+        open={openDialog === "properties"}
+        onClose={closeDialog}
+        study={study}
+      />
+      <ConfirmationDialog
+        title={t("dialog.title.confirmation")}
+        onCancel={closeDialog}
+        onConfirm={handleDelete}
+        alert="warning"
+        open={openDialog === "delete"}
+      >
+        {t("studies.question.delete")}
+      </ConfirmationDialog>
+      <ExportModal
+        open={openDialog === "export"}
+        onClose={closeDialog}
+        study={study}
+      />
+      <MoveStudyDialog
+        open={openDialog === "move"}
+        onClose={closeDialog}
+        study={study}
+      />
     </Card>
   );
 }, areEqual);
