@@ -525,7 +525,7 @@
   "study.modelization.clusters.costGeneration": "TS Cost",
   "study.modelization.clusters.efficiency": "Efficiency (%)",
   "study.modelization.clusters.timeSeriesGen": "Time-Series generation",
-  "study.modelization.clusters.genTs": "Generate Time-Series",
+  "study.modelization.clusters.genTs": "Parameter",
   "study.modelization.clusters.volatilityForced": "Volatility forced",
   "study.modelization.clusters.volatilityPlanned": "Volatility planned",
   "study.modelization.clusters.lawForced": "Law forced",
