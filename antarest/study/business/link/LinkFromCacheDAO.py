@@ -103,25 +103,21 @@ class LinkFromCacheDAO(LinkDAO):
         cache_key = self._get_cache_key(study.id)
         cached_links = self.redis.get(cache_key)
 
-        # Deserialize or initialize
-        if isinstance(cached_links, str):  # If it's a JSON string
+        if isinstance(cached_links, str):
             try:
-                cached_links = json.loads(cached_links)  # Deserialize to a Python dict
+                cached_links = json.loads(cached_links)
             except json.JSONDecodeError:
-                cached_links = {"links": []}  # Initialize an empty dictionary
-        elif not isinstance(cached_links, dict):  # If not a dict, initialize
+                cached_links = {"links": []}
+        elif not isinstance(cached_links, dict):
             cached_links = {"links": []}
 
-        # Access the list of links in cached_links
         links_data = cached_links.get("links", [])
-        if not isinstance(links_data, list):  # Ensure it's a list
+        if not isinstance(links_data, list):
             links_data = []
 
-        # Add the new link
         link_data = link_dto.model_dump(by_alias=True, exclude_unset=True)
         links_data.append(link_data)
 
-        # Update the cache
         cached_links["links"] = links_data
         self.redis.put(cache_key, cached_links)
 
