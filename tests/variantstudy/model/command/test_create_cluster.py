@@ -210,6 +210,8 @@ class TestCreateCluster:
             "id": None,
             "version": 1,
             "study_version": STUDY_VERSION_8_8,
+            "user_id": None,
+            "updated_at": None,
         }
 
 

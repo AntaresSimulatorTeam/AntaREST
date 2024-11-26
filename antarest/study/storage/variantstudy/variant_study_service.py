@@ -209,6 +209,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
+                user_id=params.user.id,
+                updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
         ]
