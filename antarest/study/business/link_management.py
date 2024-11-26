@@ -17,13 +17,11 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.model.link_model import LinkDTO, LinkInternal
+from antarest.study.business.link.LinkDAO import LinkDAO
+from antarest.study.business.model.link_model import LinkDTO
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
-from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
-from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 _ALL_LINKS_PATH = "input/links"
@@ -38,53 +36,17 @@ class LinkOutput(LinkProperties):
 
 
 class LinkManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, link_dao: LinkDAO) -> None:
+        self.link_dao = link_dao
 
     def get_all_links(self, study: Study) -> t.List[LinkDTO]:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        result: t.List[LinkDTO] = []
+        return self.link_dao.get_all_links(study)
 
-        for area_id, area in file_study.config.areas.items():
-            links_config = file_study.tree.get(["input", "links", area_id, "properties"])
-
-            for link in area.links:
-                link_tree_config: t.Dict[str, t.Any] = links_config[link]
-                link_tree_config.update({"area1": area_id, "area2": link})
-
-                link_internal = LinkInternal.model_validate(link_tree_config)
-
-                result.append(link_internal.to_dto())
-
-        return result
-
-    def create_link(self, study: Study, link_creation_dto: LinkDTO) -> LinkDTO:
-        link = link_creation_dto.to_internal(StudyVersion.parse(study.version))
-
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
-
-        command = CreateLink(
-            area1=link.area1,
-            area2=link.area2,
-            parameters=link.model_dump(exclude_none=True),
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
-        )
-
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
-
-        return link_creation_dto
+    def create_link(self, study: Study, link_dto: LinkDTO) -> LinkDTO:
+        return self.link_dao.create_link(study, link_dto)
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        command = RemoveLink(
-            area1=area1_id,
-            area2=area2_id,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
-        )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        self.link_dao.delete_link(study, area1_id, area2_id)
 
     def get_all_links_props(self, study: RawStudy) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
         """

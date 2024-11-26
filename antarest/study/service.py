@@ -31,6 +31,7 @@ from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
 
+from antarest.core.cache.business.redis_cache import RedisCache
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     BadEditInstructionException,
@@ -87,6 +88,9 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
+from antarest.study.business.link.CompositeLinkDAO import CompositeLinkDAO
+from antarest.study.business.link.LinkFromCacheDAO import LinkFromCacheDAO
+from antarest.study.business.link.LinkFromStorageDAO import LinkFromStorageDAO
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.link_model import LinkDTO
@@ -354,6 +358,10 @@ class StudyService:
         config: Config,
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
+        self.storare_link_dao = LinkFromStorageDAO(self.storage_service)
+        self.cache_link_dao = LinkFromCacheDAO(cache_service)
+        self.composite_link_dao = CompositeLinkDAO(self.cache_link_dao, self.storare_link_dao)
+        self.links_manager = LinkManager(self.composite_link_dao)
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
@@ -361,7 +369,6 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service, self.repository)
         self.district_manager = DistrictManager(self.storage_service)
-        self.links_manager = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
         self.general_manager = GeneralManager(self.storage_service)
         self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
