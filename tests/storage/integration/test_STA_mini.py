@@ -444,6 +444,10 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
             f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/info/general/version",
             700,
         ),
+        (
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1430adq-2/about-the-study/areas",
+            b"DE\r\nES\r\nFR\r\nIT\r\n",
+        ),
     ],
 )
 def test_sta_mini_output(storage_service, url: str, expected_output: dict):

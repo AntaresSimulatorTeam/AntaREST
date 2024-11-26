@@ -148,13 +148,9 @@ class INode(ABC, Generic[G, S, V]):
             The actual path of the extracted file
             the tmp_dir object which MUST be cleared after use of the file
         """
-        if self.config.archive_path is None:
-            raise ShouldNotHappenException()
-        inside_archive_path = self.config.path.relative_to(self.config.archive_path.parent / self.config.study_id)
-        if self.config.archive_path:
-            return extract_file_to_tmp_dir(self.config.archive_path, inside_archive_path)
-        else:
-            raise ShouldNotHappenException()
+        assert self.config.archive_path is not None
+        inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix(""))
+        return extract_file_to_tmp_dir(self.config.archive_path, inside_archive_path)
 
     def _assert_not_in_zipped_file(self) -> None:
         """Prevents writing inside a zip file"""
