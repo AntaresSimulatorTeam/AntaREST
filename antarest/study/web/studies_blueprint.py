@@ -43,7 +43,7 @@ from antarest.study.model import (
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestDTO
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
 
@@ -817,16 +817,16 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         return content
 
     @bp.get(
-        "/private/studies/{study_id}/outputs/{output_id}/digest",
+        "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
         tags=[APITag.study_outputs],
-        summary="Get an output digest file",
-        response_model=DigestDTO,
+        summary="Display an output digest file for the front-end",
+        response_model=DigestUI,
     )
     def get_digest_file(
         study_id: str,
         output_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> DigestDTO:
+    ) -> DigestUI:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(
