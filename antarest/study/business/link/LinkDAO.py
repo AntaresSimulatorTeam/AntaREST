@@ -54,3 +54,4 @@ class LinkDAO(ABC):
             area2_id (str): The ID of the target area of the link.
         """
         pass
+
