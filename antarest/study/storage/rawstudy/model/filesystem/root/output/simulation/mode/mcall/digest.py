@@ -25,14 +25,14 @@ class DigestMatrixDTO(AntaresBaseModel):
     rowHeaders: t.List[str]
     columns: t.List[str]
     data: t.List[t.List[t.Any]]
-    grouped_columns: bool
+    groupedColumns: bool
 
 
 class DigestDTO(AntaresBaseModel):
     area: DigestMatrixDTO
     districts: DigestMatrixDTO
-    flow_linear: DigestMatrixDTO
-    flow_quadratic: DigestMatrixDTO
+    flowLinear: DigestMatrixDTO
+    flowQuadratic: DigestMatrixDTO
 
 
 def _get_flow_linear(df: pd.DataFrame) -> DigestMatrixDTO:
@@ -47,14 +47,14 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> DigestMatrixDTO:
     first_column = df["1"].tolist()
     index = next((k for k, v in enumerate(first_column) if v == keyword), None)
     if not index:
-        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], grouped_columns=False)
+        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], groupedColumns=False)
     index_start = index + 2
     df_col_start = 1
     df_size = next((k for k, v in enumerate(first_column[index_start:]) if v == ""), len(first_column) - index_start)
     flow_df = df.iloc[index_start : index_start + df_size, df_col_start : df_col_start + df_size]
     area_names = flow_df.iloc[0, 1:].tolist()
     data = flow_df.iloc[1:, 1:].to_numpy().tolist()
-    return DigestMatrixDTO(rowHeaders=area_names, columns=area_names, data=data, grouped_columns=False)
+    return DigestMatrixDTO(rowHeaders=area_names, columns=area_names, data=data, groupedColumns=False)
 
 
 def _build_areas_and_districts(df: pd.DataFrame, first_row: int) -> DigestMatrixDTO:
@@ -66,7 +66,7 @@ def _build_areas_and_districts(df: pd.DataFrame, first_row: int) -> DigestMatrix
     index = first_column[first_row:final_index]
     cols_raw = df.iloc[first_row - 3 : first_row, 2 : col_number + 1].to_numpy().tolist()
     columns = [[a, b, c] for a, b, c in zip(cols_raw[0], cols_raw[1], cols_raw[2])]
-    return DigestMatrixDTO(rowHeaders=index, columns=columns, data=data, grouped_columns=True)
+    return DigestMatrixDTO(rowHeaders=index, columns=columns, data=data, groupedColumns=True)
 
 
 def _get_area(df: pd.DataFrame) -> DigestMatrixDTO:
@@ -77,7 +77,7 @@ def _get_district(df: pd.DataFrame) -> DigestMatrixDTO:
     first_column = df["1"].tolist()
     first_row = next((k for k, v in enumerate(first_column) if "@" in v), None)
     if not first_row:
-        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], grouped_columns=False)
+        return DigestMatrixDTO(rowHeaders=[], columns=[], data=[], groupedColumns=False)
     return _build_areas_and_districts(df, first_row)
 
 
@@ -108,7 +108,7 @@ class DigestSynthesis(OutputSynthesis):
         flow_quadratic = _get_flow_quadratic(df)
         area = _get_area(df)
         districts = _get_district(df)
-        return DigestDTO(area=area, districts=districts, flow_linear=flow_linear, flow_quadratic=flow_quadratic)
+        return DigestDTO(area=area, districts=districts, flowLinear=flow_linear, flowQuadratic=flow_quadratic)
 
     def _parse_digest_file(self) -> pd.DataFrame:
         """
