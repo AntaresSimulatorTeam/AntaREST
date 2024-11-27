@@ -164,7 +164,7 @@ class TestCreateRenewablesCluster:
             "version": 1,
             "study_version": STUDY_VERSION_8_8,
             "updated_at": None,
-            "user_id": None
+            "user_id": None,
         }
 
 
