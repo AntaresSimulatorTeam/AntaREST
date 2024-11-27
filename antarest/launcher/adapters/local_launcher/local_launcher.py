@@ -12,6 +12,7 @@
 
 import io
 import logging
+import os
 import shutil
 import signal
 import subprocess
@@ -19,7 +20,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Dict, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from uuid import UUID
 
 from antares.study.version import SolverVersion
@@ -33,6 +34,28 @@ from antarest.launcher.adapters.log_manager import follow
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_launcher_options(launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
+    simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
+    environment_variables = os.environ.copy()
+    if launcher_parameters.other_options:
+        solver = []
+        if "xpress" in launcher_parameters.other_options:
+            solver = ["--use-ortools", "--ortools-solver=xpress"]
+            # Add xpress to environment variables
+            # todo: remove this path hard-coded
+            xpress_dir_path = "my_path"
+            environment_variables["XPRESSDIR"] = xpress_dir_path
+            os_sep = "\\" if os.name == "nt" else "/"
+            environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os_sep + "bin"
+        elif "coin" in launcher_parameters.other_options:
+            solver = ["--use-ortools", "--ortools-solver=coin"]
+        if solver:
+            simulator_args += solver
+        if "presolve" in launcher_parameters.other_options:
+            simulator_args.append('--solver-parameters="PRESOLVE 1"')
+    return simulator_args, environment_variables
 
 
 class LocalLauncher(AbstractLauncher):
@@ -123,21 +146,11 @@ class LocalLauncher(AbstractLauncher):
         try:
             self.callbacks.export_study(str(uuid), study_uuid, export_path, launcher_parameters)
 
-            simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
-            if launcher_parameters.other_options:
-                solver = []
-                if "xpress" in launcher_parameters.other_options:
-                    solver = ["--use-ortools", "--ortools-solver=xpress"]
-                elif "coin" in launcher_parameters.other_options:
-                    solver = ["--use-ortools", "--ortools-solver=coin"]
-                if solver:
-                    simulator_args += solver
-                if "presolve" in launcher_parameters.other_options:
-                    simulator_args.append('--solver-parameters="PRESOLVE 1"')
-
+            simulator_args, environment_variables = _parse_launcher_options(launcher_parameters)
             new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
             process = subprocess.Popen(
                 new_args,
+                env=environment_variables,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
