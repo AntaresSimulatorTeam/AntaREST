@@ -47,8 +47,7 @@ def _parse_launcher_options(launcher_parameters: LauncherParametersDTO) -> Tuple
             # todo: remove this path hard-coded
             xpress_dir_path = "my_path"
             environment_variables["XPRESSDIR"] = xpress_dir_path
-            os_sep = "\\" if os.name == "nt" else "/"
-            environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os_sep + "bin"
+            environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
         elif "coin" in launcher_parameters.other_options:
             solver = ["--use-ortools", "--ortools-solver=coin"]
         if solver:
