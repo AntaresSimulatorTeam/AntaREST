@@ -135,7 +135,7 @@ class TestVariantStudyService:
     ) -> None:
         ## Prepare database objects
         # noinspection PyArgumentList
-        user = User(id=0, name="admin")
+        user = User(id=1, name="admin")
         db.session.add(user)
         db.session.commit()
 
