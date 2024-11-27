@@ -53,6 +53,7 @@ class TestCreateLink:
                 area2=area1,
                 parameters={},
                 command_context=command_context,
+                series=[[0]],
                 study_version=STUDY_VERSION_8_8,
             )
 
@@ -85,6 +86,7 @@ class TestCreateLink:
             area2=area2_id,
             parameters={},
             command_context=command_context,
+            series=[[0]],
             study_version=study_version,
         )
         output = create_link_command.apply(
@@ -115,7 +117,8 @@ class TestCreateLink:
             area2=area3_id,
             parameters={},
             command_context=command_context,
-            study_version=empty_study.config.version,
+            series=[[0]],
+            study_version=study_version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
@@ -135,7 +138,8 @@ class TestCreateLink:
                 "area2": area2_id,
                 "parameters": {},
                 "command_context": command_context,
-                "study_version": empty_study.config.version,
+                "series": [[0]],
+                "study_version": study_version,
             }
         ).apply(study_data=empty_study)
 
@@ -163,6 +167,7 @@ class TestCreateLink:
                 "area2": area1_id,
                 "parameters": parameters,
                 "command_context": command_context,
+                "series": [[0]],
                 "study_version": study_version,
             }
         )
@@ -177,7 +182,7 @@ class TestCreateLink:
                     "area1": area3_id,
                     "area2": area1_id,
                     "parameters": parameters,
-                    "series": [[0]],
+                    "direct": [[0]],
                     "command_context": command_context,
                     "study_version": study_version,
                 }
@@ -209,6 +214,7 @@ class TestCreateLink:
             area2=area2_id,
             parameters={},
             command_context=command_context,
+            series=[[0]],
             study_version=study_version,
         ).apply(empty_study)
         assert not output.status

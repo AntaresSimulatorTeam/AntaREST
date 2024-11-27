@@ -58,11 +58,9 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         if self.area1 == self.area2:
             raise ValueError("Cannot create link on same node")
 
-        if StudyVersion.parse(self.study_version) < STUDY_VERSION_8_2 and (
-            self.series is not None or self.direct is not None or self.indirect is not None
-        ):
+        if self.study_version < STUDY_VERSION_8_2 and (self.direct is not None or self.indirect is not None):
             raise LinkValidationError(
-                "The fields 'series', 'direct', and 'indirect' cannot be provided when the version is less than 820."
+                "The fields 'direct' and 'indirect' cannot be provided when the version is less than 820."
             )
 
         return self
@@ -134,7 +132,6 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         return list_matrices
 
     def save_series(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        self.series = self.command_context.generator_matrix_constants.get_link(version=version)
         assert isinstance(self.series, str)
         if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
@@ -145,7 +142,6 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             )
 
     def save_direct(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        self.direct = self.command_context.generator_matrix_constants.get_link_direct()
         assert isinstance(self.direct, str)
         if version >= STUDY_VERSION_8_2:
             study_data.tree.save(
@@ -160,7 +156,6 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             )
 
     def save_indirect(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        self.indirect = self.command_context.generator_matrix_constants.get_link_indirect()
         assert isinstance(self.indirect, str)
         if version >= STUDY_VERSION_8_2:
             study_data.tree.save(
