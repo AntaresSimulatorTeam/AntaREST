@@ -123,13 +123,21 @@ class LocalLauncher(AbstractLauncher):
         try:
             self.callbacks.export_study(str(uuid), study_uuid, export_path, launcher_parameters)
 
-            args = [
-                str(antares_solver_path),
-                f"--force-parallel={launcher_parameters.nb_cpu}",
-                str(export_path),
-            ]
+            simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
+            if launcher_parameters.other_options:
+                solver = []
+                if "xpress" in launcher_parameters.other_options:
+                    solver = ["--use-ortools", "--ortools-solver=xpress"]
+                elif "coin" in launcher_parameters.other_options:
+                    solver = ["--use-ortools", "--ortools-solver=coin"]
+                if solver:
+                    simulator_args += solver
+                if "presolve" in launcher_parameters.other_options:
+                    simulator_args.append('--solver-parameters="PRESOLVE 1"')
+
+            new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
             process = subprocess.Popen(
-                args,
+                new_args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
