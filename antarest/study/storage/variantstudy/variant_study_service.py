@@ -201,6 +201,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         command_objs = self._check_commands_validity(study_id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
         first_index = len(study.commands)
+
+        # type check in case user is None
+        if not params.user or not params.user.id:
+            user_id = None
+        else:
+            user_id = params.user.id
+
         # noinspection PyArgumentList
         new_commands = [
             CommandBlock(
@@ -209,7 +216,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=params.user.id,
+                user_id=user_id,
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
