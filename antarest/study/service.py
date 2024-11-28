@@ -89,7 +89,7 @@ from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import LinkDTO, LinkDtoForUpdate
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -1908,13 +1908,15 @@ class StudyService:
     def update_link(
         self,
         uuid: str,
-        link_update_dto: LinkDTO,
+        area_from: str,
+        area_to: str,
+        link_update_dto: LinkDtoForUpdate,
         params: RequestParameters,
     ) -> LinkDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_link = self.links_manager.update_link(study, link_update_dto)
+        updated_link = self.links_manager.update_link(study, area_from, area_to, link_update_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,

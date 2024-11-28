@@ -13,6 +13,7 @@ import typing as t
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
@@ -51,7 +52,11 @@ class Area(AntaresBaseModel):
 
 
 class LinkDTO(Area):
-    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     hurdles_cost: bool = False
     loop_flow: bool = False
@@ -79,6 +84,11 @@ class LinkDTO(Area):
             data["filter_year_by_year"] = None
 
         return LinkInternal(**data)
+
+
+class LinkDtoForUpdate(LinkDTO):
+    area1: SkipJsonSchema[str] = Field("a", exclude=True)
+    area2: SkipJsonSchema[str] = Field("b", exclude=True)
 
 
 class LinkInternal(AntaresBaseModel):

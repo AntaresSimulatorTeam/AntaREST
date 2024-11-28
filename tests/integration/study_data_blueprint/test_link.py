@@ -36,8 +36,8 @@ class TestLink:
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
         client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "hurdlesCost": True})
         res = client.put(
-            f"/v1/studies/{study_id}/links",
-            json={"area1": area1_id, "area2": area2_id, "colorr": 150},
+            f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}",
+            json={"colorr": 150},
         )
 
         assert res.status_code == 200
@@ -63,12 +63,8 @@ class TestLink:
         # Test update link same area
 
         res = client.put(
-            f"/v1/studies/{study_id}/links",
-            json={
-                "area1": area1_id,
-                "area2": area1_id,
-                "hurdlesCost": False,
-            },
+            f"/v1/studies/{study_id}/links/{area1_id}/{area1_id}",
+            json={"hurdlesCost": False},
         )
         assert res.status_code == 422
         expected = {
@@ -80,12 +76,8 @@ class TestLink:
         # Test update link with non existing area
 
         res = client.put(
-            f"/v1/studies/{study_id}/links",
-            json={
-                "area1": area1_id,
-                "area2": "id_do_not_exist",
-                "hurdlesCost": False,
-            },
+            f"/v1/studies/{study_id}/links/{area1_id}/id_do_not_exist",
+            json={"hurdlesCost": False},
         )
         assert res.status_code == 404
         expected = {
@@ -117,12 +109,8 @@ class TestLink:
 
         if study_type == "variant":
             res = client.put(
-                f"/v1/studies/{study_id}/links",
-                json={
-                    "area1": area1_id,
-                    "area2": area2_id,
-                    "hurdlesCost": False,
-                },
+                f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}",
+                json={"hurdlesCost": False},
             )
             assert res.status_code == 200
 

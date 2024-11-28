@@ -18,7 +18,7 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import ConfigFileNotFound, LinkNotFound, LinkValidationError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.model.link_model import LinkDTO, LinkInternal
+from antarest.study.business.model.link_model import LinkDTO, LinkDtoForUpdate, LinkInternal
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
@@ -79,17 +79,19 @@ class LinkManager:
 
         return link_creation_dto
 
-    def update_link(self, study: RawStudy, link_dto: LinkDTO) -> LinkDTO:
+    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkDtoForUpdate) -> LinkDTO:
+        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump())
+
         link = link_dto.to_internal(StudyVersion.parse(study.version))
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         self.get_link_if_exists(file_study, link)
 
         command = UpdateLink(
-            area1=link.area1,
-            area2=link.area2,
+            area1=area_from,
+            area2=area_to,
             parameters=link.model_dump(
-                include=link_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
+                include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
             ),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
             study_version=file_study.config.version,
