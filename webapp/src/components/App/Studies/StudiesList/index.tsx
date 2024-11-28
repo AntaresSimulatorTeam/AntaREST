@@ -163,7 +163,7 @@ function StudiesList(props: StudiesListProps) {
     try {
       // Remove "/root" from the path
       const folder = folderList.slice(1).join("/");
-      await scanFolder(folder, requestDeepscan);
+      await scanFolder(folder, requestDeepScan);
       setConfirmFolderScan(false);
       setRequestDeepScan(false);
     } catch (e) {
@@ -172,7 +172,7 @@ function StudiesList(props: StudiesListProps) {
   };
 
   const handleDeepScanCheckboxChange = () => {
-    setRequestDeepScan(!requestDeepscan);
+    setRequestDeepScan(!requestDeepScan);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -296,7 +296,7 @@ function StudiesList(props: StudiesListProps) {
             >
               {`${t("studies.scanFolder")} ${folder}?`}
               <FormControlLabel
-                control={<Checkbox checked={requestDeepscan} />}
+                control={<Checkbox checked={requestDeepScan} />}
                 label={t("studies.requestDeepScan")}
                 onChange={handleDeepScanCheckboxChange}
               />{" "}
