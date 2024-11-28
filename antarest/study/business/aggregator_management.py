@@ -326,7 +326,7 @@ class AggregatorManager:
             renamed_cols = []
             # check if there is a production column to rename it to `PRODUCTION_COLUMN_NAME`
             prod_col = _infer_column_from_regex(actual_cols, PRODUCTION_COLUMN_REGEX)
-            if prod_col is not None:
+            if prod_col:
                 prod_col_name = (
                     PRODUCTION_COLUMN_NAME_ST
                     if (
@@ -338,10 +338,9 @@ class AggregatorManager:
                 new_obj[prod_col_name] = new_obj.pop(prod_col)
                 actual_cols.remove(prod_col)
                 renamed_cols.append(prod_col_name)
-
             for col_regex, new_col_name in RENAME_MAPPING.items():
                 col_name = _infer_column_from_regex(actual_cols, col_regex)
-                if col_name is not None:
+                if col_name:
                     new_obj[new_col_name] = new_obj.pop(col_name)
                     actual_cols.remove(col_name)
                     renamed_cols.append(new_col_name)
