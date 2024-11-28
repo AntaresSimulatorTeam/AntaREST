@@ -14,6 +14,7 @@ import enum
 import logging
 import typing as t
 from http import HTTPStatus
+from io import BytesIO
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Depends, Query
@@ -542,7 +543,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.load_manager.get_load_matrix(study, area_id)
+
+        try:
+            df = study_service.load_manager.get_load_matrix(study, area_id)
+        except ValueError as e:
+            return Response(content=str(e), status_code=400)
+
+        buffer = BytesIO()
+        df.to_feather(buffer, compression="uncompressed")
+        return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file", status_code=200)
 
     @bp.put(
         "/studies/{uuid}/{area_id}/load/series",

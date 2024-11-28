@@ -27,22 +27,21 @@ class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_load_matrix(self, study: Study, area_id: str) -> Response:
+    def get_load_matrix(self, study: Study, area_id: str) -> pd.DataFrame:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         load_path = LOAD_PATH.format(area_id=area_id).split("/")
         node = file_study.tree.get_node(load_path)
 
         if not isinstance(node, InputSeriesMatrix):
-            return Response(content="Invalid node type", status_code=400)
+            raise ValueError("Invalid node type")
 
         matrix_data = InputSeriesMatrix.parse(node, return_dataframe=True)
 
         matrix_df = cast(pd.DataFrame, matrix_data)
         matrix_df.columns = matrix_df.columns.map(str)
-        buffer = BytesIO()
-        matrix_df.to_feather(buffer, compression="uncompressed")
-        return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
+
+        return matrix_df
 
     def update_load_matrix(self, study: Study, area_id: str, load_dto: LoadDTO) -> LoadDTO:
         load_properties = load_dto.to_properties()
