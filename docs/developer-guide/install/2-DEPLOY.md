@@ -68,28 +68,28 @@ These steps should work on any linux system with docker and docker-compose insta
 This is an example of a deployment.
 You'll have to edit your own `docker-compose.yml` file and [`application.yaml` configuration](./1-CONFIG.md) to customize it to your needs.
 
-## Local application build
+## Local desktop application
 
 The local application is a bundled build of the web server to ease its launch as a kind of desktop application.  
-When started, the application will be shown as a systray application (icon in the bottom right corner of the Windows bar). The menu will allow to go
-to the local address where the interface is available.
+When started, the application will be shown as a systray application (icon in the bottom right corner of the Windows bar). The menu will allow to go to the local address where the interface is available.
 
 The build is directly available in the [release](https://github.com/AntaresSimulatorTeam/AntaREST/releases) files for each version.
 
 You can download the latest version here:
 
-- [For Windows](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.17.6/AntaresWeb-windows-v2.17.6.zip)
-- [For Ubuntu 20.04 ](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.17.6/AntaresWeb-ubuntu_20.04-v2.17.6.zip)
-- [For Ubuntu 22.04](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.17.6/AntaresWeb-ubuntu_22.04-v2.17.6.zip)
+- [For Windows](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.18.0/AntaresWeb-windows-v2.18.0.zip)
+- [For Ubuntu 20.04 ](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.18.0/AntaresWeb-ubuntu_20.04-v2.18.0.zip)
+- [For Ubuntu 22.04](https://github.com/AntaresSimulatorTeam/AntaREST/releases/download/v2.18.0/AntaresWeb-ubuntu_22.04-v2.18.0.zip)
 
 The local application contains an installer program that you can use to manage the installation. 
 This program will keep your local data while updating the functional parts of the server.
 
 ### GUI installer (windows only)
 
-Double-click on the installer executable and follow the instructions. 
-In case you already have a local application, choose your current application path
-in order to update it.
+Double-click on the AntaresWebInstaller.exe executable and follow the instructions. 
+In case you already have a local application, choose your current application path in order to update it.
+
+![installer_screenshot.png](../../assets/media/img/installer_screenshot.png)
 
 ### CLI installer (linux only)
 

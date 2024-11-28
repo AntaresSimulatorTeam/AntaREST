@@ -65,7 +65,20 @@ On the thematic trimming window, you will find the following elements:
 The detailed configuration is available in the [Antares Simulator documentation](https://antares-simulator.readthedocs.io/en/stable/user-guide/ts-generator/04-parameters/#general-parameters).
 
 ## Time-series management
-> TODO
+
+To access to Time-series management : 
+1. From the "Study" view, click on the "CONFIGURATION" tab
+2. The second next tab is for time series management.
+
+![01-configuration-timeseries-management1.png](../../assets/media/user-guide/simulation-configuration/02-configuration-timeseries-management1.png)
+
+In this view you can generate time series for all thermals clusters. Choose "To be Generated" and set the number stochastics TS you want. And clic on GENERATE TS.
+
+![01-configuration-timeseries-management2.png](../../assets/media/user-guide/simulation-configuration/02-configuration-timeseries-management2.png)
+
+It'll create a task you can monitor on the Tasks view. The TS generate are visible on Availability tab of the thermal cluster of the study.
+
+A new library [antares-timeseries-generation](https://github.com/AntaresSimulatorTeam/antares-timeseries-generation) was created to generate time series for clusters.
 
 ## Optimization preferences
 > TODO
