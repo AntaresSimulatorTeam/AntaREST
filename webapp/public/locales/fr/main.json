@@ -638,6 +638,7 @@
   "studies.folder": "Dossier",
   "studies.filters.strictfolder": "Afficher uniquement les descendants directs",
   "studies.scanFolder": "Scanner le dossier",
+  "studies.requestDeepScan": "Scanner le dossier récursivement (ça peut être long) ?",
   "studies.moveStudy": "Déplacer",
   "studies.movefolderplaceholder": "Chemin séparé par des '/'",
   "studies.importcopy": "Copier en base",

@@ -26,6 +26,8 @@ import {
   FormControl,
   InputLabel,
   IconButton,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
@@ -33,7 +35,8 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import HomeIcon from "@mui/icons-material/Home";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import FolderOffIcon from "@mui/icons-material/FolderOff";
+import FolderIcon from "@mui/icons-material/Folder";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import RadarIcon from "@mui/icons-material/Radar";
 import { FixedSizeGrid, GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
@@ -91,6 +94,7 @@ function StudiesList(props: StudiesListProps) {
   const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [confirmFolderScan, setConfirmFolderScan] = useState<boolean>(false);
+  const [requestDeepscan, setRequestDeepScan] = useState<boolean>(false);
 
   useEffect(() => {
     setFolderList(folder.split("/"));
@@ -159,11 +163,16 @@ function StudiesList(props: StudiesListProps) {
     try {
       // Remove "/root" from the path
       const folder = folderList.slice(1).join("/");
-      await scanFolder(folder);
+      await scanFolder(folder, requestDeepscan);
       setConfirmFolderScan(false);
+      setRequestDeepScan(false);
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.scanFolder"), e as AxiosError);
     }
+  };
+
+  const handleDeepScanCheckboxChange = () => {
+    setRequestDeepScan(!requestDeepscan);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -253,11 +262,15 @@ function StudiesList(props: StudiesListProps) {
             ({`${studyIds.length} ${t("global.studies").toLowerCase()}`})
           </Typography>
           <Tooltip title={t("studies.filters.strictfolder") as string}>
-            <IconButton onClick={toggleStrictFolder}>
-              <FolderOffIcon
-                color={strictFolderFilter ? "secondary" : "disabled"}
-              />
-            </IconButton>
+            {strictFolderFilter ? (
+              <IconButton onClick={toggleStrictFolder}>
+                <FolderIcon color="secondary" />
+              </IconButton>
+            ) : (
+              <IconButton onClick={toggleStrictFolder}>
+                <AccountTreeIcon color="secondary" />
+              </IconButton>
+            )}
           </Tooltip>
           {folder !== "root" && (
             <Tooltip title={t("studies.scanFolder") as string}>
@@ -269,12 +282,20 @@ function StudiesList(props: StudiesListProps) {
           {folder !== "root" && confirmFolderScan && (
             <ConfirmationDialog
               titleIcon={RadarIcon}
-              onCancel={() => setConfirmFolderScan(false)}
+              onCancel={() => {
+                setConfirmFolderScan(false);
+                setRequestDeepScan(false);
+              }}
               onConfirm={handleFolderScan}
               alert="warning"
               open
             >
               {`${t("studies.scanFolder")} ${folder}?`}
+              <FormControlLabel
+                control={<Checkbox checked={requestDeepscan} />}
+                label={t("studies.requestDeepScan")}
+                onChange={handleDeepScanCheckboxChange}
+              />{" "}
             </ConfirmationDialog>
           )}
         </Box>
