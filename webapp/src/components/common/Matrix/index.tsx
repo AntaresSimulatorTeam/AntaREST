@@ -60,8 +60,8 @@ function Matrix({
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [uploadType, setUploadType] = useState<"file" | "database" | null>(
-    null,
+  const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(
+    undefined,
   );
 
   // TODO: split `useMatrix` into smaller units
@@ -75,7 +75,7 @@ function Matrix({
     dateTime,
     handleCellEdit,
     handleMultipleCellsEdit,
-    handleImport,
+    handleUpload,
     handleSaveUpdates,
     pendingUpdatesCount,
     undo,
@@ -145,22 +145,29 @@ function Matrix({
           showPercent={showPercent}
         />
       )}
-      {uploadType && (
+      {uploadType === "file" && (
         <MatrixUpload
           studyId={study.id}
           path={url}
-          type={uploadType}
-          open={!!uploadType}
-          onClose={() => {
-            setUploadType(null);
-            if (uploadType === "database") {
-              reload();
-            }
-          }}
-          onFileUpload={handleImport}
+          type="file"
+          open={true}
+          onClose={() => setUploadType(undefined)}
+          onFileUpload={handleUpload}
           fileOptions={{
             accept: { "text/*": [".csv", ".tsv", ".txt"] },
             dropzoneText: t("matrix.message.importHint"),
+          }}
+        />
+      )}
+      {uploadType === "database" && (
+        <MatrixUpload
+          studyId={study.id}
+          path={url}
+          type="database"
+          open={true}
+          onClose={() => {
+            setUploadType(undefined);
+            reload();
           }}
         />
       )}

@@ -249,7 +249,7 @@ export function useMatrix(
     applyUpdates(updates);
   };
 
-  const handleImport = async (file: File) => {
+  const handleUpload = async (file: File) => {
     try {
       await importFile({ file, studyId, path: url });
       await fetchMatrix();
@@ -312,7 +312,7 @@ export function useMatrix(
     dateTime,
     handleCellEdit,
     handleMultipleCellsEdit,
-    handleImport,
+    handleUpload,
     handleSaveUpdates,
     pendingUpdatesCount: currentState.updateCount,
     undo: handleUndo,

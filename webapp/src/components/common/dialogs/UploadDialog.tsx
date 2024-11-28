@@ -24,7 +24,7 @@ import { enqueueSnackbar } from "notistack";
 import { PromiseAny } from "../../../utils/tsUtils";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
-interface ImportDialogProps extends Omit<BasicDialogProps, "actions"> {
+interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
   dropzoneText?: string;
   accept?: Accept;
   onCancel: VoidFunction;
@@ -34,7 +34,7 @@ interface ImportDialogProps extends Omit<BasicDialogProps, "actions"> {
   ) => PromiseAny;
 }
 
-function ImportDialog(props: ImportDialogProps) {
+function UploadDialog(props: UploadDialogProps) {
   const {
     dropzoneText,
     accept,
@@ -59,18 +59,19 @@ function ImportDialog(props: ImportDialogProps) {
   });
 
   useEffect(() => {
-    if (isUploading) {
-      const listener = (e: BeforeUnloadEvent) => {
-        // eslint-disable-next-line no-param-reassign
-        e.returnValue = "Import";
-      };
+    // Protect against data loss by preventing navigation/refresh during file upload
+    // This displays a browser warning when trying to:
+    // - Close the browser tab/window
+    // - Refresh the page
+    // - Navigate away from the page
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isUploading) {
+        e.preventDefault();
+      }
+    };
 
-      window.addEventListener("beforeunload", listener);
-
-      return () => {
-        window.removeEventListener("beforeunload", listener);
-      };
-    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isUploading]);
 
   ////////////////////////////////////////////////////////////////
@@ -102,7 +103,7 @@ function ImportDialog(props: ImportDialogProps) {
     setInvalidText(fileRejections[0].errors[0].message);
   }
 
-  const handleClose: ImportDialogProps["onClose"] = (...args) => {
+  const handleClose: UploadDialogProps["onClose"] = (...args) => {
     if (!isUploading) {
       onCancel();
       onClose?.(...args);
@@ -174,4 +175,4 @@ function ImportDialog(props: ImportDialogProps) {
   );
 }
 
-export default ImportDialog;
+export default UploadDialog;

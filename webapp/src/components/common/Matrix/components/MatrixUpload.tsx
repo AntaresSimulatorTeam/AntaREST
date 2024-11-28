@@ -12,26 +12,36 @@
  * This file is part of the Antares project.
  */
 
-/**
- * MatrixUpload.tsx - Main component that manages matrix uploads
- */
 import { StudyMetadata } from "@/common/types";
 import DatabaseUploadDialog from "@/components/common/dialogs/DatabaseUploadDialog";
-import FileUploadDialog from "@/components/common/dialogs/FileUploadDialog";
 import { useTranslation } from "react-i18next";
+import UploadDialog from "../../dialogs/UploadDialog";
 
-interface MatrixUploadProps {
+interface MatrixFileOptions {
+  accept?: Record<string, string[]>;
+  dropzoneText?: string;
+}
+
+interface BaseMatrixUploadProps {
   studyId: StudyMetadata["id"];
   path: string;
-  type: "file" | "database";
   open: boolean;
   onClose: VoidFunction;
-  onFileUpload?: (file: File) => Promise<void>;
-  fileOptions?: {
-    accept?: Record<string, string[]>;
-    dropzoneText?: string;
-  };
 }
+
+interface FileMatrixUploadProps extends BaseMatrixUploadProps {
+  type: "file";
+  onFileUpload: (file: File) => Promise<void>;
+  fileOptions?: MatrixFileOptions;
+}
+
+interface DatabaseMatrixUploadProps extends BaseMatrixUploadProps {
+  type: "database";
+  onFileUpload?: never;
+  fileOptions?: never;
+}
+
+type MatrixUploadProps = FileMatrixUploadProps | DatabaseMatrixUploadProps;
 
 function MatrixUpload({
   studyId,
@@ -51,7 +61,7 @@ function MatrixUpload({
   // Import from the filesystem
   if (type === "file" && onFileUpload) {
     return (
-      <FileUploadDialog
+      <UploadDialog
         open={open}
         title={t("matrix.importNewMatrix")}
         onCancel={onClose}
