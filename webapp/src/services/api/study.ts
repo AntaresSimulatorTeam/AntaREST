@@ -466,7 +466,7 @@ export const updateStudyMetadata = async (
 
 export const scanFolder = async (
   folderPath: string,
-  recursive: boolean = false,
+  recursive = false,
 ): Promise<void> => {
   await client.post(
     `/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}&recursive=${recursive}`,
