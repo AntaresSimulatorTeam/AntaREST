@@ -36,7 +36,7 @@ FILTER_VALUES: t.List[FilterOption] = [
 ]
 
 
-class LinkBaseDto(AntaresBaseModel):
+class LinkBaseDTO(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     hurdles_cost: bool = False
@@ -68,7 +68,7 @@ class Area(AntaresBaseModel):
         return self
 
 
-class LinkDTO(Area, LinkBaseDto):
+class LinkDTO(Area, LinkBaseDTO):
     def to_internal(self, version: StudyVersion) -> "LinkInternal":
         if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
