@@ -94,7 +94,7 @@ function StudiesList(props: StudiesListProps) {
   const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [confirmFolderScan, setConfirmFolderScan] = useState<boolean>(false);
-  const [requestDeepscan, setRequestDeepScan] = useState<boolean>(false);
+  const [requestDeepScan, setRequestDeepScan] = useState<boolean>(false);
 
   useEffect(() => {
     setFolderList(folder.split("/"));
