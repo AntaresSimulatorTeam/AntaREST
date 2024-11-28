@@ -637,6 +637,7 @@
   "studies.copySuffix": "Copie",
   "studies.folder": "Dossier",
   "studies.filters.strictfolder": "Afficher uniquement les descendants directs",
+  "studies.filters.showAllDescendants": "Afficher tous les descendants",
   "studies.scanFolder": "Scanner le dossier",
   "studies.requestDeepScan": "Scanner le dossier récursivement (ça peut être long) ?",
   "studies.moveStudy": "Déplacer",

@@ -637,6 +637,7 @@
   "studies.copySuffix": "Copy",
   "studies.folder": "Folder",
   "studies.filters.strictfolder": "Show only direct folder children",
+  "studies.filters.showAllDescendants": "Show all children",
   "studies.scanFolder": "Scan folder",
   "studies.requestDeepScan": "Scan the folder recursively (may be long) ?",
   "studies.moveStudy": "Move",

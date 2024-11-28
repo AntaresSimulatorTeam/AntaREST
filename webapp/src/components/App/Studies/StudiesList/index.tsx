@@ -261,17 +261,21 @@ function StudiesList(props: StudiesListProps) {
           <Typography mx={2} sx={{ color: "white" }}>
             ({`${studyIds.length} ${t("global.studies").toLowerCase()}`})
           </Typography>
-          <Tooltip title={t("studies.filters.strictfolder") as string}>
-            {strictFolderFilter ? (
+
+          {strictFolderFilter ? (
+            <Tooltip title={t("studies.filters.strictfolder") as string}>
               <IconButton onClick={toggleStrictFolder}>
                 <FolderIcon color="secondary" />
               </IconButton>
-            ) : (
+            </Tooltip>
+          ) : (
+            <Tooltip title={t("studies.filters.showAllDescendants") as string}>
               <IconButton onClick={toggleStrictFolder}>
                 <AccountTreeIcon color="secondary" />
               </IconButton>
-            )}
-          </Tooltip>
+            </Tooltip>
+          )}
+
           {folder !== "root" && (
             <Tooltip title={t("studies.scanFolder") as string}>
               <IconButton onClick={() => setConfirmFolderScan(true)}>
