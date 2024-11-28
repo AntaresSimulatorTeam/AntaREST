@@ -13,7 +13,6 @@ import typing as t
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
-from pydantic.json_schema import SkipJsonSchema
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
@@ -37,6 +36,24 @@ FILTER_VALUES: t.List[FilterOption] = [
 ]
 
 
+class LinkBaseDto(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    hurdles_cost: bool = False
+    loop_flow: bool = False
+    use_phase_shifter: bool = False
+    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
+    asset_type: AssetType = AssetType.AC
+    display_comments: bool = True
+    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    link_width: float = 1
+    link_style: LinkStyle = LinkStyle.PLAIN
+    filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+    filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+
+
 class Area(AntaresBaseModel):
     area1: str
     area2: str
@@ -51,28 +68,7 @@ class Area(AntaresBaseModel):
         return self
 
 
-class LinkDTO(Area):
-    model_config = ConfigDict(
-        alias_generator=to_camel_case,
-        populate_by_name=True,
-        extra="forbid",
-    )
-
-    hurdles_cost: bool = False
-    loop_flow: bool = False
-    use_phase_shifter: bool = False
-    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
-    asset_type: AssetType = AssetType.AC
-    display_comments: bool = True
-    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    link_width: float = 1
-    link_style: LinkStyle = LinkStyle.PLAIN
-
-    filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
-    filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
-
+class LinkDTO(Area, LinkBaseDto):
     def to_internal(self, version: StudyVersion) -> "LinkInternal":
         if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
@@ -84,11 +80,6 @@ class LinkDTO(Area):
             data["filter_year_by_year"] = None
 
         return LinkInternal(**data)
-
-
-class LinkDtoForUpdate(LinkDTO):
-    area1: SkipJsonSchema[str] = Field("a", exclude=True)
-    area2: SkipJsonSchema[str] = Field("b", exclude=True)
 
 
 class LinkInternal(AntaresBaseModel):

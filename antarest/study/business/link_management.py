@@ -18,7 +18,7 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import ConfigFileNotFound, LinkNotFound, LinkValidationError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.model.link_model import LinkDTO, LinkDtoForUpdate, LinkInternal
+from antarest.study.business.model.link_model import LinkBaseDto, LinkDTO, LinkInternal
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
@@ -79,7 +79,7 @@ class LinkManager:
 
         return link_creation_dto
 
-    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkDtoForUpdate) -> LinkDTO:
+    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkBaseDto) -> LinkDTO:
         link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump())
 
         link = link_dto.to_internal(StudyVersion.parse(study.version))

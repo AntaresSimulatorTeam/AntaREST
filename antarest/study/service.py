@@ -89,7 +89,7 @@ from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.link_model import LinkDTO, LinkDtoForUpdate
+from antarest.study.business.model.link_model import LinkBaseDto, LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -1910,7 +1910,7 @@ class StudyService:
         uuid: str,
         area_from: str,
         area_to: str,
-        link_update_dto: LinkDtoForUpdate,
+        link_update_dto: LinkBaseDto,
         params: RequestParameters,
     ) -> LinkDTO:
         study = self.get_study(uuid)
