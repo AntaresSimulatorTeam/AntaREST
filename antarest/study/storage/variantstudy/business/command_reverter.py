@@ -359,7 +359,7 @@ class CommandReverter:
     ) -> t.List[ICommand]:
         return [
             RemoveUserResource(
-                path=base_command.path,
+                data=base_command.data,
                 command_context=base_command.command_context,
                 study_version=base_command.study_version,
             )

@@ -183,7 +183,7 @@ class TestFetchRawData:
             commands = res.json()
             # First command is created automatically to respect owners, we ignore it.
             assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == [{"path": "somewhere/something.txt", "resource_type": "file"}]
+            assert commands[1]["args"] == [{"data": {"path": "somewhere/something.txt", "resource_type": "file"}}]
             assert commands[2]["action"] == "update_file"
             assert commands[2]["args"] == [{"target": file_to_create, "b64Data": "R29vZGJ5ZSBDcnVlbCBXb3JsZCE="}]
 
@@ -421,11 +421,15 @@ def test_create_folder(client: TestClient, user_access_token: str, internal_stud
     #  ERRORS
     # =============================
 
-    # asserts it doesn't work without specifying it's a folder
-    res = client.put(raw_url, params={"path": "/user/folder_3"})
-    assert res.status_code == 404
-    assert res.json()["exception"] == "ChildNotFoundError"
-    assert res.json()["description"] == "'folder_3' not a child of User"
+    # we can't create a file without specifying a content
+    res = client.put(raw_url, params={"path": "fake_path"})
+    assert res.status_code == 422
+    assert res.json()["description"] == "Argument mismatch: Must give a content to create a file"
+
+    # we can't create a folder and specify a content at the same time
+    res = client.put(raw_url, params={"path": "", "resource_type": "folder"}, files={"file": b"content"})
+    assert res.status_code == 422
+    assert res.json()["description"] == "Argument mismatch: Cannot give a content to create a folder"
 
     # try to create a folder outside `user` folder
     wrong_folder = "input/wrong_folder"

@@ -34,7 +34,7 @@ class CreateUserResourceData(AntaresBaseModel):
     resource_type: ResourceType
 
 
-class CreateUserResource(ICommand, CreateUserResourceData):
+class CreateUserResource(ICommand):
     """
     Command used to create a resource inside the `user` folder.
     """
@@ -45,32 +45,39 @@ class CreateUserResource(ICommand, CreateUserResourceData):
     command_name: CommandName = CommandName.CREATE_USER_RESOURCE
     version: int = 1
 
+    # Command parameters
+    # ==================
+
+    data: CreateUserResourceData
+
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        url = [item for item in self.path.split("/") if item]
+        url = [item for item in self.data.path.split("/") if item]
         study_tree = study_data.tree
         user_node = t.cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
-            return CommandOutput(status=False, message=f"you are not allowed to create a resource here: {self.path}")
+            return CommandOutput(
+                status=False, message=f"you are not allowed to create a resource here: {self.data.path}"
+            )
         try:
             study_tree.get_node(["user"] + url)
         except ChildNotFoundError:
             # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-            last_value = b"" if self.resource_type == ResourceType.FILE else {}
+            last_value = b"" if self.data.resource_type == ResourceType.FILE else {}
             nested_dict: JSON = {url[-1]: last_value}
             for key in reversed(url[:-1]):
                 nested_dict = {key: nested_dict}
             study_tree.save({"user": nested_dict})
         else:
-            return CommandOutput(status=False, message=f"the given resource already exists: {self.path}")
+            return CommandOutput(status=False, message=f"the given resource already exists: {self.data.path}")
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"path": self.path, "resource_type": self.resource_type},
+            args={"data": self.data.model_dump(mode="json")},
             study_version=self.study_version,
         )
 
@@ -78,15 +85,15 @@ class CreateUserResource(ICommand, CreateUserResourceData):
         return str(
             self.command_name.value
             + MATCH_SIGNATURE_SEPARATOR
-            + self.path
+            + self.data.path
             + MATCH_SIGNATURE_SEPARATOR
-            + self.resource_type.value
+            + self.data.resource_type.value
         )
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateUserResource):
             return False
-        return self.path == other.path and self.resource_type == other.resource_type
+        return self.data.path == other.data.path and self.data.resource_type == other.data.resource_type
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]

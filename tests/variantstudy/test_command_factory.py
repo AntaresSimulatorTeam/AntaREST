@@ -388,14 +388,18 @@ COMMANDS: List[CommandDTO] = [
     ),
     CommandDTO(
         action=CommandName.CREATE_USER_RESOURCE.value,
-        args=[{"path": "folder_1", "resource_type": "folder"}],
+        args=[{"data": {"path": "folder_1", "resource_type": "folder"}}],
         study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
-        action=CommandName.REMOVE_USER_RESOURCE.value, args=[{"path": "folder_1"}], study_version=STUDY_VERSION_8_8
+        action=CommandName.REMOVE_USER_RESOURCE.value,
+        args=[{"data": {"path": "folder_1"}}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
-        action=CommandName.REMOVE_USER_RESOURCE.value, args=[{"path": "file_1.txt"}], study_version=STUDY_VERSION_8_8
+        action=CommandName.REMOVE_USER_RESOURCE.value,
+        args=[{"data": {"path": "file_1.txt"}}],
+        study_version=STUDY_VERSION_8_8,
     ),
 ]
 

@@ -511,7 +511,7 @@ def create_raw_study_routes(
     def replace_study_file(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
-        file: bytes = File(default=b""),
+        file: bytes = File(default=None),
         create_missing: bool = Query(
             False,
             description="Create file or parent directories if missing.",
@@ -531,9 +531,14 @@ def create_raw_study_routes(
         - `resource_type`: When set to "folder" and `create_missing` is True, creates a folder. Else (default value), it's ignored.
 
         """
+        if file is not None and resource_type == ResourceType.FOLDER:
+            raise HTTPException(status_code=422, detail="Argument mismatch: Cannot give a content to create a folder")
+        if file is None and resource_type == ResourceType.FILE:
+            raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
+
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        if resource_type == ResourceType.FOLDER and create_missing:
+        if resource_type == ResourceType.FOLDER and create_missing:  # type: ignore
             logger.info(f"Creating folder {path} for study {uuid}", extra={"user": current_user.id})
             study_service.create_user_folder(uuid, path, current_user)
         else:

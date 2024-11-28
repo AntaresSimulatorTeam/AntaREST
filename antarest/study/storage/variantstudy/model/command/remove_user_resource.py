@@ -27,7 +27,7 @@ class RemoveUserResourceData(AntaresBaseModel):
     path: str
 
 
-class RemoveUserResource(ICommand, RemoveUserResourceData):
+class RemoveUserResource(ICommand):
     """
     Command used to delete a resource inside the `user` folder.
     """
@@ -38,15 +38,22 @@ class RemoveUserResource(ICommand, RemoveUserResourceData):
     command_name: CommandName = CommandName.REMOVE_USER_RESOURCE
     version: int = 1
 
+    # Command parameters
+    # ==================
+
+    data: RemoveUserResourceData
+
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        url = [item for item in self.path.split("/") if item]
+        url = [item for item in self.data.path.split("/") if item]
         study_tree = study_data.tree
         user_node = t.cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
-            return CommandOutput(status=False, message=f"you are not allowed to delete this resource : {self.path}")
+            return CommandOutput(
+                status=False, message=f"you are not allowed to delete this resource : {self.data.path}"
+            )
 
         try:
             user_node.delete(url)
@@ -56,15 +63,19 @@ class RemoveUserResource(ICommand, RemoveUserResourceData):
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={"path": self.path}, study_version=self.study_version)
+        return CommandDTO(
+            action=self.command_name.value,
+            args={"data": self.data.model_dump(mode="json")},
+            study_version=self.study_version,
+        )
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.path)
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.data.path)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveUserResource):
             return False
-        return self.path == other.path
+        return self.data.path == other.data.path
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]

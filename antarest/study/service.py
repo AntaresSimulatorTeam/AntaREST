@@ -1621,9 +1621,9 @@ class StudyService:
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
             user_path = _get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
-            cmd_1 = CreateUserResource(
-                path=user_path, resource_type=ResourceType.FILE, command_context=context, study_version=version
-            )
+            args = {"path": user_path, "resource_type": ResourceType.FILE}
+            command_data = CreateUserResourceData.model_validate(args)
+            cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
             assert isinstance(data, bytes)
             cmd_2 = UpdateRawFile(
                 target=url,
@@ -2767,7 +2767,7 @@ class StudyService:
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
         args = {
-            **command_data.model_dump(mode="json"),
+            "data": command_data,
             "study_version": StudyVersion.parse(study.version),
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
