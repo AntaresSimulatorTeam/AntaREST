@@ -13,12 +13,12 @@
  */
 
 import { AxiosRequestConfig } from "axios";
-import { MatrixType } from "../../common/types";
 import {
   XpansionCandidate,
   XpansionSettings,
 } from "../../components/App/Singlestudy/explore/Xpansion/types";
 import client from "./client";
+import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 export const createXpansionConfiguration = async (
   uuid: string,
@@ -248,7 +248,7 @@ export const deleteCapacity = async (
 export const getCapacity = async (
   uuid: string,
   filename: string,
-): Promise<MatrixType> => {
+): Promise<MatrixDataDTO> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/capacities/${filename}`,
   );

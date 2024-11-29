@@ -51,6 +51,13 @@ export interface CustomColumnOptions {
   width?: number;
 }
 
+export interface DataColumnsConfig {
+  timeSeriesColumns: boolean;
+  width?: number;
+  count: number;
+  customColumns?: string[] | readonly string[];
+}
+
 export interface FormatGridNumberOptions {
   value?: number;
   maxDecimals?: number;

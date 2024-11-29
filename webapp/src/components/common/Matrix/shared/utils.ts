@@ -21,7 +21,8 @@ import {
   type AggregateConfig,
   type DateTimeMetadataDTO,
   type FormatGridNumberOptions,
-  type ResultColumn,
+  DataColumnsConfig,
+  ResultColumn,
 } from "./types";
 import { parseISO, Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -170,14 +171,18 @@ export function generateTimeSeriesColumns({
  *
  * @param customColumns - An array of strings representing the custom column titles.
  * @param customColumns.titles - The titles of the custom columns.
+ * @param customColumns.width - The width of each column.
+ 
  * @returns An array of EnhancedGridColumn objects representing the generated custom columns.
  */
 export function generateCustomColumns({
   titles,
+  width,
 }: CustomColumnOptions): EnhancedGridColumn[] {
   return titles.map((title, index) => ({
     id: `custom${index + 1}`,
     title,
+    width,
     type: Column.Number,
     editable: true,
   }));
@@ -186,26 +191,33 @@ export function generateCustomColumns({
 /**
  * Generates an array of data columns for a matrix grid.
  *
- * @param timeSeriesColumns - A boolean indicating whether to enable time series columns.
- * @param columnCount - The number of columns to generate.
- * @param customColumns - An optional array of custom column titles.
- * @param colWidth - The width of each column.
- * @returns An array of EnhancedGridColumn objects representing the generated data columns.
+ * @param config - Configuration object for generating columns
+ * @param config.timeSeriesColumns - A boolean indicating whether to enable time series columns
+ * @param config.count - The number of columns to generate
+ * @param config.customColumns - An optional array of custom column titles
+ * @param config.width - The width of each column
+ *
+ * @returns An array of EnhancedGridColumn objects representing the generated data columns
  */
-export function generateDataColumns(
-  timeSeriesColumns: boolean,
-  columnCount: number,
-  customColumns?: string[] | readonly string[],
-  colWidth?: number,
-): EnhancedGridColumn[] {
+export function generateDataColumns({
+  timeSeriesColumns,
+  width,
+  count,
+  customColumns,
+}: DataColumnsConfig): EnhancedGridColumn[] {
   // If custom columns are provided, use them
   if (customColumns) {
-    return generateCustomColumns({ titles: customColumns, width: colWidth });
+    return generateCustomColumns({
+      titles: customColumns,
+      width,
+    });
   }
 
   // Else, generate time series columns if enabled
   if (timeSeriesColumns) {
-    return generateTimeSeriesColumns({ count: columnCount });
+    return generateTimeSeriesColumns({
+      count,
+    });
   }
 
   return [];

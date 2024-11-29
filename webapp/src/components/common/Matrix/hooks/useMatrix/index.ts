@@ -162,12 +162,12 @@ export function useMatrix(
       });
     }
 
-    const dataColumns = generateDataColumns(
+    const dataColumns = generateDataColumns({
       timeSeriesColumns,
-      columnCount,
+      count: columnCount,
       customColumns,
-      colWidth,
-    );
+      width: colWidth,
+    });
 
     const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map(
       (aggregateType) => ({
@@ -249,7 +249,7 @@ export function useMatrix(
     applyUpdates(updates);
   };
 
-  const handleImport = async (file: File) => {
+  const handleUpload = async (file: File) => {
     try {
       await importFile({ file, studyId, path: url });
       await fetchMatrix();
@@ -312,12 +312,13 @@ export function useMatrix(
     dateTime,
     handleCellEdit,
     handleMultipleCellsEdit,
-    handleImport,
+    handleUpload,
     handleSaveUpdates,
     pendingUpdatesCount: currentState.updateCount,
     undo: handleUndo,
     redo: handleRedo,
     canUndo: canUndoChanges,
     canRedo,
+    reload: fetchMatrix,
   };
 }
