@@ -36,18 +36,7 @@ FILTER_VALUES: t.List[FilterOption] = [
 ]
 
 
-class Area(AntaresBaseModel):
-    area1: str
-    area2: str
-
-    @model_validator(mode="after")
-    def validate_areas(self) -> t.Self:
-        if self.area1 == self.area2:
-            raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
-        return self
-
-
-class LinkDTO(Area):
+class LinkBaseDTO(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     hurdles_cost: bool = False
@@ -61,10 +50,25 @@ class LinkDTO(Area):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-
     filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
     filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
 
+
+class Area(AntaresBaseModel):
+    area1: str
+    area2: str
+
+    @model_validator(mode="after")
+    def validate_areas(self) -> t.Self:
+        if self.area1 == self.area2:
+            raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
+        area_from, area_to = sorted([self.area1, self.area2])
+        self.area1 = area_from
+        self.area2 = area_to
+        return self
+
+
+class LinkDTO(Area, LinkBaseDTO):
     def to_internal(self, version: StudyVersion) -> "LinkInternal":
         if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
