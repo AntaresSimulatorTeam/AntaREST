@@ -1302,19 +1302,14 @@ def test_edit_study_with_command() -> None:
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
 
-    service._edit_study_using_command(study=Mock(), url="", data=[])
-    command.apply.assert_called_with(file_study)
+    service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
+    command.apply.assert_called_with(file_study, None)
 
     study_service = Mock(spec=VariantStudyService)
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
     service._edit_study_using_command(study=Mock(), url="", data=[])
-
-    study_service.append_command.assert_called_once_with(
-        study_id=study_id,
-        command=command.to_dto(),
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    service.storage_service.variant_study_service.append_commands.assert_called_once()
 
 
 @pytest.mark.unit_test

@@ -353,13 +353,23 @@ class StudyVariantUpgradeError(HTTPException):
             super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
 
 
-class FileDeletionNotAllowed(HTTPException):
+class ResourceDeletionNotAllowed(HTTPException):
     """
     Exception raised when deleting a file or a folder which isn't inside the 'User' folder.
     """
 
     def __init__(self, message: str) -> None:
-        msg = f"Raw deletion failed because {message}"
+        msg = f"Resource deletion failed because {message}"
+        super().__init__(HTTPStatus.FORBIDDEN, msg)
+
+
+class FolderCreationNotAllowed(HTTPException):
+    """
+    Exception raised when creating a folder which isn't inside the 'User' folder.
+    """
+
+    def __init__(self, message: str) -> None:
+        msg = f"Folder creation failed because {message}"
         super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 
