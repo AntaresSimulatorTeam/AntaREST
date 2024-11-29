@@ -1,7 +1,5 @@
 # Thermal Clusters Configuration
 
-[⬅ Area Configuration](../02-areas.md)
-
 ## Introduction
 
 This documentation is dedicated to configuring Thermal Clusters (Thermals) in the Antares Web application.
@@ -10,7 +8,7 @@ To access the configuration of Thermals:
 
 1. From the "Study" view, click on the "MODELIZATION" tab.
 2. Click on the "AREAS" tab, then choose an area from the sidebar.
-3. Next, click on the "THERMALS" tab to access the page dedicated to Thermals.
+3. Next, click on the "THERMAL" tab to access the page dedicated to Thermals.
 
 ![03-thermals.tab.png](../../../assets/media/user-guide/study/areas/03-thermals.tab.png)
 
@@ -20,7 +18,7 @@ To access the configuration of Thermals:
 
 On the Thermals page, you will find the following elements:
 
-- **Command Bar:** Add, duplicate, or delete thermal clusters using the "Add," "Duplicate," and "Delete" buttons.
+- **Command Bar:** Add, duplicate, or delete thermal clusters using the "ADD," "DUPLICATE," and "DELETE" buttons.
 - **Toolbar:** Use the toolbar to filter and quickly search in the thermal clusters table.
 - **Selection and Actions:** Click on a row to select a thermal cluster. You can then delete or duplicate it.
 
@@ -42,7 +40,7 @@ The **Total** row displays the sum of the values in the **Unit Count** and **Ena
 
 Click on the name of a thermal cluster to open the properties form.
 
-![03-thermals.form.png](../../../assets/media/user-guide/study/areas/03-thermals.form.png)
+![03-thermals.form.png](../../../assets/media/user-guide/study/areas/03-thermals-form.png)
 
 You will find the following elements:
 
@@ -53,16 +51,23 @@ You will find the following elements:
 
 ## Time Series Matrices
 
-In the tabs, you will find time series matrices composed of 8760 rows (hourly for a simulation year).
+You will find at the bottom of the page differents tabs for matrix : 
+- COMMON : used to define the cluster's technico-economic characteristics
+- TS GENERATOR : used to set the parameters of the stochastic generator
+- AVAILABILITY : displays the "ready-made" 8760-hour time-series available for simulation purposes
+- FUEL COSTS : used in case of TS Cost have the value "Use cost Timeseries"
+- CO2 COSTS : used in case of TS Cost have the value "Use cost Timeseries"
 
-![03-thermals.series.png](../../../assets/media/user-guide/study/areas/03-thermals.series.png)
+![03-thermals.series.png](../../../assets/media/user-guide/study/areas/03-thermals-series.png)
 
 The available commands are:
 
-- **Assign a Matrix:** Search and assign a matrix from the matrix store to Thermal Clusters.
-- **Import:** Drag and drop a TSV file to update the time series matrices.
-- **Export:** Download the current TSV file using the "Export" button.
+- **IMPORT > From database:** Search and assign a matrix from the matrix store to Thermal Clusters.
+- **IMPORT > From a file:** Drag and drop a TSV or CSV file to update the time series matrices.
+- **Export:** Download the current TSV file using the "Export" button. You can also download the file in Excel format, choose this in the button dropdown list.
 
 You can edit a cell and confirm with the "Enter" key. You can also edit a group of cells or an entire column and confirm with the "Ctrl+Enter" key combination.
 
-The detailed configuration is available in the [Antares Simulator documentation](https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/#thermal).
+The detailed configuration is available in the [Antares Simulator documentation](https://antares-simulator.readthedocs.io/en/stable/user-guide/solver/02-inputs/#thermal).
+
+[⬅ Back to Area Configuration](../02-areas.md)

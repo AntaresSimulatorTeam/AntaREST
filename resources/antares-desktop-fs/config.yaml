@@ -1,0 +1,58 @@
+# Documentation about this file can be found in this file: `docs/install/1-CONFIG.md`
+
+security:
+  disabled: true
+  jwt:
+    key: super-secret
+
+db:
+  url: "sqlite:///database.db"
+
+storage:
+  tmp_dir: ./tmp
+  matrixstore: ./matrices
+  archive_dir: ./archives
+  workspaces:
+    default:
+      path: ./internal_studies/
+    studies:
+      path: ./studies/
+
+launcher:
+  local:
+    binaries:
+      VER: ANTARES_SOLVER_PATH
+
+#  slurm:
+#    local_workspace: /path/to/slurm_workspace  # Path to the local SLURM workspace
+#    username: run-antares  # SLURM username
+#    hostname: 10.134.248.111  # SLURM server hostname
+#    port: 22  # SSH port for SLURM
+#    private_key_file: /path/to/ssh_private_key  # SSH private key file
+#    default_wait_time: 900  # Default wait time for SLURM jobs
+#    default_time_limit: 172800  # Default time limit for SLURM jobs
+#    enable_nb_cores_detection: False  # Enable detection of available CPU cores for SLURM
+#    nb_cores:
+#      min: 1  # Minimum number of CPU cores
+#      default: 22  # Default number of CPU cores
+#      max: 24  # Maximum number of CPU cores
+#    default_json_db_name: launcher_db.json  # Default JSON database name for SLURM
+#    slurm_script_path: /applis/antares/launchAntares.sh  # Path to the SLURM script (on distant server)
+#    db_primary_key: name  # Primary key for the SLURM database
+#    antares_versions_on_remote_server: #List of Antares versions available on the remote SLURM server
+#      - "840"
+#      - "850"
+
+
+debug: false
+
+# Serve the API at /api
+api_prefix: "/api"
+
+server:
+  worker_threadpool_size: 12
+  services:
+    - watcher
+
+logging:
+  logfile: ./logs/antarest.log

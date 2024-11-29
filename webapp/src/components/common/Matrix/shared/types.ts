@@ -51,6 +51,13 @@ export interface CustomColumnOptions {
   width?: number;
 }
 
+export interface DataColumnsConfig {
+  timeSeriesColumns: boolean;
+  width?: number;
+  count: number;
+  customColumns?: string[] | readonly string[];
+}
+
 export interface FormatGridNumberOptions {
   value?: number;
   maxDecimals?: number;
@@ -58,10 +65,15 @@ export interface FormatGridNumberOptions {
 
 export interface EnhancedGridColumn extends BaseGridColumn {
   id: string;
+  title: string;
   width?: number;
   type: ColumnType;
   editable: boolean;
 }
+
+export type ResultColumn = Omit<EnhancedGridColumn, "title"> & {
+  title: string[];
+};
 
 export type AggregateConfig = AggregateType[] | boolean | "stats" | "all";
 
@@ -77,6 +89,12 @@ export interface MatrixDataDTO {
   data: number[][];
   columns: number[];
   index: number[];
+}
+
+export interface ResultMatrixDTO {
+  data: number[][];
+  columns: string[][];
+  index: string[];
 }
 
 export type Coordinates = [number, number];

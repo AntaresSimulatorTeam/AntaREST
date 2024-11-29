@@ -33,9 +33,9 @@ This integration brings:
 
 ## Documentation
 
-- [Building the application](./install/0-INSTALL.md)
+- [Building the application](./developer-guide/install/0-INSTALL.md)
 - [Using the application](./user-guide/0-introduction.md)
-- [Contributing to the application code](./architecture/0-introduction.md)
+- [Contributing to the application code](./developer-guide/architecture/0-introduction.md)
 
 `Antares-Web` is currently under development. Feel free to submit any issue.
 

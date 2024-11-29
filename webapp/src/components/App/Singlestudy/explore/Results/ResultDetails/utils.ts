@@ -82,3 +82,12 @@ export const SYNTHESIS_ITEMS = [
     label: "Thermal synthesis",
   },
 ];
+
+// Allow the possibilty to use OR operator on search using pipe
+export function matchesSearchTerm(text: string, searchTerm: string): boolean {
+  const searchTerms = searchTerm
+    .split("|")
+    .map((term) => term.trim().toLowerCase());
+
+  return searchTerms.some((term) => text.toLowerCase().includes(term));
+}

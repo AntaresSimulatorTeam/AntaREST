@@ -32,12 +32,11 @@ nav:
   - 'User guide':
       - 'Introduction': 'user-guide/0-introduction.md'
       - 'User interface': 'user-guide/1-interface.md'
-      - 'Study Configuration':
-          - 'Main Topics': 'user-guide/2-study.md'
-          - 'Map':
-              - 'Main Topics': 'user-guide/study/01-map.md'
+      - 'Study Modelization':
+          - 'Overview': 'user-guide/2-study.md'
+          - 'Map': 'user-guide/study/01-map.md'
           - 'Area Configuration':
-              - 'Main Topics': 'user-guide/study/02-areas.md'
+              - 'Overview': 'user-guide/study/02-areas.md'
               - 'General Properties': 'user-guide/study/areas/01-properties.md'
               - 'Load': 'user-guide/study/areas/02-load.md'
               - 'Thermal Clusters': 'user-guide/study/areas/03-thermals.md'
@@ -48,30 +47,41 @@ nav:
               - 'Short-Term Storages': 'user-guide/study/areas/08-st-storages.md'
               - 'Reserves': 'user-guide/study/areas/09-reserves.md'
               - 'Miscellaneous Generators': 'user-guide/study/areas/10-misc-gen.md'
-          - 'Links':
-              - 'Main Topics': 'user-guide/study/03-links.md'
-          - 'Binding Constraints':
-              - 'Main Topics': 'user-guide/study/04-binding-constraints.md'
-          - 'Debug':
-              - 'Main Topics': 'user-guide/study/05-debug.md'
-          - 'Table Mode':
-              - 'Main Topics': 'user-guide/study/06-table-mode.md'
+          - 'Links': 'user-guide/study/03-links.md'
+          - 'Binding Constraints': 'user-guide/study/04-binding-constraints.md'
+      - 'Simulation Configuration':
+          'General Configuration': 'user-guide/simulation-configuration/all-configurations.md#general-configuration'
+          'TS management': 'user-guide/simulation-configuration/all-configurations.md#Time-series management'
+          'Optimization preferences': 'user-guide/simulation-configuration/all-configurations.md#optimization-preferences'
+          'Adequacy Patch': 'user-guide/simulation-configuration/all-configurations.md#adequacy-patch'
+          'Advanced parameters': 'user-guide/simulation-configuration/all-configurations.md#advanced-parameters'
+          'Economic Opt.': 'user-guide/simulation-configuration/all-configurations.md#economic-opt'
+          'Geographic Trimming (Areas)': 'user-guide/simulation-configuration/all-configurations.md#geographic-trimming(areas)'
+          'Geographic Trimming (Links)': 'user-guide/simulation-configuration/all-configurations.md#geographic-trimming(links)'
+          'Geographic Trimming (Binding Constraints)': 'user-guide/simulation-configuration/all-configurations.md#geographic-trimming(binding-constrainte)'
+      - 'Table Mode': 'user-guide/study/06-table-mode.md'
+      - 'Xpansion' : user-guide/study/07-xpansion.md
+      - 'Results' : user-guide/study/08-results.md
+      - 'Debug': 'user-guide/study/05-debug.md'
       - 'Variant manager': 'user-guide/3-variant_manager.md'
-  - 'How to':
-      - 'Create a study': 'how-to/studies-create.md'
-      - 'Import a study': 'how-to/studies-import.md'
-      - 'Upgrade a study': 'how-to/studies-upgrade.md'
-  - 'Build':
-      - 'Introduction': 'install/0-INSTALL.md'
-      - 'Configuration': 'install/1-CONFIG.md'
-      - 'Deployment': 'install/2-DEPLOY.md'
-  - 'Develop':
-      - 'Introduction': 'architecture/0-introduction.md'
-      - 'Database management': 'architecture/1-database.md'
-      - 'Add a new Study version': 'architecture/2-add-new-antares-version.md'
-      - 'Roadmap': 'architecture/5-roadmap.md'
-  - 'Antares ecosystem': 'https://antares-doc.readthedocs.io'
-  - 'Changelog': 'CHANGELOG.md'
+      - 'How to':
+          - 'Create a study': 'user-guide/how-to/studies-create.md'
+          - 'Import a study': 'user-guide/how-to/studies-import.md'
+          - 'Upgrade a study': 'user-guide/how-to/studies-upgrade.md'
+  - 'Developer guide':
+      - 'Build':
+          - 'Introduction': 'developer-guide/install/0-INSTALL.md'
+          - 'Configuration': 'developer-guide/install/1-CONFIG.md'
+          - 'Deployment': 'developer-guide/install/2-DEPLOY.md'
+      - 'Architecture': 'developer-guide/architecture/0-introduction.md'
+      - 'Database management': 'developer-guide/architecture/1-database.md'
+      - 'Add a new study version': 'developer-guide/2-add-new-antares-version.md'
+      - 'Changelog': 'CHANGELOG.md'
+      - 'Roadmap': 'developer-guide/5-roadmap.md'
+  - 'External links' :
+    - 'Antares ecosystem': 'https://antares-doc.readthedocs.io'
+    - 'Antares website' : 'https://antares-simulator.org/'
+    - 'RTE website' : 'http://www.rte-france.com/'
 
 extra:
   generator: false
@@ -101,4 +111,4 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed
 
-copyright: Copyright &copy; 2007 - 2023 RTE
+copyright: Copyright &copy; 2007 - 2024 RTE

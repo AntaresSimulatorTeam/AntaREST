@@ -1,7 +1,5 @@
 # Area General Properties
 
-[⬅ Area Configuration](../02-areas.md)
-
 ## Introduction
 
 This documentation is dedicated to configuring the general properties of an area in the Antares Web application.
@@ -18,6 +16,11 @@ To access the configuration of an area:
 
 ![01-properties-form.png](../../../assets/media/user-guide/study/areas/01-properties-form.png)
 
-The area properties form allows you to configure the following elements:
+The area properties form allows you to configure the following elements for each area of your study :
 
-> TODO
+- Energy cost
+- Last resort shedding status
+- Adequacy patch
+- Output print status
+
+[⬅ Back to Area Configuration](../02-areas.md)

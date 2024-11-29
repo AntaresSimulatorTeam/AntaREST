@@ -1,7 +1,5 @@
 # Renewable Clusters Configuration
 
-[⬅ Area Configuration](../02-areas.md)
-
 ## Introduction
 
 This documentation is dedicated to configuring Renewable Clusters (Renewables) in the Antares Web application.
@@ -13,6 +11,12 @@ To access the configuration of Renewables:
 3. Next, click on the "RENEWABLE" tab to access the page dedicated to Renewables.
 
 ![04-renewables.tab.png](../../../assets/media/user-guide/study/areas/04-renewables.tab.png)
+
+
+This tab is visible only when the study configuration have the value "Clusters" on Advanced parameters > Renewable generation modeling.
+
+![04-renewables-activation.png](../../../assets/media/user-guide/study/areas/04-renewables-activation.png)
+
 
 ## Renewable List
 
@@ -58,10 +62,12 @@ In the tabs, you will find time series matrices composed of 8760 rows (hourly fo
 
 The available commands are:
 
-- **Assign a Matrix:** Search and assign a matrix from the matrix store to Renewable Clusters.
-- **Import:** Drag and drop a TSV file to update the time series matrices.
-- **Export:** Download the current TSV file using the "Export" button.
+- **IMPORT > From database:** Search and assign a matrix from the matrix store to Thermal Clusters.
+- **IMPORT > From a file:** Drag and drop a TSV or CSV file to update the time series matrices.
+- **Export:** Download the current TSV file using the "Export" button. You can also download the file in Excel format, choose this in the button dropdown list.
 
 You can edit a cell and confirm with the "Enter" key. You can also edit a group of cells or an entire column and confirm with the "Ctrl+Enter" key combination.
 
-The detailed configuration is available in the [Antares Simulator documentation](https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/#renewable).
+The detailed configuration is available in the [Antares Simulator documentation](https://antares-simulator.readthedocs.io/en/stable/user-guide/solver/02-inputs/#renewable).
+
+[⬅ Back to Area Configuration](../02-areas.md)

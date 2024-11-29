@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import numpy as np
+import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
@@ -99,24 +100,18 @@ class TestGenerateThermalClusterTimeseries:
         data = res.json()["data"]
         assert data == [[]]  # no generation c.f. gen-ts parameter
 
-    def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str) -> None:
+    @pytest.mark.parametrize("study_type", ["raw", "variant"])
+    def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         # Study Preparation
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=860)
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
+        if study_type == "variant":
+            study_id = preparer.create_variant(study_id, name="Variant 1")
 
-        # Create a cluster without nominal power
         cluster_name = "Cluster 1"
         preparer.create_thermal(study_id, area1_id, name=cluster_name, group="Lignite")
-        # Timeseries generation fails because there's no nominal power
-        task = self._generate_timeseries(client, user_access_token, study_id)
-        assert task.status == TaskStatus.FAILED
-        assert (
-            f"Area {area1_id}, cluster {cluster_name.lower()}: Nominal power must be strictly positive, got 0.0"
-            in task.result.message
-        )
-
         # Puts the nominal power as a float
         body = {"nominalCapacity": 4.4}
         res = client.patch(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal/{cluster_name}", json=body)
@@ -144,6 +139,18 @@ class TestGenerateThermalClusterTimeseries:
         # Timeseries generation should succeed
         task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.COMPLETED
+
+        # Puts nominal capacity at 0
+        body = {"nominalCapacity": 0}
+        res = client.patch(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal/{cluster_name}", json=body)
+        assert res.status_code in {200, 201}
+        # Timeseries generation fails because there's no nominal power
+        task = self._generate_timeseries(client, user_access_token, study_id)
+        assert task.status == TaskStatus.FAILED
+        assert (
+            f"Area {area1_id}, cluster {cluster_name.lower()}: Nominal power must be strictly positive, got 0.0"
+            in task.result.message
+        )
 
     def test_advanced_results(self, client: TestClient, user_access_token: str) -> None:
         # Study Preparation

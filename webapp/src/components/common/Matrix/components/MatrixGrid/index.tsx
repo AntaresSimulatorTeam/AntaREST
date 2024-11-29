@@ -31,7 +31,7 @@ import {
 } from "../../shared/types";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useMatrixPortal } from "../../hooks/useMatrixPortal";
-import { darkTheme, readOnlyDarkTheme } from "./styles";
+import { darkTheme, readOnlyDarkTheme } from "../../styles";
 
 export interface MatrixGridProps {
   data: number[][];

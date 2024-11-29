@@ -13,114 +13,67 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { Box, IconButton, Tooltip, Typography } from "@mui/material";
-import { useSnackbar } from "notistack";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { Box, Typography } from "@mui/material";
 import { Code } from "./styles";
-import { MatrixType } from "../../../../common/types";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import OkDialog from "../OkDialog";
-import EditableMatrix from "../../EditableMatrix";
-import { getStudyMatrixIndex } from "../../../../services/api/matrix";
 import SimpleLoader from "../../loaders/SimpleLoader";
-
-type MatrixTypeWithId = MatrixType & { id?: string };
+import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
+import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
+import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 interface Props {
-  studyId?: string;
   filename: string;
-  content?: string | MatrixTypeWithId;
+  content?: string | MatrixDataDTO;
   loading?: boolean;
   onClose: () => void;
   isMatrix?: boolean;
-  readOnly?: boolean;
 }
 
-function DataViewerDialog(props: Props) {
-  const [t] = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
-  const {
-    studyId,
-    filename,
-    content,
-    onClose,
-    isMatrix,
-    loading,
-    readOnly = true,
-  } = props;
-
-  const { data: matrixIndex } = usePromiseWithSnackbarError(
-    async () => {
-      if (studyId) {
-        return getStudyMatrixIndex(studyId);
-      }
-      return undefined;
-    },
-    {
-      errorMessage: t("matrix.error.failedToRetrieveIndex"),
-      deps: [studyId],
-    },
+function isMatrixData(
+  content: string | MatrixDataDTO,
+): content is MatrixDataDTO {
+  return (
+    typeof content === "object" && "data" in content && "columns" in content
   );
+}
 
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const copyId = async (matrixId: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(matrixId);
-      enqueueSnackbar(t("data.success.matrixIdCopied"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueSnackbar(t("data.error.copyMatrixId"), { variant: "error" });
-    }
-  };
+/**
+ * @deprecated This component is legacy and only used in Xpansion views.
+ * TODO: This component should be removed when the Xpansion views are reworked.
+ * The new implementation should separate the following responsibilities:
+ * - Matrix data visualization
+ * - Text content display
+ *
+ * @param props - Component props
+ * @param props.filename - The name of the file to be displayed
+ * @param [props.content] - The content to be displayed, either text or matrix data
+ * @param props.onClose - Callback function to handle dialog close
+ * @param [props.isMatrix] - Flag indicating if the content is matrix data
+ * @param [props.loading] - Flag indicating if the content is being loaded
+ * @returns The rendered DataViewerDialog component
+ */
+function DataViewerDialog({
+  filename,
+  content,
+  onClose,
+  isMatrix,
+  loading,
+}: Props) {
+  const [t] = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  const renderContent = (data: MatrixTypeWithId | string) =>
-    isMatrix ? (
-      <Box width="100%" height="100%" p={2}>
-        <EditableMatrix
-          matrix={data as MatrixType}
-          matrixTime={!!matrixIndex}
-          matrixIndex={matrixIndex}
-          readOnly={!!readOnly}
-        />
-      </Box>
-    ) : (
-      <Code>
-        <code style={{ whiteSpace: "pre" }}>{data as string}</code>
-      </Code>
-    );
-
   return (
     <OkDialog
       open
       title={
-        isMatrix ? (
+        isMatrix && content && isMatrixData(content) ? (
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Typography
               sx={{ fontWeight: 500, fontSize: "1.25rem" }}
             >{`Matrix - ${filename}`}</Typography>
-            {content && (content as MatrixTypeWithId).id && (
-              <IconButton
-                onClick={() =>
-                  copyId((content as MatrixTypeWithId).id as string)
-                }
-                sx={{
-                  ml: 1,
-                  color: "action.active",
-                }}
-              >
-                <Tooltip title={t("study.copyId") as string}>
-                  <ContentCopyIcon sx={{ height: "20px", width: "20px" }} />
-                </Tooltip>
-              </IconButton>
-            )}
           </Box>
         ) : (
           filename
@@ -134,8 +87,27 @@ function DataViewerDialog(props: Props) {
       okButtonText={t("global.close")}
       onOk={onClose}
     >
-      {!!loading && !content && <SimpleLoader />}
-      {!!content && renderContent(content)}
+      {loading && !content && <SimpleLoader />}
+      {content && (
+        <>
+          {isMatrix && isMatrixData(content) && (
+            <MatrixGrid
+              data={content.data}
+              rows={content.data.length}
+              columns={generateDataColumns({
+                timeSeriesColumns: true,
+                count: content.columns.length,
+              })}
+              readOnly
+            />
+          )}
+          {!isMatrix && typeof content === "string" && (
+            <Code>
+              <code style={{ whiteSpace: "pre" }}>{content}</code>
+            </Code>
+          )}
+        </>
+      )}
     </OkDialog>
   );
 }

@@ -43,7 +43,7 @@ import { importFile } from "../../../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import usePrompt from "../../../../../hooks/usePrompt";
 import { Aggregate, Column, Operation } from "../../shared/constants";
-import { aggregatesTheme } from "../../components/MatrixGrid/styles";
+import { aggregatesTheme } from "../../styles";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -162,12 +162,12 @@ export function useMatrix(
       });
     }
 
-    const dataColumns = generateDataColumns(
+    const dataColumns = generateDataColumns({
       timeSeriesColumns,
-      columnCount,
+      count: columnCount,
       customColumns,
-      colWidth,
-    );
+      width: colWidth,
+    });
 
     const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map(
       (aggregateType) => ({
@@ -249,7 +249,7 @@ export function useMatrix(
     applyUpdates(updates);
   };
 
-  const handleImport = async (file: File) => {
+  const handleUpload = async (file: File) => {
     try {
       await importFile({ file, studyId, path: url });
       await fetchMatrix();
@@ -312,12 +312,13 @@ export function useMatrix(
     dateTime,
     handleCellEdit,
     handleMultipleCellsEdit,
-    handleImport,
+    handleUpload,
     handleSaveUpdates,
     pendingUpdatesCount: currentState.updateCount,
     undo: handleUndo,
     redo: handleRedo,
     canUndo: canUndoChanges,
     canRedo,
+    reload: fetchMatrix,
   };
 }

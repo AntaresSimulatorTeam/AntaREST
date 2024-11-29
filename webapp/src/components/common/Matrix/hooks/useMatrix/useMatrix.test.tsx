@@ -171,7 +171,7 @@ describe("useMatrix", () => {
       const hook = await setupHook();
 
       await act(async () => {
-        await hook.result.current.handleImport(mockFile);
+        await hook.result.current.handleUpload(mockFile);
       });
 
       expect(rawStudy.importFile).toHaveBeenCalledWith({

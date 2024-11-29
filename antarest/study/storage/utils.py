@@ -132,7 +132,9 @@ def find_single_output_path(all_output_path: Path) -> Path:
 def is_output_archived(path_output: Path) -> bool:
     # Returns True it the given path is archived or if adding a suffix to the path points to an existing path
     suffixes = [".zip"]
-    return path_output.suffix in suffixes or any(path_output.with_suffix(suffix).exists() for suffix in suffixes)
+    if path_output.suffixes and path_output.suffixes[-1] in suffixes:
+        return True
+    return any((path_output.parent / (path_output.name + suffix)).exists() for suffix in suffixes)
 
 
 def extract_output_name(path_output: Path, new_suffix_name: t.Optional[str] = None) -> str:

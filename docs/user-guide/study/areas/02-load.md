@@ -1,7 +1,5 @@
 # Load Configuration
 
-[⬅ Area Configuration](../02-areas.md)
-
 ## Introduction
 
 This documentation is dedicated to configuring Load in the Antares Web application.
@@ -24,12 +22,14 @@ and 1 column for each Monte-Carlo year.
 The available commands are:
 
 - **Assign a Matrix:** Search and assign a matrix from the matrix store to the load.
-- **Import:** Drag and drop a TSV file to update the time series matrices.
-- **Export:** Download the current TSV file using the "Export" button.
+- **Import:** Drag and drop a TSV or CSV file to update the time series matrices.
+- **Export:** Download the current TSV file using the "Export" button. You can also download this file in Excel format.
 
 You can edit a cell and confirm with the "Enter" key.
 You can also edit a group of cells or an entire column and confirm with the "Ctrl+Enter" key combination.
 
-The detailed configuration is available in the [Antares Simulator documentation](https://antares-simulator.readthedocs.io/en/latest/reference-guide/04-active_windows/#load).
+The detailed configuration is available in the [Antares Simulator documentation](https://antares-simulator.readthedocs.io/en/stable/user-guide/solver/02-inputs/#load).
 
 Explore these features to customize the ST Storage settings according to the specific needs of your study.
+
+[⬅ Back to Area Configuration](../02-areas.md)

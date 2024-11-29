@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import { MatrixType, StudyMetadata } from "../../../../../../common/types";
+import { StudyMetadata } from "../../../../../../common/types";
 import { XpansionCandidate } from "../types";
 import {
   getAllCandidates,
@@ -44,6 +44,7 @@ import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import EmptyView from "../../../../../common/page/SimpleContent";
 import SplitView from "../../../../../common/SplitView";
 import { getLinks } from "@/services/api/studies/links";
+import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -55,7 +56,7 @@ function Candidates() {
   const [selectedItem, setSelectedItem] = useState<string>();
   const [capacityViewDialog, setCapacityViewDialog] = useState<{
     filename: string;
-    content: MatrixType;
+    content: MatrixDataDTO;
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
@@ -267,7 +268,6 @@ function Candidates() {
       )}
       {!!capacityViewDialog && (
         <DataViewerDialog
-          studyId={study?.id || ""}
           filename={capacityViewDialog.filename}
           content={capacityViewDialog.content}
           onClose={() => setCapacityViewDialog(undefined)}
