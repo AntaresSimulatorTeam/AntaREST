@@ -12,16 +12,18 @@
 
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import root_validator, validator
+from pydantic import ValidationInfo, field_validator, model_validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -51,30 +53,31 @@ class CreateLink(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_LINK
-    version = 1
+    command_name: CommandName = CommandName.CREATE_LINK
+    version: int = 1
 
     # Command parameters
     # ==================
 
     area1: str
     area2: str
-    parameters: Optional[Dict[str, str]] = None
+    parameters: Optional[Dict[str, Any]] = None
     series: Optional[Union[List[List[MatrixData]], str]] = None
     direct: Optional[Union[List[List[MatrixData]], str]] = None
     indirect: Optional[Union[List[List[MatrixData]], str]] = None
 
-    @validator("series", "direct", "indirect", always=True)
+    @field_validator("series", "direct", "indirect", mode="before")
     def validate_series(
-        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Any
+        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Union[Dict[str, Any], ValidationInfo]
     ) -> Optional[Union[List[List[MatrixData]], str]]:
-        return validate_matrix(v, values) if v is not None else v
+        new_values = values if isinstance(values, dict) else values.data
+        return validate_matrix(v, new_values) if v is not None else v
 
-    @root_validator
-    def validate_areas(cls, values: Dict[str, Any]) -> Any:
-        if values.get("area1") == values.get("area2"):
+    @model_validator(mode="after")
+    def validate_areas(self) -> "CreateLink":
+        if self.area1 == self.area2:
             raise ValueError("Cannot create link on same node")
-        return values
+        return self
 
     def _create_link_in_config(self, area_from: str, area_to: str, study_data: FileStudyTreeConfig) -> None:
         self.parameters = self.parameters or {}
@@ -203,7 +206,7 @@ class CreateLink(ICommand):
             {"area_from": area_from, "area_to": area_to},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
         output, data = self._apply_config(study_data.config)
         if not output.status:
@@ -220,7 +223,7 @@ class CreateLink(ICommand):
         self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
         assert type(self.series) is str
-        if version < 820:
+        if version < STUDY_VERSION_8_2:
             study_data.tree.save(self.series, ["input", "links", area_from, area_to])
         else:
             study_data.tree.save(

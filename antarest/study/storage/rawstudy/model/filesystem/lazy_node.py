@@ -47,19 +47,19 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         self,
     ) -> t.Tuple[Path, t.Any]:
         tmp_dir = None
-        if self.config.zip_path:
-            path, tmp_dir = self._extract_file_to_tmp_dir()
+        if self.config.archive_path:
+            path, tmp_dir = self._extract_file_to_tmp_dir(self.config.archive_path)
         else:
             path = self.config.path
         return path, tmp_dir
 
     def file_exists(self) -> bool:
-        if self.config.zip_path:
-            str_zipped_path = str(self.config.zip_path)
+        if self.config.archive_path:
+            str_zipped_path = str(self.config.archive_path)
             inside_zip_path = str(self.config.path)[len(str_zipped_path[:-4]) + 1 :]
             str_inside_zip_path = str(inside_zip_path).replace("\\", "/")
             if str_zipped_path not in LazyNode.ZIP_FILELIST_CACHE:
-                with ZipFile(file=self.config.zip_path) as zip_file:
+                with ZipFile(file=self.config.archive_path) as zip_file:
                     LazyNode.ZIP_FILELIST_CACHE[str_zipped_path] = SimpleCache(
                         value=zip_file.namelist(),
                         expiration_date=datetime.utcnow() + timedelta(hours=2),

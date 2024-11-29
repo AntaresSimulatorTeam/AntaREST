@@ -11,10 +11,13 @@
 # This file is part of the Antares project.
 
 import datetime
+import shutil
+import zipfile
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
+import py7zr
 import pytest
 from sqlalchemy import create_engine
 
@@ -41,6 +44,20 @@ def sta_mini_path(tmp_path: Path) -> Path:
 @pytest.fixture
 def sta_mini_zip_path(project_path: Path) -> Path:
     return project_path / "examples/studies/STA-mini.zip"
+
+
+@pytest.fixture
+def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path:
+    target = project_path / "examples/studies/STA-mini.7z"
+    if target.is_file():
+        return target
+    with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
+        zf.extractall(sta_mini_zip_path.parent)
+    extracted_dir_path = sta_mini_zip_path.parent / "STA-mini"
+    with py7zr.SevenZipFile(target, "w") as szf:
+        szf.writeall(extracted_dir_path, arcname="")
+    shutil.rmtree(extracted_dir_path)
+    return target
 
 
 @pytest.fixture
@@ -109,7 +126,7 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     )
     matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     storage_service = build_study_service(
-        application=Mock(),
+        app_ctxt=Mock(),
         cache=LocalCache(config=config.cache),
         file_transfer_manager=Mock(),
         task_service=task_service_mock,

@@ -46,8 +46,7 @@ class InputSeriesMatrix(MatrixNode):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
         if default_empty is None:
-            # Ensure that the matrix is a 2D matrix
-            self.default_empty = np.empty((1, 0), dtype=np.float64)
+            self.default_empty = None
         else:
             # Clone the template value and make it writable
             self.default_empty = np.copy(default_empty)
@@ -96,7 +95,9 @@ class InputSeriesMatrix(MatrixNode):
             return data
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
-            matrix = pd.DataFrame(self.default_empty)
+            matrix = pd.DataFrame()
+            if self.default_empty is not None:
+                matrix = pd.DataFrame(self.default_empty)
             return matrix if return_dataframe else cast(JSON, matrix.to_dict(orient="split"))
 
     def check_errors(

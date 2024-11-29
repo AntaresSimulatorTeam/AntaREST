@@ -1,14 +1,28 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import client from "./client";
 import {
   CommandDTO,
   FileStudyTreeConfigDTO,
   StudyMetadata,
   StudyMetadataDTO,
-  TaskDTO,
   VariantTree,
 } from "../../common/types";
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
 import { FileDownloadTask } from "./downloads";
+import type { TaskDTO } from "./tasks/types";
 
 export const getVariantChildren = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);

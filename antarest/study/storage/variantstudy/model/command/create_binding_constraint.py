@@ -10,16 +10,18 @@
 #
 # This file is part of the Antares project.
 
-import json
 import typing as t
 from abc import ABCMeta
 from enum import Enum
 
 import numpy as np
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from antares.study.version import StudyVersion
+from pydantic import Field, field_validator, model_validator
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -37,6 +39,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MatrixType = t.List[t.List[MatrixData]]
@@ -54,7 +57,7 @@ class TermMatrices(Enum):
     EQUAL = "equal_term_matrix"
 
 
-def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: int) -> None:
+def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: StudyVersion) -> None:
     """
     Check the binding constraint's matrix values for the specified time step.
 
@@ -91,26 +94,24 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 # =================================================================================
 
 
-class BindingConstraintPropertiesBase(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
+class BindingConstraintPropertiesBase(AntaresBaseModel, extra="forbid", populate_by_name=True):
     enabled: bool = True
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
     operator: BindingConstraintOperator = DEFAULT_OPERATOR
     comments: str = ""
 
-    @classmethod
-    def from_dict(cls, **attrs: t.Any) -> "BindingConstraintPropertiesBase":
-        """
-        Instantiate a class from a dictionary excluding unknown or `None` fields.
-        """
-        attrs = {k: v for k, v in attrs.items() if k in cls.__fields__ and v is not None}
-        return cls(**attrs)
+    @model_validator(mode="before")
+    def replace_with_alias(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        if "type" in values:
+            values["time_step"] = values.pop("type")
+        return values
 
 
 class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_year_by_year: str = Field("", alias="filter-year-by-year")
     filter_synthesis: str = Field("", alias="filter-synthesis")
 
-    @validator("filter_synthesis", "filter_year_by_year", pre=True)
+    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def _validate_filtering(cls, v: t.Any) -> str:
         return validate_filtering(v)
 
@@ -126,20 +127,19 @@ BindingConstraintProperties = t.Union[
 ]
 
 
-def get_binding_constraint_config_cls(study_version: t.Union[str, int]) -> t.Type[BindingConstraintProperties]:
+def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[BindingConstraintProperties]:
     """
     Retrieves the binding constraint configuration class based on the study version.
     """
-    version = int(study_version)
-    if version >= 870:
+    if study_version >= STUDY_VERSION_8_7:
         return BindingConstraintProperties870
-    elif version >= 830:
+    elif study_version >= STUDY_VERSION_8_3:
         return BindingConstraintProperties830
     else:
         return BindingConstraintPropertiesBase
 
 
-def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs: t.Any) -> BindingConstraintProperties:
+def create_binding_constraint_config(study_version: StudyVersion, **kwargs: t.Any) -> BindingConstraintProperties:
     """
     Factory method to create a binding constraint configuration model.
 
@@ -151,10 +151,12 @@ def create_binding_constraint_config(study_version: t.Union[str, int], **kwargs:
         The binding_constraint configuration model.
     """
     cls = get_binding_constraint_config_cls(study_version)
-    return cls.from_dict(**kwargs)
+    attrs = {k: v for k, v in kwargs.items() if k in cls.model_fields and v is not None}
+    return cls(**attrs)
 
 
-class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMetaclass, use_none=True):
+@all_optional_model
+class OptionalProperties(BindingConstraintProperties870):
     pass
 
 
@@ -163,32 +165,30 @@ class OptionalProperties(BindingConstraintProperties870, metaclass=AllOptionalMe
 # =================================================================================
 
 
-class BindingConstraintMatrices(BaseModel, extra=Extra.forbid, allow_population_by_field_name=True):
+@camel_case_model
+class BindingConstraintMatrices(AntaresBaseModel, extra="forbid", populate_by_name=True):
     """
     Class used to store the matrices of a binding constraint.
     """
 
     values: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
+        default=None,
         description="2nd member matrix for studies before v8.7",
     )
     less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
+        default=None,
         description="less term matrix for v8.7+ studies",
-        alias="lessTermMatrix",
     )
     greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
+        default=None,
         description="greater term matrix for v8.7+ studies",
-        alias="greaterTermMatrix",
     )
     equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
-        None,
+        default=None,
         description="equal term matrix for v8.7+ studies",
-        alias="equalTermMatrix",
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_matrices(
         cls, values: t.Dict[str, t.Optional[t.Union[MatrixType, str]]]
     ) -> t.Dict[str, t.Optional[t.Union[MatrixType, str]]]:
@@ -215,10 +215,10 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     Abstract class for binding constraint commands.
     """
 
-    coeffs: t.Optional[t.Dict[str, t.List[float]]]
+    coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
 
     def to_dto(self) -> CommandDTO:
-        json_command = json.loads(self.json(exclude={"command_context"}))
+        json_command = self.model_dump(mode="json", exclude={"command_context"})
         args = {}
         for field in ["enabled", "coeffs", "comments", "time_step", "operator"]:
             if json_command[field]:
@@ -256,7 +256,11 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         ]
 
     def get_corresponding_matrices(
-        self, v: t.Optional[t.Union[MatrixType, str]], time_step: BindingConstraintFrequency, version: int, create: bool
+        self,
+        v: t.Optional[t.Union[MatrixType, str]],
+        time_step: BindingConstraintFrequency,
+        version: StudyVersion,
+        create: bool,
     ) -> t.Optional[str]:
         constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
 
@@ -293,10 +297,10 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         *,
         time_step: BindingConstraintFrequency,
         specific_matrices: t.Optional[t.List[str]],
-        version: int,
+        version: StudyVersion,
         create: bool,
     ) -> None:
-        if version < 870:
+        if version < STUDY_VERSION_8_7:
             self.values = self.get_corresponding_matrices(self.values, time_step, version, create)
         elif specific_matrices:
             for matrix in specific_matrices:
@@ -365,7 +369,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             bd_id, study_data.config, self.coeffs or {}, operator=current_operator, time_step=time_step, group=group
         )
 
-        if version >= 870:
+        if version >= STUDY_VERSION_8_7:
             # When all BC of a given group are removed, the group should be removed from the scenario builder
             old_groups = old_groups or set()
             new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
@@ -375,7 +379,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         if self.values:
             if not isinstance(self.values, str):  # pragma: no cover
                 raise TypeError(repr(self.values))
-            if version < 870:
+            if version < STUDY_VERSION_8_7:
                 study_data.tree.save(self.values, ["input", "bindingconstraints", bd_id])
 
         operator_matrices_map = {
@@ -389,7 +393,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             if matrix_term:
                 if not isinstance(matrix_term, str):  # pragma: no cover
                     raise TypeError(repr(matrix_term))
-                if version >= 870:
+                if version >= STUDY_VERSION_8_7:
                     matrix_id = f"{bd_id}_{matrix_alias}"
                     study_data.tree.save(matrix_term, ["input", "bindingconstraints", matrix_id])
         return CommandOutput(status=True)
@@ -400,7 +404,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     Command used to create a binding constraint.
     """
 
-    command_name = CommandName.CREATE_BINDING_CONSTRAINT
+    command_name: CommandName = CommandName.CREATE_BINDING_CONSTRAINT
     version: int = 1
 
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
@@ -421,14 +425,14 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         )
         return CommandOutput(status=True), {}
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = str(len(binding_constraints))
         bd_id = transform_name_to_id(self.name)
 
         study_version = study_data.config.version
-        props = create_binding_constraint_config(study_version, **self.dict())
-        obj = json.loads(props.json(by_alias=True))
+        props = create_binding_constraint_config(study_version, **self.model_dump())
+        obj = props.model_dump(mode="json", by_alias=True)
 
         new_binding = {"id": bd_id, "name": self.name, **obj}
 
@@ -454,9 +458,9 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
         args = {"id": bd_id, "command_context": other.command_context}
 
-        excluded_fields = frozenset(ICommand.__fields__)
-        self_command = json.loads(self.json(exclude=excluded_fields))
-        other_command = json.loads(other.json(exclude=excluded_fields))
+        excluded_fields = set(ICommand.model_fields)
+        self_command = self.model_dump(mode="json", exclude=excluded_fields)
+        other_command = other.model_dump(mode="json", exclude=excluded_fields)
         properties = [
             "enabled",
             "coeffs",
@@ -480,7 +484,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
             if self_matrix_id != other_matrix_id:
                 args[matrix_name] = other_matrix_id
 
-        return [UpdateBindingConstraint(**args)]
+        return [UpdateBindingConstraint.model_validate(args)]
 
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         if not isinstance(other, self.__class__):
@@ -496,6 +500,9 @@ def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set
 
     NOTE: this update can be very long if the scenario builder configuration is large.
     """
+    if not removed_groups:
+        return
+
     rulesets = study_data.tree.get(["settings", "scenariobuilder"])
 
     for ruleset in rulesets.values():

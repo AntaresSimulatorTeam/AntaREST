@@ -1,14 +1,18 @@
-import { styled, Box, Paper } from "@mui/material";
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
 
-export const Root = styled(Box)(({ theme }) => ({
-  width: "100%",
-  height: "100%",
-  padding: theme.spacing(2),
-  paddingTop: 0,
-  marginTop: theme.spacing(1),
-  display: "flex",
-  overflowY: "auto",
-}));
+import { styled, Box, Paper } from "@mui/material";
 
 export const FormBox = styled(Box)(({ theme }) => ({
   width: "100%",

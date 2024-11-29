@@ -22,6 +22,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
@@ -46,19 +47,23 @@ ADMIN = JWTUser(
 )
 
 
-def assert_url_content(storage_service: StudyService, url: str, expected_output: dict) -> None:
-    app = FastAPI(title=__name__)
+def create_test_client(service: StudyService) -> TestClient:
+    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
     build_study_service(
-        app,
+        build_ctxt,
         cache=Mock(),
         user_service=Mock(),
         task_service=Mock(),
         file_transfer_manager=Mock(),
-        study_service=storage_service,
+        study_service=service,
         matrix_service=Mock(spec=MatrixService),
-        config=storage_service.storage_service.raw_study_service.config,
+        config=service.storage_service.raw_study_service.config,
     )
-    client = TestClient(app)
+    return TestClient(build_ctxt.build())
+
+
+def assert_url_content(storage_service: StudyService, url: str, expected_output: dict) -> None:
+    client = create_test_client(storage_service)
     res = client.get(url)
     assert_study(res.json(), expected_output)
 
@@ -439,6 +444,10 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict):
             f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/info/general/version",
             700,
         ),
+        (
+            f"/v1/studies/{UUID}/raw?path=output/20201014-1430adq-2/about-the-study/areas",
+            b"DE\r\nES\r\nFR\r\nIT\r\n",
+        ),
     ],
 )
 def test_sta_mini_output(storage_service, url: str, expected_output: dict):
@@ -493,18 +502,7 @@ def test_sta_mini_copy(storage_service) -> None:
     source_study_name = UUID
     destination_study_name = "copy-STA-mini"
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        user_service=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        matrix_service=Mock(spec=MatrixService),
-        config=storage_service.storage_service.raw_study_service.config,
-    )
-    client = TestClient(app)
+    client = create_test_client(storage_service)
     result = client.post(f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}&use_task=false")
 
     assert result.status_code == HTTPStatus.CREATED.value
@@ -590,18 +588,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     sta_mini_zip_filepath = shutil.make_archive(tmp_path, "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-        config=storage_service.storage_service.raw_study_service.config,
-    )
-    client = TestClient(app)
+    client = create_test_client(storage_service)
 
     study_data = io.BytesIO(sta_mini_zip_path.read_bytes())
     result = client.post("/v1/studies/_import", files={"study": study_data})
@@ -620,18 +607,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
 
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-        config=storage_service.storage_service.raw_study_service.config,
-    )
-    client = TestClient(app)
+    client = create_test_client(storage_service)
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
     result = client.post(

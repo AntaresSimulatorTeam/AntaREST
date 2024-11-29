@@ -51,31 +51,34 @@ class UriResolverService:
 
     def _resolve_matrix(self, id: str, formatted: bool = True) -> SUB_JSON:
         data = self.matrix_service.get(id)
-        if data:
-            if formatted:
-                return {
-                    "data": data.data,
-                    "index": data.index,
-                    "columns": data.columns,
-                }
-            else:
-                df = pd.DataFrame(
-                    data=data.data,
-                    index=data.index,
-                    columns=data.columns,
-                )
-                if df.empty:
-                    return ""
-                else:
-                    csv = df.to_csv(
-                        None,
-                        sep="\t",
-                        header=False,
-                        index=False,
-                        float_format="%.6f",
-                    )
-                    return csv or ""
-        raise ValueError(f"id matrix {id} not found")
+        if not data:
+            raise ValueError(f"id matrix {id} not found")
+        if data.data == [[]]:
+            # Corresponds to an empty matrix, so we should return empty index and columns.
+            data.columns = []
+            data.index = []
+
+        if formatted:
+            return {
+                "data": data.data,
+                "index": data.index,
+                "columns": data.columns,
+            }
+        df = pd.DataFrame(
+            data=data.data,
+            index=data.index,
+            columns=data.columns,
+        )
+        if df.empty:
+            return ""
+        csv = df.to_csv(
+            None,
+            sep="\t",
+            header=False,
+            index=False,
+            float_format="%.6f",
+        )
+        return csv or ""
 
     def build_matrix_uri(self, id: str) -> str:
         return f"matrix://{id}"

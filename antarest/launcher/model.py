@@ -11,26 +11,26 @@
 # This file is part of the Antares project.
 
 import enum
-import json
 import typing as t
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from antarest.core.persistence import Base
-from antarest.core.utils.string import to_camel_case
+from antarest.core.serialization import AntaresBaseModel, from_json
 from antarest.login.model import Identity, UserInfo
+from antarest.study.business.all_optional_meta import camel_case_model
 
 
-class XpansionParametersDTO(BaseModel):
-    output_id: t.Optional[str]
+class XpansionParametersDTO(AntaresBaseModel):
+    output_id: t.Optional[str] = None
     sensitivity_mode: bool = False
     enabled: bool = True
 
 
-class LauncherParametersDTO(BaseModel):
+class LauncherParametersDTO(AntaresBaseModel):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
@@ -54,10 +54,10 @@ class LauncherParametersDTO(BaseModel):
         """
         if params is None:
             return cls()
-        return cls.parse_obj(json.loads(params))
+        return cls.model_validate(from_json(params))
 
 
-class LogType(str, enum.Enum):
+class LogType(enum.StrEnum):
     STDOUT = "STDOUT"
     STDERR = "STDERR"
 
@@ -79,19 +79,19 @@ class LogType(str, enum.Enum):
             return "out.log"
 
 
-class JobStatus(str, enum.Enum):
+class JobStatus(enum.StrEnum):
     PENDING = "pending"
     FAILED = "failed"
     SUCCESS = "success"
     RUNNING = "running"
 
 
-class JobLogType(str, enum.Enum):
+class JobLogType(enum.StrEnum):
     BEFORE = "BEFORE"
     AFTER = "AFTER"
 
 
-class JobResultDTO(BaseModel):
+class JobResultDTO(AntaresBaseModel):
     """
     A data transfer object (DTO) representing the job result.
 
@@ -125,7 +125,7 @@ class JobResultDTO(BaseModel):
 
     class Config:
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = JobResultDTO(
                 id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
                 study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
@@ -139,7 +139,7 @@ class JobResultDTO(BaseModel):
                 exit_code=0,
                 solver_stats="time: 1651s, call_count: 1, optimization_issues: []",
                 owner=UserInfo(id=0o007, name="James BOND"),
-            )
+            ).model_dump(mode="json")
 
 
 class JobLog(Base):  # type: ignore
@@ -232,21 +232,16 @@ class JobResult(Base):  # type: ignore
         )
 
 
-class JobCreationDTO(BaseModel):
+class JobCreationDTO(AntaresBaseModel):
     job_id: str
 
 
-class LauncherEnginesDTO(BaseModel):
+class LauncherEnginesDTO(AntaresBaseModel):
     engines: t.List[str]
 
 
-class LauncherLoadDTO(
-    BaseModel,
-    extra="forbid",
-    validate_assignment=True,
-    allow_population_by_field_name=True,
-    alias_generator=to_camel_case,
-):
+@camel_case_model
+class LauncherLoadDTO(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 

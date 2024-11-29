@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { DeepPartial } from "react-hook-form";
 import { StudyMetadata } from "../../../../../../common/types";
 import client from "../../../../../../services/api/client";
@@ -54,26 +68,20 @@ export interface TSFormFields
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const SEASONAL_CORRELATION_OPTIONS = Object.values(SeasonCorrelation);
+export const DEFAULT_VALUES: DeepPartial<TSFormFields> = {
+  thermal: {
+    stochasticTsStatus: false,
+    number: 1,
+  },
+};
 
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
 
-function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/timeseries/form`;
-}
-
-export async function getTimeSeriesFormFields(
-  studyId: StudyMetadata["id"],
-): Promise<TSFormFields> {
-  const res = await client.get(makeRequestURL(studyId));
-  return res.data;
-}
-
 export function setTimeSeriesFormFields(
   studyId: StudyMetadata["id"],
   values: DeepPartial<TSFormFields>,
 ): Promise<void> {
-  return client.put(makeRequestURL(studyId), values);
+  return client.put(`v1/studies/${studyId}/config/timeseries/form`, values);
 }

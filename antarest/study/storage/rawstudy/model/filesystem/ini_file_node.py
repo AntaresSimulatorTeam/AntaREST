@@ -13,18 +13,20 @@
 import contextlib
 import functools
 import io
-import json
 import logging
 import os
 import tempfile
 import typing as t
 import zipfile
-from json import JSONDecodeError
 from pathlib import Path
 
+import py7zr
+import pydantic_core
 from filelock import FileLock
 
+from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
+from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.ini_reader import IniReader, IReader
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -105,11 +107,18 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
         kwargs = self._get_filtering_kwargs(url)
 
-        if self.config.zip_path:
-            with zipfile.ZipFile(self.config.zip_path, mode="r") as zipped_folder:
-                inside_zip_path = self.config.path.relative_to(self.config.zip_path.with_suffix("")).as_posix()
-                with io.TextIOWrapper(zipped_folder.open(inside_zip_path)) as f:
-                    data = self.reader.read(f, **kwargs)
+        if self.config.archive_path:
+            inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
+            if self.config.archive_path.suffix == ".zip":
+                with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
+                    with io.TextIOWrapper(zipped_folder.open(inside_archive_path)) as f:
+                        data = self.reader.read(f, **kwargs)
+            elif self.config.archive_path.suffix == ".7z":
+                with py7zr.SevenZipFile(self.config.archive_path, mode="r") as zipped_folder:
+                    with io.TextIOWrapper(zipped_folder.read([inside_archive_path])[inside_archive_path]) as f:
+                        data = self.reader.read(f, **kwargs)
+            else:
+                raise ShouldNotHappenException(f"Unsupported archived study format: {self.config.archive_path.suffix}")
         else:
             data = self.reader.read(self.path, **kwargs)
 
@@ -190,8 +199,8 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             info = self.reader.read(self.path) if self.path.exists() else {}
             obj = data
             if isinstance(data, str):
-                with contextlib.suppress(JSONDecodeError):
-                    obj = json.loads(data)
+                with contextlib.suppress(pydantic_core.ValidationError):
+                    obj = from_json(data)
             if len(url) == 2:
                 if url[0] not in info:
                     info[url[0]] = {}

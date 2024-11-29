@@ -95,36 +95,37 @@ class TableModeManager:
     def _get_table_data_unsafe(self, study: RawStudy, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
             areas_map = self._area_manager.get_all_area_props(study)
-            data = {area_id: area.dict(by_alias=True) for area_id, area in areas_map.items()}
+            data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links_props(study)
             data = {
-                f"{area1_id} / {area2_id}": link.dict(by_alias=True) for (area1_id, area2_id), link in links_map.items()
+                f"{area1_id} / {area2_id}": link.model_dump(mode="json", by_alias=True)
+                for (area1_id, area2_id), link in links_map.items()
             }
         elif table_type == TableModeType.THERMAL:
             thermals_by_areas = self._thermal_manager.get_all_thermals_props(study)
             data = {
-                f"{area_id} / {cluster_id}": cluster.dict(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
                 for area_id, thermals_by_ids in thermals_by_areas.items()
                 for cluster_id, cluster in thermals_by_ids.items()
             }
         elif table_type == TableModeType.RENEWABLE:
             renewables_by_areas = self._renewable_manager.get_all_renewables_props(study)
             data = {
-                f"{area_id} / {cluster_id}": cluster.dict(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
                 for area_id, renewables_by_ids in renewables_by_areas.items()
                 for cluster_id, cluster in renewables_by_ids.items()
             }
         elif table_type == TableModeType.ST_STORAGE:
             storages_by_areas = self._st_storage_manager.get_all_storages_props(study)
             data = {
-                f"{area_id} / {cluster_id}": cluster.dict(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
                 for area_id, storages_by_ids in storages_by_areas.items()
                 for cluster_id, cluster in storages_by_ids.items()
             }
         elif table_type == TableModeType.BINDING_CONSTRAINT:
             bc_seq = self._binding_constraint_manager.get_binding_constraints(study)
-            data = {bc.id: bc.dict(by_alias=True, exclude={"id", "name", "terms"}) for bc in bc_seq}
+            data = {bc.id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}) for bc in bc_seq}
         else:  # pragma: no cover
             raise NotImplementedError(f"Table type {table_type} not implemented")
         return data
@@ -189,13 +190,13 @@ class TableModeManager:
             # Use AreaOutput to update properties of areas, which may include `None` values
             area_props_by_ids = {key: AreaOutput(**values) for key, values in data.items()}
             areas_map = self._area_manager.update_areas_props(study, area_props_by_ids)
-            data = {area_id: area.dict(by_alias=True, exclude_none=True) for area_id, area in areas_map.items()}
+            data = {area_id: area.model_dump(by_alias=True, exclude_none=True) for area_id, area in areas_map.items()}
             return data
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkOutput(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links_props(study, links_map)  # type: ignore
             data = {
-                f"{area1_id} / {area2_id}": link.dict(by_alias=True)
+                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True)
                 for (area1_id, area2_id), link in updated_map.items()
             }
             return data
@@ -207,7 +208,7 @@ class TableModeManager:
                 thermals_by_areas[area_id][cluster_id] = ThermalClusterInput(**values)
             thermals_map = self._thermal_manager.update_thermals_props(study, thermals_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.dict(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
                 for area_id, thermals_by_ids in thermals_map.items()
                 for cluster_id, cluster in thermals_by_ids.items()
             }
@@ -220,7 +221,7 @@ class TableModeManager:
                 renewables_by_areas[area_id][cluster_id] = RenewableClusterInput(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.dict(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
                 for area_id, renewables_by_ids in renewables_map.items()
                 for cluster_id, cluster in renewables_by_ids.items()
             }
@@ -233,7 +234,7 @@ class TableModeManager:
                 storages_by_areas[area_id][cluster_id] = STStorageInput(**values)
             storages_map = self._st_storage_manager.update_storages_props(study, storages_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.dict(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
                 for area_id, storages_by_ids in storages_map.items()
                 for cluster_id, cluster in storages_by_ids.items()
             }
@@ -241,7 +242,9 @@ class TableModeManager:
         elif table_type == TableModeType.BINDING_CONSTRAINT:
             bcs_by_ids = {key: ConstraintInput(**values) for key, values in data.items()}
             bcs_map = self._binding_constraint_manager.update_binding_constraints(study, bcs_by_ids)
-            return {bc_id: bc.dict(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()}
+            return {
+                bc_id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()
+            }
         else:  # pragma: no cover
             raise NotImplementedError(f"Table type {table_type} not implemented")
 

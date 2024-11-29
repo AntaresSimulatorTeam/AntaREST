@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useMemo } from "react";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -18,10 +32,10 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import { StudyMetadata } from "../../../../../../common/types";
-import { validateString } from "../../../../../../utils/validationUtils";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { useOutletContext } from "react-router";
+import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;

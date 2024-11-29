@@ -10,13 +10,14 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Union, cast
 
-from pydantic import PositiveInt, StrictBool, conint, root_validator
+from pydantic import PositiveInt, StrictBool, ValidationInfo, conint, model_validator
 
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -63,39 +64,67 @@ class BuildingMode(EnumIgnoreCase):
 DayNumberType = conint(ge=1, le=366)
 
 
+@all_optional_model
 class GeneralFormFields(FormFieldsBaseModel):
-    mode: Optional[Mode]
-    first_day: Optional[DayNumberType]  # type: ignore
-    last_day: Optional[DayNumberType]  # type: ignore
-    horizon: Optional[str]  # Don't use `StrictStr` because it can be an int
-    first_month: Optional[Month]
-    first_week_day: Optional[WeekDay]
-    first_january: Optional[WeekDay]
-    leap_year: Optional[StrictBool]
-    nb_years: Optional[PositiveInt]
-    building_mode: Optional[BuildingMode]
-    selection_mode: Optional[StrictBool]
-    year_by_year: Optional[StrictBool]
-    simulation_synthesis: Optional[StrictBool]
-    mc_scenario: Optional[StrictBool]
+    mode: Mode
+    first_day: DayNumberType  # type: ignore
+    last_day: DayNumberType  # type: ignore
+    horizon: Union[str, int]
+    first_month: Month
+    first_week_day: WeekDay
+    first_january: WeekDay
+    leap_year: StrictBool
+    nb_years: PositiveInt
+    building_mode: BuildingMode
+    selection_mode: StrictBool
+    year_by_year: StrictBool
+    simulation_synthesis: StrictBool
+    mc_scenario: StrictBool
     # Geographic trimming + Thematic trimming.
     # For study versions < 710
-    filtering: Optional[StrictBool]
+    filtering: StrictBool
     # For study versions >= 710
-    geographic_trimming: Optional[StrictBool]
-    thematic_trimming: Optional[StrictBool]
+    geographic_trimming: StrictBool
+    thematic_trimming: StrictBool
 
-    @root_validator
-    def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        first_day = values.get("first_day")
-        last_day = values.get("last_day")
-        leap_year = values.get("leap_year")
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "mode": "Economy",
+                    "first_day": 1,
+                    "last_day": 365,
+                    "horizon": "2020",
+                    "first_month": "january",
+                    "first_week_day": "Monday",
+                    "first_january": "Monday",
+                    "leap_year": True,
+                    "nb_years": 5,
+                    "building_mode": "Automatic",
+                    "selection_mode": True,
+                    "year_by_year": True,
+                    "simulation_synthesis": True,
+                    "mc_scenario": True,
+                    "filtering": True,
+                    "geographic_trimming": True,
+                    "thematic_trimming": True,
+                }
+            ]
+        }
+    }
+
+    @model_validator(mode="before")
+    def day_fields_validation(cls, values: Union[Dict[str, Any], ValidationInfo]) -> Dict[str, Any]:
+        new_values = values if isinstance(values, dict) else values.data
+        first_day = new_values.get("first_day")
+        last_day = new_values.get("last_day")
+        leap_year = new_values.get("leap_year")
         day_fields = [first_day, last_day, leap_year]
 
         if all(v is None for v in day_fields):
             # The user wishes to update another field than these three.
             # no need to validate anything:
-            return values
+            return new_values
 
         if any(v is None for v in day_fields):
             raise ValueError("First day, last day and leap year fields must be defined together")
@@ -110,7 +139,7 @@ class GeneralFormFields(FormFieldsBaseModel):
         if last_day > num_days_in_year:
             raise ValueError(f"Last day cannot be greater than {num_days_in_year}")
 
-        return values
+        return new_values
 
 
 GENERAL = "general"
@@ -118,7 +147,6 @@ OUTPUT = "output"
 GENERAL_PATH = f"{GENERAL_DATA_PATH}/{GENERAL}"
 OUTPUT_PATH = f"{GENERAL_DATA_PATH}/{OUTPUT}"
 BUILDING_MODE = "building_mode"
-
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
     "mode": {
@@ -172,17 +200,17 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "filtering": {
         "path": f"{GENERAL_PATH}/filtering",
         "default_value": False,
-        "end_version": 710,
+        "end_version": STUDY_VERSION_7_1,
     },
     "geographic_trimming": {
         "path": f"{GENERAL_PATH}/geographic-trimming",
         "default_value": False,
-        "start_version": 710,
+        "start_version": STUDY_VERSION_7_1,
     },
     "thematic_trimming": {
         "path": f"{GENERAL_PATH}/thematic-trimming",
         "default_value": False,
-        "start_version": 710,
+        "start_version": STUDY_VERSION_7_1,
     },
     "simulation_synthesis": {
         "path": f"{OUTPUT_PATH}/synthesis",
@@ -274,7 +302,7 @@ class GeneralManager:
         return [
             UpdateConfig(
                 target=f"{GENERAL_PATH}/custom-scenario"
-                if file_study.config.version >= 800
+                if file_study.config.version >= STUDY_VERSION_8
                 else f"{GENERAL_PATH}/custom-ts-numbers",
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,

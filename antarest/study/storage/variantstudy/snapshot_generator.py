@@ -23,7 +23,7 @@ from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
-from antarest.core.tasks.service import TaskUpdateNotifier, noop_notifier
+from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
@@ -31,6 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, 
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -70,7 +71,8 @@ class SnapshotGenerator:
         *,
         denormalize: bool = True,
         from_scratch: bool = False,
-        notifier: TaskUpdateNotifier = noop_notifier,
+        notifier: ITaskNotifier = NoopNotifier(),
+        listener: t.Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -100,7 +102,7 @@ class SnapshotGenerator:
                 self._export_ref_study(snapshot_dir, ref_study)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(snapshot_dir, variant_study, cmd_blocks)
+            results = self._apply_commands(snapshot_dir, variant_study, cmd_blocks, listener)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
             file_study = self.study_factory.create_from_fs(
@@ -133,7 +135,7 @@ class SnapshotGenerator:
 
         else:
             try:
-                notifier(results.json())
+                notifier.notify_message(results.model_dump_json())
             except Exception as exc:
                 # This exception is ignored, because it is not critical.
                 logger.warning(f"Error while sending notification: {exc}", exc_info=True)
@@ -174,6 +176,7 @@ class SnapshotGenerator:
         snapshot_dir: Path,
         variant_study: VariantStudy,
         cmd_blocks: t.Sequence[CommandBlock],
+        listener: t.Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         generator = VariantCommandGenerator(self.study_factory)
@@ -183,6 +186,7 @@ class SnapshotGenerator:
             variant_study,
             delete_on_failure=False,  # Not needed, because we are using a temporary directory
             notifier=None,
+            listener=listener,
         )
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
@@ -203,7 +207,7 @@ class SnapshotGenerator:
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
         patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.json())
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
         return study_additional_data
 
     def _update_cache(self, file_study: FileStudy) -> None:
@@ -211,7 +215,7 @@ class SnapshotGenerator:
         self.cache.invalidate(f"{CacheConstants.RAW_STUDY}/{file_study.config.study_id}")
         self.cache.put(
             f"{CacheConstants.STUDY_FACTORY}/{file_study.config.study_id}",
-            FileStudyTreeConfigDTO.from_build_config(file_study.config).dict(),
+            FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump(),
         )
 
 

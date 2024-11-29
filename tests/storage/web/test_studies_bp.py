@@ -24,9 +24,11 @@ from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import UrlNotMatchJsonDataError
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
@@ -48,6 +50,7 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
+from antarest.study.service import StudyService
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 
@@ -66,23 +69,29 @@ CONFIG = Config(
 )
 
 
+def create_test_client(
+    service: StudyService, file_transfer_manager: FileTransferManager = Mock(), raise_server_exceptions: bool = True
+) -> TestClient:
+    app_ctxt = create_app_ctxt(FastAPI(title=__name__))
+    build_study_service(
+        app_ctxt,
+        cache=Mock(),
+        task_service=Mock(),
+        file_transfer_manager=file_transfer_manager,
+        study_service=service,
+        config=CONFIG,
+        user_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
+    )
+    return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
+
+
 @pytest.mark.unit_test
 def test_server() -> None:
     mock_service = Mock()
     mock_service.get.return_value = {}
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(mock_service)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
 
     mock_service.get.assert_called_once_with(
@@ -95,18 +104,7 @@ def test_404() -> None:
     mock_storage_service = Mock()
     mock_storage_service.get.side_effect = UrlNotMatchJsonDataError("Test")
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+    client = create_test_client(mock_storage_service, raise_server_exceptions=False)
     result = client.get("/v1/studies/study1/raw?path=settings/general/params")
     assert result.status_code == HTTPStatus.NOT_FOUND
 
@@ -119,18 +117,7 @@ def test_server_with_parameters() -> None:
     mock_storage_service = Mock()
     mock_storage_service.get.return_value = {}
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(mock_storage_service)
     result = client.get("/v1/studies/study1/raw?depth=4")
 
     parameters = RequestParameters(user=ADMIN)
@@ -158,18 +145,7 @@ def test_create_study(tmp_path: str, project_path) -> None:
     storage_service = Mock()
     storage_service.create_study.return_value = "my-uuid"
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(storage_service)
 
     result_right = client.post("/v1/studies?name=study2")
 
@@ -193,18 +169,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     study_uuid = str(uuid.uuid4())
     mock_storage_service.import_study.return_value = study_uuid
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(mock_storage_service)
 
     result = client.post("/v1/studies")
 
@@ -223,18 +188,7 @@ def test_copy_study(tmp_path: Path) -> None:
     storage_service = Mock()
     storage_service.copy_study.return_value = "/studies/study-copied"
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(storage_service)
 
     result = client.post(f"/v1/studies/{UUID}/copy?dest=study-copied")
 
@@ -285,21 +239,10 @@ def test_list_studies(tmp_path: str) -> None:
     storage_service = Mock()
     storage_service.get_studies_information.return_value = studies
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(storage_service)
     result = client.get("/v1/studies")
 
-    assert {k: StudyMetadataDTO.parse_obj(v) for k, v in result.json().items()} == studies
+    assert {k: StudyMetadataDTO.model_validate(v) for k, v in result.json().items()} == studies
 
 
 def test_study_metadata(tmp_path: str) -> None:
@@ -320,21 +263,10 @@ def test_study_metadata(tmp_path: str) -> None:
     storage_service = Mock()
     storage_service.get_study_information.return_value = study
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(storage_service)
     result = client.get("/v1/studies/1")
 
-    assert StudyMetadataDTO.parse_obj(result.json()) == study
+    assert StudyMetadataDTO.model_validate(result.json()) == study
 
 
 @pytest.mark.unit_test
@@ -352,20 +284,8 @@ def test_export_files(tmp_path: Path) -> None:
     )
     mock_storage_service.export_study.return_value = expected
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-
     # Simulate the download of data using a streamed request
-    client = TestClient(app)
+    client = create_test_client(mock_storage_service)
     if client.stream is False:
         # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
         # noinspection PyArgumentList
@@ -382,7 +302,7 @@ def test_export_files(tmp_path: Path) -> None:
         res.raise_for_status()
         result = json.loads(data.getvalue())
 
-    assert FileDownloadTaskDTO(**result).json() == expected.json()
+    assert FileDownloadTaskDTO(**result).model_dump_json() == expected.model_dump_json()
 
     mock_storage_service.export_study.assert_called_once_with(UUID, PARAMS, True)
 
@@ -402,18 +322,7 @@ def test_export_params(tmp_path: Path) -> None:
     )
     mock_storage_service.export_study.return_value = expected
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(mock_storage_service)
     client.get(f"/v1/studies/{UUID}/export?no_output=true")
     client.get(f"/v1/studies/{UUID}/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
@@ -428,18 +337,7 @@ def test_export_params(tmp_path: Path) -> None:
 def test_delete_study() -> None:
     mock_storage_service = Mock()
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(mock_storage_service)
 
     study_uuid = "8319b5f8-2a35-4984-9ace-2ab072bd6eef"
     client.delete(f"/v1/studies/{study_uuid}")
@@ -452,44 +350,10 @@ def test_edit_study() -> None:
     mock_storage_service = Mock()
     mock_storage_service.edit_study.return_value = {}
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_storage_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app)
+    client = create_test_client(mock_storage_service)
     client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={"Hello": "World"})
 
     mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"}, PARAMS)
-
-
-# @pytest.mark.unit_test
-# def test_edit_study_fail() -> None:
-#     mock_storage_service = Mock()
-#
-#     app = FastAPI(title=__name__)
-#     build_study_service(
-#         app,
-#         cache=Mock(),
-#         task_service=Mock(),
-#         file_transfer_manager=Mock(),
-#         study_service=mock_storage_service,
-#         config=CONFIG,
-#         user_service=Mock(),
-#         matrix_service=Mock(spec=MatrixService),
-#     )
-#     client = TestClient(app, raise_server_exceptions=False)
-#     res = client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={})
-#
-#     assert res.status_code == 400
-#
-#     mock_storage_service.edit_study.assert_not_called()
 
 
 @pytest.mark.unit_test
@@ -497,18 +361,7 @@ def test_validate() -> None:
     mock_service = Mock()
     mock_service.check_errors.return_value = ["Hello"]
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+    client = create_test_client(mock_service, raise_server_exceptions=False)
     res = client.get("/v1/studies/my-uuid/raw/validate")
 
     assert res.json() == ["Hello"]
@@ -551,24 +404,13 @@ def test_output_download(tmp_path: Path) -> None:
         synthesis=False,
         includeClusters=True,
     )
-
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path))),
-        study_service=mock_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+    ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
+    client = create_test_client(mock_service, ftm, raise_server_exceptions=False)
     res = client.post(
         f"/v1/studies/{UUID}/outputs/my-output-id/download",
-        json=study_download.dict(),
+        json=study_download.model_dump(),
     )
-    assert res.json() == output_data.dict()
+    assert res.json() == output_data.model_dump()
 
 
 @pytest.mark.unit_test
@@ -588,18 +430,8 @@ def test_output_whole_download(tmp_path: Path) -> None:
     )
     mock_service.export_output.return_value = expected
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path))),
-        study_service=mock_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+    ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
+    client = create_test_client(mock_service, ftm, raise_server_exceptions=False)
     res = client.get(
         f"/v1/studies/{UUID}/outputs/{output_id}/export",
     )
@@ -612,18 +444,7 @@ def test_sim_reference() -> None:
     study_id = str(uuid.uuid4())
     output_id = "my-output-id"
 
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+    client = create_test_client(mock_service, raise_server_exceptions=False)
     res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
     mock_service.set_sim_reference.assert_called_once_with(study_id, output_id, True, PARAMS)
     assert res.status_code == HTTPStatus.OK
@@ -656,38 +477,17 @@ def test_sim_result() -> None:
         )
     ]
     mock_service.get_study_sim_result.return_value = result_data
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=mock_service,
-        config=CONFIG,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+
+    client = create_test_client(mock_service, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")
-    assert res.json() == result_data
+    actual_object = [StudySimResultDTO.parse_obj(res.json()[0])]
+    assert actual_object == result_data
 
 
 @pytest.mark.unit_test
 def test_study_permission_management(tmp_path: Path) -> None:
     storage_service = Mock()
-
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=storage_service,
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-        config=CONFIG,
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+    client = create_test_client(storage_service, raise_server_exceptions=False)
 
     result = client.put(f"/v1/studies/{UUID}/owner/2")
     storage_service.change_owner.assert_called_with(
@@ -727,18 +527,7 @@ def test_study_permission_management(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_get_study_versions(tmp_path: Path) -> None:
-    app = FastAPI(title=__name__)
-    build_study_service(
-        app,
-        cache=Mock(),
-        task_service=Mock(),
-        file_transfer_manager=Mock(),
-        study_service=Mock(),
-        user_service=Mock(),
-        matrix_service=Mock(spec=MatrixService),
-        config=CONFIG,
-    )
-    client = TestClient(app, raise_server_exceptions=False)
+    client = create_test_client(Mock(), raise_server_exceptions=False)
 
     result = client.get("/v1/studies/_versions")
-    assert result.json() == list(STUDY_REFERENCE_TEMPLATES.keys())
+    assert result.json() == [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]

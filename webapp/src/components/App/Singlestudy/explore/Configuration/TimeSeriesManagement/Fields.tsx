@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   Table,
   TableBody,
@@ -7,18 +21,19 @@ import {
   TableRow,
 } from "@mui/material";
 import { capitalize } from "lodash";
-import * as R from "ramda";
-import CheckBoxFE from "../../../../../common/fieldEditors/CheckBoxFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import { useFormContextPlus } from "../../../../../common/Form";
-import { TSFormFields, SEASONAL_CORRELATION_OPTIONS, TSType } from "./utils";
+import { TSFormFields, TSType } from "./utils";
+import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
+import { useTranslation } from "react-i18next";
+import { validateNumber } from "@/utils/validation/number";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
 function Fields() {
-  const { control, getValues, setValue } = useFormContextPlus<TSFormFields>();
+  const { control, watch } = useFormContextPlus<TSFormFields>();
+  const isReadyMade = watch("thermal.stochasticTsStatus") === false;
+  const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -26,24 +41,8 @@ function Fields() {
 
   return (
     <TableContainer>
-      <Table sx={{ minWidth: "1050px" }} size="small">
+      <Table size="small" sx={{ width: "auto" }}>
         <TableHead>
-          <TableRow sx={{ th: { py: 1, borderBottom: "none" } }}>
-            <TableCell />
-            <TableCell sx={{ borderRight: borderStyle }} align="center">
-              Ready made TS
-            </TableCell>
-            <TableCell
-              sx={{ borderRight: borderStyle }}
-              align="center"
-              colSpan={7}
-            >
-              Stochastic TS
-            </TableCell>
-            <TableCell align="center" colSpan={2}>
-              Draw correlation
-            </TableCell>
-          </TableRow>
           <TableRow
             sx={{
               th: {
@@ -53,147 +52,49 @@ function Fields() {
             }}
           >
             <TableCell />
-            <TableCell align="center">Status</TableCell>
-            <TableCell align="center">Status</TableCell>
-            <TableCell align="center">Number</TableCell>
-            <TableCell align="center">Refresh</TableCell>
-            <TableCell align="center">Refresh interval</TableCell>
-            <TableCell align="center">Season correlation</TableCell>
-            <TableCell align="center">Store in input</TableCell>
-            <TableCell align="center">Store in output</TableCell>
-            <TableCell align="center">Intra-modal</TableCell>
-            <TableCell align="center">inter-modal</TableCell>
+            <TableCell align="center">{t("global.status")}</TableCell>
+            <TableCell align="center">
+              {t("study.configuration.tsManagement.numberStochasticTs")}
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody
           sx={{
             "th, td": { borderBottom: borderStyle },
+            "tr:last-child td": {
+              borderBottomColor: "transparent", // 'border: none' change the color of `TableHead` border
+            },
           }}
         >
-          {R.values(TSType)
-            .filter((type) => !!getValues(type))
-            .map((type) => {
-              const isSpecialType =
-                type === TSType.Renewables || type === TSType.NTC;
-              const emptyDisplay = "-";
-              const notApplicableDisplay = "n/a";
-              const isReadyMadeStatusEnable = !getValues(
-                `${type}.stochasticTsStatus`,
-              );
-
-              const ifNotSpecialType = (
-                fn: (
-                  t: Exclude<TSType, TSType.Renewables | TSType.NTC>,
-                ) => React.ReactNode,
-              ) => {
-                return isSpecialType ? emptyDisplay : fn(type);
-              };
-
-              return (
-                <TableRow key={type}>
-                  <TableCell sx={{ fontWeight: "bold" }}>
-                    {capitalize(type)}
-                  </TableCell>
-                  <TableCell align="center">
-                    <SwitchFE
-                      value={isReadyMadeStatusEnable}
-                      onChange={(_, checked) => {
-                        setValue(
-                          `${type}.stochasticTsStatus`,
-                          !checked as never,
-                        );
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <SwitchFE
-                      name={`${type}.stochasticTsStatus` as const}
-                      control={control}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    {ifNotSpecialType((t) => (
-                      <NumberFE
-                        name={`${t}.number` as const}
-                        control={control}
-                        size="small"
-                        fullWidth
-                        disabled={isReadyMadeStatusEnable}
-                      />
-                    ))}
-                  </TableCell>
-                  <TableCell align="center">
-                    {ifNotSpecialType((t) => (
-                      <CheckBoxFE
-                        name={`${t}.refresh` as const}
-                        control={control}
-                        disabled={isReadyMadeStatusEnable}
-                      />
-                    ))}
-                  </TableCell>
-                  <TableCell align="center">
-                    {ifNotSpecialType((t) => (
-                      <NumberFE
-                        name={`${t}.refreshInterval` as const}
-                        control={control}
-                        size="small"
-                        fullWidth
-                        disabled={isReadyMadeStatusEnable}
-                      />
-                    ))}
-                  </TableCell>
-                  <TableCell align="center">
-                    {ifNotSpecialType((t) =>
-                      t !== TSType.Thermal ? (
-                        <SelectFE
-                          name={`${t}.seasonCorrelation` as const}
-                          options={SEASONAL_CORRELATION_OPTIONS}
-                          control={control}
-                          size="small"
-                          disabled={isReadyMadeStatusEnable}
-                        />
-                      ) : (
-                        notApplicableDisplay
-                      ),
-                    )}
-                  </TableCell>
-                  <TableCell align="center">
-                    {ifNotSpecialType((t) => (
-                      <CheckBoxFE
-                        name={`${t}.storeInInput` as const}
-                        control={control}
-                        disabled={isReadyMadeStatusEnable}
-                      />
-                    ))}
-                  </TableCell>
-                  <TableCell align="center">
-                    {ifNotSpecialType((t) => (
-                      <CheckBoxFE
-                        name={`${t}.storeInOutput` as const}
-                        control={control}
-                        disabled={isReadyMadeStatusEnable}
-                      />
-                    ))}
-                  </TableCell>
-                  <TableCell align="center">
-                    <CheckBoxFE
-                      name={`${type}.intraModal` as const}
-                      control={control}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    {type !== TSType.NTC ? (
-                      <CheckBoxFE
-                        name={`${type}.interModal` as const}
-                        control={control}
-                      />
-                    ) : (
-                      emptyDisplay
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+          <TableRow>
+            <TableCell sx={{ fontWeight: "bold" }}>
+              {capitalize(TSType.Thermal)}
+            </TableCell>
+            <TableCell align="center">
+              <BooleanFE
+                name={"thermal.stochasticTsStatus"}
+                control={control}
+                trueText={t(
+                  "study.configuration.tsManagement.status.toBeGenerated",
+                )}
+                falseText={t(
+                  "study.configuration.tsManagement.status.readyMade",
+                )}
+                variant="outlined"
+                size="small"
+              />
+            </TableCell>
+            <TableCell align="center">
+              <NumberFE
+                name={"thermal.number"}
+                control={control}
+                size="small"
+                disabled={isReadyMade}
+                rules={{ validate: validateNumber({ min: 1 }) }}
+                sx={{ width: 110 }}
+              />
+            </TableCell>
+          </TableRow>
         </TableBody>
       </Table>
     </TableContainer>

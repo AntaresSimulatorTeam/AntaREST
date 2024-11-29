@@ -12,11 +12,12 @@
 
 import typing as t
 
-from pydantic import validator
+from pydantic import Field, ValidationInfo, field_validator
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     FileStudyTreeConfig,
@@ -27,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -38,46 +40,51 @@ class CreateCluster(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_THERMAL_CLUSTER
-    version = 1
+    command_name: CommandName = CommandName.CREATE_THERMAL_CLUSTER
+    version: int = 1
 
     # Command parameters
     # ==================
 
     area_id: str
     cluster_name: str
-    parameters: t.Dict[str, str]
-    prepro: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = None
-    modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = None
+    parameters: t.Dict[str, t.Any]
+    prepro: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
+    modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
 
-    @validator("cluster_name")
+    @field_validator("cluster_name", mode="before")
     def validate_cluster_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:
             raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    @validator("prepro", always=True)
+    @field_validator("prepro", mode="before")
     def validate_prepro(
-        cls, v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]], values: t.Any
+        cls,
+        v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]],
+        values: t.Union[t.Dict[str, t.Any], ValidationInfo],
     ) -> t.Optional[t.Union[t.List[t.List[MatrixData]], str]]:
+        new_values = values if isinstance(values, dict) else values.data
         if v is None:
-            v = values["command_context"].generator_matrix_constants.get_thermal_prepro_data()
+            v = new_values["command_context"].generator_matrix_constants.get_thermal_prepro_data()
             return v
-
         else:
-            return validate_matrix(v, values)
+            return validate_matrix(v, new_values)
 
-    @validator("modulation", always=True)
+    @field_validator("modulation", mode="before")
     def validate_modulation(
-        cls, v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]], values: t.Any
+        cls,
+        v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]],
+        values: t.Union[t.Dict[str, t.Any], ValidationInfo],
     ) -> t.Optional[t.Union[t.List[t.List[MatrixData]], str]]:
+        new_values = values if isinstance(values, dict) else values.data
         if v is None:
-            v = values["command_context"].generator_matrix_constants.get_thermal_prepro_modulation()
+            v = new_values["command_context"].generator_matrix_constants.get_thermal_prepro_modulation()
             return v
 
         else:
-            return validate_matrix(v, values)
+            return validate_matrix(v, new_values)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         # Search the Area in the configuration
@@ -113,7 +120,7 @@ class CreateCluster(ICommand):
             {"cluster_id": cluster.id},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -144,7 +151,7 @@ class CreateCluster(ICommand):
                 }
             }
         }
-        if study_data.config.version >= 870:
+        if study_data.config.version >= STUDY_VERSION_8_7:
             new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["CO2Cost"] = null_matrix
             new_cluster_data["input"]["thermal"]["series"][self.area_id][series_id]["fuelCost"] = null_matrix
         study_data.tree.save(new_cluster_data)

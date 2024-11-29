@@ -1,15 +1,29 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { AxiosRequestConfig } from "axios";
-import { MatrixType } from "../../common/types";
 import {
   XpansionCandidate,
   XpansionSettings,
 } from "../../components/App/Singlestudy/explore/Xpansion/types";
 import client from "./client";
+import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 export const createXpansionConfiguration = async (
   uuid: string,
 ): Promise<void> => {
-  const res = await client.post(`/v1//studies/${uuid}/extensions/xpansion`);
+  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion`);
   return res.data;
 };
 
@@ -234,7 +248,7 @@ export const deleteCapacity = async (
 export const getCapacity = async (
   uuid: string,
   filename: string,
-): Promise<MatrixType> => {
+): Promise<MatrixDataDTO> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/capacities/${filename}`,
   );

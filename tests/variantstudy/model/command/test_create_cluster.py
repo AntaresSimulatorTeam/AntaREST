@@ -28,11 +28,13 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
+GEN = np.random.default_rng(1000)
+
 
 class TestCreateCluster:
     def test_init(self, command_context: CommandContext):
-        prepro = np.random.rand(365, 6).tolist()
-        modulation = np.random.rand(8760, 4).tolist()
+        prepro = GEN.random((365, 6)).tolist()
+        modulation = GEN.random((8760, 4)).tolist()
         cl = CreateCluster(
             area_id="foo",
             cluster_name="Cluster1",
@@ -52,7 +54,7 @@ class TestCreateCluster:
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Nuclear", "nominalcapacity": "2400", "unitcount": "2"}
+        assert cl.parameters == {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2}
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
 
@@ -85,8 +87,8 @@ class TestCreateCluster:
             "market-bid-cost": "30",
         }
 
-        prepro = np.random.rand(365, 6).tolist()
-        modulation = np.random.rand(8760, 4).tolist()
+        prepro = GEN.random((365, 6)).tolist()
+        modulation = GEN.random((8760, 4)).tolist()
         command = CreateCluster(
             area_id=area_id,
             cluster_name=cluster_name,
@@ -147,8 +149,8 @@ class TestCreateCluster:
         )
 
     def test_to_dto(self, command_context: CommandContext):
-        prepro = np.random.rand(365, 6).tolist()
-        modulation = np.random.rand(8760, 4).tolist()
+        prepro = GEN.random((365, 6)).tolist()
+        modulation = GEN.random((8760, 4)).tolist()
         command = CreateCluster(
             area_id="foo",
             cluster_name="Cluster1",
@@ -160,12 +162,12 @@ class TestCreateCluster:
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
         dto = command.to_dto()
-        assert dto.dict() == {
+        assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
                 "cluster_name": "Cluster1",
-                "parameters": {"group": "Nuclear", "nominalcapacity": "2400", "unitcount": "2"},
+                "parameters": {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2},
                 "prepro": prepro_id,
                 "modulation": modulation_id,
             },
@@ -175,8 +177,8 @@ class TestCreateCluster:
 
 
 def test_match(command_context: CommandContext):
-    prepro = np.random.rand(365, 6).tolist()
-    modulation = np.random.rand(8760, 4).tolist()
+    prepro = GEN.random((365, 6)).tolist()
+    modulation = GEN.random((8760, 4)).tolist()
     base = CreateCluster(
         area_id="foo",
         cluster_name="foo",
@@ -235,8 +237,8 @@ def test_revert(command_context: CommandContext):
 
 
 def test_create_diff(command_context: CommandContext):
-    prepro_a = np.random.rand(365, 6).tolist()
-    modulation_a = np.random.rand(8760, 4).tolist()
+    prepro_a = GEN.random((365, 6)).tolist()
+    modulation_a = GEN.random((8760, 4)).tolist()
     base = CreateCluster(
         area_id="foo",
         cluster_name="foo",
@@ -246,8 +248,8 @@ def test_create_diff(command_context: CommandContext):
         command_context=command_context,
     )
 
-    prepro_b = np.random.rand(365, 6).tolist()
-    modulation_b = np.random.rand(8760, 4).tolist()
+    prepro_b = GEN.random((365, 6)).tolist()
+    modulation_b = GEN.random((8760, 4)).tolist()
     other_match = CreateCluster(
         area_id="foo",
         cluster_name="foo",

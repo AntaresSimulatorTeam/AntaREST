@@ -19,12 +19,13 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
-from fastapi_jwt_auth import AuthJWT
 from starlette.testclient import TestClient
 
+from antarest.core.application import AppBuildContext, create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
+from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.main import build_login
 from antarest.login.model import (
     Bot,
@@ -63,15 +64,16 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
             authjwt_token_location=("headers", "cookies"),
         )
 
+    app_ctxt = create_app_ctxt(app)
     build_login(
-        app,
+        app_ctxt,
         service=service,
         config=Config(
             resources_path=Path(),
             security=SecurityConfig(disabled=auth_disabled),
         ),
     )
-    return app
+    return app_ctxt.build()
 
 
 class TokenType:
@@ -189,7 +191,7 @@ def test_user() -> None:
     client = TestClient(app)
     res = client.get("/v1/users", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == [User(id=1, name="user").to_dto().dict()]
+    assert res.json() == [User(id=1, name="user").to_dto().model_dump()]
 
 
 @pytest.mark.unit_test
@@ -201,7 +203,7 @@ def test_user_id() -> None:
     client = TestClient(app)
     res = client.get("/v1/users/1", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == User(id=1, name="user").to_dto().dict()
+    assert res.json() == User(id=1, name="user").to_dto().model_dump()
 
 
 @pytest.mark.unit_test
@@ -213,7 +215,7 @@ def test_user_id_with_details() -> None:
     client = TestClient(app)
     res = client.get("/v1/users/1?details=true", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == IdentityDTO(id=1, name="user", roles=[]).dict()
+    assert res.json() == IdentityDTO(id=1, name="user", roles=[]).model_dump()
 
 
 @pytest.mark.unit_test
@@ -228,12 +230,12 @@ def test_user_create() -> None:
     res = client.post(
         "/v1/users",
         headers=create_auth_token(app),
-        json=user.dict(),
+        json=user.model_dump(),
     )
 
     assert res.status_code == 200
     service.create_user.assert_called_once_with(user, PARAMS)
-    assert res.json() == user_id.to_dto().dict()
+    assert res.json() == user_id.to_dto().model_dump()
 
 
 @pytest.mark.unit_test
@@ -244,7 +246,7 @@ def test_user_save() -> None:
 
     app = create_app(service)
     client = TestClient(app)
-    user_obj = user.to_dto().dict()
+    user_obj = user.to_dto().model_dump()
     res = client.put(
         "/v1/users/0",
         headers=create_auth_token(app),
@@ -256,7 +258,7 @@ def test_user_save() -> None:
 
     assert service.save_user.call_count == 1
     call = service.save_user.call_args_list[0]
-    assert call[0][0].to_dto().dict() == user_obj
+    assert call[0][0].to_dto().model_dump() == user_obj
     assert call[0][1] == PARAMS
 
 
@@ -281,7 +283,7 @@ def test_group() -> None:
     client = TestClient(app)
     res = client.get("/v1/groups", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == [Group(id="my-group", name="group").to_dto().dict()]
+    assert res.json() == [Group(id="my-group", name="group").to_dto().model_dump()]
 
 
 @pytest.mark.unit_test
@@ -293,7 +295,7 @@ def test_group_id() -> None:
     client = TestClient(app)
     res = client.get("/v1/groups/1", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == Group(id="my-group", name="group").to_dto().dict()
+    assert res.json() == Group(id="my-group", name="group").to_dto().model_dump()
 
 
 @pytest.mark.unit_test
@@ -311,7 +313,7 @@ def test_group_create() -> None:
     )
 
     assert res.status_code == 200
-    assert res.json() == group.to_dto().dict()
+    assert res.json() == group.to_dto().model_dump()
 
 
 @pytest.mark.unit_test
@@ -341,7 +343,7 @@ def test_role() -> None:
     client = TestClient(app)
     res = client.get("/v1/roles/group/g", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert [RoleDetailDTO.parse_obj(el) for el in res.json()] == [role.to_dto()]
+    assert [RoleDetailDTO.model_validate(el) for el in res.json()] == [role.to_dto()]
 
 
 @pytest.mark.unit_test
@@ -363,7 +365,7 @@ def test_role_create() -> None:
     )
 
     assert res.status_code == 200
-    assert RoleDetailDTO.parse_obj(res.json()) == role.to_dto().dict()
+    assert RoleDetailDTO.model_validate(res.json()) == role.to_dto()
 
 
 @pytest.mark.unit_test
@@ -403,10 +405,10 @@ def test_bot_create() -> None:
     service.save_bot.return_value = bot
     service.get_group.return_value = Group(id="group", name="group")
 
-    print(create.json())
+    create.model_dump_json()
     app = create_app(service)
     client = TestClient(app)
-    res = client.post("/v1/bots", headers=create_auth_token(app), json=create.dict())
+    res = client.post("/v1/bots", headers=create_auth_token(app), json=create.model_dump())
 
     assert res.status_code == 200
     assert len(res.json().split(".")) == 3
@@ -422,7 +424,7 @@ def test_bot() -> None:
     client = TestClient(app)
     res = client.get("/v1/bots/0", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == bot.to_dto().dict()
+    assert res.json() == bot.to_dto().model_dump()
 
 
 @pytest.mark.unit_test
@@ -436,11 +438,11 @@ def test_all_bots() -> None:
     client = TestClient(app)
     res = client.get("/v1/bots", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == [b.to_dto().dict() for b in bots]
+    assert res.json() == [b.to_dto().model_dump() for b in bots]
 
     res = client.get("/v1/bots?owner=4", headers=create_auth_token(app))
     assert res.status_code == 200
-    assert res.json() == [b.to_dto().dict() for b in bots]
+    assert res.json() == [b.to_dto().model_dump() for b in bots]
 
     service.get_all_bots.assert_called_once()
     service.get_all_bots_by_owner.assert_called_once()

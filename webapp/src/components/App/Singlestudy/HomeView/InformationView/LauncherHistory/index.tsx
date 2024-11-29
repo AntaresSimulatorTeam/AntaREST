@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { Box, Paper, styled, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,25 +20,22 @@ import HistoryIcon from "@mui/icons-material/History";
 import moment from "moment";
 import {
   LaunchJob,
-  LaunchJobDTO,
-  LaunchJobProgressDTO,
   LaunchJobsProgress,
   StudyMetadata,
-  WSEvent,
-  WSMessage,
 } from "../../../../../../common/types";
 import {
   getStudyJobs,
   mapLaunchJobDTO,
 } from "../../../../../../services/api/study";
 import {
-  addWsMessageListener,
-  sendWsSubscribeMessage,
-  WsChannel,
-} from "../../../../../../services/webSockets";
+  addWsEventListener,
+  subscribeWsChannels,
+} from "../../../../../../services/webSocket/ws";
 import JobStepper from "./JobStepper";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { getProgress } from "../../../../../../services/api/tasks";
+import { getJobProgress } from "../../../../../../services/api/launcher";
+import { WsEvent } from "@/services/webSocket/types";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -47,21 +58,21 @@ function LauncherHistory(props: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const handleEvents = useCallback(
-    (msg: WSMessage): void => {
+    (event: WsEvent): void => {
       if (study === undefined) {
         return;
       }
-      if (msg.type === WSEvent.STUDY_JOB_STARTED) {
-        const newJob = mapLaunchJobDTO(msg.payload as LaunchJobDTO);
+      if (event.type === WsEventType.StudyJobStarted) {
+        const newJob = mapLaunchJobDTO(event.payload);
         if (newJob.studyId === study.id) {
           const existingJobs = studyJobs || [];
           setStudyJobs([newJob].concat(existingJobs));
         }
       } else if (
-        msg.type === WSEvent.STUDY_JOB_STATUS_UPDATE ||
-        msg.type === WSEvent.STUDY_JOB_COMPLETED
+        event.type === WsEventType.StudyJobStatusUpdate ||
+        event.type === WsEventType.StudyJobCompleted
       ) {
-        const newJob = mapLaunchJobDTO(msg.payload as LaunchJobDTO);
+        const newJob = mapLaunchJobDTO(event.payload);
         if (newJob.studyId === study.id) {
           const existingJobs = studyJobs || [];
           if (!existingJobs.find((j) => j.id === newJob.id)) {
@@ -77,12 +88,12 @@ function LauncherHistory(props: Props) {
             );
           }
         }
-      } else if (msg.type === WSEvent.STUDY_JOB_LOG_UPDATE) {
+      } else if (event.type === WsEventType.StudyJobLogUpdate) {
         // TODO
-      } else if (msg.type === WSEvent.STUDY_EDITED) {
+      } else if (event.type === WsEventType.StudyEdited) {
         // TODO
-      } else if (msg.type === WSEvent.LAUNCH_PROGRESS) {
-        const message = msg.payload as LaunchJobProgressDTO;
+      } else if (event.type === WsEventType.LaunchProgress) {
+        const message = event.payload;
         setStudyJobsProgress((studyJobsProgress) => ({
           ...studyJobsProgress,
           [message.id]: message.progress,
@@ -104,7 +115,7 @@ function LauncherHistory(props: Props) {
               .filter((o) => o.status === "running")
               .map(async (item) => ({
                 id: item.id,
-                progress: await getProgress(item.id),
+                progress: await getJobProgress({ id: item.id }),
               })),
           );
 
@@ -144,12 +155,12 @@ function LauncherHistory(props: Props) {
   }, [study, t, enqueueErrorSnackbar]);
 
   useEffect(() => {
-    return addWsMessageListener(handleEvents);
+    return addWsEventListener(handleEvents);
   }, [handleEvents]);
 
   useEffect(() => {
     const channels = studyJobs.map((job) => WsChannel.JobStatus + job.id);
-    return sendWsSubscribeMessage(channels);
+    return subscribeWsChannels(channels);
   }, [studyJobs]);
 
   return (

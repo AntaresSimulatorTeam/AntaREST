@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -80,6 +94,7 @@ export interface FormProps<
   hideFooterDivider?: boolean;
   onStateChange?: (state: FormState<TFieldValues>) => void;
   autoSubmit?: boolean | AutoSubmitConfig;
+  allowSubmitOnPristine?: boolean;
   enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext> | undefined>;
@@ -105,6 +120,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     hideFooterDivider,
     onStateChange,
     autoSubmit,
+    allowSubmitOnPristine,
     enableUndoRedo,
     className,
     sx,
@@ -154,12 +170,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   const { getValues, setValue, setError, handleSubmit, formState, reset } =
     formApi;
+
   // * /!\ `formState` is a proxy
-  const { isSubmitting, isSubmitSuccessful, isDirty, dirtyFields, errors } =
-    formState;
+  const {
+    isSubmitting,
+    isSubmitSuccessful,
+    isDirty,
+    disabled: isDisabled,
+    dirtyFields,
+    errors,
+  } = formState;
+
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
-  const isSubmitAllowed = isDirty && !isSubmitting;
+  const isSubmitAllowed =
+    (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
   const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
   const showFooter = showSubmitButton || enableUndoRedo || rootError;
@@ -282,8 +307,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
       return Promise.all(toResolve)
         .then((values) => {
           submitSuccessfulCb.current = () => {
-            const onSubmitRes = onSubmit ? R.last(values) : undefined;
-            onSubmitSuccessful?.(dataArg, onSubmitRes);
+            const submitRes = onSubmit ? R.last(values) : undefined;
+            onSubmitSuccessful?.(dataArg, submitRes);
           };
         })
         .catch((err) => {

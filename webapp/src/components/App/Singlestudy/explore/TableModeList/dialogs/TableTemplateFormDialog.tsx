@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { Box } from "@mui/material";
 import { startCase } from "lodash";
 import { useTranslation } from "react-i18next";
@@ -9,8 +23,9 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import { getTableColumnsForType, type TableTemplate } from "../utils";
 import { TABLE_MODE_TYPES } from "../../../../../../services/api/studies/tableMode/constants";
-import { validateString } from "../../../../../../utils/validationUtils";
 import { useMemo } from "react";
+import { validateArray } from "@/utils/validation/array";
+import { validateString } from "@/utils/validation/string";
 
 export interface TableTemplateFormDialogProps
   extends Pick<
@@ -88,7 +103,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
             getOptionLabel={startCase}
             name="columns"
             control={control}
-            rules={{ required: true }}
+            rules={{ validate: validateArray() }}
           />
         </Box>
       )}

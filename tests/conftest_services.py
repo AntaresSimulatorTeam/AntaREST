@@ -29,7 +29,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, Task
+from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
@@ -85,10 +85,11 @@ class SynchTaskService(ITaskService):
         name: t.Optional[str],
         task_type: t.Optional[TaskType],
         ref_id: t.Optional[str],
+        progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
         request_params: RequestParameters,
     ) -> str:
-        self._task_result = action(lambda message: None)
+        self._task_result = action(NoopNotifier())
         return str(uuid.uuid4())
 
     def status_task(

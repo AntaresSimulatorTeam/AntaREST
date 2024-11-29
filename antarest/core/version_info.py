@@ -18,17 +18,17 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from pydantic import BaseModel
+from antarest.core.serialization import AntaresBaseModel
 
 
-class VersionInfoDTO(BaseModel):
+class VersionInfoDTO(AntaresBaseModel):
     name: str = "AntaREST"
     version: str
     gitcommit: str
     dependencies: Dict[str, str]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "AntaREST",
                 "version": "2.13.2",

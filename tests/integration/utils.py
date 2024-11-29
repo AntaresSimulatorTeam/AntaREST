@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import contextlib
+import os
 import time
 from typing import Callable
 
@@ -29,24 +30,32 @@ def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: flo
     raise TimeoutError(f"task is still in progress after {timeout} seconds")
 
 
+IS_WINDOWS = os.name == "nt"
+TIMEOUT_MULTIPLIER = 2 if IS_WINDOWS else 1
+
+
 def wait_task_completion(
     client: TestClient,
     access_token: str,
     task_id: str,
     *,
-    timeout: float = 10,
+    base_timeout: float = 10,
 ) -> TaskDTO:
-    end_time = time.time() + timeout
-    while time.time() < end_time:
-        time.sleep(0.1)
-        res = client.request(
-            "GET",
-            f"/v1/tasks/{task_id}",
-            headers={"Authorization": f"Bearer {access_token}"},
-            json={"wait_for_completion": True},
-        )
-        assert res.status_code == 200
+    """
+    base_timeout is multiplied by 2 on windows to cope with slow CI
+    """
+    timeout = TIMEOUT_MULTIPLIER * base_timeout
+    params = {"wait_for_completion": True, "timeout": timeout}
+    res = client.request(
+        "GET",
+        f"/v1/tasks/{task_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=params,
+    )
+    if res.status_code == 200:
         task = TaskDTO(**res.json())
         if task.status not in {TaskStatus.PENDING, TaskStatus.RUNNING}:
             return task
-    raise TimeoutError(f"{timeout} seconds")
+    elif res.status_code == 408:
+        raise TimeoutError(f"{timeout} seconds")
+    raise ValueError(f"Unexpected status code {res.status_code}")

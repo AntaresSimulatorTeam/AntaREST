@@ -12,7 +12,7 @@
 
 import typing as t
 
-from pydantic import validator
+from pydantic import field_validator
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -25,6 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import cr
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -36,17 +37,17 @@ class CreateRenewablesCluster(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_RENEWABLES_CLUSTER
-    version = 1
+    command_name: CommandName = CommandName.CREATE_RENEWABLES_CLUSTER
+    version: int = 1
 
     # Command parameters
     # ==================
 
     area_id: str
     cluster_name: str
-    parameters: t.Dict[str, str]
+    parameters: t.Dict[str, t.Any]
 
-    @validator("cluster_name")
+    @field_validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:
@@ -100,7 +101,7 @@ class CreateRenewablesCluster(ICommand):
             {"cluster_id": cluster.id},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output

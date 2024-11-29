@@ -1,10 +1,24 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Button,
   Divider,
-  Unstable_Grid2 as Grid,
+  Grid2 as Grid,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import * as R from "ramda";
@@ -152,7 +166,7 @@ function ThematicTrimmingDialog(props: Props) {
             const fields = getFieldLabelsForGroup(api.getValues(), group)
               .filter(([, label]) => isSearchMatching(search, label))
               .map(([name, label]) => (
-                <Grid key={name} xs={4}>
+                <Grid key={name} size={{ xs: 4 }}>
                   <SwitchFE name={name} label={label} control={api.control} />
                 </Grid>
               ));
@@ -172,12 +186,7 @@ function ThematicTrimmingDialog(props: Props) {
                   )}
                 </AccordionSummary>
                 <AccordionDetails>
-                  <Grid
-                    container
-                    disableEqualOverflow
-                    spacing={1}
-                    sx={{ overflow: "auto", p: 1 }}
-                  >
+                  <Grid container spacing={1} sx={{ overflow: "auto", p: 1 }}>
                     {fields}
                   </Grid>
                 </AccordionDetails>

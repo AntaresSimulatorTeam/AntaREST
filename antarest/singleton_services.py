@@ -19,17 +19,16 @@ from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
-from antarest.study.storage.auto_archive_service import AutoArchiveService
-from antarest.utils import (
+from antarest.service_creator import (
     SESSION_ARGS,
     Module,
     create_archive_worker,
     create_core_services,
     create_matrix_gc,
-    create_simulator_worker,
     create_watcher,
     init_db_engine,
 )
+from antarest.study.storage.auto_archive_service import AutoArchiveService
 
 
 def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IService]:
@@ -56,13 +55,13 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     services: Dict[Module, IService] = {}
 
     if Module.WATCHER in services_list:
-        watcher = create_watcher(config=config, application=None, study_service=study_service)
+        watcher = create_watcher(config=config, app_ctxt=None, study_service=study_service)
         services[Module.WATCHER] = watcher
 
     if Module.MATRIX_GC in services_list:
         matrix_gc = create_matrix_gc(
             config=config,
-            application=None,
+            app_ctxt=None,
             study_service=study_service,
             matrix_service=matrix_service,
         )
@@ -71,10 +70,6 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     if Module.ARCHIVE_WORKER in services_list:
         worker = create_archive_worker(config, "test", event_bus=event_bus)
         services[Module.ARCHIVE_WORKER] = worker
-
-    if Module.SIMULATOR_WORKER in services_list:
-        worker = create_simulator_worker(config, matrix_service=matrix_service, event_bus=event_bus)
-        services[Module.SIMULATOR_WORKER] = worker
 
     if Module.AUTO_ARCHIVER in services_list:
         auto_archive_service = AutoArchiveService(study_service, config)

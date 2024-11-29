@@ -1,15 +1,30 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box, Paper } from "@mui/material";
-import { MatrixType, StudyMetadata } from "../../../../../common/types";
+import { StudyMetadata } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../common/FileTable";
 import { Title } from "./share/styles";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
+import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 interface PropTypes {
   addResource: (studyId: string, file: File) => Promise<void>;
@@ -17,7 +32,7 @@ interface PropTypes {
   fetchResourceContent: (
     studyId: string,
     filename: string,
-  ) => Promise<MatrixType | string>;
+  ) => Promise<MatrixDataDTO | string>;
   listResources: (studyId: string) => Promise<string[] | undefined>;
   errorMessages?: {
     add?: string;
@@ -43,7 +58,7 @@ function FileList(props: PropTypes) {
   } = props;
   const [viewDialog, setViewDialog] = useState<{
     filename: string;
-    content: MatrixType | string;
+    content: MatrixDataDTO | string;
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
@@ -119,7 +134,7 @@ function FileList(props: PropTypes) {
     <>
       <UsePromiseCond
         response={res}
-        ifResolved={(data) => (
+        ifFulfilled={(data) => (
           <Box sx={{ width: "100%", height: "100%", p: 2 }}>
             <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
               <FileTable
@@ -137,7 +152,6 @@ function FileList(props: PropTypes) {
       />
       {!!viewDialog && (
         <DataViewerDialog
-          studyId={study?.id || ""}
           filename={viewDialog.filename}
           content={viewDialog.content}
           onClose={() => setViewDialog(undefined)}

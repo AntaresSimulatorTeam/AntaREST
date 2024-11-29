@@ -10,105 +10,63 @@
 #
 # This file is part of the Antares project.
 
-import contextlib
+import os
+import sys
+
+# The Pyinstaller version we use has a known issue on windows and to fix it we need to implement this workaround.
+# See issue description and workaround on pyinstaller website:
+# https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html#sys-stdin-sys-stdout-and-sys-stderr-in-noconsole-windowed-applications-windows-only
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+
+import argparse
 import multiprocessing
-import platform
-import time
-import webbrowser
-from multiprocessing import Process
-from pathlib import Path
 
-try:
-    # `httpx` is a modern alternative to the `requests` library
-    import httpx as requests
-    from httpx import ConnectError as ConnectionError
-except ImportError:
-    # noinspection PyUnresolvedReferences, PyPackageRequirements
-    import requests
-    from requests import ConnectionError
-
-import uvicorn  # type: ignore
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QApplication, QMenu, QSystemTrayIcon
-
-from antarest.core.utils.utils import get_local_path
-from antarest.main import fastapi_app, parse_arguments
-
-RESOURCE_PATH = get_local_path() / "resources"
+from antarest import __version__
+from antarest.core.cli import PathType
 
 
-def run_server(config_file: Path) -> None:
-    app = fastapi_app(
-        config_file,
-        mount_front=True,
-        auto_upgrade_db=True,
-    )[0]
-    # noinspection PyTypeChecker
-    uvicorn.run(app, host="127.0.0.1", port=8080)
-
-
-def open_app() -> None:
-    webbrowser.open("http://localhost:8080")
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=PathType(exists=True, file_ok=True),
+        dest="config_file",
+        help="path to the config file [default: '%(default)s']",
+        default="./config.yaml",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        help="Display the server version and exit",
+        version=__version__,
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
+    """
+    Entry point for "desktop" version of antares-web.
+
+    This process actually only runs a small app which is accessible
+    in the system tray.
+    It spawns the actual server as a separate process.
+    The systray app allows to shutdown the server, and to open
+    antares webapp in the users's browser.
+    """
     multiprocessing.freeze_support()
+
     arguments = parse_arguments()
-    if platform.system() == "Windows":
-        # noinspection PyPackageRequirements
-        from win10toast import ToastNotifier  # type: ignore
 
-        toaster = ToastNotifier()
-        toaster.show_toast(
-            "AntaresWebServer",
-            "Antares Web Server started, you can manage the application within the systray app",
-            icon_path=RESOURCE_PATH / "webapp" / "favicon.ico",
-            threaded=True,
-        )
-    else:
-        from plyer import notification  # type: ignore
+    # VERY important to keep this import here in order to have fast startup
+    # when only getting version
+    from antarest.desktop.systray_app import run_systray_app
 
-        notification.notify(
-            title="AntaresWebServer",
-            message="Antares Web Server started, you can manage the application within the systray app",
-            app_name="AntaresWebServer",
-            app_icon=RESOURCE_PATH / "webapp" / "favicon.ico",
-            timeout=600,
-        )
-    app = QApplication([])
-    app.setQuitOnLastWindowClosed(False)
-    # Adding an icon
-    icon = QIcon(str(RESOURCE_PATH / "webapp" / "logo16.png"))
-    # Adding item on the menu bar
-    tray = QSystemTrayIcon()
-    tray.setIcon(icon)
-    tray.setVisible(True)
-    # Creating the options
-    menu = QMenu()
-    open_app_action = QAction("Open application")
-    menu.addAction(open_app_action)
-    open_app_action.triggered.connect(open_app)
-    # To quit the app
-    quit_action = QAction("Quit")
-    quit_action.triggered.connect(app.quit)
-    menu.addAction(quit_action)
-    # Adding options to the System Tray
-    tray.setContextMenu(menu)
-    app.processEvents()
-    tray.setToolTip("AntaresWebServer")
-    server = Process(
-        target=run_server,
-        args=(arguments.config_file,),
-    )
-    server.start()
-    for _ in range(30, 0, -1):
-        with contextlib.suppress(ConnectionError):
-            res = requests.get("http://localhost:8080")
-            if res.status_code == 200:
-                break
-        time.sleep(1)
-    app.exec_()
-    server.kill()
+    run_systray_app(arguments.config_file)
 
 
 if __name__ == "__main__":

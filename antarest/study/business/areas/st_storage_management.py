@@ -11,14 +11,12 @@
 # This file is part of the Antares project.
 
 import collections
-import functools
-import json
 import operator
 import typing as t
 
 import numpy as np
-from pydantic import BaseModel, Extra, root_validator, validator
-from requests.structures import CaseInsensitiveDict
+from antares.study.version import StudyVersion
+from pydantic import field_validator, model_validator
 from typing_extensions import Literal
 
 from antarest.core.exceptions import (
@@ -30,9 +28,11 @@ from antarest.core.exceptions import (
     STStorageNotFound,
 )
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.core.requests import CaseInsensitiveDict
+from antarest.core.serialization import AntaresBaseModel
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
@@ -49,15 +49,16 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
+@all_optional_model
 @camel_case_model
-class STStorageInput(STStorage880Properties, metaclass=AllOptionalMetaclass, use_none=True):
+class STStorageInput(STStorage880Properties):
     """
     Model representing the form used to EDIT an existing short-term storage.
     """
 
     class Config:
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = STStorageInput(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
@@ -67,7 +68,7 @@ class STStorageInput(STStorage880Properties, metaclass=AllOptionalMetaclass, use
                 efficiency=0.94,
                 initial_level=0.5,
                 initial_level_optim=True,
-            )
+            ).model_dump(mode="json")
 
 
 class STStorageCreation(STStorageInput):
@@ -76,7 +77,7 @@ class STStorageCreation(STStorageInput):
     """
 
     # noinspection Pydantic
-    @validator("name", pre=True)
+    @field_validator("name", mode="before")
     def validate_name(cls, name: t.Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
@@ -86,20 +87,21 @@ class STStorageCreation(STStorageInput):
         return name
 
     # noinspection PyUnusedLocal
-    def to_config(self, study_version: t.Union[str, int]) -> STStorageConfigType:
-        values = self.dict(by_alias=False, exclude_none=True)
+    def to_config(self, study_version: StudyVersion) -> STStorageConfigType:
+        values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
         return create_st_storage_config(study_version=study_version, **values)
 
 
+@all_optional_model
 @camel_case_model
-class STStorageOutput(STStorage880Config, metaclass=AllOptionalMetaclass, use_none=True):
+class STStorageOutput(STStorage880Config):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """
 
     class Config:
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = STStorageOutput(
                 id="siemens_battery",
                 name="Siemens Battery",
@@ -109,7 +111,7 @@ class STStorageOutput(STStorage880Config, metaclass=AllOptionalMetaclass, use_no
                 reservoir_capacity=600,
                 efficiency=0.94,
                 initial_level_optim=True,
-            )
+            ).model_dump(mode="json")
 
 
 # =============
@@ -117,7 +119,7 @@ class STStorageOutput(STStorage880Config, metaclass=AllOptionalMetaclass, use_no
 # =============
 
 
-class STStorageMatrix(BaseModel):
+class STStorageMatrix(AntaresBaseModel):
     """
     Short-Term Storage Matrix  Model.
 
@@ -131,13 +133,13 @@ class STStorageMatrix(BaseModel):
     """
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     data: t.List[t.List[float]]
     index: t.List[int]
     columns: t.List[int]
 
-    @validator("data")
+    @field_validator("data")
     def validate_time_series(cls, data: t.List[t.List[float]]) -> t.List[t.List[float]]:
         """
         Validator to check the integrity of the time series data.
@@ -157,7 +159,7 @@ class STStorageMatrix(BaseModel):
 
 
 # noinspection SpellCheckingInspection
-class STStorageMatrices(BaseModel):
+class STStorageMatrices(AntaresBaseModel):
     """
     Short-Term Storage Matrices Validation Model.
 
@@ -172,7 +174,7 @@ class STStorageMatrices(BaseModel):
     """
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
 
     pmax_injection: STStorageMatrix
     pmax_withdrawal: STStorageMatrix
@@ -180,7 +182,7 @@ class STStorageMatrices(BaseModel):
     upper_rule_curve: STStorageMatrix
     inflows: STStorageMatrix
 
-    @validator(
+    @field_validator(
         "pmax_injection",
         "pmax_withdrawal",
         "lower_rule_curve",
@@ -195,23 +197,18 @@ class STStorageMatrices(BaseModel):
             raise ValueError("Matrix values should be between 0 and 1")
         return matrix
 
-    @root_validator()
-    def validate_rule_curve(
-        cls, values: t.MutableMapping[str, STStorageMatrix]
-    ) -> t.MutableMapping[str, STStorageMatrix]:
+    @model_validator(mode="after")
+    def validate_rule_curve(self) -> "STStorageMatrices":
         """
         Validator to ensure 'lower_rule_curve' values are less than
         or equal to 'upper_rule_curve' values.
         """
-        if "lower_rule_curve" in values and "upper_rule_curve" in values:
-            lower_rule_curve = values["lower_rule_curve"]
-            upper_rule_curve = values["upper_rule_curve"]
-            lower_array = np.array(lower_rule_curve.data, dtype=np.float64)
-            upper_array = np.array(upper_rule_curve.data, dtype=np.float64)
-            # noinspection PyUnresolvedReferences
-            if (lower_array > upper_array).any():
-                raise ValueError("Each 'lower_rule_curve' value must be lower or equal to each 'upper_rule_curve'")
-        return values
+        lower_array = np.array(self.lower_rule_curve.data, dtype=np.float64)
+        upper_array = np.array(self.upper_rule_curve.data, dtype=np.float64)
+        if (lower_array > upper_array).any():
+            raise ValueError("Each 'lower_rule_curve' value must be lower or equal to each 'upper_rule_curve'")
+
+        return self
 
 
 # noinspection SpellCheckingInspection
@@ -244,12 +241,12 @@ def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.
 
 
 def create_storage_output(
-    study_version: t.Union[str, int],
+    study_version: StudyVersion,
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "STStorageOutput":
     obj = create_st_storage_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.dict(by_alias=False)
+    kwargs = obj.model_dump(mode="json", by_alias=False)
     return STStorageOutput(**kwargs)
 
 
@@ -288,7 +285,7 @@ class STStorageManager:
         file_study = self._get_file_study(study)
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        storage = form.to_config(study.version)
+        storage = form.to_config(StudyVersion.parse(study.version))
         values = values_by_ids.get(storage.id)
         if values is not None:
             raise DuplicateSTStorage(area_id, storage.id)
@@ -338,7 +335,7 @@ class STStorageManager:
 
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
-        study_version = int(study.version)
+        study_version = StudyVersion.parse(study.version)
         storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
         return sorted(storages, key=order_by)
 
@@ -369,7 +366,7 @@ class STStorageManager:
         except KeyError:
             raise STStorageConfigNotFound(path) from None
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageOutput]]
         storages_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in storages.items():
@@ -393,17 +390,20 @@ class STStorageManager:
             for storage_id, update_cluster in update_storages_by_ids.items():
                 # Update the storage cluster properties.
                 old_cluster = old_storages_by_ids[storage_id]
-                new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
+                new_cluster = old_cluster.copy(
+                    update=update_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
+                )
                 new_storages_by_areas[area_id][storage_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_st_storage_config(
-                    study.version, **new_cluster.dict(by_alias=False, exclude_none=True)
+                    StudyVersion.parse(study.version),
+                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
                 )
                 path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
                 cmd = UpdateConfig(
                     target=path,
-                    data=json.loads(properties.json(by_alias=True, exclude={"id"})),
+                    data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 )
                 commands.append(cmd)
@@ -437,7 +437,7 @@ class STStorageManager:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageNotFound(path, storage_id) from None
-        return create_storage_output(int(study.version), storage_id, config)
+        return create_storage_output(StudyVersion.parse(study.version), storage_id, config)
 
     def update_storage(
         self,
@@ -457,7 +457,7 @@ class STStorageManager:
         Returns:
             Updated form of short-term storage.
         """
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
 
         #  For variants, this method requires generating a snapshot, which takes time.
         #  But sadly, there's no other way to prevent creating wrong commands.
@@ -472,16 +472,16 @@ class STStorageManager:
         old_config = create_st_storage_config(study_version, **values)
 
         # use Python values to synchronize Config and Form values
-        new_values = form.dict(by_alias=False, exclude_none=True)
+        new_values = form.model_dump(mode="json", by_alias=False, exclude_none=True)
         new_config = old_config.copy(exclude={"id"}, update=new_values)
-        new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
+        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
-        data: t.Dict[str, t.Any] = {
-            field.alias: new_data[field.alias]
-            for field_name, field in new_config.__fields__.items()
-            if field_name in new_values
-        }
+        data: t.Dict[str, t.Any] = {}
+        for field_name, field in new_config.model_fields.items():
+            if field_name in new_values:
+                name = field.alias if field.alias else field_name
+                data[name] = new_data[name]
 
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -492,7 +492,7 @@ class STStorageManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = new_config.dict(by_alias=False)
+        values = new_config.model_dump(mode="json", by_alias=False)
         return STStorageOutput(**values, id=storage_id)
 
     def delete_storages(
@@ -552,11 +552,14 @@ class STStorageManager:
         current_cluster.name = new_cluster_name
         fields_to_exclude = {"id"}
         # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
-        if int(study.version) < 880:
+        study_version = StudyVersion.parse(study.version)
+        if study_version < STUDY_VERSION_8_8:
             fields_to_exclude.add("enabled")
-        creation_form = STStorageCreation(**current_cluster.dict(by_alias=False, exclude=fields_to_exclude))
+        creation_form = STStorageCreation(
+            **current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
+        )
 
-        new_config = creation_form.to_config(study.version)
+        new_config = creation_form.to_config(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition
@@ -583,7 +586,7 @@ class STStorageManager:
 
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
-        return STStorageOutput(**new_config.dict(by_alias=False))
+        return STStorageOutput(**new_config.model_dump(mode="json", by_alias=False))
 
     def get_matrix(
         self,
@@ -684,17 +687,18 @@ class STStorageManager:
         Returns:
             bool: True if validation is successful.
         """
-        # Create a partial function to retrieve matrix objects
-        get_matrix_obj = functools.partial(self._get_matrix_obj, study, area_id, storage_id)
+
+        def validate_matrix(matrix_type: STStorageTimeSeries) -> STStorageMatrix:
+            return STStorageMatrix.model_validate(self._get_matrix_obj(study, area_id, storage_id, matrix_type))
 
         # Validate matrices by constructing the `STStorageMatrices` object
         # noinspection SpellCheckingInspection
         STStorageMatrices(
-            pmax_injection=get_matrix_obj("pmax_injection"),
-            pmax_withdrawal=get_matrix_obj("pmax_withdrawal"),
-            lower_rule_curve=get_matrix_obj("lower_rule_curve"),
-            upper_rule_curve=get_matrix_obj("upper_rule_curve"),
-            inflows=get_matrix_obj("inflows"),
+            pmax_injection=validate_matrix("pmax_injection"),
+            pmax_withdrawal=validate_matrix("pmax_withdrawal"),
+            lower_rule_curve=validate_matrix("lower_rule_curve"),
+            upper_rule_curve=validate_matrix("upper_rule_curve"),
+            inflows=validate_matrix("inflows"),
         )
 
         # Validation successful

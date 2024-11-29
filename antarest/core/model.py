@@ -13,7 +13,7 @@
 import enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from antarest.core.serialization import AntaresBaseModel
 
 if TYPE_CHECKING:
     # These dependencies are only used for type checking with mypy.
@@ -21,10 +21,10 @@ if TYPE_CHECKING:
 
 JSON = Dict[str, Any]
 ELEMENT = Union[str, int, float, bool, bytes]
-SUB_JSON = Union[ELEMENT, JSON, List, None]
+SUB_JSON = Union[ELEMENT, JSON, List[Any], None]
 
 
-class PublicMode(str, enum.Enum):
+class PublicMode(enum.StrEnum):
     NONE = "NONE"
     READ = "READ"
     EXECUTE = "EXECUTE"
@@ -32,7 +32,7 @@ class PublicMode(str, enum.Enum):
     FULL = "FULL"
 
 
-class StudyPermissionType(str, enum.Enum):
+class StudyPermissionType(enum.StrEnum):
     """
     User permission belongs to Study
     """
@@ -43,7 +43,7 @@ class StudyPermissionType(str, enum.Enum):
     MANAGE_PERMISSIONS = "MANAGE_PERMISSIONS"
 
 
-class PermissionInfo(BaseModel):
+class PermissionInfo(AntaresBaseModel):
     owner: Optional[int] = None
     groups: List[str] = []
     public_mode: PublicMode = PublicMode.NONE

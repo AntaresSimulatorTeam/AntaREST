@@ -12,6 +12,7 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -405,7 +406,7 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
 ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
 
 
-def get_thermal_config_cls(study_version: t.Union[str, int]) -> t.Type[ThermalConfigType]:
+def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
     """
     Retrieves the thermal configuration class based on the study version.
 
@@ -415,16 +416,15 @@ def get_thermal_config_cls(study_version: t.Union[str, int]) -> t.Type[ThermalCo
     Returns:
         The thermal configuration class.
     """
-    version = int(study_version)
-    if version >= 870:
+    if study_version >= 870:
         return Thermal870Config
-    elif version == 860:
+    elif study_version == 860:
         return Thermal860Config
     else:
         return ThermalConfig
 
 
-def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> ThermalConfigType:
+def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:
     """
     Factory method to create a thermal configuration model.
 
@@ -439,4 +439,4 @@ def create_thermal_config(study_version: t.Union[str, int], **kwargs: t.Any) -> 
         ValueError: If the study version is not supported.
     """
     cls = get_thermal_config_cls(study_version)
-    return cls(**kwargs)
+    return cls.model_validate(kwargs)

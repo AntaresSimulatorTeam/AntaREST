@@ -30,7 +30,7 @@ class TestFilesystemDTO:
                 "common": "/path/to/workspaces/common_studies",
             },
         }
-        dto = FilesystemDTO.parse_obj(example)
+        dto = FilesystemDTO.model_validate(example)
         assert dto.name == example["name"]
         assert dto.mount_dirs["default"] == Path(example["mount_dirs"]["default"])
         assert dto.mount_dirs["common"] == Path(example["mount_dirs"]["common"])
@@ -46,7 +46,7 @@ class TestMountPointDTO:
             "free_bytes": 1e9 - 0.6e9,
             "message": f"{0.6e9 / 1e9:%} used",
         }
-        dto = MountPointDTO.parse_obj(example)
+        dto = MountPointDTO.model_validate(example)
         assert dto.name == example["name"]
         assert dto.path == Path(example["path"])
         assert dto.total_bytes == example["total_bytes"]
@@ -90,7 +90,7 @@ class TestFileInfoDTO:
             "accessed": "2024-01-11T17:54:09",
             "message": "OK",
         }
-        dto = FileInfoDTO.parse_obj(example)
+        dto = FileInfoDTO.model_validate(example)
         assert dto.path == Path(example["path"])
         assert dto.file_type == example["file_type"]
         assert dto.file_count == example["file_count"]

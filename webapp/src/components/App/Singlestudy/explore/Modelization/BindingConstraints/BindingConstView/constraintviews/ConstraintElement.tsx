@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { FormControlLabel, Switch, Typography } from "@mui/material";
 import { ReactNode } from "react";
 import { ConstraintElementData, ConstraintElementRoot } from "./style";
@@ -11,11 +25,11 @@ interface ElementProps {
   onToggleType?: () => void;
 }
 
-export default function ConstraintElement({
+function ConstraintElement({
   isLink,
   left,
   right,
-  operator,
+  operator = "x",
   onToggleType,
 }: ElementProps) {
   const { t } = useTranslation();
@@ -39,6 +53,4 @@ export default function ConstraintElement({
   );
 }
 
-ConstraintElement.defaultProps = {
-  operator: "x",
-};
+export default ConstraintElement;

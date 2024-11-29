@@ -1,19 +1,34 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useCallback, useEffect, useState } from "react";
-import { usePromise as usePromiseWrapper } from "react-use";
 import { isDependencyList } from "../utils/reactUtils";
 
-export enum PromiseStatus {
-  Idle = "idle",
-  Pending = "pending",
-  Resolved = "resolved",
-  Rejected = "rejected",
-}
+export const PromiseStatus = {
+  Idle: "idle",
+  Pending: "pending",
+  Fulfilled: "fulfilled",
+  Rejected: "rejected",
+} as const;
+
+export type TPromiseStatus = (typeof PromiseStatus)[keyof typeof PromiseStatus];
 
 export interface UsePromiseResponse<T> {
   data: T | undefined;
-  status: PromiseStatus;
+  status: TPromiseStatus;
   isLoading: boolean;
-  isResolved: boolean;
+  isFulfilled: boolean;
   isRejected: boolean;
   error: Error | string | undefined;
   reload: () => void;
@@ -37,43 +52,39 @@ function usePromise<T>(
 ): UsePromiseResponse<T> {
   const { deps = [], resetDataOnReload, resetErrorOnReload } = toParams(params);
   const [data, setData] = useState<T>();
-  const [status, setStatus] = useState(PromiseStatus.Idle);
+  const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Error | string | undefined>();
   const [reloadCount, setReloadCount] = useState(0);
   const reload = useCallback(() => setReloadCount((prev) => prev + 1), []);
-  const mounted = usePromiseWrapper();
 
-  useEffect(
-    () => {
-      setStatus(PromiseStatus.Pending);
-      // Reset
-      if (resetDataOnReload) {
-        setData(undefined);
-      }
-      if (resetErrorOnReload) {
-        setError(undefined);
-      }
+  useEffect(() => {
+    setStatus(PromiseStatus.Pending);
 
-      mounted(fn())
-        .then((res) => {
-          setData(res);
-          setStatus(PromiseStatus.Resolved);
-        })
-        .catch((err) => {
-          setError(err);
-          setStatus(PromiseStatus.Rejected);
-        });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [reloadCount, ...deps],
-  );
+    // Reset
+    if (resetDataOnReload) {
+      setData(undefined);
+    }
+    if (resetErrorOnReload) {
+      setError(undefined);
+    }
+
+    fn()
+      .then((res) => {
+        setData(res);
+        setStatus(PromiseStatus.Fulfilled);
+      })
+      .catch((err) => {
+        setError(err);
+        setStatus(PromiseStatus.Rejected);
+      });
+  }, [reloadCount, ...deps]);
 
   return {
     data,
     status,
     isLoading:
       status === PromiseStatus.Idle || status === PromiseStatus.Pending,
-    isResolved: status === PromiseStatus.Resolved,
+    isFulfilled: status === PromiseStatus.Fulfilled,
     isRejected: status === PromiseStatus.Rejected,
     error,
     reload,

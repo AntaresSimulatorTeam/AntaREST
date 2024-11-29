@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useTranslation } from "react-i18next";
 import { Box, CircularProgress } from "@mui/material";
 
@@ -9,7 +23,7 @@ interface PropTypes {
 
 function SimpleLoader(props: PropTypes) {
   const [t] = useTranslation();
-  const { progress, message, color } = props;
+  const { progress, message, color = "rgba(0,0,0,0)" } = props;
   return (
     <Box
       display="flex"
@@ -60,11 +74,5 @@ function SimpleLoader(props: PropTypes) {
     </Box>
   );
 }
-
-SimpleLoader.defaultProps = {
-  progress: undefined,
-  message: undefined,
-  color: "rgba(0,0,0,0)",
-};
 
 export default SimpleLoader;

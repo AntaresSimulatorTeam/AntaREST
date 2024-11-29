@@ -45,7 +45,7 @@ class TestConfigGeneralForm:
             "firstJanuary": "Monday",
             "firstMonth": "january",
             "firstWeekDay": "Monday",
-            "horizon": "2030",
+            "horizon": 2030,
             "lastDay": 7,
             "leapYear": False,
             "mcScenario": True,

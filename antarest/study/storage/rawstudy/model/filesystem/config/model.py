@@ -14,8 +14,10 @@ import re
 import typing as t
 from pathlib import Path
 
-from pydantic import BaseModel, Field, root_validator
+from antares.study.version import StudyVersion
+from pydantic import Field, field_serializer, field_validator, model_validator
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
@@ -49,7 +51,7 @@ class EnrModelling(EnumIgnoreCase):
         return self.value
 
 
-class Link(BaseModel, extra="ignore"):
+class Link(AntaresBaseModel, extra="ignore"):
     """
     Object linked to /input/links/<link>/properties.ini information
 
@@ -64,7 +66,7 @@ class Link(BaseModel, extra="ignore"):
     filters_synthesis: t.List[str] = Field(default_factory=list)
     filters_year: t.List[str] = Field(default_factory=list)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validation(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
         # note: field names are in kebab-case in the INI file
         filters_synthesis = values.pop("filter-synthesis", values.pop("filters_synthesis", ""))
@@ -74,7 +76,7 @@ class Link(BaseModel, extra="ignore"):
         return values
 
 
-class Area(BaseModel, extra="forbid"):
+class Area(AntaresBaseModel, extra="forbid"):
     """
     Object linked to /input/<area>/optimization.ini information
     """
@@ -89,12 +91,12 @@ class Area(BaseModel, extra="forbid"):
     st_storages: t.List[STStorageConfigType] = []
 
 
-class DistrictSet(BaseModel):
+class DistrictSet(AntaresBaseModel):
     """
     Object linked to /inputs/sets.ini information
     """
 
-    ALL = ["hourly", "daily", "weekly", "monthly", "annual"]
+    ALL: t.List[str] = ["hourly", "daily", "weekly", "monthly", "annual"]
     name: t.Optional[str] = None
     inverted_set: bool = False
     areas: t.Optional[t.List[str]] = None
@@ -108,7 +110,7 @@ class DistrictSet(BaseModel):
         return self.areas or []
 
 
-class Simulation(BaseModel):
+class Simulation(AntaresBaseModel):
     """
     Object linked to /output/<simulation_name>/about-the-study/** information
     """
@@ -130,7 +132,7 @@ class Simulation(BaseModel):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class BindingConstraintDTO(BaseModel):
+class BindingConstraintDTO(AntaresBaseModel):
     """
     Object linked to `input/bindingconstraints/bindingconstraints.ini` information
 
@@ -162,7 +164,7 @@ class FileStudyTreeConfig(DTO):
         study_path: Path,
         path: Path,
         study_id: str,
-        version: int,
+        version: StudyVersion,
         output_path: t.Optional[Path] = None,
         areas: t.Optional[t.Dict[str, Area]] = None,
         sets: t.Optional[t.Dict[str, DistrictSet]] = None,
@@ -172,7 +174,7 @@ class FileStudyTreeConfig(DTO):
         archive_input_series: t.Optional[t.List[str]] = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
         cache: t.Optional[t.Dict[str, t.List[str]]] = None,
-        zip_path: t.Optional[Path] = None,
+        archive_path: t.Optional[Path] = None,
     ):
         self.study_path = study_path
         self.path = path
@@ -187,13 +189,13 @@ class FileStudyTreeConfig(DTO):
         self.archive_input_series = archive_input_series or []
         self.enr_modelling = enr_modelling
         self.cache = cache or {}
-        self.zip_path = zip_path
+        self.archive_path = archive_path
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
-            zip_path: t.Optional[Path] = self.path / f"{name}.zip"
+            archive_path: t.Optional[Path] = self.path / f"{name}.zip"
         else:
-            zip_path = self.zip_path
+            archive_path = self.archive_path
 
         return FileStudyTreeConfig(
             study_path=self.study_path,
@@ -209,7 +211,7 @@ class FileStudyTreeConfig(DTO):
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
             cache=self.cache,
-            zip_path=zip_path,
+            archive_path=archive_path,
         )
 
     def at_file(self, filepath: Path) -> "FileStudyTreeConfig":
@@ -302,11 +304,11 @@ def transform_name_to_id(name: str, lower: bool = True) -> str:
     return valid_id.lower() if lower else valid_id
 
 
-class FileStudyTreeConfigDTO(BaseModel):
+class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_path: Path
     path: Path
     study_id: str
-    version: int
+    version: StudyVersion
     output_path: t.Optional[Path] = None
     areas: t.Dict[str, Area] = dict()
     sets: t.Dict[str, DistrictSet] = dict()
@@ -315,7 +317,15 @@ class FileStudyTreeConfigDTO(BaseModel):
     store_new_set: bool = False
     archive_input_series: t.List[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)
-    zip_path: t.Optional[Path] = None
+    archive_path: t.Optional[Path] = None
+
+    @field_serializer("version")
+    def serialize_version(self, version: StudyVersion) -> int:
+        return version.__int__()
+
+    @field_validator("version", mode="before")
+    def _validate_version(cls, v: t.Any) -> StudyVersion:
+        return StudyVersion.parse(v)
 
     @staticmethod
     def from_build_config(
@@ -334,7 +344,7 @@ class FileStudyTreeConfigDTO(BaseModel):
             store_new_set=config.store_new_set,
             archive_input_series=config.archive_input_series,
             enr_modelling=config.enr_modelling,
-            zip_path=config.zip_path,
+            archive_path=config.archive_path,
         )
 
     def to_build_config(self) -> FileStudyTreeConfig:
@@ -351,5 +361,5 @@ class FileStudyTreeConfigDTO(BaseModel):
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
-            zip_path=self.zip_path,
+            archive_path=self.archive_path,
         )

@@ -17,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_district import DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -28,17 +29,17 @@ class UpdateDistrict(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_DISTRICT
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_DISTRICT
+    version: int = 1
 
     # Command parameters
     # ==================
 
     id: str
-    base_filter: Optional[DistrictBaseFilter]
-    filter_items: Optional[List[str]]
-    output: Optional[bool]
-    comments: Optional[str]
+    base_filter: Optional[DistrictBaseFilter] = None
+    filter_items: Optional[List[str]] = None
+    output: Optional[bool] = None
+    comments: Optional[str] = None
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         base_set = study_data.sets[self.id]
@@ -66,7 +67,7 @@ class UpdateDistrict(ICommand):
             "item_key": item_key,
         }
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output

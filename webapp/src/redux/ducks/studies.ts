@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   createAction,
   createAsyncThunk,
@@ -10,9 +24,7 @@ import {
   GroupDTO,
   StudyMetadata,
   StudyPublicMode,
-  StudySummary,
   UserDTO,
-  WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
@@ -24,6 +36,7 @@ import {
   createThunk,
 } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
+import type { StudyEventPayload } from "@/services/webSocket/types";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -181,12 +194,9 @@ export const createStudy = createAsyncThunk<
 
 export const setStudy = createAsyncThunk<
   StudyMetadata,
-  WSMessage<StudySummary>,
+  StudyEventPayload,
   AppAsyncThunkConfig
->(n("SET_STUDY"), (event) => {
-  const { id } = event.payload;
-  return api.getStudyMetadata(id);
-});
+>(n("SET_STUDY"), ({ id }) => api.getStudyMetadata(id));
 
 interface StudyDeleteInfo {
   id: StudyMetadata["id"];
@@ -195,20 +205,21 @@ interface StudyDeleteInfo {
 
 export const deleteStudy = createAsyncThunk<
   StudyMetadata["id"],
-  StudyDeleteInfo | WSMessage<StudySummary>,
+  StudyDeleteInfo | StudyEventPayload,
   AppAsyncThunkConfig
 >(n("DELETE_STUDY"), async (arg, { dispatch, getState, rejectWithValue }) => {
   let studyId: string;
-  if ((arg as StudyDeleteInfo)?.id) {
-    const { id, deleteChildren } = arg as StudyDeleteInfo;
+  // WebSocket
+  if ("name" in arg) {
+    studyId = arg.id;
+  } else {
+    const { id, deleteChildren } = arg;
     studyId = id;
     try {
       await api.deleteStudy(studyId, deleteChildren);
     } catch (err) {
       return rejectWithValue(err);
     }
-  } else {
-    studyId = (arg as WSMessage<StudySummary>).payload.id;
   }
 
   const state = getState();

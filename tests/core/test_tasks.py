@@ -16,14 +16,17 @@ import typing as t
 from pathlib import Path
 from unittest.mock import ANY, Mock
 
+import numpy as np
+import pandas as pd
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -37,15 +40,22 @@ from antarest.core.tasks.model import (
     cancel_orphan_tasks,
 )
 from antarest.core.tasks.repository import TaskJobRepository
-from antarest.core.tasks.service import TaskJobService
+from antarest.core.tasks.service import ITaskNotifier, TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
+from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
-from antarest.utils import SESSION_ARGS
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import with_db_context
+from tests.storage.test_service import build_study_service
 
 
 @pytest.fixture(name="db_engine", autouse=True)
@@ -72,8 +82,9 @@ def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
 
 
 @with_db_context
-def test_service(core_config: Config, event_bus: IEventBus) -> None:
+def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
     engine = db.session.bind
+
     task_job_repo = TaskJobRepository()
 
     # Prepare a TaskJob in the database
@@ -92,7 +103,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
 
     tasks = service.list_tasks(
         TaskListFilter(),
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        request_params=RequestParameters(user=admin_user),
     )
     assert len(tasks) == 1
     assert tasks[0].status == TaskStatus.FAILED
@@ -101,7 +112,7 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     # Test Case: get task status
     # ==========================
 
-    res = service.status_task("a", RequestParameters(user=DEFAULT_ADMIN_USER))
+    res = service.status_task("a", RequestParameters(user=admin_user))
     assert res is not None
     expected = {
         "completion_date_utc": ANY,
@@ -118,23 +129,25 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
         },
         "status": TaskStatus.FAILED,
         "type": None,
+        "progress": None,
     }
-    assert res.dict() == expected
+    assert res.model_dump() == expected
 
     # Test Case: add a task that fails and wait for it
     # ================================================
 
     # noinspection PyUnusedLocal
-    def action_fail(update_msg: t.Callable[[str], None]) -> TaskResult:
+    def action_fail(notifier: ITaskNotifier) -> TaskResult:
         raise Exception("this action failed")
 
     failed_id = service.add_task(
         action_fail,
         "failed action",
+        TaskType.COPY,
         None,
         None,
         None,
-        RequestParameters(user=DEFAULT_ADMIN_USER),
+        RequestParameters(user=admin_user),
     )
     service.await_task(failed_id, timeout_sec=2)
 
@@ -151,18 +164,19 @@ def test_service(core_config: Config, event_bus: IEventBus) -> None:
     # Test Case: add a task that succeeds and wait for it
     # ===================================================
 
-    def action_ok(update_msg: t.Callable[[str], None]) -> TaskResult:
-        update_msg("start")
-        update_msg("end")
+    def action_ok(notifier: ITaskNotifier) -> TaskResult:
+        notifier.notify_message("start")
+        notifier.notify_message("end")
         return TaskResult(success=True, message="OK")
 
     ok_id = service.add_task(
         action_ok,
         None,
+        TaskType.COPY,
         None,
         None,
         None,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
+        request_params=RequestParameters(user=admin_user),
     )
     service.await_task(ok_id, timeout_sec=2)
 
@@ -200,7 +214,7 @@ def test_repository(db_session: Session) -> None:
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db_session.add(RawStudy(id="study_id", name="foo", version="860"))
+    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
     db_session.commit()
 
     # Create a TaskJobService
@@ -276,7 +290,7 @@ def test_repository(db_session: Session) -> None:
 
 
 @with_db_context
-def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
+def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
     # Create a TaskJobService and add tasks
     task_job_repo = TaskJobRepository()
     task_job_repo.save(TaskJob(id="a", name="foo"))
@@ -296,7 +310,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
 
     backend.clear_events()
 
-    service.cancel_task("b", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
+    service.cancel_task("b", RequestParameters(user=admin_user), dispatch=True)
 
     collected_events = backend.get_events()
 
@@ -312,7 +326,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus) -> None:
 
     backend.clear_events()
 
-    service.cancel_task("a", RequestParameters(user=DEFAULT_ADMIN_USER), dispatch=True)
+    service.cancel_task("a", RequestParameters(user=admin_user), dispatch=True)
 
     collected_events = backend.get_events()
     assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
@@ -374,3 +388,212 @@ def test_cancel_orphan_tasks(
             assert updated_task_job.result_status == result_status
             assert updated_task_job.result_msg == result_msg
             assert (datetime.datetime.utcnow() - updated_task_job.completion_date).seconds <= max_diff_seconds
+
+
+def test_get_progress(db_session: Session, admin_user: JWTUser, core_config: Config, event_bus: IEventBus) -> None:
+    # Prepare two users in the database
+    user1_id = 9
+    db_session.add(User(id=user1_id, name="John"))
+    user2_id = 10
+    db_session.add(User(id=user2_id, name="Jane"))
+    db_session.commit()
+
+    # Create a RawStudy in the database
+    study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
+    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db_session.commit()
+
+    # Create a TaskJobService
+    task_job_repo = TaskJobRepository(db_session)
+
+    # User 1 launches a ts generation
+    first_task = TaskJob(
+        name="ts_gen_1",
+        owner_id=user1_id,
+        type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
+        ref_id=study_id,
+        progress=40,
+    )
+    first_task = task_job_repo.save(first_task)
+    assert first_task.progress == 40
+    assert first_task.ref_id == study_id
+
+    # User 2 launches another generation
+    second_task = TaskJob(
+        name="ts_gen_2", owner_id=user2_id, ref_id=study_id, type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION
+    )
+    second_task = task_job_repo.save(second_task)
+    assert second_task.progress is None
+
+    # Create a TaskJobService
+    service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+
+    # Asserts the progress cannot be fetched by users that didn't launch it
+    user_2 = JWTUser(id=user2_id, type="user", impersonator=user2_id)
+    for user in [None, user_2]:
+        with pytest.raises(UserHasNotPermissionError):
+            service.get_task_progress(first_task.id, RequestParameters(user))
+
+    # Asserts admin and user_1 can fetch the first_task progress
+    user_1 = JWTUser(id=user1_id, type="user", impersonator=user1_id)
+    for user in [user_1, admin_user]:
+        progress = service.get_task_progress(first_task.id, RequestParameters(user))
+        assert progress == 40
+
+    # Asserts admin and user_2 can fetch the second_task progress
+    for user in [user_2, admin_user]:
+        progress = service.get_task_progress(second_task.id, RequestParameters(user))
+        assert progress is None
+
+    # Asserts fetching with a wrong id raises an Exception
+    wrong_id = "foo_bar"
+    with pytest.raises(HTTPException, match=f"Task {wrong_id} not found"):
+        service.get_task_progress(wrong_id, RequestParameters(user))
+
+
+def test_ts_generation_task(
+    tmp_path: Path,
+    core_config: Config,
+    admin_user: JWTUser,
+    raw_study_service: RawStudyService,
+    db_session: Session,
+) -> None:
+    # =======================
+    #  SET UP
+    # =======================
+
+    event_bus = DummyEventBusService()
+
+    # Create a TaskJobService and add tasks
+    task_job_repo = TaskJobRepository(db_session)
+
+    # Create a TaskJobService
+    task_job_service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
+
+    # Create a raw study
+    raw_study_path = tmp_path / "study"
+
+    regular_user = User(id=99, name="regular")
+    db_session.add(regular_user)
+    db_session.commit()
+
+    raw_study = RawStudy(
+        id="my_raw_study",
+        name="my_raw_study",
+        version="860",
+        author="John Smith",
+        created_at=datetime.datetime(2023, 7, 15, 16, 45),
+        updated_at=datetime.datetime(2023, 7, 19, 8, 15),
+        last_access=datetime.datetime.utcnow(),
+        public_mode=PublicMode.FULL,
+        owner=regular_user,
+        path=str(raw_study_path),
+    )
+    study_metadata_repository = StudyMetadataRepository(Mock(), None)
+    db_session.add(raw_study)
+    db_session.commit()
+
+    # Set up the Raw Study
+    raw_study_service.create(raw_study)
+    # Create an area
+    areas_path = raw_study_path / "input" / "areas"
+    areas_path.mkdir(parents=True, exist_ok=True)
+    (areas_path / "fr").mkdir(parents=True, exist_ok=True)
+    (areas_path / "list.txt").touch(exist_ok=True)
+    with open(areas_path / "list.txt", mode="w") as f:
+        f.writelines(["fr"])
+    # Create 2 thermal clusters
+    thermal_path = raw_study_path / "input" / "thermal"
+    thermal_path.mkdir(parents=True, exist_ok=True)
+    fr_path = thermal_path / "clusters" / "fr"
+    fr_path.mkdir(parents=True, exist_ok=True)
+    (fr_path / "list.ini").touch(exist_ok=True)
+    content = """
+    [th_1]
+name = th_1
+nominalcapacity = 14.0
+
+[th_2]
+name = th_2
+nominalcapacity = 14.0
+"""
+    (fr_path / "list.ini").write_text(content)
+    # Create matrix files
+    for th_name in ["th_1", "th_2"]:
+        prepro_folder = thermal_path / "prepro" / "fr" / th_name
+        prepro_folder.mkdir(parents=True, exist_ok=True)
+        # Modulation
+        modulation_df = pd.DataFrame(data=np.ones((8760, 3)))
+        modulation_df.to_csv(prepro_folder / "modulation.txt", sep="\t", header=False, index=False)
+        (prepro_folder / "data.txt").touch()
+        # Data
+        data_df = pd.DataFrame(data=np.zeros((365, 6)))
+        data_df[0] = [1] * 365
+        data_df[1] = [1] * 365
+        data_df.to_csv(prepro_folder / "data.txt", sep="\t", header=False, index=False)
+        # Series
+        series_path = thermal_path / "series" / "fr" / th_name
+        series_path.mkdir(parents=True, exist_ok=True)
+        (series_path / "series.txt").touch()
+
+    # Set up the mocks
+    variant_study_service = Mock(spec=VariantStudyService)
+    command_factory = Mock(spec=CommandFactory)
+    variant_study_service.command_factory = command_factory
+    command_factory.command_context = Mock(spec=CommandContext)
+    config = Mock(spec=Config)
+
+    study_service = build_study_service(
+        raw_study_service,
+        study_metadata_repository,
+        config,
+        task_service=task_job_service,
+        event_bus=event_bus,
+        variant_study_service=variant_study_service,
+    )
+
+    # =======================
+    #  TEST CASE
+    # =======================
+
+    task = ThermalClusterTimeSeriesGeneratorTask(
+        raw_study.id,
+        repository=study_service.repository,
+        storage_service=study_service.storage_service,
+        event_bus=study_service.event_bus,
+    )
+
+    task_id = study_service.task_service.add_task(
+        task,
+        "test_generation",
+        task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
+        ref_id=raw_study.id,
+        progress=0,
+        custom_event_messages=None,
+        request_params=RequestParameters(DEFAULT_ADMIN_USER),
+    )
+
+    # Await task
+    study_service.task_service.await_task(task_id, 2)
+    tasks = study_service.task_service.list_tasks(TaskListFilter(), RequestParameters(DEFAULT_ADMIN_USER))
+    assert len(tasks) == 1
+    task = tasks[0]
+    assert task.ref_id == raw_study.id
+    assert task.id == task_id
+    assert task.name == "test_generation"
+    assert task.status == TaskStatus.COMPLETED
+    assert task.progress == 100
+
+    # Check eventbus
+    events = event_bus.events
+    assert len(events) == 6
+    assert events[0].type == EventType.TASK_ADDED
+    assert events[1].type == EventType.TASK_RUNNING
+
+    assert events[2].type == EventType.TASK_PROGRESS
+    assert events[2].payload == {"task_id": task_id, "progress": 50}
+    assert events[3].type == EventType.TASK_PROGRESS
+    assert events[3].payload == {"task_id": task_id, "progress": 100}
+
+    assert events[4].type == EventType.STUDY_EDITED
+    assert events[5].type == EventType.TASK_COMPLETED

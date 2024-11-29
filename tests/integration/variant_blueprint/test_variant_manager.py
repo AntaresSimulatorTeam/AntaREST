@@ -10,16 +10,19 @@
 #
 # This file is part of the Antares project.
 
+import datetime
 import io
 import logging
 import time
 import typing as t
+from pathlib import Path
 
 import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from tests.integration.assets import ASSETS_DIR
+from tests.integration.utils import wait_task_completion
 
 
 @pytest.fixture(name="base_study_id")
@@ -43,6 +46,68 @@ def variant_id_fixture(
     with caplog.at_level(level=logging.WARNING):
         res = client.post(f"/v1/studies/{base_study_id}/variants?name=Variant1", headers=admin_headers)
     return t.cast(str, res.json())
+
+
+@pytest.fixture(name="generate_snapshots")
+def generate_snapshot_fixture(
+    client: TestClient,
+    admin_access_token: str,
+    base_study_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: t.Any,
+) -> t.List[str]:
+    """Generate some snapshots with different date of update and last access"""
+
+    class FakeDatetime:
+        """
+        Class that handle fake timestamp creation/update of variant
+        """
+
+        fake_time: datetime.datetime
+
+        @classmethod
+        def now(cls) -> datetime.datetime:
+            """Method used to get the custom timestamp"""
+            return cls.fake_time
+
+        @classmethod
+        def utcnow(cls) -> datetime.datetime:
+            """Method used while a variant is created"""
+            return cls.now()
+
+    # Initialize variant_ids list
+    variant_ids = []
+
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    with caplog.at_level(level=logging.WARNING):
+        # Generate three different timestamp
+        older_time = datetime.datetime.utcnow() - datetime.timedelta(
+            hours=25
+        )  # older than the default value which is 24
+        old_time = datetime.datetime.utcnow() - datetime.timedelta(hours=8)  # older than 6 hours
+        recent_time = datetime.datetime.utcnow() - datetime.timedelta(hours=2)  # older than 0 hours
+
+        with monkeypatch.context() as m:
+            # Patch the datetime import instance of the variant_study_service package to hack
+            # the `created_at` and `updated_at` fields
+            # useful when a variant is created
+            m.setattr("antarest.study.storage.variantstudy.variant_study_service.datetime", FakeDatetime)
+            # useful when a study is accessed
+            m.setattr("antarest.study.service.datetime", FakeDatetime)
+
+            for index, different_time in enumerate([older_time, old_time, recent_time]):
+                FakeDatetime.fake_time = different_time
+                res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant{index}", headers=admin_headers)
+                variant_ids.append(res.json())
+
+                # Generate snapshot for each variant
+                task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
+                wait_task_completion(
+                    client, admin_access_token, task_id.json()
+                )  # wait for the filesystem to be updated
+                client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
+    return t.cast(t.List[str], variant_ids)
 
 
 def test_variant_manager(
@@ -199,7 +264,7 @@ def test_variant_manager(
 
         res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=admin_headers)
         assert res.status_code == 200
-        task_result = TaskDTO.parse_obj(res.json())
+        task_result = TaskDTO.model_validate(res.json())
         assert task_result.status == TaskStatus.COMPLETED
         assert task_result.result.success  # type: ignore
 
@@ -246,7 +311,7 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
     # Wait for task completion
     res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
     assert res.status_code == 200
-    task_result = TaskDTO.parse_obj(res.json())
+    task_result = TaskDTO.model_validate(res.json())
     assert task_result.status == TaskStatus.COMPLETED
     assert task_result.result is not None
     assert task_result.result.success
@@ -320,7 +385,7 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
     # Wait for task completion
     res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
     res.raise_for_status()
-    task_result = TaskDTO.parse_obj(res.json())
+    task_result = TaskDTO.model_validate(res.json())
     assert task_result.status == TaskStatus.COMPLETED
     assert task_result.result is not None
     assert task_result.result.success
@@ -330,3 +395,44 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
     assert res.status_code == 200, res.json()
     outputs = res.json()
     assert len(outputs) == 1
+
+
+def test_clear_snapshots(
+    client: TestClient,
+    admin_access_token: str,
+    tmp_path: Path,
+    generate_snapshots: t.List[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """
+    The `snapshot/` directory must not exist after a call to `clear-snapshot`.
+    """
+    # Set up
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    older = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[0], "snapshot")
+    old = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[1], "snapshot")
+    recent = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[2], "snapshot")
+
+    # Test
+    # Check initial data
+    assert older.exists() and old.exists() and recent.exists()
+
+    # Delete the older snapshot (default retention hours implicitly equals to 24 hours)
+    # and check if it was successfully deleted
+    response = client.put(f"v1/studies/variants/clear-snapshots", headers=admin_headers)
+    task = response.json()
+    wait_task_completion(client, admin_access_token, task)
+    assert (not older.exists()) and old.exists() and recent.exists()
+
+    # Delete the old snapshot and check if it was successfully deleted
+    response = client.put(f"v1/studies/variants/clear-snapshots?hours=6", headers=admin_headers)
+    task = response.json()
+    wait_task_completion(client, admin_access_token, task)
+    assert (not older.exists()) and (not old.exists()) and recent.exists()
+
+    # Delete the recent snapshot and check if it was successfully deleted
+    response = client.put(f"v1/studies/variants/clear-snapshots?hours=-1", headers=admin_headers)
+    task = response.json()
+    wait_task_completion(client, admin_access_token, task)
+    assert not (older.exists() and old.exists() and recent.exists())

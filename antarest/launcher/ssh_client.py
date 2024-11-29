@@ -43,7 +43,7 @@ class SlurmError(Exception):
 def execute_command(ssh_config: SSHConfigDTO, args: List[str]) -> Any:
     command = " ".join(args)
     try:
-        with ssh_client(ssh_config) as client:  # type: ignore
+        with ssh_client(ssh_config) as client:  # type: paramiko.SSHClient
             _, stdout, stderr = client.exec_command(command, timeout=10)
             output = stdout.read().decode("utf-8").strip()
             error = stderr.read().decode("utf-8").strip()

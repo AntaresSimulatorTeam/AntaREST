@@ -56,7 +56,7 @@ def file_study_720(tmpdir: Path) -> FileStudy:
 
 def test_ts_field_values(file_study_820: FileStudy, file_study_720: FileStudy):
     command_factory_mock = Mock()
-    command_factory_mock.command_context = CommandContext.construct()
+    command_factory_mock.command_context = CommandContext.model_construct()
 
     raw_study_service = Mock(spec=RawStudyService)
 

@@ -2,9 +2,17 @@
   "compilerOptions": {
     "target": "es2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022", 
+      "DOM", 
+      "DOM.Iterable",
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
+     "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -13,7 +21,11 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["vitest/globals", "vitest/jsdom"],
+    "types": [
+      "vite/client",
+      "vitest/globals",
+      "vitest/jsdom",
+    ],
 
     /* Linting */
     "strict": true,

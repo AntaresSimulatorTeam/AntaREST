@@ -13,18 +13,18 @@
 import logging
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.serialization import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
-from antarest.core.utils.utils import StopWatch, unzip
+from antarest.core.utils.archives import unzip
+from antarest.core.utils.utils import StopWatch
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 
 logger = logging.getLogger(__name__)
 
 
-class ArchiveTaskArgs(BaseModel):
+class ArchiveTaskArgs(AntaresBaseModel):
     src: str
     dest: str
     remove_src: bool = False
@@ -58,10 +58,10 @@ class ArchiveWorker(AbstractWorker):
         )
 
     def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
-        logger.info(f"Executing task {task_info.json()}")
+        logger.info(f"Executing task {task_info.model_dump_json()}")
         try:
             # sourcery skip: extract-method
-            archive_args = ArchiveTaskArgs.parse_obj(task_info.task_args)
+            archive_args = ArchiveTaskArgs.model_validate(task_info.task_args)
             dest = self.translate_path(Path(archive_args.dest))
             src = self.translate_path(Path(archive_args.src))
             stopwatch = StopWatch()
@@ -75,7 +75,7 @@ class ArchiveWorker(AbstractWorker):
             return TaskResult(success=True, message="")
         except Exception as e:
             logger.warning(
-                f"Task {task_info.json()} failed",
+                f"Task {task_info.model_dump_json()} failed",
                 exc_info=e,
             )
             return TaskResult(success=False, message=str(e))

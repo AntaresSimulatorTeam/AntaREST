@@ -28,7 +28,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
@@ -74,7 +74,12 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission, assert_permission_on_studies, study_matcher
+from antarest.study.storage.utils import (
+    assert_permission,
+    assert_permission_on_studies,
+    is_output_archived,
+    study_matcher,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -92,13 +97,14 @@ def build_study_service(
     cache_service: ICache = Mock(spec=ICache),
     variant_study_service: VariantStudyService = Mock(spec=VariantStudyService),
     task_service: ITaskService = Mock(spec=ITaskService),
+    event_bus: IEventBus = Mock(spec=IEventBus),
 ) -> StudyService:
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
         user_service=user_service,
         repository=repository,
-        event_bus=Mock(),
+        event_bus=event_bus,
         task_service=task_service,
         file_transfer_manager=Mock(),
         cache_service=cache_service,
@@ -110,7 +116,7 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
     return StudyMetadataDTO(
         id=study.id,
         name=study.name,
-        version=int(study.version),
+        version=study.version,
         created=str(study.created_at),
         updated=str(study.updated_at),
         workspace=DEFAULT_WORKSPACE_NAME,
@@ -597,7 +603,7 @@ def test_download_output() -> None:
                 name="east",
                 type=StudyDownloadType.AREA,
                 data={
-                    1: [
+                    "1": [
                         TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
                         TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
                     ]
@@ -661,7 +667,7 @@ def test_download_output() -> None:
             TimeSeriesData(
                 name="east^west",
                 type=StudyDownloadType.LINK,
-                data={1: [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]},
+                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]},
             )
         ],
         warnings=[],
@@ -695,7 +701,7 @@ def test_download_output() -> None:
                 name="north",
                 type=StudyDownloadType.DISTRICT,
                 data={
-                    1: [
+                    "1": [
                         TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
                         TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
                     ]
@@ -1377,6 +1383,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
     output_id = "some-output"
     service.task_service.add_worker_task.return_value = None  # type: ignore
     service.task_service.list_tasks.return_value = []  # type: ignore
+    (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
     service.unarchive_output(
         study_id,
         output_id,
@@ -1391,7 +1398,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
             src=str(tmp_path / "output" / f"{output_id}.zip"),
             dest=str(tmp_path / "output" / output_id),
             remove_src=False,
-        ).dict(),
+        ).model_dump(),
         name=f"Unarchive output {study_name}/{output_id} ({study_id})",
         ref_id=study_id,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -1401,6 +1408,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
         f"Unarchive output {study_name}/{output_id} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1432,13 +1440,16 @@ def test_archive_output_locks(tmp_path: Path) -> None:
 
     service.task_service.reset_mock()
 
-    output_id = "some-output"
+    output_zipped = "some-output_zipped"
+    output_unzipped = "some-output_unzipped"
     service.task_service.add_worker_task.return_value = None  # type: ignore
+    (tmp_path / "output" / output_unzipped).mkdir(parents=True)
+    (tmp_path / "output" / f"{output_zipped}.zip").touch()
     service.task_service.list_tasks.side_effect = [
         [
             TaskDTO(
                 id="1",
-                name=f"Archive output {study_id}/{output_id}",
+                name=f"Archive output {study_id}/{output_zipped}",
                 status=TaskStatus.PENDING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.ARCHIVE,
@@ -1448,7 +1459,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+                name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
                 status=TaskStatus.PENDING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.UNARCHIVE,
@@ -1458,7 +1469,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Archive output {study_id}/{output_id}",
+                name=f"Archive output {study_id}/{output_unzipped}",
                 status=TaskStatus.PENDING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.ARCHIVE,
@@ -1468,7 +1479,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+                name=f"Unarchive output {study_name}/{output_unzipped} ({study_id})",
                 status=TaskStatus.RUNNING,
                 creation_date_utc=str(datetime.utcnow()),
                 type=TaskType.UNARCHIVE,
@@ -1481,7 +1492,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     with pytest.raises(TaskAlreadyRunning):
         service.unarchive_output(
             study_id,
-            output_id,
+            output_zipped,
             keep_src_zip=True,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
@@ -1489,7 +1500,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     with pytest.raises(TaskAlreadyRunning):
         service.unarchive_output(
             study_id,
-            output_id,
+            output_zipped,
             keep_src_zip=True,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
@@ -1497,20 +1508,20 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     with pytest.raises(TaskAlreadyRunning):
         service.archive_output(
             study_id,
-            output_id,
+            output_unzipped,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     with pytest.raises(TaskAlreadyRunning):
         service.archive_output(
             study_id,
-            output_id,
+            output_unzipped,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     service.unarchive_output(
         study_id,
-        output_id,
+        output_zipped,
         keep_src_zip=True,
         params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1519,19 +1530,20 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_id}.zip"),
-            dest=str(tmp_path / "output" / output_id),
+            src=str(tmp_path / "output" / f"{output_zipped}.zip"),
+            dest=str(tmp_path / "output" / output_zipped),
             remove_src=False,
-        ).dict(),
-        name=f"Unarchive output {study_name}/{output_id} ({study_id})",
+        ).model_dump(),
+        name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         ref_id=study_id,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.task_service.add_task.assert_called_once_with(
         ANY,
-        f"Unarchive output {study_name}/{output_id} ({study_id})",
+        f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         task_type=TaskType.UNARCHIVE,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -1563,7 +1575,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
 
     output_config = Mock(get_file=Mock(return_value="output_id"), archived=False)
 
-    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, zip_path=None)
+    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, archive_path=None)
     file_study_config.outputs = {"output_id": output_config}
 
     context = Mock()
@@ -1686,6 +1698,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         f"Upgrade study my_study ({study_id}) to version 800",
         task_type=TaskType.UPGRADE_STUDY,
         ref_id=study_id,
+        progress=None,
         custom_event_messages=None,
         request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
@@ -2006,3 +2019,19 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
     # No event must be emitted
     event_bus.push.assert_not_called()
+
+
+@pytest.mark.unit_test
+def test_is_output_archived(tmp_path) -> None:
+    assert not is_output_archived(path_output=Path("fake_path"))
+    assert is_output_archived(path_output=Path("fake_path.zip"))
+
+    zipped_output_path = tmp_path / "output.zip"
+    zipped_output_path.mkdir(parents=True)
+    assert is_output_archived(path_output=zipped_output_path)
+    assert is_output_archived(path_output=tmp_path / "output")
+
+    zipped_with_suffix = tmp_path / "output_1.4.3.zip"
+    zipped_with_suffix.mkdir(parents=True)
+    assert is_output_archived(path_output=zipped_with_suffix)
+    assert is_output_archived(path_output=tmp_path / "output_1.4.3")

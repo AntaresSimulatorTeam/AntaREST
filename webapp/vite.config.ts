@@ -1,6 +1,20 @@
-/// <reference types="vitest" />
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import path from "path";
 
 const SERVER_URL = "http://localhost:8080";
 
@@ -15,6 +29,18 @@ export default defineConfig(({ mode }) => {
     define: {
       // Not working in dev without `JSON.stringify`
       __BUILD_TIMESTAMP__: JSON.stringify(Date.now()),
+    },
+    build: {
+      // Exclude test files and directories from production builds
+      // This improves build performance and reduces bundle size
+      rollupOptions: {
+        external: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+      },
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"), // Relative imports from the src directory
+      },
     },
     esbuild: {
       // Remove logs safely when building production bundle
@@ -35,7 +61,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     test: {
-      globals: true, // Use the APIs globally
+      globals: true, // Use the APIs globally,
       environment: "jsdom",
       css: true,
       setupFiles: "./src/tests/setup.ts",

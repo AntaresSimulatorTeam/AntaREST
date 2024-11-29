@@ -36,7 +36,6 @@ We should test the following end poins:
 * validate the consistency of the matrices (and properties)
 """
 
-import json
 import re
 import typing as t
 
@@ -50,7 +49,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import transf
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableProperties
 from tests.integration.utils import wait_task_completion
 
-DEFAULT_PROPERTIES = json.loads(RenewableProperties(name="Dummy").json())
+DEFAULT_PROPERTIES = RenewableProperties(name="Dummy").model_dump(mode="json")
 DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
 
 # noinspection SpellCheckingInspection
@@ -537,13 +536,10 @@ class TestRenewable:
         In this test, we want to check that renewable clusters can be managed
         in the context of a "variant" study.
         """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
         # Create an area
         area_name = "France"
-        res = client.post(
-            f"/v1/studies/{variant_id}/areas",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"name": area_name, "type": "AREA"},
-        )
+        res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": area_name, "type": "AREA"})
         assert res.status_code in {200, 201}, res.json()
         area_cfg = res.json()
         area_id = area_cfg["id"]
@@ -552,7 +548,6 @@ class TestRenewable:
         cluster_name = "Th1"
         res = client.post(
             f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable",
-            headers={"Authorization": f"Bearer {user_access_token}"},
             json={
                 "name": cluster_name,
                 "group": "Wind Offshore",
@@ -565,9 +560,7 @@ class TestRenewable:
 
         # Update the renewable cluster
         res = client.patch(
-            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{cluster_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json={"unitCount": 15},
+            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{cluster_id}", json={"unitCount": 15}
         )
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
@@ -577,19 +570,13 @@ class TestRenewable:
         matrix = np.random.randint(0, 2, size=(8760, 1)).tolist()
         matrix_path = f"input/renewables/series/{area_id}/{cluster_id.lower()}/series"
         args = {"target": matrix_path, "matrix": matrix}
-        res = client.post(
-            f"/v1/studies/{variant_id}/commands",
-            json=[{"action": "replace_matrix", "args": args}],
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.post(f"/v1/studies/{variant_id}/commands", json=[{"action": "replace_matrix", "args": args}])
         assert res.status_code in {200, 201}, res.json()
 
         # Duplicate the renewable cluster
         new_name = "Th2"
         res = client.post(
-            f"/v1/studies/{variant_id}/areas/{area_id}/renewables/{cluster_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"newName": new_name},
+            f"/v1/studies/{variant_id}/areas/{area_id}/renewables/{cluster_id}", params={"newName": new_name}
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
@@ -597,10 +584,7 @@ class TestRenewable:
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties
-        res = client.get(
-            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{new_id}",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
         assert cluster_cfg["group"] == "Wind Offshore"
@@ -609,27 +593,19 @@ class TestRenewable:
 
         # Check that the duplicate has the right matrix
         new_cluster_matrix_path = f"input/renewables/series/{area_id}/{new_id.lower()}/series"
-        res = client.get(
-            f"/v1/studies/{variant_id}/raw",
-            params={"path": new_cluster_matrix_path},
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{variant_id}/raw", params={"path": new_cluster_matrix_path})
         assert res.status_code == 200
         assert res.json()["data"] == matrix
 
         # Delete the renewable cluster
-        res = client.delete(
-            f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[cluster_id],
+        # usage of request instead of delete as httpx doesn't support delete with a payload anymore.
+        res = client.request(
+            method="DELETE", url=f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable", json=[cluster_id]
         )
         assert res.status_code == 204, res.json()
 
         # Check the list of variant commands
-        res = client.get(
-            f"/v1/studies/{variant_id}/commands",
-            headers={"Authorization": f"Bearer {user_access_token}"},
-        )
+        res = client.get(f"/v1/studies/{variant_id}/commands")
         assert res.status_code == 200, res.json()
         commands = res.json()
         assert len(commands) == 7

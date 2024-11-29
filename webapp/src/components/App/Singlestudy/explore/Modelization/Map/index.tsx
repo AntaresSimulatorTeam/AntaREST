@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -131,8 +145,8 @@ function Map() {
     if (updatedNode) {
       const { layerX, layerY, layerColor } = updatedNode;
       updateUI(id, {
-        x,
-        y,
+        x: Math.round(x),
+        y: Math.round(y),
         color_rgb: layerColor[currentLayerId]
           ? layerColor[currentLayerId].split(",").map(Number)
           : NODE_COLOR.slice(4, -1).split(",").map(Number),
@@ -164,7 +178,7 @@ function Map() {
   return (
     <UsePromiseCond
       response={mapNodesRes}
-      ifResolved={(mapNodes) => (
+      ifFulfilled={(mapNodes) => (
         <>
           <SplitView id="map" sizes={[10, 90]}>
             <Box>

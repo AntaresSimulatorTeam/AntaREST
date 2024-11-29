@@ -81,7 +81,7 @@ def test_parse_output_parameters(study_path: Path) -> None:
     config = FileStudyTreeConfig(
         study_path=study_path,
         path=study_path,
-        version=-1,
+        version=0,
         store_new_set=True,
         study_id="id",
         output_path=study_path / "output",
@@ -105,7 +105,7 @@ def test_parse_bindings(study_path: Path) -> None:
     config = FileStudyTreeConfig(
         study_path=study_path,
         path=study_path,
-        version=-1,
+        version=0,
         bindings=[
             BindingConstraintDTO(
                 id="bindA",
@@ -154,7 +154,7 @@ def test_parse_outputs(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=-1,
+        version=0,
         output_path=study_path / "output",
         outputs={
             "20201220-1456eco-hello": Simulation(
@@ -271,7 +271,7 @@ def test_parse_area(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=-1,
+        version=0,
         output_path=study_path / "output",
         areas={
             "fr": Area(
@@ -307,7 +307,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=-1,
+        version=0,
         output_path=study_path / "output",
         areas={
             "fr": Area(
@@ -415,7 +415,7 @@ def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
         assert not caplog.text
     else:
         expected = [ThermalConfig(id="t1", name="t1")]
-        assert "extra fields not permitted" in caplog.text
+        assert "Extra inputs are not permitted" in caplog.text
     assert actual == expected
 
 

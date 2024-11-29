@@ -12,11 +12,10 @@
 
 import typing as t
 
-from pydantic import BaseModel
-
 from antarest.core.exceptions import ConfigFileNotFound
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.core.serialization import AntaresBaseModel
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
@@ -28,20 +27,21 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 _ALL_LINKS_PATH = "input/links"
 
 
-class LinkUIDTO(BaseModel):
+class LinkUIDTO(AntaresBaseModel):
     color: str
     width: float
     style: str
 
 
-class LinkInfoDTO(BaseModel):
+class LinkInfoDTO(AntaresBaseModel):
     area1: str
     area2: str
     ui: t.Optional[LinkUIDTO] = None
 
 
+@all_optional_model
 @camel_case_model
-class LinkOutput(LinkProperties, metaclass=AllOptionalMetaclass, use_none=True):
+class LinkOutput(LinkProperties):
     """
     DTO object use to get the link information.
     """
@@ -121,7 +121,7 @@ class LinkManager:
             for area2_id, properties_cfg in property_map.items():
                 area1_id, area2_id = sorted([area1_id, area2_id])
                 properties = LinkProperties(**properties_cfg)
-                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.dict(by_alias=False))
+                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.model_dump(mode="json", by_alias=False))
 
         return links_by_ids
 
@@ -137,11 +137,13 @@ class LinkManager:
         for (area1, area2), update_link_dto in update_links_by_ids.items():
             # Update the link properties.
             old_link_dto = old_links_by_ids[(area1, area2)]
-            new_link_dto = old_link_dto.copy(update=update_link_dto.dict(by_alias=False, exclude_none=True))
+            new_link_dto = old_link_dto.copy(
+                update=update_link_dto.model_dump(mode="json", by_alias=False, exclude_none=True)
+            )
             new_links_by_ids[(area1, area2)] = new_link_dto
 
             # Convert the DTO to a configuration object and update the configuration file.
-            properties = LinkProperties(**new_link_dto.dict(by_alias=False))
+            properties = LinkProperties(**new_link_dto.model_dump(by_alias=False))
             path = f"{_ALL_LINKS_PATH}/{area1}/properties/{area2}"
             cmd = UpdateConfig(
                 target=path,

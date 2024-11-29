@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useState } from "react";
 import {
   Box,
@@ -203,8 +217,8 @@ function LauncherDialog(props: Props) {
             variant="contained"
             disabled={
               isLaunching ||
-              !launcherCores.isResolved ||
-              !launcherTimeLimit.isResolved
+              !launcherCores.isFulfilled ||
+              !launcherTimeLimit.isFulfilled
             }
             onClick={handleLaunchClick}
           >
@@ -269,7 +283,7 @@ function LauncherDialog(props: Props) {
 
           <UsePromiseCond
             response={launcherTimeLimit}
-            ifResolved={(timeLimit) => (
+            ifFulfilled={(timeLimit) => (
               <TextField
                 id="launcher-option-time-limit"
                 label={t("study.timeLimit")}
@@ -308,7 +322,7 @@ function LauncherDialog(props: Props) {
 
           <UsePromiseCond
             response={launcherCores}
-            ifResolved={(cores) => (
+            ifFulfilled={(cores) => (
               <TextField
                 id="nb-cpu"
                 label={t("study.nbCpu")}

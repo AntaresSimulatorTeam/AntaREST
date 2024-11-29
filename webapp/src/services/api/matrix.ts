@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { AxiosRequestConfig } from "axios";
 import client from "./client";
 import {
@@ -10,6 +24,7 @@ import {
 } from "../../common/types";
 import { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
+import { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
 
 export const getMatrixList = async (
   name = "",
@@ -91,16 +106,37 @@ export const deleteDataSet = async (id: string): Promise<void> => {
   return res.data;
 };
 
+/**
+ * @deprecated Use `updateMatrix` instead.
+ *
+ * @param sid - The study ID.
+ * @param path - The path of the matrix.
+ * @param matrixEdit - The matrix edit data.
+ */
 export const editMatrix = async (
   sid: string,
   path: string,
   matrixEdit: MatrixEditDTO[],
 ): Promise<void> => {
-  const res = await client.put(
-    `/v1/studies/${sid}/matrix?path=${encodeURIComponent(path)}`,
+  const sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
+
+  await client.put(
+    `/v1/studies/${sid}/matrix?path=${encodeURIComponent(sanitizedPath)}`,
     matrixEdit,
   );
-  return res.data;
+};
+
+export const updateMatrix = async (
+  studyId: string,
+  path: string,
+  updates: MatrixUpdateDTO[],
+): Promise<void> => {
+  const sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
+
+  await client.put(
+    `/v1/studies/${studyId}/matrix?path=${encodeURIComponent(sanitizedPath)}`,
+    updates,
+  );
 };
 
 export const getStudyMatrixIndex = async (

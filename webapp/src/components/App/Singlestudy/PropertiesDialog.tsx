@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import debug from "debug";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
@@ -23,7 +37,7 @@ import Fieldset from "../../common/Fieldset";
 import { SubmitHandlerPlus } from "../../common/Form/types";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { updateStudy } from "../../../redux/ducks/studies";
-import { validateString } from "../../../utils/validationUtils";
+import { validateString } from "@/utils/validation/string";
 
 const logErr = debug("antares:createstudyform:error");
 

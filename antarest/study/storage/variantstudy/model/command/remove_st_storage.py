@@ -14,14 +14,16 @@ import typing as t
 
 from pydantic import Field
 
+from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 # minimum required version.
-REQUIRED_VERSION = 860
+REQUIRED_VERSION = STUDY_VERSION_8_6
 
 
 class RemoveSTStorage(ICommand):
@@ -32,14 +34,14 @@ class RemoveSTStorage(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_ST_STORAGE
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_ST_STORAGE
+    version: int = 1
 
     # Command parameters
     # ==================
 
-    area_id: str = Field(description="Area ID", regex=r"[a-z0-9_(),& -]+")
-    storage_id: str = Field(description="Short term storage ID", regex=r"[a-z0-9_(),& -]+")
+    area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
+    storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
@@ -98,7 +100,7 @@ class RemoveSTStorage(ICommand):
             {},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes:
         remove the storage from the configuration and remove the attached time series.

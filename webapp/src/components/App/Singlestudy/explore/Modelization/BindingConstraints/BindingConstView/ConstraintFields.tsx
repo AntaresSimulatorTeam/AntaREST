@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   BindingConstraint,
   OPERATORS,
@@ -13,10 +27,10 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { validateString } from "../../../../../../../utils/validationUtils";
-import Matrix from "./Matrix";
 import { Box, Button } from "@mui/material";
 import { Dataset } from "@mui/icons-material";
+import { validateString } from "@/utils/validation/string";
+import ConstraintMatrix from "./Matrix";
 
 interface Props {
   study: StudyMetadata;
@@ -160,7 +174,7 @@ function Fields({ study, constraintId }: Props) {
       </Box>
 
       {matrixDialogOpen && (
-        <Matrix
+        <ConstraintMatrix
           study={study}
           constraintId={constraintId}
           operator={currentOperator}

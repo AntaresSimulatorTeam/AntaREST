@@ -10,10 +10,10 @@
 #
 # This file is part of the Antares project.
 
-import json
 import typing as t
 from pathlib import Path
 
+from antarest.core.serialization import from_json
 from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -34,8 +34,7 @@ class PatchService:
         if not get_from_file and study.additional_data is not None:
             # the `study.additional_data.patch` field is optional
             if study.additional_data.patch:
-                patch_obj = json.loads(study.additional_data.patch or "{}")
-                return Patch.parse_obj(patch_obj)
+                return Patch.model_validate(from_json(study.additional_data.patch))
 
         patch = Patch()
         patch_path = Path(study.path) / PATCH_JSON
@@ -67,9 +66,9 @@ class PatchService:
     def save(self, study: t.Union[RawStudy, VariantStudy], patch: Patch) -> None:
         if self.repository:
             study.additional_data = study.additional_data or StudyAdditionalData()
-            study.additional_data.patch = patch.json()
+            study.additional_data.patch = patch.model_dump_json()
             self.repository.save(study)
 
         patch_path = (Path(study.path)) / PATCH_JSON
         patch_path.parent.mkdir(parents=True, exist_ok=True)
-        patch_path.write_text(patch.json())
+        patch_path.write_text(patch.model_dump_json())

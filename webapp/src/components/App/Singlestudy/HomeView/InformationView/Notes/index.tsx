@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
@@ -26,6 +40,7 @@ import { getAreas, getLinks } from "../../../../../../redux/selectors";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { PromiseStatus } from "../../../../../../hooks/usePromise";
 
 const Root = styled(Box)(() => ({
   flex: "0 0 40%",
@@ -147,7 +162,7 @@ function Notes({ study }: Props) {
 
         <UsePromiseCond
           response={commentRes}
-          ifResolved={() => (
+          ifFulfilled={() => (
             <>
               <EditorContainer>
                 <Editor
@@ -196,7 +211,7 @@ function Notes({ study }: Props) {
             },
             {
               content:
-                synthesisStatus === "resolved" ? (
+                synthesisStatus === PromiseStatus.Fulfilled ? (
                   areas.length
                 ) : (
                   <Skeleton width={100} />
@@ -206,7 +221,7 @@ function Notes({ study }: Props) {
             },
             {
               content:
-                synthesisStatus === "resolved" ? (
+                synthesisStatus === PromiseStatus.Fulfilled ? (
                   links.length
                 ) : (
                   <Skeleton width={100} />

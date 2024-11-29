@@ -11,11 +11,11 @@
 # This file is part of the Antares project.
 
 import collections
-import json
 import typing as t
 from pathlib import Path
 
-from pydantic import validator
+from antares.study.version import StudyVersion
+from pydantic import field_validator
 
 from antarest.core.exceptions import (
     DuplicateThermalCluster,
@@ -25,9 +25,9 @@ from antarest.core.exceptions import (
     WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_7, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
@@ -54,33 +54,35 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
 
 
+@all_optional_model
 @camel_case_model
-class ThermalClusterInput(Thermal870Properties, metaclass=AllOptionalMetaclass, use_none=True):
+class ThermalClusterInput(Thermal870Properties):
     """
     Model representing the data structure required to edit an existing thermal cluster within a study.
     """
 
     class Config:
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = ThermalClusterInput(
                 group="Gas",
                 name="Gas Cluster XY",
                 enabled=False,
-                unitCount=100,
-                nominalCapacity=1000.0,
-                genTs="use global",
+                unit_count=100,
+                nominal_capacity=1000.0,
+                gen_ts="use global",
                 co2=7.0,
-            )
+            ).model_dump(mode="json")
 
 
+@camel_case_model
 class ThermalClusterCreation(ThermalClusterInput):
     """
     Model representing the data structure required to create a new thermal cluster within a study.
     """
 
     # noinspection Pydantic
-    @validator("name", pre=True)
+    @field_validator("name", mode="before")
     def validate_name(cls, name: t.Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
@@ -89,39 +91,40 @@ class ThermalClusterCreation(ThermalClusterInput):
             raise ValueError("name must not be empty")
         return name
 
-    def to_config(self, study_version: t.Union[str, int]) -> ThermalConfigType:
-        values = self.dict(by_alias=False, exclude_none=True)
+    def to_config(self, study_version: StudyVersion) -> ThermalConfigType:
+        values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
         return create_thermal_config(study_version=study_version, **values)
 
 
+@all_optional_model
 @camel_case_model
-class ThermalClusterOutput(Thermal870Config, metaclass=AllOptionalMetaclass, use_none=True):
+class ThermalClusterOutput(Thermal870Config):
     """
     Model representing the output data structure to display the details of a thermal cluster within a study.
     """
 
     class Config:
         @staticmethod
-        def schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
             schema["example"] = ThermalClusterOutput(
                 id="Gas cluster YZ",
                 group="Gas",
                 name="Gas Cluster YZ",
                 enabled=False,
-                unitCount=100,
-                nominalCapacity=1000.0,
-                genTs="use global",
+                unit_count=100,
+                nominal_capacity=1000.0,
+                gen_ts="use global",
                 co2=7.0,
-            )
+            ).model_dump(mode="json")
 
 
 def create_thermal_output(
-    study_version: t.Union[str, int],
+    study_version: StudyVersion,
     cluster_id: str,
     config: t.Mapping[str, t.Any],
 ) -> "ThermalClusterOutput":
     obj = create_thermal_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.dict(by_alias=False)
+    kwargs = obj.model_dump(mode="json", by_alias=False)
     return ThermalClusterOutput(**kwargs)
 
 
@@ -170,7 +173,7 @@ class ThermalManager:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise ThermalClusterNotFound(path, cluster_id) from None
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         return create_thermal_output(study_version, cluster_id, cluster)
 
     def get_clusters(
@@ -198,7 +201,7 @@ class ThermalManager:
             clusters = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise ThermalClusterConfigNotFound(path, area_id) from None
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
     def get_all_thermals_props(
@@ -228,7 +231,7 @@ class ThermalManager:
         except KeyError:
             raise ThermalClusterConfigNotFound(path) from None
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterOutput]]
         thermals_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
@@ -252,15 +255,20 @@ class ThermalManager:
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
                 old_cluster = old_thermals_by_ids[thermal_id]
-                new_cluster = old_cluster.copy(update=update_cluster.dict(by_alias=False, exclude_none=True))
+                new_cluster = old_cluster.copy(
+                    update=update_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
+                )
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
-                properties = create_thermal_config(study.version, **new_cluster.dict(by_alias=False, exclude_none=True))
+                properties = create_thermal_config(
+                    StudyVersion.parse(study.version),
+                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
+                )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
                 cmd = UpdateConfig(
                     target=path,
-                    data=json.loads(properties.json(by_alias=True, exclude={"id"})),
+                    data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 )
                 commands.append(cmd)
@@ -288,7 +296,7 @@ class ThermalManager:
         """
 
         file_study = self._get_file_study(study)
-        cluster = cluster_data.to_config(study.version)
+        cluster = cluster_data.to_config(StudyVersion.parse(study.version))
         command = self._make_create_cluster_cmd(area_id, cluster)
         execute_or_add_commands(
             study,
@@ -302,12 +310,13 @@ class ThermalManager:
     def _make_create_cluster_cmd(self, area_id: str, cluster: ThermalConfigType) -> CreateCluster:
         # NOTE: currently, in the `CreateCluster` class, there is a confusion
         # between the cluster name and the cluster ID (which is a section name).
-        command = CreateCluster(
-            area_id=area_id,
-            cluster_name=cluster.id,
-            parameters=cluster.dict(by_alias=True, exclude={"id"}),
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-        )
+        args = {
+            "area_id": area_id,
+            "cluster_name": cluster.id,
+            "parameters": cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+        }
+        command = CreateCluster.model_validate(args)
         return command
 
     def update_cluster(
@@ -335,7 +344,7 @@ class ThermalManager:
             in the provided cluster_data.
         """
 
-        study_version = study.version
+        study_version = StudyVersion.parse(study.version)
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
@@ -346,16 +355,16 @@ class ThermalManager:
             old_config = create_thermal_config(study_version, **values)
 
         # Use Python values to synchronize Config and Form values
-        new_values = cluster_data.dict(by_alias=False, exclude_none=True)
+        new_values = cluster_data.model_dump(mode="json", by_alias=False, exclude_none=True)
         new_config = old_config.copy(exclude={"id"}, update=new_values)
-        new_data = json.loads(new_config.json(by_alias=True, exclude={"id"}))
+        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
-        data: t.Dict[str, t.Any] = {
-            field.alias: new_data[field.alias]
-            for field_name, field in new_config.__fields__.items()
-            if field_name in new_values
-        }
+        data: t.Dict[str, t.Any] = {}
+        for field_name, field in new_config.model_fields.items():
+            if field_name in new_values:
+                name = field.alias if field.alias else field_name
+                data[name] = new_data[name]
 
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -365,8 +374,8 @@ class ThermalManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = new_config.dict(by_alias=False)
-        return ThermalClusterOutput(**values, id=cluster_id)
+        values = {**new_config.model_dump(mode="json", by_alias=False), "id": cluster_id}
+        return ThermalClusterOutput.model_validate(values)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
         """
@@ -418,8 +427,8 @@ class ThermalManager:
         # Cluster duplication
         source_cluster = self.get_cluster(study, area_id, source_id)
         source_cluster.name = new_cluster_name
-        creation_form = ThermalClusterCreation(**source_cluster.dict(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study.version)
+        creation_form = ThermalClusterCreation(**source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"}))
+        new_config = creation_form.to_config(StudyVersion.parse(study.version))
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config)
 
         # Matrix edition
@@ -434,7 +443,7 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
-        if int(study.version) >= 870:
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
             new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
@@ -451,13 +460,13 @@ class ThermalManager:
 
         execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
 
-        return ThermalClusterOutput(**new_config.dict(by_alias=False))
+        return ThermalClusterOutput(**new_config.model_dump(mode="json", by_alias=False))
 
     def validate_series(self, study: Study, area_id: str, cluster_id: str) -> bool:
         lower_cluster_id = cluster_id.lower()
         thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
         series_path = [thermal_cluster_path / "series"]
-        if int(study.version) >= 870:
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 

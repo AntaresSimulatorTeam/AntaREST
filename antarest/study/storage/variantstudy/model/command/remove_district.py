@@ -10,12 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -27,8 +28,8 @@ class RemoveDistrict(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_DISTRICT
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_DISTRICT
+    version: int = 1
 
     # Command parameters
     # ==================
@@ -39,7 +40,7 @@ class RemoveDistrict(ICommand):
         del study_data.sets[self.id]
         return CommandOutput(status=True, message=self.id), dict()
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, _ = self._apply_config(study_data.config)
         study_data.tree.delete(["input", "areas", "sets", self.id])
         return output

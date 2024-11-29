@@ -3,17 +3,14 @@ requires = ["setuptools"]
 
 [project]
 name = "AntaREST"
-version = "2.17.6"
+version = "2.18.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 classifiers=[
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "License :: Apache License :: 2.0",
         "Operating System :: OS Independent",
@@ -38,8 +35,14 @@ where = ["."]
 include = ["antarest*"]
 
 [tool.mypy]
+exclude = "antarest/fastapi_jwt_auth/*"
 strict = true
-files = "antarest/**/*.py"
+files = "antarest"
+plugins = "pydantic.mypy"
+
+[[tool.mypy.overrides]]
+module = ["antarest/fastapi_jwt_auth.*"]
+follow_imports = "skip"
 
 [[tool.mypy.overrides]]
 module = [
@@ -71,7 +74,7 @@ line-length = 120
 exclude = "(antares-?launcher/*|alembic/*)"
 
 [tool.coverage.run]
-omit = ["antarest/tools/cli.py", "antarest/tools/admin.py"]
+omit = ["antarest/tools/cli.py", "antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]
 relative_files = true  # avoids absolute path issues in CI
 
 [tool.isort]
@@ -120,8 +123,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.8
-target-version = "py38"
+# Assumes Python 3.11
+target-version = "py311"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.

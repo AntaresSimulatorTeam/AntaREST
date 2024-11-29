@@ -22,13 +22,13 @@ from markupsafe import escape
 from pydantic import NonNegativeInt
 
 from antarest.core.config import Config
-from antarest.core.exceptions import BadZipBinary
+from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.utils.utils import BadArchiveContent, sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
@@ -98,7 +98,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         exists: t.Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
         workspace: str = Query("", description="Filter studies based on their workspace."),
         folder: str = Query("", description="Filter studies based on their folder."),
-        sort_by: t.Optional[StudySortBy] = Query(
+        sort_by: StudySortBy = Query(
             None,
             description="Sort studies based on their name (case-insensitive) or creation date.",
             alias="sortBy",
@@ -727,7 +727,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        accept = request.headers.get("Accept")
+        accept = request.headers["Accept"]
         filetype = ExportFormat.from_dto(accept)
 
         content = study_service.download_outputs(

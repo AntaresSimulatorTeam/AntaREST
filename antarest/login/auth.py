@@ -10,19 +10,18 @@
 #
 # This file is part of the Antares project.
 
-import json
 import logging
 from datetime import timedelta
 from typing import Any, Callable, Coroutine, Dict, Optional, Tuple, Union
 
 from fastapi import Depends
-from fastapi_jwt_auth import AuthJWT  # type: ignore
-from pydantic import BaseModel
 from ratelimit.types import Scope  # type: ignore
 from starlette.requests import Request
 
 from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.serialization import AntaresBaseModel, from_json
+from antarest.fastapi_jwt_auth import AuthJWT
 
 logger = logging.getLogger(__name__)
 
@@ -66,20 +65,20 @@ class Auth:
 
         auth_jwt.jwt_required()
 
-        user = JWTUser.parse_obj(json.loads(auth_jwt.get_jwt_subject()))
+        user = JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
         return user
 
     @staticmethod
     def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:
         try:
             token_data = jwt_manager._verified_token(token)
-            return JWTUser.parse_obj(json.loads(token_data["sub"]))
+            return JWTUser.model_validate(from_json(token_data["sub"]))
         except Exception as e:
             logger.debug("Failed to retrieve user from token", exc_info=e)
         return None
 
 
-class JwtSettings(BaseModel):
+class JwtSettings(AntaresBaseModel):
     authjwt_secret_key: str
     authjwt_token_location: Tuple[str, ...]
     authjwt_access_token_expires: Union[int, timedelta] = Auth.ACCESS_TOKEN_DURATION

@@ -16,6 +16,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -27,8 +28,8 @@ class RemoveRenewablesCluster(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_RENEWABLES_CLUSTER
-    version = 1
+    command_name: CommandName = CommandName.REMOVE_RENEWABLES_CLUSTER
+    version: int = 1
 
     # Command parameters
     # ==================
@@ -92,7 +93,7 @@ class RemoveRenewablesCluster(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update renewable cluster configurations and saves the changes:
         remove corresponding the configuration and remove the attached time series.

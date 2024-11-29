@@ -1,11 +1,25 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
 import { mergeSxProp } from "../../utils/muiUtils";
-import * as RA from "ramda-adjunct";
+import * as R from "ramda";
 
 export type TreeItemEnhancedProps = TreeItemProps;
 
 function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
-  const canExpand = rest.children && RA.isNotEmpty(rest.children);
+  const canExpand = rest.children && R.isNotEmpty(rest.children);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

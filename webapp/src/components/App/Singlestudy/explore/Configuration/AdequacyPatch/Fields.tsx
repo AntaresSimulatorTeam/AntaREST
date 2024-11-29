@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
@@ -8,7 +22,7 @@ import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import { AdequacyPatchFormFields, PRICE_TAKING_ORDER_OPTIONS } from "./utils";
 import { StudyMetadata } from "../../../../../../common/types";
-import { validateNumber } from "../../../../../../utils/validationUtils";
+import { validateNumber } from "@/utils/validation/number";
 
 function Fields() {
   const { t } = useTranslation();

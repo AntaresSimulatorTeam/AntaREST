@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -35,7 +36,7 @@ class InputLinkArea(FolderNode):
         children: TREE
         ctx = self.context
         cfg = self.config
-        if cfg.version < 820:
+        if cfg.version < STUDY_VERSION_8_2:
             children = {link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt")) for link in cfg.get_links(self.area)}
         else:
             children = {

@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { Grid } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useState } from "react";
@@ -13,7 +27,7 @@ import {
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import HydroMatrixDialog from "../HydroMatrixDialog";
-import { HydroMatrixType } from "../utils";
+import { HydroMatrix } from "../utils";
 import { FormBox, FormPaper } from "../style";
 import ViewMatrixButton from "../ViewMatrixButton";
 
@@ -70,7 +84,7 @@ function Allocation() {
       </FormPaper>
       {matrixDialogOpen && (
         <HydroMatrixDialog
-          type={HydroMatrixType.Allocation}
+          type={HydroMatrix.Allocation}
           open={matrixDialogOpen}
           onClose={() => setMatrixDialogOpen(false)}
         />

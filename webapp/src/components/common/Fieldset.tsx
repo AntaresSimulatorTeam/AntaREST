@@ -1,13 +1,28 @@
-import { Box, BoxProps, Divider } from "@mui/material";
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { Box, BoxProps, Divider, SxProps, Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { mergeSxProp } from "../../utils/muiUtils";
 
-interface FieldsetProps extends Omit<BoxProps, "component"> {
+interface FieldsetProps {
   legend?: string | React.ReactNode;
   children: React.ReactNode;
   contentProps?: BoxProps;
   fullFieldWidth?: boolean;
   fieldWidth?: number;
+  sx?: SxProps<Theme>;
 }
 
 function Fieldset(props: FieldsetProps) {
@@ -18,12 +33,10 @@ function Fieldset(props: FieldsetProps) {
     contentProps,
     fullFieldWidth = false,
     fieldWidth = 220,
-    ...rest
   } = props;
 
   return (
     <Box
-      {...rest}
       component="fieldset"
       sx={mergeSxProp(
         {

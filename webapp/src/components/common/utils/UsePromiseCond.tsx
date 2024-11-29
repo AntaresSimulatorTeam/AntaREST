@@ -1,4 +1,17 @@
-import * as R from "ramda";
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { PromiseStatus, UsePromiseResponse } from "../../../hooks/usePromise";
 import SimpleLoader from "../loaders/SimpleLoader";
 import EmptyView from "../page/SimpleContent";
@@ -19,7 +32,7 @@ export function mergeResponses<T1, T2>(
       PromiseStatus.Rejected,
     ].find((status) => res1.status === status || res2.status === status);
 
-    return preResolvedStatus || PromiseStatus.Resolved;
+    return preResolvedStatus || PromiseStatus.Fulfilled;
   }
 
   const status = getMergedStatus();
@@ -29,7 +42,7 @@ export function mergeResponses<T1, T2>(
     ...res2,
     status,
     data:
-      status === PromiseStatus.Resolved
+      status === PromiseStatus.Fulfilled
         ? [res1.data as T1, res2.data as T2]
         : undefined,
     error: res1.error || res2.error,
@@ -40,7 +53,7 @@ export interface UsePromiseCondProps<T> {
   response: Response<T>;
   ifPending?: () => React.ReactNode;
   ifRejected?: (error: Response["error"]) => React.ReactNode;
-  ifResolved?: (data: T) => React.ReactNode;
+  ifFulfilled?: (data: T) => React.ReactNode;
   keepLastResolvedOnReload?: boolean;
 }
 
@@ -49,9 +62,10 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
     response,
     ifPending = () => <SimpleLoader />,
     ifRejected = (error) => <EmptyView title={error?.toString()} />,
-    ifResolved,
+    ifFulfilled,
     keepLastResolvedOnReload = false,
   } = props;
+
   const { status, data, error } = response;
 
   ////////////////////////////////////////////////////////////////
@@ -66,27 +80,18 @@ function UsePromiseCond<T>(props: UsePromiseCondProps<T>) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <>
-      {R.cond([
-        // Resolved
-        [
-          R.either(R.equals(PromiseStatus.Resolved), hasToKeepLastResolved),
-          () => ifResolved?.(data as T),
-        ],
-        // Pending
-        [
-          R.either(
-            R.equals(PromiseStatus.Idle),
-            R.equals(PromiseStatus.Pending),
-          ),
-          () => ifPending(),
-        ],
-        // Rejected
-        [R.equals(PromiseStatus.Rejected), () => ifRejected(error)],
-      ])(status)}
-    </>
-  );
+  // Keep this condition at the top
+  if (status === PromiseStatus.Fulfilled || hasToKeepLastResolved()) {
+    return ifFulfilled?.(data as T);
+  }
+
+  if (status === PromiseStatus.Idle || status === PromiseStatus.Pending) {
+    return ifPending();
+  }
+
+  if (status === PromiseStatus.Rejected) {
+    return ifRejected(error);
+  }
 }
 
 export default UsePromiseCond;

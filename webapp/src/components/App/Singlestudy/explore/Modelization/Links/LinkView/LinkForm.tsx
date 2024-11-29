@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { Box } from "@mui/material";
 import { AxiosError } from "axios";
 import { useMemo } from "react";
@@ -8,16 +22,12 @@ import Fieldset from "../../../../../../common/Fieldset";
 import { AutoSubmitHandler } from "../../../../../../common/Form/types";
 import { getLinkPath, LinkFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import {
-  LinkElement,
-  MatrixStats,
-  StudyMetadata,
-} from "../../../../../../../common/types";
+import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import MatrixInput from "../../../../../../common/MatrixInput";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";
 import { useFormContextPlus } from "../../../../../../common/Form";
+import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
   link: LinkElement;
@@ -237,11 +247,9 @@ function LinkForm(props: Props) {
           {isTabMatrix ? (
             <LinkMatrixView study={study} area1={area1} area2={area2} />
           ) : (
-            <MatrixInput
-              study={study}
+            <Matrix
               url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}`}
-              columnsNames={columnsNames}
-              computStats={MatrixStats.NOCOL}
+              customColumns={columnsNames}
             />
           )}
         </Box>

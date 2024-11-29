@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { ReactNode, useState } from "react";
 import {
   Box,
@@ -23,13 +37,13 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import { GenericInfo } from "../../common/types";
 import DownloadLink from "./DownloadLink";
-import ImportDialog from "./dialogs/ImportDialog";
+import UploadDialog from "./dialogs/UploadDialog";
 
 interface PropType {
   title: ReactNode;
   content: GenericInfo[];
   onDelete?: (id: string) => Promise<void>;
-  onRead: (id: string) => Promise<void>;
+  onRead: (id: string) => Promise<void> | void;
   uploadFile?: (file: File) => Promise<void>;
   onFileDownload?: (id: string) => string;
   onAssign?: (id: string) => Promise<void>;
@@ -53,7 +67,7 @@ function FileTable(props: PropType) {
   } = props;
   const [t] = useTranslation();
   const [openConfirmationModal, setOpenConfirmationModal] = useState("");
-  const [openImportDialog, setOpenImportDialog] = useState(false);
+  const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
   return (
     <Box
@@ -71,7 +85,7 @@ function FileTable(props: PropType) {
             variant="outlined"
             color="primary"
             startIcon={<UploadOutlinedIcon />}
-            onClick={() => setOpenImportDialog(true)}
+            onClick={() => setOpenUploadDialog(true)}
           >
             {t("global.import")}
           </Button>
@@ -212,25 +226,15 @@ function FileTable(props: PropType) {
           {t("xpansion.question.deleteFile")}
         </ConfirmationDialog>
       )}
-      {openImportDialog && (
-        <ImportDialog
-          open={openImportDialog}
-          onCancel={() => setOpenImportDialog(false)}
+      {openUploadDialog && (
+        <UploadDialog
+          open={openUploadDialog}
+          onCancel={() => setOpenUploadDialog(false)}
           onImport={async (file) => uploadFile?.(file)}
         />
       )}
     </Box>
   );
 }
-
-FileTable.defaultProps = {
-  onDelete: undefined,
-  onAssign: undefined,
-  uploadFile: undefined,
-  allowImport: false,
-  allowDelete: false,
-  onFileDownload: undefined,
-  copyId: false,
-};
 
 export default FileTable;

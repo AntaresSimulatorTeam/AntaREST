@@ -15,11 +15,12 @@ import logging
 import re
 import typing as t
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import Field
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import AllOptionalMetaclass, camel_case_model
+from antarest.core.serialization import AntaresBaseModel
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -47,11 +48,11 @@ class AreaType(enum.Enum):
     DISTRICT = "DISTRICT"
 
 
-class AreaCreationDTO(BaseModel):
+class AreaCreationDTO(AntaresBaseModel):
     name: str
     type: AreaType
-    metadata: t.Optional[PatchArea]
-    set: t.Optional[t.List[str]]
+    metadata: t.Optional[PatchArea] = None
+    set: t.Optional[t.List[str]] = None
 
 
 # review: is this class necessary?
@@ -60,9 +61,9 @@ class ClusterInfoDTO(PatchCluster):
     name: str
     enabled: bool = True
     unitcount: int = 0
-    nominalcapacity: int = 0
+    nominalcapacity: float = 0
     group: t.Optional[str] = None
-    min_stable_power: t.Optional[int] = None
+    min_stable_power: t.Optional[float] = None
     min_up_time: t.Optional[int] = None
     min_down_time: t.Optional[int] = None
     spinning: t.Optional[float] = None
@@ -76,13 +77,13 @@ class AreaInfoDTO(AreaCreationDTO):
     thermals: t.Optional[t.List[ClusterInfoDTO]] = None
 
 
-class LayerInfoDTO(BaseModel):
+class LayerInfoDTO(AntaresBaseModel):
     id: str
     name: str
     areas: t.List[str]
 
 
-class UpdateAreaUi(BaseModel, extra="forbid", allow_population_by_field_name=True):
+class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
     """
     DTO for updating area UI
 
@@ -107,7 +108,7 @@ class UpdateAreaUi(BaseModel, extra="forbid", allow_population_by_field_name=Tru
     ... }
 
     >>> model = UpdateAreaUi(**obj)
-    >>> pprint(model.dict(by_alias=True), width=80)
+    >>> pprint(model.model_dump(by_alias=True), width=80)
     {'colorRgb': [230, 108, 44],
      'layerColor': {0: '230, 108, 44',
                     4: '230, 108, 44',
@@ -179,9 +180,9 @@ class _BaseAreaDTO(
     OptimizationProperties.FilteringSection,
     OptimizationProperties.ModalOptimizationSection,
     AdequacyPathProperties.AdequacyPathSection,
-    extra=Extra.forbid,
+    extra="forbid",
     validate_assignment=True,
-    allow_population_by_field_name=True,
+    populate_by_name=True,
 ):
     """
     Represents an area output.
@@ -200,8 +201,9 @@ class _BaseAreaDTO(
 
 
 # noinspection SpellCheckingInspection
+@all_optional_model
 @camel_case_model
-class AreaOutput(_BaseAreaDTO, metaclass=AllOptionalMetaclass, use_none=True):
+class AreaOutput(_BaseAreaDTO):
     """
     DTO object use to get the area information using a flat structure.
     """
@@ -227,30 +229,32 @@ class AreaOutput(_BaseAreaDTO, metaclass=AllOptionalMetaclass, use_none=True):
         obj = {
             "average_unsupplied_energy_cost": average_unsupplied_energy_cost,
             "average_spilled_energy_cost": average_spilled_energy_cost,
-            **area_folder.optimization.filtering.dict(by_alias=False),
-            **area_folder.optimization.nodal_optimization.dict(by_alias=False),
+            **area_folder.optimization.filtering.model_dump(mode="json", by_alias=False),
+            **area_folder.optimization.nodal_optimization.model_dump(mode="json", by_alias=False),
             # adequacy_patch is only available if study version >= 830.
-            **(area_folder.adequacy_patch.adequacy_patch.dict(by_alias=False) if area_folder.adequacy_patch else {}),
+            **(
+                area_folder.adequacy_patch.adequacy_patch.model_dump(mode="json", by_alias=False)
+                if area_folder.adequacy_patch
+                else {}
+            ),
         }
         return cls(**obj)
 
     def _to_optimization(self) -> OptimizationProperties:
-        obj = {name: getattr(self, name) for name in OptimizationProperties.FilteringSection.__fields__}
+        obj = {name: getattr(self, name) for name in OptimizationProperties.FilteringSection.model_fields}
         filtering_section = OptimizationProperties.FilteringSection(**obj)
-        obj = {name: getattr(self, name) for name in OptimizationProperties.ModalOptimizationSection.__fields__}
+        obj = {name: getattr(self, name) for name in OptimizationProperties.ModalOptimizationSection.model_fields}
         nodal_optimization_section = OptimizationProperties.ModalOptimizationSection(**obj)
-        return OptimizationProperties(
-            filtering=filtering_section,
-            nodal_optimization=nodal_optimization_section,
-        )
+        args = {"filtering": filtering_section, "nodal_optimization": nodal_optimization_section}
+        return OptimizationProperties.model_validate(args)
 
     def _to_adequacy_patch(self) -> t.Optional[AdequacyPathProperties]:
-        obj = {name: getattr(self, name) for name in AdequacyPathProperties.AdequacyPathSection.__fields__}
+        obj = {name: getattr(self, name) for name in AdequacyPathProperties.AdequacyPathSection.model_fields}
         # If all fields are `None`, the object is empty.
         if all(value is None for value in obj.values()):
             return None
         adequacy_path_section = AdequacyPathProperties.AdequacyPathSection(**obj)
-        return AdequacyPathProperties(adequacy_patch=adequacy_path_section)
+        return AdequacyPathProperties.model_validate({"adequacy_patch": adequacy_path_section})
 
     @property
     def area_folder(self) -> AreaFolder:
@@ -359,7 +363,7 @@ class AreaManager:
         for area_id, update_area in update_areas_by_ids.items():
             # Update the area properties.
             old_area = old_areas_by_ids[area_id]
-            new_area = old_area.copy(update=update_area.dict(by_alias=False, exclude_none=True))
+            new_area = old_area.copy(update=update_area.model_dump(mode="json", by_alias=False, exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
             # Convert the DTO to a configuration object and update the configuration file.
@@ -740,7 +744,7 @@ class AreaManager:
             id=area_id,
             name=file_study.config.areas[area_id].name,
             type=AreaType.AREA,
-            metadata=patch.areas.get(area_id, PatchArea()).dict(),
+            metadata=patch.areas.get(area_id, PatchArea()),
             thermals=self._get_clusters(file_study, area_id, patch),
             set=None,
         )

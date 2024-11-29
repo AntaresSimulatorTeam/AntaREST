@@ -1,14 +1,24 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
-import jwtDecode, { JwtPayload } from "jwt-decode";
+import { jwtDecode, type JwtPayload } from "jwt-decode";
 import { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
 import { isUserExpired } from "../../services/utils";
-import {
-  closeWebSocket,
-  initWebSocket,
-  reloadWebSocket,
-} from "../../services/webSockets";
+import { closeWs, initWs, reloadWs } from "../../services/webSocket/ws";
 import { getAuthUser } from "../selectors";
 import { AppAsyncThunkConfig } from "../store";
 import { createThunk, makeActionName } from "../utils";
@@ -36,7 +46,7 @@ const n = makeActionName("auth");
 
 export const logout = createThunk(n("LOGOUT"), () => {
   clientApi.setAuth(null);
-  closeWebSocket();
+  closeWs();
 });
 
 export const refresh = createAsyncThunk<
@@ -62,7 +72,7 @@ export const refresh = createAsyncThunk<
       };
 
       clientApi.setAuth(tokens.access_token);
-      reloadWebSocket(dispatch, userUpdated);
+      reloadWs(dispatch, userUpdated);
 
       return userUpdated;
     } catch (err) {
@@ -107,7 +117,7 @@ export const login = createAsyncThunk<
     }
   }
 
-  initWebSocket(dispatch, user);
+  initWs(dispatch, user);
   clientApi.initAxiosInterceptors();
 
   return user;

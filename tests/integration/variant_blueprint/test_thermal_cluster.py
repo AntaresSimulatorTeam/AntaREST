@@ -140,7 +140,7 @@ class TestThermalCluster:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         task = TaskDTO(**res.json())
-        assert task.dict() == {
+        assert task.model_dump() == {
             "completion_date_utc": mock.ANY,
             "creation_date_utc": mock.ANY,
             "id": task_id,
@@ -155,4 +155,5 @@ class TestThermalCluster:
             },
             "status": TaskStatus.COMPLETED,
             "type": "VARIANT_GENERATION",
+            "progress": None,
         }

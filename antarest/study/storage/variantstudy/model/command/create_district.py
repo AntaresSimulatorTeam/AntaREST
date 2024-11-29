@@ -13,7 +13,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from pydantic import validator
+from pydantic import field_validator
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
@@ -23,6 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -39,8 +40,8 @@ class CreateDistrict(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.CREATE_DISTRICT
-    version = 1
+    command_name: CommandName = CommandName.CREATE_DISTRICT
+    version: int = 1
 
     # Command parameters
     # ==================
@@ -51,7 +52,7 @@ class CreateDistrict(ICommand):
     output: bool = True
     comments: str = ""
 
-    @validator("name")
+    @field_validator("name")
     def validate_district_name(cls, val: str) -> str:
         valid_name = transform_name_to_id(val, lower=False)
         if valid_name != val:
@@ -83,7 +84,7 @@ class CreateDistrict(ICommand):
             "item_key": item_key,
         }
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output

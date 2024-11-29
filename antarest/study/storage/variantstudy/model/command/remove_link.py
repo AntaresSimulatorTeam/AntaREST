@@ -12,12 +12,14 @@
 
 import typing as t
 
-from pydantic import root_validator, validator
+from pydantic import field_validator, model_validator
 
+from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -29,7 +31,7 @@ class RemoveLink(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REMOVE_LINK
+    command_name: CommandName = CommandName.REMOVE_LINK
     version: int = 1
 
     # Command parameters
@@ -40,7 +42,7 @@ class RemoveLink(ICommand):
     area2: str
 
     # noinspection PyMethodParameters
-    @validator("area1", "area2", pre=True)
+    @field_validator("area1", "area2", mode="before")
     def _validate_id(cls, area: str) -> str:
         if isinstance(area, str):
             # Area IDs must be in lowercase and not empty.
@@ -54,16 +56,12 @@ class RemoveLink(ICommand):
         return area
 
     # noinspection PyMethodParameters
-    @root_validator(pre=False)
-    def _validate_link(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        area1 = values.get("area1")
-        area2 = values.get("area2")
-
-        if area1 and area2:
-            # By convention, the source area is always the smallest one (in lexicographic order).
-            values["area1"], values["area2"] = sorted([area1, area2])
-
-        return values
+    @model_validator(mode="after")
+    def _validate_link(self) -> "RemoveLink":
+        # By convention, the source area is always the smallest one (in lexicographic order).
+        if self.area1 > self.area2:
+            self.area1, self.area2 = self.area2, self.area1
+        return self
 
     def _check_link_exists(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
         """
@@ -127,7 +125,7 @@ class RemoveLink(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Update the configuration and the study data by removing the link between the source and target areas.
 
@@ -141,7 +139,7 @@ class RemoveLink(ICommand):
         output = self._check_link_exists(study_data.config)[0]
 
         if output.status:
-            if study_data.config.version < 820:
+            if study_data.config.version < STUDY_VERSION_8_2:
                 study_data.tree.delete(["input", "links", self.area1, self.area2])
             else:
                 study_data.tree.delete(["input", "links", self.area1, f"{self.area2}_parameters"])

@@ -29,10 +29,10 @@ class RedisEventBus(IEventBusBackend):
         self.pubsub.subscribe(REDIS_STORE_KEY)
 
     def push_event(self, event: Event) -> None:
-        self.redis.publish(REDIS_STORE_KEY, event.json())
+        self.redis.publish(REDIS_STORE_KEY, event.model_dump_json())
 
     def queue_event(self, event: Event, queue: str) -> None:
-        self.redis.rpush(queue, event.json())
+        self.redis.rpush(queue, event.model_dump_json())
 
     def pull_queue(self, queue: str) -> Optional[Event]:
         event = self.redis.lpop(queue)

@@ -10,11 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy
 import numpy as np
-from pydantic import conlist, root_validator, validator
+from annotated_types import Len
+from pydantic import ValidationInfo, field_validator, model_validator
+from typing_extensions import Annotated
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.study.business.area_management import AreaInfoDTO
@@ -36,9 +38,9 @@ class AllocationFormFields(FormFieldsBaseModel):
 
     allocation: List[AllocationField]
 
-    @root_validator
-    def check_allocation(cls, values: Dict[str, List[AllocationField]]) -> Dict[str, List[AllocationField]]:
-        allocation = values.get("allocation", [])
+    @model_validator(mode="after")
+    def check_allocation(self) -> "AllocationFormFields":
+        allocation = self.allocation
 
         if not allocation:
             raise ValueError("allocation must not be empty")
@@ -56,7 +58,7 @@ class AllocationFormFields(FormFieldsBaseModel):
         if sum(a.coefficient for a in allocation) <= 0:
             raise ValueError("sum of allocation coefficients must be positive")
 
-        return values
+        return self
 
 
 class AllocationMatrix(FormFieldsBaseModel):
@@ -67,14 +69,14 @@ class AllocationMatrix(FormFieldsBaseModel):
     data: 2D-array matrix of consumption coefficients
     """
 
-    index: conlist(str, min_items=1)  # type: ignore
-    columns: conlist(str, min_items=1)  # type: ignore
+    index: Annotated[List[str], Len(min_length=1)]
+    columns: Annotated[List[str], Len(min_length=1)]
     data: List[List[float]]  # NonNegativeFloat not necessary
 
     # noinspection PyMethodParameters
-    @validator("data")
+    @field_validator("data", mode="before")
     def validate_hydro_allocation_matrix(
-        cls, data: List[List[float]], values: Dict[str, List[str]]
+        cls, data: List[List[float]], values: Union[Dict[str, List[str]], ValidationInfo]
     ) -> List[List[float]]:
         """
         Validate the hydraulic allocation matrix.
@@ -89,8 +91,9 @@ class AllocationMatrix(FormFieldsBaseModel):
         """
 
         array = np.array(data)
-        rows = len(values.get("index", []))
-        cols = len(values.get("columns", []))
+        new_values = values if isinstance(values, dict) else values.data
+        rows = len(new_values.get("index", []))
+        cols = len(new_values.get("columns", []))
 
         if array.size == 0:
             raise ValueError("allocation matrix must not be empty")
@@ -136,7 +139,7 @@ class AllocationManager:
         if not allocation_data:
             raise AllocationDataNotFound(area_id)
 
-        return allocation_data.get("[allocation]", {})
+        return allocation_data.get("[allocation]", {})  # type: ignore
 
     def get_allocation_form_fields(
         self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
@@ -160,13 +163,10 @@ class AllocationManager:
         allocations = self.get_allocation_data(study, area_id)
 
         filtered_allocations = {area: value for area, value in allocations.items() if area in areas_ids}
-
-        return AllocationFormFields.construct(
-            allocation=[
-                AllocationField.construct(area_id=area, coefficient=value)
-                for area, value in filtered_allocations.items()
-            ]
-        )
+        final_allocations = [
+            AllocationField.construct(area_id=area, coefficient=value) for area, value in filtered_allocations.items()
+        ]
+        return AllocationFormFields.model_validate({"allocation": final_allocations})
 
     def set_allocation_form_fields(
         self,
@@ -233,7 +233,7 @@ class AllocationManager:
         """
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        allocation_cfg = file_study.tree.get("input/hydro/allocation/*".split("/"), depth=2)
+        allocation_cfg = file_study.tree.get(["input", "hydro", "allocation"], depth=3)
 
         if not allocation_cfg:
             areas_ids = {area.id for area in all_areas}

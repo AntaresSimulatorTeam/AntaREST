@@ -20,6 +20,7 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2, STUDY_VERSION_8_7
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -173,7 +174,7 @@ class CommandExtractor(ICommandExtractor):
         )
         null_matrix_id = strip_matrix_protocol(self.generator_matrix_constants.get_null_matrix())
         commands: t.List[ICommand] = [link_command, link_config_command]
-        if study.config.version < 820:
+        if study.config.version < STUDY_VERSION_8_2:
             commands.append(
                 self.generate_replace_matrix(
                     study_tree,
@@ -223,7 +224,7 @@ class CommandExtractor(ICommandExtractor):
             create_cluster_command(
                 area_id=area_id,
                 cluster_name=cluster.id,
-                parameters=cluster.dict(by_alias=True, exclude_defaults=True, exclude={"id"}),
+                parameters=cluster.model_dump(by_alias=True, exclude_defaults=True, exclude={"id"}),
                 command_context=self.command_context,
             ),
             self.generate_replace_matrix(
@@ -288,7 +289,7 @@ class CommandExtractor(ICommandExtractor):
             ),
         ]
 
-        if study_tree.config.version > 650:
+        if study_tree.config.version > STUDY_VERSION_6_5:
             commands += [
                 self.generate_replace_matrix(
                     study_tree,
@@ -323,6 +324,7 @@ class CommandExtractor(ICommandExtractor):
         district_config = study_config.sets[district_id]
         base_filter = DistrictBaseFilter.add_all if district_config.inverted_set else DistrictBaseFilter.remove_all
         district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
+        assert district_config.name is not None
         study_commands.append(
             CreateDistrict(
                 name=district_config.name,
@@ -366,7 +368,7 @@ class CommandExtractor(ICommandExtractor):
                 del binding[term_id]
 
         # Extract the matrices associated with the binding constraint
-        if study.config.version < 870:
+        if study.config.version < STUDY_VERSION_8_7:
             urls = {"values": ["input", "bindingconstraints", bc_id]}
         else:
             urls = {
@@ -382,7 +384,8 @@ class CommandExtractor(ICommandExtractor):
                 matrices[name] = matrix["data"]
 
         # Create the command to create the binding constraint
-        create_cmd = CreateBindingConstraint(**binding, **matrices, coeffs=terms, command_context=self.command_context)
+        kwargs = {**binding, **matrices, "coeffs": terms, "command_context": self.command_context}
+        create_cmd = CreateBindingConstraint.model_validate(kwargs)
 
         return [create_cmd]
 
@@ -416,8 +419,8 @@ class CommandExtractor(ICommandExtractor):
         config = study_tree.get(["settings", "generaldata"])
         playlist = get_playlist(config)
         return UpdatePlaylist(
-            items=playlist.keys() if playlist else None,
-            weights=({year for year, weight in playlist.items() if weight != 1} if playlist else None),
+            items=list(playlist.keys()) if playlist else None,
+            weights=({year: weight for year, weight in playlist.items() if weight != 1} if playlist else None),
             active=bool(playlist and len(playlist) > 0),
             reverse=False,
             command_context=self.command_context,
@@ -453,6 +456,7 @@ class CommandExtractor(ICommandExtractor):
         study_tree = study.tree
         district_config = study_config.sets[district_id]
         district_fetched_config = study_tree.get(["input", "areas", "sets", district_id])
+        assert district_config.name is not None
         return UpdateDistrict(
             id=district_config.name,
             base_filter=DistrictBaseFilter.add_all if district_config.inverted_set else DistrictBaseFilter.remove_all,

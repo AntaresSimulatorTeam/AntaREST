@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 
 import base64
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -29,8 +30,8 @@ class UpdateRawFile(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.UPDATE_FILE
-    version = 1
+    command_name: CommandName = CommandName.UPDATE_FILE
+    version: int = 1
 
     # Command parameters
     # ==================
@@ -50,7 +51,7 @@ class UpdateRawFile(ICommand):
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, RawFileNode):

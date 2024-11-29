@@ -12,7 +12,7 @@
 
 import typing as t
 
-from pydantic import validator
+from pydantic import Field, ValidationInfo, field_validator
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
@@ -24,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
@@ -35,16 +36,18 @@ class ReplaceMatrix(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name = CommandName.REPLACE_MATRIX
-    version = 1
+    command_name: CommandName = CommandName.REPLACE_MATRIX
+    version: int = 1
 
     # Command parameters
     # ==================
 
     target: str
-    matrix: t.Union[t.List[t.List[MatrixData]], str]
+    matrix: t.Union[t.List[t.List[MatrixData]], str] = Field(validate_default=True)
 
-    _validate_matrix = validator("matrix", each_item=True, always=True, allow_reuse=True)(validate_matrix)
+    @field_validator("matrix", mode="before")
+    def matrix_validator(cls, matrix: t.Union[t.List[t.List[MatrixData]], str], values: ValidationInfo) -> str:
+        return validate_matrix(matrix, values.data)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return (
@@ -55,7 +58,7 @@ class ReplaceMatrix(ICommand):
             {},
         )
 
-    def _apply(self, study_data: FileStudy) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         if self.target[0] == "@":
             self.target = AliasDecoder.decode(self.target, study_data)
 

@@ -12,7 +12,6 @@
 
 import contextlib
 import io
-import json
 import logging
 import tempfile
 import typing as t
@@ -31,10 +30,12 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serialization import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import ITaskService, TaskUpdateNotifier
+from antarest.core.tasks.service import ITaskNotifier, ITaskService
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, zip_dir
+from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
@@ -100,11 +101,7 @@ class ISimpleMatrixService(ABC):
         """
         # noinspection SpellCheckingInspection
         if isinstance(matrix, str):
-            # str.removeprefix() is not available in Python 3.8
-            prefix = "matrix://"
-            if matrix.startswith(prefix):
-                return matrix[len(prefix) :]
-            return matrix
+            return matrix.removeprefix("matrix://")
         elif isinstance(matrix, list):
             return self.create(matrix)
         else:
@@ -225,6 +222,7 @@ class MatrixService(ISimpleMatrixService):
             A list of `MatrixInfoDTO` objects containing the SHA256 hash of the imported matrices.
         """
         with file.file as f:
+            assert file.filename is not None
             if file.content_type == "application/zip":
                 with contextlib.closing(f):
                     buffer = io.BytesIO(f.read())
@@ -262,7 +260,7 @@ class MatrixService(ISimpleMatrixService):
             A SHA256 hash that identifies the imported matrix.
         """
         if is_json:
-            obj = json.loads(file)
+            obj = from_json(file)
             content = MatrixContent(**obj)
             return self.create(content.data)
         # noinspection PyTypeChecker
@@ -468,7 +466,7 @@ class MatrixService(ISimpleMatrixService):
                 else:
                     # noinspection PyTypeChecker
                     np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
-            zip_dir(Path(tmpdir), export_path)
+            archive_dir(Path(tmpdir), export_path, archive_format=ArchiveFormat.ZIP)
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
         return str(export_path)
 
@@ -512,7 +510,7 @@ class MatrixService(ISimpleMatrixService):
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: TaskUpdateNotifier) -> TaskResult:
+        def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 self.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
                 self.file_transfer_manager.set_ready(export_id)
@@ -529,6 +527,7 @@ class MatrixService(ISimpleMatrixService):
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=None,
+            progress=None,
             custom_event_messages=None,
             request_params=params,
         )

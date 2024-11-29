@@ -14,10 +14,12 @@ import functools
 import operator
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, Extra, Field, root_validator, validator
+from pydantic import Field, field_validator, model_validator
+
+from antarest.core.serialization import AntaresBaseModel
 
 
-class MatrixSlice(BaseModel):
+class MatrixSlice(AntaresBaseModel):
     # NOTE: This Markdown documentation is reflected in the Swagger API
     """
     Represents a group of cells in a matrix for updating.
@@ -35,8 +37,8 @@ class MatrixSlice(BaseModel):
     column_to: int
 
     class Config:
-        extra = Extra.forbid
-        schema_extra = {
+        extra = "forbid"
+        json_schema_extra = {
             "example": {
                 "column_from": 5,
                 "column_to": 8,
@@ -45,7 +47,7 @@ class MatrixSlice(BaseModel):
             }
         }
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Converts and validates the slice coordinates.
@@ -97,7 +99,7 @@ OPERATIONS = {
 
 
 @functools.total_ordering
-class Operation(BaseModel):
+class Operation(AntaresBaseModel):
     # NOTE: This Markdown documentation is reflected in the Swagger API
     """
     Represents an update operation to be performed on matrix cells.
@@ -107,12 +109,12 @@ class Operation(BaseModel):
      - `value`: The value associated with the operation.
     """
 
-    operation: str = Field(regex=r"[=/*+-]|ABS")
+    operation: str = Field(pattern=r"[=/*+-]|ABS")
     value: float
 
     class Config:
-        extra = Extra.forbid
-        schema_extra = {"example": {"operation": "=", "value": 120.0}}
+        extra = "forbid"
+        json_schema_extra = {"example": {"operation": "=", "value": 120.0}}
 
     # noinspection SpellCheckingInspection
     def compute(self, x: Any, use_coords: bool = False) -> Any:
@@ -140,7 +142,7 @@ class Operation(BaseModel):
         return NotImplemented  # pragma: no cover
 
 
-class MatrixEditInstruction(BaseModel):
+class MatrixEditInstruction(AntaresBaseModel):
     # NOTE: This Markdown documentation is reflected in the Swagger API
     """
     Provides edit instructions to be applied to a matrix.
@@ -157,16 +159,17 @@ class MatrixEditInstruction(BaseModel):
     operation: Operation
 
     class Config:
-        extra = Extra.forbid
+        extra = "forbid"
+        json_schema_extra = {
+            "example": {
+                "column_from": 5,
+                "column_to": 8,
+                "row_from": 0,
+                "row_to": 8760,
+            }
+        }
 
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any]) -> None:
-            schema["example"] = MatrixEditInstruction(
-                coordinates=[(0, 10), (0, 11), (0, 12)],
-                operation=Operation(operation="=", value=120.0),
-            )
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validates the 'slices' and 'coordinates' fields.
@@ -191,7 +194,7 @@ class MatrixEditInstruction(BaseModel):
 
         return values
 
-    @validator("coordinates")
+    @field_validator("coordinates")
     def validate_coordinates(cls, coordinates: Optional[List[Tuple[int, int]]]) -> Optional[List[Tuple[int, int]]]:
         """
         Validates the `coordinates` field.

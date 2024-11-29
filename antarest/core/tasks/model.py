@@ -13,14 +13,14 @@
 import typing as t
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 
-from pydantic import BaseModel, Extra
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization import AntaresBaseModel
 
 if t.TYPE_CHECKING:
     # avoid circular import
@@ -28,7 +28,7 @@ if t.TYPE_CHECKING:
     from antarest.study.model import Study
 
 
-class TaskType(str, Enum):
+class TaskType(StrEnum):
     EXPORT = "EXPORT"
     VARIANT_GENERATION = "VARIANT_GENERATION"
     COPY = "COPY"
@@ -37,6 +37,7 @@ class TaskType(str, Enum):
     SCAN = "SCAN"
     UPGRADE_STUDY = "UPGRADE_STUDY"
     THERMAL_CLUSTER_SERIES_GENERATION = "THERMAL_CLUSTER_SERIES_GENERATION"
+    SNAPSHOT_CLEARING = "SNAPSHOT_CLEARING"
 
 
 class TaskStatus(Enum):
@@ -56,43 +57,46 @@ class TaskStatus(Enum):
         ]
 
 
-class TaskResult(BaseModel, extra=Extra.forbid):
+class TaskResult(AntaresBaseModel, extra="forbid"):
     success: bool
     message: str
     # Can be used to store json serialized result
-    return_value: t.Optional[str]
+    return_value: t.Optional[str] = None
 
 
-class TaskLogDTO(BaseModel, extra=Extra.forbid):
+class TaskLogDTO(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
 
 
-class CustomTaskEventMessages(BaseModel, extra=Extra.forbid):
+class CustomTaskEventMessages(AntaresBaseModel, extra="forbid"):
     start: str
     running: str
     end: str
 
 
-class TaskEventPayload(BaseModel, extra=Extra.forbid):
+class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
+    type: TaskType
+    study_id: t.Optional[str] = None
 
 
-class TaskDTO(BaseModel, extra=Extra.forbid):
+class TaskDTO(AntaresBaseModel, extra="forbid"):
     id: str
     name: str
-    owner: t.Optional[int]
+    owner: t.Optional[int] = None
     status: TaskStatus
     creation_date_utc: str
-    completion_date_utc: t.Optional[str]
-    result: t.Optional[TaskResult]
-    logs: t.Optional[t.List[TaskLogDTO]]
+    completion_date_utc: t.Optional[str] = None
+    result: t.Optional[TaskResult] = None
+    logs: t.Optional[t.List[TaskLogDTO]] = None
     type: t.Optional[str] = None
     ref_id: t.Optional[str] = None
+    progress: t.Optional[int] = None
 
 
-class TaskListFilter(BaseModel, extra=Extra.forbid):
+class TaskListFilter(AntaresBaseModel, extra="forbid"):
     status: t.List[TaskStatus] = []
     name: t.Optional[str] = None
     type: t.List[TaskType] = []
@@ -142,6 +146,7 @@ class TaskJob(Base):  # type: ignore
     result: t.Optional[str] = Column(String(), nullable=True, default=None)
     result_status: t.Optional[bool] = Column(Boolean(), nullable=True, default=None)
     type: t.Optional[str] = Column(String(), nullable=True, default=None, index=True)
+    progress: t.Optional[int] = Column(Integer(), nullable=True, default=None)
     owner_id: int = Column(
         Integer(),
         ForeignKey("identities.id", name="fk_taskjob_identity_id", ondelete="SET NULL"),
@@ -170,6 +175,15 @@ class TaskJob(Base):  # type: ignore
     study: "Study" = relationship("Study", back_populates="jobs", uselist=False)
 
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
+        result = None
+        if self.completion_date:
+            assert self.result_status is not None
+            assert self.result_msg is not None
+            result = TaskResult(
+                success=self.result_status,
+                message=self.result_msg,
+                return_value=self.result,
+            )
         return TaskDTO(
             id=self.id,
             owner=self.owner_id,
@@ -177,16 +191,11 @@ class TaskJob(Base):  # type: ignore
             completion_date_utc=str(self.completion_date) if self.completion_date else None,
             name=self.name,
             status=TaskStatus(self.status),
-            result=TaskResult(
-                success=self.result_status,
-                message=self.result_msg,
-                return_value=self.result,
-            )
-            if self.completion_date
-            else None,
+            result=result,
             logs=sorted([log.to_dto() for log in self.logs], key=lambda log: log.id) if with_logs else None,
             type=self.type,
             ref_id=self.ref_id,
+            progress=self.progress,
         )
 
     def __eq__(self, other: t.Any) -> bool:

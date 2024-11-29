@@ -15,10 +15,10 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import Optional
 
-from pydantic import BaseModel
 from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
 
 from antarest.core.persistence import Base
+from antarest.core.serialization import AntaresBaseModel
 
 
 class FileDownloadNotFound(HTTPException):
@@ -37,17 +37,17 @@ class FileDownloadNotReady(HTTPException):
         )
 
 
-class FileDownloadDTO(BaseModel):
+class FileDownloadDTO(AntaresBaseModel):
     id: str
     name: str
     filename: str
-    expiration_date: Optional[str]
+    expiration_date: Optional[str] = None
     ready: bool
     failed: bool = False
     error_message: str = ""
 
 
-class FileDownloadTaskDTO(BaseModel):
+class FileDownloadTaskDTO(AntaresBaseModel):
     file: FileDownloadDTO
     task: str
 

@@ -144,7 +144,7 @@ class TestThermalManager:
         form = manager.get_cluster(study, area_id="north", cluster_id="2 avail and must 1")
 
         # Assert that the returned fields match the expected fields
-        actual = form.dict(by_alias=True)
+        actual = form.model_dump(by_alias=True)
         expected = {
             "id": "2 avail and must 1",
             "group": ThermalClusterGroup.GAS,
@@ -210,7 +210,7 @@ class TestThermalManager:
         groups = manager.get_clusters(study, area_id="north")
 
         # Assert that the returned fields match the expected fields
-        actual = [form.dict(by_alias=True) for form in groups]
+        actual = [form.model_dump(by_alias=True) for form in groups]
         expected = [
             {
                 "id": "2 avail and must 1",
@@ -366,7 +366,7 @@ class TestThermalManager:
             form = manager.create_cluster(study, area_id="north", cluster_data=cluster_data)
 
             # Assert that the returned fields match the expected fields
-            actual = form.dict(by_alias=True)
+            actual = form.model_dump(by_alias=True)
             expected = {
                 "co2": 12.59,
                 "enabled": True,
@@ -426,7 +426,7 @@ class TestThermalManager:
 
             # Assert that the returned fields match the expected fields
             form = manager.get_cluster(study, area_id="north", cluster_id="2 avail and must 1")
-            actual = form.dict(by_alias=True)
+            actual = form.model_dump(by_alias=True)
             expected = {
                 "id": "2 avail and must 1",
                 "group": ThermalClusterGroup.GAS,

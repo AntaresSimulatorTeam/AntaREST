@@ -1,17 +1,29 @@
+/**
+ * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 import {
   createAction,
   createAsyncThunk,
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import * as RA from "ramda-adjunct";
 import {
   FileStudyTreeConfigDTO,
   GenericInfo,
   LaunchJobDTO,
   Link,
   LinkElement,
-  WSMessage,
 } from "../../common/types";
 import * as api from "../../services/api/study";
 import {
@@ -132,11 +144,10 @@ export const setStudySynthesis = createAsyncThunk<
 });
 
 export const refreshStudySynthesis =
-  (event: WSMessage<GenericInfo | LaunchJobDTO>): AppThunk =>
+  (payload: GenericInfo | LaunchJobDTO): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
-    const id =
-      "study_id" in event.payload ? event.payload.study_id : event.payload.id;
+    const id = "study_id" in payload ? payload.study_id : payload.id;
 
     if (getStudySynthesisIds(state).includes(id)) {
       dispatch(setStudySynthesis(id as string));
@@ -149,10 +160,11 @@ export const refreshStudySynthesis =
 
 export const deleteStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO["study_id"],
-  FileStudyTreeConfigDTO["study_id"] | WSMessage<GenericInfo>,
+  FileStudyTreeConfigDTO["study_id"],
   AppAsyncThunkConfig
->(n("DELETE_STUDY_SYNTHESIS"), async (arg) => {
-  return RA.isString(arg) ? arg : (arg.payload.id as string);
+>(n("DELETE_STUDY_SYNTHESIS"), (id) => {
+  // TODO Why empty?
+  return id;
 });
 
 ////////////////////////////////////////////////////////////////

@@ -10,11 +10,13 @@
 #
 # This file is part of the Antares project.
 
-import json
 from pathlib import Path
 from unittest.mock import Mock
 
+from antares.study.version import StudyVersion
+
 from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
+from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 
@@ -25,7 +27,7 @@ def test_lifecycle():
         study_path=Path("somepath"),
         path=Path("somepath"),
         study_id="",
-        version=-1,
+        version=StudyVersion.parse(0),
         areas={
             "a1": Area(
                 name="a1",
@@ -40,18 +42,18 @@ def test_lifecycle():
     id = "some_id"
     redis_key = f"cache:{id}"
     duration = 3600
-    cache_element = RedisCacheElement(duration=duration, data=config.dict()).json()
+    cache_element = RedisCacheElement(duration=duration, data=config.model_dump(mode="json")).model_dump_json()
 
     # GET
     redis_client.get.return_value = cache_element
-    load = json.loads(cache_element)
+    load = from_json(cache_element)
     assert cache.get(id=id) == load["data"]
     redis_client.expire.assert_called_with(redis_key, duration)
     redis_client.get.assert_called_once_with(redis_key)
 
     # PUT
     duration = 7200
-    cache_element = RedisCacheElement(duration=duration, data=config.dict()).json()
-    cache.put(id=id, data=config.dict(), duration=duration)
+    cache_element = RedisCacheElement(duration=duration, data=config.model_dump(mode="json")).model_dump_json()
+    cache.put(id=id, data=config.model_dump(mode="json"), duration=duration)
     redis_client.set.assert_called_once_with(redis_key, cache_element)
     redis_client.expire.assert_called_with(redis_key, duration)
