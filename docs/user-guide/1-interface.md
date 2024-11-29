@@ -14,11 +14,30 @@ tags:
   - dataset
   - batch
   - launch
+  - settings
 ---
 
 # User interface
 
-## What's new (2.5.0)
+## What's new (2.18.0)
+- redesign of the debug view, with the possibility of importing files into the user folder. See more details [here](./study/05-debug.md)
+- new endpoint for admin to clear snapshots
+- update version of python to 3.11
+- time series generator for thermals clusters. See more details [here](../user-guide/simulation-configuration/all-configurations.md#time-series-management)
+- installer for desktop version of Antares Web
+- use .7z format to export and archive studies
+- new component for matrix (Data Glide)
+- adding column filters and search bar on results view
+- enhance results columns headers
+- adding aggregates columns on some matrix
+- disable copy/paste on matrix 
+- allow csv import
+- allow to change app language. See more details [here](#tabs-description)
+
+Antares Web is supporting antares simulator version untill v8.8.x.
+For more details, see the changelog.
+
+## Main features of the interface
 
 - [Launch batch mode](#launch-batch-mode)
 - [Strict folder filtering](#strict-folder-filtering)
@@ -146,9 +165,24 @@ The data which can be uploaded are either a single tsv file, or a zipped list of
 
 ![](../assets/media/img/userguide_dataset_creation.png)
 
-## User account and api tokens
+## Settings
 
-For normal user, the account section allows the creation of "api token".  
+The settings are accessible in the menu on the left of the application. There are a total of 5 tabs that are visible depending on the user profile:
+- the normal user has access to GENERAL and TOKENS tabs
+- the administrator user of a group has access to the GROUPS tab in addition to the normal user tabs
+- the server administrator has access to all tabs (USERS and MAINTENANCE tabs in addition to the others).
+
+### Tabs description
+1. GENERAL: allows you to change the language of the application, two possible choices English or French
+2. USERS: List of users on the server, you can create, delete or modify their permissions
+3. GROUPS: List of user groups on the server, you can create, delete, modify its list of users or their permissions in the group
+4. TOKENS: Allows you to create a token that will be used to access to APIs via scripts
+5. MAINTENANCE: Allows you to put the server in maintenance mode, preventing other users other than the administrator from accessing the application. 
+
+![userguide_change_language.png](../assets/media/img/userguide_change_language.png)
+
+### Create a token
+
 These token can be used in scripts that will use the [API](#api-documentation).
 
 ![](../assets/media/img/userguide_token_listing.png)

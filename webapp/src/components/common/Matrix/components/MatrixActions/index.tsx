@@ -13,14 +13,16 @@
  */
 
 import { Box, Divider, IconButton, Tooltip } from "@mui/material";
-import SplitButton from "@/components/common/buttons/SplitButton";
+import SplitButton, {
+  type SplitButtonProps,
+} from "@/components/common/buttons/SplitButton";
 import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
 import { FileDownload, Save, Undo, Redo } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
 
 interface MatrixActionsProps {
-  onImport: VoidFunction;
+  onImport: SplitButtonProps["onClick"];
   onSave: VoidFunction;
   studyId: string;
   path: string;

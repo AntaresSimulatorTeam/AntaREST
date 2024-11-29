@@ -1,6 +1,25 @@
-# Hydraulic Generators Configuration
+---
+title: Hydraulic Generators Configuration
+author: Antares Web Team
+date: 2024-11-22
+category: User Guide
+tags:
 
-[⬅ Area Configuration](../02-areas.md)
+  - hydraulic generators configuration
+  - hydro
+  - inflow structure
+  - allocation
+  - correlation
+  - daily power & energy credits
+  - reservoir levels
+  - water values
+  - hydro storage
+  - ROR run of river
+  - min gen
+
+---
+# Hydraulic Generators Configuration
+**_This section is under construction_**
 
 ## Introduction
 
@@ -22,33 +41,27 @@ This tab allows you to configure the management options of the hydraulic generat
 
 ## Inflow Structure
 
-This tab allows you to configure the inflow pattern time series and the overall monthly hydro parameters.
+This tab allows you to configure the inter-monthly correlation, inflow pattern time series and the overall monthly hydro parameters.
 
-> TODO
+![05-hydro-inflowstructure.png](../../../assets/media/user-guide/study/areas/05-hydro-inflowstructure.png)
 
 ## Allocation
 
 This tab allows you to configure the allocation coefficients for each area.
 
-> TODO
+![05-hydro-allocation.png](../../../assets/media/user-guide/study/areas/05-hydro-allocation.png)
 
 ## Correlation
 
 This tab allows you to configure the correlation coefficients between the current area and the other areas.
 
-> TODO
+![05-hydro-correlation.png](../../../assets/media/user-guide/study/areas/05-hydro-correlation.png)
 
-## Daily Power
+## Daily Power & Energy Credits
 
-This tab allows you to configure the daily generating power and the pumping power of the hydraulic generators.
+This tab allows you to configure the daily generating power and the pumping power of the hydraulic generators, the energy credits time series of the hydraulic generators.
 
-> TODO
-
-## Energy Credits
-
-This tab allows you to configure the energy credits time series of the hydraulic generators.
-
-> TODO
+![05-hydro-dailypower-energycredits.png](../../../assets/media/user-guide/study/areas/05-hydro-dailypower-energycredits.png)
 
 ## Reservoir Levels
 
@@ -77,3 +90,5 @@ This tab allows you to configure the run of river time series of the hydraulic g
 The "Min Gen." tab is dedicated to configuring the minimum generation levels of the hydraulic generators. This tab presents a time series that represents the minimum hourly production for one or more Monte-Carlo years.
 
 ![05-hydro.min-generation.series.png](../../../assets/media/user-guide/study/areas/05-hydro.min-generation.series.png)
+
+[⬅ Back to Area Configuration](../02-areas.md)
