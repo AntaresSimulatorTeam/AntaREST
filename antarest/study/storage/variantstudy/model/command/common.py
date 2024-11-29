@@ -31,6 +31,7 @@ class CommandName(Enum):
     CREATE_DISTRICT = "create_district"
     REMOVE_DISTRICT = "remove_district"
     CREATE_LINK = "create_link"
+    UPDATE_LINK = "update_link"
     REMOVE_LINK = "remove_link"
     CREATE_BINDING_CONSTRAINT = "create_binding_constraint"
     UPDATE_BINDING_CONSTRAINT = "update_binding_constraint"

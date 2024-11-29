@@ -43,6 +43,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
@@ -55,6 +56,7 @@ COMMAND_MAPPING = {
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,
+    CommandName.UPDATE_LINK.value: UpdateLink,
     CommandName.REMOVE_LINK.value: RemoveLink,
     CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
