@@ -48,7 +48,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
     ) -> t.Tuple[Path, t.Any]:
         tmp_dir = None
         if self.config.archive_path:
-            path, tmp_dir = self._extract_file_to_tmp_dir()
+            path, tmp_dir = self._extract_file_to_tmp_dir(self.config.archive_path)
         else:
             path = self.config.path
         return path, tmp_dir

@@ -50,8 +50,13 @@ def start_server(config_file: Path) -> Process:
     return server
 
 
-def open_app() -> None:
-    webbrowser.open("http://localhost:8080")
+def open_app(wait_seconds: int = 0) -> None:
+    """
+    Open antares-web in a new browser tab.
+    Optionally, waits for some seconds to ensure it does have time for opening.
+    """
+    webbrowser.open_new_tab("http://localhost:8080")
+    time.sleep(wait_seconds)
 
 
 def monitor_server_process(server: Process, app: QApplication) -> None:
@@ -173,7 +178,9 @@ def run_systray_app(config_file: Path) -> None:
         notification_popup(
             "Antares Web Server already running, you can manage the application within the system tray.", threaded=False
         )
-        open_app()
+        # On windows at least, if the current process closes too fast,
+        # the browser does not have time to open --> waiting an arbitrary 10s
+        open_app(wait_seconds=10)
         return
     notification_popup("Starting Antares Web Server...")
     systray_app = create_systray_app()
@@ -182,5 +189,8 @@ def run_systray_app(config_file: Path) -> None:
     wait_for_server_start()
     notification_popup("Antares Web Server started, you can manage the application within the system tray.")
     open_app()
-    systray_app.app.exec_()
-    server.kill()
+    try:
+        systray_app.app.exec_()
+    finally:
+        # Kill server also on exception, in particular on keyboard interrupt
+        server.kill()

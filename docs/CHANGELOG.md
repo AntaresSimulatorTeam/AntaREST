@@ -1,6 +1,124 @@
 Antares Web Changelog
 =====================
 
+v2.18.0 (2024-11-29)
+-------------------
+
+## What's Changed
+
+### Features
+
+* **ui-common**: integrate `GlideDataGrid` into `MatrixGrid` [`2134`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2134)
+* **pydantic**: use pydantic serialization [`2139`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2139)
+* **aggregation-api**: delete index from the response file [`2151`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2151)
+* **variant**: add new endpoint to clear snapshots [`2135`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2135)
+* **version**: use class StudyVersion to handle versions [`2156`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2156)
+* Increase cleaning snapshot frequency [`2173`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2173)
+* **tests**: add tests on matrix index [`2180`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2180)
+* **desktop**: open browser when server is started [`2187`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2187)
+* **ui-tablemode**: prevent duplicate columns [`2190`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2190)
+* **watcher**: filter out upgrade and TS generation `.tmp` folders [`2189`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2189)
+* **installer**: update installer version and improve desktop version launcher [`2157`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2157)
+* **tasks**: add new endpoint to fetch task progress [`2191`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2191)
+* **bc**: use `update_config` instead of `update_bc` for multiple updates [`2105`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2105)
+* **ts-gen**: display progress bar via websockets [`2194`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2194)
+* **watcher**: add new endpoint for optimized scanning [`2193`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2193)
+* **ui-ts**: update TimeSeriesManagement page to allow the generation of TS [`2170`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2170)
+* **matrices**: allow csv import [`2211`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2211)
+* **matrix**: allow import for various formats [`2218`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2218)
+* **ui-results**: enhance results columns headers [`2207`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2207)
+* **auto_archive_service**: increase cleaning snapshot frequency [`2213`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2213)
+* **ui-study**: change error display in FreezeStudy [`2222`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2222)
+* **ui-settings**: allow to change app language [`2226`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2226)
+* **ui-results**: add column filters [`2230`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2230)
+* **ts-gen**: add failing area and cluster info inside error msg (#2227) [`2231`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2231)
+* Add new build directory structure [`2228`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2228)
+* **installer**: update installer for new directory layout [`2242`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2242)
+* **ui-studies**: allow to move an archived study [`2241`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2241)
+* **ui-i18n**: change translations for thermal fields [`2246`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2246)
+
+### Bug Fixes
+
+* **ci**: multiply timeouts on windows platform [`2137`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2137)
+* **playlist**: change response model to accept optional answers [`2152`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2152)
+* **api**: allow `nominalcapacity` to be a float inside API response [`2158`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2158)
+* **adq_patch**: set default value for field `enable-first-step` to False [`2160`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2160)
+* **pydantic**: allow `str` fields to be populated by `int` [`2166`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2166)
+* **api**: allow `min_stable_power` to be a float inside API response [`2167`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2167)
+* **snapshot_cleaning**: set `ref_id` to `None` to prevent postgresql crash [`2169`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2169)
+* **allocation**: show matrix even with only one area [`2168`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2168)
+* Enable foreign keys for sqlite [`2172`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2172)
+* **matrix-index**: return the right year [`2177`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2177)
+* **tests**: adapt new year for index test [`2178`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2178)
+* **db**: migrate db to use foreign key inside sqlite [`2185`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2185)
+* Apidocs redirect [`2186`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2186)
+* **bc**: display matrix index according to frequency [`2196`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2196)
+* **docker**: reduce docker image size [`2195`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2195)
+* **xpansion**: fix typo inside backend api call [`2197`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2197)
+* **matrix**: return empty index for empty matrices [`2198`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2198)
+* **archive**: raise Exception when (un)archiving wrong outputs [`2199`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2199)
+* **installer**: update installer to fix install to wrong directory [`2205`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2205)
+* **ts-gen**: add failing info in the front and fix pandas issue in the back [`2208`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2208)
+* **ui-ws**: rename the task progress event type [`2209`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2209)
+* **export**: allow digest file download [`2210`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2210)
+* **ui-maps**: area positions are not saved [`2212`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2212)
+* **ts-gen**: bump package to avoid `fo_rate` or `po_rate` exceptions [`2215`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2215)
+* **ui**: progress bar issue [`2217`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2217)
+* **ui-ts**: submit partial values instead of all [`2223`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2223)
+* **ui-tasks**: add missing new task notifications [`2225`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2225)
+* **ts-gen**: make variant generation fail when it's supposed to [`2234`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2234)
+* **desktop,windows**: wait a few seconds for browser to open [`2247`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2247)
+* **outputs**: allow reading inside archive + output with `.` in the name [`2249`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2249)
+* **export**: allow export for zipped outputs [`2253`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2253)
+
+### Continuous Integration
+
+* **tests**: reduce number of workers for tests [`2149`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2149)
+
+### Documentation
+
+* Improve of the documentary tree and make some update [`2243`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2243)
+
+### Build
+
+* **python**: bump project dependencies [`1728`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/1728)
+* **ui**: fix rollup issue [`2161`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2161)
+* **ui**: fix issue with build result not working [`2163`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2163)
+* **deps**: bump launcher and paramiko versions [`2140`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2140)
+* **python**: bump python version to use v3.11 [`2164`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2164)
+
+### Chore
+
+* **front-end**: add license headers inside front-end [`2145`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2145)
+* **variants**: increase timeout duration for variant generation [`2144`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2144)
+* **license**: add a new ESLint rule to check license header [`2150`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2150)
+
+### Perf
+
+* **scripts**: improve load balancing [`2165`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2165)
+
+### Style
+
+* **license**: reformat license header inside front-end [`2148`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2148)
+* **api**: change apidoc example to make it work [`2155`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2155)
+* **variant**: improve logs [`2179`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2179)
+
+### Refactor
+
+* **workers**: remove the `simulator` worker [`2184`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2184)
+* **ui**: replace `MatrixInput` with `Matrix` Glide Data Grid integration [`2138`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2138)
+* **aggregation-apis**: remove `time` column from the aggregated data [`2214`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2214)
+
+### Test
+
+* **ui-utils**: add tests for validation utils & refactor imports [`2192`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2192)
+
+### BREAKING CHANGES
+
+* **archive-apis**: use `.7z` format to archive studies [`2013`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2013)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.17.6...v2.18.0
+
 v2.17.6 (2024-09-25)
 --------------------
 

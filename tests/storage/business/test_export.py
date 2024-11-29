@@ -19,6 +19,7 @@ from checksumdir import dirhash
 from py7zr import SevenZipFile
 
 from antarest.core.config import Config, StorageConfig
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 
@@ -162,3 +163,9 @@ def test_export_output(tmp_path: Path):
     zipf = ZipFile(export_path)
 
     assert "file_output.txt" in zipf.namelist()
+
+    # asserts exporting a zipped output doesn't raise an error
+    output_path = root / "output" / output_id
+    target_path = root / "output" / f"{output_id}.zip"
+    archive_dir(output_path, target_path, True, ArchiveFormat.ZIP)
+    study_service.export_output(study, output_id, export_path)

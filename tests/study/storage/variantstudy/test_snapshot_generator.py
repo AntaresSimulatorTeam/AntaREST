@@ -1025,52 +1025,6 @@ class TestSnapshotGenerator:
         assert not (snapshot_dir / "output").exists()
 
     @with_db_context
-    def test_generate__with_user_dir(
-        self,
-        variant_study: VariantStudy,
-        variant_study_service: VariantStudyService,
-        jwt_user: JWTUser,
-    ) -> None:
-        """
-        Test the generation of a variant study containing a user directory.
-        We expect that the user directory is correctly preserved.
-        """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
-            repository=variant_study_service.repository,
-        )
-
-        # Generate the snapshot once
-        generator.generate_snapshot(
-            variant_study.id,
-            jwt_user,
-            denormalize=False,
-            from_scratch=False,
-        )
-
-        # Add a user directory to the variant study.
-        user_dir = Path(variant_study.snapshot_dir) / "user"
-        user_dir.mkdir(parents=True, exist_ok=True)
-        user_dir.joinpath("user_file.txt").touch()
-
-        # Generate the snapshot again
-        generator.generate_snapshot(
-            variant_study.id,
-            jwt_user,
-            denormalize=False,
-            from_scratch=False,
-        )
-
-        # Check that the user directory is correctly preserved.
-        user_dir = Path(variant_study.snapshot_dir) / "user"
-        assert user_dir.is_dir()
-        assert user_dir.joinpath("user_file.txt").exists()
-
-    @with_db_context
     def test_generate__with_denormalize_true(
         self,
         variant_study: VariantStudy,
