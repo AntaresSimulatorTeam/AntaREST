@@ -23,7 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, create_area
 from antarest.study.storage.variantstudy.model.command.create_st_storage import REQUIRED_VERSION, CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -238,15 +238,12 @@ class TestCreateSTStorage:
 
     def test_apply_config__duplicate_storage(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
-        )
-        create_area.apply(recent_study)
+        create_area(command_context, recent_study, "Area FR")
 
         # Then, apply the config for a new ST Storage
         create_st_storage = CreateSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             parameters=STStorageConfig(**PARAMETERS),
             study_version=recent_study.config.version,
         )
@@ -257,7 +254,7 @@ class TestCreateSTStorage:
         parameters = {**PARAMETERS, "name": "STORAGE1"}  # different case
         create_st_storage = CreateSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             parameters=STStorageConfig(**parameters),
             study_version=recent_study.config.version,
         )
@@ -273,15 +270,12 @@ class TestCreateSTStorage:
 
     def test_apply_config__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
-        )
-        create_area.apply(recent_study)
+        create_area(command_context, recent_study, "Area FR")
 
         # Then, apply the config for a new ST Storage
         create_st_storage = CreateSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             parameters=STStorageConfig(**PARAMETERS),
             study_version=recent_study.config.version,
         )
@@ -298,17 +292,14 @@ class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
     def test_apply__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
-        )
-        create_area.apply(recent_study)
+        create_area(command_context, recent_study, "Area FR")
 
         # Then, apply the command to create a new ST Storage
         pmax_injection = GEN.random((8760, 1))
         inflows = GEN.uniform(0, 1000, size=(8760, 1))
         cmd = CreateSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             parameters=STStorageConfig(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
@@ -352,15 +343,12 @@ class TestCreateSTStorage:
 
     def test_apply__invalid_apply_config(self, empty_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context, study_version=empty_study.config.version
-        )
-        create_area.apply(empty_study)
+        create_area(command_context, empty_study, "Area FR")
 
         # Then, apply the command to create a new ST Storage
         cmd = CreateSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             parameters=STStorageConfig(**PARAMETERS),
             study_version=empty_study.config.version,
         )

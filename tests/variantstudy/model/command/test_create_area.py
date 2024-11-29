@@ -21,8 +21,7 @@ from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.create_area import create_area_cmd
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -55,9 +54,7 @@ class TestCreateArea:
         assert output.status, output.message
 
         # When the CreateArea command is applied
-        output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
-            study_data=empty_study
-        )
+        output = create_area_cmd(command_context, study_version, area_name).apply(study_data=empty_study)
         assert output.status, output.message
 
         # Then, check the study structure
@@ -165,17 +162,15 @@ class TestCreateArea:
 
         assert output.status, output.message
 
-        create_area_command: ICommand = CreateArea(
-            area_name=area_name, command_context=command_context, metadata={}, study_version=study_version
-        )
-        output = create_area_command.apply(study_data=empty_study)
+        output = create_area_cmd(command_context, study_version, area_name).apply(study_data=empty_study)
         assert not output.status
 
 
 def test_match(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_not_match = CreateArea(area_name="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    base = create_area_cmd(command_context, STUDY_VERSION_8_8, "foo")
+    other_match = create_area_cmd(command_context, STUDY_VERSION_8_8, "foo")
+
+    other_not_match = create_area_cmd(command_context, STUDY_VERSION_8_8, "bar")
     other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
 
     assert base.match(other_match)
@@ -186,7 +181,8 @@ def test_match(command_context: CommandContext) -> None:
 
 
 def test_revert(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    base = create_area_cmd(command_context, STUDY_VERSION_8_8, "foo")
+
     file_study = Mock(spec=FileStudy)
     file_study.config.version = STUDY_VERSION_8_8
     actual = CommandReverter().revert(base, [], file_study)
@@ -194,6 +190,7 @@ def test_revert(command_context: CommandContext) -> None:
 
 
 def test_create_diff(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    base = create_area_cmd(command_context, STUDY_VERSION_8_8, "foo")
+    other_match = create_area_cmd(command_context, STUDY_VERSION_8_8, "foo")
+
     assert base.create_diff(other_match) == []

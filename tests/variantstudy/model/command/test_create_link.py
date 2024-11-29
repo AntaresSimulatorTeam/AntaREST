@@ -15,6 +15,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from antares.study.version import StudyVersion
 from pydantic import ValidationError
 
 from antarest.core.exceptions import LinkValidationError
@@ -24,7 +25,7 @@ from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaData, create_area_cmd
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
@@ -39,13 +40,8 @@ class TestCreateLink:
         area1 = "Area1"
         area2 = "Area2"
 
-        CreateArea.model_validate(
-            {"area_name": area1, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
-        ).apply(empty_study)
-
-        CreateArea.model_validate(
-            {"area_name": area2, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
-        ).apply(empty_study)
+        create_area_cmd(command_context, STUDY_VERSION_8_8, area1).apply(empty_study)
+        create_area_cmd(command_context, STUDY_VERSION_8_8, area2).apply(empty_study)
 
         with pytest.raises(ValidationError):
             CreateLink(
@@ -69,17 +65,9 @@ class TestCreateLink:
         area3 = "Area3"
         area3_id = transform_name_to_id(area3)
 
-        CreateArea.model_validate(
-            {"area_name": area1, "command_context": command_context, "study_version": study_version}
-        ).apply(empty_study)
-
-        CreateArea.model_validate(
-            {"area_name": area2, "command_context": command_context, "study_version": study_version}
-        ).apply(empty_study)
-
-        CreateArea.model_validate(
-            {"area_name": area3, "command_context": command_context, "study_version": study_version}
-        ).apply(empty_study)
+        create_area_cmd(command_context, study_version, area1).apply(empty_study)
+        create_area_cmd(command_context, study_version, area2).apply(empty_study)
+        create_area_cmd(command_context, study_version, area3).apply(empty_study)
 
         create_link_command: ICommand = CreateLink(
             area1=area1_id,

@@ -27,7 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaData
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
@@ -76,7 +76,11 @@ class CommandExtractor(ICommandExtractor):
         ui_data = study_tree.get(["input", "areas", area_id, "ui"])
 
         study_commands: t.List[ICommand] = [
-            CreateArea(area_name=area.name, command_context=self.command_context, study_version=study_config.version),
+            CreateArea(
+                data=CreateAreaData(area_name=area.name),
+                command_context=self.command_context,
+                study_version=study_config.version,
+            ),
             UpdateConfig(
                 target=f"input/areas/{area_id}/optimization",
                 data=optimization_data,

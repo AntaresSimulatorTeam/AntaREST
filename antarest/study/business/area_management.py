@@ -35,7 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaData
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -639,7 +639,7 @@ class AreaManager:
 
         # Create area and apply changes in the study
         command = CreateArea(
-            area_name=area_creation_info.name,
+            data=CreateAreaData(area_name=area_creation_info.name),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
             study_version=file_study.config.version,
         )

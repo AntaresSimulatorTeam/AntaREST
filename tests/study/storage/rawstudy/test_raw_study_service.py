@@ -29,7 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import S
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, create_area_cmd
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_db_context
@@ -121,7 +121,7 @@ class TestRawStudyService:
             patch_service=patch_service,
         )
 
-        create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
+        create_area_fr = create_area_cmd(ctxt=command_context, area_name="fr", study_version=file_study.config.version)
 
         # noinspection SpellCheckingInspection
         pmax_injection = np.random.rand(8760, 1)

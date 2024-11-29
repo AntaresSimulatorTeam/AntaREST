@@ -12,7 +12,6 @@
 
 import datetime
 import re
-import typing
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -34,7 +33,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import S
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import create_area_cmd
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -186,7 +185,7 @@ class TestVariantStudyService:
             patch_service=patch_service,
         )
 
-        create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=study_version)
+        create_area_fr = create_area_cmd(ctxt=command_context, area_name="fr", study_version=study_version)
 
         ## Prepare the Variant Study Data
         # noinspection SpellCheckingInspection

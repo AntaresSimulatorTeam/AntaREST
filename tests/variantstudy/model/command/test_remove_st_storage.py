@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import transf
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, create_area
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -130,15 +130,12 @@ class TestRemoveSTStorage:
 
     def test_apply_config__missing_storage(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
-        create_area = CreateArea(
-            command_context=command_context, area_name="Area FR", study_version=recent_study.config.version
-        )
-        create_area.apply(recent_study)
+        create_area(command_context, recent_study, "Area FR")
 
         # Then, apply the config for a new ST Storage
         remove_st_storage = RemoveSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             storage_id="storage 1",
             study_version=recent_study.config.version,
         )
@@ -155,13 +152,12 @@ class TestRemoveSTStorage:
     def test_apply_config__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
         study_version = recent_study.config.version
         # First, prepare a new Area
-        create_area = CreateArea(area_name="Area FR", command_context=command_context, study_version=study_version)
-        create_area.apply(recent_study)
+        create_area(command_context, recent_study, "Area FR")
 
         # Then, prepare a new Storage
         create_st_storage = CreateSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             parameters=PARAMETERS,  # type: ignore
             study_version=study_version,
         )
@@ -170,7 +166,7 @@ class TestRemoveSTStorage:
         # Then, apply the config for a new ST Storage
         remove_st_storage = RemoveSTStorage(
             command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
+            area_id=transform_name_to_id("Area FR"),
             storage_id=create_st_storage.storage_id,
             study_version=study_version,
         )

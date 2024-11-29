@@ -15,7 +15,7 @@ from checksumdir import dirhash
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, create_area
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
@@ -34,9 +34,7 @@ class TestRemoveRenewablesCluster:
         cluster_name = "Cluster Name"
         cluster_id = transform_name_to_id(cluster_name, lower=False)
 
-        output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
-            empty_study
-        )
+        output = create_area(command_context, empty_study, area_name)
         assert output.status, output.message
 
         ################################################################################################

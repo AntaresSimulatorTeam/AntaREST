@@ -22,7 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrMod
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import create_area
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -69,7 +69,7 @@ class TestCreateRenewablesCluster:
         area_id = transform_name_to_id(area_name, lower=True)
         cluster_name = "Cluster-1"
 
-        CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(empty_study)
+        create_area(command_context, empty_study, area_name)
 
         parameters = {
             "name": cluster_name,

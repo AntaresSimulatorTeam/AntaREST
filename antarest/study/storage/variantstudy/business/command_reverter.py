@@ -60,7 +60,7 @@ class CommandReverter:
 
     @staticmethod
     def _revert_create_area(base_command: CreateArea, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
-        area_id = transform_name_to_id(base_command.area_name)
+        area_id = transform_name_to_id(base_command.data.area_name)
         return [RemoveArea(id=area_id, command_context=base_command.command_context, study_version=base.config.version)]
 
     @staticmethod

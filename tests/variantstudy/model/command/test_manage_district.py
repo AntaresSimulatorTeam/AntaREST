@@ -17,7 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import create_area
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
@@ -38,17 +38,9 @@ def test_manage_district(empty_study: FileStudy, command_context: CommandContext
 
     study_version = empty_study.config.version
 
-    CreateArea.model_validate(
-        {"area_name": area1, "command_context": command_context, "study_version": study_version}
-    ).apply(empty_study)
-
-    CreateArea.model_validate(
-        {"area_name": area2, "command_context": command_context, "study_version": study_version}
-    ).apply(empty_study)
-
-    CreateArea.model_validate(
-        {"area_name": area3, "command_context": command_context, "study_version": study_version}
-    ).apply(empty_study)
+    create_area(command_context, empty_study, area1)
+    create_area(command_context, empty_study, area2)
+    create_area(command_context, empty_study, area3)
 
     create_district1_command: ICommand = CreateDistrict(
         name="Two added zone",

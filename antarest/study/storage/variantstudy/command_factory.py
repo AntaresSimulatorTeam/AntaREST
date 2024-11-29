@@ -20,7 +20,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaFactory
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
@@ -30,7 +30,7 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import GenericCommandFactory, ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
@@ -51,30 +51,30 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 COMMAND_MAPPING = {
-    CommandName.CREATE_AREA.value: CreateArea,
-    CommandName.REMOVE_AREA.value: RemoveArea,
-    CommandName.CREATE_DISTRICT.value: CreateDistrict,
-    CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
-    CommandName.CREATE_LINK.value: CreateLink,
-    CommandName.UPDATE_LINK.value: UpdateLink,
-    CommandName.REMOVE_LINK.value: RemoveLink,
-    CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
-    CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
-    CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
-    CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
-    CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
-    CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
-    CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
-    CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
-    CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
-    CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
-    CommandName.UPDATE_CONFIG.value: UpdateConfig,
-    CommandName.UPDATE_COMMENTS.value: UpdateComments,
-    CommandName.UPDATE_FILE.value: UpdateRawFile,
-    CommandName.UPDATE_DISTRICT.value: UpdateDistrict,
-    CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,
-    CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
-    CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenerateThermalClusterTimeSeries,
+    CommandName.CREATE_AREA.value: CreateAreaFactory(),
+    CommandName.REMOVE_AREA.value: GenericCommandFactory(RemoveArea),
+    CommandName.CREATE_DISTRICT.value: GenericCommandFactory(CreateDistrict),
+    CommandName.REMOVE_DISTRICT.value: GenericCommandFactory(RemoveDistrict),
+    CommandName.CREATE_LINK.value: GenericCommandFactory(CreateLink),
+    CommandName.UPDATE_LINK.value: GenericCommandFactory(UpdateLink),
+    CommandName.REMOVE_LINK.value: GenericCommandFactory(RemoveLink),
+    CommandName.CREATE_BINDING_CONSTRAINT.value: GenericCommandFactory(CreateBindingConstraint),
+    CommandName.UPDATE_BINDING_CONSTRAINT.value: GenericCommandFactory(UpdateBindingConstraint),
+    CommandName.REMOVE_BINDING_CONSTRAINT.value: GenericCommandFactory(RemoveBindingConstraint),
+    CommandName.CREATE_THERMAL_CLUSTER.value: GenericCommandFactory(CreateCluster),
+    CommandName.REMOVE_THERMAL_CLUSTER.value: GenericCommandFactory(RemoveCluster),
+    CommandName.CREATE_RENEWABLES_CLUSTER.value: GenericCommandFactory(CreateRenewablesCluster),
+    CommandName.REMOVE_RENEWABLES_CLUSTER.value: GenericCommandFactory(RemoveRenewablesCluster),
+    CommandName.CREATE_ST_STORAGE.value: GenericCommandFactory(CreateSTStorage),
+    CommandName.REMOVE_ST_STORAGE.value: GenericCommandFactory(RemoveSTStorage),
+    CommandName.REPLACE_MATRIX.value: GenericCommandFactory(ReplaceMatrix),
+    CommandName.UPDATE_CONFIG.value: GenericCommandFactory(UpdateConfig),
+    CommandName.UPDATE_COMMENTS.value: GenericCommandFactory(UpdateComments),
+    CommandName.UPDATE_FILE.value: GenericCommandFactory(UpdateRawFile),
+    CommandName.UPDATE_DISTRICT.value: GenericCommandFactory(UpdateDistrict),
+    CommandName.UPDATE_PLAYLIST.value: GenericCommandFactory(UpdatePlaylist),
+    CommandName.UPDATE_SCENARIO_BUILDER.value: GenericCommandFactory(UpdateScenarioBuilder),
+    CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenericCommandFactory(GenerateThermalClusterTimeSeries),
 }
 
 
@@ -100,13 +100,13 @@ class CommandFactory:
     ) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
-            command_class = COMMAND_MAPPING[action]
-            return command_class(  # type: ignore
-                **args,
-                command_context=self.command_context,
+            command_factory = COMMAND_MAPPING[action]
+            return command_factory.create_command(
+                context=self.command_context,
                 version=version,
                 command_id=command_id,
                 study_version=study_version,
+                data_dict=args,
             )
         raise NotImplementedError(action)
 

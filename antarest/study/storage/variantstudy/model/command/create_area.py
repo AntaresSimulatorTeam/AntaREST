@@ -12,9 +12,11 @@
 
 import typing as t
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.core.model import JSON
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -24,7 +26,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import (
+    MATCH_SIGNATURE_SEPARATOR,
+    ICommand,
+    ICommandFactory,
+)
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -55,6 +62,35 @@ class NodalOptimization:
     SPILLEDENERGYCOST: float = 0.000000
 
 
+class CreateAreaData(AntaresBaseModel):
+    area_name: str
+    # The `metadata` attribute is added to ensure upward compatibility with previous versions.
+    # Ideally, this attribute should be of type `PatchArea`, but as it is not used,
+    # we choose to declare it as an empty dictionary.
+    # fixme: remove this attribute in the next version if it is not used by the "Script R" team,
+    #  or if we don't want to support this feature.
+    metadata: t.Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
+
+
+class CreateAreaFactory(ICommandFactory):
+    def create_command(
+        self,
+        version: int,
+        study_version: StudyVersion,
+        command_id: t.Optional[str],
+        context: CommandContext,
+        data_dict: JSON,
+    ) -> ICommand:
+        data = CreateAreaData.model_validate(data_dict)
+        return CreateArea(
+            data=data,
+            command_context=context,
+            version=version,
+            command_id=command_id,
+            study_version=study_version,
+        )
+
+
 class CreateArea(ICommand):
     """
     Command used to create a new area in the study.
@@ -69,32 +105,25 @@ class CreateArea(ICommand):
     # Command parameters
     # ==================
 
-    area_name: str
-
-    # The `metadata` attribute is added to ensure upward compatibility with previous versions.
-    # Ideally, this attribute should be of type `PatchArea`, but as it is not used,
-    # we choose to declare it as an empty dictionary.
-    # fixme: remove this attribute in the next version if it is not used by the "Script R" team,
-    #  or if we don't want to support this feature.
-    metadata: t.Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
+    data: CreateAreaData
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
 
-        area_id = transform_name_to_id(self.area_name)
+        area_id = transform_name_to_id(self.data.area_name)
 
         if area_id in study_data.areas.keys():
             return (
                 CommandOutput(
                     status=False,
-                    message=f"Area '{self.area_name}' already exists and could not be created",
+                    message=f"Area '{self.data.area_name}' already exists and could not be created",
                 ),
                 {},
             )
 
         study_data.areas[area_id] = Area(
-            name=self.area_name,
+            name=self.data.area_name,
             links={},
             thermals=[],
             renewables=[],
@@ -102,7 +131,7 @@ class CreateArea(ICommand):
             filters_year=[],
         )
         return (
-            CommandOutput(status=True, message=f"Area '{self.area_name}' created"),
+            CommandOutput(status=True, message=f"Area '{self.data.area_name}' created"),
             {"area_id": area_id},
         )
 
@@ -293,19 +322,29 @@ class CreateArea(ICommand):
 
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_AREA.value, args={"area_name": self.area_name}, study_version=self.study_version
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": self.data.area_name},
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area_name)
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.data.area_name)
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateArea):
             return False
-        return self.area_name == other.area_name
+        return self.data.area_name == other.data.area_name
 
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
     def get_inner_matrices(self) -> t.List[str]:
         return []
+
+
+def create_area_cmd(ctxt: CommandContext, study_version: StudyVersion, area_name: str) -> CreateArea:
+    return CreateArea(data=CreateAreaData(area_name=area_name), command_context=ctxt, study_version=study_version)
+
+
+def create_area(ctxt: CommandContext, study: FileStudy, area_name: str) -> CommandOutput:
+    return create_area_cmd(ctxt, study.config.version, area_name).apply(study_data=study)

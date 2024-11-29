@@ -9,14 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import dataclasses
 import logging
 import typing as t
 import uuid
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Type
 
 import typing_extensions as te
+from antares.study.version import StudyVersion
+from typing_extensions import override
 
+from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import assert_this
 from antarest.study.model import StudyVersionStr
@@ -37,6 +42,42 @@ logger = logging.getLogger(__name__)
 OutputTuple: te.TypeAlias = t.Tuple[CommandOutput, t.Dict[str, t.Any]]
 
 
+class ICommandFactory(ABC):
+    @abstractmethod
+    def create_command(
+        self,
+        version: int,
+        study_version: StudyVersion,
+        command_id: t.Optional[str],
+        context: CommandContext,
+        data_dict: JSON,
+    ) -> "ICommand":
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True)
+class GenericCommandFactory(ICommandFactory):
+    command_class: Type["ICommand"]
+
+    @override
+    def create_command(
+        self,
+        version: int,
+        study_version: StudyVersion,
+        command_id: t.Optional[str],
+        context: CommandContext,
+        data_dict: JSON,
+    ) -> "ICommand":
+        return self.command_class(
+            **data_dict,
+            command_context=context,
+            version=version,
+            command_id=command_id,
+            study_version=study_version,
+        )
+
+
+# TODO: should not inherit from AntaresBaseModel
 class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
     """
     Interface for all commands that can be applied to a study.

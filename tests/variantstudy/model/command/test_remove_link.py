@@ -26,7 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, create_area
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
@@ -100,9 +100,7 @@ class TestRemoveLink:
         # Create some areas
         areas = {transform_name_to_id(area, lower=True): area for area in ["Area_X", "Area_Y", "Area_Z"]}
         for area in areas.values():
-            output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
-                empty_study
-            )
+            output = create_area(command_context, empty_study, area)
             assert output.status, output.message
 
         # Create a link between Area_X and Area_Y

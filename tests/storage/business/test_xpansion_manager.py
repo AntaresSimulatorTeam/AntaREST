@@ -42,7 +42,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import create_area
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -70,17 +70,9 @@ def make_xpansion_manager(empty_study: FileStudy) -> XpansionManager:
 
 
 def make_areas(empty_study: FileStudy) -> None:
-    study_version = empty_study.config.version
-    CreateArea(
-        area_name="area1",
-        command_context=Mock(spec=CommandContext, generator_matrix_constants=Mock()),
-        study_version=study_version,
-    )._apply_config(empty_study.config)
-    CreateArea(
-        area_name="area2",
-        command_context=Mock(spec=CommandContext, generator_matrix_constants=Mock()),
-        study_version=study_version,
-    )._apply_config(empty_study.config)
+    command_context = Mock(spec=CommandContext, generator_matrix_constants=Mock())
+    create_area(command_context, empty_study, "area1")
+    create_area(command_context, empty_study, "area2")
 
 
 def make_link(empty_study: FileStudy) -> None:

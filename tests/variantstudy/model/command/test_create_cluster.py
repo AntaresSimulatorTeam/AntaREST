@@ -23,7 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import transf
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaData
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -99,9 +99,9 @@ class TestCreateCluster:
         cluster_name = "Cluster-1"
         cluster_id = transform_name_to_id(cluster_name, lower=True)
 
-        CreateArea(area_name=area_name, command_context=command_context, study_version=STUDY_VERSION_8_8).apply(
-            empty_study
-        )
+        CreateArea(
+            data=CreateAreaData(area_name=area_name), command_context=command_context, study_version=STUDY_VERSION_8_8
+        ).apply(empty_study)
 
         parameters = {
             "group": "Other",

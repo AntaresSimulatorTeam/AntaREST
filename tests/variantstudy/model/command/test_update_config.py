@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, create_area
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -34,9 +34,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 
-    CreateArea.model_validate(
-        {"area_name": area1, "command_context": command_context, "study_version": study_version}
-    ).apply(empty_study)
+    create_area(command_context, empty_study, area1)
 
     update_settings_command = UpdateConfig(
         target="settings/generaldata/optimization/simplex-range",

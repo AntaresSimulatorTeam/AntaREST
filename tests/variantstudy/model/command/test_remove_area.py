@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, create_area
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
@@ -64,10 +64,7 @@ class TestRemoveArea:
 
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
-        create_area_command: ICommand = CreateArea(
-            area_name=area_name, command_context=command_context, study_version=empty_study.config.version
-        )
-        output = create_area_command.apply(study_data=empty_study)
+        output = create_area(command_context, empty_study, area_name)
         assert output.status, output.message
         return empty_study, area_id
 
@@ -123,11 +120,7 @@ class TestRemoveArea:
 
         area_name2 = "Area2"
         area_id2 = transform_name_to_id(area_name2)
-
-        create_area_command: ICommand = CreateArea(
-            area_name=area_name2, command_context=command_context, study_version=study_version
-        )
-        output = create_area_command.apply(study_data=empty_study)
+        output = create_area(command_context, empty_study, area_name2)
         assert output.status, output.message
 
         create_link_command: ICommand = CreateLink(

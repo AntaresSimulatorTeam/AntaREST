@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaData
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
@@ -41,9 +41,9 @@ class TestRemoveCluster:
 
         study_version = empty_study.config.version
 
-        output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
-            empty_study
-        )
+        output = CreateArea(
+            data=CreateAreaData(area_name=area_name), command_context=command_context, study_version=study_version
+        ).apply(empty_study)
         assert output.status, output.message
 
         ################################################################################################

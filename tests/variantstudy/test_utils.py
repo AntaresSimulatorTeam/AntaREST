@@ -12,7 +12,7 @@
 
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaData, create_area_cmd
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -21,11 +21,11 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 def test_aggregate_commands(command_context: CommandContext):
     study_version = STUDY_VERSION_8_8
     command_list = [
-        CreateArea(area_name="a", command_context=command_context, study_version=study_version),
-        CreateArea(area_name="b", command_context=command_context, study_version=study_version),
+        create_area_cmd(area_name="a", ctxt=command_context, study_version=study_version),
+        create_area_cmd(area_name="b", ctxt=command_context, study_version=study_version),
         CreateLink(area1="a", area2="b", command_context=command_context, study_version=study_version),
-        CreateArea(area_name="d", command_context=command_context, study_version=study_version),
-        CreateArea(area_name="e", command_context=command_context, study_version=study_version),
+        create_area_cmd(area_name="d", ctxt=command_context, study_version=study_version),
+        create_area_cmd(area_name="e", ctxt=command_context, study_version=study_version),
     ]
     command_dto_list = transform_command_to_dto(command_list, force_aggregate=True)
     assert len(command_dto_list) == 3

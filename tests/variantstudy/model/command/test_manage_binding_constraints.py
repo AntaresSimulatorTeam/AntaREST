@@ -32,7 +32,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
     default_bc_hourly,
     default_bc_weekly_daily,
 )
-from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea, CreateAreaData
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -56,8 +56,12 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
     area1 = "area1"
     area2 = "area2"
     cluster = "cluster"
-    CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(empty_study)
-    CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(empty_study)
+    CreateArea(
+        data=CreateAreaData(area_name=area1), command_context=command_context, study_version=study_version
+    ).apply(empty_study)
+    CreateArea(
+        data=CreateAreaData(area_name=area2), command_context=command_context, study_version=study_version
+    ).apply(empty_study)
     CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(
         empty_study
     )
@@ -243,9 +247,9 @@ def test_scenario_builder(empty_study: FileStudy, command_context: CommandContex
     # Create two areas and a link between them:
     areas = {name: transform_name_to_id(name) for name in ["Area X", "Area Y"]}
     for area in areas.values():
-        output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
-            empty_study
-        )
+        output = CreateArea(
+            data=CreateAreaData(area_name=area), command_context=command_context, study_version=study_version
+        ).apply(empty_study)
         assert output.status, output.message
     output = CreateLink(
         area1=areas["Area X"], area2=areas["Area Y"], command_context=command_context, study_version=study_version
@@ -607,8 +611,12 @@ def test__update_matrices_names(
     area1 = "area1"
     area2 = "area2"
     cluster = "cluster"
-    CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(empty_study)
-    CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(empty_study)
+    CreateArea(
+        data=CreateAreaData(area_name=area1), command_context=command_context, study_version=study_version
+    ).apply(empty_study)
+    CreateArea(
+        data=CreateAreaData(area_name=area2), command_context=command_context, study_version=study_version
+    ).apply(empty_study)
     CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(
         empty_study
     )
