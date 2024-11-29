@@ -124,7 +124,7 @@ class LocalLauncher(AbstractLauncher):
         try:
             self.callbacks.export_study(str(uuid), study_uuid, export_path, launcher_parameters)
 
-            simulator_args, environment_variables = self._parse_launcher_options(launcher_parameters)
+            simulator_args, environment_variables = self.parse_launcher_options(launcher_parameters)
             new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
             process = subprocess.Popen(
                 new_args,
@@ -194,7 +194,7 @@ class LocalLauncher(AbstractLauncher):
             end = True
             shutil.rmtree(tmp_path)
 
-    def _parse_launcher_options(self, launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
+    def parse_launcher_options(self, launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
         simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
         environment_variables = os.environ.copy()
         if launcher_parameters.other_options:
