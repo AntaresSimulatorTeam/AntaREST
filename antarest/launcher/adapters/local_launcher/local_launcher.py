@@ -32,7 +32,6 @@ from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import follow
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
-from core.utils.utils import get_default_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +201,7 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.launcher.local.xpress_dir:
+                if xpress_dir_path := self.config.launcher.local.xpress_dir:  # type: ignore
                     environment_variables["XPRESSDIR"] = xpress_dir_path
                     environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
             elif "coin" in launcher_parameters.other_options:
