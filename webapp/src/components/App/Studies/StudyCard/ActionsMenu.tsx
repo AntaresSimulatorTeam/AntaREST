@@ -67,6 +67,8 @@ function ActionsMenu(props: Props) {
       );
       logError("Failed to unarchive study", study, err);
     });
+
+    onClose();
   };
 
   const handleArchiveClick = () => {
@@ -138,12 +140,6 @@ function ActionsMenu(props: Props) {
     <Menu open={!!anchorEl} anchorEl={anchorEl} keepMounted onClose={onClose}>
       {[
         menuItem(
-          study.archived,
-          t("global.unarchive"),
-          UnarchiveOutlinedIcon,
-          handleUnarchiveClick,
-        ),
-        menuItem(
           !study.archived,
           t("global.launch"),
           BoltIcon,
@@ -174,7 +170,13 @@ function ActionsMenu(props: Props) {
           handleExportClick,
         ),
         menuItem(
-          study.managed,
+          study.archived,
+          t("global.unarchive"),
+          UnarchiveOutlinedIcon,
+          handleUnarchiveClick,
+        ),
+        menuItem(
+          study.managed && !study.archived,
           t("global.archive"),
           ArchiveOutlinedIcon,
           handleArchiveClick,
