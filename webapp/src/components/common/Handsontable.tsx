@@ -18,6 +18,7 @@ import { styled } from "@mui/material";
 import { forwardRef } from "react";
 import * as RA from "ramda-adjunct";
 import { SECONDARY_MAIN_COLOR } from "../../theme";
+import "handsontable/dist/handsontable.min.css";
 
 // Register Handsontable's modules
 registerAllModules();
