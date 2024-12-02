@@ -20,7 +20,7 @@ from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)
 REDIS_STORE_KEY = "events"
-MAX_EVENTS_LIST_SIZE = 10000
+MAX_EVENTS_LIST_SIZE = 1000
 
 
 class RedisEventBus(IEventBusBackend):
