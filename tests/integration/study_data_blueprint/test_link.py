@@ -68,6 +68,32 @@ class TestLink:
         }
         assert expected == res.json()
 
+        # Test update link area not ordered
+
+        res = client.put(
+            f"/v1/studies/{study_id}/links/{area2_id}/{area1_id}",
+            json={"hurdlesCost": False},
+        )
+        assert res.status_code == 200
+        expected = {
+            "area1": "area 1",
+            "area2": "area 2",
+            "assetType": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 150,
+            "displayComments": True,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
+        }
+        assert expected == res.json()
+
         # Test update link with non existing area
 
         res = client.put(
