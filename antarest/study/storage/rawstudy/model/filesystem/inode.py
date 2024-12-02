@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from antarest.core.exceptions import WritingInsideZippedFileException
+from antarest.core.exceptions import ShouldNotHappenException, StudyNotArchived, WritingInsideZippedFileException
 from antarest.core.utils.archives import extract_file_to_tmp_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
@@ -123,6 +123,15 @@ class INode(ABC, Generic[G, S, V]):
 
         """
         raise NotImplementedError()
+
+    def get_relative_path_inside_archive(self) -> Path:
+        archive_path = self.config.archive_path
+        if archive_path:
+            return self.config.path.relative_to(archive_path.parent / self.config.study_id)
+        else:
+            raise StudyNotArchived(
+                f"Study with uuid={self.config.study_id} supposed to be archived but archive_path is None."
+            )
 
     def _assert_url_end(self, url: Optional[List[str]] = None) -> None:
         """

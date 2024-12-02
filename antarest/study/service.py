@@ -104,6 +104,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
+from antarest.study.common.studystorage import OriginalFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -450,6 +451,30 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+
+    def get_file(
+        self,
+        uuid: str,
+        url: str,
+        params: RequestParameters,
+    ) -> OriginalFile:
+        """
+        retrieve a file from a study folder
+
+        Args:
+            uuid: study uuid
+            url: route to follow inside study structure
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+
+        output = self.storage_service.get_storage(study).get_file(study, url)
+
+        return output
 
     def aggregate_output_data(
         self,
