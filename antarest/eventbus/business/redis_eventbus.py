@@ -20,6 +20,7 @@ from antarest.eventbus.business.interfaces import IEventBusBackend
 
 logger = logging.getLogger(__name__)
 REDIS_STORE_KEY = "events"
+MAX_EVENTS_LIST_SIZE = 1000
 
 
 class RedisEventBus(IEventBusBackend):
@@ -41,14 +42,23 @@ class RedisEventBus(IEventBusBackend):
         return None
 
     def get_events(self) -> List[Event]:
+        messages = []
         try:
-            event = self.pubsub.get_message(ignore_subscribe_messages=True)
-            if event is not None:
-                return [Event.parse_raw(event["data"])]
+            while msg := self.pubsub.get_message(ignore_subscribe_messages=True):
+                messages.append(msg)
+                if len(messages) >= MAX_EVENTS_LIST_SIZE:
+                    break
         except Exception:
-            logger.error("Failed to retrieve or parse event !", exc_info=True)
+            logger.error("Failed to retrieve events !", exc_info=True)
 
-        return []
+        events = []
+        for msg in messages:
+            try:
+                events.append(Event.model_validate_json(msg["data"]))
+            except Exception:
+                logger.error(f"Failed to parse event ! {msg}", exc_info=True)
+
+        return events
 
     def clear_events(self) -> None:
         # Nothing to do
