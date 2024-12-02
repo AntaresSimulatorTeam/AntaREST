@@ -859,6 +859,7 @@ def test_table_type_aliases(client: TestClient, user_access_token: str) -> None:
         res = client.get(f"/v1/table-schema/{table_type}")
         assert res.status_code == 200, f"Failed to get schema for {table_type}: {res.json()}"
 
+
 def get_table_mode_link_test_data(version: StudyVersion):
     """Generates the JSON data and expected_links based on the version for the link tests"""
     if version < STUDY_VERSION_8_2:
