@@ -251,7 +251,6 @@
   "study.district": "District",
   "study.bindingconstraints": "Contraintes Couplantes",
   "study.debug": "Debug",
-  "study.debug.file.image": "Fichier image",
   "study.debug.folder.empty": "Le dossier est vide",
   "study.debug.file.unsupported": "Type de fichier non supporté",
   "study.debug.file.deleteConfirm.title": "Supprimer le fichier ?",
