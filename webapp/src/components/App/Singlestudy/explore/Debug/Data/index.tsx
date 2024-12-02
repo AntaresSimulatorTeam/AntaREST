@@ -12,15 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import { ComponentType } from "react";
 import Text from "./Text";
-import Image from "./Image";
-import Json from "./Json";
+import Unsupported from "./Unsupported";
 import Matrix from "./Matrix";
 import Folder from "./Folder";
 import { canEditFile, type FileInfo, type FileType } from "../utils";
 import type { DataCompProps } from "../utils";
 import ViewWrapper from "../../../../../common/page/ViewWrapper";
 import type { StudyMetadata } from "../../../../../../common/types";
+import Json from "./Json";
 
 interface Props extends FileInfo {
   study: StudyMetadata;
@@ -28,28 +29,23 @@ interface Props extends FileInfo {
   reloadTreeData: () => void;
 }
 
-type DataComponent = React.ComponentType<DataCompProps>;
-
-const componentByFileType: Record<FileType, DataComponent> = {
+const componentByFileType: Record<FileType, ComponentType<DataCompProps>> = {
   matrix: Matrix,
   json: Json,
   text: Text,
-  image: Image,
+  unsupported: Unsupported,
   folder: Folder,
 } as const;
 
-function Data(props: Props) {
-  const { study, setSelectedFile, reloadTreeData, ...fileInfo } = props;
-  const { fileType, filePath } = fileInfo;
-  const canEdit = canEditFile(study, filePath);
-  const DataViewer = componentByFileType[fileType];
+function Data({ study, setSelectedFile, reloadTreeData, ...fileInfo }: Props) {
+  const DataViewer = componentByFileType[fileInfo.fileType];
 
   return (
     <ViewWrapper>
       <DataViewer
         {...fileInfo}
         studyId={study.id}
-        canEdit={canEdit}
+        canEdit={canEditFile(study, fileInfo.filePath)}
         setSelectedFile={setSelectedFile}
         reloadTreeData={reloadTreeData}
       />
