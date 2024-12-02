@@ -24,7 +24,7 @@ It enables detailed modeling of energy consumption, generation, and transportati
 across numerous year-long scenarios, each consisting of 8760 hourly time-frames.
 
 `antares-web` serves as a server API interfacing with Antares Simulator studies, providing a web application to manage
-studies while adding features for enhanced edition capabilities.
+studies while adding features for enhanced edition capabilities. It's also can be use in a local desktop application for one user, find the instruction about it [here](../developer-guide/install/2-DEPLOY.md#Local-application-build).
 
 This integration brings:
 

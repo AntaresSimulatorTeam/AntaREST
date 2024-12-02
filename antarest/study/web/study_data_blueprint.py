@@ -68,7 +68,7 @@ from antarest.study.business.correlation_management import (
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -196,6 +196,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         return study_service.create_link(uuid, link_creation_info, params)
+
+    @bp.put(
+        "/studies/{uuid}/links/{area_from}/{area_to}",
+        tags=[APITag.study_data],
+        summary="Update a link",
+        response_model=LinkDTO,
+    )
+    def update_link(
+        uuid: str,
+        area_from: str,
+        area_to: str,
+        link_update_dto: LinkBaseDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        logger.info(
+            f"Updating link {area_from} -> {area_to} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.update_link(uuid, area_from, area_to, link_update_dto, params)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/ui",
