@@ -15,7 +15,7 @@
 import Matrix from "../../../../../common/Matrix";
 import type { DataCompProps } from "../utils";
 
-function DebugMatrix({ studyId, filename, filePath, canEdit }: DataCompProps) {
+function DebugMatrix({ filename, filePath, canEdit }: DataCompProps) {
   return <Matrix title={filename} url={filePath} canImport={!canEdit} />;
 }
 
