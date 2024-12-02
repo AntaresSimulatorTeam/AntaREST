@@ -29,8 +29,9 @@ def test_lifecycle():
         payload="foo",
         permissions=PermissionInfo(public_mode=PublicMode.READ),
     )
+
     serialized = event.model_dump_json()
-    pubsub_mock.get_message.return_value = {"data": serialized}
+    pubsub_mock.get_message = Mock(side_effect=[{"data": serialized}, {"data": serialized}, None])
     eventbus.push_event(event)
     redis_client.publish.assert_called_once_with("events", serialized)
-    assert eventbus.get_events() == [event]
+    assert eventbus.get_events() == [event, event]

@@ -1,8 +1,22 @@
 Antares Web Changelog
 =====================
 
+v2.18.1 (2024-12-02)
+--------------------
+
+## What's Changed
+
+### Bug Fixes
+
+* **ui-tablemode**: style missing [`2257`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2257)
+* **ui-studies**: multiple API calls on study list view [`2258`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2258)
+* **events**: avoid slow processing of events [`2259`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2259)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.18.0...v2.18.1
+
+
 v2.18.0 (2024-11-29)
--------------------
+--------------------
 
 ## What's Changed
 
