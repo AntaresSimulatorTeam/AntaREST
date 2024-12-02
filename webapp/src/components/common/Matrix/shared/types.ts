@@ -75,6 +75,11 @@ export type ResultColumn = Omit<EnhancedGridColumn, "title"> & {
   title: string[];
 };
 
+export interface ResultColumnsOptions {
+  titles: string[][];
+  width?: number;
+}
+
 export type AggregateConfig = AggregateType[] | boolean | "stats" | "all";
 
 export interface MatrixAggregates {
