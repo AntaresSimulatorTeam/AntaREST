@@ -26,8 +26,6 @@ from antarest.study.storage.variantstudy.model.command.create_link import Create
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 
-_ALL_LINKS_PATH = "input/links"
-
 
 class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
@@ -103,7 +101,7 @@ class LinkManager:
 
         return updated_link.to_dto()
 
-    def update_all_links(
+    def update_links(
         self,
         study: RawStudy,
         update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkBaseDTO],

@@ -201,7 +201,7 @@ class TableModeManager:
             return data
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkBaseDTO(**values) for key, values in data.items()}
-            updated_map = self._link_manager.update_all_links(study, links_map)  # type: ignore
+            updated_map = self._link_manager.update_links(study, links_map)  # type: ignore
             excludes = (
                 set()
                 if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
