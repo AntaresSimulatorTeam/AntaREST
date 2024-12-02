@@ -51,6 +51,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
+from antarest.study.common.studystorage import OriginalFile
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -557,6 +558,29 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             url=url,
             depth=depth,
             formatted=formatted,
+            use_cache=use_cache,
+        )
+
+    def get_file(
+        self,
+        metadata: VariantStudy,
+        url: str = "",
+        use_cache: bool = True,
+    ) -> OriginalFile:
+        """
+        Entry point to fetch for a file inside a study folder.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            use_cache: indicate if cache should be used to fetch study tree
+
+        Returns: the file content and extension
+        """
+        self._safe_generation(metadata, timeout=600)
+        self.repository.refresh(metadata)
+        return super().get_file(
+            metadata=metadata,
+            url=url,
             use_cache=use_cache,
         )
 

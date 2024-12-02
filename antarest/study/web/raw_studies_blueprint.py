@@ -75,6 +75,10 @@ CONTENT_TYPES = {
     ".txt": ("text/plain", "utf-8"),
     # (JSON)
     ".json": ("application/json", "utf-8"),
+    # (INI FILE)
+    ".ini": ("text/plain", "utf-8"),
+    # (antares file)
+    ".antares": ("text/plain", "utf-8"),
 }
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
@@ -110,7 +114,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
-    def get_study(
+    def get_study_data(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
         depth: int = 3,
@@ -185,6 +189,51 @@ def create_raw_study_routes(
         # `NaN` and other values to `null`, even when using a custom encoder.
         json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")
+
+    @bp.get(
+        "/studies/{uuid}/raw/original-file",
+        tags=[APITag.study_raw_data],
+        summary="Retrieve Raw file from a Study folder in its original format",
+    )
+    def get_study_file(
+        uuid: str,
+        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        """
+        Fetches for a file in its original format from a study folder
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `path`: The path to the file to fetch.
+
+        Returns the fetched file in its original format.
+        """
+        logger.info(
+            f"📘 Fetching file at {path} from study {uuid}",
+            extra={"user": current_user.id},
+        )
+        parameters = RequestParameters(user=current_user)
+        original_file = study_service.get_file(uuid, path, params=parameters)
+        filename = original_file.filename
+        output = original_file.content
+        suffix = original_file.suffix
+        headers = {
+            "Content-Disposition": f"attachment; filename={filename}",
+        }
+
+        # Guess the suffix form the filename suffix
+        content_type, _ = CONTENT_TYPES.get(suffix, (None, None))
+        if content_type:
+            return StreamingResponse(
+                io.BytesIO(output),
+                media_type=content_type,
+                headers=headers,
+            )
+        else:
+            # Unknown content types are considered binary,
+            # because it's better to avoid raising an exception.
+            return Response(content=output, media_type="application/octet-stream", headers=headers)
 
     @bp.delete(
         "/studies/{uuid}/raw",
