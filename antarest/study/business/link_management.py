@@ -11,20 +11,23 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any, Dict
 
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import ConfigFileNotFound
+from antarest.core.exceptions import ConfigFileNotFound, LinkNotFound, LinkValidationError
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.model.link_model import LinkDTO, LinkInternal
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 
 _ALL_LINKS_PATH = "input/links"
 
@@ -75,6 +78,46 @@ class LinkManager:
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         return link_creation_dto
+
+    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
+        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump())
+
+        link = link_dto.to_internal(StudyVersion.parse(study.version))
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        self.get_link_if_exists(file_study, link)
+
+        command = UpdateLink(
+            area1=area_from,
+            area2=area_to,
+            parameters=link.model_dump(
+                include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
+            ),
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
+        )
+
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        updated_link = self.get_internal_link(study, link)
+
+        return updated_link.to_dto()
+
+    def get_link_if_exists(self, file_study: FileStudy, link: LinkInternal) -> dict[str, Any]:
+        try:
+            return file_study.tree.get(["input", "links", link.area1, "properties", link.area2])
+        except KeyError:
+            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
+
+    def get_internal_link(self, study: RawStudy, link: LinkInternal) -> LinkInternal:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        link_properties = self.get_link_if_exists(file_study, link)
+
+        link_properties.update({"area1": link.area1, "area2": link.area2})
+        updated_link = LinkInternal.model_validate(link_properties)
+
+        return updated_link
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)

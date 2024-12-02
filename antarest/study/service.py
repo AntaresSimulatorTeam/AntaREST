@@ -36,13 +36,14 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
-    FileDeletionNotAllowed,
+    FolderCreationNotAllowed,
     IncorrectPathError,
     NotAManagedStudyException,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
     OutputNotFound,
     ReferencedObjectDeletionNotAllowed,
+    ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
     StudyTypeUnsupported,
@@ -89,7 +90,7 @@ from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -155,10 +156,19 @@ from antarest.study.storage.utils import (
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.model.command.create_user_resource import (
+    CreateUserResource,
+    CreateUserResourceData,
+    ResourceType,
+)
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_user_resource import (
+    RemoveUserResource,
+    RemoveUserResourceData,
+)
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -187,6 +197,20 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
             elif entry.is_dir():
                 total_size += get_disk_usage(path=str(entry.path))
     return total_size
+
+
+def _get_path_inside_user_folder(
+    path: str, exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]]
+) -> str:
+    """
+    Retrieves the path inside the `user` folder for a given user path
+
+    Raises exception_class if the path is not located inside the `user` folder
+    """
+    url = [item for item in path.split("/") if item]
+    if len(url) < 2 or url[0] != "user":
+        raise exception_class(f"the given path isn't inside the 'User' folder: {path}")
+    return "/".join(url[1:])
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -226,7 +250,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             )
             execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
 
-            if isinstance(file_study, VariantStudy):
+            if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
                 # It means the generation will really be executed in the next snapshot generation.
                 # We don't want this, we want this task to generate the matrices no matter the study.
@@ -236,8 +260,10 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 generation_task_id = variant_service.generate_task(study, True, False, listener)
                 task_service.await_task(generation_task_id)
                 result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
-                if not result.result or not result.result.success:
-                    raise ValueError(f"Failed to generate variant study {self._study_id}")
+                assert result.result is not None
+                if not result.result.success:
+                    raise ValueError(result.result.message)
+
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
@@ -1578,7 +1604,7 @@ class StudyService:
         data: SUB_JSON,
         *,
         create_missing: bool = False,
-    ) -> ICommand:
+    ) -> t.List[ICommand]:
         """
         Replace data on disk with new, using variant commands.
 
@@ -1593,57 +1619,39 @@ class StudyService:
         """
         study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
+        version = file_study.config.version
+        commands: t.List[ICommand] = []
 
         file_relpath = PurePosixPath(url.strip().strip("/"))
         file_path = study_service.get_study_path(study).joinpath(file_relpath)
         create_missing &= not file_path.exists()
         if create_missing:
-            # IMPORTANT: We prohibit deep file system changes in private directories.
-            # - File and directory creation is only possible for the "user" directory,
-            #   because the "input" and "output" directories are managed by Antares.
-            # - We also prohibit writing files in the "user/expansion" folder which currently
-            #   contains the Xpansion tool configuration.
-            #   This configuration should be moved to the "input/expansion" directory in the future.
-            if file_relpath and file_relpath.parts[0] == "user" and file_relpath.parts[1] != "expansion":
-                # In the case of variants, we must write the file directly in the study's snapshot folder,
-                # because the "user" folder is not managed by the command mechanism.
-                file_path.parent.mkdir(parents=True, exist_ok=True)
-                file_path.touch()
-
-        # A 404 Not Found error is raised if the file does not exist.
-        tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
-
-        study_version = file_study.config.version
-        command = self._create_edit_study_command(tree_node=tree_node, url=url, data=data, study_version=study_version)
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            user_path = _get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
+            args = {"path": user_path, "resource_type": ResourceType.FILE}
+            command_data = CreateUserResourceData.model_validate(args)
+            cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
+            assert isinstance(data, bytes)
+            cmd_2 = UpdateRawFile(
+                target=url,
+                b64Data=base64.b64encode(data).decode("utf-8"),
+                command_context=context,
+                study_version=version,
+            )
+            commands.extend([cmd_1, cmd_2])
+        else:
+            # A 404 Not Found error is raised if the file does not exist.
+            tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
+            commands.append(self._create_edit_study_command(tree_node, url, data, version))
 
         if isinstance(study_service, RawStudyService):
-            res = command.apply(study_data=file_study)
-            if not is_managed(study):
-                tree_node.denormalize()
-            if not res.status:
-                raise CommandApplicationError(res.message)
-
-            # noinspection SpellCheckingInspection
             url = "study/antares/lastsave"
             last_save_node = file_study.tree.get_node(url.split("/"))
-            cmd = self._create_edit_study_command(
-                tree_node=last_save_node, url=url, data=int(time.time()), study_version=study_version
-            )
-            cmd.apply(file_study)
+            cmd = self._create_edit_study_command(last_save_node, url, int(time.time()), version)
+            commands.append(cmd)
 
-            self.storage_service.variant_study_service.invalidate_cache(study)
-
-        elif isinstance(study_service, VariantStudyService):
-            study_service.append_command(
-                study_id=file_study.config.study_id,
-                command=command.to_dto(),
-                params=RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-
-        else:  # pragma: no cover
-            raise TypeError(repr(type(study_service)))
-
-        return command  # for testing purpose
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        return commands  # for testing purpose
 
     def apply_commands(
         self, uuid: str, commands: t.List[CommandDTO], params: RequestParameters
@@ -1908,6 +1916,27 @@ class StudyService:
             )
         )
         return new_link
+
+    def update_link(
+        self,
+        uuid: str,
+        area_from: str,
+        area_to: str,
+        link_update_dto: LinkBaseDTO,
+        params: RequestParameters,
+    ) -> LinkDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        self._assert_study_unarchived(study)
+        updated_link = self.links_manager.update_link(study, area_from, area_to, link_update_dto)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
+        return updated_link
 
     def update_area(
         self,
@@ -2716,7 +2745,7 @@ class StudyService:
                 binding_ids = [bc.id for bc in ref_bcs]
                 raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
 
-    def delete_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+    def delete_user_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
         """
         Deletes a file or a folder of the study.
         The data must be located inside the 'User' folder.
@@ -2728,28 +2757,58 @@ class StudyService:
             current_user: User that called the endpoint
 
         Raises:
-            FileDeletionNotAllowed: if the path does not comply with the above rules
+            ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
+        cmd_data = RemoveUserResourceData(**{"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)})
+        self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed, current_user)
+
+    def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+        """
+        Creates a folder inside the study.
+        The data must be located inside the 'User' folder.
+        Also, it can not be inside the 'expansion' folder.
+
+        Args:
+            study_id: UUID of the concerned study
+            path: Path corresponding to the resource to be deleted
+            current_user: User that called the endpoint
+
+        Raises:
+            FolderCreationNotAllowed: if the path does not comply with the above rules
+        """
+        args = {
+            "path": _get_path_inside_user_folder(path, FolderCreationNotAllowed),
+            "resource_type": ResourceType.FOLDER,
+        }
+        command_data = CreateUserResourceData.model_validate(args)
+        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed, current_user)
+
+    def _alter_user_folder(
+        self,
+        study_id: str,
+        command_data: t.Union[CreateUserResourceData, RemoveUserResourceData],
+        command_class: t.Type[t.Union[CreateUserResource, RemoveUserResource]],
+        exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]],
+        current_user: JWTUser,
+    ) -> None:
         study = self.get_study(study_id)
         assert_permission(current_user, study, StudyPermissionType.WRITE)
 
-        url = [item for item in path.split("/") if item]
-        if len(url) < 2 or url[0] != "user":
-            raise FileDeletionNotAllowed(f"the targeted data isn't inside the 'User' folder: {path}")
-
-        study_tree = self.storage_service.raw_study_service.get_raw(study, True).tree
-        user_node = t.cast(User, study_tree.get_node(["user"]))
-        if url[1] in [file.filename for file in user_node.registered_files]:
-            raise FileDeletionNotAllowed(f"you are not allowed to delete this resource : {path}")
-
+        args = {
+            "data": command_data,
+            "study_version": StudyVersion.parse(study.version),
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+        }
+        command = command_class.model_validate(args)
+        file_study = self.storage_service.get_storage(study).get_raw(study, True)
         try:
-            user_node.delete(url[1:])
-        except ChildNotFoundError as e:
-            raise FileDeletionNotAllowed("the given path doesn't exist") from e
+            execute_or_add_commands(study, file_study, [command], self.storage_service)
+        except CommandApplicationError as e:
+            raise exception_class(e.detail) from e
 
         # update cache
         cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
-        updated_tree = study_tree.get()
+        updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
     def get_digest_file(self, study_id: str, output_id: str, params: RequestParameters) -> DigestUI:

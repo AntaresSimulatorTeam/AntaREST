@@ -314,7 +314,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         logger.info(f"Exporting output {output_id} from study {metadata.id}")
 
         path_output = Path(metadata.path) / "output" / output_id
-        path_output_zip = Path(metadata.path) / "output" / f"{output_id}.{ArchiveFormat.ZIP}"
+        path_output_zip = Path(metadata.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}"
 
         if path_output_zip.exists():
             shutil.copyfile(path_output_zip, target)

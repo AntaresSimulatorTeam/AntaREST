@@ -135,8 +135,8 @@ class TestRemoveArea:
             area2=area_id2,
             parameters={},
             command_context=command_context,
-            study_version=study_version,
             series=[[0]],
+            study_version=study_version,
         )
         output = create_link_command.apply(study_data=empty_study)
         assert output.status, output.message

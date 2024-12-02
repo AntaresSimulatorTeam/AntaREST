@@ -39,6 +39,7 @@ from antarest.study.business.aggregator_management import (
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
 try:
     import tables  # type: ignore
@@ -198,7 +199,7 @@ def create_raw_study_routes(
     ) -> t.Any:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}", extra={"user": current_user.id})
-        study_service.delete_file_or_folder(uuid, path, current_user)
+        study_service.delete_user_file_or_folder(uuid, path, current_user)
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
@@ -476,7 +477,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
-        summary="Update data by posting formatted data",
+        summary="Update study by posting formatted data",
     )
     def edit_study(
         uuid: str,
@@ -493,13 +494,10 @@ def create_raw_study_routes(
 
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
-        - `data`: The formatted data to be posted. Defaults to an empty string.
-          The data could be a JSON object, or a simple string.
+        - `data`: The formatted data to be posted. Could be a JSON object, or a string. Defaults to an empty string.
+
         """
-        logger.info(
-            f"Editing data at {path} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
         study_service.edit_study(uuid, path, data, params)
@@ -513,11 +511,12 @@ def create_raw_study_routes(
     def replace_study_file(
         uuid: str,
         path: str = Param("/", examples=get_path_examples()),  # type: ignore
-        file: bytes = File(...),
+        file: bytes = File(default=None),
         create_missing: bool = Query(
             False,
             description="Create file or parent directories if missing.",
         ),  # type: ignore
+        resource_type: ResourceType = ResourceType.FILE,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -528,15 +527,23 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to update. Defaults to "/".
         - `file`: The raw file to be posted (e.g. a CSV file opened in binary mode).
-        - `create_missing`: Flag to indicate whether to create file or parent directories if missing.
+        - `create_missing`: Flag to indicate whether to create file and parent directories if missing.
+        - `resource_type`: When set to "folder" and `create_missing` is True, creates a folder. Else (default value), it's ignored.
+
         """
-        logger.info(
-            f"Uploading new data file at {path} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        if file is not None and resource_type == ResourceType.FOLDER:
+            raise HTTPException(status_code=422, detail="Argument mismatch: Cannot give a content to create a folder")
+        if file is None and resource_type == ResourceType.FILE:
+            raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
+
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
+        if resource_type == ResourceType.FOLDER and create_missing:  # type: ignore
+            logger.info(f"Creating folder {path} for study {uuid}", extra={"user": current_user.id})
+            study_service.create_user_folder(uuid, path, current_user)
+        else:
+            logger.info(f"Uploading new data file at {path} for study {uuid}", extra={"user": current_user.id})
+            study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
 
     @bp.get(
         "/studies/{uuid}/raw/validate",

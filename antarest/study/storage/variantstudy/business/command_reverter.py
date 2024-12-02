@@ -28,6 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -39,6 +40,7 @@ from antarest.study.storage.variantstudy.model.command.remove_district import Re
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -98,6 +100,10 @@ class CommandReverter:
                 study_version=base.config.version,
             )
         ]
+
+    @staticmethod
+    def _revert_update_link(base_command: CreateLink, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for UpdateLink is not available")
 
     @staticmethod
     def _revert_remove_link(base_command: RemoveLink, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
@@ -350,6 +356,24 @@ class CommandReverter:
         base_command: GenerateThermalClusterTimeSeries, history: t.List["ICommand"], base: FileStudy
     ) -> t.List[ICommand]:
         raise NotImplementedError("The revert function for GenerateThermalClusterTimeSeries is not available")
+
+    @staticmethod
+    def _revert_create_user_resource(
+        base_command: CreateUserResource, history: t.List["ICommand"], base: FileStudy
+    ) -> t.List[ICommand]:
+        return [
+            RemoveUserResource(
+                data=base_command.data,
+                command_context=base_command.command_context,
+                study_version=base_command.study_version,
+            )
+        ]
+
+    @staticmethod
+    def _revert_remove_user_resource(
+        base_command: RemoveUserResource, history: t.List["ICommand"], base: FileStudy
+    ) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for RemoveUserResource is not available")
 
     def revert(
         self,
