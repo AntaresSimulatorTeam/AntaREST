@@ -50,8 +50,16 @@ export interface DataCompProps extends FileInfo {
 }
 
 ////////////////////////////////////////////////////////////////
-// File Info
+// Utils
 ////////////////////////////////////////////////////////////////
+
+const URL_SCHEMES = {
+  MATRIX: ["matrix://", "matrixfile://"],
+  JSON: "json://",
+  FILE: "file://",
+} as const;
+
+const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini"] as const;
 
 // Maps file types to their corresponding icon components.
 const iconByFileType: Record<FileType, SvgIconComponent> = {
@@ -88,17 +96,11 @@ export function getFileType(treeData: TreeData): FileType {
   }
 
   if (typeof treeData === "string") {
-    // Handle matrix files
-    if (
-      treeData.startsWith("matrix://") ||
-      treeData.startsWith("matrixfile://")
-    ) {
+    if (URL_SCHEMES.MATRIX.some((scheme) => treeData.startsWith(scheme))) {
       return "matrix";
     }
 
-    // Handle files displayed as JSON by the API even though they are .ini files in the filesystem.
-    // The json:// prefix or .json extension indicates the content should be viewed as JSON.
-    if (treeData.startsWith("json://") || treeData.endsWith(".json")) {
+    if (treeData.startsWith(URL_SCHEMES.JSON)) {
       return "json";
     }
 
@@ -106,26 +108,16 @@ export function getFileType(treeData: TreeData): FileType {
     // All files except matrices and json-formatted content use this prefix
     // We filter to only allow extensions that can be properly displayed (.txt, .log, .csv, .tsv, .ini)
     // Other extensions (like .RDS or .xlsx) are marked as unsupported since they can't be shown in the UI
-    if (treeData.startsWith("file://")) {
-      const supportedTextExtensions = [".txt", ".log", ".csv", ".tsv", ".ini"];
-
-      // Check if the file ends with any of the supported extensions
-      if (supportedTextExtensions.some((ext) => treeData.endsWith(ext))) {
-        return "text";
-      }
-
-      // Any other extension with file:// prefix is unsupported
-      return "unsupported";
+    if (
+      treeData.startsWith(URL_SCHEMES.FILE) &&
+      SUPPORTED_EXTENSIONS.some((ext) => treeData.endsWith(ext))
+    ) {
+      return "text";
     }
   }
 
-  // Default to text for any other string content
-  return "text";
+  return "unsupported";
 }
-
-////////////////////////////////////////////////////////////////
-// Rights
-////////////////////////////////////////////////////////////////
 
 /**
  * Checks if a study's file can be edited.
