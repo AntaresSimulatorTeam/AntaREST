@@ -40,10 +40,7 @@ function Unsupported({ studyId, filePath, filename }: DataCompProps) {
 
   const handleDownload = () => {
     if (res.data) {
-      downloadFile(
-        res.data,
-        filename.endsWith(".txt") ? filename : `${filename}.txt`,
-      );
+      downloadFile(res.data, filename);
     }
   };
 
@@ -62,7 +59,6 @@ function Unsupported({ studyId, filePath, filename }: DataCompProps) {
         <UploadFileButton
           studyId={studyId}
           path={filePath}
-          accept={{ "text/plain": [".txt"] }}
           onUploadSuccessful={handleUploadSuccessful}
         />
         <DownloadButton onClick={handleDownload} />
