@@ -60,7 +60,7 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ width: 1, height: 800 }}>
+      <Box sx={{ width: 1, height: "calc(100vh - 350px)" }}>
         {!matrix.data[0]?.length ? (
           <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOff} />
         ) : (
