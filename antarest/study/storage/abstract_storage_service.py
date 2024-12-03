@@ -19,22 +19,11 @@ from pathlib import Path
 from uuid import uuid4
 
 from antarest.core.config import Config
-from antarest.core.exceptions import (
-    BadOutputError,
-    PathIsAFolderError,
-    ShouldNotHappenException,
-    StudyOutputNotFoundError,
-)
+from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
 from antarest.core.serialization import from_json
-from antarest.core.utils.archives import (
-    ArchiveFormat,
-    archive_dir,
-    extract_archive,
-    read_original_file_in_archive,
-    unzip,
-)
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO
 from antarest.study.common.studystorage import IStudyStorageService, OriginalFile, T
@@ -54,69 +43,10 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
-
-
-def _assert_not_folder_node(file_node: INode[t.Any, t.Any, t.Any]) -> None:
-    if isinstance(file_node, FolderNode):
-        raise PathIsAFolderError("Node is a folder node.")
-
-
-def _parse_file_from_link(file_node: INode[t.Any, t.Any, t.Any], link: str) -> bytes:
-    if not isinstance(file_node, InputSeriesMatrix):
-        raise ShouldNotHappenException(f"Node {file_node.config.path} has a link but is not an InputSeriesMatrix.")
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        # target path to save the file
-        target_path = Path(tmp_dir) / file_node.config.path.name
-        # use `.tsv` as suffix for the file
-        target_path = target_path.with_suffix(".tsv")
-        # retrieve the file content
-        file_node.parse(return_dataframe=True).to_csv(  # type: ignore
-            target_path,
-            sep="\t",
-            index=False,
-            header=True,
-            float_format="%.6f",
-        )
-        output = target_path.read_bytes()
-    return output
-
-
-def _extract_original_file_from_unarchived_study(
-    file_node: INode[t.Any, t.Any, t.Any],
-) -> OriginalFile:
-    _assert_not_folder_node(file_node)
-    if isinstance(file_node, LazyNode) and file_node.get_link_path().is_file():
-        return OriginalFile(
-            suffix=".tsv",
-            content=_parse_file_from_link(file_node, file_node.get_link_path().read_text()),
-            filename=file_node.config.path.with_suffix(".tsv").name,
-        )
-    else:
-        return OriginalFile(
-            suffix=f"{file_node.config.path.suffix}",
-            content=file_node.config.path.read_bytes(),
-            filename=file_node.config.path.name,
-        )
-
-
-def _extract_original_file_from_archived_study(
-    file_node: INode[t.Any, t.Any, t.Any], archive_path: Path
-) -> OriginalFile:
-    _assert_not_folder_node(file_node)
-    relative_path_inside_archive = str(file_node.get_relative_path_inside_archive())
-    return OriginalFile(
-        suffix=f"{file_node.config.path.suffix}",
-        content=read_original_file_in_archive(archive_path, relative_path_inside_archive),
-        filename=file_node.config.path.name,
-    )
 
 
 class AbstractStorageService(IStudyStorageService[T], ABC):
@@ -261,10 +191,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         file_node = study.tree.get_node(parts)
 
-        if file_node.config.archive_path:
-            return _extract_original_file_from_archived_study(file_node, file_node.config.archive_path)
-        else:
-            return _extract_original_file_from_unarchived_study(file_node)
+        content, suffix, filename = file_node.get_file_content()
+        return OriginalFile(content=content, suffix=suffix, filename=filename)
 
     def get_study_sim_result(
         self,

@@ -14,8 +14,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from antarest.core.exceptions import ShouldNotHappenException, StudyNotArchived, WritingInsideZippedFileException
-from antarest.core.utils.archives import extract_file_to_tmp_dir
+from antarest.core.exceptions import StudyNotArchived, WritingInsideZippedFileException
+from antarest.core.utils.archives import extract_file_to_tmp_dir, read_original_file_in_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
 G = TypeVar("G")
@@ -123,6 +123,26 @@ class INode(ABC, Generic[G, S, V]):
 
         """
         raise NotImplementedError()
+
+    def get_file_content(self) -> Tuple[bytes, str, str]:
+        """
+        Get file content
+
+        Returns:
+            file content, as bytes
+            file suffix
+            file name
+        """
+        suffix = self.config.path.suffix
+        filename = self.config.path.name
+        if self.config.archive_path:
+            return (
+                read_original_file_in_archive(self.config.archive_path, str(self.get_relative_path_inside_archive())),
+                suffix,
+                filename,
+            )
+        else:
+            return self.config.path.read_bytes(), suffix, filename
 
     def get_relative_path_inside_archive(self) -> Path:
         archive_path = self.config.archive_path
