@@ -24,7 +24,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
@@ -145,9 +145,7 @@ def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
     Returns:
         An instance of the SimpleMatrixService class representing the matrix service.
     """
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=bucket_dir,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=bucket_dir, format=InternalMatrixFormat.TSV)
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
