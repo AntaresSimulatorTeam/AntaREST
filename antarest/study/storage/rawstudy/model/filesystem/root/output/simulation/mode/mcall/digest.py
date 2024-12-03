@@ -24,7 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 class DigestMatrixUI(AntaresBaseModel):
     columns: t.List[t.Union[str, t.List[str]]]
-    data: t.List[t.List[t.Any]]
+    data: t.List[t.List[str]]
     grouped_columns: bool = Field(alias="groupedColumns")
 
 
@@ -52,7 +52,7 @@ def _get_flow(df: pd.DataFrame, keyword: str) -> DigestMatrixUI:
     df_col_start = 1
     df_size = next((k for k, v in enumerate(first_column[index_start:]) if v == ""), len(first_column) - index_start)
     flow_df = df.iloc[index_start : index_start + df_size, df_col_start : df_col_start + df_size]
-    data = flow_df.iloc[:, 1:].to_numpy().tolist()
+    data = flow_df.iloc[1:, :].to_numpy().tolist()
     cols = [""] + flow_df.iloc[0, 1:].tolist()
     return DigestMatrixUI(columns=cols, data=data, groupedColumns=False)
 
