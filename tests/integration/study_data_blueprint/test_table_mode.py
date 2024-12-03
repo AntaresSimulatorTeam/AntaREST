@@ -318,7 +318,6 @@ class TestTableMode:
                     }
                 )
 
-        # Sending PUT request
         res = client.put(f"/v1/studies/{internal_study_id}/table-mode/links", json=json_input)
         assert res.status_code == 200, res.json()
 
@@ -330,6 +329,10 @@ class TestTableMode:
         res = client.get(f"/v1/studies/{internal_study_id}/table-mode/links")
         assert res.status_code == 200, res.json()
         assert res.json() == expected_links
+
+        # GET request to make sure that the GET /links works
+        res = client.get(f"/v1/studies/{internal_study_id}/links")
+        assert res.status_code == 200, res.json()
 
         # Table Mode - Thermal Clusters
         # =============================
