@@ -259,14 +259,14 @@ function Data() {
       {!loaded && <SimpleLoader />}
       {matrixModal && currentMatrix && (
         <MatrixDialog
-          open={matrixModal} // Why 'openModal &&' ? => Otherwise previous data are still present
-          matrixInfo={currentMatrix}
+          matrix={currentMatrix}
+          open={matrixModal}
           onClose={onMatrixModalClose}
         />
       )}
       {openModal && (
         <DatasetCreationDialog
-          open={openModal} // Why 'openModal &&' ? => Otherwise previous data are still present
+          open={openModal}
           data={currentData}
           onNewDataUpdate={onNewDataUpdate}
           onClose={onModalClose}

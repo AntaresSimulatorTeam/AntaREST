@@ -24,6 +24,9 @@ from antarest.eventbus.business.interfaces import IEventBusBackend
 logger = logging.getLogger(__name__)
 
 
+EVENT_LOOP_REST_TIME = 0.2
+
+
 class EventBusService(IEventBus):
     def __init__(self, backend: IEventBusBackend, autostart: bool = True) -> None:
         self.backend = backend
@@ -76,18 +79,22 @@ class EventBusService(IEventBus):
 
     async def _run_loop(self) -> None:
         while True:
-            time.sleep(0.2)
             try:
-                await self._on_events()
+                processed_events_count = await self._on_events()
+                # Give the loop some rest if it has nothing to do
+                if processed_events_count == 0:
+                    await asyncio.sleep(EVENT_LOOP_REST_TIME)
             except Exception as e:
                 logger.error("Unexpected error when processing events", exc_info=e)
 
-    async def _on_events(self) -> None:
+    async def _on_events(self) -> int:
+        processed_events_count = 0
         with self.lock:
             for queue in self.consumers:
                 if len(self.consumers[queue]) > 0:
                     event = self.backend.pull_queue(queue)
                     while event is not None:
+                        processed_events_count += 1
                         try:
                             await list(self.consumers[queue].values())[
                                 random.randint(0, len(self.consumers[queue]) - 1)
@@ -99,7 +106,9 @@ class EventBusService(IEventBus):
                             )
                         event = self.backend.pull_queue(queue)
 
-            for e in self.backend.get_events():
+            events = self.backend.get_events()
+            processed_events_count += len(events)
+            for e in events:
                 if e.type in self.listeners:
                     responses = await asyncio.gather(
                         *[
@@ -115,6 +124,7 @@ class EventBusService(IEventBus):
                                 exc_info=res,
                             )
             self.backend.clear_events()
+            return processed_events_count
 
     def _async_loop(self, new_loop: bool = True) -> None:
         loop = asyncio.new_event_loop() if new_loop else asyncio.get_event_loop()

@@ -18,7 +18,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-      - uses: isort/isort-action@master
+      - uses: isort/isort-action@v1.1.1
         with:
           sort-paths: antarest, tests
           requirementsFiles: "requirements-dev.txt"
@@ -156,7 +156,7 @@ jobs:
         with:
           name: python-code-coverage-report
       - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
+        uses: sonarsource/sonarcloud-github-action@v3.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

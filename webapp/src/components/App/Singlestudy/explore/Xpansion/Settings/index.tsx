@@ -178,7 +178,6 @@ function Settings() {
       )}
       {!!resourceViewDialog && (
         <DataViewerDialog
-          studyId={study?.id || ""}
           filename={resourceViewDialog.filename}
           content={resourceViewDialog.content}
           onClose={() => setResourceViewDialog(undefined)}

@@ -21,6 +21,8 @@ import {
   type AggregateConfig,
   type DateTimeMetadataDTO,
   type FormatGridNumberOptions,
+  DataColumnsConfig,
+  ResultColumn,
 } from "./types";
 import { parseISO, Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -169,14 +171,18 @@ export function generateTimeSeriesColumns({
  *
  * @param customColumns - An array of strings representing the custom column titles.
  * @param customColumns.titles - The titles of the custom columns.
+ * @param customColumns.width - The width of each column.
+ 
  * @returns An array of EnhancedGridColumn objects representing the generated custom columns.
  */
 export function generateCustomColumns({
   titles,
+  width,
 }: CustomColumnOptions): EnhancedGridColumn[] {
   return titles.map((title, index) => ({
     id: `custom${index + 1}`,
     title,
+    width,
     type: Column.Number,
     editable: true,
   }));
@@ -185,26 +191,33 @@ export function generateCustomColumns({
 /**
  * Generates an array of data columns for a matrix grid.
  *
- * @param timeSeriesColumns - A boolean indicating whether to enable time series columns.
- * @param columnCount - The number of columns to generate.
- * @param customColumns - An optional array of custom column titles.
- * @param colWidth - The width of each column.
- * @returns An array of EnhancedGridColumn objects representing the generated data columns.
+ * @param config - Configuration object for generating columns
+ * @param config.timeSeriesColumns - A boolean indicating whether to enable time series columns
+ * @param config.count - The number of columns to generate
+ * @param config.customColumns - An optional array of custom column titles
+ * @param config.width - The width of each column
+ *
+ * @returns An array of EnhancedGridColumn objects representing the generated data columns
  */
-export function generateDataColumns(
-  timeSeriesColumns: boolean,
-  columnCount: number,
-  customColumns?: string[] | readonly string[],
-  colWidth?: number,
-): EnhancedGridColumn[] {
+export function generateDataColumns({
+  timeSeriesColumns,
+  width,
+  count,
+  customColumns,
+}: DataColumnsConfig): EnhancedGridColumn[] {
   // If custom columns are provided, use them
   if (customColumns) {
-    return generateCustomColumns({ titles: customColumns, width: colWidth });
+    return generateCustomColumns({
+      titles: customColumns,
+      width,
+    });
   }
 
   // Else, generate time series columns if enabled
   if (timeSeriesColumns) {
-    return generateTimeSeriesColumns({ count: columnCount });
+    return generateTimeSeriesColumns({
+      count,
+    });
   }
 
   return [];
@@ -318,46 +331,68 @@ export function calculateMatrixAggregates(
  * // Both columns will be grouped under "OV. COST (Euro)"
  * ```
  */
+
 export function groupResultColumns(
-  columns: EnhancedGridColumn[],
+  columns: Array<EnhancedGridColumn | ResultColumn>,
 ): EnhancedGridColumn[] {
-  return columns.map((column) => {
-    try {
-      const titles = Array.isArray(column.title)
-        ? column.title
-        : [String(column.title)];
+  return columns.map((column): EnhancedGridColumn => {
+    const titles = Array.isArray(column.title)
+      ? column.title
+      : [String(column.title)];
 
-      // Extract and validate components
-      // [0]: Variable name (e.g., "OV. COST")
-      // [1]: Unit (e.g., "Euro")
-      // [2]: Statistic type (e.g., "MIN", "MAX", "STD")
-      const [variable, unit, stat] = titles.map((t) => String(t).trim());
+    // Extract and validate components
+    // [0]: Variable name (e.g., "OV. COST")
+    // [1]: Unit (e.g., "Euro")
+    // [2]: Statistic type (e.g., "MIN", "MAX", "STD")
+    const [variable, unit, stat] = titles.map((t) => String(t).trim());
 
-      // Create group name:
-      // - If unit exists and is not empty/whitespace, add it in parentheses
-      // - If no unit or empty unit, use variable name alone
-      const hasUnit = unit && unit.trim().length > 0;
-      const title = hasUnit ? `${variable} (${unit})` : variable;
+    // Create group name:
+    // - If unit exists and is not empty/whitespace, add it in parentheses
+    // - If no unit or empty unit, use variable name alone
+    const hasUnit = unit && unit.trim().length > 0;
+    const title = hasUnit ? `${variable} (${unit})` : variable;
 
-      // If no stats, it does not make sense to group columns
-      if (!stat) {
-        return {
-          ...column,
-          title,
-        };
-      }
-
+    // If no stats, it does not make sense to group columns
+    if (!stat) {
       return {
         ...column,
-        group: title, // Group header title
-        title: stat.toLowerCase(), // Sub columns title
-        themeOverride: {
-          bgHeader: "#2D2E40", // Sub columns bg color
-        },
+        title,
       };
-    } catch (error) {
-      console.error(`Error processing column ${column.id}:`, error);
-      return column;
     }
+
+    return {
+      ...column,
+      group: title, // Group header title
+      title: stat.toLowerCase(), // Sub columns title,
+
+      themeOverride: {
+        bgHeader: "#2D2E40", // Sub columns bg color
+      },
+    };
   });
+}
+
+/**
+ * Generates an array of ResultColumn objects from a 2D array of column titles.
+ * Each title array should follow the format [variable, unit, stat] as used in result matrices.
+ 
+ * This function is designed to work in conjunction with groupResultColumns()
+ * to create properly formatted and grouped result matrix columns.
+ *
+ * @param titles - 2D array of string arrays, where each inner array contains:
+ *   - [0]: Variable name (e.g., "OV. COST")
+ *   - [1]: Unit (e.g., "Euro", "MW")
+ *   - [2]: Statistic type (e.g., "MIN", "MAX", "STD")
+ *
+ * @returns Array of ResultColumn objects ready for use in result matrices
+ *
+ * @see groupResultColumns - Use this function to apply grouping to the generated columns
+ */
+export function generateResultColumns(titles: string[][]): ResultColumn[] {
+  return titles.map((title, index) => ({
+    id: `custom${index + 1}`,
+    title: title,
+    type: Column.Number,
+    editable: false,
+  }));
 }

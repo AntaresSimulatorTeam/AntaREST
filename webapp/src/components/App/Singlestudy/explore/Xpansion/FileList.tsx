@@ -17,13 +17,14 @@ import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box, Paper } from "@mui/material";
-import { MatrixType, StudyMetadata } from "../../../../../common/types";
+import { StudyMetadata } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../common/FileTable";
 import { Title } from "./share/styles";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
+import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 interface PropTypes {
   addResource: (studyId: string, file: File) => Promise<void>;
@@ -31,7 +32,7 @@ interface PropTypes {
   fetchResourceContent: (
     studyId: string,
     filename: string,
-  ) => Promise<MatrixType | string>;
+  ) => Promise<MatrixDataDTO | string>;
   listResources: (studyId: string) => Promise<string[] | undefined>;
   errorMessages?: {
     add?: string;
@@ -57,7 +58,7 @@ function FileList(props: PropTypes) {
   } = props;
   const [viewDialog, setViewDialog] = useState<{
     filename: string;
-    content: MatrixType | string;
+    content: MatrixDataDTO | string;
   }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
@@ -151,7 +152,6 @@ function FileList(props: PropTypes) {
       />
       {!!viewDialog && (
         <DataViewerDialog
-          studyId={study?.id || ""}
           filename={viewDialog.filename}
           content={viewDialog.content}
           onClose={() => setViewDialog(undefined)}

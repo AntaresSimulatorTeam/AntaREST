@@ -1,5 +1,5 @@
 ---
-title: Study Configuration
+title: Study Modelization
 author: Antares Web Team
 date: 2023-12-21
 category: User Guide
@@ -11,15 +11,13 @@ tags:
   - areas
   - links
   - binding-constraints
-  - debug
-  - table-mode
 ---
 
-# Study Configuration
+# Study Modelization
 
-This page is dedicated to configuring the study in the Antares Web application.
+This page is dedicated to modelize a study in the Antares Web application.
 
-To access the configuration of the study:
+To access the modelization of the study:
 
 1. From the "Study" view, click on the "MODELIZATION" tab.
 
@@ -29,5 +27,3 @@ To access the configuration of the study:
 - [Areas](study/02-areas.md)
 - [Links](study/03-links.md)
 - [Binding Constraints](study/04-binding-constraints.md)
-- [Debug](study/05-debug.md)
-- [Table Mode](study/06-table-mode.md)

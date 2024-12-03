@@ -21,7 +21,7 @@ import zipfile
 from fastapi import HTTPException, UploadFile
 from pydantic import Field, ValidationError, field_validator, model_validator
 
-from antarest.core.exceptions import BadZipBinary, ChildNotFoundError
+from antarest.core.exceptions import BadZipBinary, ChildNotFoundError, LinkNotFound
 from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
@@ -253,11 +253,6 @@ class XpansionCandidateDTO(AntaresBaseModel):
     already_installed_indirect_link_profile: t.Optional[str] = Field(
         default=None, alias="already-installed-indirect-link-profile"
     )
-
-
-class LinkNotFound(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.NOT_FOUND, message)
 
 
 class XpansionFileNotFoundError(HTTPException):

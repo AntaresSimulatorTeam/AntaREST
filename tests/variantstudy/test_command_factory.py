@@ -17,7 +17,6 @@ from typing import List, Set
 from unittest.mock import Mock
 
 import pytest
-from antares.study.version import StudyVersion
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import STUDY_VERSION_8_8
@@ -76,6 +75,18 @@ COMMANDS: List[CommandDTO] = [
     ),
     CommandDTO(
         action=CommandName.CREATE_LINK.value,
+        args=[
+            {
+                "area1": "area1",
+                "area2": "area2",
+                "parameters": {},
+                "series": "series",
+            }
+        ],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.UPDATE_LINK.value,
         args=[
             {
                 "area1": "area1",
@@ -387,6 +398,21 @@ COMMANDS: List[CommandDTO] = [
     CommandDTO(
         action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value, args=[{}], study_version=STUDY_VERSION_8_8
     ),
+    CommandDTO(
+        action=CommandName.CREATE_USER_RESOURCE.value,
+        args=[{"data": {"path": "folder_1", "resource_type": "folder"}}],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_USER_RESOURCE.value,
+        args=[{"data": {"path": "folder_1"}}],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_USER_RESOURCE.value,
+        args=[{"data": {"path": "file_1.txt"}}],
+        study_version=STUDY_VERSION_8_8,
+    ),
 ]
 
 
@@ -414,7 +440,7 @@ class TestCommandFactory:
                 f".{name}",
                 package="antarest.study.storage.variantstudy.model.command",
             )
-        abstract_commands = {"AbstractBindingConstraintCommand"}
+        abstract_commands = {"AbstractBindingConstraintCommand", "AbstractLinkCommand"}
         return {cmd.__name__ for cmd in ICommand.__subclasses__() if cmd.__name__ not in abstract_commands}
 
     def test_all_commands_are_tested(self, command_factory: CommandFactory):
