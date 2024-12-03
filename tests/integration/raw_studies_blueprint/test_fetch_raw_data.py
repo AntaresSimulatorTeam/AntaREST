@@ -19,13 +19,40 @@ import shutil
 from unittest.mock import ANY
 
 import numpy as np
+import pandas as pd
 import pytest
+from httpx import Response
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
+
+
+def _check_endpoint_response(
+    study_type: str, res: Response, client: TestClient, study_id: str, expected_msg: str, exception: str
+):
+    # The command will only fail when applied so on raw studies only.
+    # So we have to differentiate the test based on the study type.
+    if study_type == "raw":
+        assert res.status_code == 403
+        assert res.json()["exception"] == exception
+        assert expected_msg in res.json()["description"]
+    else:
+        res.raise_for_status()
+        task_id = client.put(f"/v1/studies/{study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        task = res.json()
+        assert task["status"] == TaskStatus.FAILED.value
+        assert not task["result"]["success"]
+        assert expected_msg in task["result"]["message"]
+        # We have to delete the command to make the variant "clean" again.
+        res = client.get(f"/v1/studies/{study_id}/commands")
+        cmd_id = res.json()[-1]["id"]
+        res = client.delete(f"/v1/studies/{study_id}/commands/{cmd_id}")
+        res.raise_for_status()
 
 
 @pytest.mark.integration_test
@@ -34,12 +61,8 @@ class TestFetchRawData:
     Check the retrieval of Raw Data from Study: JSON, Text, or File Attachment.
     """
 
-    def test_get_study(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-    ):
+    @pytest.mark.parametrize("study_type", ["raw", "variant"])
+    def test_get_study(self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str):
         """
         Test the `get_study` endpoint for fetching raw data from a study.
 
@@ -53,18 +76,40 @@ class TestFetchRawData:
         4. Uses the API to download files from the "user/unknown" directory.
         5. Checks for a 415 error when the extension of a file is unknown.
         """
+
+        # =============================
+        #  SET UP
+        # =============================
+
         # First copy the user resources in the Study directory
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
             study_dir = pathlib.Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        raw_url = f"/v1/studies/{internal_study_id}/raw"
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
             study_dir.joinpath("user"),
             dirs_exist_ok=True,
         )
+
+        if study_type == "variant":
+            # Copies the study, to convert it into a managed one.
+            res = client.post(
+                f"/v1/studies/{internal_study_id}/copy",
+                headers={"Authorization": f"Bearer {user_access_token}"},
+                params={"dest": "default", "with_outputs": False, "use_task": False},
+            )
+            assert res.status_code == 201
+            parent_id = res.json()
+            res = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant 1"})
+            internal_study_id = res.json()
+
+        raw_url = f"/v1/studies/{internal_study_id}/raw"
+
+        # =============================
+        #  NOMINAL CASES
+        # =============================
 
         # Then, use the API to download the files from the "user/folder" directory
         user_folder_dir = study_dir.joinpath("user/folder")
@@ -119,37 +164,68 @@ class TestFetchRawData:
 
         # To create a resource, you can use PUT method and the `create_missing` flag.
         # The expected status code should be 204 No Content.
+        file_to_create = "user/somewhere/something.txt"
         res = client.put(
             raw_url,
-            params={"path": "user/somewhere/something.txt", "create_missing": True},
+            params={"path": file_to_create, "create_missing": True},
             files={"file": io.BytesIO(b"Goodbye Cruel World!")},
         )
         assert res.status_code == 204, res.json()
+        if study_type == "variant":
+            # Asserts the generation succeeds
+            task_id = client.put(f"/v1/studies/{internal_study_id}/generate?from_scratch=True").json()
+            res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+            task = res.json()
+            assert task["status"] == TaskStatus.COMPLETED.value
+            assert task["result"]["success"]
+            # Checks created commands
+            res = client.get(f"/v1/studies/{internal_study_id}/commands")
+            commands = res.json()
+            # First command is created automatically to respect owners, we ignore it.
+            assert commands[1]["action"] == "create_user_resource"
+            assert commands[1]["args"] == [{"data": {"path": "somewhere/something.txt", "resource_type": "file"}}]
+            assert commands[2]["action"] == "update_file"
+            assert commands[2]["args"] == [{"target": file_to_create, "b64Data": "R29vZGJ5ZSBDcnVlbCBXb3JsZCE="}]
 
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
         # The expected status code should be 204 No Content.
         res = client.put(
             raw_url,
-            params={"path": "user/somewhere/something.txt", "create_missing": True},
+            params={"path": file_to_create, "create_missing": True},
             files={"file": io.BytesIO(b"This is the end!")},
         )
         assert res.status_code == 204, res.json()
 
         # You can check that the resource has been created or updated.
-        res = client.get(raw_url, params={"path": "user/somewhere/something.txt"})
+        res = client.get(raw_url, params={"path": file_to_create})
         assert res.status_code == 200, res.json()
         assert res.content == b"This is the end!"
 
         # You can import a csv or a tsv file inside a matrix
         matrix_path = "input/load/series/load_de"
         for content, delimiter in zip(
-            [b"1.20000\n3.400000\n", b"1.4\t0.5\n0.0\t0.4\n", b"1.2,1.3\n1.4,1.5\n"], ["\t", "\t", ","]
+            [
+                b"1.20000\n3.400000\n",
+                b"1.4\t0.5\n0.0\t0.4\n",
+                b"1.2,1.3\n1.4,1.5\n",
+                b"",
+                b"\xef\xbb\xbf1;1;1;1;1\r\n1;1;1;1;1",
+                b"1;1;1;1;1\r1;1;1;1;1",
+                b"0,000000;0,000000;0,000000;0,000000\n0,000000;0,000000;0,000000;0,000000",
+            ],
+            ["\t", "\t", ",", "\t", ";", ";", ";"],
         ):
             res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(content)})
             assert res.status_code == 204, res.json()
             res = client.get(raw_url, params={"path": matrix_path})
             written_data = res.json()["data"]
-            assert written_data == np.loadtxt(io.BytesIO(content), delimiter=delimiter, ndmin=2).tolist()
+            if not content.decode("utf-8"):
+                # For some reason the `GET` returns the default matrix when it's empty
+                expected = 8760 * [[0]] if study_type == "raw" else [[]]
+            else:
+                df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+                expected = df.to_numpy(dtype=np.float64).tolist()
+            assert written_data == expected
 
         # If we ask for properties, we should have a JSON content
         rel_path = "/input/links/de/properties/fr"
@@ -180,7 +256,6 @@ class TestFetchRawData:
         assert actual == {"index": ANY, "columns": ANY, "data": ANY}
 
         # If we ask for a matrix, we should have a CSV content if formatted is False
-        rel_path = "/input/links/de/fr"
         res = client.get(raw_url, params={"path": rel_path, "formatted": False})
         assert res.status_code == 200, res.json()
         actual = res.text
@@ -212,9 +287,10 @@ class TestFetchRawData:
         assert res.json() == ["DE", "ES", "FR", "IT"]
 
         # asserts that the GET /raw endpoint is able to read matrix containing NaN values
-        res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"})
-        assert res.status_code == 200
-        assert np.isnan(res.json()["data"][0]).any()
+        if study_type == "raw":
+            res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"})
+            assert res.status_code == 200
+            assert np.isnan(res.json()["data"][0]).any()
 
         # Iterate over all possible combinations of path and depth
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
@@ -222,11 +298,27 @@ class TestFetchRawData:
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
 
 
-def test_delete_raw(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+@pytest.mark.parametrize("study_type", ["raw", "variant"])
+def test_delete_raw(client: TestClient, user_access_token: str, internal_study_id: str, study_type: str) -> None:
+    # =============================
+    #  SET UP
+    # =============================
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
+    if study_type == "variant":
+        # Copies the study, to convert it into a managed one.
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/copy",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"dest": "default", "with_outputs": False, "use_task": False},
+        )
+        assert res.status_code == 201
+        parent_id = res.json()
+        res = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant 1"})
+        internal_study_id = res.json()
+
     # =============================
-    #  SET UP + NOMINAL CASES
+    #  NOMINAL CASES
     # =============================
 
     content = io.BytesIO(b"This is the end!")
@@ -268,21 +360,96 @@ def test_delete_raw(client: TestClient, user_access_token: str, internal_study_i
 
     # try to delete expansion folder
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
-    assert res.status_code == 403
-    assert res.json()["exception"] == "FileDeletionNotAllowed"
-    assert "you are not allowed to delete this resource" in res.json()["description"]
+    expected_msg = "you are not allowed to delete this resource"
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
 
     # try to delete a file which isn't inside the 'User' folder
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/input/thermal")
+    expected_msg = "the given path isn't inside the 'User' folder"
     assert res.status_code == 403
-    assert res.json()["exception"] == "FileDeletionNotAllowed"
-    assert "the targeted data isn't inside the 'User' folder" in res.json()["description"]
+    assert res.json()["exception"] == "ResourceDeletionNotAllowed"
+    assert expected_msg in res.json()["description"]
 
     # With a path that doesn't exist
     res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
+    expected_msg = "the given path doesn't exist"
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
+
+
+@pytest.mark.parametrize("study_type", ["raw", "variant"])
+def test_create_folder(client: TestClient, user_access_token: str, internal_study_id: str, study_type: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    if study_type == "variant":
+        # Copies the study, to convert it into a managed one.
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/copy",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"dest": "default", "with_outputs": False, "use_task": False},
+        )
+        assert res.status_code == 201
+        parent_id = res.json()
+        res = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant 1"})
+        internal_study_id = res.json()
+
+    raw_url = f"/v1/studies/{internal_study_id}/raw"
+
+    # =============================
+    # NOMINAL CASES
+    # =============================
+    additional_params = {"resource_type": "folder", "create_missing": True}
+
+    res = client.put(raw_url, params={"path": "user/folder_1", **additional_params})
+    assert res.status_code == 204
+
+    # same case with different writing should succeed
+    res = client.put(raw_url, params={"path": "/user/folder_2", **additional_params})
+    assert res.status_code == 204
+
+    # create a folder within a non-existing one
+    res = client.put(raw_url, params={"path": "/user/folder_x/folder_y", **additional_params})
+    assert res.status_code == 204
+
+    # checks debug view to see that folders were created
+    res = client.get(f"/v1/studies/{internal_study_id}/raw?path=&depth=-1")
+    assert res.status_code == 200
+    tree = res.json()["user"]
+    assert list(tree.keys()) == ["expansion", "folder_1", "folder_2", "folder_x"]
+    assert tree["folder_x"] == {"folder_y": {}}
+
+    # =============================
+    #  ERRORS
+    # =============================
+
+    # we can't create a file without specifying a content
+    res = client.put(raw_url, params={"path": "fake_path"})
+    assert res.status_code == 422
+    assert res.json()["description"] == "Argument mismatch: Must give a content to create a file"
+
+    # we can't create a folder and specify a content at the same time
+    res = client.put(raw_url, params={"path": "", "resource_type": "folder"}, files={"file": b"content"})
+    assert res.status_code == 422
+    assert res.json()["description"] == "Argument mismatch: Cannot give a content to create a folder"
+
+    # try to create a folder outside `user` folder
+    wrong_folder = "input/wrong_folder"
+    expected_msg = f"the given path isn't inside the 'User' folder: {wrong_folder}"
+    res = client.put(raw_url, params={"path": wrong_folder, **additional_params})
     assert res.status_code == 403
-    assert res.json()["exception"] == "FileDeletionNotAllowed"
-    assert "the given path doesn't exist" in res.json()["description"]
+    assert res.json()["exception"] == "FolderCreationNotAllowed"
+    assert expected_msg in res.json()["description"]
+
+    # try to create a folder inside the 'expansion` folder
+    expansion_folder = "user/expansion/wrong_folder"
+    expected_msg = "you are not allowed to create a resource here"
+    res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
+
+    # try to create an already existing folder
+    existing_folder = "user/folder_1"
+    expected_msg = "the given resource already exists"
+    res = client.put(raw_url, params={"path": existing_folder, **additional_params})
+    _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
 
 def test_retrieve_from_archive(client: TestClient, user_access_token: str) -> None:

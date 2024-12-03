@@ -13,6 +13,7 @@
 import pytest
 from checksumdir import dirhash
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -63,7 +64,9 @@ class TestRemoveArea:
 
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
-        create_area_command: ICommand = CreateArea(area_name=area_name, command_context=command_context)
+        create_area_command: ICommand = CreateArea(
+            area_name=area_name, command_context=command_context, study_version=empty_study.config.version
+        )
         output = create_area_command.apply(study_data=empty_study)
         assert output.status, output.message
         return empty_study, area_id
@@ -71,7 +74,7 @@ class TestRemoveArea:
     @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
     def test_remove_with_aggregated(self, empty_study: FileStudy, command_context: CommandContext):
         (empty_study, area_id) = self._set_up(empty_study, command_context)
-        remove_area_command = RemoveArea(id=area_id, command_context=command_context)
+        remove_area_command = RemoveArea(id=area_id, command_context=command_context, study_version=STUDY_VERSION_8_8)
         output = remove_area_command.apply(study_data=empty_study)
         assert output.status, output.message
 
@@ -79,12 +82,14 @@ class TestRemoveArea:
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         # noinspection SpellCheckingInspection
         (empty_study, area_id) = self._set_up(empty_study, command_context)
+        study_version = empty_study.config.version
 
         create_district_command = CreateDistrict(
             name="foo",
             base_filter=DistrictBaseFilter.add_all,
             filter_items=[area_id],
             command_context=command_context,
+            study_version=study_version,
         )
         output = create_district_command.apply(study_data=empty_study)
         assert output.status, output.message
@@ -98,6 +103,7 @@ class TestRemoveArea:
                 target="settings/generaldata/other preferences",
                 data={"renewable-generation-modelling": "clusters"},
                 command_context=command_context,
+                study_version=study_version,
             )
             output = update_config.apply(study_data=empty_study)
             assert output.status, output.message
@@ -109,7 +115,7 @@ class TestRemoveArea:
         hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
         empty_study_cfg = empty_study.tree.get(depth=999)
-        if empty_study.config.version >= 830:
+        if study_version >= 830:
             empty_study_cfg["input"]["areas"][area_id]["adequacy_patch"] = {
                 "adequacy-patch": {"adequacy-patch-mode": "outside"}
             }
@@ -118,7 +124,9 @@ class TestRemoveArea:
         area_name2 = "Area2"
         area_id2 = transform_name_to_id(area_name2)
 
-        create_area_command: ICommand = CreateArea(area_name=area_name2, command_context=command_context)
+        create_area_command: ICommand = CreateArea(
+            area_name=area_name2, command_context=command_context, study_version=study_version
+        )
         output = create_area_command.apply(study_data=empty_study)
         assert output.status, output.message
 
@@ -128,6 +136,7 @@ class TestRemoveArea:
             parameters={},
             command_context=command_context,
             series=[[0]],
+            study_version=study_version,
         )
         output = create_link_command.apply(study_data=empty_study)
         assert output.status, output.message
@@ -147,11 +156,12 @@ class TestRemoveArea:
             prepro=[[0]],
             modulation=[[0]],
             command_context=command_context,
+            study_version=study_version,
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
         renewable_id = None
-        if empty_study.config.version >= 810:
+        if study_version >= 810:
             renewable_name = "Renewable"
             renewable_id = transform_name_to_id(renewable_name)
             output = CreateRenewablesCluster(
@@ -165,6 +175,7 @@ class TestRemoveArea:
                     "ts-interpretation": "power-generation",
                 },
                 command_context=command_context,
+                study_version=study_version,
             ).apply(study_data=empty_study)
             assert output.status, output.message
 
@@ -178,14 +189,12 @@ class TestRemoveArea:
             },
             comments="Hello",
             command_context=command_context,
+            study_version=study_version,
         )
         output = bind1_cmd.apply(study_data=empty_study)
         assert output.status, output.message
 
-        remove_district_command = RemoveDistrict(
-            id="foo",
-            command_context=command_context,
-        )
+        remove_district_command = RemoveDistrict(id="foo", command_context=command_context, study_version=study_version)
         output = remove_district_command.apply(study_data=empty_study)
         assert output.status, output.message
 
@@ -194,6 +203,7 @@ class TestRemoveArea:
             base_filter=DistrictBaseFilter.add_all,
             filter_items=[area_id, area_id2],
             command_context=command_context,
+            study_version=study_version,
         )
         output = create_district_command.apply(study_data=empty_study)
         assert output.status, output.message
@@ -207,24 +217,25 @@ class TestRemoveArea:
             f"ntc,{area_id},{area_id2},0": 1,
             f"t,{area_id2},0,{thermal_id.lower()}": 1,
         }
-        if empty_study.config.version >= 800:
+        if study_version >= 800:
             default_ruleset[f"hl,{area_id2},0"] = 1
-        if empty_study.config.version >= 810:
+        if study_version >= 810:
             default_ruleset[f"r,{area_id2},0,{renewable_id.lower()}"] = 1
-        if empty_study.config.version >= 870:
+        if study_version >= 870:
             default_ruleset["bc,bd 2,0"] = 1
-        if empty_study.config.version >= 920:
+        if study_version >= 920:
             default_ruleset[f"hfl,{area_id2},0"] = 1
-        if empty_study.config.version >= 910:
+        if study_version >= 910:
             default_ruleset[f"hgp,{area_id2},0"] = 1
 
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": default_ruleset},
-            command_context=command_context,
+            data={"Default Ruleset": default_ruleset}, command_context=command_context, study_version=study_version
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
-        remove_area_command: ICommand = RemoveArea(id=area_id2, command_context=command_context)
+        remove_area_command: ICommand = RemoveArea(
+            id=area_id2, command_context=command_context, study_version=study_version
+        )
         output = remove_area_command.apply(study_data=empty_study)
         assert output.status, output.message
         assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
@@ -234,10 +245,10 @@ class TestRemoveArea:
 
 
 def test_match(command_context: CommandContext):
-    base = RemoveArea(id="foo", command_context=command_context)
-    other_match = RemoveArea(id="foo", command_context=command_context)
-    other_not_match = RemoveArea(id="bar", command_context=command_context)
-    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context)
+    base = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_not_match = RemoveArea(id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.match(other_match)
     assert not base.match(other_not_match)
     assert not base.match(other_other)
@@ -246,6 +257,6 @@ def test_match(command_context: CommandContext):
 
 
 def test_create_diff(command_context: CommandContext):
-    base = RemoveArea(id="foo", command_context=command_context)
-    other_match = RemoveArea(id="foo", command_context=command_context)
+    base = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
+    other_match = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
     assert base.create_diff(other_match) == []

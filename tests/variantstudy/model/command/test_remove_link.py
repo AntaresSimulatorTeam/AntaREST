@@ -21,6 +21,7 @@ import pytest
 from checksumdir import dirhash
 from pydantic import ValidationError
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -69,7 +70,9 @@ class TestRemoveLink:
         It checks that the area names are correctly converted to area ID (in lowercase)
         and that the areas are well-ordered in alphabetical order (Antares Solver convention).
         """
-        command = RemoveLink(area1=area1, area2=area2, command_context=Mock(spec=CommandContext))
+        command = RemoveLink(
+            area1=area1, area2=area2, command_context=Mock(spec=CommandContext), study_version=STUDY_VERSION_8_8
+        )
         actual = command.model_dump(include={"area1", "area2"})
         assert actual == expected
 
@@ -92,21 +95,27 @@ class TestRemoveLink:
     @pytest.mark.parametrize("version", [810, 820])
     def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int) -> None:
         empty_study = self.make_study(tmpdir, version)
+        study_version = empty_study.config.version
 
         # Create some areas
         areas = {transform_name_to_id(area, lower=True): area for area in ["Area_X", "Area_Y", "Area_Z"]}
         for area in areas.values():
-            output = CreateArea(area_name=area, command_context=command_context).apply(empty_study)
+            output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
+                empty_study
+            )
             assert output.status, output.message
 
         # Create a link between Area_X and Area_Y
-        output = CreateLink(area1="area_x", area2="area_y", command_context=command_context).apply(empty_study)
+        output = CreateLink(
+            area1="area_x", area2="area_y", command_context=command_context, study_version=study_version
+        ).apply(empty_study)
         assert output.status, output.message
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
             data={"Default Ruleset": {"ntc,area_x,area_y,0": 1}},
             command_context=command_context,
+            study_version=study_version,
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
@@ -117,26 +126,35 @@ class TestRemoveLink:
         hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
         # Create a link between Area_X and Area_Z
-        output = CreateLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
+        output = CreateLink(
+            area1="area_x", area2="area_z", command_context=command_context, study_version=study_version
+        ).apply(empty_study)
         assert output.status, output.message
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
             data={"Default Ruleset": {"ntc,area_x,area_z,0": 1}},
             command_context=command_context,
+            study_version=study_version,
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
-        output = RemoveLink(area1="area_x", area2="area_z", command_context=command_context).apply(empty_study)
+        output = RemoveLink(
+            area1="area_x", area2="area_z", command_context=command_context, study_version=study_version
+        ).apply(empty_study)
         assert output.status, output.message
 
         assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
     def test_match(self, command_context: CommandContext) -> None:
-        base = RemoveLink(area1="foo", area2="bar", command_context=command_context)
-        other_match = RemoveLink(area1="foo", area2="bar", command_context=command_context)
-        other_not_match = RemoveLink(area1="foo", area2="baz", command_context=command_context)
-        other_other = RemoveArea(id="id", command_context=command_context)
+        base = RemoveLink(area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
+        other_match = RemoveLink(
+            area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+        )
+        other_not_match = RemoveLink(
+            area1="foo", area2="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
+        )
+        other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
         assert base.match(other_match)
         assert not base.match(other_not_match)
         assert not base.match(other_other)
@@ -144,6 +162,8 @@ class TestRemoveLink:
         assert base.get_inner_matrices() == []
 
     def test_create_diff(self, command_context: CommandContext) -> None:
-        base = RemoveLink(area1="foo", area2="bar", command_context=command_context)
-        other_match = RemoveLink(area1="foo", area2="bar", command_context=command_context)
+        base = RemoveLink(area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
+        other_match = RemoveLink(
+            area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
+        )
         assert base.create_diff(other_match) == []

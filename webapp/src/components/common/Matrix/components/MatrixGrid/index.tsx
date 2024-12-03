@@ -31,7 +31,7 @@ import {
 } from "../../shared/types";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useMatrixPortal } from "../../hooks/useMatrixPortal";
-import { darkTheme, readOnlyDarkTheme } from "./styles";
+import { darkTheme, readOnlyDarkTheme } from "../../styles";
 
 export interface MatrixGridProps {
   data: number[][];
@@ -44,8 +44,8 @@ export interface MatrixGridProps {
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
-  isReadOnly?: boolean;
-  isPercentDisplayEnabled?: boolean;
+  readOnly?: boolean;
+  showPercent?: boolean;
 }
 
 function MatrixGrid({
@@ -59,8 +59,8 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
-  isReadOnly,
-  isPercentDisplayEnabled,
+  readOnly,
+  showPercent,
 }: MatrixGridProps) {
   const [columns, setColumns] = useState<EnhancedGridColumn[]>(initialColumns);
   const [selection, setSelection] = useState<GridSelection>({
@@ -80,7 +80,7 @@ function MatrixGrid({
     useMatrixPortal();
 
   const theme = useMemo(() => {
-    if (isReadOnly) {
+    if (readOnly) {
       return {
         ...darkTheme,
         ...readOnlyDarkTheme,
@@ -88,7 +88,7 @@ function MatrixGrid({
     }
 
     return darkTheme;
-  }, [isReadOnly]);
+  }, [readOnly]);
 
   const getCellContent = useGridCellContent(
     data,
@@ -97,8 +97,8 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
-    isReadOnly,
-    isPercentDisplayEnabled,
+    readOnly,
+    showPercent,
   );
 
   ////////////////////////////////////////////////////////////////

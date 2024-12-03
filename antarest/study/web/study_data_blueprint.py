@@ -71,6 +71,7 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.link_management import LinkInfoDTO
 from antarest.study.business.model.load_model import LoadDTO
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -149,19 +150,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Get all links",
-        response_model=t.List[LinkInfoDTO],
+        response_model=t.List[LinkDTO],
     )
     def get_links(
         uuid: str,
-        with_ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> t.List[LinkDTO]:
         logger.info(
             f"Fetching link list for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        areas_list = study_service.get_all_links(uuid, with_ui, params)
+        areas_list = study_service.get_all_links(uuid, params)
         return areas_list
 
     @bp.post(
@@ -186,19 +186,39 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links",
         tags=[APITag.study_data],
         summary="Create a link",
-        response_model=LinkInfoDTO,
+        response_model=LinkDTO,
     )
     def create_link(
         uuid: str,
-        link_creation_info: LinkInfoDTO,
+        link_creation_info: LinkDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> LinkDTO:
         logger.info(
             f"Creating new link for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         return study_service.create_link(uuid, link_creation_info, params)
+
+    @bp.put(
+        "/studies/{uuid}/links/{area_from}/{area_to}",
+        tags=[APITag.study_data],
+        summary="Update a link",
+        response_model=LinkDTO,
+    )
+    def update_link(
+        uuid: str,
+        area_from: str,
+        area_to: str,
+        link_update_dto: LinkBaseDTO,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        logger.info(
+            f"Updating link {area_from} -> {area_to} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.update_link(uuid, area_from, area_to, link_update_dto, params)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/ui",

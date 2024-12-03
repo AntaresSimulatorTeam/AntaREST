@@ -21,6 +21,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session  # type: ignore
 from starlette.responses import Response
 
@@ -74,7 +75,12 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission, assert_permission_on_studies, study_matcher
+from antarest.study.storage.utils import (
+    assert_permission,
+    assert_permission_on_studies,
+    is_output_archived,
+    study_matcher,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -1296,19 +1302,14 @@ def test_edit_study_with_command() -> None:
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
 
-    service._edit_study_using_command(study=Mock(), url="", data=[])
-    command.apply.assert_called_with(file_study)
+    service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
+    command.apply.assert_called_with(file_study, None)
 
     study_service = Mock(spec=VariantStudyService)
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
     service._edit_study_using_command(study=Mock(), url="", data=[])
-
-    study_service.append_command.assert_called_once_with(
-        study_id=study_id,
-        command=command.to_dto(),
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    service.storage_service.variant_study_service.append_commands.assert_called_once()
 
 
 @pytest.mark.unit_test
@@ -1344,7 +1345,9 @@ def test_create_command(
         ),
     )
 
-    command = service._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+    command = service._create_edit_study_command(
+        tree_node=tree_node, url=url, data=data, study_version=StudyVersion.parse("880")
+    )
 
     assert command.command_name.value == expected_name
 
@@ -2014,3 +2017,19 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
     # No event must be emitted
     event_bus.push.assert_not_called()
+
+
+@pytest.mark.unit_test
+def test_is_output_archived(tmp_path) -> None:
+    assert not is_output_archived(path_output=Path("fake_path"))
+    assert is_output_archived(path_output=Path("fake_path.zip"))
+
+    zipped_output_path = tmp_path / "output.zip"
+    zipped_output_path.mkdir(parents=True)
+    assert is_output_archived(path_output=zipped_output_path)
+    assert is_output_archived(path_output=tmp_path / "output")
+
+    zipped_with_suffix = tmp_path / "output_1.4.3.zip"
+    zipped_with_suffix.mkdir(parents=True)
+    assert is_output_archived(path_output=zipped_with_suffix)
+    assert is_output_archived(path_output=tmp_path / "output_1.4.3")

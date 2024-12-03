@@ -9,52 +9,32 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, field_validator, model_validator
 
-from antarest.core.model import JSON
+from antarest.core.exceptions import LinkValidationError
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.business.model.link_model import LinkInternal
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-
-class LinkProperties:
-    HURDLES_COST: bool = False
-    LOOP_FLOW: bool = False
-    USE_PHASE_SHIFTER: bool = False
-    DISPLAY_COMMENTS: bool = True
-    TRANSMISSION_CAPACITIES: str = "enabled"
-    ASSET_TYPE: str = "ac"
-    LINK_STYLE: str = "plain"
-    LINK_WIDTH: int = 1
-    COLORR: int = 112
-    COLORG: int = 112
-    COLORB: int = 112
+MATRIX_ATTRIBUTES = ["series", "direct", "indirect"]
 
 
-class LinkAlreadyExistError(Exception):
-    pass
-
-
-class CreateLink(ICommand):
-    """
-    Command used to create a link between two areas.
-    """
-
-    # Overloaded metadata
-    # ===================
-
-    command_name: CommandName = CommandName.CREATE_LINK
-    version: int = 1
+class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
+    command_name: CommandName
 
     # Command parameters
     # ==================
@@ -74,10 +54,132 @@ class CreateLink(ICommand):
         return validate_matrix(v, new_values) if v is not None else v
 
     @model_validator(mode="after")
-    def validate_areas(self) -> "CreateLink":
+    def validate_areas(self) -> "AbstractLinkCommand":
         if self.area1 == self.area2:
             raise ValueError("Cannot create link on same node")
+
+        if self.study_version < STUDY_VERSION_8_2 and (self.direct is not None or self.indirect is not None):
+            raise LinkValidationError(
+                "The fields 'direct' and 'indirect' cannot be provided when the version is less than 820."
+            )
+
         return self
+
+    def to_dto(self) -> CommandDTO:
+        args = {
+            "area1": self.area1,
+            "area2": self.area2,
+            "parameters": self.parameters,
+        }
+        for attr in MATRIX_ATTRIBUTES:
+            if value := getattr(self, attr, None):
+                args[attr] = strip_matrix_protocol(value)
+        return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
+
+    def match(self, other: ICommand, equal: bool = False) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        simple_match = self.area1 == other.area1 and self.area2 == other.area2
+        if not equal:
+            return simple_match
+        return (
+            simple_match
+            and self.parameters == other.parameters
+            and self.series == other.series
+            and self.direct == other.direct
+            and self.indirect == other.indirect
+        )
+
+    def match_signature(self) -> str:
+        return str(
+            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
+        )
+
+    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
+        other = cast(AbstractLinkCommand, other)
+
+        commands: List[ICommand] = []
+        area_from, area_to = sorted([self.area1, self.area2])
+        if self.parameters != other.parameters:
+            properties = LinkInternal.model_validate(other.parameters or {}).model_dump(
+                mode="json", by_alias=True, exclude_none=True, exclude={"area1", "area2"}
+            )
+            commands.append(
+                UpdateConfig(
+                    target=f"input/links/{area_from}/properties/{area_to}",
+                    data=properties,
+                    command_context=self.command_context,
+                    study_version=self.study_version,
+                )
+            )
+        if self.series != other.series:
+            commands.append(
+                ReplaceMatrix(
+                    target=f"@links_series/{area_from}/{area_to}",
+                    matrix=strip_matrix_protocol(other.series),
+                    command_context=self.command_context,
+                    study_version=self.study_version,
+                )
+            )
+        return commands
+
+    def get_inner_matrices(self) -> List[str]:
+        list_matrices = []
+        for attr in MATRIX_ATTRIBUTES:
+            if value := getattr(self, attr, None):
+                assert_this(isinstance(value, str))
+                list_matrices.append(strip_matrix_protocol(value))
+        return list_matrices
+
+    def save_series(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
+        assert isinstance(self.series, str)
+        if version < STUDY_VERSION_8_2:
+            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
+        else:
+            study_data.tree.save(
+                self.series,
+                ["input", "links", area_from, f"{area_to}_parameters"],
+            )
+
+    def save_direct(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
+        assert isinstance(self.direct, str)
+        if version >= STUDY_VERSION_8_2:
+            study_data.tree.save(
+                self.direct,
+                [
+                    "input",
+                    "links",
+                    area_from,
+                    "capacities",
+                    f"{area_to}_direct",
+                ],
+            )
+
+    def save_indirect(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
+        assert isinstance(self.indirect, str)
+        if version >= STUDY_VERSION_8_2:
+            study_data.tree.save(
+                self.indirect,
+                [
+                    "input",
+                    "links",
+                    area_from,
+                    "capacities",
+                    f"{area_to}_indirect",
+                ],
+            )
+
+
+class CreateLink(AbstractLinkCommand):
+    """
+    Command used to create a link between two areas.
+    """
+
+    # Overloaded metadata
+    # ===================
+
+    command_name: CommandName = CommandName.CREATE_LINK
+    version: int = 1
 
     def _create_link_in_config(self, area_from: str, area_to: str, study_data: FileStudyTreeConfig) -> None:
         self.parameters = self.parameters or {}
@@ -98,51 +200,6 @@ class CreateLink(ICommand):
             ],
         )
 
-    @staticmethod
-    def generate_link_properties(parameters: JSON) -> JSON:
-        return {
-            "hurdles-cost": parameters.get(
-                "hurdles-cost",
-                LinkProperties.HURDLES_COST,
-            ),
-            "loop-flow": parameters.get("loop-flow", LinkProperties.LOOP_FLOW),
-            "use-phase-shifter": parameters.get(
-                "use-phase-shifter",
-                LinkProperties.USE_PHASE_SHIFTER,
-            ),
-            "transmission-capacities": parameters.get(
-                "transmission-capacities",
-                LinkProperties.TRANSMISSION_CAPACITIES,
-            ),
-            "asset-type": parameters.get(
-                "asset-type",
-                LinkProperties.ASSET_TYPE,
-            ),
-            "link-style": parameters.get(
-                "link-style",
-                LinkProperties.LINK_STYLE,
-            ),
-            "link-width": parameters.get(
-                "link-width",
-                LinkProperties.LINK_WIDTH,
-            ),
-            "colorr": parameters.get("colorr", LinkProperties.COLORR),
-            "colorg": parameters.get("colorg", LinkProperties.COLORG),
-            "colorb": parameters.get("colorb", LinkProperties.COLORB),
-            "display-comments": parameters.get(
-                "display-comments",
-                LinkProperties.DISPLAY_COMMENTS,
-            ),
-            "filter-synthesis": parameters.get(
-                "filter-synthesis",
-                FilteringOptions.FILTER_SYNTHESIS,
-            ),
-            "filter-year-by-year": parameters.get(
-                "filter-year-by-year",
-                FilteringOptions.FILTER_YEAR_BY_YEAR,
-            ),
-        }
-
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
             return (
@@ -157,15 +214,6 @@ class CreateLink(ICommand):
                 CommandOutput(
                     status=False,
                     message=f"The area '{self.area2}' does not exist",
-                ),
-                {},
-            )
-
-        if self.area1 == self.area2:
-            return (
-                CommandOutput(
-                    status=False,
-                    message="Cannot create link between the same node",
                 ),
                 {},
             )
@@ -211,126 +259,41 @@ class CreateLink(ICommand):
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
+
+        to_exclude = {"area1", "area2"}
+        if version < STUDY_VERSION_8_2:
+            to_exclude.update("filter-synthesis", "filter-year-by-year")
+
+        validated_properties = LinkInternal.model_validate(self.parameters).model_dump(
+            by_alias=True, exclude=to_exclude
+        )
+
         area_from = data["area_from"]
         area_to = data["area_to"]
 
-        self.parameters = self.parameters or {}
-        link_property = CreateLink.generate_link_properties(self.parameters)
+        study_data.tree.save(validated_properties, ["input", "links", area_from, "properties", area_to])
 
-        study_data.tree.save(link_property, ["input", "links", area_from, "properties", area_to])
         self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
         self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
         self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
-        assert type(self.series) is str
-        if version < STUDY_VERSION_8_2:
-            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
-        else:
-            study_data.tree.save(
-                self.series,
-                ["input", "links", area_from, f"{area_to}_parameters"],
-            )
-
-            study_data.tree.save({}, ["input", "links", area_from, "capacities"])
-            if self.direct:
-                assert isinstance(self.direct, str)
-                study_data.tree.save(
-                    self.direct,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_direct",
-                    ],
-                )
-
-            if self.indirect:
-                assert isinstance(self.indirect, str)
-                study_data.tree.save(
-                    self.indirect,
-                    [
-                        "input",
-                        "links",
-                        area_from,
-                        "capacities",
-                        f"{area_to}_indirect",
-                    ],
-                )
+        self.save_series(area_from, area_to, study_data, version)
+        self.save_direct(area_from, area_to, study_data, version)
+        self.save_indirect(area_from, area_to, study_data, version)
 
         return output
 
     def to_dto(self) -> CommandDTO:
-        args = {
-            "area1": self.area1,
-            "area2": self.area2,
-            "parameters": self.parameters,
-        }
-        if self.series:
-            args["series"] = strip_matrix_protocol(self.series)
-        if self.direct:
-            args["direct"] = strip_matrix_protocol(self.direct)
-        if self.indirect:
-            args["indirect"] = strip_matrix_protocol(self.indirect)
-        return CommandDTO(
-            action=CommandName.CREATE_LINK.value,
-            args=args,
-        )
+        return super().to_dto()
 
     def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
-        )
+        return super().match_signature()
 
     def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateLink):
-            return False
-        simple_match = self.area1 == other.area1 and self.area2 == other.area2
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.parameters == other.parameters
-            and self.series == other.series
-            and self.direct == other.direct
-            and self.indirect == other.indirect
-        )
+        return super().match(other, equal)
 
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        other = cast(CreateLink, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        commands: List[ICommand] = []
-        area_from, area_to = sorted([self.area1, self.area2])
-        if self.parameters != other.parameters:
-            link_property = CreateLink.generate_link_properties(other.parameters or {})
-            commands.append(
-                UpdateConfig(
-                    target=f"input/links/{area_from}/properties/{area_to}",
-                    data=link_property,
-                    command_context=self.command_context,
-                )
-            )
-        if self.series != other.series:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"@links_series/{area_from}/{area_to}",
-                    matrix=strip_matrix_protocol(other.series),
-                    command_context=self.command_context,
-                )
-            )
-        return commands
+        return super()._create_diff(other)
 
     def get_inner_matrices(self) -> List[str]:
-        list_matrices = []
-        if self.series:
-            assert_this(isinstance(self.series, str))
-            list_matrices.append(strip_matrix_protocol(self.series))
-        if self.direct:
-            assert_this(isinstance(self.direct, str))
-            list_matrices.append(strip_matrix_protocol(self.direct))
-        if self.indirect:
-            assert_this(isinstance(self.indirect, str))
-            list_matrices.append(strip_matrix_protocol(self.indirect))
-        return list_matrices
+        return super().get_inner_matrices()

@@ -118,9 +118,8 @@ describe("Matrix Utils", () => {
         expect(column).toEqual({
           id: `custom${index + 1}`,
           title: titles[index],
+          width: 100,
           type: Column.Number,
-          style: "normal",
-          width,
           editable: true,
         });
       });

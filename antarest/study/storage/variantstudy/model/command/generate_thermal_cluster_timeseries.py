@@ -86,56 +86,60 @@ class GenerateThermalClusterTimeSeries(ICommand):
             # 5- Loop through thermal clusters in alphabetical order
             sorted_thermals = sorted(area.thermals, key=lambda x: x.id)
             for thermal in sorted_thermals:
-                # 6 - Filters out clusters with no generation
-                if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
+                try:
+                    # 6 - Filters out clusters with no generation
+                    if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
+                        generation_performed += 1
+                        continue
+                    # 7- Build the cluster
+                    url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
+                    matrix = study_data.tree.get_node(url)
+                    matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
+                    modulation_capacity = matrix_df[MODULATION_CAPACITY_COLUMN].to_numpy()
+                    url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
+                    matrix = study_data.tree.get_node(url)
+                    matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
+                    fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
+                        np.array(matrix_df[i], dtype=float if i in [FO_RATE_COLUMN, PO_RATE_COLUMN] else int)
+                        for i in matrix_df.columns
+                    ]
+                    generation_params = OutageGenerationParameters(
+                        unit_count=thermal.unit_count,
+                        fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
+                        fo_volatility=thermal.volatility_forced,
+                        po_law=ProbabilityLaw(thermal.law_planned.value.upper()),
+                        po_volatility=thermal.volatility_planned,
+                        fo_duration=fo_duration,
+                        fo_rate=fo_rate,
+                        po_duration=po_duration,
+                        po_rate=po_rate,
+                        npo_min=npo_min,
+                        npo_max=npo_max,
+                    )
+                    cluster = ThermalCluster(
+                        outage_gen_params=generation_params,
+                        nominal_power=thermal.nominal_capacity,
+                        modulation=modulation_capacity,
+                    )
+                    # 8- Generate the time-series
+                    results = generator.generate_time_series_for_clusters(cluster, nb_years)
+                    generated_matrix = results.available_power
+                    # 9- Write the matrix inside the input folder.
+                    df = pd.DataFrame(data=generated_matrix)
+                    df = df[list(df.columns)].astype(int)
+                    target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
+                    dump_dataframe(df, target_path, None)
+                    # 10- Notify the progress to the notifier
                     generation_performed += 1
-                    continue
-                # 7- Build the cluster
-                url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
-                matrix = study_data.tree.get_node(url)
-                matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
-                modulation_capacity = matrix_df[MODULATION_CAPACITY_COLUMN].to_numpy()
-                url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
-                matrix = study_data.tree.get_node(url)
-                matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
-                fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
-                    np.array(matrix_df[i], dtype=float if i in [FO_RATE_COLUMN, PO_RATE_COLUMN] else int)
-                    for i in matrix_df.columns
-                ]
-                generation_params = OutageGenerationParameters(
-                    unit_count=thermal.unit_count,
-                    fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
-                    fo_volatility=thermal.volatility_forced,
-                    po_law=ProbabilityLaw(thermal.law_planned.value.upper()),
-                    po_volatility=thermal.volatility_planned,
-                    fo_duration=fo_duration,
-                    fo_rate=fo_rate,
-                    po_duration=po_duration,
-                    po_rate=po_rate,
-                    npo_min=npo_min,
-                    npo_max=npo_max,
-                )
-                cluster = ThermalCluster(
-                    outage_gen_params=generation_params,
-                    nominal_power=thermal.nominal_capacity,
-                    modulation=modulation_capacity,
-                )
-                # 8- Generate the time-series
-                results = generator.generate_time_series_for_clusters(cluster, nb_years)
-                generated_matrix = results.available_power
-                # 9- Write the matrix inside the input folder.
-                df = pd.DataFrame(data=generated_matrix)
-                df = df[list(df.columns)].astype(int)
-                target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
-                dump_dataframe(df, target_path, None)
-                # 10- Notify the progress to the notifier
-                generation_performed += 1
-                if listener:
-                    progress = int(100 * generation_performed / total_generations)
-                    listener.notify_progress(progress)
+                    if listener:
+                        progress = int(100 * generation_performed / total_generations)
+                        listener.notify_progress(progress)
+                except Exception as e:
+                    e.args = (f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0],)
+                    raise
 
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(action=self.command_name.value, args={})
+        return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
 
     def match_signature(self) -> str:
         return str(self.command_name.value)

@@ -26,7 +26,7 @@ export async function generateTimeSeries(params: {
   studyId: StudyMetadata["id"];
 }) {
   const { data } = await client.put<string>(
-    `v1/studies/${params.studyId}/timeseries/generate`,
+    `/v1/studies/${params.studyId}/timeseries/generate`,
   );
   return data;
 }

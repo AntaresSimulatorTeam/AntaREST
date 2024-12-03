@@ -21,6 +21,8 @@ import {
   type AggregateConfig,
   type DateTimeMetadataDTO,
   type FormatGridNumberOptions,
+  DataColumnsConfig,
+  ResultColumn,
 } from "./types";
 import { parseISO, Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -169,7 +171,8 @@ export function generateTimeSeriesColumns({
  *
  * @param customColumns - An array of strings representing the custom column titles.
  * @param customColumns.titles - The titles of the custom columns.
- * @param customColumns.width - The width of each custom column.
+ * @param customColumns.width - The width of each column.
+ 
  * @returns An array of EnhancedGridColumn objects representing the generated custom columns.
  */
 export function generateCustomColumns({
@@ -179,9 +182,8 @@ export function generateCustomColumns({
   return titles.map((title, index) => ({
     id: `custom${index + 1}`,
     title,
-    type: Column.Number,
-    style: "normal",
     width,
+    type: Column.Number,
     editable: true,
   }));
 }
@@ -189,26 +191,33 @@ export function generateCustomColumns({
 /**
  * Generates an array of data columns for a matrix grid.
  *
- * @param enableTimeSeriesColumns - A boolean indicating whether to enable time series columns.
- * @param columnCount - The number of columns to generate.
- * @param customColumns - An optional array of custom column titles.
- * @param colWidth - The width of each column.
- * @returns An array of EnhancedGridColumn objects representing the generated data columns.
+ * @param config - Configuration object for generating columns
+ * @param config.timeSeriesColumns - A boolean indicating whether to enable time series columns
+ * @param config.count - The number of columns to generate
+ * @param config.customColumns - An optional array of custom column titles
+ * @param config.width - The width of each column
+ *
+ * @returns An array of EnhancedGridColumn objects representing the generated data columns
  */
-export function generateDataColumns(
-  enableTimeSeriesColumns: boolean,
-  columnCount: number,
-  customColumns?: string[] | readonly string[],
-  colWidth?: number,
-): EnhancedGridColumn[] {
+export function generateDataColumns({
+  timeSeriesColumns,
+  width,
+  count,
+  customColumns,
+}: DataColumnsConfig): EnhancedGridColumn[] {
   // If custom columns are provided, use them
   if (customColumns) {
-    return generateCustomColumns({ titles: customColumns, width: colWidth });
+    return generateCustomColumns({
+      titles: customColumns,
+      width,
+    });
   }
 
   // Else, generate time series columns if enabled
-  if (enableTimeSeriesColumns) {
-    return generateTimeSeriesColumns({ count: columnCount });
+  if (timeSeriesColumns) {
+    return generateTimeSeriesColumns({
+      count,
+    });
   }
 
   return [];
@@ -281,4 +290,109 @@ export function calculateMatrixAggregates(
   });
 
   return aggregates;
+}
+
+/**
+ * Creates grouped columns specifically for result matrices by processing title arrays.
+ *
+ * This function expects columns with titles in a specific array format [variable, unit, stat]:
+ * - Position 1: Variable name (e.g., "OV. COST")
+ * - Position 2: Unit (e.g., "Euro", "MW")
+ * - Position 3: Statistic type (e.g., "MIN", "MAX", "STD")
+ *
+ * Example of expected title format:
+ * ```typescript
+ * {
+ *   id: "custom1",
+ *   title: ["OV. COST", "Euro", "MIN"],  // [variable, unit, stat]
+ *   type: "number",
+ *   editable: true
+ * }
+ * ```
+ *
+ * !Important: Do not use outside of results matrices.
+ * This function relies on array positions to determine meaning.
+ * It assumes the API provides data in the correct format:
+ * - titles[0] will always be the variable name
+ * - titles[1] will always be the unit
+ * - titles[2] will always be the statistic type
+ * This makes the solution fragile to API changes.
+ *
+ * @param columns - Array of EnhancedGridColumn objects to be processed
+ * @returns Array of EnhancedGridColumn objects with grouping applied
+ *
+ * @example
+ * ```typescript
+ * // Input columns
+ * const columns = [
+ *   { id: "col1", title: ["OV. COST", "Euro", "MIN"], type: "number", editable: true },
+ *   { id: "col2", title: ["OV. COST", "Euro", "MAX"], type: "number", editable: true }
+ * ];
+ * // Both columns will be grouped under "OV. COST (Euro)"
+ * ```
+ */
+
+export function groupResultColumns(
+  columns: Array<EnhancedGridColumn | ResultColumn>,
+): EnhancedGridColumn[] {
+  return columns.map((column): EnhancedGridColumn => {
+    const titles = Array.isArray(column.title)
+      ? column.title
+      : [String(column.title)];
+
+    // Extract and validate components
+    // [0]: Variable name (e.g., "OV. COST")
+    // [1]: Unit (e.g., "Euro")
+    // [2]: Statistic type (e.g., "MIN", "MAX", "STD")
+    const [variable, unit, stat] = titles.map((t) => String(t).trim());
+
+    // Create group name:
+    // - If unit exists and is not empty/whitespace, add it in parentheses
+    // - If no unit or empty unit, use variable name alone
+    const hasUnit = unit && unit.trim().length > 0;
+    const title = hasUnit ? `${variable} (${unit})` : variable;
+
+    // If no stats, it does not make sense to group columns
+    if (!stat) {
+      return {
+        ...column,
+        title,
+      };
+    }
+
+    return {
+      ...column,
+      group: title, // Group header title
+      title: stat.toLowerCase(), // Sub columns title,
+
+      themeOverride: {
+        bgHeader: "#2D2E40", // Sub columns bg color
+      },
+    };
+  });
+}
+
+/**
+ * Generates an array of ResultColumn objects from a 2D array of column titles.
+ * Each title array should follow the format [variable, unit, stat] as used in result matrices.
+ 
+ * This function is designed to work in conjunction with groupResultColumns()
+ * to create properly formatted and grouped result matrix columns.
+ *
+ * @param titles - 2D array of string arrays, where each inner array contains:
+ *   - [0]: Variable name (e.g., "OV. COST")
+ *   - [1]: Unit (e.g., "Euro", "MW")
+ *   - [2]: Statistic type (e.g., "MIN", "MAX", "STD")
+ *
+ * @returns Array of ResultColumn objects ready for use in result matrices
+ *
+ * @see groupResultColumns - Use this function to apply grouping to the generated columns
+ */
+export function generateResultColumns(titles: string[][]): ResultColumn[] {
+  return titles.map((title, index) => ({
+    id: `custom${index + 1}`,
+    title: title,
+    type: Column.Number,
+    editable: false,
+  }));
 }

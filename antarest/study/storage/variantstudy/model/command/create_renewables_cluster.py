@@ -141,6 +141,7 @@ class CreateRenewablesCluster(ICommand):
                 "cluster_name": self.cluster_name,
                 "parameters": self.parameters,
             },
+            study_version=self.study_version,
         )
 
     def match_signature(self) -> str:
@@ -171,6 +172,7 @@ class CreateRenewablesCluster(ICommand):
                     target=f"input/renewables/clusters/{self.area_id}/list/{self.cluster_name}",
                     data=other.parameters,
                     command_context=self.command_context,
+                    study_version=self.study_version,
                 )
             )
         return commands

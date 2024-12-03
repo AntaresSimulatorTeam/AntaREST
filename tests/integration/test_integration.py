@@ -593,12 +593,24 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
     )
     res.raise_for_status()
-    res_links = client.get(f"/v1/studies/{study_id}/links?with_ui=true")
+    res_links = client.get(f"/v1/studies/{study_id}/links")
     assert res_links.json() == [
         {
             "area1": "area 1",
             "area2": "area 2",
-            "ui": {"color": "112,112,112", "style": "plain", "width": 1.0},
+            "assetType": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "displayComments": True,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
         }
     ]
 

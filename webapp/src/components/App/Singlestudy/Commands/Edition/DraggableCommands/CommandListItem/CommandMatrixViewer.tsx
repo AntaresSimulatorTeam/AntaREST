@@ -43,7 +43,7 @@ function CommandMatrixViewer(props: PropTypes) {
           {t("data.viewMatrix")}
         </Button>
         <MatrixDialog
-          matrixInfo={{ id: matrixId, name: matrixId }}
+          matrix={{ id: matrixId, name: matrixId }}
           open={openViewer}
           onClose={() => {
             setOpenViewer(false);

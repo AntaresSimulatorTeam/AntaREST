@@ -15,6 +15,7 @@ import typing as t
 
 import numpy as np
 import pandas as pd
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
@@ -24,8 +25,9 @@ from antarest.study.business.areas.st_storage_management import STStorageInput, 
 from antarest.study.business.areas.thermal_management import ThermalClusterInput, ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintInput
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.link_management import LinkManager, LinkOutput
-from antarest.study.model import RawStudy
+from antarest.study.business.link_management import LinkManager
+from antarest.study.business.model.link_model import LinkBaseDTO
+from antarest.study.model import STUDY_VERSION_8_2, RawStudy
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
@@ -97,10 +99,15 @@ class TableModeManager:
             areas_map = self._area_manager.get_all_area_props(study)
             data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
-            links_map = self._link_manager.get_all_links_props(study)
+            links_map = self._link_manager.get_all_links(study)
+            excludes = (
+                set()
+                if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
+                else {"filter_synthesis", "filter_year_by_year"}
+            )
             data = {
-                f"{area1_id} / {area2_id}": link.model_dump(mode="json", by_alias=True)
-                for (area1_id, area2_id), link in links_map.items()
+                f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True, exclude=excludes)
+                for link in links_map
             }
         elif table_type == TableModeType.THERMAL:
             thermals_by_areas = self._thermal_manager.get_all_thermals_props(study)
@@ -193,10 +200,15 @@ class TableModeManager:
             data = {area_id: area.model_dump(by_alias=True, exclude_none=True) for area_id, area in areas_map.items()}
             return data
         elif table_type == TableModeType.LINK:
-            links_map = {tuple(key.split(" / ")): LinkOutput(**values) for key, values in data.items()}
-            updated_map = self._link_manager.update_links_props(study, links_map)  # type: ignore
+            links_map = {tuple(key.split(" / ")): LinkBaseDTO(**values) for key, values in data.items()}
+            updated_map = self._link_manager.update_links(study, links_map)  # type: ignore
+            excludes = (
+                set()
+                if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
+                else {"filter_synthesis", "filter_year_by_year"}
+            )
             data = {
-                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True)
+                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True, exclude=excludes)
                 for (area1_id, area2_id), link in updated_map.items()
             }
             return data

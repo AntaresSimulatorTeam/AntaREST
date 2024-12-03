@@ -129,9 +129,9 @@ function HydroMatrixDialog({ open, onClose, type }: Props) {
             customRowHeaders={matrix.index}
             fetchMatrixData={fetchFn}
             readOnly
-            enableDateTimeColumn={false}
-            enableTimeSeriesColumns={false}
-            isImportDisabled
+            dateTimeColumn={false}
+            timeSeriesColumns={false}
+            canImport
           />
         ) : (
           <Skeleton sx={{ height: 1, transform: "none" }} />

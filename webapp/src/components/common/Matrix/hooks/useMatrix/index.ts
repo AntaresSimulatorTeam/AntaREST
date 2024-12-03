@@ -43,7 +43,7 @@ import { importFile } from "../../../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import usePrompt from "../../../../../hooks/usePrompt";
 import { Aggregate, Column, Operation } from "../../shared/constants";
-import { aggregatesTheme } from "../../components/MatrixGrid/styles";
+import { aggregatesTheme } from "../../styles";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -55,8 +55,8 @@ interface DataState {
 export function useMatrix(
   studyId: string,
   url: string,
-  enableDateTimeColumn: boolean,
-  enableTimeSeriesColumns: boolean,
+  dateTimeColumn: boolean,
+  timeSeriesColumns: boolean,
   enableRowHeaders?: boolean,
   aggregatesConfig?: AggregateConfig,
   customColumns?: string[] | readonly string[],
@@ -143,7 +143,7 @@ export function useMatrix(
 
     const baseColumns: EnhancedGridColumn[] = [];
 
-    if (enableDateTimeColumn) {
+    if (dateTimeColumn) {
       baseColumns.push({
         id: "date",
         title: "Date",
@@ -162,12 +162,12 @@ export function useMatrix(
       });
     }
 
-    const dataColumns = generateDataColumns(
-      enableTimeSeriesColumns,
-      columnCount,
+    const dataColumns = generateDataColumns({
+      timeSeriesColumns,
+      count: columnCount,
       customColumns,
-      colWidth,
-    );
+      width: colWidth,
+    });
 
     const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map(
       (aggregateType) => ({
@@ -185,9 +185,9 @@ export function useMatrix(
     return [...baseColumns, ...dataColumns, ...aggregatesColumns];
   }, [
     currentState.data,
-    enableDateTimeColumn,
+    dateTimeColumn,
     enableRowHeaders,
-    enableTimeSeriesColumns,
+    timeSeriesColumns,
     columnCount,
     customColumns,
     colWidth,
@@ -249,7 +249,7 @@ export function useMatrix(
     applyUpdates(updates);
   };
 
-  const handleImport = async (file: File) => {
+  const handleUpload = async (file: File) => {
     try {
       await importFile({ file, studyId, path: url });
       await fetchMatrix();
@@ -312,12 +312,13 @@ export function useMatrix(
     dateTime,
     handleCellEdit,
     handleMultipleCellsEdit,
-    handleImport,
+    handleUpload,
     handleSaveUpdates,
     pendingUpdatesCount: currentState.updateCount,
     undo: handleUndo,
     redo: handleRedo,
     canUndo: canUndoChanges,
     canRedo,
+    reload: fetchMatrix,
   };
 }

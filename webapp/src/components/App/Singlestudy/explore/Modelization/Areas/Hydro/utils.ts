@@ -53,7 +53,7 @@ export interface HydroMatrixProps {
   rowHeaders?: string[];
   fetchFn?: fetchMatrixFn;
   aggregates?: AggregateConfig;
-  enableDateTimeColumn?: boolean;
+  dateTimeColumn?: boolean;
   readOnly?: boolean;
   showPercent?: boolean;
 }
@@ -131,7 +131,7 @@ export const MATRICES: Matrices = {
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     columns: generateColumns("%"),
     rowHeaders: ["Generating Power", "Pumping Power"],
-    enableDateTimeColumn: false,
+    dateTimeColumn: false,
   },
   [HydroMatrix.EnergyCredits]: {
     title: "Standard Credits",
@@ -196,19 +196,20 @@ export const MATRICES: Matrices = {
       "November",
       "December",
     ],
+    dateTimeColumn: false,
   },
   [HydroMatrix.Allocation]: {
     title: "Allocation",
     url: "",
     fetchFn: getAllocationMatrix,
-    enableDateTimeColumn: false,
+    dateTimeColumn: false,
     readOnly: true,
   },
   [HydroMatrix.Correlation]: {
     title: "Correlation",
     url: "",
     fetchFn: getCorrelationMatrix,
-    enableDateTimeColumn: false,
+    dateTimeColumn: false,
     readOnly: true,
   },
 };
