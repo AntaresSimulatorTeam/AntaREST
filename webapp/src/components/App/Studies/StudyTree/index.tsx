@@ -26,6 +26,7 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 import { fetchAndInsertSubfolders, fetchAndInsertWorkspaces } from "./utils";
 import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
@@ -63,7 +64,7 @@ function StudyTree() {
         setStudiesTree(initialStudiesTree);
         enqueueErrorSnackbar(
           t("studies.tree.error.failToFetchWorkspace"),
-          t("studies.tree.error.detailsInConsole"),
+          error as AxiosError,
         );
       }
     };
@@ -75,36 +76,41 @@ function StudyTree() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleTreeItemClick = (
+  const handleTreeItemClick = async (
     itemId: string,
     studyTreeNode: StudyTreeNode,
   ) => {
     dispatch(updateStudyFilters({ folder: itemId }));
     if (itemId === "root") {
-      fetchAndInsertWorkspaces(studiesTree)
-        .then(setStudiesTree)
-        .catch((error) => {
-          enqueueErrorSnackbar("Failed to load list workspaces", error);
-        });
+      try {
+        const nextTree = await fetchAndInsertWorkspaces(studiesTree);
+        setStudiesTree(nextTree);
+      } catch (error) {
+        enqueueErrorSnackbar(
+          "studies.tree.error.failToFetchWorkspace",
+          error as AxiosError,
+        );
+      }
     }
     const chidrenPaths = studyTreeNode.children.map(
       (child) => `root${child.path}`,
     );
     // children paths and current element path
-    fetchAndInsertSubfolders(chidrenPaths, studiesTree).then((r) => {
-      setStudiesTree(r[0]);
-      for (const path of r[1]) {
-        enqueueErrorSnackbar(
-          t("studies.tree.error.failToFetchFolder", {
-            path,
-            interpolation: { escapeValue: false },
-          }),
-          t("studies.tree.error.detailsInConsole"),
-        );
-      }
-    });
+    const [nextTree, failedPath] = await fetchAndInsertSubfolders(
+      chidrenPaths,
+      studiesTree,
+    );
+    setStudiesTree(nextTree);
+    for (const path of failedPath) {
+      enqueueErrorSnackbar(
+        t("studies.tree.error.failToFetchFolder", {
+          path,
+          interpolation: { escapeValue: false },
+        }),
+        t("studies.tree.error.detailsInConsole"),
+      );
+    }
   };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////

@@ -94,7 +94,7 @@ function StudiesList(props: StudiesListProps) {
   const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
   const [confirmFolderScan, setConfirmFolderScan] = useState<boolean>(false);
-  const [requestDeepScan, setRequestDeepScan] = useState<boolean>(false);
+  const [isRecursiveScan, setIsRecursiveScan] = useState<boolean>(false);
 
   useEffect(() => {
     setFolderList(folder.split("/"));
@@ -163,16 +163,16 @@ function StudiesList(props: StudiesListProps) {
     try {
       // Remove "/root" from the path
       const folder = folderList.slice(1).join("/");
-      await scanFolder(folder, requestDeepScan);
+      await scanFolder(folder, isRecursiveScan);
       setConfirmFolderScan(false);
-      setRequestDeepScan(false);
+      setIsRecursiveScan(false);
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.scanFolder"), e as AxiosError);
     }
   };
 
-  const handleDeepScanCheckboxChange = () => {
-    setRequestDeepScan(!requestDeepScan);
+  const handleRecursiveScan = () => {
+    setIsRecursiveScan(!isRecursiveScan);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -288,7 +288,7 @@ function StudiesList(props: StudiesListProps) {
               titleIcon={RadarIcon}
               onCancel={() => {
                 setConfirmFolderScan(false);
-                setRequestDeepScan(false);
+                setIsRecursiveScan(false);
               }}
               onConfirm={handleFolderScan}
               alert="warning"
@@ -296,9 +296,9 @@ function StudiesList(props: StudiesListProps) {
             >
               {`${t("studies.scanFolder")} ${folder}?`}
               <FormControlLabel
-                control={<Checkbox checked={requestDeepScan} />}
+                control={<Checkbox checked={isRecursiveScan} />}
                 label={t("studies.requestDeepScan")}
-                onChange={handleDeepScanCheckboxChange}
+                onChange={handleRecursiveScan}
               />{" "}
             </ConfirmationDialog>
           )}
