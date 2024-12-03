@@ -49,6 +49,7 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
+from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -106,6 +107,17 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
 
+    @staticmethod
+    def _get_user_name_from_id(user_id: int) -> str:
+        """
+        Utility method that retrieves a user's name based on their id.
+        Args:
+            user_id: user id (user must exist)
+        Returns: String representing the user's name
+        """
+        user_obj = db.session.query(Identity).get(user_id)
+        return t.cast(str, user_obj.name)
+
     def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTOAPI:
         """
         Get command lists
@@ -119,7 +131,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         try:
             index = [command.id for command in study.commands].index(command_id)  # Maybe add Try catch for this
-            return t.cast(CommandDTOAPI, study.commands[index].to_dto().to_api())
+            command = study.commands[index]
+            user_name = self._get_user_name_from_id(command.user_id)
+            return t.cast(CommandDTOAPI, command.to_dto().to_api(user_name))
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
@@ -132,7 +146,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: List of commands
         """
         study = self._get_variant_study(study_id, params)
-        return [command.to_dto().to_api() for command in study.commands]
+
+        id_to_name: t.Dict[int, str] = {}
+        command_list = []
+
+        for command in study.commands:
+            if command.user_id and command.user_id not in id_to_name.keys():
+                user_name = self._get_user_name_from_id(command.user_id)
+                id_to_name[command.user_id] = str(user_name)
+            command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
+        return command_list
 
     def convert_commands(
         self, study_id: str, api_commands: t.List[CommandDTOAPI], params: RequestParameters

@@ -73,7 +73,7 @@ class CommandDTOAPI(AntaresBaseModel):
     action: str
     args: t.Union[t.MutableSequence[JSON], JSON]
     version: int = 1
-    user_id: t.Optional[int] = None
+    user_name: t.Optional[str] = None
     updated_at: t.Optional[datetime.datetime] = None
 
 
@@ -99,8 +99,10 @@ class CommandDTO(AntaresBaseModel):
     user_id: t.Optional[int] = None
     updated_at: t.Optional[datetime.datetime] = None
 
-    def to_api(self) -> CommandDTOAPI:
-        return CommandDTOAPI.model_validate(self.model_dump(mode="json", exclude={"study_version"}))
+    def to_api(self, user_name: t.Optional[str] = None) -> CommandDTOAPI:
+        data = self.model_dump(mode="json", exclude={"study_version", "user_id"})
+        data["user_name"] = user_name
+        return CommandDTOAPI.model_validate(data)
 
 
 class CommandResultDTO(AntaresBaseModel):
