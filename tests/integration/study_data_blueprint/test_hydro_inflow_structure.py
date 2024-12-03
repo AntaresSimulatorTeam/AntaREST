@@ -137,7 +137,7 @@ class TestHydroInflowStructure:
             },
             "version": 1,
             "updated_at": ANY,
-            "user_id": ANY,
+            "user_name": ANY,
         }
         assert actual[1] == expected
 
