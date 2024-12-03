@@ -12,6 +12,9 @@
 
 import typing as t
 
+from pydantic import field_validator
+
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_id_against_name
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -36,6 +39,10 @@ class RemoveRenewablesCluster(ICommand):
 
     area_id: str
     cluster_id: str
+
+    @field_validator("cluster_id", mode="before")
+    def validate_cluster_name(cls, val: str) -> str:
+        return validate_id_against_name(val)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """

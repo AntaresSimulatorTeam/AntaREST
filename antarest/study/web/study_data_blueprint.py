@@ -81,7 +81,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
 logger = logging.getLogger(__name__)
@@ -1965,7 +1965,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id.lower(), cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
@@ -2149,7 +2149,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id.lower(), cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
@@ -2577,6 +2577,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         else:  # pragma: no cover
             raise NotImplementedError(f"Cluster type {cluster_type} not implemented")
 
-        return manager.duplicate_cluster(study, area_id, source_cluster_id, new_cluster_name)
+        return manager.duplicate_cluster(study, area_id, source_cluster_id.lower(), new_cluster_name)
 
     return bp

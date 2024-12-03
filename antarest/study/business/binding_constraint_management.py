@@ -44,7 +44,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -553,7 +553,7 @@ class BindingConstraintManager:
             constraint_output["filter_year_by_year"] = _filter_year_by_year
             constraint_output["filter_synthesis"] = _filter_synthesis
         if study_version >= STUDY_VERSION_8_7:
-            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
+            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP).lower()
 
         # Choose the right model according to the version
         adapted_constraint: ConstraintOutput
