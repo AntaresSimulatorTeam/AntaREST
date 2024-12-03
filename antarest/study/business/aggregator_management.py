@@ -41,8 +41,20 @@ MC_YEAR_INDEX = 0
 """Index in path parts starting from the Monte Carlo year to determine the Monte Carlo year."""
 AREA_OR_LINK_INDEX__IND, AREA_OR_LINK_INDEX__ALL = 2, 1
 """Indexes in path parts starting from the output root `economy//mc-(ind/all)` to determine the area/link name."""
-PRODUCTION_COLUMN_NAME = "production"
+PRODUCTION_COLUMN_NAME_GENERAL = "production"
+PRODUCTION_COLUMN_NAME_ST = "levels"
 PRODUCTION_COLUMN_REGEX = "mwh"
+RENAME_MAPPING = {
+    "NP Cost - Euro": "NP Cost",
+    "NODU": "NODU",
+    "P-injection - MW": "P.injection",
+    "P-withdrawal - MW": "P.withdrawal",
+    "CashFlow - Euro": "CashFlow",
+}
+"""
+Dictionary to rename columns in a table.
+keys are the regexes to fetch for columns to rename, values are the new column names.
+"""
 CLUSTER_ID_COMPONENT = 0
 ACTUAL_COLUMN_COMPONENT = 1
 DUMMY_COMPONENT = 2
@@ -104,8 +116,9 @@ def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, 
     return new_column_order
 
 
-def _infer_production_column(cols: t.Sequence[str]) -> t.Optional[str]:
-    return next((c for c in cols if PRODUCTION_COLUMN_REGEX in c.lower().strip()), None)
+def _infer_column_from_regex(cols: t.Sequence[str], col_regex: str) -> t.Optional[str]:
+    stripped_lower_col_regex = col_regex.lower().strip()
+    return next((c for c in cols if stripped_lower_col_regex in c.lower().strip()), None)
 
 
 def _infer_time_id(df: pd.DataFrame, is_details: bool) -> t.List[int]:
@@ -309,16 +322,31 @@ class AggregatorManager:
                 new_obj[CLUSTER_ID_COL] += [cluster_id for _ in range(df_len)]
                 new_obj[TIME_ID_COL] += list(range(1, df_len + 1))
 
+            # rename the columns
+            renamed_cols = []
             # check if there is a production column to rename it to `PRODUCTION_COLUMN_NAME`
-            prod_col = _infer_production_column(actual_cols)
-            if prod_col is not None:
-                new_obj[PRODUCTION_COLUMN_NAME] = new_obj.pop(prod_col)
+            prod_col = _infer_column_from_regex(actual_cols, PRODUCTION_COLUMN_REGEX)
+            if prod_col:
+                prod_col_name = (
+                    PRODUCTION_COLUMN_NAME_ST
+                    if (
+                        self.query_file == MCIndAreasQueryFile.DETAILS_ST_STORAGE
+                        or self.query_file == MCAllAreasQueryFile.DETAILS_ST_STORAGE
+                    )
+                    else PRODUCTION_COLUMN_NAME_GENERAL
+                )
+                new_obj[prod_col_name] = new_obj.pop(prod_col)
                 actual_cols.remove(prod_col)
+                renamed_cols.append(prod_col_name)
+            for col_regex, new_col_name in RENAME_MAPPING.items():
+                col_name = _infer_column_from_regex(actual_cols, col_regex)
+                if col_name:
+                    new_obj[new_col_name] = new_obj.pop(col_name)
+                    actual_cols.remove(col_name)
+                    renamed_cols.append(new_col_name)
 
             # reorganize the data frame
-            # first the production column if it exists
-            add_prod = [PRODUCTION_COLUMN_NAME] if prod_col is not None else []
-            columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + add_prod + list(actual_cols)
+            columns_order = [CLUSTER_ID_COL, TIME_ID_COL] + renamed_cols + list(actual_cols)
             df = pd.DataFrame(new_obj).reindex(columns=columns_order).sort_values(by=[TIME_ID_COL, CLUSTER_ID_COL])
             df.index = pd.Index(list(range(1, len(df) + 1)))
 
