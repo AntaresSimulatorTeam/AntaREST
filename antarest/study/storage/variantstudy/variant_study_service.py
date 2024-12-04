@@ -41,7 +41,7 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json_string
@@ -115,8 +115,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             user_id: user id (user must exist)
         Returns: String representing the user's name
         """
-        user_obj = db.session.query(Identity).get(user_id)
-        return user_obj.name
+        user_obj: Identity = db.session.query(Identity).get(user_id)
+        return user_obj.name # type: ignore  # `name` attribute is always a string
 
     def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTOAPI:
         """
@@ -233,7 +233,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=params.user.id,
+                # params.user cannot be None, since previous checks were successful at this point
+                user_id=params.user.id, # type: ignore
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
