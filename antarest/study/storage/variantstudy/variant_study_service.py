@@ -116,7 +116,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: String representing the user's name
         """
         user_obj = db.session.query(Identity).get(user_id)
-        return t.cast(str, user_obj.name)
+        return user_obj.name
 
     def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTOAPI:
         """
@@ -130,9 +130,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
 
         try:
-            index = [command.id for command in study.commands].index(command_id)  # Maybe add Try catch for this
+            index = [command.id for command in study.commands].index(command_id)
             command = study.commands[index]
-            user_name = self._get_user_name_from_id(command.user_id)
+            user_name = self._get_user_name_from_id(command.user_id) if command.user_id else None
             return t.cast(CommandDTOAPI, command.to_dto().to_api(user_name))
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
@@ -152,8 +152,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         for command in study.commands:
             if command.user_id and command.user_id not in id_to_name.keys():
-                user_name = self._get_user_name_from_id(command.user_id)
-                id_to_name[command.user_id] = str(user_name)
+                user_name: str = self._get_user_name_from_id(command.user_id)
+                id_to_name[command.user_id] = user_name
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
 
@@ -225,12 +225,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         validated_commands = transform_command_to_dto(command_objs, commands)
         first_index = len(study.commands)
 
-        # type check in case user is None
-        if not params.user or not params.user.id:
-            user_id = None
-        else:
-            user_id = params.user.id
-
         # noinspection PyArgumentList
         new_commands = [
             CommandBlock(
@@ -239,7 +233,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=user_id,
+                user_id=params.user.id,
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)

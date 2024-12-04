@@ -66,7 +66,7 @@ class CommandBlock(Base):  # type: ignore
     version: int = Column(Integer)
     args: str = Column(String())
     study_version: str = Column(String(36))
-    user_id: int = Column(Integer, ForeignKey("identities.id", ondelete="CASCADE"), nullable=True)
+    user_id: int = Column(Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True)
     updated_at: datetime.datetime = Column(DateTime, nullable=True)
 
     def to_dto(self) -> CommandDTO:
