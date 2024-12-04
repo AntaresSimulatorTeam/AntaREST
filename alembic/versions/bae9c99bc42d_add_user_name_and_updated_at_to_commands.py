@@ -23,7 +23,7 @@ def upgrade():
     with op.batch_alter_table('commandblock', schema=None) as batch_op:
         batch_op.add_column(sa.Column('user_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('updated_at', sa.DateTime(), nullable=True))
-        batch_op.create_foreign_key(USER_ID_FKEY, 'identities', ['user_id'], ['id'], ondelete='CASCADE')
+        batch_op.create_foreign_key(USER_ID_FKEY, 'identities', ['user_id'], ['id'], ondelete='SET NULL')
     # ### end Alembic commands ###
 
 
