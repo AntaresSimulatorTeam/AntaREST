@@ -28,16 +28,10 @@ def dataframe_to_bytes(df: pd.DataFrame, metadata: t.Optional[t.Dict[str | bytes
         schema_metadata: t.Dict[str | bytes, str | bytes] = {k: v for k, v in metadata_bytes.items()}
         table = table.replace_schema_metadata(schema_metadata)
 
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        tmp_file_path = tmp_file.name
-        try:
-            write_feather(df=table, dest=tmp_file_path)  # type:ignore
-            with open(tmp_file_path, "rb") as f:
-                feather_bytes = f.read()
-        finally:
-            os.remove(tmp_file_path)
+    buffer = BytesIO()
+    write_feather(df=table, dest=buffer)  # type:ignore
 
-    return feather_bytes
+    return buffer.getvalue()
 
 
 def bytes_to_dataframe(buffer: bytes) -> pd.DataFrame:
