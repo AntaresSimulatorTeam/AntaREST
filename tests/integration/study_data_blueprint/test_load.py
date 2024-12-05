@@ -34,7 +34,7 @@ class TestLoad:
 
         # Test simple get ARROW
 
-        res = client.get(f"/v1/studies/{study_id}/aa/load/series")
+        res = client.get(f"/v1/studies/{study_id}/{area1_id}/load/series")
         assert res.status_code == 200
         assert res.headers["content-type"] == "application/vnd.apache.arrow.file"
 
