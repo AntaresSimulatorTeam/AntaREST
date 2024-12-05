@@ -56,10 +56,8 @@ function StudyTree() {
       }
     }
     // children paths and current element path
-    let [treeAfterChildrenUpdate, failedPath] = await fetchAndInsertSubfolders(
-      chidrenPaths,
-      treeAfterWorkspacesUpdate,
-    );
+    const [treeAfterChildrenUpdate, failedPath] =
+      await fetchAndInsertSubfolders(chidrenPaths, treeAfterWorkspacesUpdate);
     if (failedPath.length > 0) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {
