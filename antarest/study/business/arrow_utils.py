@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import os
 import tempfile
 import typing as t
 from io import BytesIO
@@ -28,12 +28,14 @@ def dataframe_to_bytes(df: pd.DataFrame, metadata: t.Optional[t.Dict[str | bytes
         schema_metadata: t.Dict[str | bytes, str | bytes] = {k: v for k, v in metadata_bytes.items()}
         table = table.replace_schema_metadata(schema_metadata)
 
-    with tempfile.NamedTemporaryFile() as tmp_file:
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
         tmp_file_path = tmp_file.name
-        write_feather(df=table, dest=tmp_file_path)  # type:ignore
-
-        with open(tmp_file_path, "rb") as f:
-            feather_bytes = f.read()
+        try:
+            write_feather(df=table, dest=tmp_file_path)  # type:ignore
+            with open(tmp_file_path, "rb") as f:
+                feather_bytes = f.read()
+        finally:
+            os.remove(tmp_file_path)
 
     return feather_bytes
 
