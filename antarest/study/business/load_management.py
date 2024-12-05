@@ -9,51 +9,47 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from io import BytesIO
-from typing import cast
+
+import typing as t
 
 import pandas as pd
-from starlette.responses import Response
 
-from antarest.study.business.model.load_model import LoadDTO
-from antarest.study.model import Study
+from antarest.study.model import MatrixIndex, Study
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.utils import get_start_date
 
 LOAD_PATH = "input/load/series/load_{area_id}"
+matrix_columns = ["ts-0"]
 
 
 class LoadManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_load_matrix(self, study: Study, area_id: str) -> pd.DataFrame:
+    def get_load_matrix(self, study: Study, area_id: str) -> t.Tuple[pd.DataFrame, t.Dict[str | bytes, str | bytes]]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-
         load_path = LOAD_PATH.format(area_id=area_id).split("/")
+
         node = file_study.tree.get_node(load_path)
 
         if not isinstance(node, InputSeriesMatrix):
-            raise ValueError("Invalid node type")
+            raise TypeError(f"Expected node of type 'InputSeriesMatrix', but got '{type(node).__name__}'")
 
         matrix_data = InputSeriesMatrix.parse(node, return_dataframe=True)
 
-        matrix_df = cast(pd.DataFrame, matrix_data)
+        matrix_df = t.cast(pd.DataFrame, matrix_data)
         matrix_df.columns = matrix_df.columns.map(str)
 
-        return matrix_df
+        matrix_df.columns = pd.Index(matrix_columns)
 
-    def update_load_matrix(self, study: Study, area_id: str, load_dto: LoadDTO) -> LoadDTO:
-        load_properties = load_dto.to_properties()
-        load_path = LOAD_PATH.format(area_id=area_id).split("/")
+        matrix_index: MatrixIndex = get_start_date(file_study)
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        metadata: t.Dict[str | bytes, str | bytes] = {
+            "start_date": str(matrix_index.start_date),
+            "steps": str(matrix_index.steps),
+            "first_week_size": str(matrix_index.first_week_size),
+            "level": str(matrix_index.level),
+        }
 
-        df = pd.read_feather(BytesIO(load_properties.matrix))
-
-        if df.shape[1] != 2:
-            pass
-
-        file_study.tree.save(load_properties.matrix, load_path)
-
-        return load_dto
+        return matrix_df, metadata
