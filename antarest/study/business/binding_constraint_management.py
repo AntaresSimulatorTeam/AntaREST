@@ -35,7 +35,7 @@ from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
-from antarest.study.business.utils import execute_or_add_commands
+from antarest.study.business.utils import execute_or_add_commands, update_binding_constraint_from_props
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -75,6 +75,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
     UpdateBindingConstraint,
     update_matrices_names,
 )
+from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -898,6 +899,75 @@ class BindingConstraintManager:
             if bc_id not in dict_config:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
+            # convert table mode object to an object that's the output of this function
+            # and we also update the cofig objet that will be serialized in the INI
+            bc_props = create_binding_constraint_config(study_version, **value.dict())
+            upd_obj = config[dict_config[bc_id]]
+            upd_obj_copy = copy.deepcopy(upd_obj)
+            update_binding_constraint_from_props(upd_obj, bc_props)
+            output = self.constraint_model_adapter(upd_obj_copy, study_version)
+            updated_constraints[bc_id] = output
+
+        # Updates the file only once with all the information
+        command = UpdateBindingConstraints(
+            target="input/bindingconstraints/bindingconstraints",
+            data=config,
+            command_context=command_context,
+            study_version=study_version,
+        )
+        commands.append(command)
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        return updated_constraints
+
+    def update_binding_constraints_2(
+        self,
+        study: Study,
+        bcs_by_ids: t.Mapping[str, ConstraintInput],
+    ) -> t.Mapping[str, ConstraintOutput]:
+        """
+        Updates multiple binding constraints within a study.
+
+        Args:
+            study: The study from which to update the constraints.
+            bcs_by_ids: A mapping of binding constraint IDs to their updated configurations.
+
+        If there's more than 50 BCs updated as the same time, the 'update_binding_constraint' command takes more than 1 second.
+        And for thousands of BCs updated as the same time, it takes several minutes.
+        This is mainly because we open/close the 'bindingconstraints.ini' file multiple times for each constraint.
+        To avoid this, when dealing with such a case we'll use the 'update_config' command to write all the data at once.
+        However, such command is not really clear, so we won't use it on variants with less than 50 updated BCs.
+
+        Returns:
+            A dictionary of the updated binding constraints, indexed by their IDs.
+
+        Raises:
+            BindingConstraintNotFound: If any of the specified binding constraint IDs are not found.
+        """
+
+        # Variant study with less than 50 updated constraints
+        updated_constraints = {}
+        if len(bcs_by_ids) < 50 and isinstance(study, VariantStudy):
+            existing_constraints = {bc.id: bc for bc in self.get_binding_constraints(study)}
+            for bc_id, data in bcs_by_ids.items():
+                updated_constraints[bc_id] = self.update_binding_constraint(
+                    study, bc_id, data, existing_constraints[bc_id]
+                )
+            return updated_constraints
+
+        # More efficient way of doing things but using less readable commands.
+        study_version = StudyVersion.parse(study.version)
+        commands = []
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        dict_config = {value["id"]: key for (key, value) in config.items()}
+        for bc_id, value in bcs_by_ids.items():
+            if bc_id not in dict_config:
+                raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
+
+            # convert table mode object to an object that's the output of this function
+            # and we also update the cofig objet that will be serialized in the INI
             props = create_binding_constraint_config(study_version, **value.dict())
             new_values = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             upd_obj = config[dict_config[bc_id]]

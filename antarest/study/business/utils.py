@@ -24,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import BindingConstraintProperties
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
@@ -95,3 +96,8 @@ class FieldInfo(t.TypedDict, total=False):
     encode: t.Optional[t.Callable[[t.Any], t.Any]]
     # (encoded_value, current_value) -> decoded_value
     decode: t.Optional[t.Callable[[t.Any, t.Optional[t.Any]], t.Any]]
+
+
+def update_binding_constraint_from_props(bc: t.Dict, bc_props: t.Type[BindingConstraintProperties]):
+    bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
+    bc.update(bc_props_as_dict)
