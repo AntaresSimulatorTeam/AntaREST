@@ -26,7 +26,7 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 import { fetchAndInsertSubfolders, fetchAndInsertWorkspaces } from "./utils";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import { toError } from "@/utils/fnUtils";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
@@ -36,40 +36,46 @@ function StudyTree() {
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
 
+  const updateTree = async (itemId: string, studyTreeNode: StudyTreeNode) => {
+    let treeAfterWorkspacesUpdate = studiesTree;
+    let chidrenPaths = studyTreeNode.children.map(
+      (child) => `root${child.path}`,
+    );
+
+    if (itemId === "root") {
+      try {
+        treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(studiesTree);
+        chidrenPaths = treeAfterWorkspacesUpdate.children.map(
+          (child) => `root${child.path}`,
+        );
+      } catch (error) {
+        enqueueErrorSnackbar(
+          "studies.tree.error.failToFetchWorkspace",
+          toError(error),
+        );
+      }
+    }
+    // children paths and current element path
+    let [treeAfterChildrenUpdate, failedPath] = await fetchAndInsertSubfolders(
+      chidrenPaths,
+      treeAfterWorkspacesUpdate,
+    );
+    if (failedPath.length > 0) {
+      enqueueErrorSnackbar(
+        t("studies.tree.error.failToFetchFolder", {
+          path: failedPath.join(" "),
+          interpolation: { escapeValue: false },
+        }),
+        t("studies.tree.error.detailsInConsole"),
+      );
+    }
+    setStudiesTree(treeAfterChildrenUpdate);
+  };
+
   // Initialize folders once we have the tree
   // we use useUpdateEffectOnce because at first render initialStudiesTree isn't initialized
   useUpdateEffectOnce(() => {
-    const initializeFolders = async () => {
-      try {
-        const treeWithWorkspaces =
-          await fetchAndInsertWorkspaces(initialStudiesTree);
-        const childrenPaths = treeWithWorkspaces.children.map(
-          (child) => `root${child.path}`,
-        );
-        const [updatedTree, failedPaths] = await fetchAndInsertSubfolders(
-          childrenPaths,
-          treeWithWorkspaces,
-        );
-        setStudiesTree(updatedTree);
-        failedPaths.forEach((path) => {
-          enqueueErrorSnackbar(
-            t("studies.tree.error.failToFetchFolder", {
-              path,
-              interpolation: { escapeValue: false },
-            }),
-            t("studies.tree.error.detailsInConsole"),
-          );
-        });
-      } catch (error) {
-        setStudiesTree(initialStudiesTree);
-        enqueueErrorSnackbar(
-          t("studies.tree.error.failToFetchWorkspace"),
-          error as AxiosError,
-        );
-      }
-    };
-
-    initializeFolders();
+    updateTree("root", initialStudiesTree);
   }, [initialStudiesTree]);
 
   ////////////////////////////////////////////////////////////////
@@ -81,36 +87,9 @@ function StudyTree() {
     studyTreeNode: StudyTreeNode,
   ) => {
     dispatch(updateStudyFilters({ folder: itemId }));
-    if (itemId === "root") {
-      try {
-        const nextTree = await fetchAndInsertWorkspaces(studiesTree);
-        setStudiesTree(nextTree);
-      } catch (error) {
-        enqueueErrorSnackbar(
-          "studies.tree.error.failToFetchWorkspace",
-          error as AxiosError,
-        );
-      }
-    }
-    const chidrenPaths = studyTreeNode.children.map(
-      (child) => `root${child.path}`,
-    );
-    // children paths and current element path
-    const [nextTree, failedPath] = await fetchAndInsertSubfolders(
-      chidrenPaths,
-      studiesTree,
-    );
-    setStudiesTree(nextTree);
-    for (const path of failedPath) {
-      enqueueErrorSnackbar(
-        t("studies.tree.error.failToFetchFolder", {
-          path,
-          interpolation: { escapeValue: false },
-        }),
-        t("studies.tree.error.detailsInConsole"),
-      );
-    }
+    updateTree(itemId, studyTreeNode);
   };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////

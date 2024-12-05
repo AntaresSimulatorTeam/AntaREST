@@ -26,8 +26,6 @@ import {
   FormControl,
   InputLabel,
   IconButton,
-  Checkbox,
-  FormControlLabel,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
@@ -67,6 +65,7 @@ import RefreshButton from "../RefreshButton";
 import { scanFolder } from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -263,13 +262,13 @@ function StudiesList(props: StudiesListProps) {
           </Typography>
 
           {strictFolderFilter ? (
-            <Tooltip title={t("studies.filters.strictfolder") as string}>
+            <Tooltip title={t("studies.filters.strictfolder")}>
               <IconButton onClick={toggleStrictFolder}>
                 <FolderIcon color="secondary" />
               </IconButton>
             </Tooltip>
           ) : (
-            <Tooltip title={t("studies.filters.showAllDescendants") as string}>
+            <Tooltip title={t("studies.filters.showAllDescendants")}>
               <IconButton onClick={toggleStrictFolder}>
                 <AccountTreeIcon color="secondary" />
               </IconButton>
@@ -295,11 +294,11 @@ function StudiesList(props: StudiesListProps) {
               open
             >
               {`${t("studies.scanFolder")} ${folder}?`}
-              <FormControlLabel
-                control={<Checkbox checked={isRecursiveScan} />}
+              <CheckBoxFE
                 label={t("studies.requestDeepScan")}
+                value={isRecursiveScan}
                 onChange={handleRecursiveScan}
-              />{" "}
+              />
             </ConfirmationDialog>
           )}
         </Box>
