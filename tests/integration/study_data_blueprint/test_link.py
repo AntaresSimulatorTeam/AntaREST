@@ -9,12 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sys import stderr
-
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.storage.rawstudy.model.filesystem.config.links import TransmissionCapacity
+from antarest.study.business.model.link_model import TransmissionCapacity
 from tests.integration.prepare_proxy import PreparerProxy
 
 
@@ -67,6 +65,32 @@ class TestLink:
         expected = {
             "description": "Cannot create a link that goes from and to the same single area: area 1",
             "exception": "LinkValidationError",
+        }
+        assert expected == res.json()
+
+        # Test update link area not ordered
+
+        res = client.put(
+            f"/v1/studies/{study_id}/links/{area2_id}/{area1_id}",
+            json={"hurdlesCost": False},
+        )
+        assert res.status_code == 200
+        expected = {
+            "area1": "area 1",
+            "area2": "area 2",
+            "assetType": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 150,
+            "displayComments": True,
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
         }
         assert expected == res.json()
 
@@ -276,6 +300,34 @@ class TestLink:
             "colorr": 112,
             "displayComments": True,
             "filterSynthesis": "",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
+        }
+        assert expected == res.json()
+
+        # Test create link with double value in filter
+
+        client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
+        res = client.post(
+            f"/v1/studies/{study_id}/links",
+            json={"area1": area1_id, "area2": area2_id, "filterSynthesis": "hourly, hourly"},
+        )
+
+        assert res.status_code == 200, res.json()
+        expected = {
+            "area1": "area 1",
+            "area2": "area 2",
+            "assetType": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "displayComments": True,
+            "filterSynthesis": "hourly",
             "filterYearByYear": "hourly, daily, weekly, monthly, annual",
             "hurdlesCost": False,
             "linkStyle": "plain",

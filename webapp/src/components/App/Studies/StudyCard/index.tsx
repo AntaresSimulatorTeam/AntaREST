@@ -405,30 +405,27 @@ const StudyCard = memo((props: Props) => {
           setOpenDialog={setOpenDialog}
         />
       </CardActions>
-      <PropertiesDialog
-        open={openDialog === "properties"}
-        onClose={closeDialog}
-        study={study}
-      />
-      <ConfirmationDialog
-        title={t("dialog.title.confirmation")}
-        onCancel={closeDialog}
-        onConfirm={handleDelete}
-        alert="warning"
-        open={openDialog === "delete"}
-      >
-        {t("studies.question.delete")}
-      </ConfirmationDialog>
-      <ExportModal
-        open={openDialog === "export"}
-        onClose={closeDialog}
-        study={study}
-      />
-      <MoveStudyDialog
-        open={openDialog === "move"}
-        onClose={closeDialog}
-        study={study}
-      />
+      {/* Keep conditional rendering for dialogs and not use only `open` property, because API calls are made on mount */}
+      {openDialog === "properties" && (
+        <PropertiesDialog open onClose={closeDialog} study={study} />
+      )}
+      {openDialog === "delete" && (
+        <ConfirmationDialog
+          open
+          title={t("dialog.title.confirmation")}
+          onCancel={closeDialog}
+          onConfirm={handleDelete}
+          alert="warning"
+        >
+          {t("studies.question.delete")}
+        </ConfirmationDialog>
+      )}
+      {openDialog === "export" && (
+        <ExportModal open onClose={closeDialog} study={study} />
+      )}
+      {openDialog === "move" && (
+        <MoveStudyDialog open onClose={closeDialog} study={study} />
+      )}
     </Card>
   );
 }, areEqual);
