@@ -137,21 +137,18 @@ class INode(ABC, Generic[G, S, V]):
         filename = self.config.path.name
         if self.config.archive_path:
             return (
-                read_original_file_in_archive(self.config.archive_path, str(self.get_relative_path_inside_archive())),
+                read_original_file_in_archive(
+                    self.config.archive_path,
+                    str(self.get_relative_path_inside_archive(self.config.archive_path)),
+                ),
                 suffix,
                 filename,
             )
         else:
             return self.config.path.read_bytes(), suffix, filename
 
-    def get_relative_path_inside_archive(self) -> Path:
-        archive_path = self.config.archive_path
-        if archive_path:
-            return self.config.path.relative_to(archive_path.parent / self.config.study_id)
-        else:
-            raise StudyNotArchived(
-                f"Study with uuid={self.config.study_id} supposed to be archived but archive_path is None."
-            )
+    def get_relative_path_inside_archive(self, archive_path: Path) -> Path:
+        return self.config.path.relative_to(archive_path.parent / self.config.study_id)
 
     def _assert_url_end(self, url: Optional[List[str]] = None) -> None:
         """

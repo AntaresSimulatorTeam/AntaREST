@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import tempfile
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -17,7 +16,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
-from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
@@ -146,42 +144,6 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         expanded: bool = False,
     ) -> str:
         return f"file://{self.config.path.name}"
-
-    def get_file_content(self) -> t.Tuple[bytes, str, str]:
-        """
-        Get file content
-
-        Returns:
-            file content, as bytes
-            file suffix
-            file name
-        """
-        suffix = self.config.path.suffix
-        filename = self.config.path.name
-        if self.config.archive_path:
-            return (
-                read_original_file_in_archive(self.config.archive_path, str(self.get_relative_path_inside_archive())),
-                suffix,
-                filename,
-            )
-        elif self.get_link_path().is_file():
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                # target path to save the file
-                target_path = Path(tmp_dir) / self.config.path.name
-                # use `.tsv` as suffix for the file
-                target_path = target_path.with_suffix(".tsv")
-                # retrieve the file content
-                self.parse(return_dataframe=True).to_csv(  # type: ignore
-                    target_path,
-                    sep="\t",
-                    index=False,
-                    header=True,
-                    float_format="%.6f",
-                )
-                output = target_path.read_bytes()
-            return output, target_path.suffix, target_path.name
-        else:
-            return self.config.path.read_bytes(), suffix, filename
 
     @abstractmethod
     def load(
