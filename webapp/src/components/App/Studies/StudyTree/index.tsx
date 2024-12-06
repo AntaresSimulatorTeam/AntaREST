@@ -36,7 +36,21 @@ function StudyTree() {
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
 
-  const updateTree = async (itemId: string, studyTreeNode: StudyTreeNode) => {
+  ////////////////////////////////////////////////////////////////
+  // initialize
+  ////////////////////////////////////////////////////////////////
+
+  // Initialize folders once we have the tree
+  // we use useUpdateEffectOnce because at first render initialStudiesTree isn't initialized
+  useUpdateEffectOnce(() => {
+    updateTree("root", initialStudiesTree);
+  }, [initialStudiesTree]);
+
+  ////////////////////////////////////////////////////////////////
+  // utils
+  ////////////////////////////////////////////////////////////////
+
+  async function updateTree(itemId: string, studyTreeNode: StudyTreeNode) {
     let treeAfterWorkspacesUpdate = studiesTree;
     let chidrenPaths = studyTreeNode.children.map(
       (child) => `root${child.path}`,
@@ -68,13 +82,7 @@ function StudyTree() {
       );
     }
     setStudiesTree(treeAfterChildrenUpdate);
-  };
-
-  // Initialize folders once we have the tree
-  // we use useUpdateEffectOnce because at first render initialStudiesTree isn't initialized
-  useUpdateEffectOnce(() => {
-    updateTree("root", initialStudiesTree);
-  }, [initialStudiesTree]);
+  }
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
