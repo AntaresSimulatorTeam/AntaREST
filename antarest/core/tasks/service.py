@@ -391,34 +391,37 @@ class TaskJobService(ITaskService):
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
     ) -> None:
         # attention: this function is executed in a thread, not in the main process
-        with db():
-            task = db.session.query(TaskJob).get(task_id)
-            task_type = task.type
-            study_id = task.ref_id
-
-        self.event_bus.push(
-            Event(
-                type=EventType.TASK_RUNNING,
-                payload=TaskEventPayload(
-                    id=task_id,
-                    message=custom_event_messages.running
-                    if custom_event_messages is not None
-                    else f"Task {task_id} is running",
-                    type=task_type,
-                    study_id=study_id,
-                ).model_dump(),
-                permissions=PermissionInfo(public_mode=PublicMode.READ),
-                channel=EventChannelDirectory.TASK + task_id,
-            )
-        )
-
-        logger.info(f"Starting task {task_id}")
-        with db():
-            db.session.query(TaskJob).filter(TaskJob.id == task_id).update({TaskJob.status: TaskStatus.RUNNING.value})
-            db.session.commit()
-        logger.info(f"Task {task_id} set to RUNNING")
-
         try:
+            with db():
+                # SL: this is not found
+                task = db.session.query(TaskJob).get(task_id)
+                task_type = task.type
+                study_id = task.ref_id
+
+            self.event_bus.push(
+                Event(
+                    type=EventType.TASK_RUNNING,
+                    payload=TaskEventPayload(
+                        id=task_id,
+                        message=custom_event_messages.running
+                        if custom_event_messages is not None
+                        else f"Task {task_id} is running",
+                        type=task_type,
+                        study_id=study_id,
+                    ).model_dump(),
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                    channel=EventChannelDirectory.TASK + task_id,
+                )
+            )
+
+            logger.info(f"Starting task {task_id}")
+            with db():
+                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                    {TaskJob.status: TaskStatus.RUNNING.value}
+                )
+                db.session.commit()
+            logger.info(f"Task {task_id} set to RUNNING")
+
             with db():
                 # We must use the DB session attached to the current thread
                 result = callback(TaskLogAndProgressRecorder(task_id, db.session, self.event_bus))
