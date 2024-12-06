@@ -83,6 +83,7 @@ function Matrix({
     canUndo,
     canRedo,
     reload,
+    rowCount,
   } = useMatrix(
     study.id,
     url,
@@ -136,7 +137,7 @@ function Matrix({
           data={data}
           aggregates={aggregates}
           columns={columns}
-          rows={data.length}
+          rows={rowCount ?? data.length}
           rowHeaders={customRowHeaders}
           dateTime={dateTime}
           onCellEdit={handleCellEdit}
