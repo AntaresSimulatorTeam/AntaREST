@@ -390,11 +390,13 @@ class TaskJobService(ITaskService):
         task_id: str,
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
     ) -> None:
-        # attention: this function is executed in a thread, not in the main process
+        # We need to catch all exceptions so that the calling thread is guaranteed
+        # to not die
         try:
+            # attention: this function is executed in a thread, not in the main process
             with db():
-                # SL: this is not found
                 task = db.session.query(TaskJob).get(task_id)
+                assert task is not None
                 task_type = task.type
                 study_id = task.ref_id
 
@@ -466,29 +468,35 @@ class TaskJobService(ITaskService):
             err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
             logger.error(err_msg, exc_info=exc)
 
-            with db():
-                result_msg = f"{err_msg}\nSee the logs for detailed information and the error traceback."
-                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                    {
-                        TaskJob.status: TaskStatus.FAILED.value,
-                        TaskJob.result_msg: result_msg,
-                        TaskJob.result_status: False,
-                        TaskJob.completion_date: datetime.datetime.utcnow(),
-                    }
-                )
-                db.session.commit()
+            try:
+                with db():
+                    result_msg = f"{err_msg}\nSee the logs for detailed information and the error traceback."
+                    db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                        {
+                            TaskJob.status: TaskStatus.FAILED.value,
+                            TaskJob.result_msg: result_msg,
+                            TaskJob.result_status: False,
+                            TaskJob.completion_date: datetime.datetime.utcnow(),
+                        }
+                    )
+                    db.session.commit()
 
-            message = err_msg if custom_event_messages is None else custom_event_messages.end
-            self.event_bus.push(
-                Event(
-                    type=EventType.TASK_FAILED,
-                    payload=TaskEventPayload(
-                        id=task_id, message=message, type=task_type, study_id=study_id
-                    ).model_dump(),
-                    permissions=PermissionInfo(public_mode=PublicMode.READ),
-                    channel=EventChannelDirectory.TASK + task_id,
+                message = err_msg if custom_event_messages is None else custom_event_messages.end
+                self.event_bus.push(
+                    Event(
+                        type=EventType.TASK_FAILED,
+                        payload=TaskEventPayload(
+                            id=task_id, message=message, type=task_type, study_id=study_id
+                        ).model_dump(),
+                        permissions=PermissionInfo(public_mode=PublicMode.READ),
+                        channel=EventChannelDirectory.TASK + task_id,
+                    )
                 )
-            )
+            except Exception as inner_exc:
+                logger.error(
+                    f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
+                    exc_info=inner_exc,
+                )
 
     def get_task_progress(self, task_id: str, params: RequestParameters) -> t.Optional[int]:
         task = self.repo.get_or_raise(task_id)
