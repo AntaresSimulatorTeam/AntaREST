@@ -116,7 +116,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: String representing the user's name
         """
         user_obj: Identity = db.session.query(Identity).get(user_id)
-        return user_obj.name # type: ignore  # `name` attribute is always a string
+        return user_obj.name  # type: ignore  # `name` attribute is always a string
 
     def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTOAPI:
         """
@@ -234,7 +234,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 version=command.version,
                 study_version=str(command.study_version),
                 # params.user cannot be None, since previous checks were successful
-                user_id=params.user.id, # type: ignore
+                user_id=params.user.id,  # type: ignore
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
