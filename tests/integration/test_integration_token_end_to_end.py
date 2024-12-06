@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import datetime
 import io
 import typing as t
 from unittest.mock import ANY
@@ -38,10 +39,11 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     study_path = ASSETS_DIR / "STA-mini.zip"
 
     # create a bot
+    bot_name = "admin_bot"
     res = client.post(
         "/v1/bots",
         headers={"Authorization": f"Bearer {admin_access_token}"},
-        json={"name": "admin_bot", "roles": [{"group": "admin", "role": 40}], "is_author": False},
+        json={"name": bot_name, "roles": [{"group": "admin", "role": 40}], "is_author": False},
     )
     bot_headers = {"Authorization": f"Bearer {res.json()}"}
 
@@ -172,6 +174,15 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     ]
     res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=commands)
     assert res.status_code == 200
+
+    # check if the author's name and date of update are retrieved with commands created by a bot
+    commands_res = client.get(f"/v1/studies/{variant_id}/commands", headers=bot_headers)
+    assert commands_res.status_code == 200
+    assert commands_res.json()
+
+    for command in commands_res.json():
+        assert command.get("user_name") == bot_name
+        assert isinstance(command.get("updated_at"), datetime.datetime)
 
     # generate variant before running a simulation
     res = client.put(f"/v1/studies/{variant_id}/generate", headers=bot_headers)

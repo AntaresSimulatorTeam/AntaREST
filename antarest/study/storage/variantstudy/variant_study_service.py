@@ -233,7 +233,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                # params.user cannot be None, since previous checks were successful at this point
+                # params.user cannot be None, since previous checks were successful
                 user_id=params.user.id, # type: ignore
                 updated_at=datetime.utcnow(),
             )
