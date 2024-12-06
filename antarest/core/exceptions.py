@@ -693,11 +693,6 @@ class PathIsAFolderError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class InvalidContentError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
-
-
 class WorkspaceNotFound(HTTPException):
     """
     This will be raised when we try to load a workspace that does not exist
