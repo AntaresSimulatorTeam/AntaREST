@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import io
 import logging
 import shutil
+import typing as t
 from pathlib import Path
-from typing import Any, List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -22,6 +22,7 @@ from pandas.errors import EmptyDataError
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -40,8 +41,8 @@ class InputSeriesMatrix(MatrixNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
-        nb_columns: Optional[int] = None,
-        default_empty: Optional[npt.NDArray[np.float64]] = None,
+        nb_columns: t.Optional[int] = None,
+        default_empty: t.Optional[npt.NDArray[np.float64]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
@@ -54,16 +55,16 @@ class InputSeriesMatrix(MatrixNode):
 
     def parse_from_link(self, link: str) -> pd.DataFrame:
         matrix_json = self.context.resolver.resolve(link)
-        matrix_json = cast(JSON, matrix_json)
+        matrix_json = t.cast(JSON, matrix_json)
         matrix: pd.DataFrame = pd.DataFrame(**matrix_json)
         return matrix
 
     def parse(
         self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
+        file_path: t.Optional[Path] = None,
+        tmp_dir: t.Any = None,
         return_dataframe: bool = False,
-    ) -> Union[JSON, pd.DataFrame]:
+    ) -> t.Union[JSON, pd.DataFrame]:
         file_path = file_path or self.config.path
         try:
             # sourcery skip: extract-method
@@ -93,7 +94,7 @@ class InputSeriesMatrix(MatrixNode):
             if return_dataframe:
                 return final_matrix
 
-            data = cast(JSON, final_matrix.to_dict(orient="split"))
+            data = t.cast(JSON, final_matrix.to_dict(orient="split"))
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
 
             return data
@@ -102,14 +103,14 @@ class InputSeriesMatrix(MatrixNode):
             matrix = pd.DataFrame()
             if self.default_empty is not None:
                 matrix = pd.DataFrame(self.default_empty)
-            return matrix if return_dataframe else cast(JSON, matrix.to_dict(orient="split"))
+            return matrix if return_dataframe else t.cast(JSON, matrix.to_dict(orient="split"))
 
     def check_errors(
         self,
         data: JSON,
-        url: Optional[List[str]] = None,
+        url: t.Optional[t.List[str]] = None,
         raising: bool = False,
-    ) -> List[str]:
+    ) -> t.List[str]:
         self._assert_url_end(url)
 
         errors = []
@@ -135,3 +136,37 @@ class InputSeriesMatrix(MatrixNode):
         target_path = self.config.path.parent.joinpath(f"{target}{''.join(self._infer_path().suffixes)}")
         target_path.unlink(missing_ok=True)
         shutil.copy(self._infer_path(), target_path)
+
+    def get_file_content(self) -> t.Tuple[bytes, str, str]:
+        """
+        Get file content
+
+        Returns:
+            file content, as bytes
+            file suffix
+            file name
+        """
+        suffix = self.config.path.suffix
+        filename = self.config.path.name
+        if self.config.archive_path:
+            return (
+                read_original_file_in_archive(
+                    self.config.archive_path, str(self.get_relative_path_inside_archive(self.config.archive_path))
+                ),
+                suffix,
+                filename,
+            )
+        elif self.get_link_path().is_file():
+            target_path = self.config.path.with_suffix(".tsv")
+            buffer = io.StringIO()
+            self.parse(return_dataframe=True).to_csv(  # type: ignore
+                buffer,
+                sep="\t",
+                index=False,
+                header=False,
+                float_format="%.6f",
+            )
+            output = buffer.getvalue().encode()
+            return output, target_path.suffix, target_path.name
+        else:
+            return self.config.path.read_bytes(), suffix, filename
