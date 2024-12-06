@@ -14,7 +14,6 @@ import http
 import io
 import itertools
 import json
-import os
 import pathlib
 import shutil
 from unittest.mock import ANY
@@ -574,7 +573,7 @@ class TestFetchOriginalFile:
         # If you try to retrieve a folder, we should get an Error 422
         res = client.get(original_file_url, params={"path": "user/folder"})
         assert res.status_code == 422, res.json()
-        assert "Node is a folder node." in res.json()["description"]
+        assert "is a folder node." in res.json()["description"]
         assert res.json()["exception"] == "PathIsAFolderError"
 
     def test_retrieve_original_file_from_archive(self, client: TestClient, user_access_token: str) -> None:
@@ -653,21 +652,11 @@ class TestFetchOriginalFile:
         res.raise_for_status()
 
         # create a binding constraint that references the link
-        bc_id = "bc_1"
         bc_obj = {
-            "name": bc_id,
+            "name": "bc_1",
             "enabled": True,
             "time_step": "daily",
             "operator": "less",
-            "terms": [
-                {
-                    # Cluster in an area
-                    "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                    "id": f"{area1_id}.{cluster_id.lower()}",
-                    "offset": 2,
-                    "weight": 1.0,
-                }
-            ],
         }
         res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json=bc_obj)
         res.raise_for_status()
@@ -680,23 +669,21 @@ class TestFetchOriginalFile:
         )
         res.raise_for_status()
 
-        # skip the test if the OS is Windows
-        if os.name != "nt":
-            # archive the study
-            res = client.put(f"/v1/studies/{study_id}/archive")
-            assert res.status_code == 200
-            task_id = res.json()
-            wait_for(
-                lambda: client.get(
-                    f"/v1/tasks/{task_id}",
-                ).json()["status"]
-                == 3
-            )
+        # archive the study
+        res = client.put(f"/v1/studies/{study_id}/archive")
+        assert res.status_code == 200
+        task_id = res.json()
+        wait_for(
+            lambda: client.get(
+                f"/v1/tasks/{task_id}",
+            ).json()["status"]
+            == 3
+        )
 
-            # retrieve the binding constraint `bc_1` less matrix from archive
-            rel_path = "input/bindingconstraints/bc_1_lt"
-            res = client.get(
-                f"v1/studies/{study_id}/raw/original-file",
-                params={"path": rel_path},
-            )
-            res.raise_for_status()
+        # retrieve the binding constraint `bc_1` less matrix from archive
+        rel_path = "input/bindingconstraints/bc_1_lt"
+        res = client.get(
+            f"v1/studies/{study_id}/raw/original-file",
+            params={"path": rel_path},
+        )
+        res.raise_for_status()
