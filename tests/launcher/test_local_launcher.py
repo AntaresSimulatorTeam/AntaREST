@@ -111,7 +111,50 @@ def test_compute(tmp_path: Path, launcher_config: Config):
 
 
 @pytest.mark.unit_test
-def test_select_best_binary(tmp_path: Path):
+def test_parse_launcher_arguments(launcher_config: Config):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    launcher_parameters = LauncherParametersDTO(nb_cpu=4)
+    sim_args, _ = local_launcher.parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=4"]
+
+    launcher_parameters = LauncherParametersDTO(nb_cpu=8)
+    sim_args, _ = local_launcher.parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=8"]
+
+    launcher_parameters.other_options = "coin"
+    sim_args, _ = local_launcher.parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=8", "--use-ortools", "--ortools-solver=coin"]
+
+    launcher_parameters.other_options = "xpress"
+    sim_args, blabla = local_launcher.parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=8", "--use-ortools", "--ortools-solver=xpress"]
+
+    launcher_parameters.other_options = "xpress presolve"
+    sim_args, _ = local_launcher.parse_launcher_options(launcher_parameters)
+    assert sim_args == [
+        "--force-parallel=8",
+        "--use-ortools",
+        "--ortools-solver=xpress",
+        '--solver-parameters="PRESOLVE 1"',
+    ]
+
+    os.environ["XPRESS_DIR"] = "fake_path_for_test"
+    launcher_parameters.other_options = "xpress presolve"
+    _, env_variables = local_launcher.parse_launcher_options(launcher_parameters)
+    assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
+
+
+@pytest.mark.unit_test
+def test_parse_xpress_dir(tmp_path: Path):
+    data = {"xpress_dir": "fake_path_for_test"}
+    launcher_config = Config(launcher=LauncherConfig(local=LocalConfig.from_dict(data)))
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    _, env_variables = local_launcher.parse_launcher_options(LauncherParametersDTO())
+    assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
+
+
+@pytest.mark.unit_test
+def test_select_best_binary():
     binaries = {
         "700": Path("700"),
         "800": Path("800"),

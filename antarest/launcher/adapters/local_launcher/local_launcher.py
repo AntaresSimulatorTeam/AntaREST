@@ -12,6 +12,7 @@
 
 import io
 import logging
+import os
 import shutil
 import signal
 import subprocess
@@ -19,7 +20,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Dict, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 from uuid import UUID
 
 from antares.study.version import SolverVersion
@@ -123,13 +124,11 @@ class LocalLauncher(AbstractLauncher):
         try:
             self.callbacks.export_study(str(uuid), study_uuid, export_path, launcher_parameters)
 
-            args = [
-                str(antares_solver_path),
-                f"--force-parallel={launcher_parameters.nb_cpu}",
-                str(export_path),
-            ]
+            simulator_args, environment_variables = self.parse_launcher_options(launcher_parameters)
+            new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
             process = subprocess.Popen(
-                args,
+                new_args,
+                env=environment_variables,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
@@ -194,6 +193,24 @@ class LocalLauncher(AbstractLauncher):
             logger.info(f"Removing launch {uuid} export path at {tmp_path}")
             end = True
             shutil.rmtree(tmp_path)
+
+    def parse_launcher_options(self, launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
+        simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
+        environment_variables = os.environ.copy()
+        if launcher_parameters.other_options:
+            solver = []
+            if "xpress" in launcher_parameters.other_options:
+                solver = ["--use-ortools", "--ortools-solver=xpress"]
+                if xpress_dir_path := self.config.launcher.local.xpress_dir:  # type: ignore
+                    environment_variables["XPRESSDIR"] = xpress_dir_path
+                    environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
+            elif "coin" in launcher_parameters.other_options:
+                solver = ["--use-ortools", "--ortools-solver=coin"]
+            if solver:
+                simulator_args += solver
+            if "presolve" in launcher_parameters.other_options:
+                simulator_args.append('--solver-parameters="PRESOLVE 1"')
+        return simulator_args, environment_variables
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:
         base_func = super().create_update_log(job_id)
