@@ -14,12 +14,11 @@
 
 import DataObjectIcon from "@mui/icons-material/DataObject";
 import TextSnippetIcon from "@mui/icons-material/TextSnippet";
-import ImageIcon from "@mui/icons-material/Image";
+import BlockIcon from "@mui/icons-material/Block";
 import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../common/types";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -33,7 +32,7 @@ export interface TreeFolder {
 
 export type TreeData = TreeFolder | TreeFile;
 
-export type FileType = "json" | "matrix" | "text" | "image" | "folder";
+export type FileType = "json" | "matrix" | "text" | "folder" | "unsupported";
 
 export interface FileInfo {
   fileType: FileType;
@@ -44,22 +43,36 @@ export interface FileInfo {
 
 export interface DataCompProps extends FileInfo {
   studyId: string;
-  canEdit: boolean;
   setSelectedFile: (file: FileInfo) => void;
   reloadTreeData: () => void;
 }
 
 ////////////////////////////////////////////////////////////////
-// File Info
+// Utils
 ////////////////////////////////////////////////////////////////
+
+const URL_SCHEMES = {
+  MATRIX: ["matrix://", "matrixfile://"],
+  JSON: "json://",
+  FILE: "file://",
+} as const;
+
+const SUPPORTED_EXTENSIONS = [
+  ".txt",
+  ".log",
+  ".csv",
+  ".tsv",
+  ".ini",
+  ".yml",
+] as const;
 
 // Maps file types to their corresponding icon components.
 const iconByFileType: Record<FileType, SvgIconComponent> = {
   matrix: DatasetIcon,
   json: DataObjectIcon,
   text: TextSnippetIcon,
-  image: ImageIcon,
   folder: FolderIcon,
+  unsupported: BlockIcon,
 } as const;
 
 /**
@@ -83,39 +96,39 @@ export function isFolder(treeData: TreeData): treeData is TreeFolder {
  * @returns The corresponding file type.
  */
 export function getFileType(treeData: TreeData): FileType {
+  if (isFolder(treeData)) {
+    return "folder";
+  }
+
   if (typeof treeData === "string") {
-    if (
-      treeData.startsWith("matrix://") ||
-      treeData.startsWith("matrixfile://")
-    ) {
+    if (URL_SCHEMES.MATRIX.some((scheme) => treeData.startsWith(scheme))) {
       return "matrix";
     }
-    if (treeData.startsWith("json://") || treeData.endsWith(".json")) {
+
+    if (treeData.startsWith(URL_SCHEMES.JSON)) {
       return "json";
     }
-    if (treeData.startsWith("file://") && treeData.endsWith(".ico")) {
-      return "image";
-    }
+
+    // Handle regular files with file:// prefix
+    // All files except matrices and json-formatted content use this prefix
+    // We filter to only allow extensions that can be properly displayed (.txt, .log, .csv, .tsv, .ini)
+    // Other extensions (like .RDS or .xlsx) are marked as unsupported since they can't be shown in the UI
+    return treeData.startsWith(URL_SCHEMES.FILE) &&
+      SUPPORTED_EXTENSIONS.some((ext) => treeData.endsWith(ext))
+      ? "text"
+      : "unsupported";
   }
-  return isFolder(treeData) ? "folder" : "text";
+
+  return "text";
 }
 
-////////////////////////////////////////////////////////////////
-// Rights
-////////////////////////////////////////////////////////////////
-
 /**
- * Checks if a study's file can be edited.
+ * Checks if a path is protected from deletion
  *
- * @param study  - The study where the file is located.
- * @param filePath - The path of the file.
- * @returns True if the file can be edited, false otherwise.
+ * @param path - Path to check
+ * @returns Whether the path is protected
  */
-export function canEditFile(study: StudyMetadata, filePath: string): boolean {
-  return (
-    !study.archived &&
-    (filePath === "user" || filePath.startsWith("user/")) &&
-    // To remove when Xpansion tool configuration will be moved to "input/expansion" directory
-    !(filePath === "user/expansion" || filePath.startsWith("user/expansion/"))
-  );
+export function isProtected(path: string): boolean {
+  // user/expansion folder and its contents must not be deleted
+  return path === "user/expansion" || path.startsWith("user/expansion/");
 }

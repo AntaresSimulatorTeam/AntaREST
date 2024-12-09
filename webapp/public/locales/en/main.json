@@ -251,7 +251,7 @@
   "study.district": "District",
   "study.bindingconstraints": "Binding Constraints",
   "study.debug": "Debug",
-  "study.debug.file.image": "Image file",
+  "study.debug.file.unsupported": "Unsupported file type",
   "study.debug.file.deleteConfirm.title": "Delete File?",
   "study.debug.file.deleteConfirm.message": "Are you sure you want to delete the file?",
   "study.debug.folder.empty": "Folder is empty",

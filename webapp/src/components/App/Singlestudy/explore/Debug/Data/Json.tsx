@@ -25,7 +25,7 @@ import { useEffect, useState } from "react";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 
-function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
+function Json({ filePath, filename, studyId }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [currentJson, setCurrentJson] = useState<JSONEditorProps["json"]>();
@@ -82,14 +82,12 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
         <Flex>
           <Menubar>
             <Filename>{filename}</Filename>
-            {canEdit && (
-              <UploadFileButton
-                studyId={studyId}
-                path={filePath}
-                accept={{ "application/json": [".json"] }}
-                onUploadSuccessful={handleUploadSuccessful}
-              />
-            )}
+            <UploadFileButton
+              studyId={studyId}
+              path={filePath}
+              accept={{ "application/json": [".json"] }}
+              onUploadSuccessful={handleUploadSuccessful}
+            />
             <DownloadButton onClick={handleDownload} />
           </Menubar>
           <JSONEditor
