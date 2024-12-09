@@ -12,13 +12,10 @@
 
 import typing as t
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
+from antarest.core.model import LowerCaseStr
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
-    transform_name_to_id,
-    validate_id_against_name,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -45,11 +42,7 @@ class RemoveSTStorage(ICommand):
     # ==================
 
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
-    storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
-
-    @field_validator("storage_id", mode="before")
-    def validate_cluster_name(cls, val: str) -> str:
-        return validate_id_against_name(val)
+    storage_id: LowerCaseStr = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
