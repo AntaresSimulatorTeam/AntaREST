@@ -45,7 +45,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.string import to_camel_case
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableProperties
 from tests.integration.utils import wait_task_completion
 
@@ -129,9 +129,14 @@ class TestRenewable:
         )
         assert res.status_code == 200, res.json()
         fr_solar_pv_id = res.json()["id"]
-        assert fr_solar_pv_id == transform_name_to_id(fr_solar_pv, lower=False)
+        assert fr_solar_pv_id == transform_name_to_id(fr_solar_pv)
         # noinspection SpellCheckingInspection
-        fr_solar_pv_cfg = {"id": fr_solar_pv_id, **fr_solar_pv_props}
+        fr_solar_pv_cfg = {
+            "id": fr_solar_pv_id,
+            **fr_solar_pv_props,
+            "name": fr_solar_pv.lower(),
+            "group": fr_solar_pv_props["group"].lower(),
+        }
         assert res.json() == fr_solar_pv_cfg
 
         # reading the properties of a renewable cluster
@@ -177,18 +182,19 @@ class TestRenewable:
         assert res.json() == EXISTING_CLUSTERS + [fr_solar_pv_cfg]
 
         # updating properties
+        old_name = "fr solar pv old 1"
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
             json={
-                "name": "FR Solar pv old 1",
+                "name": old_name,
                 "nominalCapacity": 5132,
             },
         )
         assert res.status_code == 200, res.json()
         fr_solar_pv_cfg = {
             **fr_solar_pv_cfg,
-            "name": "FR Solar pv old 1",
+            "name": old_name,
             "nominalCapacity": 5132,
         }
         assert res.json() == fr_solar_pv_cfg
@@ -254,8 +260,8 @@ class TestRenewable:
         # asserts the config is the same
         assert res.status_code in {200, 201}, res.json()
         duplicated_config = dict(fr_solar_pv_cfg)
-        duplicated_config["name"] = new_name
-        duplicated_id = transform_name_to_id(new_name, lower=False)
+        duplicated_config["name"] = new_name.lower()
+        duplicated_id = transform_name_to_id(new_name)
         duplicated_config["id"] = duplicated_id
         assert res.json() == duplicated_config
 
@@ -425,7 +431,7 @@ class TestRenewable:
         assert res.status_code == 200, res.json()
         obj = res.json()
         # If a group is not found, return the default group ("Other RES 1" by default).
-        assert obj["group"] == "Other RES 1"
+        assert obj["group"] == "other res 1"
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
@@ -499,7 +505,7 @@ class TestRenewable:
         assert res.status_code == 409, res.json()
         obj = res.json()
         description = obj["description"]
-        assert other_cluster_name.upper() in description
+        assert other_cluster_name.lower() in description
         assert obj["exception"] == "DuplicateRenewableCluster"
 
     @pytest.fixture(name="base_study_id")
@@ -580,14 +586,14 @@ class TestRenewable:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name
+        assert cluster_cfg["name"] == new_name.lower()
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "Wind Offshore"
+        assert cluster_cfg["group"] == "wind offshore"
         assert cluster_cfg["unitCount"] == 15
         assert cluster_cfg["nominalCapacity"] == 42500
 
