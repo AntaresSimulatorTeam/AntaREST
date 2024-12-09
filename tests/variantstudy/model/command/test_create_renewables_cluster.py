@@ -71,7 +71,7 @@ class TestCreateRenewablesCluster:
         empty_study.config.version = study_version
         study_path = empty_study.config.study_path
         area_name = "DE"
-        area_id = transform_name_to_id(area_name, lower=True)
+        area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster-1"
 
         CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(empty_study)

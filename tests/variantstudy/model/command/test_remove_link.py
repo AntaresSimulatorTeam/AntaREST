@@ -98,7 +98,7 @@ class TestRemoveLink:
         study_version = empty_study.config.version
 
         # Create some areas
-        areas = {transform_name_to_id(area, lower=True): area for area in ["Area_X", "Area_Y", "Area_Z"]}
+        areas = {transform_name_to_id(area): area for area in ["Area_X", "Area_Y", "Area_Z"]}
         for area in areas.values():
             output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
                 empty_study

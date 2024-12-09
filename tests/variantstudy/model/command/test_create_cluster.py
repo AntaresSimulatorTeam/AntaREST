@@ -98,9 +98,9 @@ class TestCreateCluster:
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         study_path = empty_study.config.study_path
         area_name = "DE"
-        area_id = transform_name_to_id(area_name, lower=True)
+        area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster-1"
-        cluster_id = transform_name_to_id(cluster_name, lower=True)
+        cluster_id = transform_name_to_id(cluster_name)
 
         CreateArea(area_name=area_name, command_context=command_context, study_version=STUDY_VERSION_8_8).apply(
             empty_study

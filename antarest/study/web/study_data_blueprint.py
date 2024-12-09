@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import JSON, StudyPermissionType
+from antarest.core.model import JSON, LowerCaseStr, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -1955,7 +1955,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_renewable_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: str,
+        cluster_id: LowerCaseStr,
         cluster_data: RenewableClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
@@ -1965,7 +1965,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id.lower(), cluster_data)
+        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id, cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
@@ -2129,7 +2129,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_thermal_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: str,
+        cluster_id: LowerCaseStr,
         cluster_data: ThermalClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
@@ -2149,7 +2149,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id.lower(), cluster_data)
+        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id, cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
@@ -2556,8 +2556,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_type: ClusterType,
-        source_cluster_id: str,
-        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
+        source_cluster_id: LowerCaseStr,
+        new_cluster_name: LowerCaseStr = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
         logger.info(
@@ -2577,6 +2577,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         else:  # pragma: no cover
             raise NotImplementedError(f"Cluster type {cluster_type} not implemented")
 
-        return manager.duplicate_cluster(study, area_id, source_cluster_id.lower(), new_cluster_name)
+        return manager.duplicate_cluster(study, area_id, source_cluster_id, new_cluster_name)
 
     return bp

@@ -15,7 +15,10 @@ import typing as t
 from pydantic import Field, field_validator
 
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
+    transform_name_to_id,
+    validate_id_against_name,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -46,10 +49,7 @@ class RemoveSTStorage(ICommand):
 
     @field_validator("storage_id", mode="before")
     def validate_cluster_name(cls, val: str) -> str:
-        to_return = transform_name_to_id(val)
-        if not to_return:
-            raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-        return to_return
+        return validate_id_against_name(val)
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """

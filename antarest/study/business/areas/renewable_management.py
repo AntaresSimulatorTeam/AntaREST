@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 from pydantic import field_validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
-from antarest.core.model import JSON, LowerCaseStr
+from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import execute_or_add_commands
@@ -340,7 +340,7 @@ class RenewableManager:
         study: Study,
         area_id: str,
         source_id: str,
-        new_cluster_name: LowerCaseStr,
+        new_cluster_name: str,
     ) -> RenewableClusterOutput:
         """
         Creates a duplicate cluster within the study area with a new name.

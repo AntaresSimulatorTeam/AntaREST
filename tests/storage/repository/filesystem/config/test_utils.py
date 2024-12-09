@@ -29,8 +29,7 @@ def test_transform_name_to_id__nominal_case(name, expected):
 
 @pytest.mark.parametrize("name", VALID_CHARS)
 def test_transform_name_to_id__valid_chars(name):
-    assert transform_name_to_id(name, lower=True) == name.lower()
-    assert transform_name_to_id(name, lower=False) == name
+    assert transform_name_to_id(name) == name.lower()
 
 
 @pytest.mark.parametrize("name", sorted(set(string.punctuation) - set(VALID_CHARS)))

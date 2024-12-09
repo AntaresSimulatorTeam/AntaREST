@@ -27,7 +27,7 @@ from antarest.core.exceptions import (
     STStorageMatrixNotFound,
     STStorageNotFound,
 )
-from antarest.core.model import JSON, LowerCaseStr
+from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
@@ -534,9 +534,7 @@ class STStorageManager:
             )
             execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def duplicate_cluster(
-        self, study: Study, area_id: str, source_id: str, new_cluster_name: LowerCaseStr
-    ) -> STStorageOutput:
+    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_cluster_name: str) -> STStorageOutput:
         """
         Creates a duplicate cluster within the study area with a new name.
 

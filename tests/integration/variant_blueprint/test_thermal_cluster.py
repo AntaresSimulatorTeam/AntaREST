@@ -97,7 +97,7 @@ class TestThermalCluster:
                 "action": "create_cluster",
                 "args": {
                     "area_id": area_id,
-                    "cluster_name": transform_name_to_id(cluster_name, lower=False),
+                    "cluster_name": transform_name_to_id(cluster_name),
                     "parameters": _create_thermal_params(cluster_name),
                     "prepro": np.random.rand(8760, 6).tolist(),
                     "modulation": np.random.rand(8760, 4).tolist(),

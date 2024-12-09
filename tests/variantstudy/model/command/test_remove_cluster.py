@@ -37,7 +37,7 @@ class TestRemoveCluster:
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster Name"
-        cluster_id = transform_name_to_id(cluster_name, lower=False)
+        cluster_id = transform_name_to_id(cluster_name)
 
         study_version = empty_study.config.version
 
