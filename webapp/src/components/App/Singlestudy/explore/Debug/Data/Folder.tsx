@@ -33,7 +33,7 @@ import {
   type TreeFolder,
   type DataCompProps,
   isFolder,
-  canEditFile,
+  isProtected,
 } from "../utils";
 import { Fragment, useState } from "react";
 import EmptyView from "../../../../../common/page/SimpleContent";
@@ -45,8 +45,6 @@ import useConfirm from "../../../../../../hooks/useConfirm";
 import { deleteFile } from "../../../../../../services/api/studies/raw";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../../../../utils/fnUtils";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../common/types";
 import { useSnackbar } from "notistack";
 
 function Folder(props: DataCompProps) {
@@ -54,14 +52,12 @@ function Folder(props: DataCompProps) {
     filename,
     filePath,
     treeData,
-    canEdit,
     setSelectedFile,
     reloadTreeData,
     studyId,
   } = props;
 
   const { t } = useTranslation();
-  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const replaceAction = useConfirm();
   const deleteAction = useConfirm();
   const { enqueueSnackbar } = useSnackbar();
@@ -126,14 +122,12 @@ function Folder(props: DataCompProps) {
           <ListSubheader>
             <Menubar>
               <Filename>{filename}</Filename>
-              {canEdit && (
-                <UploadFileButton
-                  studyId={studyId}
-                  path={(file) => `${filePath}/${file.name}`}
-                  onUploadSuccessful={reloadTreeData}
-                  validate={handleValidateUpload}
-                />
-              )}
+              <UploadFileButton
+                studyId={studyId}
+                path={(file) => `${filePath}/${file.name}`}
+                onUploadSuccessful={reloadTreeData}
+                validate={handleValidateUpload}
+              />
             </Menubar>
           </ListSubheader>
         }
@@ -159,7 +153,7 @@ function Folder(props: DataCompProps) {
               <Fragment key={filename}>
                 <ListItem
                   secondaryAction={
-                    canEditFile(study, path) && (
+                    !isProtected(path) && (
                       <IconButton
                         edge="end"
                         size="small"
@@ -212,10 +206,12 @@ function Folder(props: DataCompProps) {
         open={!!menuData}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleDeleteClick}>
-          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
-          {t("global.delete")}
-        </MenuItem>
+        {menuData && !isProtected(menuData.filePath) && (
+          <MenuItem onClick={handleDeleteClick}>
+            <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
+            {t("global.delete")}
+          </MenuItem>
+        )}
       </Menu>
       {/* Confirm file replacement */}
       <ConfirmationDialog

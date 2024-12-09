@@ -19,7 +19,6 @@ import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import { SvgIconComponent } from "@mui/icons-material";
 import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../common/types";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -44,7 +43,6 @@ export interface FileInfo {
 
 export interface DataCompProps extends FileInfo {
   studyId: string;
-  canEdit: boolean;
   setSelectedFile: (file: FileInfo) => void;
   reloadTreeData: () => void;
 }
@@ -59,7 +57,14 @@ const URL_SCHEMES = {
   FILE: "file://",
 } as const;
 
-const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini"] as const;
+const SUPPORTED_EXTENSIONS = [
+  ".txt",
+  ".log",
+  ".csv",
+  ".tsv",
+  ".ini",
+  ".yml",
+] as const;
 
 // Maps file types to their corresponding icon components.
 const iconByFileType: Record<FileType, SvgIconComponent> = {
@@ -108,29 +113,22 @@ export function getFileType(treeData: TreeData): FileType {
     // All files except matrices and json-formatted content use this prefix
     // We filter to only allow extensions that can be properly displayed (.txt, .log, .csv, .tsv, .ini)
     // Other extensions (like .RDS or .xlsx) are marked as unsupported since they can't be shown in the UI
-    if (
-      treeData.startsWith(URL_SCHEMES.FILE) &&
+    return treeData.startsWith(URL_SCHEMES.FILE) &&
       SUPPORTED_EXTENSIONS.some((ext) => treeData.endsWith(ext))
-    ) {
-      return "text";
-    }
+      ? "text"
+      : "unsupported";
   }
 
-  return "unsupported";
+  return "text";
 }
 
 /**
- * Checks if a study's file can be edited.
+ * Checks if a path is protected from deletion
  *
- * @param study  - The study where the file is located.
- * @param filePath - The path of the file.
- * @returns True if the file can be edited, false otherwise.
+ * @param path - Path to check
+ * @returns Whether the path is protected
  */
-export function canEditFile(study: StudyMetadata, filePath: string): boolean {
-  return (
-    !study.archived &&
-    (filePath === "user" || filePath.startsWith("user/")) &&
-    // To remove when Xpansion tool configuration will be moved to "input/expansion" directory
-    !(filePath === "user/expansion" || filePath.startsWith("user/expansion/"))
-  );
+export function isProtected(path: string): boolean {
+  // user/expansion folder and its contents must not be deleted
+  return path === "user/expansion" || path.startsWith("user/expansion/");
 }

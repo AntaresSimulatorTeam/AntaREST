@@ -75,7 +75,7 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
+function Text({ studyId, filePath, filename }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
@@ -115,20 +115,18 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
         <Flex>
           <Menubar>
             <Filename>{filename}</Filename>
-            {canEdit && (
-              <UploadFileButton
-                studyId={studyId}
-                path={filePath}
-                accept={{ "text/plain": [".txt"] }}
-                onUploadSuccessful={handleUploadSuccessful}
-              />
-            )}
+            <UploadFileButton
+              studyId={studyId}
+              path={filePath}
+              accept={{ "text/plain": [".txt"] }}
+              onUploadSuccessful={handleUploadSuccessful}
+            />
             <DownloadButton
               onClick={handleDownload}
               disabled={isEmptyContent(text)}
             />
           </Menubar>
-          {isEmptyContent(text) ? (
+          {isEmptyContent(text) ? ( // TODO: remove this when the files become editable
             <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
           ) : (
             <Box sx={{ overflow: "auto" }}>
