@@ -209,12 +209,12 @@ class TestVariantStudyService:
         root_study_id: str,
     ):
         """
-        Test two different users that are authors of two different commands of the same variant
+        Test two different users that are authors on two different commands of the same variant
         Set up:
             Retrieve the user that will be the owner of the study and variant
             Create a second user
             Create a study and a variant study
-            Create a command created by each user
+            Each user creates a command
 
         Tests:
             Test whether the commands have the `user_name` and `updated_at` attributes
@@ -310,15 +310,8 @@ class TestVariantStudyService:
                     study_version=StudyVersion.parse(variant_study.version),
                 )
             )
-
         variant_study_service.append_commands(variant_study.id, commands, params=owner_params)
 
         nb_queries_before = nb_queries  # store initial state
-
-        with patch.object(
-            variant_study_service, "_get_user_name_from_id", return_value="john.doe"
-        ) as mock_database_call:
-            variant_study_service.get_commands(variant_study.id, params=owner_params)
-            mock_database_call.assert_called_once()  # make sure the mapper function is called once
-
+        variant_study_service.get_commands(variant_study.id, params=owner_params)  # execute database query
         assert nb_queries_before + 1 == nb_queries  # compare with initial state to make sure database was queried once
