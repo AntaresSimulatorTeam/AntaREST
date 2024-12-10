@@ -11,20 +11,21 @@
 # This file is part of the Antares project.
 
 import datetime
+import pytest
 import typing as t
 import uuid
+
 from pathlib import Path
+from sqlalchemy import inspect, event
 from unittest.mock import patch
 
-import pytest
 from antares.study.version import StudyVersion
-
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Group, Role, User
+from antarest.login.model import Group, Role, User, Identity
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -272,9 +273,27 @@ class TestVariantStudyService:
         root_study_id: str,
     ):
         """
-        Test if multiple commands of the same user have the same author
-        Test if database was called for each command
+        Test the case of multiple commands was created by the same user.
+        Set up:
+            Initialize a counter of queries to database
+            Define a watcher on the orm queries to database that updates the counter
+            Create a user
+            Create a variant study
+            Make the user generates five commands on the newly created variant
+        Test:
+            Each time a command is retrieved, the database must be accessed only if
+            the author of the currently retrieved command is not already known during
+            the process
         """
+        nb_queries = 0  # Store number of orm queries to database
+
+        # Watch orm events and update `nb_queries`
+        @event.listens_for(db.session, "do_orm_execute")
+        def check_orm_operations(orm_execute_state):
+            if orm_execute_state.is_select:
+                nonlocal nb_queries
+                nb_queries += 1
+
         owner_params = RequestParameters(user=jwt_user)
 
         # Generate a variant on a study that allow other user to edit it
@@ -294,8 +313,12 @@ class TestVariantStudyService:
 
         variant_study_service.append_commands(variant_study.id, commands, params=owner_params)
 
+        nb_queries_before = nb_queries  # store initial state
+
         with patch.object(
             variant_study_service, "_get_user_name_from_id", return_value="john.doe"
         ) as mock_database_call:
             variant_study_service.get_commands(variant_study.id, params=owner_params)
-            mock_database_call.assert_called_once()
+            mock_database_call.assert_called_once()  # make sure the mapper function is called once
+
+        assert nb_queries_before + 1 == nb_queries  # compare with initial state to make sure database was queried once

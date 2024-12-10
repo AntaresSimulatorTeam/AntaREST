@@ -131,9 +131,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         try:
             index = [command.id for command in study.commands].index(command_id)
-            command = study.commands[index]
+            command: CommandBlock = study.commands[index]
             user_name = self._get_user_name_from_id(command.user_id) if command.user_id else None
-            return t.cast(CommandDTOAPI, command.to_dto().to_api(user_name))
+            return command.to_dto().to_api(user_name)
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
