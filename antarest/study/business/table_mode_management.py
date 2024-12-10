@@ -217,7 +217,9 @@ class TableModeManager:
             thermals_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                thermals_by_areas[area_id][cluster_id] = ThermalClusterInput(**values)
+                # Thermal clusters ids were not lowered at the time.
+                # So to ensure this endpoint still works with old scripts we have to lower the id at first.
+                thermals_by_areas[area_id][cluster_id.lower()] = ThermalClusterInput(**values)
             thermals_map = self._thermal_manager.update_thermals_props(study, thermals_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
@@ -230,7 +232,8 @@ class TableModeManager:
             renewables_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                renewables_by_areas[area_id][cluster_id] = RenewableClusterInput(**values)
+                # Same reason as for thermal clusters
+                renewables_by_areas[area_id][cluster_id.lower()] = RenewableClusterInput(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
