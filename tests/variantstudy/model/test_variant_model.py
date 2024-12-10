@@ -11,21 +11,21 @@
 # This file is part of the Antares project.
 
 import datetime
-import pytest
 import typing as t
 import uuid
-
 from pathlib import Path
-from sqlalchemy import inspect, event
 from unittest.mock import patch
 
+import pytest
 from antares.study.version import StudyVersion
+from sqlalchemy import event
+
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Group, Role, User, Identity
+from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
