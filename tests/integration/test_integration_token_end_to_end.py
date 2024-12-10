@@ -183,8 +183,9 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
         # Some commands, such as those that modify study configurations, are run by admin user
         # Thus the `user_name` for such type of command will be the admin's name
         # Here we detect those commands by their `action` and their `target` values
-        if (command["action"] == 'update_playlist' or
-                (command["action"] == 'update_config' and 'settings/generaldata' in command["args"]["target"])):
+        if command["action"] == "update_playlist" or (
+            command["action"] == "update_config" and "settings/generaldata" in command["args"]["target"]
+        ):
             assert command["user_name"] == "admin"
         else:
             assert command["user_name"] == "admin_bot"
