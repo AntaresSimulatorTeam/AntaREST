@@ -105,7 +105,7 @@ def retry(func: t.Callable[[], T], attempts: int = 10, interval: float = 0.5) ->
             attempt += 1
             return func()
         except Exception as e:
-            logger.info(f"💤 Sleeping {interval} second(s)...")
+            logger.info(f"💤 Sleeping {interval} second(s) before retry...", exc_info=e)
             time.sleep(interval)
             caught_exception = e
     raise caught_exception or ShouldNotHappenException()
