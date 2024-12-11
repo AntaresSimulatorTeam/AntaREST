@@ -79,8 +79,8 @@ def test_compute(tmp_path: Path, launcher_config: Config):
         )
         solver_path.chmod(0o775)
 
-    study_id = uuid.uuid4()
-    local_launcher.job_id_to_study_id = {str(study_id): ("study-id", tmp_path / "run", Mock())}
+    study_id = str(uuid.uuid4())
+    local_launcher.job_id_to_study_id = {study_id: ("study-id", tmp_path / "run", Mock())}
     local_launcher.callbacks.import_output.return_value = "some output"
     launcher_parameters = LauncherParametersDTO(
         adequacy_patch=None,
@@ -98,15 +98,15 @@ def test_compute(tmp_path: Path, launcher_config: Config):
         antares_solver_path=solver_path,
         study_uuid="study-id",
         study_path=Path(tmp_path / "run"),
-        uuid=study_id,
+        job_id=study_id,
         launcher_parameters=launcher_parameters,
     )
 
     # noinspection PyUnresolvedReferences
     local_launcher.callbacks.update_status.assert_has_calls(
         [
-            call(str(study_id), JobStatus.RUNNING, None, None),
-            call(str(study_id), JobStatus.SUCCESS, None, "some output"),
+            call(study_id, JobStatus.RUNNING, None, None),
+            call(study_id, JobStatus.SUCCESS, None, "some output"),
         ]
     )
 

@@ -108,7 +108,7 @@ class LocalLauncher(AbstractLauncher):
 
         # create study logs
         logs_path = study_path / "logs"
-        logs_path.mkdir(exist_ok=True)
+        logs_path.mkdir(exist_ok=True, parents=True)
 
         def stop_reading_output() -> bool:
             if end and job_id in self.logs:
