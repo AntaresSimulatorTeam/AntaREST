@@ -66,6 +66,8 @@ class CommandBlock(Base):  # type: ignore
     version: int = Column(Integer)
     args: str = Column(String())
     study_version: str = Column(String(36))
+    user_id: int = Column(Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True)
+    updated_at: datetime.datetime = Column(DateTime, nullable=True)
 
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
@@ -76,6 +78,8 @@ class CommandBlock(Base):  # type: ignore
             args=from_json(self.args),
             version=version,
             study_version=self.study_version,
+            user_id=self.user_id,
+            updated_at=self.updated_at,
         )
 
     def __str__(self) -> str:
@@ -87,6 +91,8 @@ class CommandBlock(Base):  # type: ignore
             f" version={self.version!r},"
             f" args={self.args!r})"
             f" study_version={self.study_version!r}"
+            f" user_id={self.user_id!r}"
+            f" updated_at={self.updated_at!r}"
         )
 
 

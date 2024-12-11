@@ -192,8 +192,8 @@ class TestBindingConstraints:
         clusters_list = preparer.get_thermals(study_id, area1_id)
         assert len(clusters_list) == 1
         assert clusters_list[0]["id"] == cluster_id
-        assert clusters_list[0]["name"] == "Cluster 1"
-        assert clusters_list[0]["group"] == "Nuclear"
+        assert clusters_list[0]["name"] == "cluster 1"
+        assert clusters_list[0]["group"] == "nuclear"
 
         if study_type == "variant":
             study_id = preparer.create_variant(study_id, name="Variant 1")
@@ -635,7 +635,7 @@ class TestBindingConstraints:
         # Creation of bc with a group
         bc_id_w_group = "binding_constraint_2"
         args["operator"], operator_2 = "greater", "gt"
-        properties = preparer.create_binding_constraint(study_id, name=bc_id_w_group, group="specific_grp", **args)
+        properties = preparer.create_binding_constraint(study_id, name=bc_id_w_group, group="Specific_GRP", **args)
         assert properties["group"] == "specific_grp"
 
         # Creation of bc with a matrix
@@ -805,13 +805,13 @@ class TestBindingConstraints:
         # =============================
 
         # Add a group
-        grp_name = "random_grp"
+        grp_name = "RandOM_grp"
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
             json={"group": grp_name},
         )
         assert res.status_code == 200, res.json()
-        assert res.json()["group"] == grp_name
+        assert res.json()["group"] == grp_name.lower()
 
         # check that updating of a binding constraint that has an operator "equal"
         # with a greater matrix will raise an error 422
@@ -1131,15 +1131,15 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/constraint-groups")
         assert res.status_code in {200, 201}, res.json()
         groups = res.json()
-        assert set(groups) == {"default", "random_grp", "Group 1", "Group 2"}
-        assert groups["Group 2"] == [
+        assert set(groups) == {"default", "random_grp", "group 1", "group 2"}
+        assert groups["group 2"] == [
             {
                 "comments": "New API",
                 "terms": [],
                 "enabled": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "",
-                "group": "Group 2",
+                "group": "group 2",
                 "id": "second bc",
                 "name": "Second BC",
                 "operator": "less",
