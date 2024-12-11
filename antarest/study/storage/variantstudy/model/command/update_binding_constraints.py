@@ -14,14 +14,16 @@ import copy
 import typing as t
 
 from antares.study.version import StudyVersion
+from pydantic import model_validator
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, ConstraintVersionDoesNotMatchBindingVersion
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.binding_constraint_management import OPERATOR_MATRIX_FILE_MAP, ConstraintInput
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    DEFAULT_GROUP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
@@ -45,8 +47,11 @@ from antarest.study.storage.variantstudy.business.utils import AliasDecoder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
+    BindingConstraintProperties,
     TermMatrices,
     create_binding_constraint_config,
+    get_binding_constraint_config_cls,
+    remove_bc_from_scenario_builder,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import update_matrices_names
@@ -72,7 +77,7 @@ class UpdateBindingConstraints(AbstractBindingConstraintCommand):
     id: str
     # TODO input should be ConstraintProperties
     # TODO
-    bcs_by_ids: t.Mapping[str, ConstraintInput]
+    bcs_by_ids: t.Mapping[str, t.Type[BindingConstraintProperties]]
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         # index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
@@ -102,6 +107,17 @@ class UpdateBindingConstraints(AbstractBindingConstraintCommand):
         # study_data.bindings[index] = new_constraint
         return CommandOutput(status=True), {}
 
+    @model_validator(mode="before")
+    def check_card_number_omitted(self) -> t.Self:
+        """
+        Retrieves the binding constraint configuration class based on the study version.
+        """
+        bcs = self.bcs_by_ids.values()
+        required_bc_props_cls = get_binding_constraint_config_cls(self.study_version)
+        if any(not isinstance(bc, required_bc_props_cls) for bc in bcs):
+            raise ConstraintVersionDoesNotMatchBindingVersion()
+        return self
+
     def _find_binding_config(self, binding_constraints: t.Mapping[str, JSON]) -> t.Optional[t.Tuple[str, JSON]]:
         """
         Find the binding constraint with the given ID in the list of binding constraints,
@@ -118,22 +134,22 @@ class UpdateBindingConstraints(AbstractBindingConstraintCommand):
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         dict_config = {value["id"]: key for (key, value) in config.items()}
         # next_bc_props_by_id = {}
+        old_groups = set()
+        new_groups = set()
         for bc_id, bc_input in self.bcs_by_ids.items():
             if bc_id not in dict_config:
                 return CommandOutput(
                     status=False,
                     message=f"Binding contraint '{bc_id}' not found.",
                 )
-
             input_bc_props = create_binding_constraint_config(study_version, **bc_input.model_dump())
-            new_bc_props = input_bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
-            next_bc_props = config[dict_config[bc_id]]
-            prev_bc_props = copy.deepcopy(next_bc_props)
-            next_bc_props.update(new_bc_props)
+            input_bc_props_as_dict = input_bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
+            bc = config[dict_config[bc_id]]
+            bc_copy = copy.deepcopy(bc)
+            bc.update(input_bc_props_as_dict)
             # output = BindingConstraintManager.constraint_model_adapter(next_bc_props, study_version)
             # next_bc_props_by_id[bc_id] = next_bc_props
-
-            if bc_input.time_step and bc_input.time_step != BindingConstraintFrequency(prev_bc_props["type"]):
+            if bc_input.time_step and bc_input.time_step != BindingConstraintFrequency(bc_copy["type"]):
                 # The user changed the time step, we need to update the matrix accordingly
                 for [target, next_matrice] in self.generate_replacement_matrices():
                     try:
@@ -141,23 +157,28 @@ class UpdateBindingConstraints(AbstractBindingConstraintCommand):
                     except (KeyError, ChildNotFoundError):
                         return CommandOutput(
                             status=False,
-                            message=f"Path '{self.target}' does not exist.",
+                            message=f"Path '{target}' does not exist.",
                         )
                     except AssertionError:
                         return CommandOutput(
                             status=False,
-                            message=f"Path '{self.target}' does not target a matrix.",
+                            message=f"Path '{target}' does not target a matrix.",
                         )
                     except Exception:
                         return CommandOutput(
                             status=False,
                             message=f"Couldn't save matrix {target}.",
                         )
-
             if bc_input.operator and study_version >= STUDY_VERSION_8_7:
                 # The user changed the operator, we have to rename matrices accordingly
-                existing_operator = BindingConstraintOperator(prev_bc_props["operator"])
+                existing_operator = BindingConstraintOperator(bc_copy["operator"])
                 update_matrices_names(file_study, bc_id, existing_operator, bc_input.operator)
+            if self.study_version >= STUDY_VERSION_8_7:
+                old_groups.add(bc_copy.get("group", DEFAULT_GROUP).lower())
+                new_groups.add(input_bc_props.get("group", DEFAULT_GROUP).lower())
+
+        removed_groups = old_groups - new_groups
+        remove_bc_from_scenario_builder(file_study, removed_groups)
 
         # call appl_config on this constraint
         study_file_target = "input/bindingconstraints/bindingconstraints"
