@@ -23,7 +23,7 @@ import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getStudyData } from "@/services/api/study";
 import { downloadFile } from "@/utils/fileUtils";
 
-function Unsupported({ studyId, filePath, filename }: DataCompProps) {
+function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   const { t } = useTranslation();
 
   const res = usePromiseWithSnackbarError(
@@ -56,11 +56,13 @@ function Unsupported({ studyId, filePath, filename }: DataCompProps) {
     <Flex>
       <Menubar>
         <Filename>{filename}</Filename>
-        <UploadFileButton
-          studyId={studyId}
-          path={filePath}
-          onUploadSuccessful={handleUploadSuccessful}
-        />
+        {canEdit && (
+          <UploadFileButton
+            studyId={studyId}
+            path={filePath}
+            onUploadSuccessful={handleUploadSuccessful}
+          />
+        )}
         <DownloadButton onClick={handleDownload} />
       </Menubar>
       <EmptyView icon={BlockIcon} title={t("study.debug.file.unsupported")} />

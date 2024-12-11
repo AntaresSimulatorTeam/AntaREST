@@ -17,7 +17,12 @@ import Text from "./Text";
 import Unsupported from "./Unsupported";
 import Matrix from "./Matrix";
 import Folder from "./Folder";
-import { canEditFile, type FileInfo, type FileType } from "../utils";
+import {
+  canEditFile,
+  getEffectiveFileType,
+  type FileInfo,
+  type FileType,
+} from "../utils";
 import type { DataCompProps } from "../utils";
 import ViewWrapper from "../../../../../common/page/ViewWrapper";
 import type { StudyMetadata } from "../../../../../../common/types";
@@ -38,7 +43,8 @@ const componentByFileType: Record<FileType, ComponentType<DataCompProps>> = {
 } as const;
 
 function Data({ study, setSelectedFile, reloadTreeData, ...fileInfo }: Props) {
-  const DataViewer = componentByFileType[fileInfo.fileType];
+  const fileType = getEffectiveFileType(fileInfo.filePath, fileInfo.fileType);
+  const DataViewer = componentByFileType[fileType];
 
   return (
     <ViewWrapper>
