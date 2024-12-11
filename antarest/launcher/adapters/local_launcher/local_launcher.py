@@ -124,14 +124,17 @@ class LocalLauncher(AbstractLauncher):
 
             simulator_args, environment_variables = self.parse_launcher_options(launcher_parameters)
             new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
-            process = subprocess.Popen(
-                new_args,
-                env=environment_variables,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                encoding="utf-8",
-            )
+
+            std_out_file = study_path / "logs" / f"{job_id}-err.log"
+            with open(std_out_file, "w") as err_file:
+                process = subprocess.Popen(
+                    new_args,
+                    env=environment_variables,
+                    stdout=subprocess.PIPE,
+                    stderr=err_file,
+                    universal_newlines=True,
+                    encoding="utf-8",
+                )
             self.job_id_to_study_id[job_id] = (
                 study_uuid,
                 export_path,
