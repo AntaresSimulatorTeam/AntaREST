@@ -45,7 +45,7 @@ function Debug() {
   const res = usePromiseWithSnackbarError(
     async () => {
       const treeData = await getStudyData<TreeFolder>(study.id, "", -1);
-      return R.omit(["Desktop", "study", "logs"], treeData);
+      return R.omit(["Desktop", "study"], treeData);
     },
     {
       errorMessage: t("studies.error.retrieveData"),
