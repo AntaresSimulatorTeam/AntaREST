@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import datetime
 import io
 import typing as t
 from unittest.mock import ANY
@@ -172,6 +173,21 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     ]
     res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=commands)
     assert res.status_code == 200
+
+    # Check if the author's name and date of update are retrieved with commands created by a bot
+    commands_res = client.get(f"/v1/studies/{variant_id}/commands", headers=bot_headers)
+
+    for command in commands_res.json():
+        # FIXME: Some commands, such as those that modify study configurations, are run by admin user
+        # Thus the `user_name` for such type of command will be the admin's name
+        # Here we detect those commands by their `action` and their `target` values
+        if command["action"] == "update_playlist" or (
+            command["action"] == "update_config" and "settings/generaldata" in command["args"]["target"]
+        ):
+            assert command["user_name"] == "admin"
+        else:
+            assert command["user_name"] == "admin_bot"
+        assert command["updated_at"]
 
     # generate variant before running a simulation
     res = client.put(f"/v1/studies/{variant_id}/generate", headers=bot_headers)

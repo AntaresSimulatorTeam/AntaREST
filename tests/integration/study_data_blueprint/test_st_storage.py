@@ -669,6 +669,8 @@ class TestSTStorage:
                 "inflows": ANY,
             },
             "version": 1,
+            "updated_at": ANY,
+            "user_name": ANY,
         }
         assert actual == expected
 
@@ -693,6 +695,8 @@ class TestSTStorage:
                 "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
             },
             "version": 1,
+            "updated_at": ANY,
+            "user_name": ANY,
         }
         assert actual == expected
 
@@ -723,6 +727,8 @@ class TestSTStorage:
                 },
             ],
             "version": 1,
+            "updated_at": ANY,
+            "user_name": ANY,
         }
         assert actual == expected
 
