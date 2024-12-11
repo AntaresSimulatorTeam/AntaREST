@@ -209,7 +209,8 @@ class LocalLauncher(AbstractLauncher):
             if solver:
                 simulator_args += solver
             if "presolve" in launcher_parameters.other_options:
-                simulator_args.append('--solver-parameters="PRESOLVE 1"')
+                simulator_args.append("--solver-parameters")
+                simulator_args.append("PRESOLVE 1")
         return simulator_args, environment_variables
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:
