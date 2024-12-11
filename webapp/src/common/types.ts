@@ -306,6 +306,9 @@ export interface CommandDTO {
   id?: string;
   action: string;
   args: object;
+  version?: number;
+  user_name?: string;
+  updated_at?: string;
 }
 
 export type Components = Record<string, () => React.ReactNode>;
