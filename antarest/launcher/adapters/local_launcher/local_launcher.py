@@ -96,9 +96,6 @@ class LocalLauncher(AbstractLauncher):
         )
         job.start()
 
-    def _get_job_final_output_path(self, job_id: str) -> Path:
-        return self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
-
     def _compute(
         self,
         antares_solver_path: Path,
