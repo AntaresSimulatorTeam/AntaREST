@@ -109,12 +109,13 @@ class LocalLauncher(AbstractLauncher):
     ) -> None:
         end = False
 
+        # create study logs
+        logs_path = study_path / "logs"
+        logs_path.mkdir(exist_ok=True)
+
         def stop_reading_output() -> bool:
             if end and job_id in self.logs:
-                with open(
-                    self._get_job_final_output_path(job_id),
-                    "w",
-                ) as log_file:
+                with open(logs_path / f"{job_id}-out.txt", "w") as log_file:
                     log_file.write(self.logs[job_id])
                 del self.logs[job_id]
             return end
@@ -222,11 +223,12 @@ class LocalLauncher(AbstractLauncher):
 
         return append_to_log
 
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> Optional[str]:
         if job_id in self.job_id_to_study_id and job_id in self.logs:
             return self.logs[job_id]
-        elif self._get_job_final_output_path(job_id).exists():
-            return self._get_job_final_output_path(job_id).read_text()
+        job_path = study_path / "logs" / f"{job_id}-{log_type.to_suffix()}.txt"
+        if job_path.exists():
+            return job_path.read_text()
         return None
 
     def kill_job(self, job_id: str) -> None:

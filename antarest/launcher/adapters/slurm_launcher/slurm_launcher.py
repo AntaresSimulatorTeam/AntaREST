@@ -603,7 +603,7 @@ class SlurmLauncher(AbstractLauncher):
         )
         thread.start()
 
-    def get_log(self, job_id: str, log_type: LogType) -> t.Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> t.Optional[str]:
         log_path: t.Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:

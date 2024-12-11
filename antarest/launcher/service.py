@@ -404,7 +404,8 @@ class LauncherService:
                 if job_result.launcher is None:
                     raise ValueError(f"Job {job_id} has no launcher")
                 self._assert_launcher_is_initialized(job_result.launcher)
-                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type) or "")
+                study_path = self.study_service.get_study_path(job_result.study_id, params)
+                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type, study_path) or "")
             if log_type == LogType.STDOUT:
                 app_logs: Dict[JobLogType, List[str]] = functools.reduce(
                     lambda logs, log: LauncherService.sort_log(log, logs),

@@ -79,7 +79,7 @@ class AbstractLauncher(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> Optional[str]:
         raise NotImplementedError()
 
     @abstractmethod
