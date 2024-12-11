@@ -26,7 +26,7 @@ import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintex
 import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import type { DataCompProps } from "../utils";
+import { isEmptyContent, parseContent, type DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
 import { Filename, Flex, Menubar } from "./styles";
@@ -43,16 +43,6 @@ SyntaxHighlighter.registerLanguage("properties", properties);
 const logsRegex = /^(\[[^\]]*\]){3}/;
 // Ex: "EXP : 0"
 const propertiesRegex = /^[^:]+ : [^:]+/;
-
-function isEmptyContent(text: string | string[]): boolean {
-  if (Array.isArray(text)) {
-    return (
-      !text || text.every((line) => typeof line === "string" && !line.trim())
-    );
-  }
-
-  return typeof text !== "string" || !text.trim();
-}
 
 function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   const isArray = Array.isArray(data);
@@ -75,15 +65,24 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
+function Text({
+  studyId,
+  filePath,
+  filename,
+  fileType,
+  canEdit,
+}: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
   const res = usePromiseWithSnackbarError(
-    () => getStudyData<string>(studyId, filePath),
+    () =>
+      getStudyData<string>(studyId, filePath).then((text) =>
+        parseContent(text, { filePath, fileType }),
+      ),
     {
       errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
+      deps: [studyId, filePath, fileType],
     },
   );
 
@@ -123,15 +122,19 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
                 onUploadSuccessful={handleUploadSuccessful}
               />
             )}
-            <DownloadButton
-              onClick={handleDownload}
-              disabled={isEmptyContent(text)}
-            />
+            <DownloadButton onClick={handleDownload} />
           </Menubar>
-          {isEmptyContent(text) ? (
+          {isEmptyContent(text) ? ( // TODO remove when files become editable
             <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
           ) : (
-            <Box sx={{ overflow: "auto" }}>
+            <Box
+              sx={{
+                overflow: "auto",
+                height: 1,
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
               <SyntaxHighlighter
                 style={atomOneDark}
                 lineNumberStyle={{
@@ -143,6 +146,7 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
                   padding: theme.spacing(2),
                   borderRadius: theme.shape.borderRadius,
                   fontSize: theme.typography.body2.fontSize,
+                  flex: 1,
                 }}
                 {...getSyntaxProps(text)}
               />
