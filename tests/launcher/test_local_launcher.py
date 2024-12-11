@@ -135,7 +135,8 @@ def test_parse_launcher_arguments(launcher_config: Config):
         "--force-parallel=8",
         "--use-ortools",
         "--ortools-solver=xpress",
-        '--solver-parameters="PRESOLVE 1"',
+        "--solver-parameters",
+        "PRESOLVE 1",
     ]
 
     os.environ["XPRESS_DIR"] = "fake_path_for_test"
