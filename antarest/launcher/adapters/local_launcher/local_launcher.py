@@ -89,6 +89,7 @@ class LocalLauncher(AbstractLauncher):
                 self,
                 antares_solver_path,
                 study_uuid,
+                study_path,
                 job_id,
                 launcher_parameters,
             ),
@@ -103,6 +104,7 @@ class LocalLauncher(AbstractLauncher):
         self,
         antares_solver_path: Path,
         study_uuid: str,
+        study_path: Path,
         uuid: UUID,
         launcher_parameters: LauncherParametersDTO,
     ) -> None:

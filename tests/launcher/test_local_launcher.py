@@ -97,6 +97,7 @@ def test_compute(tmp_path: Path, launcher_config: Config):
     local_launcher._compute(
         antares_solver_path=solver_path,
         study_uuid="study-id",
+        study_path=Path(tmp_path / "run"),
         uuid=study_id,
         launcher_parameters=launcher_parameters,
     )
