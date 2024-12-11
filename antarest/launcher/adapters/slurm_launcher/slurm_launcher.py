@@ -33,7 +33,6 @@ from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitCo
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -595,7 +594,7 @@ class SlurmLauncher(AbstractLauncher):
         job_id: str,
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
+        study_path: Path,
     ) -> None:
         thread = threading.Thread(
             target=self._run_study,

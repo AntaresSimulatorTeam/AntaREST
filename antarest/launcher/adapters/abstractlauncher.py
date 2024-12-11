@@ -21,7 +21,6 @@ from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
@@ -75,7 +74,7 @@ class AbstractLauncher(ABC):
         job_id: str,
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
+        study_path: Path,
     ) -> None:
         raise NotImplementedError()
 
