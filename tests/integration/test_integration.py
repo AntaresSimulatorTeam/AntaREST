@@ -207,7 +207,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert len(res.json()) == 3
-    assert filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()["folder"] == "foo/bar"
+    moved_study = filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()
+    assert moved_study["folder"] == f"foo/bar/{moved_study['id']}"
 
     # Study delete
     client.delete(
