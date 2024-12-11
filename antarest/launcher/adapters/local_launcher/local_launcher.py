@@ -107,7 +107,7 @@ class LocalLauncher(AbstractLauncher):
         end = False
 
         # create study logs
-        logs_path = study_path / "logs"
+        logs_path = study_path / "output" / "logs"
         logs_path.mkdir(exist_ok=True, parents=True)
 
         def stop_reading_output() -> bool:
@@ -125,7 +125,7 @@ class LocalLauncher(AbstractLauncher):
             simulator_args, environment_variables = self.parse_launcher_options(launcher_parameters)
             new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
 
-            std_out_file = study_path / "logs" / f"{job_id}-err.log"
+            std_out_file = study_path / "output" / "logs" / f"{job_id}-err.log"
             with open(std_out_file, "w") as err_file:
                 process = subprocess.Popen(
                     new_args,
@@ -228,7 +228,7 @@ class LocalLauncher(AbstractLauncher):
     def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> Optional[str]:
         if job_id in self.job_id_to_study_id and job_id in self.logs:
             return self.logs[job_id]
-        job_path = study_path / "logs" / f"{job_id}-{log_type.to_suffix()}"
+        job_path = study_path / "output" / "logs" / f"{job_id}-{log_type.to_suffix()}"
         if job_path.exists():
             return job_path.read_text()
         return None
