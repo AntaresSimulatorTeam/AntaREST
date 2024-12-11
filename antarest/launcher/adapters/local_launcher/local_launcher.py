@@ -28,7 +28,6 @@ from antares.study.version import SolverVersion
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import follow
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
@@ -80,7 +79,7 @@ class LocalLauncher(AbstractLauncher):
         job_id: str,
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
+        study_path: Path,
     ) -> None:
         antares_solver_path = self._select_best_binary(f"{version:ddd}")
 
@@ -209,8 +208,7 @@ class LocalLauncher(AbstractLauncher):
             if solver:
                 simulator_args += solver
             if "presolve" in launcher_parameters.other_options:
-                simulator_args.append("--solver-parameters")
-                simulator_args.append("PRESOLVE 1")
+                simulator_args += ["--solver-parameters", "PRESOLVE 1"]
         return simulator_args, environment_variables
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:
