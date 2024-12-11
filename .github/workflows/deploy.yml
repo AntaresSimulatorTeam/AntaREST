@@ -4,7 +4,6 @@ on:
     branches:
       - "master"
       - "hotfix/**"
-      - "feat/allow-xpress-and-presolve-in-local"
 
 jobs:
   binary:
