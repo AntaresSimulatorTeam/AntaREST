@@ -165,13 +165,15 @@ class LocalLauncher(AbstractLauncher):
                 subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
 
             output_id: Optional[str] = None
-            try:
-                output_id = self.callbacks.import_output(job_id, export_path / "output", {})
-            except Exception as e:
-                logger.error(
-                    f"Failed to import output for study {study_uuid} located at {export_path}",
-                    exc_info=e,
-                )
+            if process.returncode == 0:
+                # The job succeed we need to import the output
+                try:
+                    output_id = self.callbacks.import_output(job_id, export_path / "output", {})
+                except Exception as e:
+                    logger.error(
+                        f"Failed to import output for study {study_uuid} located at {export_path}",
+                        exc_info=e,
+                    )
             del self.job_id_to_study_id[job_id]
             self.callbacks.update_status(
                 job_id,
