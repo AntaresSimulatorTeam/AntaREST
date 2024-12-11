@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { insertFoldersIfNotExist, insertWorkspacesIfNotExist } from "./utils";
-import { NonStudyFolderDTO, StudyTreeNode } from "../utils";
+import { insertFoldersIfNotExist, insertWorkspacesIfNotExist } from "../utils";
+import { NonStudyFolderDTO, StudyTreeNode } from "../../utils";
 import { FIXTURES } from "./fixtures";
 
 describe("StudyTree Utils", () => {
