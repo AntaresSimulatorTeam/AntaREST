@@ -21,7 +21,6 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
-from uuid import UUID
 
 from antares.study.version import SolverVersion
 
@@ -105,25 +104,25 @@ class LocalLauncher(AbstractLauncher):
         antares_solver_path: Path,
         study_uuid: str,
         study_path: Path,
-        uuid: UUID,
+        job_id: str,
         launcher_parameters: LauncherParametersDTO,
     ) -> None:
         end = False
 
         def stop_reading_output() -> bool:
-            if end and str(uuid) in self.logs:
+            if end and job_id in self.logs:
                 with open(
-                    self._get_job_final_output_path(str(uuid)),
+                    self._get_job_final_output_path(job_id),
                     "w",
                 ) as log_file:
-                    log_file.write(self.logs[str(uuid)])
-                del self.logs[str(uuid)]
+                    log_file.write(self.logs[job_id])
+                del self.logs[job_id]
             return end
 
         tmp_path = tempfile.mkdtemp(prefix="local_launch_", dir=str(self.tmpdir))
         export_path = Path(tmp_path) / "export"
         try:
-            self.callbacks.export_study(str(uuid), study_uuid, export_path, launcher_parameters)
+            self.callbacks.export_study(job_id, study_uuid, export_path, launcher_parameters)
 
             simulator_args, environment_variables = self.parse_launcher_options(launcher_parameters)
             new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
@@ -135,13 +134,13 @@ class LocalLauncher(AbstractLauncher):
                 universal_newlines=True,
                 encoding="utf-8",
             )
-            self.job_id_to_study_id[str(uuid)] = (
+            self.job_id_to_study_id[job_id] = (
                 study_uuid,
                 export_path,
                 process,
             )
             self.callbacks.update_status(
-                str(uuid),
+                job_id,
                 JobStatus.RUNNING,
                 None,
                 None,
@@ -150,7 +149,7 @@ class LocalLauncher(AbstractLauncher):
             thread = threading.Thread(
                 target=lambda: follow(
                     cast(io.StringIO, process.stdout),
-                    self.create_update_log(str(uuid)),
+                    self.create_update_log(job_id),
                     stop_reading_output,
                     None,
                 ),
@@ -169,29 +168,29 @@ class LocalLauncher(AbstractLauncher):
 
             output_id: Optional[str] = None
             try:
-                output_id = self.callbacks.import_output(str(uuid), export_path / "output", {})
+                output_id = self.callbacks.import_output(job_id, export_path / "output", {})
             except Exception as e:
                 logger.error(
                     f"Failed to import output for study {study_uuid} located at {export_path}",
                     exc_info=e,
                 )
-            del self.job_id_to_study_id[str(uuid)]
+            del self.job_id_to_study_id[job_id]
             self.callbacks.update_status(
-                str(uuid),
+                job_id,
                 JobStatus.FAILED if process.returncode != 0 or not output_id else JobStatus.SUCCESS,
                 None,
                 output_id,
             )
         except Exception as e:
-            logger.error(f"Unexpected error happened during launch {uuid}", exc_info=e)
+            logger.error(f"Unexpected error happened during launch {job_id}", exc_info=e)
             self.callbacks.update_status(
-                str(uuid),
+                job_id,
                 JobStatus.FAILED,
                 str(e),
                 None,
             )
         finally:
-            logger.info(f"Removing launch {uuid} export path at {tmp_path}")
+            logger.info(f"Removing launch {job_id} export path at {tmp_path}")
             end = True
             shutil.rmtree(tmp_path)
 
