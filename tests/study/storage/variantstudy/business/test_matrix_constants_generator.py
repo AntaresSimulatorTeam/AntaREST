@@ -12,6 +12,7 @@
 
 import numpy as np
 
+from antarest.core.config import InternalMatrixFormat
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
@@ -20,12 +21,12 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
     GeneratorMatrixConstants,
 )
 
+DEFAULT_INTERNAL_FORMAT = InternalMatrixFormat.TSV
+
 
 class TestGeneratorMatrixConstants:
     def test_get_st_storage(self, tmp_path):
-        matrix_content_repository = MatrixContentRepository(
-            bucket_dir=tmp_path,
-        )
+        matrix_content_repository = MatrixContentRepository(bucket_dir=tmp_path, format=DEFAULT_INTERNAL_FORMAT)
         generator = GeneratorMatrixConstants(
             matrix_service=SimpleMatrixService(
                 matrix_content_repository=matrix_content_repository,
@@ -59,9 +60,7 @@ class TestGeneratorMatrixConstants:
         assert np.array(matrix_dto5.data).all() == matrix_constants.st_storage.series.inflows.all()
 
     def test_get_binding_constraint_before_v87(self, tmp_path):
-        matrix_content_repository = MatrixContentRepository(
-            bucket_dir=tmp_path,
-        )
+        matrix_content_repository = MatrixContentRepository(bucket_dir=tmp_path, format=DEFAULT_INTERNAL_FORMAT)
         generator = GeneratorMatrixConstants(
             matrix_service=SimpleMatrixService(
                 matrix_content_repository=matrix_content_repository,
