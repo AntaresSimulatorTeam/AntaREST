@@ -226,7 +226,7 @@ class LocalLauncher(AbstractLauncher):
         return append_to_log
 
     def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> Optional[str]:
-        if job_id in self.job_id_to_study_id and job_id in self.logs:
+        if job_id in self.job_id_to_study_id and job_id in self.logs and log_type == LogType.STDOUT:
             return self.logs[job_id]
         job_path = study_path / "output" / "logs" / f"{job_id}-{log_type.to_suffix()}"
         if job_path.exists():
