@@ -33,7 +33,6 @@ from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitCo
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -595,7 +594,7 @@ class SlurmLauncher(AbstractLauncher):
         job_id: str,
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
+        study_path: Path,
     ) -> None:
         thread = threading.Thread(
             target=self._run_study,
@@ -604,7 +603,7 @@ class SlurmLauncher(AbstractLauncher):
         )
         thread.start()
 
-    def get_log(self, job_id: str, log_type: LogType) -> t.Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> t.Optional[str]:
         log_path: t.Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:

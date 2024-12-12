@@ -231,6 +231,7 @@ class LauncherService:
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid, params=params)
         solver_version = SolverVersion.parse(study_version or study_info.version)
+        study_path = self.study_service.get_study_path(uuid=study_uuid, params=params)
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
@@ -251,13 +252,7 @@ class LauncherService:
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(
-            study_uuid,
-            job_uuid,
-            solver_version,
-            launcher_parameters,
-            params,
-        )
+        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters, study_path)
 
         self.event_bus.push(
             Event(
@@ -409,7 +404,8 @@ class LauncherService:
                 if job_result.launcher is None:
                     raise ValueError(f"Job {job_id} has no launcher")
                 self._assert_launcher_is_initialized(job_result.launcher)
-                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type) or "")
+                study_path = self.study_service.get_study_path(job_result.study_id, params)
+                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type, study_path) or "")
             if log_type == LogType.STDOUT:
                 app_logs: Dict[JobLogType, List[str]] = functools.reduce(
                     lambda logs, log: LauncherService.sort_log(log, logs),
