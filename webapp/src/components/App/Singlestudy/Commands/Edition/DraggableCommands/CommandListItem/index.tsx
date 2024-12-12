@@ -43,6 +43,7 @@ import {
   StyledDeleteIcon,
 } from "./style";
 import CommandMatrixViewer from "./CommandMatrixViewer";
+import CommandDetails from "./CommandDetails";
 
 export const Item = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
@@ -51,9 +52,6 @@ export const Item = styled(Box)(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "flex-start",
   width: "100%",
-  height: "auto",
-  userSelect: "none",
-  maxWidth: "800px",
 }));
 
 interface StyleType {
@@ -189,9 +187,8 @@ function CommandListItem({
             onClick={() => onExpanded(index, !(expandedIndex === index))}
           >
             <Info>
-              <Typography style={{ fontSize: "0.9em", color: "text.primary" }}>
-                {item.action}
-              </Typography>
+              <Typography sx={{ px: 0.5, mb: 0.5 }}>{item.action}</Typography>
+              <CommandDetails item={item} />
             </Info>
           </AccordionSummary>
           <AccordionDetails sx={{ ...detailsStyle }}>

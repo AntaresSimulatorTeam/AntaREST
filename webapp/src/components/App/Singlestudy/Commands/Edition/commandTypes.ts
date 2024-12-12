@@ -14,12 +14,32 @@
 
 import { CommandResultDTO } from "../../../../../common/types";
 
+interface AntaresConfig {
+  version: string;
+  caption: string;
+  created: number;
+  lastsave: number;
+  author: string;
+}
+
+interface CommandArgsData {
+  antares: AntaresConfig;
+}
+
+export interface CommandArgsDTO {
+  data: CommandArgsData;
+  target: string;
+}
+
 export interface CommandItem {
   id?: string;
   action: string;
   updated: boolean;
-  args: object;
+  args: CommandArgsDTO | object;
   results?: CommandResultDTO;
+  version?: number;
+  user?: string;
+  updatedAt?: string;
 }
 
 export interface JsonCommandItem {

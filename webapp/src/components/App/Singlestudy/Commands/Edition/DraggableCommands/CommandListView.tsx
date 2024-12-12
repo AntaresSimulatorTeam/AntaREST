@@ -129,9 +129,9 @@ function CommandListView({
       >
         {(provided) => (
           <FixedSizeList
-            height={500}
+            height={1000}
             itemCount={items.length}
-            itemSize={68}
+            itemSize={80}
             width={300}
             outerRef={provided.innerRef}
             ref={listRef}
@@ -149,7 +149,7 @@ function CommandListView({
             }}
             style={{
               width: "100%",
-              height: "90%",
+              height: "100%",
             }}
           >
             {Row}
