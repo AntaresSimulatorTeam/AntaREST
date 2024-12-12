@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -26,6 +27,7 @@ from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, LinkStyle, TransmissionCapacity
+from antarest.study.dao.dao_factory import DAOFactory
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
@@ -96,7 +98,8 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         storage_service=storage_service,
         repository=StudyMetadataRepository(Mock()),
     )
-    link_manager = LinkManager(storage_service=storage_service)
+    dao_factory = DAOFactory(storage_service, ICache())
+    link_manager = LinkManager(dao_factory)
 
     # Check `AreaManager` behaviour with a RAW study
     study_id = str(uuid.uuid4())
@@ -325,11 +328,11 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
 
 def test_get_all_area():
     raw_study_service = Mock(spec=RawStudyService)
+    study_storage_service = StudyStorageService(raw_study_service, Mock())
     area_manager = AreaManager(
-        storage_service=StudyStorageService(raw_study_service, Mock()),
+        storage_service=study_storage_service,
         repository=Mock(spec=StudyMetadataRepository),
     )
-    link_manager = LinkManager(storage_service=StudyStorageService(raw_study_service, Mock()))
 
     study = RawStudy(version="900")
     config = FileStudyTreeConfig(
@@ -535,6 +538,8 @@ def test_get_all_area():
             }
         },
     ]
+    dao_factory = DAOFactory(study_storage_service, ICache())
+    link_manager = LinkManager(dao_factory)
     links = link_manager.get_all_links(study)
     assert [
         {

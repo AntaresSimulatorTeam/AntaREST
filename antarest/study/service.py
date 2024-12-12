@@ -105,6 +105,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
+from antarest.study.dao.dao_factory import DAOFactory
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -381,6 +382,7 @@ class StudyService:
         config: Config,
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
+        self.dao_factory = DAOFactory(self.storage_service, cache_service)
         self.user_service = user_service
         self.repository = repository
         self.event_bus = event_bus
@@ -388,7 +390,7 @@ class StudyService:
         self.task_service = task_service
         self.areas = AreaManager(self.storage_service, self.repository)
         self.district_manager = DistrictManager(self.storage_service)
-        self.links_manager = LinkManager(self.storage_service)
+        self.links_manager = LinkManager(self.dao_factory)
         self.config_manager = ConfigManager(self.storage_service)
         self.general_manager = GeneralManager(self.storage_service)
         self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
@@ -2068,7 +2070,7 @@ class StudyService:
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
-            raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
+            raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="link")
         self.links_manager.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
