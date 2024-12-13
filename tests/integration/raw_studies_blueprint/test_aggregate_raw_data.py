@@ -804,3 +804,37 @@ class TestRawDataAggregationMCAll:
         )
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
+
+
+@pytest.mark.integration_test
+class TestRawDataAggregationColumnsFormatting:
+    def test_columns_formatting(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+    ):
+        """
+        Check returned columns names are post-processed
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Prepare output
+        output_id = "20201014-1422eco-hello"
+        output_path = (
+            tmp_path / "ext_workspace" / "STA-mini" / "output" / output_id / "economy" / "mc-all" / "areas" / "de"
+        )
+        matrix_path = ASSETS_DIR / "aggregate_areas_raw_data" / "details-STstorage-annual.txt"
+        shutil.copy(matrix_path, output_path)
+
+        # asserts STS column names are post-processed by the back-end
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}",
+            params={
+                "query_file": "details-STstorage",
+                "frequency": "annual",
+            },
+        )
+        assert res.status_code == 200
+        content = io.BytesIO(res.content)
+        actual_df = pd.read_csv(content, sep=",")
+        expected_df_path = ASSETS_DIR / "aggregate_areas_raw_data" / "expected_result_sts.csv"
+        expected_df = pd.read_csv(expected_df_path, sep=",")
+        assert actual_df.equals(expected_df)
