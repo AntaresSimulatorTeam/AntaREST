@@ -19,6 +19,7 @@ import Form from "../../../../../../common/Form";
 import LinkForm from "./LinkForm";
 import { getDefaultValues } from "./utils";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
+import { Skeleton } from "@mui/material";
 
 interface Props {
   link: LinkElement;
@@ -44,6 +45,7 @@ function LinkView(props: Props) {
           <LinkForm link={link} study={study} />
         </Form>
       )}
+      ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
     />
   );
 }

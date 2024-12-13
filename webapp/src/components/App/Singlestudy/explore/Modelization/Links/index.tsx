@@ -12,34 +12,54 @@
  * This file is part of the Antares project.
  */
 
+import { Skeleton } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import EmptyView from "../../../../../common/page/SimpleContent";
 import LinkPropsView from "./LinkPropsView";
-import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { getCurrentLink } from "../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
 import LinkView from "./LinkView";
+import usePromise from "../../../../../../hooks/usePromise";
+import { getLinks } from "@/services/api/studies/links";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import SplitView from "../../../../../common/SplitView";
-import ViewWrapper from "../../../../../common/page/ViewWrapper";
+import { useEffect } from "react";
+import { makeLinkId } from "@/redux/utils";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import { useTranslation } from "react-i18next";
 
 function Links() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const res = useStudySynthesis({
-    studyId: study.id,
-    selector: getCurrentLink,
-  });
-
+  const [t] = useTranslation();
   const dispatch = useAppDispatch();
+  const currentLink = useAppSelector((state) =>
+    getCurrentLink(state, study.id),
+  );
+
+  const linksRes = usePromise(
+    () => getLinks({ studyId: study.id }),
+    [study.id],
+  );
+
+  useEffect(() => {
+    const { data } = linksRes;
+    if (!data || data.length === 0 || currentLink) {
+      return;
+    }
+
+    const firstLinkId = makeLinkId(data[0].area1, data[0].area2);
+    dispatch(setCurrentLink(firstLinkId));
+  }, [linksRes, currentLink, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleLinkClick = (linkName: string): void => {
-    dispatch(setCurrentLink(linkName));
+  const handleLinkClick = (linkId: string) => {
+    dispatch(setCurrentLink(linkId));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -53,12 +73,13 @@ function Links() {
       {/* Right */}
       <ViewWrapper>
         <UsePromiseCond
-          response={res}
-          ifFulfilled={(currentLink) =>
-            currentLink ? (
+          response={linksRes}
+          ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+          ifFulfilled={(data) =>
+            data.length > 0 && currentLink ? (
               <LinkView link={currentLink} />
             ) : (
-              <EmptyView title="No Links" />
+              <EmptyView title={t("study.modelization.links.empty")} />
             )
           }
         />

@@ -295,6 +295,7 @@
   "study.outputFilters": "Affichage des sorties",
   "study.outputFilters.filterByYear": "Sorties année par année",
   "study.outputFilters.filterSynthesis": "Sorties de la synthèse",
+  "study.modelization.links.empty": "Aucun lien disponible",
   "study.modelization.links.hurdleCost": "Hurdle costs",
   "study.modelization.links.loopFlows": "Loop flows",
   "study.modelization.links.pst": "PST",

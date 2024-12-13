@@ -12,10 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import EmptyView from "../../../../../common/page/SimpleContent";
 import BindingConstPropsView from "./BindingConstPropsView";
 import {
@@ -42,14 +41,13 @@ function BindingConstraints() {
     getBindingConst(state, study.id),
   );
 
-  // TODO find better name
-  const constraints = usePromise(
+  const constraintsRes = usePromise(
     () => getBindingConstraintList(study.id),
     [study.id, bindingConstraints],
   );
 
   useEffect(() => {
-    const { data } = constraints;
+    const { data } = constraintsRes;
 
     if (!data || data.length === 0 || currentConstraintId) {
       return;
@@ -57,7 +55,7 @@ function BindingConstraints() {
 
     const firstConstraintId = data[0].id;
     dispatch(setCurrentBindingConst(firstConstraintId));
-  }, [constraints, currentConstraintId, dispatch]);
+  }, [constraintsRes, currentConstraintId, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -73,8 +71,8 @@ function BindingConstraints() {
 
   return (
     <UsePromiseCond
-      response={constraints}
-      ifPending={() => <SimpleLoader />}
+      response={constraintsRes}
+      ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
       ifFulfilled={(data) => (
         <SplitView id="binding-constraints" sizes={[10, 90]}>
           {/* Left */}
@@ -82,7 +80,7 @@ function BindingConstraints() {
             list={data}
             onClick={handleConstraintChange}
             currentConstraint={currentConstraintId}
-            reloadConstraintsList={constraints.reload}
+            reloadConstraintsList={constraintsRes.reload}
           />
           {/* Right */}
           <Box>

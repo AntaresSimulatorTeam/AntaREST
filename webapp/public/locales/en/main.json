@@ -295,6 +295,7 @@
   "study.outputFilters": "Output print status",
   "study.outputFilters.filterByYear": "Output year by year",
   "study.outputFilters.filterSynthesis": "Synthesis outputs",
+  "study.modelization.links.empty": "No links available",
   "study.modelization.links.hurdleCost": "Hurdle costs",
   "study.modelization.links.loopFlows": "Loop flows",
   "study.modelization.links.pst": "PST",
