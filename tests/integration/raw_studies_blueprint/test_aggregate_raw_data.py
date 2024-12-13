@@ -531,37 +531,27 @@ class TestRawDataAggregationMCInd:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_aggregation_with_incoherent_bodies(
-        self, client: TestClient, user_access_token: str, internal_study_id: str
+    def test_aggregation_errors(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
     ):
-        """
-        Asserts that requests with incoherent bodies don't crash but send empty dataframes
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Asserts that requests with incoherent bodies don't crash but send empty dataframes
         for params in INCOHERENT_REQUESTS_BODIES__IND:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             assert res.content.strip() == b""
 
-    def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        """
-        Asserts that wrongly typed requests send an HTTP 422 Exception
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__IND:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
 
-    def test_aggregation_with_wrong_output(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        """
-        Asserts that requests with wrong output send an HTTP 422 Exception
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # test for areas
+        # Asserts that requests with wrong output send an HTTP 422 Exception
+        # for areas
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/unknown_id",
             params={
@@ -573,7 +563,7 @@ class TestRawDataAggregationMCInd:
         assert res.json()["exception"] == "OutputNotFound"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
-        # test for links
+        # for links
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/unknown_id",
             params={
@@ -584,6 +574,19 @@ class TestRawDataAggregationMCInd:
         assert res.status_code == 404, res.json()
         assert res.json()["exception"] == "OutputNotFound"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+
+        # Asserts that requests with non-existing folders send an HTTP 404 Exception
+        # the mc-ind folder
+        mc_ind_folder = tmp_path.joinpath("ext_workspace/STA-mini/output/20201014-1425eco-goodbye/economy/mc-ind")
+        # delete the folder
+        shutil.rmtree(mc_ind_folder)
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
+            params={"query_file": "values", "frequency": "hourly"},
+        )
+        assert res.status_code == 404, res.json()
+        assert "economy/mc-ind" in res.json()["description"]
+        assert res.json()["exception"] == "OutputSubFolderNotFound"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -614,26 +617,6 @@ class TestRawDataAggregationMCInd:
         )
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
-
-    def test_non_existing_folder(
-        self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
-    ):
-        """
-        Asserts that requests with non-existing folders send an HTTP 404 Exception
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # the mc-ind folder
-        mc_ind_folder = tmp_path.joinpath("ext_workspace/STA-mini/output/20201014-1425eco-goodbye/economy/mc-ind")
-        # delete the folder
-        shutil.rmtree(mc_ind_folder)
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
-            params={"query_file": "values", "frequency": "hourly"},
-        )
-        assert res.status_code == 404, res.json()
-        assert "economy/mc-ind" in res.json()["description"]
-        assert res.json()["exception"] == "OutputSubFolderNotFound"
 
 
 @pytest.mark.integration_test
@@ -735,37 +718,27 @@ class TestRawDataAggregationMCAll:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_aggregation_with_incoherent_bodies(
-        self, client: TestClient, user_access_token: str, internal_study_id: str
+    def test_aggregation_errors(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
     ):
-        """
-        Asserts that requests with incoherent bodies don't crash but send empty dataframes
-        """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Asserts that requests with incoherent bodies don't crash but send empty dataframes
         for params in INCOHERENT_REQUESTS_BODIES__ALL:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             assert res.content.strip() == b""
 
-    def test_wrongly_typed_request(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        """
-        Asserts that wrongly typed requests send an HTTP 422 Exception
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__ALL:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
 
-    def test_aggregation_with_wrong_output(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        """
-        Asserts that requests with wrong output send an HTTP 422 Exception
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # test for areas
+        # Asserts that requests with wrong output send an HTTP 422 Exception
+        # for areas
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/unknown_id",
             params={
@@ -777,7 +750,7 @@ class TestRawDataAggregationMCAll:
         assert res.json()["exception"] == "OutputNotFound"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
-        # test for links
+        # for links
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/unknown_id",
             params={
@@ -788,6 +761,18 @@ class TestRawDataAggregationMCAll:
         assert res.status_code == 404, res.json()
         assert res.json()["exception"] == "OutputNotFound"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+
+        # Asserts that an error 404 is raised when the `economy/mc-all` folder does not exist
+        mc_all_path = tmp_path.joinpath("ext_workspace/STA-mini/output/20241807-1540eco-extra-outputs/economy/mc-all")
+        # delete the folder
+        shutil.rmtree(mc_all_path)
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
+            params={"query_file": "values", "frequency": "daily"},
+        )
+        assert res.status_code == 404, res.json()
+        assert "economy/mc-all" in res.json()["description"]
+        assert res.json()["exception"] == "OutputSubFolderNotFound"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -819,21 +804,3 @@ class TestRawDataAggregationMCAll:
         )
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
-
-    def test_non_existing_folder(
-        self, tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str
-    ):
-        """
-        Test that an error 404 is raised when the `economy/mc-all` folder does not exist
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        mc_all_path = tmp_path.joinpath("ext_workspace/STA-mini/output/20241807-1540eco-extra-outputs/economy/mc-all")
-        # delete the folder
-        shutil.rmtree(mc_all_path)
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
-            params={"query_file": "values", "frequency": "daily"},
-        )
-        assert res.status_code == 404, res.json()
-        assert "economy/mc-all" in res.json()["description"]
-        assert res.json()["exception"] == "OutputSubFolderNotFound"
