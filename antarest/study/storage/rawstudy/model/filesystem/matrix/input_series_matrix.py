@@ -53,12 +53,6 @@ class InputSeriesMatrix(MatrixNode):
             self.default_empty = np.copy(default_empty)
             self.default_empty.flags.writeable = True
 
-    def parse_from_link(self, link: str) -> pd.DataFrame:
-        matrix_json = self.context.resolver.resolve(link)
-        matrix_json = t.cast(JSON, matrix_json)
-        matrix: pd.DataFrame = pd.DataFrame(**matrix_json)
-        return matrix
-
     def parse(
         self,
         file_path: t.Optional[Path] = None,
@@ -72,7 +66,9 @@ class InputSeriesMatrix(MatrixNode):
             link_path = self.get_link_path()
             if link_path.exists():
                 link = link_path.read_text()
-                matrix: pd.DataFrame = self.parse_from_link(link)
+                matrix_json = self.context.resolver.resolve(link)
+                matrix_json = t.cast(JSON, matrix_json)
+                matrix: pd.DataFrame = pd.DataFrame(**matrix_json)
             else:
                 try:
                     matrix = pd.read_csv(
@@ -157,7 +153,7 @@ class InputSeriesMatrix(MatrixNode):
                 filename,
             )
         elif self.get_link_path().is_file():
-            target_path = self.config.path.with_suffix(".tsv")
+            target_path = self.config.path.with_suffix(".txt")
             buffer = io.StringIO()
             self.parse(return_dataframe=True).to_csv(  # type: ignore
                 buffer,

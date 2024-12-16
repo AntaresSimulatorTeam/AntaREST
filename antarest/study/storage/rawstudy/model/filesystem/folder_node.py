@@ -218,4 +218,5 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         return names, sub_url
 
     def get_file_content(self) -> t.Tuple[bytes, str, str]:
-        raise PathIsAFolderError(f"Node at {self.config.path} is a folder node.")
+        relative_path = self.config.path.relative_to(self.config.study_path).as_posix()
+        raise PathIsAFolderError(f"Node at {relative_path} is a folder node.")

@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
-from antarest.core.exceptions import StudyNotArchived, WritingInsideZippedFileException
+from antarest.core.exceptions import WritingInsideZippedFileException
 from antarest.core.utils.archives import extract_file_to_tmp_dir, read_original_file_in_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 

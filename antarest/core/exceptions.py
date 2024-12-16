@@ -711,15 +711,6 @@ class BadArchiveContent(Exception):
         super().__init__(message)
 
 
-class StudyNotArchived(HTTPException):
-    """
-    Exception raised when the study is supposed to be archived but is not.
-    """
-
-    def __init__(self, message: str = "") -> None:
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
-
-
 class FolderNotFoundInWorkspace(HTTPException):
     """
     This will be raised when we try to load a folder that does not exist
