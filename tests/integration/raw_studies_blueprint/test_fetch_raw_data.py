@@ -551,6 +551,15 @@ class TestFetchOriginalFile:
             expected = file_path.read_bytes()
             assert actual == expected
 
+        # retrieves a txt file from the outputs
+        file_path = "output/20201014-1422eco-hello/simulation"
+        res = client.get(f"/v1/studies/{internal_study_id}/raw/original-file", params={"path": file_path})
+        assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=simulation.log"
+        actual = res.content
+        expected = study_dir.joinpath(f"{file_path}.log").read_bytes()
+        assert actual == expected
+
         # If the extension is unknown, we should have a "binary" content
         user_folder_dir = study_dir.joinpath("user/unknown")
         for file_path in user_folder_dir.glob("*.*"):
@@ -573,18 +582,17 @@ class TestFetchOriginalFile:
         # If you try to retrieve a folder, we should get an Error 422
         res = client.get(original_file_url, params={"path": "user/folder"})
         assert res.status_code == 422, res.json()
-        assert "is a folder node." in res.json()["description"]
+        assert res.json()["description"] == "Node at user/folder is a folder node."
         assert res.json()["exception"] == "PathIsAFolderError"
 
-    def test_retrieve_original_file_from_archive(self, client: TestClient, user_access_token: str) -> None:
+    @pytest.mark.parametrize("archive", [True, False])
+    def test_retrieve_original_files(self, client: TestClient, user_access_token: str, archive: bool) -> None:
         # client headers
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # create a new study
-        res = client.post("/v1/studies?name=MyStudy")
+        res = client.post("/v1/studies", params={"name": "MyStudy", "version": "880"})
         assert res.status_code == 201
-
-        # get the study id
         study_id = res.json()
 
         # add a new area to the study
@@ -598,92 +606,31 @@ class TestFetchOriginalFile:
         )
         assert res.status_code == 200, res.json()
 
-        # archive the study
-        res = client.put(f"/v1/studies/{study_id}/archive")
-        assert res.status_code == 200
-        task_id = res.json()
-        wait_for(
-            lambda: client.get(
-                f"/v1/tasks/{task_id}",
-            ).json()["status"]
-            == 3
-        )
+        if archive:
+            # archive the study
+            res = client.put(f"/v1/studies/{study_id}/archive")
+            assert res.status_code == 200
+            task_id = res.json()
+            wait_for(lambda: client.get(f"/v1/tasks/{task_id}").json()["status"] == 3)
 
-        # retrieve a `Desktop.ini` file from inside the archive
-        rel_path = "Desktop"
+        # retrieves an `ini` file
         res = client.get(
-            f"/v1/studies/{study_id}/raw/original-file",
-            params={"path": rel_path},
+            f"/v1/studies/{study_id}/raw/original-file", params={"path": "input/areas/area 1/adequacy_patch"}
         )
         assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=adequacy_patch.ini"
+        assert res.content.strip().decode("utf-8").splitlines() == ["[adequacy-patch]", "adequacy-patch-mode = outside"]
 
-        # retrieve a `study.antares` file from inside the archive
-        rel_path = "study"
-        res = client.get(
-            f"/v1/studies/{study_id}/raw/original-file",
-            params={"path": rel_path},
-        )
+        # retrieves the `study.antares`
+        res = client.get(f"/v1/studies/{study_id}/raw/original-file", params={"path": "study"})
         assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=study.antares"
+        assert res.content.strip().decode().splitlines()[:3] == ["[antares]", "version = 880", "caption = MyStudy"]
 
-    def test_retrieve_matrix_with_link(self, client: TestClient, user_access_token: str):
-        # set client headers to user access token
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # create a study
-        res = client.post("/v1/studies", params={"name": "MyStudy"})
-        assert res.status_code in {200, 201}, res.json()
-        study_id = res.json()
-
-        area1_id = "france"
-        cluster_id = "nuclear power plant"
-
-        # Create an area "area_1" in the study
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            json={"name": area1_id.title(), "type": "AREA", "metadata": {"country": "FR"}},
-        )
-        res.raise_for_status()
-
-        # Create a cluster in the first area
-        res = client.post(
-            f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal",
-            json={"name": cluster_id.title(), "group": "Nuclear"},
-        )
-        res.raise_for_status()
-
-        # create a binding constraint that references the link
-        bc_obj = {
-            "name": "bc_1",
-            "enabled": True,
-            "time_step": "daily",
-            "operator": "less",
-        }
-        res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json=bc_obj)
-        res.raise_for_status()
-
-        # retrieve the binding constraint `bc_1` less matrix
-        rel_path = "input/bindingconstraints/bc_1_lt"
-        res = client.get(
-            f"v1/studies/{study_id}/raw/original-file",
-            params={"path": rel_path},
-        )
-        res.raise_for_status()
-
-        # archive the study
-        res = client.put(f"/v1/studies/{study_id}/archive")
+        # retrieves a matrix (a link towards the matrix store if the study is unarchived, else the real matrix)
+        res = client.get(f"/v1/studies/{study_id}/raw/original-file", params={"path": "input/load/series/load_area 1"})
         assert res.status_code == 200
-        task_id = res.json()
-        wait_for(
-            lambda: client.get(
-                f"/v1/tasks/{task_id}",
-            ).json()["status"]
-            == 3
-        )
-
-        # retrieve the binding constraint `bc_1` less matrix from archive
-        rel_path = "input/bindingconstraints/bc_1_lt"
-        res = client.get(
-            f"v1/studies/{study_id}/raw/original-file",
-            params={"path": rel_path},
-        )
-        res.raise_for_status()
+        assert res.headers.get("content-disposition") == "attachment; filename=load_area 1.txt"
+        expected_content = np.zeros((8760, 1))
+        actual_content = pd.read_csv(io.BytesIO(res.content), header=None)
+        assert actual_content.to_numpy().tolist() == expected_content.tolist()
