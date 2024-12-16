@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Backdrop, Box, CircularProgress } from "@mui/material";
+import { Backdrop, Box, CircularProgress, Skeleton } from "@mui/material";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import { StudyMetadata } from "../../../../../../common/types";
@@ -45,6 +45,7 @@ import EmptyView from "../../../../../common/page/SimpleContent";
 import SplitView from "../../../../../common/SplitView";
 import { getLinks } from "@/services/api/studies/links";
 import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -224,13 +225,17 @@ function Candidates() {
     }
   };
 
+  if (isLoading) {
+    return <Skeleton sx={{ height: 1, transform: "none" }} />;
+  }
+
   if (isRejected) {
     return <EmptyView title={t("xpansion.error.loadConfiguration")} />;
   }
 
   return (
     <>
-      <SplitView id="xpansion">
+      <SplitView id="xpansion" sizes={[10, 90]}>
         <Box>
           <XpansionPropsView
             candidateList={candidates || []}
@@ -241,9 +246,13 @@ function Candidates() {
           />
         </Box>
         <Box>
-          <Box width="100%" height="100%" boxSizing="border-box">
-            {renderView()}
-          </Box>
+          <ViewWrapper>
+            {!candidates?.length ? (
+              <EmptyView title={t("xpansion.configuration.empty")} />
+            ) : (
+              renderView()
+            )}
+          </ViewWrapper>
           <Backdrop
             open={isLoading && !candidates}
             sx={{
