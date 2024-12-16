@@ -46,6 +46,7 @@ function Links() {
 
   useEffect(() => {
     const { data } = linksRes;
+
     if (!data || data.length === 0 || currentLink) {
       return;
     }

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MenuItem } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
@@ -45,7 +45,7 @@ function TableModeList() {
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<
     TableTemplate["id"] | undefined
-  >(templates[0]?.id);
+  >();
 
   const [dialog, setDialog] = useState<{
     type: "add" | "edit" | "delete";
@@ -56,6 +56,12 @@ function TableModeList() {
   const selectedTemplate = templates.find((tp) => tp.id === selectedTemplateId);
   const dialogTemplate =
     dialog && templates.find((tp) => tp.id === dialog.templateId);
+
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplateId) {
+      setSelectedTemplateId(templates[0].id);
+    }
+  }, [templates, selectedTemplateId]);
 
   // Update local storage
   useUpdateEffect(() => {
