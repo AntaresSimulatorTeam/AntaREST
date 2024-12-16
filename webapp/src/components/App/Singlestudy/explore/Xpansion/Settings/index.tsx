@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box, Paper } from "@mui/material";
+import { Skeleton } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { StudyMetadata } from "../../../../../../common/types";
 import { XpansionResourceType, XpansionSettings } from "../types";
@@ -31,10 +31,10 @@ import {
 } from "../../../../../../services/api/xpansion";
 import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import { removeEmptyFields } from "../../../../../../services/utils/index";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
 
 const resourceContentFetcher = (
   resourceType: string,
@@ -158,25 +158,24 @@ function Settings() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  if (settingsLoading || !settings) {
+    return <Skeleton sx={{ height: 1, transform: "none" }} />;
+  }
+
   return (
     <>
-      {!settingsLoading && settings ? (
-        <Box sx={{ width: "100%", flexGrow: 1, overflow: "hidden", p: 2 }}>
-          <Paper sx={{ width: "100%", height: "100%", overflow: "auto", p: 2 }}>
-            <SettingsForm
-              settings={settings}
-              candidates={candidates || []}
-              constraints={constraints || []}
-              weights={weights || []}
-              updateSettings={updateSettings}
-              onRead={getResourceContent}
-            />
-          </Paper>
-        </Box>
-      ) : (
-        <SimpleLoader />
-      )}
-      {!!resourceViewDialog && (
+      <ViewWrapper>
+        <SettingsForm
+          settings={settings}
+          candidates={candidates || []}
+          constraints={constraints || []}
+          weights={weights || []}
+          updateSettings={updateSettings}
+          onRead={getResourceContent}
+        />
+      </ViewWrapper>
+
+      {resourceViewDialog && (
         <DataViewerDialog
           filename={resourceViewDialog.filename}
           content={resourceViewDialog.content}

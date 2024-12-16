@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -64,7 +64,7 @@ function Candidates() {
 
   const {
     data: candidates,
-    isLoading,
+    isLoading: isCandidatesLoading,
     isRejected,
     reload,
   } = usePromiseWithSnackbarError(
@@ -97,22 +97,29 @@ function Candidates() {
     },
   );
 
-  const { data: capaLinks } = usePromiseWithSnackbarError(
-    async () => {
-      if (!study) {
+  const { data: capaLinks, isLoading: isLinksLoading } =
+    usePromiseWithSnackbarError(
+      async () => {
+        if (!study) {
+          return {};
+        }
+        const exist = await xpansionConfigurationExist(study.id);
+        if (exist) {
+          return {
+            capacities: await getAllCapacities(study.id),
+            links: await getLinks({ studyId: study.id }),
+          };
+        }
         return {};
-      }
-      const exist = await xpansionConfigurationExist(study.id);
-      if (exist) {
-        return {
-          capacities: await getAllCapacities(study.id),
-          links: await getLinks({ studyId: study.id }),
-        };
-      }
-      return {};
-    },
-    { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
-  );
+      },
+      { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
+    );
+
+  useEffect(() => {
+    if (candidates && candidates.length > 0 && !selectedItem) {
+      setSelectedItem(candidates[0].name);
+    }
+  }, [candidates, selectedItem]);
 
   const deleteXpansion = async () => {
     try {
@@ -225,7 +232,7 @@ function Candidates() {
     }
   };
 
-  if (isLoading) {
+  if (isCandidatesLoading || isLinksLoading) {
     return <Skeleton sx={{ height: 1, transform: "none" }} />;
   }
 
@@ -254,7 +261,7 @@ function Candidates() {
             )}
           </ViewWrapper>
           <Backdrop
-            open={isLoading && !candidates}
+            open={isCandidatesLoading && !candidates}
             sx={{
               position: "absolute",
               zIndex: (theme) => theme.zIndex.drawer + 1,
