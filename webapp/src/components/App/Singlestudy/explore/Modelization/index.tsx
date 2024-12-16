@@ -76,7 +76,7 @@ function Modelization() {
         disabled: links.length === 0,
       },
       {
-        label: t("study.bindingconstraints"),
+        label: t("study.bindingConstraints"),
         path: `${basePath}/bindingcontraint`,
       },
     ];

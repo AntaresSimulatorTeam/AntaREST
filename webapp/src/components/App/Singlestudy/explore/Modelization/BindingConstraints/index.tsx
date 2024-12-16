@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Skeleton } from "@mui/material";
+import { Skeleton } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import EmptyView from "../../../../../common/page/SimpleContent";
@@ -30,9 +30,12 @@ import { getBindingConstraintList } from "../../../../../../services/api/studyda
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import { useEffect } from "react";
 import SplitView from "../../../../../common/SplitView";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import { useTranslation } from "react-i18next";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const [t] = useTranslation();
   const dispatch = useAppDispatch();
 
   const currentConstraintId = useAppSelector(getCurrentBindingConstId);
@@ -83,13 +86,13 @@ function BindingConstraints() {
             reloadConstraintsList={constraintsRes.reload}
           />
           {/* Right */}
-          <Box>
+          <ViewWrapper>
             {data.length > 0 && currentConstraintId ? (
               <BindingConstView constraintId={currentConstraintId} />
             ) : (
-              <EmptyView title="No Binding Constraints" />
+              <EmptyView title={t("study.bindingConstraints.empty")} />
             )}
-          </Box>
+          </ViewWrapper>
         </SplitView>
       )}
       ifRejected={(error) => <EmptyView title={error?.toString()} />}
