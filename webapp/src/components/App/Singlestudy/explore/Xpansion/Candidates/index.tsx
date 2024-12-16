@@ -248,7 +248,7 @@ function Candidates() {
         <Box>
           <ViewWrapper>
             {!candidates?.length ? (
-              <EmptyView title={t("xpansion.configuration.empty")} />
+              <EmptyView title={t("xpansion.candidates.empty")} />
             ) : (
               renderView()
             )}
