@@ -147,7 +147,7 @@ class InputSeriesMatrix(MatrixNode):
         if self.config.archive_path:
             return (
                 read_original_file_in_archive(
-                    self.config.archive_path, str(self.get_relative_path_inside_archive(self.config.archive_path))
+                    self.config.archive_path, self.get_relative_path_inside_archive(self.config.archive_path)
                 ),
                 suffix,
                 filename,

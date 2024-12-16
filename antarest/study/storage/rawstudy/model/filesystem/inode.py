@@ -139,7 +139,7 @@ class INode(ABC, Generic[G, S, V]):
             return (
                 read_original_file_in_archive(
                     self.config.archive_path,
-                    str(self.get_relative_path_inside_archive(self.config.archive_path)),
+                    self.get_relative_path_inside_archive(self.config.archive_path),
                 ),
                 suffix,
                 filename,
@@ -147,8 +147,8 @@ class INode(ABC, Generic[G, S, V]):
         else:
             return self.config.path.read_bytes(), suffix, filename
 
-    def get_relative_path_inside_archive(self, archive_path: Path) -> Path:
-        return self.config.path.relative_to(archive_path.parent / self.config.study_id)
+    def get_relative_path_inside_archive(self, archive_path: Path) -> str:
+        return self.config.path.relative_to(archive_path.parent / self.config.study_id).as_posix()
 
     def _assert_url_end(self, url: Optional[List[str]] = None) -> None:
         """
