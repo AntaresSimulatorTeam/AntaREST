@@ -26,7 +26,8 @@ from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode, dump_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +54,9 @@ class InputSeriesMatrix(MatrixNode):
             self.default_empty = np.copy(default_empty)
             self.default_empty.flags.writeable = True
 
-    def parse(
-        self,
-        file_path: t.Optional[Path] = None,
-        tmp_dir: t.Any = None,
-        return_dataframe: bool = False,
-    ) -> t.Union[JSON, pd.DataFrame]:
+    def parse_as_dataframe(self, file_path: t.Optional[Path] = None) -> pd.DataFrame:
         file_path = file_path or self.config.path
         try:
-            # sourcery skip: extract-method
             stopwatch = StopWatch()
             link_path = self.get_link_path()
             if link_path.exists():
@@ -84,22 +79,22 @@ class InputSeriesMatrix(MatrixNode):
                     study_id = self.config.study_id
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
-
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
             final_matrix = matrix.dropna(how="any", axis=1)
-            if return_dataframe:
-                return final_matrix
-
-            data = t.cast(JSON, final_matrix.to_dict(orient="split"))
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
-
-            return data
+            return final_matrix
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
-            matrix = pd.DataFrame()
+            final_matrix = pd.DataFrame()
             if self.default_empty is not None:
-                matrix = pd.DataFrame(self.default_empty)
-            return matrix if return_dataframe else t.cast(JSON, matrix.to_dict(orient="split"))
+                final_matrix = pd.DataFrame(self.default_empty)
+            return final_matrix
+
+    def parse_as_json(self, file_path: t.Optional[Path] = None) -> JSON:
+        df = self.parse_as_dataframe(file_path)
+        stopwatch = StopWatch()
+        data = t.cast(JSON, df.to_dict(orient="split"))
+        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
+        return data
 
     def check_errors(
         self,
@@ -133,36 +128,21 @@ class InputSeriesMatrix(MatrixNode):
         target_path.unlink(missing_ok=True)
         shutil.copy(self._infer_path(), target_path)
 
-    def get_file_content(self) -> t.Tuple[bytes, str, str]:
-        """
-        Get file content
-
-        Returns:
-            file content, as bytes
-            file suffix
-            file name
-        """
+    def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix
         filename = self.config.path.name
         if self.config.archive_path:
-            return (
-                read_original_file_in_archive(
-                    self.config.archive_path, self.get_relative_path_inside_archive(self.config.archive_path)
-                ),
-                suffix,
-                filename,
+            content = read_original_file_in_archive(
+                self.config.archive_path, self.get_relative_path_inside_archive(self.config.archive_path)
             )
         elif self.get_link_path().is_file():
             target_path = self.config.path.with_suffix(".txt")
-            buffer = io.StringIO()
-            self.parse(return_dataframe=True).to_csv(  # type: ignore
-                buffer,
-                sep="\t",
-                index=False,
-                header=False,
-                float_format="%.6f",
-            )
-            output = buffer.getvalue().encode()
-            return output, target_path.suffix, target_path.name
+            buffer = io.BytesIO()
+            df = self.parse_as_dataframe()
+            dump_dataframe(df, buffer, None)
+            content = buffer.getvalue()
+            suffix = target_path.suffix
+            filename = target_path.name
         else:
-            return self.config.path.read_bytes(), suffix, filename
+            content = self.config.path.read_bytes()
+        return OriginalFile(content=content, suffix=suffix, filename=filename)

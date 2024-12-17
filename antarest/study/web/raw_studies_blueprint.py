@@ -18,7 +18,7 @@ import typing as t
 from pathlib import Path, PurePosixPath
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException
-from fastapi.params import Param, Query
+from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
@@ -82,6 +82,7 @@ CONTENT_TYPES = {
 }
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+PATH_TYPE = t.Annotated[str, Query(openapi_examples=get_path_examples())]
 
 
 def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
@@ -116,7 +117,7 @@ def create_raw_study_routes(
     )
     def get_study_data(
         uuid: str,
-        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        path: PATH_TYPE = "/",
         depth: int = 3,
         formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -197,7 +198,7 @@ def create_raw_study_routes(
     )
     def get_study_file(
         uuid: str,
-        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        path: PATH_TYPE = "/",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         """
@@ -224,16 +225,8 @@ def create_raw_study_routes(
 
         # Guess the suffix form the filename suffix
         content_type, _ = CONTENT_TYPES.get(suffix, (None, None))
-        if content_type:
-            return StreamingResponse(
-                io.BytesIO(output),
-                media_type=content_type,
-                headers=headers,
-            )
-        else:
-            # Unknown content types are considered binary,
-            # because it's better to avoid raising an exception.
-            return Response(content=output, media_type="application/octet-stream", headers=headers)
+        media_type = content_type or "application/octet-stream"
+        return Response(content=output, media_type=media_type, headers=headers)
 
     @bp.delete(
         "/studies/{uuid}/raw",
@@ -243,7 +236,14 @@ def create_raw_study_routes(
     )
     def delete_file(
         uuid: str,
-        path: str = Param("/", examples=["user/wind_solar/synthesis_windSolar.xlsx"]),  # type: ignore
+        path: t.Annotated[
+            str,
+            Query(
+                openapi_examples={
+                    "user/wind_solar/synthesis_windSolar.xlsx": {"value": "user/wind_solar/synthesis_windSolar.xlsx"}
+                },
+            ),
+        ] = "/",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         uuid = sanitize_uuid(uuid)
@@ -530,7 +530,7 @@ def create_raw_study_routes(
     )
     def edit_study(
         uuid: str,
-        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        path: PATH_TYPE = "/",
         data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
@@ -559,7 +559,7 @@ def create_raw_study_routes(
     )
     def replace_study_file(
         uuid: str,
-        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        path: PATH_TYPE = "/",
         file: bytes = File(default=None),
         create_missing: bool = Query(
             False,

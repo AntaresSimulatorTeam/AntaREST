@@ -104,7 +104,6 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.common.studystorage import OriginalFile
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -135,7 +134,7 @@ from antarest.study.repository import (
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix

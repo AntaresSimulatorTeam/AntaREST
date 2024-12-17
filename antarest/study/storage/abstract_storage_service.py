@@ -26,7 +26,7 @@ from antarest.core.serialization import from_json
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO
-from antarest.study.common.studystorage import IStudyStorageService, OriginalFile, T
+from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
@@ -43,6 +43,7 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
@@ -191,8 +192,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         file_node = study.tree.get_node(parts)
 
-        content, suffix, filename = file_node.get_file_content()
-        return OriginalFile(content=content, suffix=suffix, filename=filename)
+        return file_node.get_file_content()
 
     def get_study_sim_result(
         self,

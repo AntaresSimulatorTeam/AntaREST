@@ -17,18 +17,12 @@ from pathlib import Path
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.core.serialization import AntaresBaseModel
 from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
 T = t.TypeVar("T", bound=Study)
-
-
-class OriginalFile(AntaresBaseModel):
-    suffix: str
-    content: bytes
-    filename: str
 
 
 class IStudyStorageService(ABC, t.Generic[T]):

@@ -51,13 +51,13 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
-from antarest.study.common.studystorage import OriginalFile
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto

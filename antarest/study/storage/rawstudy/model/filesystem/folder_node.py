@@ -18,7 +18,7 @@ from antarest.core.exceptions import ChildNotFoundError, PathIsAFolderError
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode, OriginalFile
 
 
 class FilterError(Exception):
@@ -217,6 +217,6 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                 raise FilterError("Filter selection has different classes")
         return names, sub_url
 
-    def get_file_content(self) -> t.Tuple[bytes, str, str]:
+    def get_file_content(self) -> OriginalFile:
         relative_path = self.config.path.relative_to(self.config.study_path).as_posix()
         raise PathIsAFolderError(f"Node at {relative_path} is a folder node.")
