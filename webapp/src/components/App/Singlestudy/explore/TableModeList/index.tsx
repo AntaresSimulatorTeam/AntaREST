@@ -45,7 +45,7 @@ function TableModeList() {
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<
     TableTemplate["id"] | undefined
-  >();
+  >(templates[0]?.id);
 
   const [dialog, setDialog] = useState<{
     type: "add" | "edit" | "delete";
@@ -57,11 +57,12 @@ function TableModeList() {
   const dialogTemplate =
     dialog && templates.find((tp) => tp.id === dialog.templateId);
 
+  // Handle automatic selection of the first element
   useEffect(() => {
-    if (templates.length > 0 && !selectedTemplateId) {
+    if (templates.length > 0 && !selectedTemplate) {
       setSelectedTemplateId(templates[0].id);
     }
-  }, [templates, selectedTemplateId]);
+  }, [templates, selectedTemplate]);
 
   // Update local storage
   useUpdateEffect(() => {

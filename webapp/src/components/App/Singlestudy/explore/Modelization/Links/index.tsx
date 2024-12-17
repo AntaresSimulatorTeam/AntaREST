@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { Skeleton } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import EmptyView from "../../../../../common/page/SimpleContent";
@@ -44,6 +43,7 @@ function Links() {
     [study.id],
   );
 
+  // Handle automatic selection of the first link
   useEffect(() => {
     const { data } = linksRes;
 
@@ -53,7 +53,8 @@ function Links() {
 
     const firstLinkId = makeLinkId(data[0].area1, data[0].area2);
     dispatch(setCurrentLink(firstLinkId));
-  }, [linksRes, currentLink, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linksRes.data, currentLink, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -75,7 +76,6 @@ function Links() {
       <ViewWrapper>
         <UsePromiseCond
           response={linksRes}
-          ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
           ifFulfilled={(data) =>
             data.length > 0 && currentLink ? (
               <LinkView link={currentLink} />

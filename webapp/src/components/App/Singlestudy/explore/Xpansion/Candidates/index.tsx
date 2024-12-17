@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Backdrop, Box, CircularProgress, Skeleton } from "@mui/material";
+import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import { StudyMetadata } from "../../../../../../common/types";
@@ -46,6 +46,7 @@ import SplitView from "../../../../../common/SplitView";
 import { getLinks } from "@/services/api/studies/links";
 import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 import ViewWrapper from "@/components/common/page/ViewWrapper";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -115,6 +116,7 @@ function Candidates() {
       { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
     );
 
+  // Handle automatic selection of the first element
   useEffect(() => {
     if (candidates && candidates.length > 0 && !selectedItem) {
       setSelectedItem(candidates[0].name);
@@ -233,7 +235,7 @@ function Candidates() {
   };
 
   if (isCandidatesLoading || isLinksLoading) {
-    return <Skeleton sx={{ height: 1, transform: "none" }} />;
+    return <SimpleLoader />;
   }
 
   if (isRejected) {

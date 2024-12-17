@@ -16,7 +16,6 @@ import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Skeleton } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { StudyMetadata } from "../../../../../../common/types";
 import { XpansionResourceType, XpansionSettings } from "../types";
@@ -35,6 +34,7 @@ import { removeEmptyFields } from "../../../../../../services/utils/index";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import ViewWrapper from "@/components/common/page/ViewWrapper";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 const resourceContentFetcher = (
   resourceType: string,
@@ -56,11 +56,7 @@ function Settings() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const {
-    data: settings,
-    isLoading: settingsLoading,
-    reload: reloadSettings,
-  } = usePromiseWithSnackbarError(
+  const settingsRes = usePromiseWithSnackbarError(
     async () => {
       if (study) {
         return getXpansionSettings(study.id);
@@ -129,7 +125,7 @@ function Settings() {
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.updateSettings"), e as AxiosError);
     } finally {
-      reloadSettings();
+      settingsRes.reload();
       enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });
@@ -158,20 +154,21 @@ function Settings() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (settingsLoading || !settings) {
-    return <Skeleton sx={{ height: 1, transform: "none" }} />;
-  }
-
   return (
     <>
       <ViewWrapper>
-        <SettingsForm
-          settings={settings}
-          candidates={candidates || []}
-          constraints={constraints || []}
-          weights={weights || []}
-          updateSettings={updateSettings}
-          onRead={getResourceContent}
+        <UsePromiseCond
+          response={settingsRes}
+          ifFulfilled={(data) => (
+            <SettingsForm
+              settings={data}
+              candidates={candidates || []}
+              constraints={constraints || []}
+              weights={weights || []}
+              updateSettings={updateSettings}
+              onRead={getResourceContent}
+            />
+          )}
         />
       </ViewWrapper>
 

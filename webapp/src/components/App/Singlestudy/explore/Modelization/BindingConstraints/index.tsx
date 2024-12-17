@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { Skeleton } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
 import EmptyView from "../../../../../common/page/SimpleContent";
@@ -58,7 +57,8 @@ function BindingConstraints() {
 
     const firstConstraintId = data[0].id;
     dispatch(setCurrentBindingConst(firstConstraintId));
-  }, [constraintsRes, currentConstraintId, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [constraintsRes.data, currentConstraintId, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -75,7 +75,6 @@ function BindingConstraints() {
   return (
     <UsePromiseCond
       response={constraintsRes}
-      ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
       ifFulfilled={(data) => (
         <SplitView id="binding-constraints" sizes={[10, 90]}>
           {/* Left */}
