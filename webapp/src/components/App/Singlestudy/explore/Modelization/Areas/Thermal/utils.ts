@@ -38,16 +38,16 @@ export const TS_GEN_MATRIX_COLS = [
 ] as const;
 
 export const THERMAL_GROUPS = [
-  "Gas",
-  "Hard Coal",
-  "Lignite",
-  "Mixed fuel",
-  "Nuclear",
-  "Oil",
-  "Other 1",
-  "Other 2",
-  "Other 3",
-  "Other 4",
+  "gas",
+  "hard coal",
+  "lignite",
+  "mixed fuel",
+  "nuclear",
+  "oil",
+  "other 1",
+  "other 2",
+  "other 3",
+  "other 4",
 ] as const;
 
 export const THERMAL_POLLUTANTS = [
