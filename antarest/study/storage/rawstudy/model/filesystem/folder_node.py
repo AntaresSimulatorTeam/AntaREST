@@ -14,11 +14,11 @@ import shutil
 import typing as t
 from abc import ABC, abstractmethod
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, PathIsAFolderError
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode, OriginalFile
 
 
 class FilterError(Exception):
@@ -216,3 +216,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             if not isinstance(children[name], child_class):
                 raise FilterError("Filter selection has different classes")
         return names, sub_url
+
+    def get_file_content(self) -> OriginalFile:
+        relative_path = self.config.path.relative_to(self.config.study_path).as_posix()
+        raise PathIsAFolderError(f"Node at {relative_path} is a folder node.")

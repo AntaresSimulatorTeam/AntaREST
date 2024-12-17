@@ -1,6 +1,17 @@
 Antares Web Changelog
 =====================
 
+v2.18.2 (2024-12-11)
+--------------------
+
+## What's Changed
+
+### Bug Fixes
+
+* **tasks**: frozen tasks with pgpool [`2264`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2264)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.18.1...v2.18.2
+
 v2.18.1 (2024-12-02)
 --------------------
 

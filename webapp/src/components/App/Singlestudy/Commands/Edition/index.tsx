@@ -23,7 +23,7 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import debug from "debug";
 import { AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
-import { Box, Button, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Skeleton, Tooltip, Typography } from "@mui/material";
 import { useMountedState } from "react-use";
 import { CommandItem, JsonCommandItem } from "./commandTypes";
 import CommandListView from "./DraggableCommands/CommandListView";
@@ -50,7 +50,6 @@ import { CommandResultDTO } from "../../../../../common/types";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
-import SimpleLoader from "../../../../common/loaders/SimpleLoader";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   addWsEventListener,
@@ -500,7 +499,7 @@ function EditionView(props: Props) {
           </Typography>
         </Header>
       )}
-      {loaded && commands.length > 0 ? (
+      {commands.length > 0 ? (
         <Body>
           <CommandListView
             items={commands}
@@ -516,18 +515,15 @@ function EditionView(props: Props) {
             onExpanded={onExpanded}
           />
         </Body>
-      ) : (
-        loaded && (
-          <Body sx={{ alignItems: "left" }}>
-            <Box height="85%">
-              <EmptyView title="variants.error.noCommands" />
-            </Box>
-          </Body>
-        )
-      )}
-      {!loaded && (
+      ) : !loaded ? (
         <Body>
-          <SimpleLoader color="" />
+          <Skeleton sx={{ width: 1, height: "80vh", transform: "none" }} />
+        </Body>
+      ) : (
+        <Body sx={{ alignItems: "left" }}>
+          <Box height="85%">
+            <EmptyView title="variants.error.noCommands" />
+          </Box>
         </Body>
       )}
       {openClearCommandsDialog && (

@@ -13,7 +13,7 @@
  */
 
 import { BindingConstraint } from "./utils";
-import { Box, Button, Paper, Skeleton } from "@mui/material";
+import { Box, Button, Skeleton } from "@mui/material";
 import Form from "../../../../../../common/Form";
 import UsePromiseCond, {
   mergeResponses,
@@ -120,20 +120,11 @@ function BindingConstView({ constraintId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Paper
-      sx={{
-        p: 2,
-        width: 1,
-        height: 1,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "auto",
-      }}
-    >
+    <>
       <UsePromiseCond
         response={mergeResponses(constraint, linksAndClusters)}
         ifFulfilled={([defaultValues, linksAndClusters]) => (
-          <>
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
             <Box sx={{ alignSelf: "flex-end" }}>
               <Button
                 variant="outlined"
@@ -166,7 +157,7 @@ function BindingConstView({ constraintId }: Props) {
                 />
               </Form>
             </Box>
-          </>
+          </Box>
         )}
         ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
       />
@@ -184,7 +175,7 @@ function BindingConstView({ constraintId }: Props) {
           )}
         </ConfirmationDialog>
       )}
-    </Paper>
+    </>
   );
 }
 

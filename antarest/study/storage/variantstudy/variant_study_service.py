@@ -41,7 +41,7 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json_string
@@ -49,6 +49,7 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
+from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -56,6 +57,7 @@ from antarest.study.storage.abstract_storage_service import AbstractStorageServi
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -106,6 +108,17 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
 
+    @staticmethod
+    def _get_user_name_from_id(user_id: int) -> str:
+        """
+        Utility method that retrieves a user's name based on their id.
+        Args:
+            user_id: user id (user must exist)
+        Returns: String representing the user's name
+        """
+        user_obj: Identity = db.session.query(Identity).get(user_id)
+        return user_obj.name  # type: ignore  # `name` attribute is always a string
+
     def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTOAPI:
         """
         Get command lists
@@ -118,8 +131,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         study = self._get_variant_study(study_id, params)
 
         try:
-            index = [command.id for command in study.commands].index(command_id)  # Maybe add Try catch for this
-            return t.cast(CommandDTOAPI, study.commands[index].to_dto().to_api())
+            index = [command.id for command in study.commands].index(command_id)
+            command: CommandBlock = study.commands[index]
+            user_name = self._get_user_name_from_id(command.user_id) if command.user_id else None
+            return command.to_dto().to_api(user_name)
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
@@ -132,7 +147,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: List of commands
         """
         study = self._get_variant_study(study_id, params)
-        return [command.to_dto().to_api() for command in study.commands]
+
+        id_to_name: t.Dict[int, str] = {}
+        command_list = []
+
+        for command in study.commands:
+            if command.user_id and command.user_id not in id_to_name.keys():
+                user_name: str = self._get_user_name_from_id(command.user_id)
+                id_to_name[command.user_id] = user_name
+            command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
+        return command_list
 
     def convert_commands(
         self, study_id: str, api_commands: t.List[CommandDTOAPI], params: RequestParameters
@@ -201,6 +225,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         command_objs = self._check_commands_validity(study_id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
         first_index = len(study.commands)
+
         # noinspection PyArgumentList
         new_commands = [
             CommandBlock(
@@ -209,6 +234,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
+                # params.user cannot be None, since previous checks were successful
+                user_id=params.user.id,  # type: ignore
+                updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -249,6 +277,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=i,
                 version=command.version,
                 study_version=str(command.study_version),
+                user_id=params.user.id,  # type: ignore
+                updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -531,6 +561,29 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache=use_cache,
         )
 
+    def get_file(
+        self,
+        metadata: VariantStudy,
+        url: str = "",
+        use_cache: bool = True,
+    ) -> OriginalFile:
+        """
+        Entry point to fetch for a file inside a study folder.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            use_cache: indicate if cache should be used to fetch study tree
+
+        Returns: the file content and extension
+        """
+        self._safe_generation(metadata, timeout=600)
+        self.repository.refresh(metadata)
+        return super().get_file(
+            metadata=metadata,
+            url=url,
+            use_cache=use_cache,
+        )
+
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:
         """
         Create a new variant study.
@@ -581,7 +634,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=study.version,
-            folder=(re.sub(f"/?{study.id}", "", study.folder) if study.folder is not None else None),
+            folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
             snapshot=None,
@@ -893,6 +946,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 index=command.index,
                 version=command.version,
                 study_version=str(command.study_version),
+                user_id=command.user_id,
+                updated_at=command.updated_at,
             )
             for command in src_meta.commands
         ]

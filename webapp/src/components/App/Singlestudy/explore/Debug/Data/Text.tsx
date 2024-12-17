@@ -26,11 +26,13 @@ import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintex
 import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import type { DataCompProps } from "../utils";
+import { isEmptyContent, parseContent, type DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
+import EmptyView from "@/components/common/page/SimpleContent";
+import GridOffIcon from "@mui/icons-material/GridOff";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -63,15 +65,24 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
+function Text({
+  studyId,
+  filePath,
+  filename,
+  fileType,
+  canEdit,
+}: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
   const res = usePromiseWithSnackbarError(
-    () => getStudyData<string>(studyId, filePath),
+    () =>
+      getStudyData<string>(studyId, filePath).then((text) =>
+        parseContent(text, { filePath, fileType }),
+      ),
     {
       errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
+      deps: [studyId, filePath, fileType],
     },
   );
 
@@ -113,22 +124,34 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
             )}
             <DownloadButton onClick={handleDownload} />
           </Menubar>
-          <Box sx={{ overflow: "auto" }}>
-            <SyntaxHighlighter
-              style={atomOneDark}
-              lineNumberStyle={{
-                opacity: 0.5,
-                paddingRight: theme.spacing(3),
+          {isEmptyContent(text) ? ( // TODO remove when files become editable
+            <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
+          ) : (
+            <Box
+              sx={{
+                overflow: "auto",
+                height: 1,
+                display: "flex",
+                flexDirection: "column",
               }}
-              customStyle={{
-                margin: 0,
-                padding: theme.spacing(2),
-                borderRadius: theme.shape.borderRadius,
-                fontSize: theme.typography.body2.fontSize,
-              }}
-              {...getSyntaxProps(text)}
-            />
-          </Box>
+            >
+              <SyntaxHighlighter
+                style={atomOneDark}
+                lineNumberStyle={{
+                  opacity: 0.5,
+                  paddingRight: theme.spacing(3),
+                }}
+                customStyle={{
+                  margin: 0,
+                  padding: theme.spacing(2),
+                  borderRadius: theme.shape.borderRadius,
+                  fontSize: theme.typography.body2.fontSize,
+                  flex: 1,
+                }}
+                {...getSyntaxProps(text)}
+              />
+            </Box>
+          )}
         </Flex>
       )}
     />

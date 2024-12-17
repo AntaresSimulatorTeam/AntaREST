@@ -320,5 +320,9 @@ export function useMatrix(
     canUndo: canUndoChanges,
     canRedo,
     reload: fetchMatrix,
+    // Use the matrix index 'steps' field to determine the number of rows
+    // This ensures consistent row display (8760 for hourly, 365 for daily/weekly)
+    // rather than using data.length which can vary for Binding Constraints (8784/366)
+    rowCount: index?.steps,
   };
 }

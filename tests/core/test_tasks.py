@@ -204,21 +204,22 @@ class DummyWorker(AbstractWorker):
         return TaskResult(success=True, message="")
 
 
-def test_repository(db_session: Session) -> None:
+@with_db_context
+def test_repository() -> None:
     # Prepare two users in the database
     user1_id = 9
-    db_session.add(User(id=user1_id, name="John"))
+    db.session.add(User(id=user1_id, name="John"))
     user2_id = 10
-    db_session.add(User(id=user2_id, name="Jane"))
-    db_session.commit()
+    db.session.add(User(id=user2_id, name="Jane"))
+    db.session.commit()
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
-    db_session.commit()
+    db.session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db.session.commit()
 
     # Create a TaskJobService
-    task_job_repo = TaskJobRepository(db_session)
+    task_job_repo = TaskJobRepository()
 
     new_task = TaskJob(name="foo", owner_id=user1_id, type=TaskType.COPY)
 
@@ -282,10 +283,10 @@ def test_repository(db_session: Session) -> None:
     assert len(new_task.logs) == 2
     assert new_task.logs[0].message == "hello"
 
-    assert len(db_session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 2
+    assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 2
 
     task_job_repo.delete(new_task.id)
-    assert len(db_session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 0
+    assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 0
     assert task_job_repo.get(new_task.id) is None
 
 
@@ -390,21 +391,22 @@ def test_cancel_orphan_tasks(
             assert (datetime.datetime.utcnow() - updated_task_job.completion_date).seconds <= max_diff_seconds
 
 
-def test_get_progress(db_session: Session, admin_user: JWTUser, core_config: Config, event_bus: IEventBus) -> None:
+@with_db_context
+def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEventBus) -> None:
     # Prepare two users in the database
     user1_id = 9
-    db_session.add(User(id=user1_id, name="John"))
+    db.session.add(User(id=user1_id, name="John"))
     user2_id = 10
-    db_session.add(User(id=user2_id, name="Jane"))
-    db_session.commit()
+    db.session.add(User(id=user2_id, name="Jane"))
+    db.session.commit()
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
-    db_session.commit()
+    db.session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db.session.commit()
 
     # Create a TaskJobService
-    task_job_repo = TaskJobRepository(db_session)
+    task_job_repo = TaskJobRepository()
 
     # User 1 launches a ts generation
     first_task = TaskJob(
@@ -451,12 +453,12 @@ def test_get_progress(db_session: Session, admin_user: JWTUser, core_config: Con
         service.get_task_progress(wrong_id, RequestParameters(user))
 
 
+@with_db_context
 def test_ts_generation_task(
     tmp_path: Path,
     core_config: Config,
     admin_user: JWTUser,
     raw_study_service: RawStudyService,
-    db_session: Session,
 ) -> None:
     # =======================
     #  SET UP
@@ -465,7 +467,7 @@ def test_ts_generation_task(
     event_bus = DummyEventBusService()
 
     # Create a TaskJobService and add tasks
-    task_job_repo = TaskJobRepository(db_session)
+    task_job_repo = TaskJobRepository()
 
     # Create a TaskJobService
     task_job_service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
@@ -474,8 +476,8 @@ def test_ts_generation_task(
     raw_study_path = tmp_path / "study"
 
     regular_user = User(id=99, name="regular")
-    db_session.add(regular_user)
-    db_session.commit()
+    db.session.add(regular_user)
+    db.session.commit()
 
     raw_study = RawStudy(
         id="my_raw_study",
@@ -490,8 +492,8 @@ def test_ts_generation_task(
         path=str(raw_study_path),
     )
     study_metadata_repository = StudyMetadataRepository(Mock(), None)
-    db_session.add(raw_study)
-    db_session.commit()
+    db.session.add(raw_study)
+    db.session.commit()
 
     # Set up the Raw Study
     raw_study_service.create(raw_study)
