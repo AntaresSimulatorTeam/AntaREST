@@ -19,7 +19,6 @@ from pydantic import model_validator
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -31,7 +30,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_hourly as default_bc_hourly_87,
 )
@@ -44,11 +42,10 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
-from antarest.study.storage.variantstudy.business.utils import AliasDecoder
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     BindingConstraintProperties,
-    TermMatrices,
     create_binding_constraint_config,
     remove_bc_from_scenario_builder,
 )
@@ -162,7 +159,9 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                     bc_id, study_version, bc_props, bc_props.operator
                 ):
                     try:
-                        self.save_matrix(file_study, target, next_matrice)
+                        matrix_url = target.split("/")
+                        matrix_as_str = validate_matrix(next_matrice, {"command_context": self.command_context})
+                        file_study.tree.save(matrix_as_str, matrix_url)
                     except (KeyError, ChildNotFoundError):
                         return CommandOutput(
                             status=False,
@@ -173,7 +172,8 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                             status=False,
                             message=f"Path '{target}' does not target a matrix.",
                         )
-                    except Exception:
+                    except Exception as e:
+                        print(e)
                         return CommandOutput(
                             status=False,
                             message=f"Couldn't save matrix {target}.",
@@ -204,14 +204,14 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        matrices = ["values"] + [m.value for m in TermMatrices]
-        matrix_service = self.command_context.matrix_service
+        # matrices = ["values"] + [m.value for m in TermMatrices]
+        # matrix_service = self.command_context.matrix_service
 
         excluded_fields = set(ICommand.model_fields)
-        json_command = self.model_dump(mode="json", exclude=excluded_fields, exclude_none=True)
-        for key in json_command:
-            if key in matrices:
-                json_command[key] = matrix_service.get_matrix_id(json_command[key])
+        json_command = self.model_dump(mode="json", exclude=excluded_fields, exclude_unset=True)
+        # for key in json_command:
+        #     if key in matrices:
+        #         json_command[key] = matrix_service.get_matrix_id(json_command[key])
 
         return CommandDTO(
             action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
@@ -230,38 +230,8 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
             return self.id == other.id
         return super().match(other, equal)
 
-    # def replace_and_save_matrix():
-
-    def save_matrix(self, study_data: FileStudy, target: str, matrix: t.Union[t.List[t.List[MatrixData]], str]):
-        if target[0] == "@":
-            target = AliasDecoder.decode(target, study_data)
-
-        replace_matrix_data: JSON = {}
-        target_matrix = replace_matrix_data
-        url = target.split("/")
-        for element in url[:-1]:
-            target_matrix[element] = {}
-            target_matrix = target_matrix[element]
-
-        target_matrix[url[-1]] = matrix
-
-        try:
-            last_node = study_data.tree.get_node(url)
-            assert_this(isinstance(last_node, MatrixNode))
-        except (KeyError, ChildNotFoundError):
-            return CommandOutput(
-                status=False,
-                message=f"Path '{target}' does not exist.",
-            )
-        except AssertionError:
-            return CommandOutput(
-                status=False,
-                message=f"Path '{target}' does not target a matrix.",
-            )
-
-        study_data.tree.save(replace_matrix_data)
-
     def generate_replacement_matrices(
+        self,
         bc_id: str,
         study_version: StudyVersion,
         value: t.Type[BindingConstraintProperties],

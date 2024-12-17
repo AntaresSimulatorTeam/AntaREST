@@ -171,9 +171,8 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 2
-        assert json_result[0]["action"] == "replace_matrix"
-        assert json_result[1]["action"] == "update_config"
+        assert len(json_result) == 1
+        assert json_result[0]["action"] == "update_binding_constraints"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
