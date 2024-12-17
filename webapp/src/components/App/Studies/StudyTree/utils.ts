@@ -111,7 +111,7 @@ async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
   // path parts should be ["root", workspace, "folder1", ...]
   const workspace = pathParts[1];
   const subPath = pathParts.slice(2).join("/");
-  return await api.getFolders(workspace, subPath);
+  return api.getFolders(workspace, subPath);
 }
 
 /**
