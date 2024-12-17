@@ -25,6 +25,7 @@ from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluste
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
 from antarest.study.storage.utils import TS_GEN_PREFIX, TS_GEN_SUFFIX
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -36,8 +37,6 @@ logger = logging.getLogger(__name__)
 
 
 MODULATION_CAPACITY_COLUMN = 2
-FO_RATE_COLUMN = 2
-PO_RATE_COLUMN = 3
 
 
 class GenerateThermalClusterTimeSeries(ICommand):
@@ -94,15 +93,19 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     # 7- Build the cluster
                     url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
                     matrix = study_data.tree.get_node(url)
-                    matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
+                    assert isinstance(matrix, InputSeriesMatrix)
+                    matrix_df = matrix.parse_as_dataframe()
                     modulation_capacity = matrix_df[MODULATION_CAPACITY_COLUMN].to_numpy()
                     url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
                     matrix = study_data.tree.get_node(url)
-                    matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
-                    fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
-                        np.array(matrix_df[i], dtype=float if i in [FO_RATE_COLUMN, PO_RATE_COLUMN] else int)
-                        for i in matrix_df.columns
-                    ]
+                    assert isinstance(matrix, InputSeriesMatrix)
+                    matrix_df = matrix.parse_as_dataframe()
+                    fo_duration = np.array(matrix_df[0], dtype=int)
+                    po_duration = np.array(matrix_df[1], dtype=int)
+                    fo_rate = np.array(matrix_df[2], dtype=float)
+                    po_rate = np.array(matrix_df[3], dtype=float)
+                    npo_min = np.array(matrix_df[4], dtype=int)
+                    npo_max = np.array(matrix_df[5], dtype=int)
                     generation_params = OutageGenerationParameters(
                         unit_count=thermal.unit_count,
                         fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
