@@ -241,7 +241,7 @@ function LinkForm(props: Props) {
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            height: "500px",
+            height: "70vh",
           }}
         >
           {isTabMatrix ? (
