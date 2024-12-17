@@ -19,7 +19,6 @@ import {
   Typography,
   Button,
   ButtonGroup,
-  Paper,
   TextField,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -100,7 +99,7 @@ function CandidateForm(props: PropType) {
   }, [candidate]);
 
   return (
-    <Paper sx={{ width: "100%", height: "100%", overflow: "auto", p: 2 }}>
+    <Box sx={{ width: "100%", height: "100%", overflow: "auto", p: 1 }}>
       <Box>
         <Box
           display="flex"
@@ -449,7 +448,7 @@ function CandidateForm(props: PropType) {
           {t("xpansion.question.deleteCandidate")}
         </ConfirmationDialog>
       )}
-    </Paper>
+    </Box>
   );
 }
 

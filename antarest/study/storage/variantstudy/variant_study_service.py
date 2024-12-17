@@ -57,6 +57,7 @@ from antarest.study.storage.abstract_storage_service import AbstractStorageServi
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -560,6 +561,29 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache=use_cache,
         )
 
+    def get_file(
+        self,
+        metadata: VariantStudy,
+        url: str = "",
+        use_cache: bool = True,
+    ) -> OriginalFile:
+        """
+        Entry point to fetch for a file inside a study folder.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            use_cache: indicate if cache should be used to fetch study tree
+
+        Returns: the file content and extension
+        """
+        self._safe_generation(metadata, timeout=600)
+        self.repository.refresh(metadata)
+        return super().get_file(
+            metadata=metadata,
+            url=url,
+            use_cache=use_cache,
+        )
+
     def create_variant_study(self, uuid: str, name: str, params: RequestParameters) -> VariantStudy:
         """
         Create a new variant study.
@@ -610,7 +634,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=study.version,
-            folder=(re.sub(f"/?{study.id}", "", study.folder) if study.folder is not None else None),
+            folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
             owner_id=params.user.impersonator if params.user else None,
             snapshot=None,

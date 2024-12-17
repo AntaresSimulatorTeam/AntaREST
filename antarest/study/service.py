@@ -134,7 +134,7 @@ from antarest.study.repository import (
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
@@ -450,6 +450,30 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+
+    def get_file(
+        self,
+        uuid: str,
+        url: str,
+        params: RequestParameters,
+    ) -> OriginalFile:
+        """
+        retrieve a file from a study folder
+
+        Args:
+            uuid: study uuid
+            url: route to follow inside study structure
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+
+        output = self.storage_service.get_storage(study).get_file(study, url)
+
+        return output
 
     def aggregate_output_data(
         self,
@@ -1073,11 +1097,15 @@ class StudyService:
 
         return task_or_study_id
 
-    def move_study(self, study_id: str, new_folder: str, params: RequestParameters) -> None:
+    def move_study(self, study_id: str, folder_dest: str, params: RequestParameters) -> None:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+        if folder_dest:
+            new_folder = folder_dest.rstrip("/") + f"/{study.id}"
+        else:
+            new_folder = None
         study.folder = new_folder
         self.repository.save(study, update_modification_date=False)
         self.event_bus.push(

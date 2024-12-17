@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MenuItem } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
@@ -32,6 +32,7 @@ import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import TableMode from "../../../../common/TableMode";
 import SplitView from "../../../../common/SplitView";
 import ViewWrapper from "../../../../common/page/ViewWrapper";
+import EmptyView from "@/components/common/page/SimpleContent";
 
 function TableModeList() {
   const { t } = useTranslation();
@@ -55,6 +56,13 @@ function TableModeList() {
   const selectedTemplate = templates.find((tp) => tp.id === selectedTemplateId);
   const dialogTemplate =
     dialog && templates.find((tp) => tp.id === dialog.templateId);
+
+  // Handle automatic selection of the first element
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplate) {
+      setSelectedTemplateId(templates[0].id);
+    }
+  }, [templates, selectedTemplate]);
 
   // Update local storage
   useUpdateEffect(() => {
@@ -132,6 +140,9 @@ function TableModeList() {
         />
         {/* Right */}
         <ViewWrapper>
+          {!templates.length && (
+            <EmptyView title={t("study.tableMode.empty")} />
+          )}
           {selectedTemplate && (
             <TableMode
               studyId={study.id}

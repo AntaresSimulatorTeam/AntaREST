@@ -28,11 +28,10 @@ interface NumberValidationOptions {
  * validateNumber(5, { min: 0, max: 10 }); // true
  * validateNumber(9, { min: 10, max: 20 }); // Error message
  *
- *
  * @example <caption>With currying.</caption>
  * const fn = validateNumber({ min: 0, max: 10 });
  * fn(5); // true
- * fn(11); // Error message
+ * fn(9); // Error message
  *
  * @param value - The number to validate.
  * @param [options] - Configuration options for validation.

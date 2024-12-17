@@ -13,17 +13,40 @@
  */
 
 import { DialogProps } from "@mui/material";
-import TextField from "@mui/material/TextField";
 import { useSnackbar } from "notistack";
-import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { usePromise } from "react-use";
 import { StudyMetadata } from "../../../common/types";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { moveStudy } from "../../../services/api/study";
-import { isStringEmpty } from "../../../services/utils";
 import FormDialog from "../../common/dialogs/FormDialog";
 import { SubmitHandlerPlus } from "../../common/Form/types";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import * as R from "ramda";
+import { validatePath } from "@/utils/validation/string";
+
+function formalizePath(
+  path: string | undefined,
+  studyId?: StudyMetadata["id"],
+) {
+  const trimmedPath = path?.trim();
+
+  if (!trimmedPath) {
+    return "";
+  }
+
+  const pathArray = trimmedPath.split("/").filter(Boolean);
+
+  if (studyId) {
+    const lastFolder = R.last(pathArray);
+
+    // The API automatically add the study ID to a not empty path when moving a study.
+    // So we need to remove it from the display path.
+    if (lastFolder === studyId) {
+      return pathArray.slice(0, -1).join("/");
+    }
+  }
+
+  return pathArray.join("/");
+}
 
 interface Props extends DialogProps {
   study: StudyMetadata;
@@ -33,36 +56,35 @@ interface Props extends DialogProps {
 function MoveStudyDialog(props: Props) {
   const { study, open, onClose } = props;
   const [t] = useTranslation();
-  const mounted = usePromise();
   const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
   const defaultValues = {
-    folder: R.join("/", R.dropLast(1, R.split("/", study.folder || ""))),
+    path: formalizePath(study.folder, study.id),
   };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
+  const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
+    const path = formalizePath(data.values.path);
+    return moveStudy(study.id, path);
+  };
+
+  const handleSubmitSuccessful = (
     data: SubmitHandlerPlus<typeof defaultValues>,
   ) => {
-    const { folder } = data.values;
-    try {
-      await mounted(moveStudy(study.id, folder));
-      enqueueSnackbar(
-        t("studies.success.moveStudy", { study: study.name, folder }),
-        {
-          variant: "success",
-        },
-      );
-      onClose();
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("studies.error.moveStudy", { study: study.name }),
-        e as Error,
-      );
-    }
+    onClose();
+
+    enqueueSnackbar(
+      t("studies.success.moveStudy", {
+        study: study.name,
+        path: data.values.path || "/", // Empty path move the study to the root
+      }),
+      {
+        variant: "success",
+      },
+    );
   };
 
   ////////////////////////////////////////////////////////////////
@@ -74,27 +96,19 @@ function MoveStudyDialog(props: Props) {
       open={open}
       config={{ defaultValues }}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={handleSubmitSuccessful}
       onCancel={onClose}
     >
-      {(formObj) => (
-        <TextField
+      {({ control }) => (
+        <StringFE
+          name="path"
+          control={control}
+          rules={{ validate: validatePath({ allowEmpty: true }) }}
+          label={t("global.path")}
+          placeholder={t("studies.movefolderplaceholder")}
           sx={{ mx: 0 }}
           autoFocus
-          label={t("studies.folder")}
-          error={!!formObj.formState.errors.folder}
-          helperText={formObj.formState.errors.folder?.message}
-          placeholder={t("studies.movefolderplaceholder") as string}
-          InputLabelProps={
-            // Allow to show placeholder when field is empty
-            formObj.formState.defaultValues?.folder ? { shrink: true } : {}
-          }
           fullWidth
-          {...formObj.register("folder", {
-            required: t("form.field.required") as string,
-            validate: (value) => {
-              return !isStringEmpty(value);
-            },
-          })}
         />
       )}
     </FormDialog>

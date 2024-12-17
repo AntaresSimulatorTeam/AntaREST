@@ -29,7 +29,6 @@ interface ArrayValidationOptions {
  * validateArray([1, 2, 3], { allowDuplicate: false }); // true
  * validateArray([1, 1, 2, 3], { allowDuplicate: false }); // Error message
  *
- *
  * @example <caption>With currying.</caption>
  * const fn = validateArray({ allowDuplicate: false });
  * fn([1, 2, 3]); // true

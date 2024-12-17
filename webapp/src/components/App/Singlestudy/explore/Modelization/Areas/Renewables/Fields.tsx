@@ -47,6 +47,7 @@ function Fields() {
           name="group"
           control={control}
           options={RENEWABLE_GROUPS}
+          startCaseLabel={false}
           sx={{
             alignSelf: "center",
           }}

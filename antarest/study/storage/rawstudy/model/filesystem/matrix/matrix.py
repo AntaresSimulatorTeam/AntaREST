@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import io
 import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, List, Optional, Union, cast
+from typing import List, Optional, Union, cast
 
 import pandas as pd
 
@@ -41,12 +41,12 @@ class MatrixFrequency(StrEnum):
     HOURLY = "hourly"
 
 
-def dump_dataframe(df: pd.DataFrame, path: Path, float_format: Optional[str] = "%.6f") -> None:
-    if df.empty:
-        path.write_bytes(b"")
+def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO, float_format: Optional[str] = "%.6f") -> None:
+    if df.empty and isinstance(path_or_buf, Path):
+        path_or_buf.write_bytes(b"")
     else:
         df.to_csv(
-            path,
+            path_or_buf,
             sep="\t",
             header=False,
             index=False,
@@ -87,7 +87,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if self.get_link_path().exists() or self.config.archive_path:
             return
 
-        matrix = self.parse()
+        matrix = self.parse_as_json()
 
         if "data" in matrix:
             data = cast(List[List[float]], matrix["data"])
@@ -131,17 +131,12 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
                 tmp_dir.cleanup()
             return b""
 
-        return cast(JSON, self.parse(file_path, tmp_dir))
+        return self.parse_as_json(file_path)
 
     @abstractmethod
-    def parse(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-        return_dataframe: bool = False,
-    ) -> Union[JSON, pd.DataFrame]:
+    def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
         """
-        Parse the matrix content
+        Parse the matrix content and return it as a JSON object
         """
         raise NotImplementedError()
 

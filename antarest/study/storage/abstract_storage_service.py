@@ -18,8 +18,6 @@ from abc import ABC
 from pathlib import Path
 from uuid import uuid4
 
-import py7zr
-
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -45,6 +43,7 @@ from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
@@ -170,6 +169,30 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             data = study.tree.get(parts, depth=depth, formatted=formatted)
         del study
         return data
+
+    def get_file(
+        self,
+        metadata: T,
+        url: str = "",
+        use_cache: bool = True,
+    ) -> OriginalFile:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            use_cache: indicate if the cache must be used
+
+        Returns: a file content with its extension and name
+
+        """
+        self._check_study_exists(metadata)
+        study = self.get_raw(metadata, use_cache)
+        parts = [item for item in url.split("/") if item]
+
+        file_node = study.tree.get_node(parts)
+
+        return file_node.get_file_content()
 
     def get_study_sim_result(
         self,

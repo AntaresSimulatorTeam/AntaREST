@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import List, Optional
 from unittest.mock import Mock
 
@@ -39,22 +38,8 @@ class MockMatrixNode(MatrixNode):
             freq=MatrixFrequency.ANNUAL,
         )
 
-    def parse(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Optional[TemporaryDirectory] = None,
-        return_dataframe: bool = False,
-    ) -> JSON:
+    def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
         return MOCK_MATRIX_JSON
-
-    # def dump(
-    #     self, data: Union[bytes, JSON], url: Optional[List[str]] = None
-    # ) -> None:
-    #     """Dump the matrix data in JSON format to simplify the tests"""
-    #     self.config.path.parent.mkdir(exist_ok=True, parents=True)
-    #     self.config.path.write_text(
-    #         json.dumps(data, indent=2), encoding="utf-8"
-    #     )
 
     def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         pass  # not used
