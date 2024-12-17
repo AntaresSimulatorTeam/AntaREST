@@ -101,17 +101,17 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   const buildTree = (children: StudyTreeNode[], parentId?: string) => {
-    return children.map((elm) => {
-      const id = parentId ? `${parentId}/${elm.name}` : elm.name;
+    return children.map((child) => {
+      const id = parentId ? `${parentId}/${child.name}` : child.name;
 
       return (
         <TreeItemEnhanced
           key={id}
           itemId={id}
-          label={elm.name}
-          onClick={() => handleTreeItemClick(id, elm)}
+          label={child.name}
+          onClick={() => handleTreeItemClick(id, child)}
         >
-          {buildTree(elm.children, id)}
+          {buildTree(child.children, id)}
         </TreeItemEnhanced>
       );
     });
@@ -121,7 +121,14 @@ function StudyTree() {
     <SimpleTreeView
       defaultExpandedItems={[...getParentPaths(folder), folder]}
       defaultSelectedItems={folder}
-      sx={{ flexGrow: 1, height: 0, width: 1, py: 1 }}
+      sx={{
+        flexGrow: 1,
+        height: 0,
+        width: 1,
+        py: 1,
+        overflowY: "auto",
+        overflowX: "hidden",
+      }}
     >
       {buildTree([studiesTree])}
     </SimpleTreeView>
