@@ -1073,11 +1073,15 @@ class StudyService:
 
         return task_or_study_id
 
-    def move_study(self, study_id: str, new_folder: str, params: RequestParameters) -> None:
+    def move_study(self, study_id: str, folder_dest: str, params: RequestParameters) -> None:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+        if folder_dest:
+            new_folder = folder_dest.rstrip("/") + f"/{study.id}"
+        else:
+            new_folder = None
         study.folder = new_folder
         self.repository.save(study, update_modification_date=False)
         self.event_bus.push(

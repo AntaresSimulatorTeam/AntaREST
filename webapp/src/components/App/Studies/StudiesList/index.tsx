@@ -39,10 +39,7 @@ import { FixedSizeGrid, GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
 import { AxiosError } from "axios";
 import { StudyMetadata } from "../../../../common/types";
-import {
-  STUDIES_HEIGHT_HEADER,
-  STUDIES_LIST_HEADER_HEIGHT,
-} from "../../../../theme";
+import { STUDIES_LIST_HEADER_HEIGHT } from "../../../../theme";
 import {
   setStudyScrollPosition,
   StudiesSortConf,
@@ -184,7 +181,7 @@ function StudiesList(props: StudiesListProps) {
 
   return (
     <Box
-      height={`calc(100vh - ${STUDIES_HEIGHT_HEADER}px)`}
+      height={1}
       flex={1}
       display="flex"
       flexDirection="column"
