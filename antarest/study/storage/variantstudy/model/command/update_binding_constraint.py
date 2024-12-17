@@ -12,6 +12,8 @@
 
 import typing as t
 
+from typing_extensions import override
+
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -112,6 +114,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
         existing_constraint = study_data.bindings[index]
@@ -151,6 +154,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                 return str(index), binding_config
         return None
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
@@ -200,6 +204,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         return super().apply_binding_constraint(study_data, binding_constraints, index, self.id, old_groups=old_groups)
 
+    @override
     def to_dto(self) -> CommandDTO:
         matrices = ["values"] + [m.value for m in TermMatrices]
         matrix_service = self.command_context.matrix_service
@@ -214,12 +219,15 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         if not isinstance(other, self.__class__):
             return False

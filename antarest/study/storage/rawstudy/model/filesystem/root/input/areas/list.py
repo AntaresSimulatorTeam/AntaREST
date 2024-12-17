@@ -12,6 +12,8 @@
 
 import typing as t
 
+from typing_extensions import override
+
 from antarest.core.utils.archives import extract_lines_from_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -21,9 +23,11 @@ AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
 
 class InputAreasList(INode[t.List[str], t.List[str], t.List[str]]):
+    @override
     def normalize(self) -> None:
         pass  # no external store in this node
 
+    @override
     def denormalize(self) -> None:
         pass  # no external store in this node
 
@@ -31,6 +35,7 @@ class InputAreasList(INode[t.List[str], t.List[str], t.List[str]]):
         super().__init__(config)
         self.context = context
 
+    @override
     def get_node(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -40,6 +45,7 @@ class InputAreasList(INode[t.List[str], t.List[str], t.List[str]]):
     ) -> INode[t.List[str], t.List[str], t.List[str]]:
         return self
 
+    @override
     def get(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -53,14 +59,17 @@ class InputAreasList(INode[t.List[str], t.List[str], t.List[str]]):
             lines = self.config.path.read_text().split("\n")
         return [l.strip() for l in lines if l.strip()]
 
+    @override
     def save(self, data: t.List[str], url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self.config.path.write_text("\n".join(data))
 
+    @override
     def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         if self.config.path.exists():
             self.config.path.unlink()
 
+    @override
     def check_errors(
         self,
         data: t.List[str],

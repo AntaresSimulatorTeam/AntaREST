@@ -20,6 +20,7 @@ import typing as t
 from pathlib import Path
 
 from fastapi import HTTPException
+from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 
@@ -33,18 +34,22 @@ class DTO:
     Implement basic method for DTO objects
     """
 
+    @override
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.__dict__.items())))
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         return isinstance(other, type(self)) and self.__dict__ == other.__dict__
 
+    @override
     def __str__(self) -> str:
         return "{}({})".format(
             type(self).__name__,
             ", ".join(["{}={}".format(k, str(self.__dict__[k])) for k in sorted(self.__dict__)]),
         )
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()
 

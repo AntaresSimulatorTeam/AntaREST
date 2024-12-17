@@ -16,6 +16,7 @@ import uuid
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serialization import AntaresBaseModel
@@ -41,10 +42,12 @@ class Matrix(Base):  # type: ignore
     height: int = Column(Integer)
     created_at: datetime.datetime = Column(DateTime)
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         """Returns a string representation of the matrix."""
         return f"Matrix(id={self.id}, shape={(self.height, self.width)}, created_at={self.created_at})"
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, Matrix):
             return False
@@ -101,10 +104,12 @@ class MatrixDataSetRelation(Base):  # type: ignore
     name: str = Column(String, primary_key=True)
     matrix: Matrix = relationship(Matrix)
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         """Returns a string representation of the matrix."""
         return f"MatrixDataSetRelation(dataset_id={self.dataset_id}, matrix_id={self.matrix_id}, name={self.name})"
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, MatrixDataSetRelation):
             return False
@@ -172,6 +177,7 @@ class MatrixDataSet(Base):  # type: ignore
             updated_at=str(self.updated_at),
         )
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         """Returns a string representation of the matrix."""
         return (
@@ -183,6 +189,7 @@ class MatrixDataSet(Base):  # type: ignore
             f" updated_at={self.updated_at})"
         )
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, MatrixDataSet):
             return False

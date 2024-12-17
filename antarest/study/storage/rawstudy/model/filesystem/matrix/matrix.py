@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import List, Optional, Union, cast
 
 import pandas as pd
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -64,6 +65,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         LazyNode.__init__(self, context, config)
         self.freq = freq
 
+    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,
@@ -72,6 +74,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     ) -> str:
         return f"matrixfile://{self.config.path.name}"
 
+    @override
     def normalize(self) -> None:
         # noinspection SpellCheckingInspection
         """
@@ -95,6 +98,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
             self.config.path.unlink()
 
+    @override
     def denormalize(self) -> None:
         """
         Read the matrix ID from the matrix link, retrieve the original matrix
@@ -114,6 +118,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self.dump(matrix)
         self.get_link_path().unlink()
 
+    @override
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -140,6 +145,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         """
         raise NotImplementedError()
 
+    @override
     def dump(
         self,
         data: Union[bytes, JSON],

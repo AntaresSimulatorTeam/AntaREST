@@ -12,6 +12,8 @@
 
 import typing as t
 
+from typing_extensions import override
+
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -54,6 +56,7 @@ class BucketNode(FolderNode):
     def _get_registered_file_by_filename(self, filename: str) -> t.Optional[RegisteredFile]:
         return next((rf for rf in self.registered_files if rf.filename == filename), None)
 
+    @override
     def save(
         self,
         data: SUB_JSON,
@@ -93,6 +96,7 @@ class BucketNode(FolderNode):
         elif isinstance(data, dict):
             BucketNode(self.context, self.config.next_file(key)).save(data)
 
+    @override
     def build(self) -> TREE:
         if not self.config.path.is_dir():
             return {}
@@ -110,6 +114,7 @@ class BucketNode(FolderNode):
 
         return children
 
+    @override
     def check_errors(
         self,
         data: JSON,

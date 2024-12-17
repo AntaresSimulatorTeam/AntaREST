@@ -23,6 +23,7 @@ from pathlib import Path
 import py7zr
 import pydantic_core
 from filelock import FileLock
+from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
@@ -168,6 +169,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         else:
             return {}
 
+    @override
     def get(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -179,6 +181,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         assert not isinstance(output, INode)
         return output
 
+    @override
     def get_node(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -187,6 +190,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         assert isinstance(output, INode)
         return output
 
+    @override
     def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         url = url or []
@@ -212,6 +216,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             self.writer.write(info, self.path)
 
     @log_warning
+    @override
     def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         """
         Deletes the specified section or key from the INI file,
@@ -274,6 +279,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
         self.writer.write(data, self.path)
 
+    @override
     def check_errors(
         self,
         data: JSON,
@@ -292,9 +298,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
         return errors
 
+    @override
     def normalize(self) -> None:
         pass  # no external store in this node
 
+    @override
     def denormalize(self) -> None:
         pass  # no external store in this node
 

@@ -15,6 +15,8 @@ import logging
 import time
 import typing as t
 
+from typing_extensions import override
+
 from antarest.core.config import Config
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.service import IService
@@ -90,6 +92,7 @@ class AutoArchiveService(IService):
                 params=RequestParameters(DEFAULT_ADMIN_USER),
             )
 
+    @override
     def _loop(self) -> None:
         while True:
             try:

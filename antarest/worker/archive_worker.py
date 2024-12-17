@@ -13,6 +13,8 @@
 import logging
 from pathlib import Path
 
+from typing_extensions import override
+
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.serialization import AntaresBaseModel
@@ -57,6 +59,7 @@ class ArchiveWorker(AbstractWorker):
             [f"{ArchiveWorker.TASK_TYPE}_{workspace}"],
         )
 
+    @override
     def _execute_task(self, task_info: WorkerTaskCommand) -> TaskResult:
         logger.info(f"Executing task {task_info.model_dump_json()}")
         try:

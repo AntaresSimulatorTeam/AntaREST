@@ -14,6 +14,7 @@ import re
 import typing as t
 
 import typing_extensions as te
+from typing_extensions import override
 
 from antarest.study.model import (
     STUDY_VERSION_8,
@@ -124,6 +125,7 @@ class ScenarioBuilder(IniFileNode):
         for area_id in self.config.areas:
             rules[f"hgp,{area_id},0"] = _TSNumber
 
+    @override
     def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
         # If the URL contains 2 elements, we can filter the options based on the generator type.
         if len(url) == 2:

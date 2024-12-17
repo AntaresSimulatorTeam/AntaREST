@@ -13,6 +13,7 @@
 import typing as t
 
 from pydantic import field_validator, model_validator
+from typing_extensions import override
 
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
@@ -91,6 +92,7 @@ class RemoveLink(ICommand):
 
         return CommandOutput(status=bool(data), message=message), data
 
+    @override
     def _apply_config(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
         """
         Update the study configuration by removing the link between the source and target areas.
@@ -126,6 +128,7 @@ class RemoveLink(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Update the configuration and the study data by removing the link between the source and target areas.
@@ -152,6 +155,7 @@ class RemoveLink(ICommand):
 
         return self._apply_config(study_data.config)[0]
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REMOVE_LINK.value,
@@ -159,17 +163,21 @@ class RemoveLink(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         sep = MATCH_SIGNATURE_SEPARATOR
         return f"{self.command_name.value}{sep}{self.area1}{sep}{self.area2}"
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveLink):
             return False
         return self.area1 == other.area1 and self.area2 == other.area2
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

@@ -30,6 +30,7 @@ from antares.study.version import StudyVersion
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -212,6 +213,7 @@ class TaskProgressRecorder(ICommandListener):
     def __init__(self, notifier: ITaskNotifier) -> None:
         self.notifier = notifier
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return self.notifier.notify_progress(progress)
 

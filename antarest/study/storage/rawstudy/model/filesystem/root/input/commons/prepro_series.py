@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import AreaMatrixList
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import InputPrepro
@@ -51,6 +52,7 @@ class InputPreproSeries(FolderNode):
         super().__init__(context, config)
         self.prefix = prefix
 
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "prepro": InputPrepro(self.context, self.config.next_file("prepro")),

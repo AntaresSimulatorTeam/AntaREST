@@ -16,6 +16,7 @@ from typing import Any, List, Optional, Union, cast
 
 import pandas as pd
 from pandas import DataFrame
+from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
@@ -56,6 +57,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         self.head_writer = head_writer
         self.freq = freq
 
+    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,
@@ -106,6 +108,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         matrix = self.parse_dataframe(file_path, tmp_dir)
         return cast(JSON, matrix.to_dict(orient="split"))
 
+    @override
     def check_errors(
         self,
         data: JSON,
@@ -119,6 +122,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
             errors.append(f"Output Series Matrix f{self.config.path} not exists")
         return errors
 
+    @override
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -148,12 +152,15 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
                 f"Output file '{self.config.path.name}' not found in study {self.config.study_id}"
             ) from e
 
+    @override
     def dump(self, data: Union[bytes, JSON], url: Optional[List[str]] = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
+    @override
     def normalize(self) -> None:
         pass  # no external store in this node
 
+    @override
     def denormalize(self) -> None:
         pass  # no external store in this node
 

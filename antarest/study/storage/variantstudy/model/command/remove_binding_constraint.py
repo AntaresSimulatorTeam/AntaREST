@@ -12,6 +12,8 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from typing_extensions import override
+
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import DEFAULT_GROUP
@@ -35,6 +37,7 @@ class RemoveBindingConstraint(ICommand):
     # Properties of the `REMOVE_BINDING_CONSTRAINT` command:
     id: str
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.id not in [bind.id for bind in study_data.bindings]:
             return (
@@ -44,6 +47,7 @@ class RemoveBindingConstraint(ICommand):
         study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
         return CommandOutput(status=True), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.config.bindings]:
             return CommandOutput(status=False, message=f"Binding constraint not found: '{self.id}'")
@@ -76,6 +80,7 @@ class RemoveBindingConstraint(ICommand):
 
         return self._apply_config(study_data.config)[0]
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
@@ -85,16 +90,20 @@ class RemoveBindingConstraint(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveBindingConstraint):
             return False
         return self.id == other.id
 
+    @override
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return []
 
+    @override
     def get_inner_matrices(self) -> List[str]:
         return []

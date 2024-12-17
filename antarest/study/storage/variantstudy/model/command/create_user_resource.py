@@ -12,6 +12,8 @@
 import typing as t
 from enum import StrEnum
 
+from typing_extensions import override
+
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
@@ -50,9 +52,11 @@ class CreateUserResource(ICommand):
 
     data: CreateUserResourceData
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         url = [item for item in self.data.path.split("/") if item]
         study_tree = study_data.tree
@@ -74,6 +78,7 @@ class CreateUserResource(ICommand):
             return CommandOutput(status=False, message=f"the given resource already exists: {self.data.path}")
         return CommandOutput(status=True, message="ok")
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
@@ -81,6 +86,7 @@ class CreateUserResource(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(
             self.command_name.value
@@ -90,13 +96,16 @@ class CreateUserResource(ICommand):
             + self.data.resource_type.value
         )
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateUserResource):
             return False
         return self.data.path == other.data.path and self.data.resource_type == other.data.resource_type
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

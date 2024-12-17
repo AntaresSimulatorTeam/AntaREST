@@ -13,6 +13,8 @@
 import logging
 from typing import List, Optional, Union
 
+from typing_extensions import override
+
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
@@ -20,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
+    @override
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -44,6 +47,7 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
         logger.warning(f"Missing file {self.config.path}")
         return []
 
+    @override
     def dump(
         self,
         data: Union[str, bytes, List[int]],
@@ -55,6 +59,7 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
             for d in data:
                 fh.write(f"{d}\n")
 
+    @override
     def check_errors(
         self,
         data: JSON,
@@ -63,10 +68,12 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
     ) -> List[str]:
         return []
 
+    @override
     def normalize(self) -> None:
         # this is not normalizable
         pass
 
+    @override
     def denormalize(self) -> None:
         # this is not normalizable
         pass
