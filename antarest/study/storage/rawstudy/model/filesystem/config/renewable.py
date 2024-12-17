@@ -14,6 +14,7 @@ import typing as t
 
 from antares.study.version import StudyVersion
 from pydantic import Field
+from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_1
@@ -54,10 +55,12 @@ class RenewableClusterGroup(EnumIgnoreCase):
     OTHER3 = "other res 3"
     OTHER4 = "other res 4"
 
+    @override
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
+    @override
     def _missing_(cls, value: object) -> t.Optional["RenewableClusterGroup"]:
         """
         Retrieves the default group or the matched group when an unknown value is encountered.

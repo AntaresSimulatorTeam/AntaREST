@@ -13,6 +13,7 @@
 import typing as t
 
 from sqlalchemy.orm import Session, joinedload  # type: ignore
+from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -37,6 +38,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         super().__init__(cache_service)
         self._session = session
 
+    @override
     @property
     def session(self) -> Session:
         """

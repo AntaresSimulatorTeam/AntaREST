@@ -12,6 +12,8 @@
 
 from typing import Any, Callable
 
+from typing_extensions import override
+
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
     AreaMatrixList,
     AreaMultipleMatrixList,
@@ -26,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "mc-0": AreaMatrixList(self.context, self.config.next_file("mc-0")),
@@ -54,6 +57,7 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
         super().__init__(context, config)
         self.klass = klass
 
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "mc-0": AreaMultipleMatrixList(
@@ -67,6 +71,7 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
 
 
 class OutputSimulationTsGenerator(FolderNode):
+    @override
     def build(self) -> TREE:
         children: TREE = {}
         for output_type in ["load", "solar", "wind"]:

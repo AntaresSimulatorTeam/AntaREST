@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -34,6 +35,7 @@ OUTPUT_MAPPING = {
 
 
 class OutputSimulationModeCommon(FolderNode):
+    @override
     def build(self) -> TREE:
         if not self.config.output_path:
             return {}

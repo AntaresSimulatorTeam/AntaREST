@@ -14,6 +14,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from pydantic import field_validator
+from typing_extensions import override
 
 from antarest.core.model import LowerCaseStr
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
@@ -50,6 +51,7 @@ class CreateDistrict(ICommand):
     output: bool = True
     comments: str = ""
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         district_id = transform_name_to_id(self.name)
         if district_id in study_data.sets:
@@ -75,6 +77,7 @@ class CreateDistrict(ICommand):
             "item_key": item_key,
         }
 
+    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
@@ -94,6 +97,7 @@ class CreateDistrict(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
@@ -107,9 +111,11 @@ class CreateDistrict(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateDistrict):
             return False
@@ -124,6 +130,7 @@ class CreateDistrict(ICommand):
             and self.comments == other.comments
         )
 
+    @override
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(CreateDistrict, other)
         district_id = transform_name_to_id(self.name)
@@ -147,5 +154,6 @@ class CreateDistrict(ICommand):
             )
         ]
 
+    @override
     def get_inner_matrices(self) -> List[str]:
         return []

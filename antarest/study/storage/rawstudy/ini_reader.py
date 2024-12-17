@@ -16,6 +16,8 @@ import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from typing_extensions import override
+
 from antarest.core.model import JSON
 
 
@@ -168,6 +170,7 @@ class IniReader(IReader):
         # Current option name used during paring
         self._curr_option = ""
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         """Return a string representation of the object."""
         cls = self.__class__.__name__
@@ -176,6 +179,7 @@ class IniReader(IReader):
         section_name = getattr(self, "_section_name", "settings")
         return f"{cls}(special_keys={special_keys!r}, section_name={section_name!r})"
 
+    @override
     def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
         if isinstance(path, (Path, str)):
             try:
@@ -321,6 +325,7 @@ class SimpleKeyValueReader(IniReader):
     Simple INI reader for "settings.ini" file which has no section.
     """
 
+    @override
     def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
         """
         Parse `.ini` file which has no section to JSON object.

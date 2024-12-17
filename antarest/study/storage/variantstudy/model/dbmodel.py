@@ -17,6 +17,7 @@ from pathlib import Path
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serialization import from_json
@@ -43,6 +44,7 @@ class VariantStudySnapshot(Base):  # type: ignore
         "polymorphic_identity": "variant_study_snapshot",
     }
 
+    @override
     def __str__(self) -> str:
         return f"[Snapshot] id={self.id}, created_at={self.created_at}"
 
@@ -82,6 +84,7 @@ class CommandBlock(Base):  # type: ignore
             updated_at=self.updated_at,
         )
 
+    @override
     def __str__(self) -> str:
         return (
             f"CommandBlock(id={self.id!r},"
@@ -125,6 +128,7 @@ class VariantStudy(Study):
         cascade="all, delete, delete-orphan",
     )
 
+    @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
 
