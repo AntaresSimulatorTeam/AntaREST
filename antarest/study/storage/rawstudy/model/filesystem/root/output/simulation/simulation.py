@@ -47,12 +47,9 @@ class OutputSimulation(FolderNode):
             "about-the-study": OutputSimulationAbout(self.context, self.config.next_file("about-the-study")),
             "simulation": RawFileNode(self.context, self.config.next_file("simulation.log")),
             "info": OutputSimulationInfoAntaresOutput(self.context, self.config.next_file("info.antares-output")),
+            "antares-out": RawFileNode(self.context, self.config.next_file("antares-out.log")),
+            "antares-err": RawFileNode(self.context, self.config.next_file("antares-err.log")),
         }
-
-        for output_type in ["out", "err"]:
-            file_name = f"antares-{output_type}"
-            if (self.config.path / f"{file_name}.log").exists():
-                children[file_name] = RawFileNode(self.context, self.config.next_file(f"{file_name}.log"))
 
         if not self.simulation.error:
             for file in ["annualSystemCost", "checkIntegrity", "simulation-comments"]:
