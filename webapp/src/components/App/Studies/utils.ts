@@ -20,6 +20,13 @@ export interface StudyTreeNode {
   children: StudyTreeNode[];
 }
 
+export interface NonStudyFolderDTO {
+  name: string;
+  path: string;
+  workspace: string;
+  parentPath: string;
+}
+
 /**
  * Builds a tree structure from a list of study metadata.
  *
