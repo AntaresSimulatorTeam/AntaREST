@@ -10,17 +10,15 @@
 #
 # This file is part of the Antares project.
 
-import io
 import logging
 import os
 import shutil
 import signal
 import subprocess
-import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from antares.study.version import SolverVersion
 
@@ -28,7 +26,7 @@ from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
-from antarest.launcher.adapters.log_manager import follow
+from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 logger = logging.getLogger(__name__)
@@ -49,7 +47,11 @@ class LocalLauncher(AbstractLauncher):
         super().__init__(config, callbacks, event_bus, cache)
         if self.config.launcher.local is None:
             raise LauncherInitException("Missing parameter 'launcher.local'")
-        self.tmpdir = config.storage.tmp_dir
+        self.local_workspace = self.config.launcher.local.local_workspace
+        logs_path = self.local_workspace / "LOGS"
+        logs_path.mkdir(parents=True, exist_ok=True)
+        self.log_directory = logs_path
+        self.log_tail_manager = LogTailManager(self.local_workspace)
         self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
@@ -73,12 +75,7 @@ class LocalLauncher(AbstractLauncher):
         return antares_solver_path
 
     def run_study(
-        self,
-        study_uuid: str,
-        job_id: str,
-        version: SolverVersion,
-        launcher_parameters: LauncherParametersDTO,
-        study_path: Path,
+        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         antares_solver_path = self._select_best_binary(f"{version:ddd}")
 
@@ -88,7 +85,6 @@ class LocalLauncher(AbstractLauncher):
                 self,
                 antares_solver_path,
                 study_uuid,
-                study_path,
                 job_id,
                 launcher_parameters,
             ),
@@ -100,64 +96,33 @@ class LocalLauncher(AbstractLauncher):
         self,
         antares_solver_path: Path,
         study_uuid: str,
-        study_path: Path,
         job_id: str,
         launcher_parameters: LauncherParametersDTO,
     ) -> None:
-        end = False
-
-        # create study logs
-        logs_path = study_path / "output" / "logs"
-        logs_path.mkdir(exist_ok=True, parents=True)
-
-        def stop_reading_output() -> bool:
-            if end and job_id in self.logs:
-                with open(logs_path / f"{job_id}-out.log", "w") as log_file:
-                    log_file.write(self.logs[job_id])
-                del self.logs[job_id]
-            return end
-
-        tmp_path = tempfile.mkdtemp(prefix="local_launch_", dir=str(self.tmpdir))
-        export_path = Path(tmp_path) / "export"
+        export_path = self.local_workspace / job_id
+        logs_path = self.log_directory / job_id
+        logs_path.mkdir()
         try:
             self.callbacks.export_study(job_id, study_uuid, export_path, launcher_parameters)
 
-            simulator_args, environment_variables = self.parse_launcher_options(launcher_parameters)
+            simulator_args, environment_variables = self._parse_launcher_options(launcher_parameters)
             new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
 
-            std_out_file = study_path / "output" / "logs" / f"{job_id}-err.log"
-            with open(std_out_file, "w") as err_file:
+            std_err_file = logs_path / f"{job_id}-err.log"
+            std_out_file = logs_path / f"{job_id}-out.log"
+            with open(std_err_file, "w") as err_file, open(std_out_file, "w") as out_file:
                 process = subprocess.Popen(
                     new_args,
                     env=environment_variables,
-                    stdout=subprocess.PIPE,
+                    stdout=out_file,
                     stderr=err_file,
                     universal_newlines=True,
                     encoding="utf-8",
                 )
-            self.job_id_to_study_id[job_id] = (
-                study_uuid,
-                export_path,
-                process,
-            )
-            self.callbacks.update_status(
-                job_id,
-                JobStatus.RUNNING,
-                None,
-                None,
-            )
+            self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
+            self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)
 
-            thread = threading.Thread(
-                target=lambda: follow(
-                    cast(io.StringIO, process.stdout),
-                    self.create_update_log(job_id),
-                    stop_reading_output,
-                    None,
-                ),
-                name=f"{self.__class__.__name__}-LogsWatcher",
-                daemon=True,
-            )
-            thread.start()
+            self.log_tail_manager.track(std_out_file, self.create_update_log(job_id))
 
             while process.poll() is None:
                 time.sleep(1)
@@ -171,7 +136,8 @@ class LocalLauncher(AbstractLauncher):
             if process.returncode == 0:
                 # The job succeed we need to import the output
                 try:
-                    output_id = self.callbacks.import_output(job_id, export_path / "output", {})
+                    launcher_logs = self._import_launcher_logs(job_id)
+                    output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
                 except Exception as e:
                     logger.error(
                         f"Failed to import output for study {study_uuid} located at {export_path}",
@@ -193,11 +159,17 @@ class LocalLauncher(AbstractLauncher):
                 None,
             )
         finally:
-            logger.info(f"Removing launch {job_id} export path at {tmp_path}")
-            end = True
-            shutil.rmtree(tmp_path)
+            logger.info(f"Removing launch {job_id} export path at {export_path}")
+            shutil.rmtree(export_path)
 
-    def parse_launcher_options(self, launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
+    def _import_launcher_logs(self, job_id: str) -> Dict[str, List[Path]]:
+        logs_path = self.log_directory / job_id
+        return {
+            "antares-out.log": [logs_path / f"{job_id}-out.log"],
+            "antares-err.log": [logs_path / f"{job_id}-err.log"],
+        }
+
+    def _parse_launcher_options(self, launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
         simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
         environment_variables = os.environ.copy()
         if launcher_parameters.other_options:
@@ -225,10 +197,10 @@ class LocalLauncher(AbstractLauncher):
 
         return append_to_log
 
-    def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         if job_id in self.job_id_to_study_id and job_id in self.logs and log_type == LogType.STDOUT:
             return self.logs[job_id]
-        job_path = study_path / "output" / "logs" / f"{job_id}-{log_type.to_suffix()}"
+        job_path = self.log_directory / job_id / f"{job_id}-{log_type.to_suffix()}"
         if job_path.exists():
             return job_path.read_text()
         return None

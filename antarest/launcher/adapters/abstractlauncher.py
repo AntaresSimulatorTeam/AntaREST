@@ -69,17 +69,12 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def run_study(
-        self,
-        study_uuid: str,
-        job_id: str,
-        version: SolverVersion,
-        launcher_parameters: LauncherParametersDTO,
-        study_path: Path,
+        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         raise NotImplementedError()
 
     @abstractmethod

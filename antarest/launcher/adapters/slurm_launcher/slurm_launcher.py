@@ -589,12 +589,7 @@ class SlurmLauncher(AbstractLauncher):
         return self.launcher_args
 
     def run_study(
-        self,
-        study_uuid: str,
-        job_id: str,
-        version: SolverVersion,
-        launcher_parameters: LauncherParametersDTO,
-        study_path: Path,
+        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         thread = threading.Thread(
             target=self._run_study,
@@ -603,7 +598,7 @@ class SlurmLauncher(AbstractLauncher):
         )
         thread.start()
 
-    def get_log(self, job_id: str, log_type: LogType, study_path: Path) -> t.Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> t.Optional[str]:
         log_path: t.Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
