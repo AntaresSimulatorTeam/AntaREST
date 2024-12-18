@@ -36,19 +36,11 @@ function StudyTree() {
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
 
-  ////////////////////////////////////////////////////////////////
-  // initialize
-  ////////////////////////////////////////////////////////////////
-
   // Initialize folders once we have the tree
   // we use useUpdateEffectOnce because at first render initialStudiesTree isn't initialized
   useUpdateEffectOnce(() => {
     updateTree("root", initialStudiesTree);
   }, [initialStudiesTree]);
-
-  ////////////////////////////////////////////////////////////////
-  // utils
-  ////////////////////////////////////////////////////////////////
 
   /**
    * This function is called at the initialization of the component and when the user clicks on a folder.
@@ -85,13 +77,12 @@ function StudyTree() {
         );
       }
     } else {
-      /* If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
-       * as well as the path of the children of the clicked folder.
-       * If we don't fetch the subfolders of the children then we won't know if they're themselves folders, which we need
-       * to know to display the little arrow next to the subfolder.
-       * On the other hand, if we fetch only the subfolders of the children, then we won't fetch their "siblings" folder
-       * if one of them is added.
-       */
+      // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
+      // as well as the path of the children of the clicked folder.
+      // If we don't fetch the subfolders of the children then we won't know if they're themselves folders, which we need
+      // to know to display the little arrow next to the subfolder.
+      // On the other hand, if we fetch only the subfolders of the children, then we won't fetch their "siblings" folder
+      // if one of them is added.
       chidrenPaths = [studyTreeNode.path].concat(chidrenPaths);
     }
 
