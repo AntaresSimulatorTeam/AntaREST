@@ -32,7 +32,7 @@ def launcher_config(tmp_path: Path) -> Config:
     Fixture to create a launcher config with a local launcher.
     """
     solver_path = tmp_path.joinpath(SOLVER_NAME)
-    data = {"binaries": {"700": solver_path}, "enable_nb_cores_detection": True}
+    data = {"binaries": {"700": solver_path}, "enable_nb_cores_detection": True, "local_workspace": tmp_path}
     return Config(launcher=LauncherConfig(local=LocalConfig.from_dict(data)))
 
 

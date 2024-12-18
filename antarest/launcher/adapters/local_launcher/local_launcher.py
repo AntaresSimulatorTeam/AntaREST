@@ -160,7 +160,7 @@ class LocalLauncher(AbstractLauncher):
             )
         finally:
             logger.info(f"Removing launch {job_id} export path at {export_path}")
-            shutil.rmtree(export_path)
+            shutil.rmtree(export_path, ignore_errors=True)
 
     def _import_launcher_logs(self, job_id: str) -> Dict[str, List[Path]]:
         logs_path = self.log_directory / job_id
