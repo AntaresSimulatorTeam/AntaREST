@@ -53,10 +53,14 @@ function StudyTree() {
   /**
    * This function is called at the initialization of the component and when the user clicks on a folder.
    *
-   * The strategy to update the tree is to fetch the subfolders for a given folder when a user click on it.
+   * The study tree is built from the studies in the database. There's a scan process that run on the server
+   * to update continuously the studies in the database.
    *
-   * Doing the fetch only when the user clicks on a folder allows us to only fetch the data when the user needs it,
-   * and not the whole tree, which can be very large.
+   * However this process can take a long time, and the user shouldn't wait for hours before he can see a study he knows is already uploaded.
+   *
+   * Instead of relying on the scan process to update the tree, we'll allow the user to walk into the tree and run a scan process only when he needs to.
+   *
+   * To enable this, we'll fetch the subfolders of a folder when the user clicks on it using the explorer API.
    *
    * @param itemId - The id of the item clicked
    * @param studyTreeNode - The node of the item clicked

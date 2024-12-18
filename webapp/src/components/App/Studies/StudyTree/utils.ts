@@ -18,14 +18,9 @@ import * as api from "../../../../services/api/study";
 /**
  * Add a folder that was returned by the explorer into the study tree view.
  *
- * This folder isn't a study, otherwise it wouldn't be
- * returned by the explorer API, but this folder can have study in it
- * and still not be in the initial study tree that's parsed from the study
- * list, this happen when the studies in the folder aren't scanned yet.
+ * This function doesn't mutate the tree, it returns a new tree with the folder inserted.
  *
- * However we want to allow the user to see these folder. When the user explore
- * they shoudln't wait for a long running scan to complete before they're able to
- * a folder in the hierarchy.
+ * If the folder is already in the tree, the tree returnred will be equal to the tree given to the function.
  *
  * @param studiesTree study tree to insert the folder into
  * @param folder folder to inert into the tree
@@ -75,6 +70,10 @@ function insertFolderIfNotExist(
 /**
  * Insert several folders in the study tree if they don't exist already in the tree.
  *
+ * This function doesn't mutate the tree, it returns a new tree with the folders inserted
+ *
+ * The folders are inserted in the order they are given.
+ *
  * @param studiesTree study tree to insert the folder into
  * @param folders folders to inert into the tree
  * @param studiesTree study tree to insert the folder into
@@ -121,6 +120,8 @@ async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
  *
  * Subfolders are inserted only if they don't exist already in the tree.
  *
+ * This function doesn't mutate the tree, it returns a new tree with the subfolders inserted
+ *
  * @param paths list of paths to fetch the subfolders for
  * @param studiesTree study tree to insert the subfolders into
  * @returns a tuple with study tree with the subfolders inserted if they weren't already there and path for which
@@ -149,6 +150,8 @@ export async function fetchAndInsertSubfolders(
 /**
  * Insert a workspace into the study tree if it doesn't exist already.
  *
+ * This function doesn't mutate the tree, it returns a new tree with the workspace inserted.
+ *
  * @param workspace key of the workspace
  * @param stydyTree study tree to insert the workspace into
  * @returns study tree with the empty workspace inserted if it wasn't already there.
@@ -170,6 +173,10 @@ function insertWorkspaceIfNotExist(
 /**
  * Insert several workspaces into the study tree if they don't exist already in the tree.
  *
+ * This function doesn't mutate the tree, it returns a new tree with the workspaces inserted.
+ *
+ * The workspaces are inserted in the order they are given.
+ *
  * @param workspaces workspaces to insert into the tree
  * @param stydyTree study tree to insert the workspaces into
  * @returns study tree with the empty workspaces inserted if they weren't already there.
@@ -184,7 +191,12 @@ export function insertWorkspacesIfNotExist(
 }
 
 /**
- * fetch and insert the workspaces into the study tree.
+ * Fetch and insert the workspaces into the study tree.
+ *
+ * Workspaces are inserted only if they don't exist already in the tree.
+ *
+ * This function doesn't mutate the tree, it returns a new tree with the workspaces inserted.
+ *
  * @param studyTree study tree to insert the workspaces into
  * @returns study tree with the workspaces inserted if they weren't already there.
  */
