@@ -20,14 +20,14 @@ import type { DataCompProps } from "../utils";
 import DownloadButton from "@/components/common/buttons/DownloadButton";
 import UploadFileButton from "@/components/common/buttons/UploadFileButton";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import { getStudyData } from "@/services/api/study";
 import { downloadFile } from "@/utils/fileUtils";
+import { getRawFile } from "@/services/api/studies/raw";
 
 function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   const { t } = useTranslation();
 
-  const res = usePromiseWithSnackbarError(
-    () => getStudyData<string>(studyId, filePath),
+  const rawFileRes = usePromiseWithSnackbarError(
+    () => getRawFile(studyId, filePath),
     {
       errorMessage: t("studies.error.retrieveData"),
       deps: [studyId, filePath],
@@ -39,13 +39,10 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   ////////////////////////////////////////////////////////////////
 
   const handleDownload = () => {
-    if (res.data) {
-      downloadFile(res.data, filename);
+    if (rawFileRes.data) {
+      const { data, filename } = rawFileRes.data;
+      downloadFile(data, filename);
     }
-  };
-
-  const handleUploadSuccessful = () => {
-    res.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -56,13 +53,7 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
     <Flex>
       <Menubar>
         <Filename>{filename}</Filename>
-        {canEdit && (
-          <UploadFileButton
-            studyId={studyId}
-            path={filePath}
-            onUploadSuccessful={handleUploadSuccessful}
-          />
-        )}
+        {canEdit && <UploadFileButton studyId={studyId} path={filePath} />}
         <DownloadButton onClick={handleDownload} />
       </Menubar>
       <EmptyView icon={BlockIcon} title={t("study.debug.file.unsupported")} />

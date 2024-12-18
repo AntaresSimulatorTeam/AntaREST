@@ -39,3 +39,8 @@ export interface DeleteFileParams {
   studyId: StudyMetadata["id"];
   path: string;
 }
+
+export interface RawFile {
+  data: Blob;
+  filename: string;
+}

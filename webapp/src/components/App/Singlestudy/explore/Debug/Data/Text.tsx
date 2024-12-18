@@ -33,6 +33,7 @@ import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import EmptyView from "@/components/common/page/SimpleContent";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import { getRawFile } from "@/services/api/studies/raw";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -75,7 +76,7 @@ function Text({
   const { t } = useTranslation();
   const theme = useTheme();
 
-  const res = usePromiseWithSnackbarError(
+  const fileRes = usePromiseWithSnackbarError(
     () =>
       getStudyData<string>(studyId, filePath).then((text) =>
         parseContent(text, { filePath, fileType }),
@@ -86,21 +87,27 @@ function Text({
     },
   );
 
+  const rawFileRes = usePromiseWithSnackbarError(
+    () => getRawFile(studyId, filePath),
+    {
+      errorMessage: t("studies.error.retrieveData"),
+      deps: [studyId, filePath],
+    },
+  );
+
+  const handleDownload = () => {
+    if (rawFileRes.data) {
+      const { data, filename } = rawFileRes.data;
+      downloadFile(data, filename);
+    }
+  };
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = () => {
-    if (res.data) {
-      downloadFile(
-        res.data,
-        filename.endsWith(".txt") ? filename : `${filename}.txt`,
-      );
-    }
-  };
-
   const handleUploadSuccessful = () => {
-    res.reload();
+    fileRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -109,7 +116,7 @@ function Text({
 
   return (
     <UsePromiseCond
-      response={res}
+      response={fileRes}
       ifFulfilled={(text) => (
         <Flex>
           <Menubar>

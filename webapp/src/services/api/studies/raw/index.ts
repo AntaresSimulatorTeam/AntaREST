@@ -17,6 +17,7 @@ import type {
   DeleteFileParams,
   DownloadMatrixParams,
   ImportFileParams,
+  RawFile,
 } from "./types";
 
 export async function downloadMatrix(params: DownloadMatrixParams) {
@@ -50,4 +51,41 @@ export async function deleteFile(params: DeleteFileParams) {
   const url = `/v1/studies/${studyId}/raw`;
 
   await client.delete<void>(url, { params: { path } });
+}
+
+/**
+ * Reads an original raw file from a study with its metadata.
+ *
+ * @param studyId - Unique identifier of the study
+ * @param filePath - Path to the file within the study
+ * @returns Promise containing the file data and metadata
+ */
+export async function getRawFile(
+  studyId: string,
+  filePath: string,
+): Promise<RawFile> {
+  const response = await client.get(
+    `/v1/studies/${studyId}/raw/original-file`,
+    {
+      params: {
+        path: filePath,
+      },
+      responseType: "blob",
+    },
+  );
+
+  const contentDisposition = response.headers["content-disposition"];
+  let filename = filePath.split("/").pop() || "file"; // fallback filename
+
+  if (contentDisposition) {
+    const matches = /filename=([^;]+)/.exec(contentDisposition);
+    if (matches?.[1]) {
+      filename = matches[1].replace(/"/g, "").trim();
+    }
+  }
+
+  return {
+    data: response.data,
+    filename: filename,
+  };
 }
