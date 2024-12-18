@@ -50,12 +50,24 @@ function StudyTree() {
   // utils
   ////////////////////////////////////////////////////////////////
 
+  /**
+   * This function is called at the initialization of the component and when the user clicks on a folder.
+   *
+   * The strategy to update the tree is to fetch the subfolders for a given folder when a user click on it.
+   *
+   * Doing the fetch only when the user clicks on a folder allows us to only fetch the data when the user needs it,
+   * and not the whole tree, which can be very large.
+   *
+   * @param itemId - The id of the item clicked
+   * @param studyTreeNode - The node of the item clicked
+   */
   async function updateTree(itemId: string, studyTreeNode: StudyTreeNode) {
     let treeAfterWorkspacesUpdate = studiesTree;
     let chidrenPaths = studyTreeNode.children.map(
       (child) => `root${child.path}`,
     );
-
+    // If the user clicks on the root folder, we fetch the workspaces and insert them.
+    // Then we fetch the direct subfolders of the workspaces.
     if (itemId === "root") {
       try {
         treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(studiesTree);
@@ -68,8 +80,17 @@ function StudyTree() {
           toError(error),
         );
       }
+    } else {
+      /* If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
+       * as well as the path of the children of the clicked folder.
+       * If we don't fetch the subfolders of the children then we won't know if they're themselves folders, which we need
+       * to know to display the little arrow next to the subfolder.
+       * On the other hand, if we fetch only the subfolders of the children, then we won't fetch their "siblings" folder
+       * if one of them is added.
+       */
+      chidrenPaths = [studyTreeNode.path].concat(chidrenPaths);
     }
-    // children paths and current element path
+
     const [treeAfterChildrenUpdate, failedPath] =
       await fetchAndInsertSubfolders(chidrenPaths, treeAfterWorkspacesUpdate);
     if (failedPath.length > 0) {
