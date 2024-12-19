@@ -2070,7 +2070,7 @@ class StudyService:
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
-            raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="link")
+            raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links_manager.delete_link(study, area_from, area_to)
         self.event_bus.push(
             Event(
