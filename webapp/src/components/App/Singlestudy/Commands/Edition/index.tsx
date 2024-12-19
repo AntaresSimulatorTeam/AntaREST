@@ -522,7 +522,7 @@ function EditionView(props: Props) {
       ) : (
         <Body sx={{ alignItems: "left" }}>
           <Box height="85%">
-            <EmptyView title="variants.error.noCommands" />
+            <EmptyView title={t("variants.error.noCommands")} />
           </Box>
         </Body>
       )}
