@@ -14,6 +14,8 @@ from abc import ABC, abstractmethod
 from enum import StrEnum
 from typing import Any, Awaitable, Callable, List, Optional
 
+from typing_extensions import override
+
 from antarest.core.model import PermissionInfo
 from antarest.core.serialization import AntaresBaseModel
 
@@ -140,21 +142,26 @@ class DummyEventBusService(IEventBus):
     def __init__(self) -> None:
         self.events: List[Event] = []
 
+    @override
     def queue(self, event: Event, queue: str) -> None:
         # Noop
         pass
 
+    @override
     def add_queue_consumer(self, listener: Callable[[Event], Awaitable[None]], queue: str) -> str:
         return ""
 
+    @override
     def remove_queue_consumer(self, listener_id: str) -> None:
         # Noop
         pass
 
+    @override
     def push(self, event: Event) -> None:
         # Noop
         self.events.append(event)
 
+    @override
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
@@ -162,10 +169,12 @@ class DummyEventBusService(IEventBus):
     ) -> str:
         return ""
 
+    @override
     def remove_listener(self, listener_id: str) -> None:
         # Noop
         pass
 
+    @override
     def start(self, threaded: bool = True) -> None:
         # Noop
         pass

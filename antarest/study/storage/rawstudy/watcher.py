@@ -19,6 +19,7 @@ from time import sleep, time
 from typing import List, Optional
 
 from filelock import FileLock
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -70,6 +71,7 @@ class Watcher(IService):
         self.should_stop = False
         self.allowed_to_start = not config.storage.watcher_lock or Watcher._get_lock(config.storage.watcher_lock_delay)
 
+    @override
     def start(self, threaded: bool = True) -> None:
         self.should_stop = False
         if self.allowed_to_start:
@@ -97,6 +99,7 @@ class Watcher(IService):
                 logger.info("Watcher doesn't get lock")
                 return False
 
+    @override
     def _loop(self) -> None:
         try:
             logger.info(

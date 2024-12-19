@@ -12,6 +12,8 @@
 
 import typing as t
 
+from typing_extensions import override
+
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.serialization import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -43,9 +45,11 @@ class RemoveUserResource(ICommand):
 
     data: RemoveUserResourceData
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         url = [item for item in self.data.path.split("/") if item]
         study_tree = study_data.tree
@@ -62,6 +66,7 @@ class RemoveUserResource(ICommand):
 
         return CommandOutput(status=True, message="ok")
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
@@ -69,16 +74,20 @@ class RemoveUserResource(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.data.path)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveUserResource):
             return False
         return self.data.path == other.data.path
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

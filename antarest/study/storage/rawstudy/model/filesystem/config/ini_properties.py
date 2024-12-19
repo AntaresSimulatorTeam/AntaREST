@@ -12,6 +12,8 @@
 
 import typing as t
 
+from typing_extensions import override
+
 from antarest.core.serialization import AntaresBaseModel, from_json, to_json
 
 
@@ -52,6 +54,7 @@ class IniProperties(
         return config
 
     @classmethod
+    @override
     def construct(cls, _fields_set: t.Optional[t.Set[str]] = None, **values: t.Any) -> "IniProperties":
         """
         Construct a new model instance from a dict of values, replacing aliases with real field names.

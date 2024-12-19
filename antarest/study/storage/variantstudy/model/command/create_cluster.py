@@ -13,6 +13,7 @@
 import typing as t
 
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from antarest.core.model import JSON, LowerCaseStr
 from antarest.core.utils.utils import assert_this
@@ -73,6 +74,7 @@ class CreateCluster(ICommand):
 
         return values
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
@@ -107,6 +109,7 @@ class CreateCluster(ICommand):
             {"cluster_id": cluster.id},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
@@ -144,6 +147,7 @@ class CreateCluster(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
@@ -157,6 +161,7 @@ class CreateCluster(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(
             self.command_name.value
@@ -166,6 +171,7 @@ class CreateCluster(ICommand):
             + self.cluster_name
         )
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateCluster):
             return False
@@ -181,6 +187,7 @@ class CreateCluster(ICommand):
             and self.modulation == other.modulation
         )
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         other = t.cast(CreateCluster, other)
         from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -220,6 +227,7 @@ class CreateCluster(ICommand):
             )
         return commands
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         matrices: t.List[str] = []
         if self.prepro:

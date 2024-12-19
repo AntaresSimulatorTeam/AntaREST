@@ -14,6 +14,8 @@ import shutil
 import typing as t
 from abc import ABC, abstractmethod
 
+from typing_extensions import override
+
 from antarest.core.exceptions import ChildNotFoundError, PathIsAFolderError
 from antarest.core.model import JSON, SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -114,6 +116,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         else:
             return self._expand_get(depth, formatted, get_node)
 
+    @override
     def get(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -125,6 +128,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         assert not isinstance(output, INode)
         return output
 
+    @override
     def get_node(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -133,6 +137,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         assert isinstance(output, INode)
         return output
 
+    @override
     def save(
         self,
         data: SUB_JSON,
@@ -151,6 +156,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             for key in data:
                 children[key].save(data[key])
 
+    @override
     def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         if url and url != [""]:
             children = self.build()
@@ -160,6 +166,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         elif self.config.path.exists():
             shutil.rmtree(self.config.path)
 
+    @override
     def check_errors(
         self,
         data: JSON,
@@ -183,10 +190,12 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                     errors += children[key].check_errors(data[key], raising=raising)
             return errors
 
+    @override
     def normalize(self) -> None:
         for child in self.build().values():
             child.normalize()
 
+    @override
     def denormalize(self) -> None:
         for child in self.build().values():
             child.denormalize()
@@ -217,6 +226,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                 raise FilterError("Filter selection has different classes")
         return names, sub_url
 
+    @override
     def get_file_content(self) -> OriginalFile:
         relative_path = self.config.path.relative_to(self.config.study_path).as_posix()
         raise PathIsAFolderError(f"Node at {relative_path} is a folder node.")

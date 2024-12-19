@@ -10,6 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
+from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
@@ -60,6 +61,7 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
 
         _Session = sessionmaker(bind=engine, **session_args)
 
+    @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         with db(commit_on_exit=self.commit_on_exit):
             response = await call_next(request)

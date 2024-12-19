@@ -16,6 +16,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
+from typing_extensions import override
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
@@ -92,6 +94,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         else:
             return self.load(url, depth, expanded, formatted)
 
+    @override
     def get(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -103,6 +106,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         assert not isinstance(output, INode)
         return output
 
+    @override
     def get_node(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -111,6 +115,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         assert isinstance(output, INode)
         return output
 
+    @override
     def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         self._assert_url_end(url)
         if self.get_link_path().exists():
@@ -122,6 +127,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
 
+    @override
     def save(self, data: t.Union[str, bytes, S], url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)

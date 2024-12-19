@@ -39,6 +39,7 @@ exclude = "antarest/fastapi_jwt_auth/*"
 strict = true
 files = "antarest"
 plugins = "pydantic.mypy"
+enable_error_code = "explicit-override"
 
 [[tool.mypy.overrides]]
 module = ["antarest/fastapi_jwt_auth.*"]

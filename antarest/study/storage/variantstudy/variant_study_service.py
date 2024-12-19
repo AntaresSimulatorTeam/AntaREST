@@ -24,6 +24,7 @@ import humanize
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from filelock import FileLock
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -532,6 +533,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return output_list
 
+    @override
     def get(
         self,
         metadata: VariantStudy,
@@ -561,6 +563,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache=use_cache,
         )
 
+    @override
     def get_file(
         self,
         metadata: VariantStudy,
@@ -870,6 +873,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             return self.task_service.status_task(task_id=task_id, request_params=params, with_logs=True)
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
+    @override
     def create(self, study: VariantStudy) -> VariantStudy:
         """
         Create an empty new study.
@@ -879,6 +883,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         raise NotImplementedError()
 
+    @override
     def exists(self, metadata: VariantStudy) -> bool:
         """
         Check if the study snapshot exists and is up-to-date.
@@ -894,6 +899,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             and (self.get_study_path(metadata) / "study.antares").is_file()
         )
 
+    @override
     def copy(
         self,
         src_meta: VariantStudy,
@@ -991,6 +997,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             return last_executed_command_index if last_executed_command_index >= 0 else None
         return None
 
+    @override
     def get_raw(
         self,
         metadata: VariantStudy,
@@ -1015,6 +1022,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             use_cache=use_cache,
         )
 
+    @override
     def get_study_sim_result(self, study: VariantStudy) -> t.List[StudySimResultDTO]:
         """
         Get global result information
@@ -1025,6 +1033,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._safe_generation(study, timeout=600)
         return super().get_study_sim_result(study=study)
 
+    @override
     def set_reference_output(self, metadata: VariantStudy, output_id: str, status: bool) -> None:
         """
         Set an output to the reference output of a study
@@ -1037,6 +1046,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.patch_service.set_reference_output(metadata, output_id, status)
         remove_from_cache(self.cache, metadata.id)
 
+    @override
     def delete(self, metadata: VariantStudy) -> None:
         """
         Delete study
@@ -1049,6 +1059,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             shutil.rmtree(study_path)
             remove_from_cache(self.cache, metadata.id)
 
+    @override
     def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
         """
         Delete a simulation output
@@ -1062,6 +1073,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         shutil.rmtree(output_path, ignore_errors=True)
         remove_from_cache(self.cache, metadata.id)
 
+    @override
     def get_study_path(self, metadata: Study) -> Path:
         """
         Get study path
@@ -1073,6 +1085,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
 
+    @override
     def export_study_flat(
         self,
         metadata: VariantStudy,
@@ -1096,6 +1109,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             output_src_path,
         )
 
+    @override
     def get_synthesis(
         self,
         metadata: VariantStudy,
@@ -1118,6 +1132,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         raise VariantGenerationError(f"Error during light generation of {metadata.id}")
 
+    @override
     def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
         try:
             if self.exists(variant_study):

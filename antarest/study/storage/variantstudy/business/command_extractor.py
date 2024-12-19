@@ -15,6 +15,7 @@ import logging
 import typing as t
 
 import numpy as np
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
@@ -67,6 +68,7 @@ class CommandExtractor(ICommandExtractor):
             patch_service=self.patch_service,
         )
 
+    @override
     def extract_area(self, study: FileStudy, area_id: str) -> t.Tuple[t.List[ICommand], t.List[ICommand]]:
         stopwatch = StopWatch()
         study_tree = study.tree
@@ -147,6 +149,7 @@ class CommandExtractor(ICommandExtractor):
         stopwatch.log_elapsed(lambda x: logger.info(f"Hydro command extraction done in {x}s"))
         return study_commands, links_commands
 
+    @override
     def extract_link(
         self,
         study: FileStudy,
@@ -249,12 +252,15 @@ class CommandExtractor(ICommandExtractor):
             )
         return study_commands
 
+    @override
     def extract_cluster(self, study: FileStudy, area_id: str, thermal_id: str) -> t.List[ICommand]:
         return self._extract_cluster(study, area_id, thermal_id, False)
 
+    @override
     def extract_renewables_cluster(self, study: FileStudy, area_id: str, renewables_id: str) -> t.List[ICommand]:
         return self._extract_cluster(study, area_id, renewables_id, True)
 
+    @override
     def extract_hydro(self, study: FileStudy, area_id: str) -> t.List[ICommand]:
         study_tree = study.tree
         commands = [
@@ -316,6 +322,7 @@ class CommandExtractor(ICommandExtractor):
 
         return commands
 
+    @override
     def extract_district(self, study: FileStudy, district_id: str) -> t.List[ICommand]:
         study_commands: t.List[ICommand] = []
         study_config = study.config
@@ -337,6 +344,7 @@ class CommandExtractor(ICommandExtractor):
         )
         return study_commands
 
+    @override
     def extract_comments(self, study: FileStudy) -> t.List[ICommand]:
         study_tree = study.tree
         content = t.cast(bytes, study_tree.get(["settings", "comments"]))
@@ -347,6 +355,7 @@ class CommandExtractor(ICommandExtractor):
             )
         ]
 
+    @override
     def extract_binding_constraint(
         self,
         study: FileStudy,
@@ -400,6 +409,7 @@ class CommandExtractor(ICommandExtractor):
 
         return [create_cmd]
 
+    @override
     def generate_update_config(self, study_tree: FileStudyTree, url: t.List[str]) -> ICommand:
         data = study_tree.get(url)
         return UpdateConfig(
@@ -409,6 +419,7 @@ class CommandExtractor(ICommandExtractor):
             study_version=study_tree.config.version,
         )
 
+    @override
     def generate_update_raw_file(self, study_tree: FileStudyTree, url: t.List[str]) -> ICommand:
         data = study_tree.get(url)
         return UpdateRawFile(
@@ -418,6 +429,7 @@ class CommandExtractor(ICommandExtractor):
             study_version=study_tree.config.version,
         )
 
+    @override
     def generate_update_comments(
         self,
         study_tree: FileStudyTree,
@@ -443,6 +455,7 @@ class CommandExtractor(ICommandExtractor):
             study_version=study_tree.config.version,
         )
 
+    @override
     def generate_replace_matrix(
         self,
         study_tree: FileStudyTree,

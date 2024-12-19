@@ -20,6 +20,7 @@ from http import HTTPStatus
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session  # type: ignore
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
@@ -108,9 +109,11 @@ class ITaskService(ABC):
 class NoopNotifier(ITaskNotifier):
     """This class is used in tasks when no notification is required."""
 
+    @override
     def notify_message(self, message: str) -> None:
         return
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return
 
@@ -129,12 +132,14 @@ class TaskLogAndProgressRecorder(ITaskNotifier):
         self.task_id = task_id
         self.event_bus = event_bus
 
+    @override
     def notify_message(self, message: str) -> None:
         task = self.session.query(TaskJob).get(self.task_id)
         if task:
             task.logs.append(TaskJobLog(message=message, task_id=self.task_id))
             self.session.commit()
 
+    @override
     def notify_progress(self, progress: int) -> None:
         self.session.query(TaskJob).filter(TaskJob.id == self.task_id).update({TaskJob.progress: progress})
         self.session.commit()
@@ -215,6 +220,7 @@ class TaskJobService(ITaskService):
     def check_remote_worker_for_queue(self, task_queue: str) -> bool:
         return any(task_queue in rw.queues for rw in self.remote_workers)
 
+    @override
     def add_worker_task(
         self,
         task_type: TaskType,
@@ -237,6 +243,7 @@ class TaskJobService(ITaskService):
         )
         return str(task.id)
 
+    @override
     def add_task(
         self,
         action: Task,
@@ -328,6 +335,7 @@ class TaskJobService(ITaskService):
                 )
             )
 
+    @override
     def status_task(
         self,
         task_id: str,
@@ -344,6 +352,7 @@ class TaskJobService(ITaskService):
                 detail=f"Failed to retrieve task {task_id} in db",
             )
 
+    @override
     def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskDTO]:
         return [task.to_dto() for task in self.list_db_tasks(task_filter, request_params)]
 
@@ -353,6 +362,7 @@ class TaskJobService(ITaskService):
         user = None if request_params.user.is_site_admin() else request_params.user.impersonator
         return self.repo.list(task_filter, user)
 
+    @override
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         if task_id in self.tasks:
             try:
