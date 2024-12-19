@@ -31,7 +31,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const { enqueueSnackbar } = useSnackbar();
   const [currentJson, setCurrentJson] = useState<JSONEditorProps["json"]>();
 
-  const fileRes = usePromiseWithSnackbarError(
+  const jsonRes = usePromiseWithSnackbarError(
     () => getStudyData(studyId, filePath, -1),
     {
       errorMessage: t("studies.error.retrieveData"),
@@ -39,23 +39,13 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
     },
   );
 
-  const rawFileRes = usePromiseWithSnackbarError(
-    () => getRawFile(studyId, filePath),
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
-    },
-  );
-
   useEffect(() => {
-    setCurrentJson(fileRes.data);
-  }, [fileRes.data]);
+    setCurrentJson(jsonRes.data);
+  }, [jsonRes.data]);
 
-  const handleDownload = () => {
-    if (rawFileRes.data) {
-      const { data, filename } = rawFileRes.data;
-      downloadFile(data, filename);
-    }
+  const handleDownload = async () => {
+    const { data, filename } = await getRawFile({ studyId, path: filePath });
+    downloadFile(data, filename);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -75,7 +65,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   };
 
   const handleUploadSuccessful = () => {
-    fileRes.reload();
+    jsonRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -84,7 +74,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
 
   return (
     <UsePromiseCond
-      response={fileRes}
+      response={jsonRes}
       ifFulfilled={(json) => (
         <Flex>
           <Menubar>
