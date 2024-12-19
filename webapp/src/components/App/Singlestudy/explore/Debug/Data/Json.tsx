@@ -21,7 +21,6 @@ import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
-import { useEffect, useState } from "react";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import { getRawFile } from "@/services/api/studies/raw";
@@ -29,9 +28,8 @@ import { getRawFile } from "@/services/api/studies/raw";
 function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const [currentJson, setCurrentJson] = useState<JSONEditorProps["json"]>();
 
-  const fileRes = usePromiseWithSnackbarError(
+  const jsonRes = usePromiseWithSnackbarError(
     () => getStudyData(studyId, filePath, -1),
     {
       errorMessage: t("studies.error.retrieveData"),
@@ -39,43 +37,27 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
     },
   );
 
-  const rawFileRes = usePromiseWithSnackbarError(
-    () => getRawFile(studyId, filePath),
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
-    },
-  );
-
-  useEffect(() => {
-    setCurrentJson(fileRes.data);
-  }, [fileRes.data]);
-
-  const handleDownload = () => {
-    if (rawFileRes.data) {
-      const { data, filename } = rawFileRes.data;
-      downloadFile(data, filename);
-    }
-  };
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+
+  const handleDownload = async () => {
+    const { data, filename } = await getRawFile({ studyId, path: filePath });
+    downloadFile(data, filename);
+  };
 
   const handleSave: JSONEditorProps["onSave"] = (json) => {
     return editStudy(json, studyId, filePath);
   };
 
-  const handleSaveSuccessful: JSONEditorProps["onSaveSuccessful"] = (json) => {
-    setCurrentJson(json);
-
+  const handleSaveSuccessful: JSONEditorProps["onSaveSuccessful"] = () => {
     enqueueSnackbar(t("studies.success.saveData"), {
       variant: "success",
     });
   };
 
   const handleUploadSuccessful = () => {
-    fileRes.reload();
+    jsonRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -84,7 +66,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
 
   return (
     <UsePromiseCond
-      response={fileRes}
+      response={jsonRes}
       ifFulfilled={(json) => (
         <Flex>
           <Menubar>
@@ -100,7 +82,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
             <DownloadButton onClick={handleDownload} />
           </Menubar>
           <JSONEditor
-            json={currentJson ?? json}
+            json={json}
             modes={["tree", "code"]}
             enableSort={false}
             enableTransform={false}

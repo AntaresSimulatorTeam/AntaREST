@@ -76,7 +76,7 @@ function Text({
   const { t } = useTranslation();
   const theme = useTheme();
 
-  const fileRes = usePromiseWithSnackbarError(
+  const textRes = usePromiseWithSnackbarError(
     () =>
       getStudyData<string>(studyId, filePath).then((text) =>
         parseContent(text, { filePath, fileType }),
@@ -87,27 +87,17 @@ function Text({
     },
   );
 
-  const rawFileRes = usePromiseWithSnackbarError(
-    () => getRawFile(studyId, filePath),
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
-    },
-  );
-
-  const handleDownload = () => {
-    if (rawFileRes.data) {
-      const { data, filename } = rawFileRes.data;
-      downloadFile(data, filename);
-    }
-  };
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
+  const handleDownload = async () => {
+    const { data, filename } = await getRawFile({ studyId, path: filePath });
+    downloadFile(data, filename);
+  };
+
   const handleUploadSuccessful = () => {
-    fileRes.reload();
+    textRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -116,7 +106,7 @@ function Text({
 
   return (
     <UsePromiseCond
-      response={fileRes}
+      response={textRes}
       ifFulfilled={(text) => (
         <Flex>
           <Menubar>

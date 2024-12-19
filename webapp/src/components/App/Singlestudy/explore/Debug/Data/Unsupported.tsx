@@ -19,30 +19,19 @@ import { Filename, Flex, Menubar } from "./styles";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "@/components/common/buttons/DownloadButton";
 import UploadFileButton from "@/components/common/buttons/UploadFileButton";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { downloadFile } from "@/utils/fileUtils";
 import { getRawFile } from "@/services/api/studies/raw";
 
 function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   const { t } = useTranslation();
 
-  const rawFileRes = usePromiseWithSnackbarError(
-    () => getRawFile(studyId, filePath),
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
-    },
-  );
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = () => {
-    if (rawFileRes.data) {
-      const { data, filename } = rawFileRes.data;
-      downloadFile(data, filename);
-    }
+  const handleDownload = async () => {
+    const { data, filename } = await getRawFile({ studyId, path: filePath });
+    downloadFile(data, filename);
   };
 
   ////////////////////////////////////////////////////////////////
