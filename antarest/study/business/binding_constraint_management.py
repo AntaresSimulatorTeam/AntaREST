@@ -35,12 +35,13 @@ from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
-from antarest.study.business.utils import execute_or_add_commands
+from antarest.study.business.utils import execute_or_add_commands, update_binding_constraint_from_props
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
+    OPERATOR_MATRIX_FILE_MAP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
@@ -68,15 +69,10 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     TermMatrices,
     create_binding_constraint_config,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
-    UpdateBindingConstraint,
-    update_matrices_names,
-)
+from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
@@ -347,13 +343,6 @@ class ConstraintOutput870(ConstraintOutput830):
 # the type of the output constraint in the FastAPI endpoint.
 ConstraintOutput = t.Union[ConstraintOutputBase, ConstraintOutput830, ConstraintOutput870]
 
-OPERATOR_MATRIX_FILE_MAP = {
-    BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
-    BindingConstraintOperator.GREATER: ["{bc_id}_gt"],
-    BindingConstraintOperator.LESS: ["{bc_id}_lt"],
-    BindingConstraintOperator.BOTH: ["{bc_id}_lt", "{bc_id}_gt"],
-}
-
 
 def _get_references_by_widths(
     file_study: FileStudy, bcs: t.Sequence[ConstraintOutput]
@@ -394,46 +383,6 @@ def _get_references_by_widths(
                 references_by_width.setdefault(matrix_width, []).append((bc.id, matrix_id))
 
     return references_by_width
-
-
-def _generate_replace_matrix_commands(
-    bc_id: str,
-    study_version: StudyVersion,
-    value: ConstraintInput,
-    operator: BindingConstraintOperator,
-    command_context: CommandContext,
-) -> t.List[ICommand]:
-    commands: t.List[ICommand] = []
-    if study_version < STUDY_VERSION_8_7:
-        matrix = {
-            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
-            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
-            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
-        }[value.time_step].tolist()
-        command = ReplaceMatrix(
-            target=f"input/bindingconstraints/{bc_id}",
-            matrix=matrix,
-            command_context=command_context,
-            study_version=study_version,
-        )
-        commands.append(command)
-    else:
-        matrix = {
-            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
-            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
-            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
-        }[value.time_step].tolist()
-        matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[operator]
-        for matrix_name in matrices_to_replace:
-            matrix_id = matrix_name.format(bc_id=bc_id)
-            command = ReplaceMatrix(
-                target=f"input/bindingconstraints/{matrix_id}",
-                matrix=matrix,
-                command_context=command_context,
-                study_version=study_version,
-            )
-            commands.append(command)
-    return commands
 
 
 def _validate_binding_constraints(file_study: FileStudy, bcs: t.Sequence[ConstraintOutput]) -> bool:
@@ -898,25 +847,14 @@ class BindingConstraintManager:
             if bc_id not in dict_config:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-            props = create_binding_constraint_config(study_version, **value.dict())
-            new_values = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
+            # convert table mode object to an object that's the output of this function
+            # and we also update the cofig objet that will be serialized in the INI
+            bc_props = create_binding_constraint_config(study_version, **value.dict())
             upd_obj = config[dict_config[bc_id]]
-            current_value = copy.deepcopy(upd_obj)
-            upd_obj.update(new_values)
-            output = self.constraint_model_adapter(upd_obj, study_version)
+            upd_obj_copy = copy.deepcopy(upd_obj)
+            update_binding_constraint_from_props(upd_obj, bc_props)
+            output = self.constraint_model_adapter(upd_obj_copy, study_version)
             updated_constraints[bc_id] = output
-
-            if value.time_step and value.time_step != BindingConstraintFrequency(current_value["type"]):
-                # The user changed the time step, we need to update the matrix accordingly
-                replace_matrix_commands = _generate_replace_matrix_commands(
-                    bc_id, study_version, value, output.operator, command_context
-                )
-                commands.extend(replace_matrix_commands)
-
-            if value.operator and study_version >= STUDY_VERSION_8_7:
-                # The user changed the operator, we have to rename matrices accordingly
-                existing_operator = BindingConstraintOperator(current_value["operator"])
-                update_matrices_names(file_study, bc_id, existing_operator, value.operator)
 
         # Updates the file only once with all the information
         command = UpdateConfig(
@@ -927,6 +865,71 @@ class BindingConstraintManager:
         )
         commands.append(command)
         execute_or_add_commands(study, file_study, commands, self.storage_service)
+        return updated_constraints
+
+    def update_binding_constraints_2(
+        self,
+        study: Study,
+        bcs_by_ids: t.Mapping[str, ConstraintInput],
+    ) -> t.Mapping[str, ConstraintOutput]:
+        """
+        WIP
+        """
+
+        # Variant study with less than 50 updated constraints
+        updated_constraints = {}
+        if len(bcs_by_ids) < 50 and isinstance(study, VariantStudy):
+            existing_constraints = {bc.id: bc for bc in self.get_binding_constraints(study)}
+            for bc_id, data in bcs_by_ids.items():
+                updated_constraints[bc_id] = self.update_binding_constraint(
+                    study, bc_id, data, existing_constraints[bc_id]
+                )
+            return updated_constraints
+
+        # More efficient way of doing things but using less readable commands.
+        study_version = StudyVersion.parse(study.version)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        bcs_config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        bcs_config_by_id = {value["id"]: key for (key, value) in bcs_config.items()}
+        # bc_props_by_id = {}
+        bc_input_as_dict_by_id = {}
+        for bc_id, bc_input in bcs_by_ids.items():
+            if bc_id not in bcs_config_by_id:
+                raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
+
+            # convert table mode object to an object that's the output of this function
+            # and we also update the cofig objet that will be serialized in the INI
+            bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
+            input_bc_props = create_binding_constraint_config(study_version, **bc_input_as_dict)
+            input_bc_props_as_dict = input_bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
+            bc_config = bcs_config[bcs_config_by_id[bc_id]]
+            bc_config_copy = copy.deepcopy(bc_config)
+            bc_config_copy.update(input_bc_props_as_dict)
+            bc_output = self.constraint_model_adapter(bc_config_copy, study_version)
+            updated_constraints[bc_id] = bc_output
+            bc_input_as_dict_by_id[bc_id] = bc_input_as_dict
+
+            # if value.time_step and value.time_step != BindingConstraintFrequency(bc_config_copy["type"]):
+            #     # The user changed the time step, we need to update the matrix accordingly
+            #     replace_matrix_commands = _generate_replace_matrix_commands(
+            #         bc_id, study_version, value, bc_output.operator, command_context
+            #     )
+            #     commands.extend(replace_matrix_commands)
+
+            # if value.operator and study_version >= STUDY_VERSION_8_7:
+            #     # The user changed the operator, we have to rename matrices accordingly
+            #     existing_operator = BindingConstraintOperator(bc_config_copy["operator"])
+            #     update_matrices_names(file_study, bc_id, existing_operator, value.operator)
+
+        # Updates the file only once with all the information
+        command = UpdateBindingConstraints(
+            bc_props_by_id=bc_input_as_dict_by_id,
+            command_context=command_context,
+            study_version=study_version,
+        )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
         return updated_constraints
 
     def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
