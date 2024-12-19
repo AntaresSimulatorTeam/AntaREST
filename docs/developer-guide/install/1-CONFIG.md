@@ -388,6 +388,19 @@ it is instantiated on shared servers using `slurm`.
 
 > NOTE: As you can see, you can use newer solver for older study version thanks to the solver retro-compatibility
 
+### **xpress_dir**
+
+- **Type:** str
+- **Default value:** None
+- **Description:** Path towards your xpress_dir. Needed if you want to launch a study with xpress. If the environment 
+variables "XPRESS_DIR" and "XPRESS" are set on your local environment it should work without setting them.
+
+### **local_workspace**
+
+- **Type:** Path
+- **Default value:** `./local_workspace`
+- **Description:** Antares Web uses this directory to run the simulations.
+
 ## **slurm**
 
 SLURM (Simple Linux Utility for Resource Management) is used to interact with a remote environment (for Antares it's
