@@ -17,7 +17,7 @@ from http import HTTPStatus
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Depends, Query
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
@@ -53,6 +53,7 @@ from antarest.study.business.areas.thermal_management import (
     ThermalClusterOutput,
     ThermalManager,
 )
+from antarest.study.business.arrow_utils import dataframe_to_bytes
 from antarest.study.business.binding_constraint_management import (
     ConstraintCreation,
     ConstraintFilters,
@@ -542,6 +543,32 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_service.hydro_manager.update_inflow_structure(study, area_id, values)
+
+    @bp.get(
+        "/studies/{uuid}/{area_id}/load/series",
+        tags=[APITag.study_data],
+        summary="Get load series data",
+    )
+    def get_load_series(
+        uuid: str,
+        area_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> Response:
+        """Return the load matrix in ARROW format."""
+        logger.info(
+            msg=f"Getting load series data for area {area_id} of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+
+        try:
+            df, metadata = study_service.load_manager.get_load_matrix(study, area_id)
+        except TypeError as e:
+            return Response(content=str(e), status_code=400)
+
+        buffer = dataframe_to_bytes(df, metadata)
+        return Response(content=buffer, media_type="application/vnd.apache.arrow.file")
 
     @bp.put(
         "/studies/{uuid}/matrix",
