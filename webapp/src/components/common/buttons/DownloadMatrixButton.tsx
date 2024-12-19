@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { downloadMatrix } from "../../../services/api/studies/raw";
+import { getMatrixFile } from "../../../services/api/studies/raw";
 import { downloadFile } from "../../../utils/fileUtils";
 import { StudyMetadata } from "../../../common/types";
 import { useTranslation } from "react-i18next";
@@ -51,7 +51,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
 
     const isXlsx = format === "xlsx";
 
-    const res = await downloadMatrix({
+    const matrixFile = await getMatrixFile({
       studyId,
       path,
       format,
@@ -62,7 +62,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
     const extension = format === "csv (semicolon)" ? "csv" : format;
 
     return downloadFile(
-      res,
+      matrixFile,
       `matrix_${studyId}_${path.replace("/", "_")}.${extension}`,
     );
   };
