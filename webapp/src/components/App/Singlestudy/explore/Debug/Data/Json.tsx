@@ -24,13 +24,14 @@ import { downloadFile } from "../../../../../../utils/fileUtils";
 import { useEffect, useState } from "react";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
+import { getRawFile } from "@/services/api/studies/raw";
 
 function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const [currentJson, setCurrentJson] = useState<JSONEditorProps["json"]>();
 
-  const res = usePromiseWithSnackbarError(
+  const jsonRes = usePromiseWithSnackbarError(
     () => getStudyData(studyId, filePath, -1),
     {
       errorMessage: t("studies.error.retrieveData"),
@@ -39,8 +40,13 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   );
 
   useEffect(() => {
-    setCurrentJson(res.data);
-  }, [res.data]);
+    setCurrentJson(jsonRes.data);
+  }, [jsonRes.data]);
+
+  const handleDownload = async () => {
+    const { data, filename } = await getRawFile({ studyId, path: filePath });
+    downloadFile(data, filename);
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -58,17 +64,8 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
     });
   };
 
-  const handleDownload = () => {
-    if (currentJson !== undefined) {
-      downloadFile(
-        JSON.stringify(currentJson, null, 2),
-        filename.endsWith(".json") ? filename : `${filename}.json`,
-      );
-    }
-  };
-
   const handleUploadSuccessful = () => {
-    res.reload();
+    jsonRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -77,7 +74,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
 
   return (
     <UsePromiseCond
-      response={res}
+      response={jsonRes}
       ifFulfilled={(json) => (
         <Flex>
           <Menubar>
@@ -93,7 +90,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
             <DownloadButton onClick={handleDownload} />
           </Menubar>
           <JSONEditor
-            json={json}
+            json={currentJson ?? json}
             modes={["tree", "code"]}
             enableSort={false}
             enableTransform={false}
