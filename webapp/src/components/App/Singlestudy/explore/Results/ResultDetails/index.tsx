@@ -223,7 +223,7 @@ function ResultDetails() {
         type: Column.DateTime,
         editable: false,
       },
-      ...generateResultColumns(resultColHeaders),
+      ...generateResultColumns({ titles: resultColHeaders }),
     ]);
   }, [matrixRes.data, resultColHeaders]);
 

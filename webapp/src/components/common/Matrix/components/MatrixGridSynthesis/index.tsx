@@ -88,7 +88,7 @@ export function MatrixGridSynthesis({
         rows={data.length}
         columns={columns}
         getCellContent={getCellContent}
-        rowMarkers="both"
+        rowMarkers="none"
         smoothScrollX
         smoothScrollY
         rowHeight={30}
