@@ -43,6 +43,7 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
@@ -154,6 +155,14 @@ class CommandReverter:
                 return [UpdateBindingConstraint.model_validate(args)]
 
         return base_command.get_command_extractor().extract_binding_constraint(base, base_command.id)
+
+    @staticmethod
+    def _revert_update_binding_constraints(
+        base_command: UpdateBindingConstraints,
+        history: t.List["ICommand"],
+        base: FileStudy,
+    ) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for UpdateBindingConstraints is not available")
 
     @staticmethod
     def _revert_remove_binding_constraint(

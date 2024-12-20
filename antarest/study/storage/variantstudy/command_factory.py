@@ -42,6 +42,7 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
@@ -62,6 +63,7 @@ COMMAND_MAPPING = {
     CommandName.REMOVE_LINK.value: RemoveLink,
     CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
+    CommandName.UPDATE_BINDING_CONSTRAINTS.value: UpdateBindingConstraints,
     CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
