@@ -30,8 +30,8 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   ////////////////////////////////////////////////////////////////
 
   const handleDownload = async () => {
-    const { data, filename } = await getRawFile({ studyId, path: filePath });
-    downloadFile(data, filename);
+    const file = await getRawFile({ studyId, path: filePath });
+    downloadFile(file, file.name);
   };
 
   ////////////////////////////////////////////////////////////////

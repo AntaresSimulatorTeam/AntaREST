@@ -17,7 +17,6 @@ import type {
   DeleteFileParams,
   GetMatrixFileParams,
   GetRawFileParams,
-  RawFile,
   UploadFileParams,
 } from "./types";
 
@@ -94,10 +93,10 @@ export async function deleteFile(params: DeleteFileParams) {
  * @param params.path - Path to the file within the study
  * @returns Promise containing the file data and metadata
  */
-export async function getRawFile(params: GetRawFileParams): Promise<RawFile> {
+export async function getRawFile(params: GetRawFileParams) {
   const { studyId, path } = params;
 
-  const { data, headers } = await client.get<RawFile["data"]>(
+  const { data, headers } = await client.get<File>(
     `/v1/studies/${studyId}/raw/original-file`,
     {
       params: {
@@ -119,8 +118,8 @@ export async function getRawFile(params: GetRawFileParams): Promise<RawFile> {
     }
   }
 
-  return {
-    data,
-    filename,
-  };
+  return new File([data], filename, {
+    type: data.type, // Preserve the MIME type from the Blob
+    lastModified: new Date().getTime(),
+  });
 }

@@ -19,6 +19,8 @@ import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
 import type { TTableExportFormat } from "@/services/api/studies/raw/types";
 
+type ExportFormat = TTableExportFormat | "raw";
+
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
   path: string;
@@ -30,7 +32,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   const { t } = useTranslation();
   const { studyId, path, disabled, label = t("global.export") } = props;
 
-  const options: Array<{ label: string; value: TTableExportFormat }> = [
+  const options: Array<{ label: string; value: ExportFormat }> = [
     { label: "CSV", value: "csv" },
     {
       label: `CSV (${t("global.semicolon").toLowerCase()})`,
@@ -45,14 +47,14 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async (format: TTableExportFormat) => {
+  const handleDownload = async (format: ExportFormat) => {
     if (!path) {
       return;
     }
 
     if (format === "raw") {
-      const { data, filename } = await getRawFile({ studyId, path });
-      return downloadFile(data, filename);
+      const file = await getRawFile({ studyId, path });
+      return downloadFile(file, file.name);
     }
 
     const isXlsx = format === "xlsx";

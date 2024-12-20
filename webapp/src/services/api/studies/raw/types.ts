@@ -46,7 +46,3 @@ export interface GetRawFileParams {
   studyId: string;
   path: string;
 }
-export interface RawFile {
-  data: Blob;
-  filename: string;
-}

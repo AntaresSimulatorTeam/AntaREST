@@ -18,5 +18,4 @@ export const TableExportFormat = {
   TSV: "tsv",
   CSV: "csv",
   CSV_SEMICOLON: "csv (semicolon)",
-  RAW: "raw",
 } as const;
