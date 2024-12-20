@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -23,17 +24,9 @@ def build_config(root: Path) -> Config:
     return Config(
         storage=StorageConfig(
             workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
-                "diese": WorkspaceConfig(
-                    path=root / "diese",
-                    groups=["tata"],
-                    filter_out=["to_skip.*"],
-                ),
-                "test": WorkspaceConfig(
-                    path=root / "test",
-                    groups=["toto"],
-                    filter_out=["to_skip.*"],
-                ),
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
+                "diese": WorkspaceConfig(path=root / "diese"),
+                "test": WorkspaceConfig(path=root / "test"),
             }
         )
     )
@@ -74,6 +67,14 @@ def config_scenario_a(tmp_path: Path) -> Config:
     (f / "AW_NO_SCAN").touch()
     (f / "study.antares").touch()
 
+    d = diese / ".git"
+    d.mkdir(parents=True)
+    (d / "config.txt").touch()
+
+    d = diese / "$RECYCLE.bin"
+    d.mkdir(parents=True)
+    (d / "trash").touch()
+
     config = build_config(tmp_path)
 
     return config
@@ -84,7 +85,7 @@ def test_list_dir_empty_string(config_scenario_a: Config):
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "")
 
-    assert len(result) == 1
+    assert len(result) == 1  # we don't want to see the .git folder or the $RECYCLE.BIN
     assert result[0] == NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder")
 
 
@@ -106,6 +107,15 @@ def test_list_dir_in_empty_folder(config_scenario_a: Config):
     result = explorer.list_dir("diese", "folder/subfolder1")
 
     assert len(result) == 0
+
+
+@pytest.mark.unit_test
+def test_list_dir_with_permission_error(config_scenario_a: Config):
+    explorer = Explorer(config_scenario_a)
+    with patch("os.listdir", side_effect=PermissionError("Permission denied")):
+        # asserts the endpoint doesn't fail but rather returns an empty list
+        result = explorer.list_dir("diese", "folder")
+        assert len(result) == 0
 
 
 @pytest.mark.unit_test
