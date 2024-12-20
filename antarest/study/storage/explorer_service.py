@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-import os
 from typing import List
 
 from antarest.core.config import Config
