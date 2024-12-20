@@ -290,7 +290,7 @@ class TestFetchRawData:
         if study_type == "raw":
             res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/areas/de/id-monthly"})
             assert res.status_code == 200
-            assert np.isnan(res.json()["data"][0]).any()
+            assert "NaN" in res.json()["data"][0]
 
         # Iterate over all possible combinations of path and depth
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
