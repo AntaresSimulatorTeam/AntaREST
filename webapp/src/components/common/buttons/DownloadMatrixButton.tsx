@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { getMatrixFile } from "../../../services/api/studies/raw";
+import { getMatrixFile, getRawFile } from "../../../services/api/studies/raw";
 import { downloadFile } from "../../../utils/fileUtils";
 import { StudyMetadata } from "../../../common/types";
 import { useTranslation } from "react-i18next";
@@ -38,6 +38,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
     },
     { label: "TSV", value: "tsv" },
     { label: "XLSX", value: "xlsx" },
+    { label: `${t("global.rawFile")}`, value: "raw" },
   ];
 
   ////////////////////////////////////////////////////////////////
@@ -47,6 +48,11 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   const handleDownload = async (format: TTableExportFormat) => {
     if (!path) {
       return;
+    }
+
+    if (format === "raw") {
+      const { data, filename } = await getRawFile({ studyId, path });
+      return downloadFile(data, filename);
     }
 
     const isXlsx = format === "xlsx";
