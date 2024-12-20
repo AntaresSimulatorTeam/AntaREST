@@ -93,10 +93,11 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
         date, body = self.date_serializer.extract_date(df)
 
         matrix = rename_unnamed(body).astype(float)
-        matrix = matrix.where(pd.notna(matrix), None)
-        matrix.index = date
-        matrix.columns = body.columns
-        return matrix
+        # replace NaN values by "NaN" for the front-end
+        final_matrix = matrix.fillna("NaN")
+        final_matrix.index = date
+        final_matrix.columns = body.columns
+        return final_matrix
 
     def parse(
         self,

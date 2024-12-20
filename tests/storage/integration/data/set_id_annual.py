@@ -10,8 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import math
-
 set_id_annual = {
     "columns": [
         ("OP. COST", "Euro", "min"),
@@ -253,14 +251,14 @@ set_id_annual = {
             1.0,
             1.0,
             1.0,
-            math.nan,
-            math.nan,
+            "NaN",
+            "NaN",
             1.0,
             1.0,
-            math.nan,
-            math.nan,
-            math.nan,
-            math.nan,
+            "NaN",
+            "NaN",
+            "NaN",
+            "NaN",
             1.0,
             1.0,
             1.0,

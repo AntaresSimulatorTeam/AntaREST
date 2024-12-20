@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import math
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -79,8 +78,6 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_list(cast(List[float], a.tolist()), b)
     elif isinstance(a, list) and isinstance(b, np.ndarray):
         _assert_list(a, cast(List[float], b.tolist()))
-    elif isinstance(a, float) and math.isnan(a):
-        assert math.isnan(b)
     else:
         _assert_others(a, b)
 
