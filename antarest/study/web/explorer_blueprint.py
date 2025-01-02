@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import NonStudyFolder, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
@@ -34,7 +35,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1/private")
+    bp = APIRouter(prefix="/v1/private", tags=[APITag.explorer])
     auth = Auth(config)
 
     @bp.get(

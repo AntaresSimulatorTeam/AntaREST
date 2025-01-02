@@ -26,6 +26,7 @@ class APITag:
     tasks = "Manage tasks"
     misc = "Miscellaneous"
     filesystem = "Filesystem Management"
+    explorer = "Explorer"
 
 
 tags_metadata = [
@@ -70,5 +71,8 @@ tags_metadata = [
     },
     {
         "name": APITag.filesystem,
+    },
+    {
+        "name": APITag.explorer,
     },
 ]
