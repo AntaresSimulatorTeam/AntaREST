@@ -12,6 +12,8 @@
 
 from typing import Any, Dict, List, Optional, Tuple
 
+from typing_extensions import override
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
@@ -40,6 +42,7 @@ class UpdatePlaylist(ICommand):
     weights: Optional[Dict[int, float]] = None
     reverse: bool = False
 
+    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         FileStudyHelpers.set_playlist(
             study_data,
@@ -50,9 +53,11 @@ class UpdatePlaylist(ICommand):
         )
         return CommandOutput(status=True)
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_PLAYLIST.value,
@@ -65,9 +70,11 @@ class UpdatePlaylist(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return CommandName.UPDATE_PLAYLIST.name
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         if not isinstance(other, UpdatePlaylist):
             return False
@@ -80,8 +87,10 @@ class UpdatePlaylist(ICommand):
             )
         return True
 
+    @override
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
 
+    @override
     def get_inner_matrices(self) -> List[str]:
         return []

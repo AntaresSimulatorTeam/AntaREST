@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
@@ -33,6 +34,7 @@ class Input(FolderNode):
     Handle the input folder which contains all the input data of the study.
     """
 
+    @override
     def build(self) -> TREE:
         config = self.config
 

@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from antares.study.version import SolverVersion
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
@@ -74,6 +75,7 @@ class LocalLauncher(AbstractLauncher):
             )
         return antares_solver_path
 
+    @override
     def run_study(
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
@@ -187,6 +189,7 @@ class LocalLauncher(AbstractLauncher):
                 simulator_args += ["--solver-parameters", "PRESOLVE 1"]
         return simulator_args, environment_variables
 
+    @override
     def create_update_log(self, job_id: str) -> Callable[[str], None]:
         base_func = super().create_update_log(job_id)
         self.logs[job_id] = ""
@@ -197,6 +200,7 @@ class LocalLauncher(AbstractLauncher):
 
         return append_to_log
 
+    @override
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         if job_id in self.job_id_to_study_id and job_id in self.logs and log_type == LogType.STDOUT:
             return self.logs[job_id]
@@ -205,6 +209,7 @@ class LocalLauncher(AbstractLauncher):
             return job_path.read_text()
         return None
 
+    @override
     def kill_job(self, job_id: str) -> None:
         if job_id in self.job_id_to_study_id:
             return self.job_id_to_study_id[job_id][2].send_signal(signal.SIGTERM)

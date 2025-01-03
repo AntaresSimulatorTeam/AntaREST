@@ -21,7 +21,7 @@ import { toError } from "../../../utils/fnUtils";
 import { Accept, useDropzone } from "react-dropzone";
 import { StudyMetadata } from "../../../common/types";
 import { useSnackbar } from "notistack";
-import { importFile } from "../../../services/api/studies/raw";
+import { uploadFile } from "../../../services/api/studies/raw";
 
 type ValidateResult = boolean | null | undefined;
 type Validate = (file: File) => ValidateResult | Promise<ValidateResult>;
@@ -89,7 +89,7 @@ function UploadFileButton(props: UploadFileButtonProps) {
 
       const filePath = typeof path === "function" ? path(fileToUpload) : path;
 
-      await importFile({
+      await uploadFile({
         studyId,
         path: filePath,
         file: fileToUpload,

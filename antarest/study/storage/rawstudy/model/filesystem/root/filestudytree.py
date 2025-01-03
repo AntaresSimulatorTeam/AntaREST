@@ -12,6 +12,8 @@
 
 import logging
 
+from typing_extensions import override
+
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -31,6 +33,7 @@ class FileStudyTree(FolderNode):
     Top level node of antares tree structure
     """
 
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "Desktop": Desktop(self.context, self.config.next_file("Desktop.ini")),

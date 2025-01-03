@@ -16,6 +16,7 @@ from http.client import HTTPException
 from typing import Optional
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serialization import AntaresBaseModel
@@ -81,6 +82,7 @@ class FileDownload(Base):  # type: ignore
             error_message=self.error_message or "",
         )
 
+    @override
     def __repr__(self) -> str:
         return (
             f"(id={self.id},"
