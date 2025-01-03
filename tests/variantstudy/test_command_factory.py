@@ -155,6 +155,19 @@ COMMANDS: List[CommandDTO] = [
         ],
         study_version=STUDY_VERSION_8_8,
     ),
+    CommandDTO(
+        action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
+        args={
+            "bc_props_by_id": {
+                "bc_0": {
+                    "enabled": True,
+                    "time_step": "hourly",
+                    "operator": "equal",
+                }
+            }
+        },
+        study_version=STUDY_VERSION_8_8,
+    ),
     CommandDTO(action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
     CommandDTO(
         action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8
