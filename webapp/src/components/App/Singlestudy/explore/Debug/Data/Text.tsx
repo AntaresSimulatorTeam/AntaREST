@@ -33,6 +33,7 @@ import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import EmptyView from "@/components/common/page/SimpleContent";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import { getRawFile } from "@/services/api/studies/raw";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -75,7 +76,7 @@ function Text({
   const { t } = useTranslation();
   const theme = useTheme();
 
-  const res = usePromiseWithSnackbarError(
+  const textRes = usePromiseWithSnackbarError(
     () =>
       getStudyData<string>(studyId, filePath).then((text) =>
         parseContent(text, { filePath, fileType }),
@@ -90,17 +91,13 @@ function Text({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = () => {
-    if (res.data) {
-      downloadFile(
-        res.data,
-        filename.endsWith(".txt") ? filename : `${filename}.txt`,
-      );
-    }
+  const handleDownload = async () => {
+    const file = await getRawFile({ studyId, path: filePath });
+    downloadFile(file, file.name);
   };
 
   const handleUploadSuccessful = () => {
-    res.reload();
+    textRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -109,7 +106,7 @@ function Text({
 
   return (
     <UsePromiseCond
-      response={res}
+      response={textRes}
       ifFulfilled={(text) => (
         <Flex>
           <Menubar>

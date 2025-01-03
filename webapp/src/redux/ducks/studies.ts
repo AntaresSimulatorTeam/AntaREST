@@ -94,7 +94,7 @@ const initialState = studiesAdapter.getInitialState({
   filters: {
     inputValue: "",
     folder: "root",
-    strictFolder: true,
+    strictFolder: false,
     managed: false,
     archived: false,
     variant: false,

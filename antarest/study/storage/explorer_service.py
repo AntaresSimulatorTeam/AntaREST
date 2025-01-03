@@ -14,7 +14,7 @@ import logging
 from typing import List
 
 from antarest.core.config import Config
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, WorkspaceMetadata
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolder, WorkspaceMetadata
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
@@ -33,7 +33,7 @@ class Explorer:
         self,
         workspace_name: str,
         workspace_directory_path: str,
-    ) -> List[NonStudyFolderDTO]:
+    ) -> List[NonStudyFolder]:
         """
         return a list of all directories under workspace_directory_path, that aren't studies.
         """
@@ -53,7 +53,7 @@ class Explorer:
             ):
                 # we don't want to expose the full absolute path on the server
                 child_rel_path = child.relative_to(workspace.path)
-                directories.append(NonStudyFolderDTO(path=child_rel_path, workspace=workspace_name, name=child.name))
+                directories.append(NonStudyFolder(path=child_rel_path, workspace=workspace_name, name=child.name))
         return directories
 
     def list_workspaces(

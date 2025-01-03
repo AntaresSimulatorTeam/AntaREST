@@ -17,9 +17,10 @@ import type { StudyMetadata } from "../../../../common/types";
 import { O } from "ts-toolbelt";
 import { TableExportFormat } from "./constants";
 
+// Available export formats for matrix tables
 export type TTableExportFormat = O.UnionOf<typeof TableExportFormat>;
 
-export interface DownloadMatrixParams {
+export interface GetMatrixFileParams {
   studyId: StudyMetadata["id"];
   path: string;
   format?: TTableExportFormat;
@@ -27,15 +28,21 @@ export interface DownloadMatrixParams {
   index?: boolean;
 }
 
-export interface ImportFileParams {
+export interface UploadFileParams {
   studyId: StudyMetadata["id"];
   path: string;
   file: File;
+  // Flag to indicate whether to create file and directories if missing
   createMissing?: boolean;
   onUploadProgress?: AxiosRequestConfig["onUploadProgress"];
 }
 
 export interface DeleteFileParams {
   studyId: StudyMetadata["id"];
+  path: string;
+}
+
+export interface GetRawFileParams {
+  studyId: string;
   path: string;
 }
