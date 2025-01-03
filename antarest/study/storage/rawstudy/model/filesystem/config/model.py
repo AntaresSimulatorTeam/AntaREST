@@ -16,6 +16,7 @@ from pathlib import Path
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import DTO
@@ -47,6 +48,7 @@ class EnrModelling(EnumIgnoreCase):
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
 
+    @override
     def __str__(self) -> str:
         """Return the string representation of the enum value."""
         return self.value

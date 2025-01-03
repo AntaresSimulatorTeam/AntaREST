@@ -16,6 +16,7 @@ import typing as t
 import numpy as np
 import pandas as pd
 from antares.study.version import StudyVersion
+from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
@@ -61,6 +62,7 @@ class TableModeType(EnumIgnoreCase):
     BINDING_CONSTRAINT = "binding-constraints"
 
     @classmethod
+    @override
     def _missing_(cls, value: object) -> t.Optional["EnumIgnoreCase"]:
         if isinstance(value, str):
             # handle aliases of old table types

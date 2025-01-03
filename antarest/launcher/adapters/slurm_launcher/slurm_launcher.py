@@ -28,6 +28,7 @@ from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
 from antareslauncher.study_dto import StudyDTO
 from filelock import FileLock
+from typing_extensions import override
 
 from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.core.interfaces.cache import ICache
@@ -589,6 +590,7 @@ class SlurmLauncher(AbstractLauncher):
 
         return self.launcher_args
 
+    @override
     def run_study(
         self,
         study_uuid: str,
@@ -604,6 +606,7 @@ class SlurmLauncher(AbstractLauncher):
         )
         thread.start()
 
+    @override
     def get_log(self, job_id: str, log_type: LogType) -> t.Optional[str]:
         log_path: t.Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
@@ -621,6 +624,7 @@ class SlurmLauncher(AbstractLauncher):
 
         return _listen_to_kill_job
 
+    @override
     def kill_job(self, job_id: str, dispatch: bool = True) -> None:
         launcher_args = LauncherArgs(self.launcher_args)
         for study in self.data_repo_tinydb.get_list_of_studies():

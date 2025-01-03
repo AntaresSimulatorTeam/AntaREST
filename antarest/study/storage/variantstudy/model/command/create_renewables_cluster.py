@@ -13,6 +13,7 @@
 import typing as t
 
 from pydantic import model_validator
+from typing_extensions import override
 
 from antarest.core.model import JSON, LowerCaseStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
@@ -53,6 +54,7 @@ class CreateRenewablesCluster(ICommand):
         values["parameters"] = create_renewable_properties(values["study_version"], **args)
         return values
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:
             # Since version 8.1 of the solver, we can use renewable clusters
@@ -100,6 +102,7 @@ class CreateRenewablesCluster(ICommand):
             {"cluster_id": cluster.id},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
@@ -127,6 +130,7 @@ class CreateRenewablesCluster(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
@@ -138,6 +142,7 @@ class CreateRenewablesCluster(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(
             self.command_name.value
@@ -147,6 +152,7 @@ class CreateRenewablesCluster(ICommand):
             + self.cluster_name
         )
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateRenewablesCluster):
             return False
@@ -157,6 +163,7 @@ class CreateRenewablesCluster(ICommand):
         other_params = other.parameters.model_dump(mode="json", by_alias=True)
         return simple_match and self_params == other_params
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         other = t.cast(CreateRenewablesCluster, other)
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -175,5 +182,6 @@ class CreateRenewablesCluster(ICommand):
             )
         return commands
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

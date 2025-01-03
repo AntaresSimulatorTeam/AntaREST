@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -18,6 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster
 
 
 class InputThermalClusters(FolderNode):
+    @override
     def build(self) -> TREE:
         children: TREE = {
             a: InputThermalClustersArea(self.context, self.config.next_file(a), area=a)

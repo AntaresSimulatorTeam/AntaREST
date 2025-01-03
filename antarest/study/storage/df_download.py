@@ -17,6 +17,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi import HTTPException
 from starlette.responses import FileResponse
+from typing_extensions import override
 
 from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
@@ -33,6 +34,7 @@ class TableExportFormat(EnumIgnoreCase):
     CSV = "csv"
     CSV_SEMICOLON = "csv (semicolon)"
 
+    @override
     def __str__(self) -> str:
         """Return the format as a string for display."""
         return self.value.title()
