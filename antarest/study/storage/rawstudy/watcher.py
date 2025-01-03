@@ -126,7 +126,7 @@ class Watcher(IService):
         max_depth: Optional[int] = None,
     ) -> List[StudyFolder]:
         try:
-            if should_ignore_folder_for_scan(path):
+            if should_ignore_folder_for_scan(path, filter_in, filter_out):
                 return []
 
             if (path / "study.antares").exists():
@@ -144,14 +144,7 @@ class Watcher(IService):
                         if max_depth is not None:
                             max_depth = max_depth - 1
                         try:
-                            if (
-                                (child.is_dir())
-                                and any([re.search(regex, child.name) for regex in filter_in])
-                                and not any([re.search(regex, child.name) for regex in filter_out])
-                            ):
-                                folders = folders + self._rec_scan(
-                                    child, workspace, groups, filter_in, filter_out, max_depth
-                                )
+                            folders += self._rec_scan(child, workspace, groups, filter_in, filter_out, max_depth)
                         except Exception as e:
                             logger.error(f"Failed to scan dir {child}", exc_info=e)
                 return folders

@@ -25,7 +25,7 @@ def build_config(root: Path) -> Config:
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
-                "diese": WorkspaceConfig(path=root / "diese"),
+                "diese": WorkspaceConfig(path=root / "diese", filter_out=[".git", ".*RECYCLE.BIN"]),
                 "test": WorkspaceConfig(path=root / "test"),
             }
         )
@@ -71,7 +71,7 @@ def config_scenario_a(tmp_path: Path) -> Config:
     d.mkdir(parents=True)
     (d / "config.txt").touch()
 
-    d = diese / "$RECYCLE.bin"
+    d = diese / "$RECYCLE.BIN"
     d.mkdir(parents=True)
     (d / "trash").touch()
 
@@ -85,7 +85,8 @@ def test_list_dir_empty_string(config_scenario_a: Config):
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "")
 
-    assert len(result) == 1  # we don't want to see the .git folder or the $RECYCLE.BIN
+    # We don't want to see the .git folder or the $RECYCLE.BIN as they were ignored in the workspace config
+    assert len(result) == 1
     assert result[0] == NonStudyFolder(path=Path("folder"), workspace="diese", name="folder")
 
 
@@ -95,7 +96,6 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
     result = explorer.list_dir("diese", "folder")
 
     assert len(result) == 3
-    workspace_path = config_scenario_a.get_workspace_path(workspace="diese")
     folder_path = Path("folder")
     assert NonStudyFolder(path=(folder_path / "subfolder1"), workspace="diese", name="subfolder1") in result
     assert NonStudyFolder(path=(folder_path / "subfolder2"), workspace="diese", name="subfolder2") in result
