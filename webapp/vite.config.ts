@@ -17,7 +17,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 //! Keep '0.0.0.0', because 'localhost' may not working on Mac
-const SERVER_URL = "http://0.0.0.0:8080"; 
+const SERVER_URL = "http://0.0.0.0:8080";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
