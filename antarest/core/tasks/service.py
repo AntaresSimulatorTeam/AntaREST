@@ -20,6 +20,7 @@ from http import HTTPStatus
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session  # type: ignore
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
@@ -38,6 +39,7 @@ from antarest.core.tasks.model import (
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import retry
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
@@ -107,9 +109,11 @@ class ITaskService(ABC):
 class NoopNotifier(ITaskNotifier):
     """This class is used in tasks when no notification is required."""
 
+    @override
     def notify_message(self, message: str) -> None:
         return
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return
 
@@ -128,12 +132,14 @@ class TaskLogAndProgressRecorder(ITaskNotifier):
         self.task_id = task_id
         self.event_bus = event_bus
 
+    @override
     def notify_message(self, message: str) -> None:
         task = self.session.query(TaskJob).get(self.task_id)
         if task:
             task.logs.append(TaskJobLog(message=message, task_id=self.task_id))
             self.session.commit()
 
+    @override
     def notify_progress(self, progress: int) -> None:
         self.session.query(TaskJob).filter(TaskJob.id == self.task_id).update({TaskJob.progress: progress})
         self.session.commit()
@@ -214,6 +220,7 @@ class TaskJobService(ITaskService):
     def check_remote_worker_for_queue(self, task_queue: str) -> bool:
         return any(task_queue in rw.queues for rw in self.remote_workers)
 
+    @override
     def add_worker_task(
         self,
         task_type: TaskType,
@@ -236,6 +243,7 @@ class TaskJobService(ITaskService):
         )
         return str(task.id)
 
+    @override
     def add_task(
         self,
         action: Task,
@@ -327,6 +335,7 @@ class TaskJobService(ITaskService):
                 )
             )
 
+    @override
     def status_task(
         self,
         task_id: str,
@@ -343,6 +352,7 @@ class TaskJobService(ITaskService):
                 detail=f"Failed to retrieve task {task_id} in db",
             )
 
+    @override
     def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskDTO]:
         return [task.to_dto() for task in self.list_db_tasks(task_filter, request_params)]
 
@@ -352,6 +362,7 @@ class TaskJobService(ITaskService):
         user = None if request_params.user.is_site_admin() else request_params.user.impersonator
         return self.repo.list(task_filter, user)
 
+    @override
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         if task_id in self.tasks:
             try:
@@ -390,35 +401,41 @@ class TaskJobService(ITaskService):
         task_id: str,
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
     ) -> None:
-        # attention: this function is executed in a thread, not in the main process
-        with db():
-            task = db.session.query(TaskJob).get(task_id)
-            task_type = task.type
-            study_id = task.ref_id
-
-        self.event_bus.push(
-            Event(
-                type=EventType.TASK_RUNNING,
-                payload=TaskEventPayload(
-                    id=task_id,
-                    message=custom_event_messages.running
-                    if custom_event_messages is not None
-                    else f"Task {task_id} is running",
-                    type=task_type,
-                    study_id=study_id,
-                ).model_dump(),
-                permissions=PermissionInfo(public_mode=PublicMode.READ),
-                channel=EventChannelDirectory.TASK + task_id,
-            )
-        )
-
-        logger.info(f"Starting task {task_id}")
-        with db():
-            db.session.query(TaskJob).filter(TaskJob.id == task_id).update({TaskJob.status: TaskStatus.RUNNING.value})
-            db.session.commit()
-        logger.info(f"Task {task_id} set to RUNNING")
-
+        # We need to catch all exceptions so that the calling thread is guaranteed
+        # to not die
         try:
+            # attention: this function is executed in a thread, not in the main process
+            with db():
+                # Important to keep this retry for now,
+                # in case commit is not visible (read from replica ...)
+                task = retry(lambda: self.repo.get_or_raise(task_id))
+                task_type = task.type
+                study_id = task.ref_id
+
+            self.event_bus.push(
+                Event(
+                    type=EventType.TASK_RUNNING,
+                    payload=TaskEventPayload(
+                        id=task_id,
+                        message=custom_event_messages.running
+                        if custom_event_messages is not None
+                        else f"Task {task_id} is running",
+                        type=task_type,
+                        study_id=study_id,
+                    ).model_dump(),
+                    permissions=PermissionInfo(public_mode=PublicMode.READ),
+                    channel=EventChannelDirectory.TASK + task_id,
+                )
+            )
+
+            logger.info(f"Starting task {task_id}")
+            with db():
+                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                    {TaskJob.status: TaskStatus.RUNNING.value}
+                )
+                db.session.commit()
+            logger.info(f"Task {task_id} set to RUNNING")
+
             with db():
                 # We must use the DB session attached to the current thread
                 result = callback(TaskLogAndProgressRecorder(task_id, db.session, self.event_bus))
@@ -463,29 +480,35 @@ class TaskJobService(ITaskService):
             err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
             logger.error(err_msg, exc_info=exc)
 
-            with db():
-                result_msg = f"{err_msg}\nSee the logs for detailed information and the error traceback."
-                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                    {
-                        TaskJob.status: TaskStatus.FAILED.value,
-                        TaskJob.result_msg: result_msg,
-                        TaskJob.result_status: False,
-                        TaskJob.completion_date: datetime.datetime.utcnow(),
-                    }
-                )
-                db.session.commit()
+            try:
+                with db():
+                    result_msg = f"{err_msg}\nSee the logs for detailed information and the error traceback."
+                    db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                        {
+                            TaskJob.status: TaskStatus.FAILED.value,
+                            TaskJob.result_msg: result_msg,
+                            TaskJob.result_status: False,
+                            TaskJob.completion_date: datetime.datetime.utcnow(),
+                        }
+                    )
+                    db.session.commit()
 
-            message = err_msg if custom_event_messages is None else custom_event_messages.end
-            self.event_bus.push(
-                Event(
-                    type=EventType.TASK_FAILED,
-                    payload=TaskEventPayload(
-                        id=task_id, message=message, type=task_type, study_id=study_id
-                    ).model_dump(),
-                    permissions=PermissionInfo(public_mode=PublicMode.READ),
-                    channel=EventChannelDirectory.TASK + task_id,
+                message = err_msg if custom_event_messages is None else custom_event_messages.end
+                self.event_bus.push(
+                    Event(
+                        type=EventType.TASK_FAILED,
+                        payload=TaskEventPayload(
+                            id=task_id, message=message, type=task_type, study_id=study_id
+                        ).model_dump(),
+                        permissions=PermissionInfo(public_mode=PublicMode.READ),
+                        channel=EventChannelDirectory.TASK + task_id,
+                    )
                 )
-            )
+            except Exception as inner_exc:
+                logger.error(
+                    f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
+                    exc_info=inner_exc,
+                )
 
     def get_task_progress(self, task_id: str, params: RequestParameters) -> t.Optional[int]:
         task = self.repo.get_or_raise(task_id)

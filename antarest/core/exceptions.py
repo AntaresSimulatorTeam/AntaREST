@@ -15,6 +15,7 @@ import typing as t
 from http import HTTPStatus
 
 from fastapi.exceptions import HTTPException
+from typing_extensions import override
 
 
 class ShouldNotHappenException(Exception):
@@ -81,6 +82,7 @@ class ConfigFileNotFound(HTTPException):
             detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -127,6 +129,7 @@ class ConfigSectionNotFound(HTTPException):
         detail = f"{object_name.title()} '{section_id}' not found in '{path}'"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -172,6 +175,7 @@ class MatrixNotFound(HTTPException):
             detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
+    @override
     def __str__(self) -> str:
         return self.detail
 
@@ -227,6 +231,7 @@ class DuplicateConfigSection(HTTPException):
             detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.CONFLICT, detail)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -397,6 +402,7 @@ class ReferencedObjectDeletionNotAllowed(HTTPException):
         )
         super().__init__(HTTPStatus.FORBIDDEN, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -429,6 +435,7 @@ class OutputNotFound(HTTPException):
         message = f"Output '{output_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -463,6 +470,7 @@ class OutputSubFolderNotFound(HTTPException):
         message = f"The output '{output_id}' sub-folder '{mc_root}' does not exist"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -552,6 +560,7 @@ class ConstraintTermNotFound(HTTPException):
         }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -572,6 +581,7 @@ class DuplicateConstraintTerm(HTTPException):
         }[min(count, 2)]
         super().__init__(HTTPStatus.CONFLICT, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -589,6 +599,7 @@ class InvalidConstraintTerm(HTTPException):
         )
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -686,6 +697,11 @@ class CannotAccessInternalWorkspace(HTTPException):
 class ChildNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class PathIsAFolderError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
 class WorkspaceNotFound(HTTPException):

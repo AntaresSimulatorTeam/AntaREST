@@ -20,6 +20,7 @@ from antarest.core.requests import RequestParameters
 from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
 T = t.TypeVar("T", bound=Study)
 
@@ -53,6 +54,23 @@ class IStudyStorageService(ABC, t.Generic[T]):
             formatted: indicate if raw files must be parsed and formatted
 
         Returns: study data formatted in json
+
+        """
+
+    @abstractmethod
+    def get_file(
+        self,
+        metadata: T,
+        url: str = "",
+    ) -> OriginalFile:
+        """
+        Entry point to fetch for a specific file inside a study folder
+
+        Args:
+            metadata: study
+            url: path data inside study to reach the file
+
+        Returns: study file content and extension
 
         """
 

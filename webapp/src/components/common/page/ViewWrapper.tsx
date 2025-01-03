@@ -29,6 +29,7 @@ function ViewWrapper({ children }: ViewWrapperProps) {
         ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
           pt: 0,
         },
+        overflow: "auto",
       }}
     >
       {children}

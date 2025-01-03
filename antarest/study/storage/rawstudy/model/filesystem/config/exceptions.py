@@ -13,6 +13,8 @@
 from pathlib import Path
 from typing import cast
 
+from typing_extensions import override
+
 
 class BaseConfigError(Exception):
     """Base class of the configuration errors."""
@@ -30,6 +32,7 @@ class SimulationParsingError(BaseConfigError):
     def reason(self) -> str:
         return cast(str, self.args[1])
 
+    @override
     def __str__(self) -> str:
         output_path = self.output_path
         reason = self.reason
@@ -48,6 +51,7 @@ class XpansionParsingError(BaseConfigError):
     def reason(self) -> str:
         return cast(str, self.args[1])
 
+    @override
     def __str__(self) -> str:
         xpansion_json = self.xpansion_json
         reason = self.reason

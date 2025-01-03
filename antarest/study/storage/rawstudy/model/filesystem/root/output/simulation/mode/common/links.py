@@ -12,6 +12,8 @@
 
 import typing as t
 
+from typing_extensions import override
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -33,6 +35,7 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         self.area_from = area_from
         self.link_names = link_names
 
+    @override
     def build(self) -> TREE:
         children: TREE = {}
         for link_name in self.link_names:
@@ -51,6 +54,7 @@ class OutputSimulationLinks(FolderNode):
     ):
         super().__init__(context, config)
 
+    @override
     def build(self) -> TREE:
         children: TREE = {}
         links = [d.stem for d in self.config.path.iterdir()]

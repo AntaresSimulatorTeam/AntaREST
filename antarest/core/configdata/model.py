@@ -14,6 +14,7 @@ from enum import StrEnum
 from typing import Any, Optional
 
 from sqlalchemy import Column, Integer, String  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serialization import AntaresBaseModel
@@ -30,11 +31,13 @@ class ConfigData(Base):  # type: ignore
     key = Column(String(), primary_key=True)
     value = Column(String(), nullable=True)
 
+    @override
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, ConfigData):
             return False
         return bool(other.key == self.key and other.value == self.value and other.owner == self.owner)
 
+    @override
     def __repr__(self) -> str:
         return f"key={self.key}, value={self.value}, owner={self.owner}"
 

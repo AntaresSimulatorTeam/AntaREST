@@ -62,7 +62,7 @@ interface Props {
   studyId: string;
   path: string;
   colHeaders: string[][];
-  onColHeadersChange: (colHeaders: string[][]) => void;
+  onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
 }
 
 function ResultFilters({
@@ -104,48 +104,61 @@ function ResultFilters({
     );
   }, [colHeaders]);
 
+  // Process headers while keeping track of their original positions
+  // This ensures we can properly filter the data matrix later
+  // Example: if we filter out column 1, we need to know that column 2
+  // becomes column 1 in the filtered view but maps to index 2 in the data
+  const filteredHeaders = useMemo(() => {
+    return parsedHeaders
+      .map((header, index) => ({ ...header, index }))
+      .filter((header) => {
+        // Apply search filter
+        if (filters.search) {
+          const matchesVariable = matchesSearchTerm(
+            header.variable,
+            filters.search,
+          );
+
+          const matchesUnit = matchesSearchTerm(header.unit, filters.search);
+
+          if (!matchesVariable && !matchesUnit) {
+            return false;
+          }
+        }
+
+        // Apply statistical filters
+        if (header.stat) {
+          const stat = header.stat.toLowerCase();
+
+          if (!filters.exp && stat.includes("exp")) {
+            return false;
+          }
+          if (!filters.min && stat.includes("min")) {
+            return false;
+          }
+          if (!filters.max && stat.includes("max")) {
+            return false;
+          }
+          if (!filters.std && stat.includes("std")) {
+            return false;
+          }
+          if (!filters.values && stat.includes("values")) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+  }, [filters, parsedHeaders]);
+
+  // Notify parent of both filtered headers and their original indices
+  // This allows the parent to correctly map the filtered view back to the original data
   useEffect(() => {
-    const filteredHeaders = parsedHeaders.filter((header) => {
-      // Apply search filters
-      if (filters.search) {
-        const matchesVariable = matchesSearchTerm(
-          header.variable,
-          filters.search,
-        );
-
-        const matchesUnit = matchesSearchTerm(header.unit, filters.search);
-
-        if (!matchesVariable && !matchesUnit) {
-          return false;
-        }
-      }
-
-      // Apply stat filters
-      if (header.stat) {
-        const stat = header.stat.toLowerCase();
-
-        if (!filters.exp && stat.includes("exp")) {
-          return false;
-        }
-        if (!filters.min && stat.includes("min")) {
-          return false;
-        }
-        if (!filters.max && stat.includes("max")) {
-          return false;
-        }
-        if (!filters.std && stat.includes("std")) {
-          return false;
-        }
-        if (!filters.values && stat.includes("values")) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    onColHeadersChange(filteredHeaders.map((h) => h.original));
-  }, [filters, parsedHeaders, onColHeadersChange]);
+    onColHeadersChange(
+      filteredHeaders.map((h) => h.original),
+      filteredHeaders.map((h) => h.index),
+    );
+  }, [filteredHeaders, onColHeadersChange]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers

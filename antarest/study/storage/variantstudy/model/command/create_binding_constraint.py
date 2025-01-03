@@ -17,7 +17,9 @@ from enum import Enum
 import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import Field, field_validator, model_validator
+from typing_extensions import override
 
+from antarest.core.model import LowerCaseStr
 from antarest.core.serialization import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
@@ -29,8 +31,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
+    transform_name_to_id,
+    validate_filtering,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import validate_matrix
@@ -117,7 +122,7 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
 
 
 class BindingConstraintProperties870(BindingConstraintProperties830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
 BindingConstraintProperties = t.Union[
@@ -217,6 +222,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
     coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
 
+    @override
     def to_dto(self) -> CommandDTO:
         json_command = self.model_dump(mode="json", exclude={"command_context"})
         args = {}
@@ -244,6 +250,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             action=self.command_name.value, args=args, version=self.version, study_version=self.study_version
         )
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         matrix_service = self.command_context.matrix_service
         return [
@@ -339,8 +346,8 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                 elif "." in link_or_cluster:
                     # Cluster IDs are stored in lower case in the binding constraints file.
                     area, cluster_id = link_or_cluster.split(".")
-                    thermal_ids = {thermal.id.lower() for thermal in study_data.config.areas[area].thermals}
-                    if area not in study_data.config.areas or cluster_id.lower() not in thermal_ids:
+                    thermal_ids = {thermal.id for thermal in study_data.config.areas[area].thermals}
+                    if area not in study_data.config.areas or cluster_id not in thermal_ids:
                         return CommandOutput(
                             status=False,
                             message=f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
@@ -412,6 +419,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
     name: str
 
+    @override
     def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         bd_id = transform_name_to_id(self.name)
         group = self.group or DEFAULT_GROUP
@@ -427,6 +435,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         )
         return CommandOutput(status=True), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = str(len(binding_constraints))
@@ -445,14 +454,17 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         )
         return super().apply_binding_constraint(study_data, binding_constraints, new_key, bd_id)
 
+    @override
     def to_dto(self) -> CommandDTO:
         dto = super().to_dto()
         dto.args["name"] = self.name  # type: ignore
         return dto
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
@@ -488,6 +500,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
         return [UpdateBindingConstraint.model_validate(args)]
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         if not isinstance(other, self.__class__):
             return False

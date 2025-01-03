@@ -49,13 +49,15 @@ export const reorder = <T>(
 export const fromCommandDTOToCommandItem = (
   commands: CommandDTO[],
 ): CommandItem[] => {
-  const dtoItems: CommandItem[] = commands.map((elm) => ({
+  return commands.map((elm) => ({
     id: elm?.id,
     action: elm.action,
     args: elm.args,
     updated: false,
+    version: elm.version,
+    user: elm.user_name,
+    updatedAt: elm.updated_at,
   }));
-  return dtoItems;
 };
 
 export const fromCommandDTOToJsonCommand = (

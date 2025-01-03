@@ -207,7 +207,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert len(res.json()) == 3
-    assert filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()["folder"] == "foo/bar"
+    moved_study = filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()
+    assert moved_study["folder"] == f"foo/bar/{moved_study['id']}"
 
     # Study delete
     client.delete(
@@ -532,19 +533,19 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 {
                     "code-oi": None,
                     "enabled": True,
-                    "group": None,
+                    "group": "other 1",
                     "id": "cluster 1",
-                    "marginal-cost": None,
-                    "market-bid-cost": None,
-                    "min-down-time": None,
-                    "min-stable-power": None,
-                    "min-up-time": None,
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
                     "name": "cluster 1",
-                    "nominalcapacity": 0,
-                    "spinning": None,
-                    "spread-cost": None,
+                    "nominalcapacity": 0.0,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
                     "type": None,
-                    "unitcount": 0,
+                    "unitcount": 1,
                 }
             ],
             "type": "AREA",
@@ -558,19 +559,19 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 {
                     "code-oi": None,
                     "enabled": True,
-                    "group": None,
+                    "group": "other 1",
                     "id": "cluster 2",
-                    "marginal-cost": None,
-                    "market-bid-cost": None,
-                    "min-down-time": None,
-                    "min-stable-power": None,
-                    "min-up-time": None,
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
                     "name": "cluster 2",
                     "nominalcapacity": 2.5,
-                    "spinning": None,
-                    "spread-cost": None,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
                     "type": None,
-                    "unitcount": 0,
+                    "unitcount": 1,
                 }
             ],
             "type": "AREA",
@@ -1336,7 +1337,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     expected = {
         "enabled": False,
-        "group": "Other RES 1",  # Default group used when not specified.
+        "group": "other res 1",  # Default group used when not specified.
         "id": "cluster renewable 1",
         "name": "cluster renewable 1 renamed",
         "nominalCapacity": 3.0,
@@ -1398,6 +1399,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
     )
     assert res.status_code == 200, res.json()
+    obj["group"] = obj["group"].lower()
     assert res.json() == {"id": "cluster 1", **obj}
 
     # Links
@@ -1470,19 +1472,19 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 {
                     "code-oi": None,
                     "enabled": True,
-                    "group": None,
+                    "group": "other 1",
                     "id": "cluster 2",
-                    "marginal-cost": None,
-                    "market-bid-cost": None,
-                    "min-down-time": None,
-                    "min-stable-power": None,
-                    "min-up-time": None,
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
                     "name": "cluster 2",
                     "nominalcapacity": 2.5,
-                    "spinning": None,
-                    "spread-cost": None,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
                     "type": None,
-                    "unitcount": 0,
+                    "unitcount": 1,
                 }
             ],
             "type": "AREA",

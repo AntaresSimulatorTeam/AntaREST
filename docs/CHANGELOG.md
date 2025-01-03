@@ -1,6 +1,29 @@
 Antares Web Changelog
 =====================
 
+v2.18.3 (2024-12-17)
+--------------------
+
+## What's Changed
+
+### Bug Fixes
+
+* **ui-results**: resolve data misalignment in matrix column filtering [`2269`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2269)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.18.2...v2.18.3
+
+
+v2.18.2 (2024-12-11)
+--------------------
+
+## What's Changed
+
+### Bug Fixes
+
+* **tasks**: frozen tasks with pgpool [`2264`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2264)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.18.1...v2.18.2
+
 v2.18.1 (2024-12-02)
 --------------------
 

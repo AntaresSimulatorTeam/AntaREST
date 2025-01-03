@@ -14,6 +14,7 @@ import logging
 from typing import List, Optional, cast
 
 from redis.client import Redis
+from typing_extensions import override
 
 from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.business.interfaces import IEventBusBackend
@@ -29,18 +30,22 @@ class RedisEventBus(IEventBusBackend):
         self.pubsub = self.redis.pubsub()
         self.pubsub.subscribe(REDIS_STORE_KEY)
 
+    @override
     def push_event(self, event: Event) -> None:
         self.redis.publish(REDIS_STORE_KEY, event.model_dump_json())
 
+    @override
     def queue_event(self, event: Event, queue: str) -> None:
         self.redis.rpush(queue, event.model_dump_json())
 
+    @override
     def pull_queue(self, queue: str) -> Optional[Event]:
         event = self.redis.lpop(queue)
         if event:
             return cast(Optional[Event], Event.parse_raw(event))
         return None
 
+    @override
     def get_events(self) -> List[Event]:
         messages = []
         try:
@@ -60,6 +65,7 @@ class RedisEventBus(IEventBusBackend):
 
         return events
 
+    @override
     def clear_events(self) -> None:
         # Nothing to do
         pass

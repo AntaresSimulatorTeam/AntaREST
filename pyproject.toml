@@ -3,7 +3,7 @@ requires = ["setuptools"]
 
 [project]
 name = "AntaREST"
-version = "2.18.1"
+version = "2.18.3"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -39,6 +39,7 @@ exclude = "antarest/fastapi_jwt_auth/*"
 strict = true
 files = "antarest"
 plugins = "pydantic.mypy"
+enable_error_code = "explicit-override"
 
 [[tool.mypy.overrides]]
 module = ["antarest/fastapi_jwt_auth.*"]

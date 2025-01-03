@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -29,12 +30,10 @@ class InputThermalPreproArea(FolderNode):
         super().__init__(context, config)
         self.area = area
 
+    @override
     def build(self) -> TREE:
-        # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
-        # For instance, if your cluster ID is "Base", then the series ID will be "base".
-        series_ids = map(str.lower, self.config.get_thermal_ids(self.area))
         children: TREE = {
             series_id: InputThermalPreproAreaThermal(self.context, self.config.next_file(series_id))
-            for series_id in series_ids
+            for series_id in self.config.get_thermal_ids(self.area)
         }
         return children

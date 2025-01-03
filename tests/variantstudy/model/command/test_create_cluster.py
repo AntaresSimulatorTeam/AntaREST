@@ -19,7 +19,8 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -57,13 +58,15 @@ class TestCreateCluster:
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
-        assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.cluster_name == "cluster1"
+        assert cl.parameters.group == "nuclear"
+        assert cl.parameters.nominal_capacity == 2400
+        assert cl.parameters.unit_count == 2
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
 
     def test_validate_cluster_name(self, command_context: CommandContext):
-        with pytest.raises(ValidationError, match="cluster_name"):
+        with pytest.raises(ValidationError, match="name"):
             CreateCluster(
                 area_id="fr",
                 cluster_name="%",
@@ -95,16 +98,16 @@ class TestCreateCluster:
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         study_path = empty_study.config.study_path
         area_name = "DE"
-        area_id = transform_name_to_id(area_name, lower=True)
+        area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster-1"
-        cluster_id = transform_name_to_id(cluster_name, lower=True)
+        cluster_id = transform_name_to_id(cluster_name)
 
         CreateArea(area_name=area_name, command_context=command_context, study_version=STUDY_VERSION_8_8).apply(
             empty_study
         )
 
         parameters = {
-            "group": "Other",
+            "group": "nuclear",
             "unitcount": "1",
             "nominalcapacity": "1000000",
             "marginal-cost": "30",
@@ -113,6 +116,7 @@ class TestCreateCluster:
 
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
+
         command = CreateCluster(
             area_id=area_id,
             cluster_name=cluster_name,
@@ -133,12 +137,13 @@ class TestCreateCluster:
 
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
-        assert str(clusters[cluster_name]["name"]) == cluster_name
-        assert str(clusters[cluster_name]["group"]) == parameters["group"]
-        assert int(clusters[cluster_name]["unitcount"]) == int(parameters["unitcount"])
-        assert float(clusters[cluster_name]["nominalcapacity"]) == float(parameters["nominalcapacity"])
-        assert float(clusters[cluster_name]["marginal-cost"]) == float(parameters["marginal-cost"])
-        assert float(clusters[cluster_name]["market-bid-cost"]) == float(parameters["market-bid-cost"])
+        section = clusters[cluster_name.lower()]
+        assert str(section["name"]) == cluster_name.lower()
+        assert str(section["group"]) == parameters["group"]
+        assert int(section["unitcount"]) == int(parameters["unitcount"])
+        assert float(section["nominalcapacity"]) == float(parameters["nominalcapacity"])
+        assert float(section["marginal-cost"]) == float(parameters["marginal-cost"])
+        assert float(section["market-bid-cost"]) == float(parameters["market-bid-cost"])
 
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "data.txt.link").exists()
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "modulation.txt.link").exists()
@@ -178,10 +183,11 @@ class TestCreateCluster:
     def test_to_dto(self, command_context: CommandContext):
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
+        parameters = {"group": "Nuclear", "unitcount": 2, "nominalcapacity": 2400}
         command = CreateCluster(
             area_id="foo",
             cluster_name="Cluster1",
-            parameters={"group": "Nuclear", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=parameters,
             command_context=command_context,
             prepro=prepro,
             modulation=modulation,
@@ -194,14 +200,18 @@ class TestCreateCluster:
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
-                "cluster_name": "Cluster1",
-                "parameters": {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2},
+                "cluster_name": "cluster1",
+                "parameters": Thermal870Properties.model_validate({"name": "cluster1", **parameters}).model_dump(
+                    mode="json", by_alias=True
+                ),
                 "prepro": prepro_id,
                 "modulation": modulation_id,
             },
             "id": None,
             "version": 1,
             "study_version": STUDY_VERSION_8_8,
+            "user_id": None,
+            "updated_at": None,
         }
 
 
@@ -309,7 +319,9 @@ def test_create_diff(command_context: CommandContext):
         ),
         UpdateConfig(
             target="input/thermal/clusters/foo/list/foo",
-            data={"nominalcapacity": "2400"},
+            data=Thermal870Properties.model_validate({"name": "foo", "nominalcapacity": "2400"}).model_dump(
+                mode="json", by_alias=True
+            ),
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         ),

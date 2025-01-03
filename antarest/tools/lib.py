@@ -22,6 +22,7 @@ from zipfile import ZipFile
 import numpy as np
 from antares.study.version import StudyVersion
 from httpx import Client
+from typing_extensions import override
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import CacheConfig, InternalMatrixFormat
@@ -77,6 +78,7 @@ class RemoteVariantGenerator(IVariantGenerator):
         self.session = session
         self.host = host
 
+    @override
     def apply_commands(
         self,
         commands: List[CommandDTO],
@@ -140,6 +142,7 @@ class LocalVariantGenerator(IVariantGenerator):
             sets_ini = self.output_path.joinpath("input/areas/sets.ini")
             sets_ini.write_bytes(b"")
 
+    @override
     def apply_commands(self, commands: List[CommandDTO], matrices_dir: Path) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
         matrix_content_repository = MatrixContentRepository(bucket_dir=matrices_dir, format=DEFAULT_INTERNAL_FORMAT)
