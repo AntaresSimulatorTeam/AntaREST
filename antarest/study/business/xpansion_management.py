@@ -203,7 +203,7 @@ class GetXpansionSettings(XpansionSettings):
         try:
             return cls(**config_obj)
         except ValidationError:
-            return cls.construct(**config_obj)
+            return cls.model_construct(**config_obj)
 
 
 @all_optional_model
@@ -270,11 +270,6 @@ class CandidateNameIsEmpty(HTTPException):
         super().__init__(http.HTTPStatus.BAD_REQUEST)
 
 
-class WrongTypeFormat(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
-
-
 class WrongLinkFormatError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(http.HTTPStatus.BAD_REQUEST, message)
@@ -291,11 +286,6 @@ class BadCandidateFormatError(HTTPException):
 
 
 class CandidateNotFoundError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.NOT_FOUND, message)
-
-
-class ConstraintsNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(http.HTTPStatus.NOT_FOUND, message)
 
@@ -337,7 +327,10 @@ class XpansionManager:
 
             xpansion_settings = XpansionSettings()
             settings_obj = xpansion_settings.model_dump(
-                mode="json", by_alias=True, exclude_none=True, exclude={"sensitivity_config"}
+                mode="json",
+                by_alias=True,
+                exclude_none=True,
+                exclude={"sensitivity_config", "yearly_weights", "additional_constraints"},
             )
             if xpansion_settings.sensitivity_config:
                 sensitivity_obj = xpansion_settings.sensitivity_config.model_dump(
@@ -389,22 +382,33 @@ class XpansionManager:
 
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
 
-        # Specific handling of the additional constraints file:
-        # - If the file name is `None`, it means that the user does not want to select an additional constraints file.
-        # - If the file name is empty, it means that the user wants to deselect the additional constraints file,
-        #   but he does not want to delete it from the expansion configuration folder.
-        # - If the file name is not empty, it means that the user wants to select an additional constraints file.
+        # Specific handling for yearly_weights and additional_constraints:
+        # - If the attributes are given, it means that the user wants to select a file.
         #   It is therefore necessary to check that the file exists.
-        constraints_file = new_xpansion_settings.additional_constraints
-        if constraints_file:
+        # - Else, it means the user want to deselect the additional constraints file,
+        #  but he does not want to delete it from the expansion configuration folder.
+        excludes = {"sensitivity_config"}
+        if constraints_file := new_xpansion_settings.additional_constraints:
             try:
                 constraints_url = ["user", "expansion", "constraints", constraints_file]
                 file_study.tree.get(constraints_url)
             except ChildNotFoundError:
                 msg = f"Additional constraints file '{constraints_file}' does not exist"
                 raise XpansionFileNotFoundError(msg) from None
+        else:
+            excludes.add("additional_constraints")
 
-        config_obj = updated_settings.model_dump(mode="json", by_alias=True, exclude={"sensitivity_config"})
+        if weights_file := new_xpansion_settings.yearly_weights:
+            try:
+                weights_url = ["user", "expansion", "weights", weights_file]
+                file_study.tree.get(weights_url)
+            except ChildNotFoundError:
+                msg = f"Additional weights file '{weights_file}' does not exist"
+                raise XpansionFileNotFoundError(msg) from None
+        else:
+            excludes.add("yearly_weights")
+
+        config_obj = updated_settings.model_dump(mode="json", by_alias=True, exclude=excludes)
         file_study.tree.save(config_obj, ["user", "expansion", "settings"])
 
         if new_xpansion_settings.sensitivity_config:

@@ -12,6 +12,10 @@
 
 import typing as t
 
+from pydantic import Field
+from typing_extensions import override
+
+from antarest.core.model import LowerCaseStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -35,8 +39,9 @@ class RemoveRenewablesCluster(ICommand):
     # ==================
 
     area_id: str
-    cluster_id: str
+    cluster_id: LowerCaseStr = Field(description="Cluster ID", pattern=r"[a-z0-9_(),& -]+")
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: remove the renewable clusters from the storages list.
@@ -93,6 +98,7 @@ class RemoveRenewablesCluster(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update renewable cluster configurations and saves the changes:
@@ -131,6 +137,7 @@ class RemoveRenewablesCluster(ICommand):
         # deleting the files and folders.
         return self._apply_config(study_data.config)[0]
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
@@ -138,6 +145,7 @@ class RemoveRenewablesCluster(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(
             self.command_name.value
@@ -147,13 +155,16 @@ class RemoveRenewablesCluster(ICommand):
             + self.area_id
         )
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, RemoveRenewablesCluster):
             return False
         return self.cluster_id == other.cluster_id and self.area_id == other.area_id
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

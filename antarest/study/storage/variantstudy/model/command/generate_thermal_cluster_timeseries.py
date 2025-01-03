@@ -21,10 +21,12 @@ import pandas as pd
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
 from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluster, TimeseriesGenerator
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
 from antarest.study.storage.utils import TS_GEN_PREFIX, TS_GEN_SUFFIX
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -36,8 +38,6 @@ logger = logging.getLogger(__name__)
 
 
 MODULATION_CAPACITY_COLUMN = 2
-FO_RATE_COLUMN = 2
-PO_RATE_COLUMN = 3
 
 
 class GenerateThermalClusterTimeSeries(ICommand):
@@ -48,9 +48,11 @@ class GenerateThermalClusterTimeSeries(ICommand):
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
     version: int = 1
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         return CommandOutput(status=True, message="Nothing to do"), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         study_path = study_data.config.study_path
         with tempfile.TemporaryDirectory(suffix=TS_GEN_SUFFIX, prefix=TS_GEN_PREFIX, dir=study_path.parent) as path:
@@ -94,15 +96,19 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     # 7- Build the cluster
                     url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
                     matrix = study_data.tree.get_node(url)
-                    matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
+                    assert isinstance(matrix, InputSeriesMatrix)
+                    matrix_df = matrix.parse_as_dataframe()
                     modulation_capacity = matrix_df[MODULATION_CAPACITY_COLUMN].to_numpy()
                     url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
                     matrix = study_data.tree.get_node(url)
-                    matrix_df = matrix.parse(return_dataframe=True)  # type: ignore
-                    fo_duration, po_duration, fo_rate, po_rate, npo_min, npo_max = [
-                        np.array(matrix_df[i], dtype=float if i in [FO_RATE_COLUMN, PO_RATE_COLUMN] else int)
-                        for i in matrix_df.columns
-                    ]
+                    assert isinstance(matrix, InputSeriesMatrix)
+                    matrix_df = matrix.parse_as_dataframe()
+                    fo_duration = np.array(matrix_df[0], dtype=int)
+                    po_duration = np.array(matrix_df[1], dtype=int)
+                    fo_rate = np.array(matrix_df[2], dtype=float)
+                    po_rate = np.array(matrix_df[3], dtype=float)
+                    npo_min = np.array(matrix_df[4], dtype=int)
+                    npo_max = np.array(matrix_df[5], dtype=int)
                     generation_params = OutageGenerationParameters(
                         unit_count=thermal.unit_count,
                         fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
@@ -138,22 +144,27 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     e.args = (f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0],)
                     raise
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value)
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         # Only used inside the cli app that no one uses I believe.
         if not isinstance(other, GenerateThermalClusterTimeSeries):
             return False
         return True
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         # Only used inside the cli app that no one uses I believe.
         raise NotImplementedError()
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         # This is used to get used matrices and not remove them inside the garbage collector loop.
         return []

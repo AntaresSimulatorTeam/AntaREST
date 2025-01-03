@@ -13,15 +13,12 @@
 import typing as t
 
 from pydantic import Field
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    EnrModelling,
-    FileStudyTreeConfig,
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
@@ -78,6 +75,7 @@ class CreateArea(ICommand):
     #  or if we don't want to support this feature.
     metadata: t.Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         if self.command_context.generator_matrix_constants is None:
             raise ValueError()
@@ -106,6 +104,7 @@ class CreateArea(ICommand):
             {"area_id": area_id},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         config = study_data.config
 
@@ -291,21 +290,26 @@ class CreateArea(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.CREATE_AREA.value, args={"area_name": self.area_name}, study_version=self.study_version
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area_name)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateArea):
             return False
         return self.area_name == other.area_name
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

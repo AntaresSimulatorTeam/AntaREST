@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, cast
 
 import yaml
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.model import JSON
@@ -23,7 +24,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 logger = logging.getLogger(__name__)
@@ -95,9 +96,11 @@ class AdequacyPatchExtension(ILauncherExtension):
     def __init__(self, study_service: StudyService, config: Config):
         self.study_service = study_service
 
+    @override
     def get_name(self) -> str:
         return AdequacyPatchExtension.EXTENSION_NAME
 
+    @override
     def after_export_flat_hook(
         self,
         job_id: str,
@@ -129,6 +132,7 @@ class AdequacyPatchExtension(ILauncherExtension):
             post_processing_file = Path(__file__).parent / "resources" / "post-processing.R"
         shutil.copy(post_processing_file, study_export_path / "post-processing.R")
 
+    @override
     def before_import_hook(
         self,
         job_id: str,

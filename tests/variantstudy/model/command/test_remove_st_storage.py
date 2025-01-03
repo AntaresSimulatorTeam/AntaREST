@@ -16,7 +16,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -72,7 +72,7 @@ class TestRemoveSTStorage:
         assert cmd.area_id == "area_fr"
         assert cmd.storage_id == "storage_1"
 
-    def test_init__invalid_storage_id(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_init__invalid_storage_id(self, command_context: CommandContext):
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             RemoveSTStorage(
@@ -81,16 +81,11 @@ class TestRemoveSTStorage:
                 storage_id="?%$$",  # bad name
                 study_version=STUDY_VERSION_8_8,
             )
-        assert ctx.value.errors() == [
-            {
-                "ctx": {"pattern": "[a-z0-9_(),& -]+"},
-                "input": "?%$$",
-                "loc": ("storage_id",),
-                "msg": "String should match pattern '[a-z0-9_(),& -]+'",
-                "type": "string_pattern_mismatch",
-                "url": "https://errors.pydantic.dev/2.8/v/string_pattern_mismatch",
-            }
-        ]
+        assert len(ctx.value.errors()) == 1
+        error = ctx.value.errors()[0]
+        assert error["type"] == "string_pattern_mismatch"
+        assert error["loc"] == ("storage_id",)
+        assert error["msg"] == "String should match pattern '[a-z0-9_(),& -]+'"
 
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720

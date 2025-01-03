@@ -12,6 +12,8 @@
 
 from abc import ABC, abstractmethod
 
+from typing_extensions import override
+
 
 class HeadWriter(ABC):
     """
@@ -43,6 +45,7 @@ class AreaHeadWriter(HeadWriter):
 \tVARIABLES\tBEGIN\tEND
 """
 
+    @override
     def build(self, var: int, end: int, start: int = 1) -> str:
         return self.head + f"\t{var}\t{start}\t{end}\n\n"
 
@@ -57,5 +60,6 @@ class LinkHeadWriter(HeadWriter):
 {dest.upper()}\tVARIABLES\tBEGIN\tEND
 """
 
+    @override
     def build(self, var: int, end: int, start: int = 1) -> str:
         return self.head + f"\t{var}\t{start}\t{end}\n\n"

@@ -14,6 +14,7 @@ import typing as t
 
 import pandas as pd
 from pydantic import Field
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
@@ -84,6 +85,7 @@ class DigestSynthesis(OutputSynthesis):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         super().__init__(context, config)
 
+    @override
     def load(
         self,
         url: t.Optional[t.List[str]] = None,

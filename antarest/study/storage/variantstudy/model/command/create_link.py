@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, field_validator, model_validator
+from typing_extensions import override
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.utils.utils import assert_this
@@ -65,6 +66,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
 
         return self
 
+    @override
     def to_dto(self) -> CommandDTO:
         args = {
             "area1": self.area1,
@@ -76,6 +78,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
                 args[attr] = strip_matrix_protocol(value)
         return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, self.__class__):
             return False
@@ -90,11 +93,13 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             and self.indirect == other.indirect
         )
 
+    @override
     def match_signature(self) -> str:
         return str(
             self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
         )
 
+    @override
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         other = cast(AbstractLinkCommand, other)
 
@@ -123,6 +128,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
             )
         return commands
 
+    @override
     def get_inner_matrices(self) -> List[str]:
         list_matrices = []
         for attr in MATRIX_ATTRIBUTES:
@@ -200,6 +206,7 @@ class CreateLink(AbstractLinkCommand):
             ],
         )
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
             return (
@@ -254,6 +261,7 @@ class CreateLink(AbstractLinkCommand):
             {"area_from": area_from, "area_to": area_to},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
         output, data = self._apply_config(study_data.config)
@@ -283,17 +291,22 @@ class CreateLink(AbstractLinkCommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return super().to_dto()
 
+    @override
     def match_signature(self) -> str:
         return super().match_signature()
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         return super().match(other, equal)
 
+    @override
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return super()._create_diff(other)
 
+    @override
     def get_inner_matrices(self) -> List[str]:
         return super().get_inner_matrices()

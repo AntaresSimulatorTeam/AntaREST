@@ -1,0 +1,8 @@
+area_1	area	sts	annual
+	VARIABLES	BEGIN	END
+	4	1	1
+
+area_1	annual	storage_1	storage_1	storage_1	storage_1
+		P-injection - MW	P-withdrawal - MW	Levels - MWh	CashFlow - Euro
+		EXP	EXP	EXP	EXP
+	Annual	0	0	0	0

@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -29,6 +30,7 @@ class InputSTStorageArea(FolderNode):
         super().__init__(context, config)
         self.area = area
 
+    @override
     def build(self) -> TREE:
         # Each area has a folder containing a file named "list.ini"
         # If the area does not have any short term storage cluster, the file is empty.
