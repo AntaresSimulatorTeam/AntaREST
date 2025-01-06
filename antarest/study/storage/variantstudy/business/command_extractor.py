@@ -225,7 +225,7 @@ class CommandExtractor(ICommandExtractor):
             create_cluster_command(
                 area_id=area_id,
                 cluster_name=cluster.id,
-                parameters=cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
+                parameters=cluster.model_dump(by_alias=True, exclude_defaults=True, exclude={"id"}),
                 command_context=self.command_context,
                 study_version=study_tree.config.version,
             ),

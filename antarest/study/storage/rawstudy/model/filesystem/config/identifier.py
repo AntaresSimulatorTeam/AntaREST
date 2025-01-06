@@ -14,12 +14,12 @@ import typing as t
 
 from pydantic import Field, model_validator
 
-__all__ = "LowerCaseIdentifier"
+__all__ = ("IgnoreCaseIdentifier", "LowerCaseIdentifier")
 
 from antarest.core.serialization import AntaresBaseModel
 
 
-class LowerCaseIdentifier(
+class IgnoreCaseIdentifier(
     AntaresBaseModel,
     extra="forbid",
     validate_assignment=True,
@@ -43,9 +43,9 @@ class LowerCaseIdentifier(
             The ID of the section.
         """
         # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
-        return transform_name_to_id(name)
+        return transform_name_to_id(name, lower=False)
 
     @model_validator(mode="before")
     def validate_id(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
@@ -74,3 +74,27 @@ class LowerCaseIdentifier(
             else:
                 raise ValueError(f"Invalid name '{name}'.")
         return values
+
+
+class LowerCaseIdentifier(IgnoreCaseIdentifier):
+    """
+    Base class for all configuration sections with a lower case ID.
+    """
+
+    id: str = Field(description="ID (section name)", pattern=r"[a-z0-9_(),& -]+")
+
+    @classmethod
+    def generate_id(cls, name: str) -> str:
+        """
+        Generate an ID from a name.
+
+        Args:
+            name: Name of a section read from an INI file
+
+        Returns:
+            The ID of the section.
+        """
+        # Avoid circular imports
+        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+
+        return transform_name_to_id(name, lower=True)
