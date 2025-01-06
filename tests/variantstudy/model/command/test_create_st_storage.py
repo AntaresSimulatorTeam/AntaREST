@@ -9,19 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import copy
+
 import re
 
 import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Properties,
-    STStorageProperties,
-)
+from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
@@ -86,7 +83,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
             study_version=STUDY_VERSION_8_8,
@@ -99,7 +96,7 @@ class TestCreateSTStorage:
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
-        assert cmd.parameters == STStorage880Properties(**expected_parameters)
+        assert cmd.parameters == STStorageConfig(**expected_parameters)
 
         # check the matrices links
 
@@ -117,15 +114,23 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="dummy",
-                parameters=parameters,
+                parameters=STStorageConfig(**parameters),
                 study_version=STUDY_VERSION_8_8,
             )
         # We get 2 errors because the `storage_name` is duplicated in the `parameters`:
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
-        assert raised_error["type"] == "string_pattern_mismatch"
-        assert raised_error["msg"] == "String should match pattern '[a-zA-Z0-9_(),& -]+'"
-        assert raised_error["input"] == "?%$$"
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == "Value error, Invalid name '?%$$'."
+        assert raised_error["input"] == {
+            "efficiency": 0.94,
+            "group": "Battery",
+            "initialleveloptim": True,
+            "injectionnominalcapacity": 1500,
+            "name": "?%$$",
+            "reservoircapacity": 20000,
+            "withdrawalnominalcapacity": 1500,
+        }
 
     def test_init__invalid_matrix_values(self, command_context: CommandContext):
         array = GEN.random((8760, 1))
@@ -134,7 +139,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=PARAMETERS,
+                parameters=STStorageConfig(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -151,7 +156,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=PARAMETERS,
+                parameters=STStorageConfig(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -168,7 +173,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=PARAMETERS,
+                parameters=STStorageConfig(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -183,7 +188,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=PARAMETERS,
+                parameters=STStorageConfig(**PARAMETERS),
                 pmax_injection=[1, 2, 3],
                 study_version=STUDY_VERSION_8_8,
             )
@@ -193,14 +198,24 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Invalid matrix shape (3,), expected (8760, 1)"
         assert "pmax_injection" in raised_error["input"]
 
-    def test_instantiate_with_invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
-        with pytest.raises(ValidationError):
-            CreateSTStorage(
-                command_context=command_context,
-                area_id="foo",
-                parameters=PARAMETERS,
-                study_version=empty_study.config.version,
-            )
+    def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
+        # Given an old study in version 720
+        # When we apply the config to add a new ST Storage
+        create_st_storage = CreateSTStorage(
+            command_context=command_context,
+            area_id="foo",
+            parameters=STStorageConfig(**PARAMETERS),
+            study_version=empty_study.config.version,
+        )
+        command_output = create_st_storage.apply_config(empty_study.config)
+
+        # Then, the output should be an error
+        assert command_output.status is False
+        assert re.search(
+            rf"Invalid.*version {empty_study.config.version}",
+            command_output.message,
+            flags=re.IGNORECASE,
+        )
 
     def test_apply_config__missing_area(self, recent_study: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
@@ -208,7 +223,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -232,7 +247,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -243,7 +258,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=parameters,
+            parameters=STStorageConfig(**parameters),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -267,7 +282,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -294,7 +309,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
             study_version=recent_study.config.version,
@@ -307,11 +322,11 @@ class TestCreateSTStorage:
         expected = {
             "storage1": {
                 "efficiency": 0.94,
-                "group": "battery",
+                "group": "Battery",
                 "initiallevel": 0.5,
                 "initialleveloptim": True,
                 "injectionnominalcapacity": 1500,
-                "name": "storage1",
+                "name": "Storage1",
                 "reservoircapacity": 20000,
                 "withdrawalnominalcapacity": 1500,
             }
@@ -335,12 +350,29 @@ class TestCreateSTStorage:
         }
         assert config == expected
 
+    def test_apply__invalid_apply_config(self, empty_study: FileStudy, command_context: CommandContext):
+        # First, prepare a new Area
+        create_area = CreateArea(
+            area_name="Area FR", command_context=command_context, study_version=empty_study.config.version
+        )
+        create_area.apply(empty_study)
+
+        # Then, apply the command to create a new ST Storage
+        cmd = CreateSTStorage(
+            command_context=command_context,
+            area_id=transform_name_to_id(create_area.area_name),
+            parameters=STStorageConfig(**PARAMETERS),
+            study_version=empty_study.config.version,
+        )
+        command_output = cmd.apply(empty_study)
+        assert not command_output.status  # invalid study (too old)
+
     # noinspection SpellCheckingInspection
     def test_to_dto(self, command_context: CommandContext):
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
 
@@ -349,10 +381,6 @@ class TestCreateSTStorage:
         expected_parameters = PARAMETERS.copy()
         # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
         expected_parameters["initiallevel"] = 0.5
-        expected_parameters["name"] = expected_parameters["name"].lower()
-        expected_parameters["group"] = expected_parameters["group"].lower()
-        # as we're using study version 8.8, we have the parameter `enabled`
-        expected_parameters["enabled"] = True
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
@@ -373,7 +401,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
         assert cmd.match_signature() == "create_st_storage%area_fr%storage1"
@@ -389,16 +417,16 @@ class TestCreateSTStorage:
         cmd1 = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
-            study_version=STUDY_VERSION_8_6,
+            parameters=STStorageConfig(**PARAMETERS),
+            study_version=STUDY_VERSION_8_8,
         )
         cmd2 = CreateSTStorage(
             command_context=command_context,
             area_id=area_id,
-            parameters=parameters,
-            study_version=STUDY_VERSION_8_6,
+            parameters=STStorageConfig(**parameters),
+            study_version=STUDY_VERSION_8_8,
         )
-        light_equal = area_id == cmd1.area_id and parameters["name"].lower() == cmd1.storage_name
+        light_equal = area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
         assert cmd1.match(cmd2, equal=False) == light_equal
         deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
         assert cmd1.match(cmd2, equal=True) == deep_equal
@@ -407,7 +435,7 @@ class TestCreateSTStorage:
         cmd1 = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
         # Always `False` when compared to another object type
@@ -418,41 +446,38 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
-            study_version=STUDY_VERSION_8_6,
+            parameters=STStorageConfig(**PARAMETERS),
+            study_version=STUDY_VERSION_8_8,
         )
         upper_rule_curve = GEN.random((8760, 1))
         inflows = GEN.uniform(0, 1000, size=(8760, 1))
         other = CreateSTStorage(
             command_context=command_context,
             area_id=cmd.area_id,
-            parameters=OTHER_PARAMETERS,
+            parameters=STStorageConfig(**OTHER_PARAMETERS),
             upper_rule_curve=upper_rule_curve.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
-            study_version=STUDY_VERSION_8_6,
+            study_version=STUDY_VERSION_8_8,
         )
         actual = cmd.create_diff(other)
-        expected_params = copy.deepcopy(OTHER_PARAMETERS)
-        expected_params["name"] = expected_params["name"].lower()
-        expected_params["group"] = expected_params["group"].lower()
         expected = [
             ReplaceMatrix(
                 command_context=command_context,
                 target="input/st-storage/series/area_fr/storage1/upper_rule_curve",
                 matrix=strip_matrix_protocol(other.upper_rule_curve),
-                study_version=STUDY_VERSION_8_6,
+                study_version=STUDY_VERSION_8_8,
             ),
             ReplaceMatrix(
                 command_context=command_context,
                 target="input/st-storage/series/area_fr/storage1/inflows",
                 matrix=strip_matrix_protocol(other.inflows),
-                study_version=STUDY_VERSION_8_6,
+                study_version=STUDY_VERSION_8_8,
             ),
             UpdateConfig(
                 command_context=command_context,
                 target="input/st-storage/clusters/area_fr/list/storage1",
-                data=expected_params,
-                study_version=STUDY_VERSION_8_6,
+                data=OTHER_PARAMETERS,
+                study_version=STUDY_VERSION_8_8,
             ),
         ]
         assert actual == expected
@@ -461,7 +486,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
         actual = cmd.create_diff(cmd)
@@ -471,7 +496,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=PARAMETERS,
+            parameters=STStorageConfig(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
         actual = cmd.get_inner_matrices()
