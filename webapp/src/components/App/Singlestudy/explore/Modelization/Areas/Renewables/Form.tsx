@@ -81,6 +81,7 @@ function Renewables() {
           config={{ defaultValues }}
           onSubmit={handleSubmit}
           enableUndoRedo
+          sx={{ height: "50%" }}
         >
           <Fields />
         </Form>
