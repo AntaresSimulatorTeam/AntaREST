@@ -73,17 +73,16 @@ function StudyTree() {
     // Now we don't use the closure anymore, we pass the root tree as a parameter. Thus at the first call of updateTree, we pass initialStudiesTree.
     // You may think why we don't just capture initialStudiesTree then, it's because in the following call we need to pass studiesTree.
     let treeAfterWorkspacesUpdate = rootNode;
-    let chidrenPaths = selectedNode.children.map(
-      (child) => `root/${child.path}`,
-    );
+
+    let pathsToFetch: string[] = [];
     // If the user clicks on the root folder, we fetch the workspaces and insert them.
     // Then we fetch the direct subfolders of the workspaces.
     if (itemId === "root") {
       try {
         treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
-        chidrenPaths = treeAfterWorkspacesUpdate.children.map(
-          (child) => `root${child.path}`,
-        );
+        pathsToFetch = treeAfterWorkspacesUpdate.children
+          .filter((t) => t.name !== "default")
+          .map((child) => `root${child.path}`);
       } catch (error) {
         enqueueErrorSnackbar(
           "studies.tree.error.failToFetchWorkspace",
@@ -92,16 +91,11 @@ function StudyTree() {
       }
     } else {
       // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
-      // as well as the path of the children of the clicked folder.
-      // If we don't fetch the subfolders of the children then we won't know if they're themselves folders, which we need
-      // to know to display the little arrow next to the subfolder.
-      // On the other hand, if we fetch only the subfolders of the children, then we won't fetch their "siblings" folder
-      // if one of them is added.
-      chidrenPaths = [selectedNode.path].concat(chidrenPaths);
+      pathsToFetch = [`root${selectedNode.path}`];
     }
 
-    const [treeAfterChildrenUpdate, failedPath] =
-      await fetchAndInsertSubfolders(chidrenPaths, treeAfterWorkspacesUpdate);
+    const [treeAfterSubfoldersUpdate, failedPath] =
+      await fetchAndInsertSubfolders(pathsToFetch, treeAfterWorkspacesUpdate);
     if (failedPath.length > 0) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {
@@ -111,7 +105,7 @@ function StudyTree() {
         t("studies.tree.error.detailsInConsole"),
       );
     }
-    setStudiesTree(treeAfterChildrenUpdate);
+    setStudiesTree(treeAfterSubfoldersUpdate);
   }
 
   ////////////////////////////////////////////////////////////////
