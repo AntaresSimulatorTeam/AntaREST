@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import JSON, LowerCaseStr, StudyPermissionType
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -81,7 +81,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
 logger = logging.getLogger(__name__)
@@ -1955,7 +1955,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_renewable_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: LowerCaseStr,
+        cluster_id: str,
         cluster_data: RenewableClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
@@ -2129,7 +2129,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_thermal_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: LowerCaseStr,
+        cluster_id: str,
         cluster_data: ThermalClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
@@ -2556,8 +2556,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_type: ClusterType,
-        source_cluster_id: LowerCaseStr,
-        new_cluster_name: LowerCaseStr = Query(..., alias="newName", title="New Cluster Name"),
+        source_cluster_id: str,
+        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
         logger.info(

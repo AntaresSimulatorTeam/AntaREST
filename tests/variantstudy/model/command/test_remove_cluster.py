@@ -19,7 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -37,7 +37,7 @@ class TestRemoveCluster:
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)
         cluster_name = "Cluster Name"
-        cluster_id = transform_name_to_id(cluster_name)
+        cluster_id = transform_name_to_id(cluster_name, lower=False)
 
         study_version = empty_study.config.version
 
@@ -57,10 +57,10 @@ class TestRemoveCluster:
             cluster_name=cluster_name,
             parameters={
                 "group": "group",
-                "unitcount": 4,
-                "nominalcapacity": 1.2,
-                "marginal-cost": 1.2,
-                "market-bid-cost": 1.2,
+                "unitcount": "unitcount",
+                "nominalcapacity": "nominalcapacity",
+                "marginal-cost": "marginal-cost",
+                "market-bid-cost": "market-bid-cost",
             },
             command_context=command_context,
             prepro=[[0]],

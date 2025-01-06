@@ -33,7 +33,7 @@ from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_8, Study
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
     STStorage880Properties,
@@ -305,7 +305,7 @@ class STStorageManager:
     ) -> CreateSTStorage:
         command = CreateSTStorage(
             area_id=area_id,
-            parameters=cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
+            parameters=cluster,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
             study_version=study_version,
         )
@@ -551,7 +551,8 @@ class STStorageManager:
             ClusterAlreadyExists: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_cluster_name)
-        if any(new_id == storage.id for storage in self.get_storages(study, area_id)):
+        lower_new_id = new_id.lower()
+        if any(lower_new_id == storage.id.lower() for storage in self.get_storages(study, area_id)):
             raise DuplicateSTStorage(area_id, new_id)
 
         # Cluster duplication
@@ -570,13 +571,16 @@ class STStorageManager:
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
+        lower_source_id = source_id.lower()
         # noinspection SpellCheckingInspection
         ts_names = ["pmax_injection", "pmax_withdrawal", "lower_rule_curve", "upper_rule_curve", "inflows"]
         source_paths = [
-            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=source_id, ts_name=ts_name) for ts_name in ts_names
+            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_source_id, ts_name=ts_name)
+            for ts_name in ts_names
         ]
         new_paths = [
-            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=new_id, ts_name=ts_name) for ts_name in ts_names
+            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_new_id, ts_name=ts_name)
+            for ts_name in ts_names
         ]
 
         # Prepare and execute commands
