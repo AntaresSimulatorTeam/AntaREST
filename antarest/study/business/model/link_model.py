@@ -148,6 +148,7 @@ class LinkBaseDTO(AntaresBaseModel):
     transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
     asset_type: AssetType = AssetType.AC
     display_comments: bool = True
+    comments: str = ""
     colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
@@ -196,6 +197,7 @@ class LinkInternal(AntaresBaseModel):
     transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
     asset_type: AssetType = AssetType.AC
     display_comments: bool = True
+    comments: str = ""
     colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)

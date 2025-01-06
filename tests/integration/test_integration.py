@@ -604,6 +604,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "colorg": 112,
             "colorr": 112,
             "displayComments": True,
+            "comments": "",
             "filterSynthesis": "hourly, daily, weekly, monthly, annual",
             "filterYearByYear": "hourly, daily, weekly, monthly, annual",
             "hurdlesCost": False,
