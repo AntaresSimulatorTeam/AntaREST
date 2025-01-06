@@ -39,7 +39,7 @@ function StudyTree() {
   // Initialize folders once we have the tree
   // we use useUpdateEffectOnce because at first render initialStudiesTree isn't initialized
   useUpdateEffectOnce(() => {
-    updateTree("root", initialStudiesTree);
+    updateTree("root", initialStudiesTree, initialStudiesTree);
   }, [initialStudiesTree]);
 
   /**
@@ -55,18 +55,28 @@ function StudyTree() {
    * To enable this, we'll fetch the subfolders of a folder when the user clicks on it using the explorer API.
    *
    * @param itemId - The id of the item clicked
-   * @param studyTreeNode - The node of the item clicked
+   * @param rootNode - The root node of the tree
+   * @param selectedNode - The node of the item clicked
    */
-  async function updateTree(itemId: string, studyTreeNode: StudyTreeNode) {
-    let treeAfterWorkspacesUpdate = studiesTree;
-    let chidrenPaths = studyTreeNode.children.map(
-      (child) => `root${child.path}`,
+  async function updateTree(
+    itemId: string,
+    rootNode: StudyTreeNode,
+    selectedNode: StudyTreeNode,
+  ) {
+    // Bug fix : this function used to take only the itemId and the selectedNode, and we used to initialize treeAfterWorkspacesUpdate
+    // with the studiesTree closure, referencing directly the state, like this : treeAfterWorkspacesUpdate = studiesTree;
+    // The thing is at the first render studiesTree was empty.
+    // This made updateTree override studiesTree with an empty tree during the first call. This caused a bug where we didn't see the default
+    // workspace in the UI, as it was overridden by an empty tree at start and then the get workspaces api never returns the default workspace.
+    let treeAfterWorkspacesUpdate = rootNode;
+    let chidrenPaths = selectedNode.children.map(
+      (child) => `root/${child.path}`,
     );
     // If the user clicks on the root folder, we fetch the workspaces and insert them.
     // Then we fetch the direct subfolders of the workspaces.
     if (itemId === "root") {
       try {
-        treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(studiesTree);
+        treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
         chidrenPaths = treeAfterWorkspacesUpdate.children.map(
           (child) => `root${child.path}`,
         );
@@ -83,7 +93,7 @@ function StudyTree() {
       // to know to display the little arrow next to the subfolder.
       // On the other hand, if we fetch only the subfolders of the children, then we won't fetch their "siblings" folder
       // if one of them is added.
-      chidrenPaths = [studyTreeNode.path].concat(chidrenPaths);
+      chidrenPaths = [selectedNode.path].concat(chidrenPaths);
     }
 
     const [treeAfterChildrenUpdate, failedPath] =
@@ -109,7 +119,7 @@ function StudyTree() {
     studyTreeNode: StudyTreeNode,
   ) => {
     dispatch(updateStudyFilters({ folder: itemId }));
-    updateTree(itemId, studyTreeNode);
+    updateTree(itemId, studiesTree, studyTreeNode);
   };
 
   ////////////////////////////////////////////////////////////////
