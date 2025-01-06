@@ -39,6 +39,8 @@ function StudyTree() {
   // Initialize folders once we have the tree
   // we use useUpdateEffectOnce because at first render initialStudiesTree isn't initialized
   useUpdateEffectOnce(() => {
+    // be carefull to pass initialStudiesTree and not studiesTree at rootNode parameter
+    // otherwise we'll lose the default workspace
     updateTree("root", initialStudiesTree, initialStudiesTree);
   }, [initialStudiesTree]);
 
@@ -68,6 +70,8 @@ function StudyTree() {
     // The thing is at the first render studiesTree was empty.
     // This made updateTree override studiesTree with an empty tree during the first call. This caused a bug where we didn't see the default
     // workspace in the UI, as it was overridden by an empty tree at start and then the get workspaces api never returns the default workspace.
+    // Now we don't use the closure anymore, we pass the root tree as a parameter. Thus at the first call of updateTree, we pass initialStudiesTree.
+    // You may think why we don't just capture initialStudiesTree then, it's because in the following call we need to pass studiesTree.
     let treeAfterWorkspacesUpdate = rootNode;
     let chidrenPaths = selectedNode.children.map(
       (child) => `root/${child.path}`,
