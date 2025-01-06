@@ -67,11 +67,7 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
     directories_res = res.json()
     directories_res = [NonStudyFolderDTO(**d) for d in directories_res]
     directorires_expected = [
-        NonStudyFolderDTO(
-            path=Path("folder/trash"),
-            workspace="ext",
-            name="trash",
-        )
+        NonStudyFolderDTO(path=Path("folder/trash"), workspace="ext", name="trash", has_children=False)
     ]
     assert directories_res == directorires_expected
 

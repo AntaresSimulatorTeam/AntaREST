@@ -477,3 +477,14 @@ def should_ignore_folder_for_scan(path: Path) -> bool:
         return True
 
     return False
+
+
+def has_non_study_folder(path: Path) -> bool:
+    for sub_path in path.iterdir():
+        if is_non_study_folder(sub_path):
+            return True
+    return False
+
+
+def is_non_study_folder(path: Path) -> bool:
+    return path.is_dir() and not is_study_folder(path) and not should_ignore_folder_for_scan(path)

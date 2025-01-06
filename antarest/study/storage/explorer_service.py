@@ -18,8 +18,8 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, Work
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
-    is_study_folder,
-    should_ignore_folder_for_scan,
+    has_non_study_folder,
+    is_non_study_folder,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,10 +41,15 @@ class Explorer:
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         directories = []
         for child in directory_path.iterdir():
-            if child.is_dir() and not is_study_folder(child) and not should_ignore_folder_for_scan(child):
+            if is_non_study_folder(child):
                 # we don't want to expose the full absolute path on the server
                 child_rel_path = child.relative_to(workspace.path)
-                directories.append(NonStudyFolderDTO(path=child_rel_path, workspace=workspace_name, name=child.name))
+                has_children = has_non_study_folder(child)
+                directories.append(
+                    NonStudyFolderDTO(
+                        path=child_rel_path, workspace=workspace_name, name=child.name, has_children=has_children
+                    )
+                )
         return directories
 
     def list_workspaces(

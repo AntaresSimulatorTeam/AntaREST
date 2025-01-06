@@ -332,6 +332,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
     path: Path
     workspace: str
     name: str
+    has_children: bool  # true when has non study folder children (false when has no children or only study children)
 
     @computed_field(alias="parentPath")
     def parent_path(self) -> Path:

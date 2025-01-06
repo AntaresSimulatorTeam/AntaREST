@@ -85,7 +85,7 @@ def test_list_dir_empty_string(config_scenario_a: Config):
     result = explorer.list_dir("diese", "")
 
     assert len(result) == 1
-    assert result[0] == NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder")
+    assert result[0] == NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True)
 
 
 @pytest.mark.unit_test
@@ -95,9 +95,18 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
 
     assert len(result) == 3
     folder_path = Path("folder")
-    assert NonStudyFolderDTO(path=(folder_path / "subfolder1"), workspace="diese", name="subfolder1") in result
-    assert NonStudyFolderDTO(path=(folder_path / "subfolder2"), workspace="diese", name="subfolder2") in result
-    assert NonStudyFolderDTO(path=(folder_path / "subfolder3"), workspace="diese", name="subfolder3") in result
+    assert (
+        NonStudyFolderDTO(path=(folder_path / "subfolder1"), workspace="diese", name="subfolder1", has_children=False)
+        in result
+    )
+    assert (
+        NonStudyFolderDTO(path=(folder_path / "subfolder2"), workspace="diese", name="subfolder2", has_children=False)
+        in result
+    )
+    assert (
+        NonStudyFolderDTO(path=(folder_path / "subfolder3"), workspace="diese", name="subfolder3", has_children=False)
+        in result
+    )
 
 
 @pytest.mark.unit_test
