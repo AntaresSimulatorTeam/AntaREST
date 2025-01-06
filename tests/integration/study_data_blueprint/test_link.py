@@ -29,7 +29,10 @@ class TestLink:
 
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
-        client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "hurdlesCost": True, "comments": "comment"})
+        client.post(
+            f"/v1/studies/{study_id}/links",
+            json={"area1": area1_id, "area2": area2_id, "hurdlesCost": True, "comments": "comment"},
+        )
         res = client.put(
             f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}",
             json={"colorr": 150},
