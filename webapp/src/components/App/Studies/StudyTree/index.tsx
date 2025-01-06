@@ -65,6 +65,11 @@ function StudyTree() {
     rootNode: StudyTreeNode,
     selectedNode: StudyTreeNode,
   ) {
+    if (selectedNode.path.startsWith("default")) {
+      // we don't update the tree if the user clicks on the default workspace
+      // api doesn't allow to fetch the subfolders of the default workspace
+      return;
+    }
     // Bug fix : this function used to take only the itemId and the selectedNode, and we used to initialize treeAfterWorkspacesUpdate
     // with the studiesTree closure, referencing directly the state, like this : treeAfterWorkspacesUpdate = studiesTree;
     // The thing is at the first render studiesTree was empty.
@@ -81,8 +86,8 @@ function StudyTree() {
       try {
         treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
         pathsToFetch = treeAfterWorkspacesUpdate.children
-          .filter((t) => t.name !== "default")
-          .map((child) => `root${child.path}`);
+          .filter((t) => t.name !== "default") // We don't fetch the default workspace subfolders, api don't allow it
+          .map((child) => `root/${child.path}`);
       } catch (error) {
         enqueueErrorSnackbar(
           "studies.tree.error.failToFetchWorkspace",
@@ -91,7 +96,7 @@ function StudyTree() {
       }
     } else {
       // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
-      pathsToFetch = [`root${selectedNode.path}`];
+      pathsToFetch = [`root/${selectedNode.path}`];
     }
 
     const [treeAfterSubfoldersUpdate, failedPath] =
