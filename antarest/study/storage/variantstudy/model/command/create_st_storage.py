@@ -364,3 +364,7 @@ class CreateSTStorage(ICommand):
         """
         matrices: t.List[str] = [strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES]
         return matrices
+
+    @override
+    def can_update_study_config(self) -> bool:
+        return True

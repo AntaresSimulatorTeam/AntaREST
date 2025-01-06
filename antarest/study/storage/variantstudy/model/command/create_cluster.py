@@ -89,7 +89,7 @@ class CreateCluster(ICommand):
 
         # Check if the cluster already exists in the area
         version = study_data.version
-        cluster = create_thermal_config(version, name=self.cluster_name)
+        cluster = create_thermal_config(version, **self.parameters.model_dump(mode="json"))
         if any(cl.id == cluster.id for cl in area.thermals):
             return (
                 CommandOutput(
@@ -237,3 +237,7 @@ class CreateCluster(ICommand):
             assert_this(isinstance(self.modulation, str))
             matrices.append(strip_matrix_protocol(self.modulation))
         return matrices
+
+    @override
+    def can_update_study_config(self) -> bool:
+        return True

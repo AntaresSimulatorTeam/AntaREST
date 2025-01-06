@@ -310,3 +310,7 @@ class CreateLink(AbstractLinkCommand):
     @override
     def get_inner_matrices(self) -> List[str]:
         return super().get_inner_matrices()
+
+    @override
+    def can_update_study_config(self) -> bool:
+        return True

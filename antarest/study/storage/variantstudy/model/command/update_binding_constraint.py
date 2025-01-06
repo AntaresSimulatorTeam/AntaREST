@@ -234,3 +234,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         if not equal:
             return self.id == other.id
         return super().match(other, equal)
+
+    @override
+    def can_update_study_config(self) -> bool:
+        return True

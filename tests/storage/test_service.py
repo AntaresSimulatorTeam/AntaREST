@@ -82,6 +82,7 @@ from antarest.study.storage.utils import (
     study_matcher,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -1294,7 +1295,8 @@ def test_edit_study_with_command() -> None:
         repository=Mock(),
         config=Mock(),
     )
-    command = Mock()
+    command = Mock(spec=ICommand)
+    command.can_update_study_config = Mock(return_value=False)
     service._create_edit_study_command = Mock(return_value=command)
     file_study = Mock()
     file_study.config.study_id = study_id

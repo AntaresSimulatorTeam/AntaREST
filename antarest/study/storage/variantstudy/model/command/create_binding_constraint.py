@@ -407,6 +407,10 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                     study_data.tree.save(matrix_term, ["input", "bindingconstraints", matrix_id])
         return CommandOutput(status=True)
 
+    @override
+    def can_update_study_config(self) -> bool:
+        return True
+
 
 class CreateBindingConstraint(AbstractBindingConstraintCommand):
     """

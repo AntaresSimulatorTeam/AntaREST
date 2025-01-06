@@ -123,3 +123,7 @@ class ReplaceMatrix(ICommand):
     def get_inner_matrices(self) -> t.List[str]:
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]
+
+    @override
+    def can_update_study_config(self) -> bool:
+        return True

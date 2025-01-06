@@ -18,7 +18,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -124,7 +124,7 @@ class TestCreateCluster:
             prepro=prepro,
             modulation=modulation,
             command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
+            study_version=STUDY_VERSION_7_2,
         )
 
         output = command.apply(empty_study)
@@ -155,7 +155,7 @@ class TestCreateCluster:
             prepro=prepro,
             modulation=modulation,
             command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
+            study_version=STUDY_VERSION_7_2,
         ).apply(empty_study)
         assert output.status is False
         assert re.match(
@@ -171,7 +171,7 @@ class TestCreateCluster:
             prepro=prepro,
             modulation=modulation,
             command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
+            study_version=STUDY_VERSION_7_2,
         ).apply(empty_study)
         assert output.status is False
         assert re.match(

@@ -36,6 +36,17 @@ class UpdateLink(AbstractLinkCommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+        self.parameters = self.parameters or {}
+        # Only updates to reflect in the config are about the filter values
+        if "filter-synthesis" in self.parameters or "filter-year-by-year" in self.parameters:
+            area_from, area_to = sorted([self.area1, self.area2])
+            if "filter-synthesis" in self.parameters:
+                filters_synthesis = [step.strip() for step in self.parameters["filter-synthesis"].split(",")]
+                study_data.areas[area_from].links[area_to].filters_synthesis = filters_synthesis
+            if "filter-year-by-year" in self.parameters:
+                filters_year_by_year = [step.strip() for step in self.parameters["filter-year-by-year"].split(",")]
+                study_data.areas[area_from].links[area_to].filters_year = filters_year_by_year
+
         return (
             CommandOutput(
                 status=True,
@@ -84,3 +95,7 @@ class UpdateLink(AbstractLinkCommand):
     @override
     def get_inner_matrices(self) -> t.List[str]:
         return super().get_inner_matrices()
+
+    @override
+    def can_update_study_config(self) -> bool:
+        return True

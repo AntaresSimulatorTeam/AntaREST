@@ -184,6 +184,14 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def can_update_study_config(self) -> bool:
+        """
+        Returns whether the command can update the study config or not.
+        We then know if we need to invalidate the cache or not after the command is used.
+        """
+        raise NotImplementedError()
+
     def get_command_extractor(self) -> "CommandExtractor":
         """
         Create a new `CommandExtractor` used to revert the command changes.

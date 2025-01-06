@@ -181,3 +181,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
         if not real_path.exists():
             (matrix_path / "series.txt.link").rename(real_path)
         return real_path
+
+    @override
+    def can_update_study_config(self) -> bool:
+        return True
