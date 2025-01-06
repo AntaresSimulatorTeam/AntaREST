@@ -12,7 +12,6 @@
 
 import datetime
 import re
-import typing
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -31,7 +30,7 @@ from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -201,16 +200,15 @@ class TestVariantStudyService:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="fr",
-            parameters=STStorageConfig(
-                id="",  # will be calculated ;-)
-                name="Storage1",
-                group=STStorageGroup.BATTERY,
-                injection_nominal_capacity=1500,
-                withdrawal_nominal_capacity=1500,
-                reservoir_capacity=20000,
-                efficiency=0.94,
-                initial_level_optim=True,
-            ),
+            parameters={
+                "name": "Storage1",
+                "group": STStorageGroup.BATTERY,
+                "injection_nominal_capacity": 1500,
+                "withdrawal_nominal_capacity": 1500,
+                "reservoir_capacity": 20000,
+                "efficiency": 0.94,
+                "initial_level_optim": True,
+            },
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
             study_version=study_version,

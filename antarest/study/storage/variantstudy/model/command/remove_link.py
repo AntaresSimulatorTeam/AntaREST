@@ -16,7 +16,8 @@ from pydantic import field_validator, model_validator
 from typing_extensions import override
 
 from antarest.study.model import STUDY_VERSION_8_2
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
@@ -47,7 +48,7 @@ class RemoveLink(ICommand):
     def _validate_id(cls, area: str) -> str:
         if isinstance(area, str):
             # Area IDs must be in lowercase and not empty.
-            area_id = transform_name_to_id(area, lower=True)
+            area_id = transform_name_to_id(area)
             if area_id:
                 return area_id
             # Valid characters are `[a-zA-Z0-9_(),& -]` (including space).

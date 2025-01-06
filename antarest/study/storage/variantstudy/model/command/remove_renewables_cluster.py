@@ -12,8 +12,10 @@
 
 import typing as t
 
+from pydantic import Field
 from typing_extensions import override
 
+from antarest.core.model import LowerCaseStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -37,7 +39,7 @@ class RemoveRenewablesCluster(ICommand):
     # ==================
 
     area_id: str
-    cluster_id: str
+    cluster_id: LowerCaseStr = Field(description="Cluster ID", pattern=r"[a-z0-9_(),& -]+")
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:

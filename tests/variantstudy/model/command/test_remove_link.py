@@ -22,8 +22,8 @@ from checksumdir import dirhash
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -98,7 +98,7 @@ class TestRemoveLink:
         study_version = empty_study.config.version
 
         # Create some areas
-        areas = {transform_name_to_id(area, lower=True): area for area in ["Area_X", "Area_Y", "Area_Z"]}
+        areas = {transform_name_to_id(area): area for area in ["Area_X", "Area_Y", "Area_Z"]}
         for area in areas.values():
             output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
                 empty_study
