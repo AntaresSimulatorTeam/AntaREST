@@ -41,13 +41,13 @@ from antarest.core.requests import RATE_LIMIT_CONFIG
 from antarest.core.swagger import customize_openapi
 from antarest.core.tasks.model import cancel_orphan_tasks
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.login.utils import CurrentUserMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
+from antarest.login.utils import CurrentUserMiddleware
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.service_creator import SESSION_ARGS, Module, create_services, init_db_engine
 from antarest.singleton_services import start_all_services

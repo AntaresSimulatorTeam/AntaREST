@@ -569,7 +569,7 @@ nominalcapacity = 14.0
         repository=study_service.repository,
         storage_service=study_service.storage_service,
         event_bus=study_service.event_bus,
-        jwt_user=jwt_user
+        jwt_user=jwt_user,
     )
 
     task_id = study_service.task_service.add_task(

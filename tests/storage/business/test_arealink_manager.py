@@ -125,7 +125,9 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     with patch("antarest.study.business.utils.get_current_user", return_value=DEFAULT_ADMIN_USER):
         area_manager.create_area(study, AreaCreationDTO(name="test", type=AreaType.AREA))
         assert len(empty_study.config.areas.keys()) == 1
-        assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
+        assert (
+            json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
+        )
 
         area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
         assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
@@ -174,7 +176,9 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
             RequestParameters(DEFAULT_ADMIN_USER),
         )
         assert (empty_study.config.study_path / "patch.json").exists()
-        assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
+        assert (
+            json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
+        )
 
         area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
         variant_study_service.append_commands.assert_called_with(

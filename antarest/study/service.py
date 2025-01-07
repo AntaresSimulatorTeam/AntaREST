@@ -249,14 +249,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             command = GenerateThermalClusterTimeSeries(
                 command_context=command_context, study_version=file_study.config.version
             )
-            execute_or_add_commands(
-                study,
-                file_study,
-                [command],
-                self.storage_service,
-                listener,
-                self.jwt_user
-            )
+            execute_or_add_commands(study, file_study, [command], self.storage_service, listener, self.jwt_user)
 
             if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
@@ -2593,7 +2586,7 @@ class StudyService:
             repository=self.repository,
             storage_service=self.storage_service,
             event_bus=self.event_bus,
-            jwt_user=params.user
+            jwt_user=params.user,  # type: ignore
         )
 
         return self.task_service.add_task(

@@ -214,11 +214,11 @@ class TestVariantStudyService:
 
         with patch("antarest.study.business.utils.get_current_user", return_value=DEFAULT_ADMIN_USER):
             execute_or_add_commands(
-                    variant_study,
-                    file_study,
-                    commands=[create_area_fr, create_st_storage],
-                    storage_service=study_storage_service,
-                )
+                variant_study,
+                file_study,
+                commands=[create_area_fr, create_st_storage],
+                storage_service=study_storage_service,
+            )
 
         ## Run the "generate" task
         actual_uui = variant_study_service.generate_task(

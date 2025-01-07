@@ -33,12 +33,12 @@ GENERAL_DATA_PATH = "settings/generaldata"
 
 
 def execute_or_add_commands(
-        study: Study,
-        file_study: FileStudy,
-        commands: t.Sequence[ICommand],
-        storage_service: StudyStorageService,
-        listener: t.Optional[ICommandListener] = None,
-        jwt_user: JWTUser = None,
+    study: Study,
+    file_study: FileStudy,
+    commands: t.Sequence[ICommand],
+    storage_service: StudyStorageService,
+    listener: t.Optional[ICommandListener] = None,
+    jwt_user: t.Optional[JWTUser] = None,
 ) -> None:
     # get current user if not in session, otherwise get session user
     current_user = get_current_user() or jwt_user
