@@ -476,6 +476,12 @@ def test_ts_generation_task(
     raw_study_path = tmp_path / "study"
 
     regular_user = User(id=99, name="regular")
+    jwt_user = Mock(
+        spec=JWTUser,
+        id=regular_user.id,
+        type="user",
+        impersonator=regular_user.id,
+    )
     db.session.add(regular_user)
     db.session.commit()
 
@@ -563,6 +569,7 @@ nominalcapacity = 14.0
         repository=study_service.repository,
         storage_service=study_service.storage_service,
         event_bus=study_service.event_bus,
+        jwt_user=jwt_user
     )
 
     task_id = study_service.task_service.add_task(

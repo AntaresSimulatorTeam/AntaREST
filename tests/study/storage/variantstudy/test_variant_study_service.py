@@ -14,7 +14,7 @@ import datetime
 import re
 import typing
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -212,12 +212,13 @@ class TestVariantStudyService:
             study_version=study_version,
         )
 
-        execute_or_add_commands(
-            variant_study,
-            file_study,
-            commands=[create_area_fr, create_st_storage],
-            storage_service=study_storage_service,
-        )
+        with patch("antarest.study.business.utils.get_current_user", return_value=DEFAULT_ADMIN_USER):
+            execute_or_add_commands(
+                    variant_study,
+                    file_study,
+                    commands=[create_area_fr, create_st_storage],
+                    storage_service=study_storage_service,
+                )
 
         ## Run the "generate" task
         actual_uui = variant_study_service.generate_task(

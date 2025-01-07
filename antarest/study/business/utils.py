@@ -15,9 +15,10 @@ import typing as t
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import CommandApplicationError
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.serialization import AntaresBaseModel
+from antarest.login.utils import get_current_user
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -32,12 +33,16 @@ GENERAL_DATA_PATH = "settings/generaldata"
 
 
 def execute_or_add_commands(
-    study: Study,
-    file_study: FileStudy,
-    commands: t.Sequence[ICommand],
-    storage_service: StudyStorageService,
-    listener: t.Optional[ICommandListener] = None,
+        study: Study,
+        file_study: FileStudy,
+        commands: t.Sequence[ICommand],
+        storage_service: StudyStorageService,
+        listener: t.Optional[ICommandListener] = None,
+        jwt_user: JWTUser = None,
 ) -> None:
+    # get current user if not in session, otherwise get session user
+    current_user = get_current_user() or jwt_user
+
     if isinstance(study, RawStudy):
         executed_commands: t.MutableSequence[ICommand] = []
         for command in commands:
@@ -68,7 +73,7 @@ def execute_or_add_commands(
         storage_service.variant_study_service.append_commands(
             study.id,
             transform_command_to_dto(commands, force_aggregate=True),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
+            RequestParameters(user=current_user),
         )
 
 

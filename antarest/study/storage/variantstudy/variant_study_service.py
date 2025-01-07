@@ -141,7 +141,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def get_commands(self, study_id: str, params: RequestParameters) -> t.List[CommandDTOAPI]:
         """
-        Get command lists
+        Get commands list
         Args:
             study_id: study id
             params: request parameters
