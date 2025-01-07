@@ -31,18 +31,40 @@ function insertFolderIfNotExist(
   studiesTree: StudyTreeNode,
   folder: NonStudyFolderDTO,
 ): StudyTreeNode {
+  const currentNodePath = `${studiesTree.path}`;
   // Early return if folder doesn't belong in this branch
-  if (!folder.parentPath.startsWith(studiesTree.path)) {
+  if (!folder.parentPath.startsWith(currentNodePath)) {
+    console.log(
+      "!folder.parentPath.startsWith(`/${studiesTree.path}`)",
+      folder.parentPath,
+      studiesTree.path,
+    );
     return studiesTree;
+  } else {
+    console.log(
+      "==folder.parentPath.startsWith(`/${studiesTree.path}`)",
+      folder.parentPath,
+      studiesTree.path,
+    );
   }
 
   // direct child case
-  if (folder.parentPath == studiesTree.path) {
-    const folderExists = studiesTree.children.some(
+  if (folder.parentPath == currentNodePath) {
+    const folderExists = studiesTree.children.find(
       (child) => child.name === folder.name,
     );
     if (folderExists) {
-      return studiesTree;
+      console.log("CASE FOLDER EXISTS", folderExists);
+      return {
+        ...studiesTree,
+        children: [
+          ...studiesTree.children.filter((child) => child.name !== folder.name),
+          {
+            ...folderExists,
+            hasChildren: folder.hasChildren,
+          },
+        ],
+      };
     }
     // parent path is the same, but no folder with the same name at this level
     return {
@@ -53,6 +75,7 @@ function insertFolderIfNotExist(
           path: `${folder.parentPath}/${folder.name}`,
           name: folder.name,
           children: [],
+          hasChildren: folder.hasChildren,
         },
       ],
     };
@@ -85,10 +108,11 @@ export function insertFoldersIfNotExist(
   studiesTree: StudyTreeNode,
   folders: NonStudyFolderDTO[],
 ): StudyTreeNode {
-  return folders.reduce(
-    (tree, folder) => insertFolderIfNotExist(tree, folder),
-    studiesTree,
-  );
+  console.log("insertFoldersIfNotExist", studiesTree);
+  return folders.reduce((tree, folder) => {
+    console.log("inserting folder", folder);
+    return insertFolderIfNotExist(tree, folder);
+  }, studiesTree);
 }
 
 /**
@@ -99,17 +123,30 @@ export function insertFoldersIfNotExist(
  */
 async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
   if (path === "root") {
+    console.error("this function should not be called with path 'root'", path);
     // Under root there're workspaces not subfolders
     return [];
   }
   // less than 2 parts means we're at the root level
   const pathParts = path.split("/");
   if (pathParts.length < 2) {
+    console.error(
+      "this function should not be called with a path that has less than two com",
+      path,
+    );
     return [];
   }
   // path parts should be ["root", workspace, "folder1", ...]
   const workspace = pathParts[1];
   const subPath = pathParts.slice(2).join("/");
+  console.log(
+    "pathParts",
+    pathParts,
+    "workspace",
+    workspace,
+    "subPath",
+    subPath,
+  );
   return api.getFolders(workspace, subPath);
 }
 
@@ -134,7 +171,7 @@ export async function fetchAndInsertSubfolders(
   const results = await Promise.allSettled(
     paths.map((path) => fetchSubfolders(path)),
   );
-
+  console.log("results", results);
   return results.reduce<[StudyTreeNode, string[]]>(
     ([tree, failed], result, index) => {
       if (result.status === "fulfilled") {
@@ -159,14 +196,20 @@ export async function fetchAndInsertSubfolders(
 function insertWorkspaceIfNotExist(
   stydyTree: StudyTreeNode,
   workspace: string,
-) {
-  const emptyNode = { name: workspace, path: `/${workspace}`, children: [] };
+): StudyTreeNode {
+  const emptyNode = {
+    name: workspace,
+    path: `/${workspace}`,
+    children: [],
+    hasChildren: true,
+  };
   if (stydyTree.children.some((child) => child.name === workspace)) {
     return stydyTree;
   }
   return {
     ...stydyTree,
     children: [...stydyTree.children, emptyNode],
+    hasChildren: true,
   };
 }
 
@@ -185,9 +228,10 @@ export function insertWorkspacesIfNotExist(
   stydyTree: StudyTreeNode,
   workspaces: string[],
 ): StudyTreeNode {
-  return workspaces.reduce((acc, workspace) => {
-    return insertWorkspaceIfNotExist(acc, workspace);
-  }, stydyTree);
+  return workspaces.reduce(
+    (acc, workspace) => insertWorkspaceIfNotExist(acc, workspace),
+    stydyTree,
+  );
 }
 
 /**

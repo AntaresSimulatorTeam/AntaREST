@@ -65,7 +65,7 @@ function StudyTree() {
     rootNode: StudyTreeNode,
     selectedNode: StudyTreeNode,
   ) {
-    if (selectedNode.path.startsWith("default")) {
+    if (selectedNode.path.startsWith("/default")) {
       // we don't update the tree if the user clicks on the default workspace
       // api doesn't allow to fetch the subfolders of the default workspace
       return;
@@ -87,7 +87,7 @@ function StudyTree() {
         treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
         pathsToFetch = treeAfterWorkspacesUpdate.children
           .filter((t) => t.name !== "default") // We don't fetch the default workspace subfolders, api don't allow it
-          .map((child) => `root/${child.path}`);
+          .map((child) => `root${child.path}`);
       } catch (error) {
         enqueueErrorSnackbar(
           "studies.tree.error.failToFetchWorkspace",
@@ -96,9 +96,9 @@ function StudyTree() {
       }
     } else {
       // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
-      pathsToFetch = [`root/${selectedNode.path}`];
+      pathsToFetch = [`root${selectedNode.path}`];
     }
-
+    console.log("pathsToFetch", pathsToFetch, selectedNode);
     const [treeAfterSubfoldersUpdate, failedPath] =
       await fetchAndInsertSubfolders(pathsToFetch, treeAfterWorkspacesUpdate);
     if (failedPath.length > 0) {
@@ -110,6 +110,7 @@ function StudyTree() {
         t("studies.tree.error.detailsInConsole"),
       );
     }
+    console.log("treeAfterSubfoldersUpdate", treeAfterSubfoldersUpdate);
     setStudiesTree(treeAfterSubfoldersUpdate);
   }
 
@@ -131,8 +132,26 @@ function StudyTree() {
 
   const buildTree = (children: StudyTreeNode[], parentId?: string) => {
     return children.map((child) => {
+      const shouldDisplayLoading =
+        child.hasChildren && child.children.length === 0;
       const id = parentId ? `${parentId}/${child.name}` : child.name;
 
+      if (shouldDisplayLoading) {
+        return (
+          <TreeItemEnhanced
+            key={id}
+            itemId={id}
+            label={child.name}
+            onClick={() => handleTreeItemClick(id, child)}
+          >
+            <TreeItemEnhanced
+              key={id + "lllloading"}
+              itemId={id + "lllloading"}
+              label={"lllloading..."}
+            ></TreeItemEnhanced>
+          </TreeItemEnhanced>
+        );
+      }
       return (
         <TreeItemEnhanced
           key={id}

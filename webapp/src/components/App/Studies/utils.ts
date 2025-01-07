@@ -18,6 +18,7 @@ export interface StudyTreeNode {
   name: string;
   path: string;
   children: StudyTreeNode[];
+  hasChildren: boolean;
 }
 
 export interface NonStudyFolderDTO {
@@ -25,6 +26,7 @@ export interface NonStudyFolderDTO {
   path: string;
   workspace: string;
   parentPath: string;
+  hasChildren: boolean;
 }
 
 /**
@@ -34,7 +36,12 @@ export interface NonStudyFolderDTO {
  * @returns A tree structure representing the studies.
  */
 export function buildStudyTree(studies: StudyMetadata[]) {
-  const tree: StudyTreeNode = { name: "root", children: [], path: "" };
+  const tree: StudyTreeNode = {
+    name: "root",
+    children: [],
+    path: "",
+    hasChildren: false,
+  };
 
   for (const study of studies) {
     const path =
@@ -57,7 +64,10 @@ export function buildStudyTree(studies: StudyMetadata[]) {
         child = {
           name: folderName,
           children: [],
-          path: current.path ? `${current.path}/${folderName}` : folderName,
+          path: current.path
+            ? `${current.path}/${folderName}`
+            : `/${folderName}`,
+          hasChildren: false,
         };
 
         current.children.push(child);
