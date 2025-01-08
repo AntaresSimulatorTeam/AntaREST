@@ -325,3 +325,51 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 if raising:
                     raise ValueError(msg)
                 errors.append(msg)
+
+    def get_lowered_content(
+        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False
+    ) -> SUB_JSON:
+        output = self._get(url, depth, expanded, get_node=False)
+        assert not isinstance(output, INode)
+        if depth <= -1 and expanded:
+            return output
+
+        # We need to lower the group attribute and the cluster ids
+        if not url:
+            assert isinstance(output, dict)
+            for key in list(output.keys()):
+                new_key = str(key).lower()
+                output[new_key] = output.pop(key)
+                if "group" in output[new_key]:
+                    output[new_key]["group"] = str(output[new_key]["group"]).lower()
+        elif len(url) == 1:
+            assert isinstance(output, dict)
+            if "group" in output:
+                output["group"] = str(output["group"]).lower()
+        elif len(url) == 2 and url[1] == "group":
+            output = str(output).lower()
+        return output
+
+    def save_lowered_content(self, data: SUB_JSON, url: t.List[str]) -> None:
+        self._assert_not_in_zipped_file()
+        with FileLock(
+            str(
+                Path(tempfile.gettempdir())
+                / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
+            )
+        ):
+            info = self.get_lowered_content([])  # We read the cluster ids in lower case
+            assert isinstance(info, dict)
+            obj = data
+            if isinstance(data, str):
+                with contextlib.suppress(pydantic_core.ValidationError):
+                    obj = from_json(data)
+            if len(url) == 2:
+                if str(url[0]).lower() not in info:
+                    info[url[0]] = {}
+                info[url[0]][url[1]] = obj
+            elif len(url) == 1:
+                info[str(url[0]).lower()] = obj
+            else:
+                info = t.cast(JSON, obj)
+            self.writer.write(info, self.path)

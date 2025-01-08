@@ -9,8 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import typing as t
+
 from typing_extensions import override
 
+from antarest.core.model import SUB_JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -30,11 +33,21 @@ class ClusteredRenewableClusterConfig(IniFileNode):
             "group": str,
             "enabled": bool,
             "unitcount": int,
-            "nomialcapacity": 0,
+            "nomialcapacity": float,
             "ts-interpretation": str,
         }
         types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}
         IniFileNode.__init__(self, context, config, types)
+
+    @override
+    def get(
+        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
+    ) -> SUB_JSON:
+        return super().get_lowered_content(url, depth, expanded)
+
+    @override
+    def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:
+        super().save_lowered_content(data, url or [])
 
 
 class ClusteredRenewableCluster(FolderNode):
