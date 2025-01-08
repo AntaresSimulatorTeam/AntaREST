@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { getConfig } from "@/services/config";
 import client from "../../client";
 import type {
   DeleteFileParams,
@@ -91,35 +92,14 @@ export async function deleteFile(params: DeleteFileParams) {
  * @param params - Parameters for getting the raw file and name
  * @param params.studyId - Unique identifier of the study
  * @param params.path - Path to the file within the study
- * @returns Promise containing the file data and metadata
  */
-export async function getRawFile(params: GetRawFileParams) {
+export function getRawFile(params: GetRawFileParams) {
   const { studyId, path } = params;
 
-  const { data, headers } = await client.get<File>(
-    `/v1/studies/${studyId}/raw/original-file`,
-    {
-      params: {
-        path,
-      },
-      responseType: "blob",
-    },
-  );
+  const url = `${
+    getConfig().downloadHostUrl ||
+    getConfig().baseUrl + getConfig().restEndpoint
+  }/v1/studies/${studyId}/raw/original-file?path=${encodeURIComponent(path)}`;
 
-  // Get the original file name from the response Headers
-  const contentDisposition = headers["content-disposition"];
-  let filename = path.split("/").pop() || "file"; // fallback filename
-
-  if (contentDisposition) {
-    const matches = /filename=([^;]+)/.exec(contentDisposition);
-
-    if (matches?.[1]) {
-      filename = matches[1].replace(/"/g, "").trim();
-    }
-  }
-
-  return new File([data], filename, {
-    type: data.type, // Preserve the MIME type from the Blob
-    lastModified: new Date().getTime(),
-  });
+  location.href = url;
 }

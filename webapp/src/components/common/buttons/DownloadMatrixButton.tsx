@@ -53,8 +53,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
     }
 
     if (format === "raw") {
-      const file = await getRawFile({ studyId, path });
-      return downloadFile(file, file.name);
+      return getRawFile({ studyId, path });
     }
 
     const isXlsx = format === "xlsx";

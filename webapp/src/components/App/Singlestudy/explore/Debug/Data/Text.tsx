@@ -28,7 +28,6 @@ import properties from "react-syntax-highlighter/dist/esm/languages/hljs/propert
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { isEmptyContent, parseContent, type DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
-import { downloadFile } from "../../../../../../utils/fileUtils";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import EmptyView from "@/components/common/page/SimpleContent";
@@ -91,9 +90,8 @@ function Text({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async () => {
-    const file = await getRawFile({ studyId, path: filePath });
-    downloadFile(file, file.name);
+  const handleDownload = () => {
+    getRawFile({ studyId, path: filePath });
   };
 
   const handleUploadSuccessful = () => {

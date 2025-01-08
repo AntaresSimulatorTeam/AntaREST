@@ -19,7 +19,6 @@ import { Filename, Flex, Menubar } from "./styles";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "@/components/common/buttons/DownloadButton";
 import UploadFileButton from "@/components/common/buttons/UploadFileButton";
-import { downloadFile } from "@/utils/fileUtils";
 import { getRawFile } from "@/services/api/studies/raw";
 
 function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
@@ -29,9 +28,8 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async () => {
-    const file = await getRawFile({ studyId, path: filePath });
-    downloadFile(file, file.name);
+  const handleDownload = () => {
+    getRawFile({ studyId, path: filePath });
   };
 
   ////////////////////////////////////////////////////////////////

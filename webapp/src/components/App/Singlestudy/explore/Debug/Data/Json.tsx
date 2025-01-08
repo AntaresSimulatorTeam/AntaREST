@@ -20,7 +20,6 @@ import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithS
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
-import { downloadFile } from "../../../../../../utils/fileUtils";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import { getRawFile } from "@/services/api/studies/raw";
@@ -41,9 +40,8 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async () => {
-    const file = await getRawFile({ studyId, path: filePath });
-    downloadFile(file, file.name);
+  const handleDownload = () => {
+    getRawFile({ studyId, path: filePath });
   };
 
   const handleSave: JSONEditorProps["onSave"] = (json) => {
