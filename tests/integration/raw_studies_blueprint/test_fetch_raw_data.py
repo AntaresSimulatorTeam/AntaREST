@@ -212,18 +212,20 @@ class TestFetchRawData:
                 b"\xef\xbb\xbf1;1;1;1;1\r\n1;1;1;1;1",
                 b"1;1;1;1;1\r1;1;1;1;1",
                 b"0,000000;0,000000;0,000000;0,000000\n0,000000;0,000000;0,000000;0,000000",
+                b"1;2;3;;;\n4;5;6;;;\n"
             ],
-            ["\t", "\t", ",", "\t", ";", ";", ";"],
+            ["\t", "\t", ",", "\t", ";", ";", ";", ";"],
         ):
             res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(content)})
             assert res.status_code == 204, res.json()
             res = client.get(raw_url, params={"path": matrix_path})
             written_data = res.json()["data"]
             if not content.decode("utf-8"):
-                # For some reason the `GET` returns the default matrix when it's empty
+                # The `GET` returns the default matrix when it's empty
                 expected = 8760 * [[0]] if study_type == "raw" else [[]]
             else:
                 df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+                df = df.dropna(axis=1, how="all")  # We don't want to be able to import NaN columns
                 expected = df.to_numpy(dtype=np.float64).tolist()
             assert written_data == expected
 

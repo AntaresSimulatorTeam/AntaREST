@@ -1600,6 +1600,7 @@ class StudyService:
                         # Can happen with data with only one column. In this case, we don't care about the delimiter.
                         delimiter = "\t"
                     df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+                    df = df.dropna(axis=1, how="all")  # We don't want to be able to import NaN columns
                     matrix = df.to_numpy(dtype=np.float64)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
