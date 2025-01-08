@@ -225,7 +225,7 @@ class TestFetchRawData:
                 expected = 8760 * [[0]] if study_type == "raw" else [[]]
             else:
                 df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).replace(",", ".", regex=True)
-                df = df.dropna(axis=1, how="all")  # We don't want to be able to import NaN columns
+                df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
                 expected = df.to_numpy(dtype=np.float64).tolist()
             assert written_data == expected
 
