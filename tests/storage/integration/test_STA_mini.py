@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Union
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -172,12 +173,9 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
 
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
-    "url, expected_output",
+    "url, expected_output, formatted",
     [
-        (
-            f"/v1/studies/{UUID}/raw?path=input/bindingconstraints/bindingconstraints",
-            {},
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/bindingconstraints/bindingconstraints", {}, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/series/de/mod",
             {
@@ -185,24 +183,17 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(365)),
                 "data": [[0.0]] * 365,
             },
+            True,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/areas/list",
-            ["DE", "ES", "FR", "IT"],
-        ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/areas/sets/all areas/output",
-            False,
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/list", ["DE", "ES", "FR", "IT"], True),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/sets/all areas/output", False, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/areas/de/optimization/nodal optimization/spread-spilled-energy-cost",
             0,
+            True,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/areas/de/ui/layerX/0", 1),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/hydro/allocation/de/[allocation]/de",
-            1,
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/areas/de/ui/layerX/0", 1, True),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/allocation/de/[allocation]/de", 1, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/common/capacity/reservoir_fr",
             {
@@ -210,6 +201,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(365)),
                 "data": [[0, 0.5, 1]] * 365,
             },
+            True,
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/thermal/series/fr/05_nuclear/series",
@@ -218,35 +210,19 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(8760)),
                 "data": [[2000]] * 8760,
             },
+            True,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode",
-            "annual",
-        ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation",
-            0.5,
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/correlation/general/mode", "annual", True),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/prepro/prepro/intermonthly-correlation", 0.5, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/hydro/prepro/fr/energy",
             {"data": [[]], "index": [0], "columns": []},
-        ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr",
-            1,
-        ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/thermal/areas/unserverdenergycost/de",
-            3000.0,
-        ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost",
-            50,
-        ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/links/fr/properties/it/hurdles-cost",
             True,
         ),
+        (f"/v1/studies/{UUID}/raw?path=input/hydro/hydro/inter-monthly-breakdown/fr", 1, True),
+        (f"/v1/studies/{UUID}/raw?path=input/thermal/areas/unserverdenergycost/de", 3000.0, True),
+        (f"/v1/studies/{UUID}/raw?path=input/thermal/clusters/fr/list/05_nuclear/marginal-cost", 50, True),
+        (f"/v1/studies/{UUID}/raw?path=input/links/fr/properties/it/hurdles-cost", True, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/links/fr/it",
             {
@@ -254,11 +230,9 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(8760)),
                 "data": [[100000, 100000, 0.01, 0.01, 0, 0, 0, 0]] * 8760,
             },
+            True,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k",
-            {"data": [[]], "index": [0], "columns": []},
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series",
             {
@@ -267,6 +241,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "load_fr": "matrixfile://load_fr.txt",
                 "load_it": "matrixfile://load_it.txt",
             },
+            True,
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
@@ -275,6 +250,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(8760)),
                 "data": [[i % 168 * 100] for i in range(8760)],
             },
+            True,
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
@@ -283,6 +259,12 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(8760)),
                 "data": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760,
             },
+            True,
+        ),
+        (
+            f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
+            np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760).tobytes(),
+            False,
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/reserves/fr",
@@ -291,11 +273,9 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
+            True,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k",
-            {"data": [[]], "index": [0], "columns": []},
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/solar/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/solar/series/solar_fr",
             {
@@ -303,11 +283,9 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
+            True,
         ),
-        (
-            f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k",
-            {"data": [[]], "index": [0], "columns": []},
-        ),
+        (f"/v1/studies/{UUID}/raw?path=input/wind/prepro/fr/k", {"data": [[]], "index": [0], "columns": []}, True),
         (
             f"/v1/studies/{UUID}/raw?path=input/wind/series/wind_fr",
             {
@@ -315,15 +293,12 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "index": list(range(8760)),
                 "data": [[0.0]] * 8760,
             },
+            True,
         ),
     ],
 )
-def test_sta_mini_input(storage_service, url: str, expected_output: dict):
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        expected_output=expected_output,
-    )
+def test_sta_mini_input(storage_service, url: str, expected_output: dict, formatted: bool):
+    assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output, formatted=formatted)
 
 
 @pytest.mark.integration_test

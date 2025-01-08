@@ -145,7 +145,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
 
         # here we should return the default matrix
         default_matrix = self.get_default_empty_matrix()
-        if not default_matrix:
+        if default_matrix is None:
             return b""
         return default_matrix.tobytes()
 
