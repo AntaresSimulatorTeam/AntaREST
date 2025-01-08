@@ -1,4 +1,4 @@
-import { RuleConfigSeverity } from "@commitlint/typSans titrees";
+import { RuleConfigSeverity } from "@commitlint/types";
 
 // Config used by 'commitlint' GitHub action.
 export default {
