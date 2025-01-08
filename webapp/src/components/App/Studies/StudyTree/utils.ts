@@ -12,8 +12,60 @@
  * This file is part of the Antares project.
  */
 
-import { NonStudyFolderDTO, StudyTreeNode } from "../utils";
 import * as api from "../../../../services/api/study";
+import { StudyMetadata } from "../../../../common/types";
+import { StudyTreeNode, NonStudyFolderDTO } from "./types";
+
+/**
+ * Builds a tree structure from a list of study metadata.
+ *
+ * @param studies - Array of study metadata objects.
+ * @returns A tree structure representing the studies.
+ */
+export function buildStudyTree(studies: StudyMetadata[]) {
+  const tree: StudyTreeNode = {
+    name: "root",
+    children: [],
+    path: "",
+    hasChildren: false,
+  };
+
+  for (const study of studies) {
+    const path =
+      typeof study.folder === "string"
+        ? [study.workspace, ...study.folder.split("/").filter(Boolean)]
+        : [study.workspace];
+
+    let current = tree;
+
+    for (let i = 0; i < path.length; i++) {
+      // Skip the last folder, as it represents the study itself
+      if (i === path.length - 1) {
+        break;
+      }
+
+      const folderName = path[i];
+      let child = current.children.find((child) => child.name === folderName);
+
+      if (!child) {
+        child = {
+          name: folderName,
+          children: [],
+          path: current.path
+            ? `${current.path}/${folderName}`
+            : `/${folderName}`,
+          hasChildren: false,
+        };
+
+        current.children.push(child);
+      }
+
+      current = child;
+    }
+  }
+
+  return tree;
+}
 
 /**
  * Add a folder that was returned by the explorer into the study tree view.
@@ -34,18 +86,7 @@ function insertFolderIfNotExist(
   const currentNodePath = `${studiesTree.path}`;
   // Early return if folder doesn't belong in this branch
   if (!folder.parentPath.startsWith(currentNodePath)) {
-    console.log(
-      "!folder.parentPath.startsWith(`/${studiesTree.path}`)",
-      folder.parentPath,
-      studiesTree.path,
-    );
     return studiesTree;
-  } else {
-    console.log(
-      "==folder.parentPath.startsWith(`/${studiesTree.path}`)",
-      folder.parentPath,
-      studiesTree.path,
-    );
   }
 
   // direct child case
@@ -54,7 +95,6 @@ function insertFolderIfNotExist(
       (child) => child.name === folder.name,
     );
     if (folderExists) {
-      console.log("CASE FOLDER EXISTS", folderExists);
       return {
         ...studiesTree,
         children: [

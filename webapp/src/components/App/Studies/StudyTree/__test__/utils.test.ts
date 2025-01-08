@@ -11,11 +11,15 @@
  *
  * This file is part of the Antares project.
  */
-
-import { insertFoldersIfNotExist, insertWorkspacesIfNotExist } from "../utils";
-import { NonStudyFolderDTO, StudyTreeNode } from "../../utils";
+import {
+  insertFoldersIfNotExist,
+  insertWorkspacesIfNotExist,
+  buildStudyTree,
+} from "../utils";
+import { NonStudyFolderDTO, StudyTreeNode } from "../types";
 import { FIXTURES } from "./fixtures";
 
+console.log("buildStudyTreebuildStudyTree", buildStudyTree);
 describe("StudyTree Utils", () => {
   describe("mergeStudyTreeAndFolders", () => {
     test.each(Object.values(FIXTURES))(

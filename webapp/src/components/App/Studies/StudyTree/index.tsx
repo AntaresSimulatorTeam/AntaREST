@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyTreeNode } from ".././utils";
+import { StudyTreeNode } from "./types";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
@@ -98,7 +98,6 @@ function StudyTree() {
       // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
       pathsToFetch = [`root${selectedNode.path}`];
     }
-    console.log("pathsToFetch", pathsToFetch, selectedNode);
     const [treeAfterSubfoldersUpdate, failedPath] =
       await fetchAndInsertSubfolders(pathsToFetch, treeAfterWorkspacesUpdate);
     if (failedPath.length > 0) {

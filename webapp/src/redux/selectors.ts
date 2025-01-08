@@ -23,7 +23,6 @@ import {
   StudyMetadata,
   UserDetailsDTO,
 } from "../common/types";
-import { buildStudyTree } from "../components/App/Studies/utils";
 import { filterStudies, sortStudies } from "../utils/studiesUtils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import { AppState } from "./ducks";
@@ -43,6 +42,7 @@ import {
   StudyMapsState,
 } from "./ducks/studyMaps";
 import { makeLinkId } from "./utils";
+import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
 
 // TODO resultEqualityCheck
 
@@ -131,6 +131,7 @@ export const getStudyIdsFilteredAndSorted = createSelector(
   (studies) => studies.map((study) => study.id),
 );
 
+console.log("buildStudyTree", buildStudyTree);
 export const getStudiesTree = createSelector(getStudies, buildStudyTree);
 
 export const getStudyVersions = (

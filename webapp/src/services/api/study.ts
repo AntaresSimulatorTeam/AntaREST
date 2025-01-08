@@ -34,7 +34,7 @@ import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
 import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
-import { NonStudyFolderDTO } from "@/components/App/Studies/utils";
+import { NonStudyFolderDTO } from "@/components/App/Studies/StudyTree/types";
 
 interface Workspace {
   name: string;

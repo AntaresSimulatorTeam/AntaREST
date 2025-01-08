@@ -44,6 +44,49 @@ export const FIXTURES = {
       ],
     },
   },
+  hasChildren: {
+    name: "Case where a folder is already in the tree, maybe because he has studies, but now the api return that the folder also contains non study folder",
+    studyTree: {
+      name: "Root",
+      path: "/",
+      children: [
+        {
+          name: "a",
+          path: "/a",
+          children: [{ name: "folder1", path: "/a/folder1", children: [] }],
+        },
+        { name: "b", path: "/b", children: [] },
+      ],
+    },
+    folders: [
+      {
+        name: "folder1",
+        path: "folder1",
+        workspace: "a",
+        parentPath: "/a",
+        hasChildren: true,
+      },
+    ],
+    expected: {
+      name: "Root",
+      path: "/",
+      children: [
+        {
+          name: "a",
+          path: "/a",
+          children: [
+            {
+              name: "folder1",
+              path: "/a/folder1",
+              children: [],
+              hasChildren: true,
+            },
+          ],
+        },
+        { name: "b", path: "/b", children: [] },
+      ],
+    },
+  },
   nestedTree: {
     name: "Nested tree structure",
     studyTree: {
