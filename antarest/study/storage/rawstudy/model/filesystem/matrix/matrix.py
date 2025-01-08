@@ -143,7 +143,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if file_content != b"":
             return file_content
 
-        # here we should return the default matrix
+        # If the content is empty, we should return the default matrix to do the same as `parse_as_json()`
         default_matrix = self.get_default_empty_matrix()
         if default_matrix is None:
             return b""
