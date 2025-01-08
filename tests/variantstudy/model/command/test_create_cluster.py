@@ -58,7 +58,7 @@ class TestCreateCluster:
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
-        assert cl.cluster_name == "cluster1"
+        assert cl.cluster_name == "Cluster1"
         assert cl.parameters.group == "nuclear"
         assert cl.parameters.nominal_capacity == 2400
         assert cl.parameters.unit_count == 2
@@ -138,7 +138,7 @@ class TestCreateCluster:
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
         section = clusters[cluster_name.lower()]
-        assert str(section["name"]) == cluster_name.lower()
+        assert str(section["name"]) == cluster_name
         assert str(section["group"]) == parameters["group"]
         assert int(section["unitcount"]) == int(parameters["unitcount"])
         assert float(section["nominalcapacity"]) == float(parameters["nominalcapacity"])
@@ -200,8 +200,8 @@ class TestCreateCluster:
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
-                "cluster_name": "cluster1",
-                "parameters": Thermal870Properties.model_validate({"name": "cluster1", **parameters}).model_dump(
+                "cluster_name": "Cluster1",
+                "parameters": Thermal870Properties.model_validate({"name": "Cluster1", **parameters}).model_dump(
                     mode="json", by_alias=True
                 ),
                 "prepro": prepro_id,

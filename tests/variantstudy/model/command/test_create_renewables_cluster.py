@@ -50,9 +50,9 @@ class TestCreateRenewablesCluster:
 
         # Check the command data
         assert cl.area_id == "foo"
-        assert cl.cluster_name == "cluster1"
+        assert cl.cluster_name == "Cluster1"
         assert cl.parameters.model_dump(by_alias=True) == RenewableProperties.model_validate(
-            {"name": "cluster1", **parameters}
+            {"name": "Cluster1", **parameters}
         ).model_dump(by_alias=True)
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
@@ -99,7 +99,7 @@ class TestCreateRenewablesCluster:
 
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "renewables" / "clusters" / area_id / "list.ini")
-        assert str(clusters[cluster_name.lower()]["name"]) == cluster_name.lower()
+        assert str(clusters[cluster_name.lower()]["name"]) == cluster_name
         assert str(clusters[cluster_name.lower()]["ts-interpretation"]) == parameters["ts-interpretation"]
 
         output = CreateRenewablesCluster(
@@ -155,8 +155,8 @@ class TestCreateRenewablesCluster:
             "action": "create_renewables_cluster",  # "renewables" with a final "s".
             "args": {
                 "area_id": "foo",
-                "cluster_name": "cluster1",
-                "parameters": RenewableProperties.model_validate({"name": "cluster1", **parameters}).model_dump(
+                "cluster_name": "Cluster1",
+                "parameters": RenewableProperties.model_validate({"name": "Cluster1", **parameters}).model_dump(
                     by_alias=True
                 ),
             },

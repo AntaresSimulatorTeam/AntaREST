@@ -15,7 +15,7 @@ import typing as t
 from pydantic import Field, model_validator
 from typing_extensions import override
 
-from antarest.core.model import JSON, LowerCaseStr
+from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
@@ -49,7 +49,7 @@ class CreateCluster(ICommand):
     # ==================
 
     area_id: str
-    cluster_name: LowerCaseStr
+    cluster_name: str
     parameters: ThermalPropertiesType
     prepro: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
     modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)

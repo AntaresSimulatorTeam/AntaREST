@@ -364,12 +364,12 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             if isinstance(data, str):
                 with contextlib.suppress(pydantic_core.ValidationError):
                     obj = from_json(data)
-            if len(url) == 2:
-                if str(url[0]).lower() not in info:
-                    info[url[0]] = {}
-                info[url[0]][url[1]] = obj
-            elif len(url) == 1:
-                info[str(url[0]).lower()] = obj
-            else:
+            if len(url) not in {1, 2}:
                 info = t.cast(JSON, obj)
+            else:
+                lowered_id = str(url[0]).lower()  # We lower the given cluster id
+                if len(url) == 2:
+                    info.setdefault(lowered_id, {})[url[1]] = obj
+                else:
+                    info[lowered_id] = obj
             self.writer.write(info, self.path)

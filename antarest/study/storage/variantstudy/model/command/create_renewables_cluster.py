@@ -15,7 +15,7 @@ import typing as t
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.core.model import JSON, LowerCaseStr
+from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableProperties,
@@ -44,7 +44,7 @@ class CreateRenewablesCluster(ICommand):
     # ==================
 
     area_id: str
-    cluster_name: LowerCaseStr
+    cluster_name: str
     parameters: RenewableProperties
 
     @model_validator(mode="before")

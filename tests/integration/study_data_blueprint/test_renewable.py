@@ -134,7 +134,7 @@ class TestRenewable:
         fr_solar_pv_cfg = {
             "id": fr_solar_pv_id,
             **fr_solar_pv_props,
-            "name": fr_solar_pv.lower(),
+            "name": fr_solar_pv,
             "group": fr_solar_pv_props["group"].lower(),
         }
         assert res.json() == fr_solar_pv_cfg
@@ -260,7 +260,7 @@ class TestRenewable:
         # asserts the config is the same
         assert res.status_code in {200, 201}, res.json()
         duplicated_config = dict(fr_solar_pv_cfg)
-        duplicated_config["name"] = new_name.lower()
+        duplicated_config["name"] = new_name
         duplicated_id = transform_name_to_id(new_name)
         duplicated_config["id"] = duplicated_id
         assert res.json() == duplicated_config
@@ -586,7 +586,7 @@ class TestRenewable:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name.lower()
+        assert cluster_cfg["name"] == new_name
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties

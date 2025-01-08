@@ -126,7 +126,7 @@ class TestRenewableCluster:
             "enabled": True,
             "group": "wind offshore",
             "id": "oleron",
-            "name": cluster_fr1.lower(),
+            "name": cluster_fr1,
             "nominalCapacity": 2500.0,
             "tsInterpretation": "power-generation",
             "unitCount": 1,
@@ -143,7 +143,7 @@ class TestRenewableCluster:
             "enabled": False,
             "group": "solar pv",
             "id": "la_rochelle",
-            "name": cluster_fr2.lower(),
+            "name": cluster_fr2,
             "nominalCapacity": 3500.0,
             "tsInterpretation": "power-generation",
             "unitCount": 4,
@@ -230,7 +230,7 @@ class TestRenewableCluster:
             "enabled": True,
             "group": "wind offshore",
             "id": "ol ron",
-            "name": cluster_it1.lower(),
+            "name": cluster_it1,
             "nominalCapacity": 1000.0,
             "tsInterpretation": "production-factor",
             "unitCount": 1,
@@ -274,7 +274,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_fr1_id: {
                         "group": "wind offshore",
-                        "name": cluster_fr1.lower(),
+                        "name": cluster_fr1,
                         "nominalcapacity": 2500,
                         "ts-interpretation": "power-generation",
                         "unitcount": 1,
@@ -286,7 +286,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1.lower(),
+                        "name": cluster_it1,
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
@@ -320,7 +320,7 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1.lower(),
+                        "name": cluster_it1,
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,

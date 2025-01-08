@@ -50,7 +50,7 @@ class ItemProperties(
 
     group: LowerCaseStr = Field(default="", description="Cluster group")
 
-    name: LowerCaseStr = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
+    name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
 
     def __lt__(self, other: t.Any) -> bool:
         """
@@ -59,7 +59,7 @@ class ItemProperties(
         This method may be used to sort and group clusters by `group` and `name`.
         """
         if isinstance(other, ItemProperties):
-            return (self.group, self.name).__lt__((other.group, other.name))
+            return (self.group, self.name.lower()).__lt__((other.group, other.name.lower()))
         return NotImplemented
 
 

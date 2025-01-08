@@ -165,7 +165,7 @@ class TestSTStorage:
             **default_output,
             **siemens_properties,
             "id": siemens_battery_id,
-            "name": siemens_battery.lower(),
+            "name": siemens_battery,
         }
         assert res.json() == siemens_output
 
@@ -238,7 +238,7 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_output = {
             **siemens_output,
-            "name": "new siemens battery",
+            "name": "New Siemens Battery",
             "reservoirCapacity": 2500,
         }
         assert res.json() == siemens_output
@@ -304,7 +304,7 @@ class TestSTStorage:
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
         duplicated_output = dict(siemens_output)
-        duplicated_output["name"] = new_name.lower()
+        duplicated_output["name"] = new_name
         duplicated_id = transform_name_to_id(new_name)
         duplicated_output["id"] = duplicated_id
         assert res.json() == duplicated_output
@@ -389,10 +389,9 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_output = {**default_output, **siemens_properties, "id": siemens_battery_id}
         grand_maison_output = {**default_output, **grand_maison_properties, "id": grand_maison_id}
-        # assert we return name and group as lower values
-        for key in ["name", "group"]:
-            grand_maison_output[key] = grand_maison_properties[key].lower()
-            siemens_output[key] = siemens_properties[key].lower()
+        # assert we return group in lower case
+        grand_maison_output["group"] = grand_maison_properties["group"].lower()
+        siemens_output["group"] = siemens_properties["group"].lower()
         assert res.json() == [duplicated_output, siemens_output, grand_maison_output]
 
         # We can delete the three short-term storages at once.
@@ -620,7 +619,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         tesla_battery_id = res.json()["id"]
-        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery.lower(), "group": "battery"}
+        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery, "group": "battery"}
         assert res.json() == tesla_output
 
         # Use the Debug mode to make sure that the initialLevel and initialLevelOptim properties
@@ -631,7 +630,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
-        expected = {**default_config, "name": tesla_battery.lower(), "group": "battery"}
+        expected = {**default_config, "name": tesla_battery, "group": "battery"}
         assert actual == expected
 
         # We want to make sure that the default properties are applied to a study variant.
@@ -661,7 +660,7 @@ class TestSTStorage:
             "action": "create_st_storage",
             "args": {
                 "area_id": "fr",
-                "parameters": {**default_config, "name": siemens_battery.lower(), "group": "battery"},
+                "parameters": {**default_config, "name": siemens_battery, "group": "battery"},
                 "pmax_injection": ANY,
                 "pmax_withdrawal": ANY,
                 "lower_rule_curve": ANY,
@@ -742,7 +741,7 @@ class TestSTStorage:
         actual = res.json()
         expected = {
             **default_config,
-            "name": siemens_battery.lower(),
+            "name": siemens_battery,
             "group": "battery",
             "injectionnominalcapacity": 1600,
             "initiallevel": 0.0,
@@ -828,7 +827,7 @@ class TestSTStorage:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name.lower()
+        assert cluster_cfg["name"] == new_name
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties

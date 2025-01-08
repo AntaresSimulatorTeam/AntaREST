@@ -311,7 +311,7 @@ class TestCreateSTStorage:
                 "initiallevel": 0.5,
                 "initialleveloptim": True,
                 "injectionnominalcapacity": 1500,
-                "name": "storage1",
+                "name": "Storage1",
                 "reservoircapacity": 20000,
                 "withdrawalnominalcapacity": 1500,
             }
@@ -349,7 +349,6 @@ class TestCreateSTStorage:
         expected_parameters = PARAMETERS.copy()
         # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
         expected_parameters["initiallevel"] = 0.5
-        expected_parameters["name"] = expected_parameters["name"].lower()
         expected_parameters["group"] = expected_parameters["group"].lower()
         # as we're using study version 8.8, we have the parameter `enabled`
         expected_parameters["enabled"] = True
@@ -398,7 +397,7 @@ class TestCreateSTStorage:
             parameters=parameters,
             study_version=STUDY_VERSION_8_6,
         )
-        light_equal = area_id == cmd1.area_id and parameters["name"].lower() == cmd1.storage_name
+        light_equal = area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
         assert cmd1.match(cmd2, equal=False) == light_equal
         deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
         assert cmd1.match(cmd2, equal=True) == deep_equal
@@ -433,7 +432,6 @@ class TestCreateSTStorage:
         )
         actual = cmd.create_diff(other)
         expected_params = copy.deepcopy(OTHER_PARAMETERS)
-        expected_params["name"] = expected_params["name"].lower()
         expected_params["group"] = expected_params["group"].lower()
         expected = [
             ReplaceMatrix(

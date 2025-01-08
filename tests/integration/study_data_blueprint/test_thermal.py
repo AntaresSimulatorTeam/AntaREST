@@ -380,7 +380,7 @@ class TestThermal:
             **fr_gas_conventional_props,
             "id": fr_gas_conventional_id,
             **{p: pollutants_values for p in pollutants_names},
-            "name": fr_gas_conventional_props["name"].lower(),
+            "name": fr_gas_conventional_props["name"],
             "group": fr_gas_conventional_props["group"].lower(),
         }
         fr_gas_conventional_cfg = {
@@ -439,7 +439,7 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_cfg,
-            "name": name.lower(),
+            "name": name,
             "nominalCapacity": 32.1,
         }
         assert res.json() == fr_gas_conventional_cfg
@@ -512,7 +512,7 @@ class TestThermal:
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
         duplicated_config = dict(fr_gas_conventional_cfg)
-        duplicated_config["name"] = new_name.lower()
+        duplicated_config["name"] = new_name
         duplicated_id = transform_name_to_id(new_name)
         duplicated_config["id"] = duplicated_id
         # takes the update into account
@@ -921,7 +921,7 @@ class TestThermal:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name.lower()
+        assert cluster_cfg["name"] == new_name
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties
