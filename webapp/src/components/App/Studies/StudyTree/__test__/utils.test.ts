@@ -11,15 +11,14 @@
  *
  * This file is part of the Antares project.
  */
+import { FIXTURES, FIXTURES_BUILD_STUDY_TREE } from "./fixtures";
 import {
+  buildStudyTree,
   insertFoldersIfNotExist,
   insertWorkspacesIfNotExist,
-  buildStudyTree,
 } from "../utils";
 import { NonStudyFolderDTO, StudyTreeNode } from "../types";
-import { FIXTURES } from "./fixtures";
 
-console.log("buildStudyTreebuildStudyTree", buildStudyTree);
 describe("StudyTree Utils", () => {
   describe("mergeStudyTreeAndFolders", () => {
     test.each(Object.values(FIXTURES))(
@@ -113,5 +112,13 @@ describe("StudyTree Utils", () => {
       const result = insertWorkspacesIfNotExist(tree, workspaces);
       expect(result).toEqual(expected);
     });
+
+    test.each(Object.values(FIXTURES_BUILD_STUDY_TREE))(
+      "$name",
+      ({ studies, expected }) => {
+        const result = buildStudyTree(studies);
+        expect(result).toEqual(expected);
+      },
+    );
   });
 });

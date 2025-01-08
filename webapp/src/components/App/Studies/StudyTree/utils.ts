@@ -27,7 +27,6 @@ export function buildStudyTree(studies: StudyMetadata[]) {
     name: "root",
     children: [],
     path: "",
-    hasChildren: false,
   };
 
   for (const study of studies) {
@@ -54,7 +53,6 @@ export function buildStudyTree(studies: StudyMetadata[]) {
           path: current.path
             ? `${current.path}/${folderName}`
             : `/${folderName}`,
-          hasChildren: false,
         };
 
         current.children.push(child);
@@ -115,7 +113,6 @@ function insertFolderIfNotExist(
           path: `${folder.parentPath}/${folder.name}`,
           name: folder.name,
           children: [],
-          hasChildren: folder.hasChildren,
         },
       ],
     };
@@ -148,9 +145,7 @@ export function insertFoldersIfNotExist(
   studiesTree: StudyTreeNode,
   folders: NonStudyFolderDTO[],
 ): StudyTreeNode {
-  console.log("insertFoldersIfNotExist", studiesTree);
   return folders.reduce((tree, folder) => {
-    console.log("inserting folder", folder);
     return insertFolderIfNotExist(tree, folder);
   }, studiesTree);
 }
@@ -167,6 +162,10 @@ async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
     // Under root there're workspaces not subfolders
     return [];
   }
+  if (!path.startsWith("/")) {
+    console.error("path here should start with / ", path);
+    return [];
+  }
   // less than 2 parts means we're at the root level
   const pathParts = path.split("/");
   if (pathParts.length < 2) {
@@ -179,14 +178,6 @@ async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
   // path parts should be ["root", workspace, "folder1", ...]
   const workspace = pathParts[1];
   const subPath = pathParts.slice(2).join("/");
-  console.log(
-    "pathParts",
-    pathParts,
-    "workspace",
-    workspace,
-    "subPath",
-    subPath,
-  );
   return api.getFolders(workspace, subPath);
 }
 
@@ -241,7 +232,6 @@ function insertWorkspaceIfNotExist(
     name: workspace,
     path: `/${workspace}`,
     children: [],
-    hasChildren: true,
   };
   if (stydyTree.children.some((child) => child.name === workspace)) {
     return stydyTree;
@@ -249,7 +239,6 @@ function insertWorkspaceIfNotExist(
   return {
     ...stydyTree,
     children: [...stydyTree.children, emptyNode],
-    hasChildren: true,
   };
 }
 

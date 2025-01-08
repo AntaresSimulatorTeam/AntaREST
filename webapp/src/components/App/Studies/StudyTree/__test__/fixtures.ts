@@ -12,6 +12,26 @@
  * This file is part of the Antares project.
  */
 
+import { StudyMetadata, StudyType } from "@/common/types";
+
+function mkStudyMetadata(folder: string, workspace: string): StudyMetadata {
+  return {
+    id: "xxxxxxxxxx",
+    name: "XXXXXXXXXX",
+    creationDate: "2024-01-01",
+    modificationDate: "2024-01-02",
+    owner: { id: 1, name: "Owner 1" },
+    type: StudyType.RAW,
+    version: "v1",
+    workspace,
+    managed: false,
+    archived: false,
+    groups: [],
+    folder,
+    publicMode: "NONE",
+  };
+}
+
 export const FIXTURES = {
   basicTree: {
     name: "Basic tree with single level",
@@ -192,6 +212,95 @@ export const FIXTURES = {
           children: [
             { name: "folder1", path: "/a/folder1", children: [] },
             { name: "folder2", path: "/a/folder2", children: [] },
+          ],
+        },
+      ],
+    },
+  },
+};
+
+export const FIXTURES_BUILD_STUDY_TREE = {
+  simpleCase: {
+    name: "Basic case",
+    studies: [mkStudyMetadata("plop1/plop2/myFolder", "workspace")],
+    expected: {
+      name: "root",
+      path: "",
+      children: [
+        {
+          name: "workspace",
+          path: "/workspace",
+          children: [
+            {
+              name: "plop1",
+              path: "/workspace/plop1",
+              children: [
+                {
+                  name: "plop2",
+                  path: "/workspace/plop1/plop2",
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  },
+  multiplieStudies: {
+    name: "Multiple studies case",
+    studies: [
+      mkStudyMetadata("plop1/plop2/xxx1", "workspace"),
+      mkStudyMetadata("plop1/plop3/xxx2", "workspace"),
+      mkStudyMetadata("plop1/plop4/xxx3", "workspace"),
+      mkStudyMetadata("plouf1/plouf2/xxx4", "workspace2"),
+    ],
+    expected: {
+      name: "root",
+      path: "",
+      children: [
+        {
+          name: "workspace",
+          path: "/workspace",
+          children: [
+            {
+              name: "plop1",
+              path: "/workspace/plop1",
+              children: [
+                {
+                  name: "plop2",
+                  path: "/workspace/plop1/plop2",
+                  children: [],
+                },
+                {
+                  name: "plop3",
+                  path: "/workspace/plop1/plop3",
+                  children: [],
+                },
+                {
+                  name: "plop4",
+                  path: "/workspace/plop1/plop4",
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: "workspace2",
+          path: "/workspace2",
+          children: [
+            {
+              name: "plouf1",
+              path: "/workspace2/plouf1",
+              children: [
+                {
+                  name: "plouf2",
+                  path: "/workspace2/plouf1/plouf2",
+                  children: [],
+                },
+              ],
+            },
           ],
         },
       ],

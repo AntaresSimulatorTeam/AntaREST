@@ -131,8 +131,9 @@ export const getStudyIdsFilteredAndSorted = createSelector(
   (studies) => studies.map((study) => study.id),
 );
 
-console.log("buildStudyTree", buildStudyTree);
-export const getStudiesTree = createSelector(getStudies, buildStudyTree);
+export const getStudiesTree = createSelector(getStudies, (studies) =>
+  buildStudyTree(studies),
+);
 
 export const getStudyVersions = (
   state: AppState,
