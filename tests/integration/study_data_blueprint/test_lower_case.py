@@ -70,8 +70,15 @@ class TestLowerCase:
         # Asserts the GET still works and returns the name in lower case
         res = client.get(f"/v1/studies/{study_id}/areas/{area1_id}/{url}/{cluster_name}")
         cluster = res.json()
-        assert cluster["name"] == lowered_name
+        assert cluster["name"] == cluster_name
         assert cluster["group"] == lowered_grp
+
+        # Also checks the GET /raw endpoint
+        res = client.get(f"/v1/studies/{study_id}/raw?path=input/{cluster_type}/clusters/{area1_id}/list")
+        cluster_list = res.json()
+        assert list(cluster_list.keys()) == [lowered_name]
+        assert cluster_list[lowered_name]["name"] == cluster_name
+        assert cluster_list[lowered_name]["group"] == lowered_grp
 
         # Try to update a property
         if cluster_type == "st-storage":
