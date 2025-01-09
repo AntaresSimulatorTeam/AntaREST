@@ -568,7 +568,7 @@ nominalcapacity = 14.0
         raw_study.id,
         repository=study_service.repository,
         storage_service=study_service.storage_service,
-        event_bus=study_service.event_bus
+        event_bus=study_service.event_bus,
     )
 
     task_id = study_service.task_service.add_task(
