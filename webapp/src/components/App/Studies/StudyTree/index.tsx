@@ -109,7 +109,6 @@ function StudyTree() {
         t("studies.tree.error.detailsInConsole"),
       );
     }
-    console.log("treeAfterSubfoldersUpdate", treeAfterSubfoldersUpdate);
     setStudiesTree(treeAfterSubfoldersUpdate);
   }
 
@@ -144,9 +143,9 @@ function StudyTree() {
             onClick={() => handleTreeItemClick(id, child)}
           >
             <TreeItemEnhanced
-              key={id + "lllloading"}
-              itemId={id + "lllloading"}
-              label={"lllloading..."}
+              key={id + "loading"}
+              itemId={id + "loading"}
+              label={t("studies.tree.fetchFolderLoading")}
             />
           </TreeItemEnhanced>
         );

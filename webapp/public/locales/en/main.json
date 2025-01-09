@@ -679,6 +679,7 @@
   "studies.tree.error.failToFetchWorkspace": "Failed to load workspaces",
   "studies.tree.error.failToFetchFolder": "Failed to load subfolders for {{path}}",
   "studies.tree.error.detailsInConsole": "Details logged in the console",
+  "studies.tree.fetchFolderLoading": "Loading...",
   "variants.createNewVariant": "Create new variant",
   "variants.newVariant": "New variant",
   "variants.newCommand": "Add new command",

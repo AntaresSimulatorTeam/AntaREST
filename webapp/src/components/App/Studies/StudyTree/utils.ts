@@ -202,7 +202,6 @@ export async function fetchAndInsertSubfolders(
   const results = await Promise.allSettled(
     paths.map((path) => fetchSubfolders(path)),
   );
-  console.log("results", results);
   return results.reduce<[StudyTreeNode, string[]]>(
     ([tree, failed], result, index) => {
       if (result.status === "fulfilled") {
