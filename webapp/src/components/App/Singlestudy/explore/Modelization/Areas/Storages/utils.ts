@@ -21,15 +21,15 @@ import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 ////////////////////////////////////////////////////////////////
 
 export const STORAGE_GROUPS = [
-  "psp_open",
-  "psp_closed",
-  "pondage",
-  "battery",
-  "other1",
-  "other2",
-  "other3",
-  "other4",
-  "other5",
+  "PSP_open",
+  "PSP_closed",
+  "Pondage",
+  "Battery",
+  "Other1",
+  "Other2",
+  "Other3",
+  "Other4",
+  "Other5",
 ] as const;
 
 ////////////////////////////////////////////////////////////////

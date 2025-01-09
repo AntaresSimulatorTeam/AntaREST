@@ -95,6 +95,7 @@ function Storages() {
           }}
           onSubmit={handleSubmit}
           enableUndoRedo
+          sx={{ height: "50%" }}
         >
           <Fields />
         </Form>
