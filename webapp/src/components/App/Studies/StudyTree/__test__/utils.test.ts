@@ -11,6 +11,7 @@
  *
  * This file is part of the Antares project.
  */
+
 import { FIXTURES, FIXTURES_BUILD_STUDY_TREE } from "./fixtures";
 import {
   buildStudyTree,

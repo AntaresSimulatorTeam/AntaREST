@@ -147,7 +147,7 @@ function StudyTree() {
               key={id + "lllloading"}
               itemId={id + "lllloading"}
               label={"lllloading..."}
-            ></TreeItemEnhanced>
+            />
           </TreeItemEnhanced>
         );
       }
