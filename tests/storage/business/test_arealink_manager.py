@@ -21,6 +21,7 @@ import pytest
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
@@ -85,7 +86,7 @@ def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
     )
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
-
+@current_user_context(token=DEFAULT_ADMIN_USER)
 @with_db_context
 def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # Prepare the managers that are used in this UT
@@ -122,210 +123,209 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     )
     assert len(empty_study.config.areas.keys()) == 0
 
-    with patch("antarest.study.business.utils.get_current_user", return_value=DEFAULT_ADMIN_USER):
-        area_manager.create_area(study, AreaCreationDTO(name="test", type=AreaType.AREA))
-        assert len(empty_study.config.areas.keys()) == 1
-        assert (
-            json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
-        )
+    area_manager.create_area(study, AreaCreationDTO(name="test", type=AreaType.AREA))
+    assert len(empty_study.config.areas.keys()) == 1
+    assert (
+        json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
+    )
 
-        area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
-        assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
-            "x": 100,
-            "y": 200,
-            "color_r": 255,
-            "color_g": 0,
-            "color_b": 100,
-            "layers": 0,
-        }
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
+    assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
+        "x": 100,
+        "y": 200,
+        "color_r": 255,
+        "color_g": 0,
+        "color_b": 100,
+        "layers": 0,
+    }
 
-        area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
+    area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
 
-        link_manager.create_link(
-            study,
-            LinkDTO(
-                area1="test",
-                area2="test2",
+    link_manager.create_link(
+        study,
+        LinkDTO(
+            area1="test",
+            area2="test2",
+        ),
+    )
+    assert empty_study.config.areas["test"].links.get("test2") is not None
+
+    link_manager.delete_link(study, "test", "test2")
+    assert empty_study.config.areas["test"].links.get("test2") is None
+    area_manager.delete_area(study, "test")
+    area_manager.delete_area(study, "test2")
+    assert len(empty_study.config.areas.keys()) == 0
+
+    # Check `AreaManager` behaviour with a variant study
+    variant_id = str(uuid.uuid4())
+    # noinspection PyArgumentList
+    study = VariantStudy(
+        id=variant_id,
+        path=str(empty_study.config.study_path),
+        additional_data=StudyAdditionalData(),
+        version="820",
+    )
+    variant_study_service.get_raw.return_value = empty_study
+    area_manager.create_area(
+        study,
+        AreaCreationDTO(name="test", type=AreaType.AREA, metadata=PatchArea(country="FR")),
+    )
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [CommandDTO(action=CommandName.CREATE_AREA.value, args={"area_name": "test"}, study_version=study_version)],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+    assert (empty_study.config.study_path / "patch.json").exists()
+    assert (
+        json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
+    )
+
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [
+            CommandDTO(
+                id=None,
+                action=CommandName.UPDATE_CONFIG.value,
+                args=[
+                    {
+                        "target": "input/areas/test/ui/ui/x",
+                        "data": 100,
+                    },
+                    {
+                        "target": "input/areas/test/ui/ui/y",
+                        "data": 200,
+                    },
+                    {
+                        "target": "input/areas/test/ui/ui/color_r",
+                        "data": 255,
+                    },
+                    {
+                        "target": "input/areas/test/ui/ui/color_g",
+                        "data": 0,
+                    },
+                    {
+                        "target": "input/areas/test/ui/ui/color_b",
+                        "data": 100,
+                    },
+                    {
+                        "target": "input/areas/test/ui/layerX/0",
+                        "data": 100,
+                    },
+                    {
+                        "target": "input/areas/test/ui/layerY/0",
+                        "data": 200,
+                    },
+                    {
+                        "target": "input/areas/test/ui/layerColor/0",
+                        "data": "255,0,100",
+                    },
+                ],
+                study_version=study_version,
             ),
-        )
-        assert empty_study.config.areas["test"].links.get("test2") is not None
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
 
-        link_manager.delete_link(study, "test", "test2")
-        assert empty_study.config.areas["test"].links.get("test2") is None
-        area_manager.delete_area(study, "test")
-        area_manager.delete_area(study, "test2")
-        assert len(empty_study.config.areas.keys()) == 0
-
-        # Check `AreaManager` behaviour with a variant study
-        variant_id = str(uuid.uuid4())
-        # noinspection PyArgumentList
-        study = VariantStudy(
-            id=variant_id,
-            path=str(empty_study.config.study_path),
-            additional_data=StudyAdditionalData(),
-            version="820",
-        )
-        variant_study_service.get_raw.return_value = empty_study
-        area_manager.create_area(
-            study,
-            AreaCreationDTO(name="test", type=AreaType.AREA, metadata=PatchArea(country="FR")),
-        )
-        variant_study_service.append_commands.assert_called_with(
-            variant_id,
-            [CommandDTO(action=CommandName.CREATE_AREA.value, args={"area_name": "test"}, study_version=study_version)],
-            RequestParameters(DEFAULT_ADMIN_USER),
-        )
-        assert (empty_study.config.study_path / "patch.json").exists()
-        assert (
-            json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
-        )
-
-        area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
-        variant_study_service.append_commands.assert_called_with(
-            variant_id,
-            [
-                CommandDTO(
-                    id=None,
-                    action=CommandName.UPDATE_CONFIG.value,
-                    args=[
-                        {
-                            "target": "input/areas/test/ui/ui/x",
-                            "data": 100,
-                        },
-                        {
-                            "target": "input/areas/test/ui/ui/y",
-                            "data": 200,
-                        },
-                        {
-                            "target": "input/areas/test/ui/ui/color_r",
-                            "data": 255,
-                        },
-                        {
-                            "target": "input/areas/test/ui/ui/color_g",
-                            "data": 0,
-                        },
-                        {
-                            "target": "input/areas/test/ui/ui/color_b",
-                            "data": 100,
-                        },
-                        {
-                            "target": "input/areas/test/ui/layerX/0",
-                            "data": 100,
-                        },
-                        {
-                            "target": "input/areas/test/ui/layerY/0",
-                            "data": 200,
-                        },
-                        {
-                            "target": "input/areas/test/ui/layerColor/0",
-                            "data": "255,0,100",
-                        },
-                    ],
-                    study_version=study_version,
-                ),
-            ],
-            RequestParameters(DEFAULT_ADMIN_USER),
-        )
-
-        area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
-        link_manager.create_link(
-            study,
-            LinkDTO(
-                area1="test",
-                area2="test2",
-            ),
-        )
-        variant_study_service.append_commands.assert_called_with(
-            variant_id,
-            [
-                CommandDTO(
-                    action=CommandName.CREATE_LINK.value,
-                    args={
+    area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
+    link_manager.create_link(
+        study,
+        LinkDTO(
+            area1="test",
+            area2="test2",
+        ),
+    )
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [
+            CommandDTO(
+                action=CommandName.CREATE_LINK.value,
+                args={
+                    "area1": "test",
+                    "area2": "test2",
+                    "parameters": {
                         "area1": "test",
                         "area2": "test2",
-                        "parameters": {
-                            "area1": "test",
-                            "area2": "test2",
-                            "hurdles_cost": False,
-                            "loop_flow": False,
-                            "use_phase_shifter": False,
-                            "transmission_capacities": TransmissionCapacity.ENABLED,
-                            "asset_type": AssetType.AC,
-                            "display_comments": True,
-                            "comments": "",
-                            "colorr": 112,
-                            "colorg": 112,
-                            "colorb": 112,
-                            "link_width": 1.0,
-                            "link_style": LinkStyle.PLAIN,
-                            "filter_synthesis": "hourly, daily, weekly, monthly, annual",
-                            "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
-                        },
+                        "hurdles_cost": False,
+                        "loop_flow": False,
+                        "use_phase_shifter": False,
+                        "transmission_capacities": TransmissionCapacity.ENABLED,
+                        "asset_type": AssetType.AC,
+                        "display_comments": True,
+                        "comments": "",
+                        "colorr": 112,
+                        "colorg": 112,
+                        "colorb": 112,
+                        "link_width": 1.0,
+                        "link_style": LinkStyle.PLAIN,
+                        "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+                        "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
                     },
-                    study_version=study_version,
-                ),
-            ],
-            RequestParameters(DEFAULT_ADMIN_USER),
-        )
-
-        study.version = 810
-        link_manager.create_link(
-            study,
-            LinkDTO(
-                area1="test",
-                area2="test2",
+                },
+                study_version=study_version,
             ),
-        )
-        variant_study_service.append_commands.assert_called_with(
-            variant_id,
-            [
-                CommandDTO(
-                    action=CommandName.CREATE_LINK.value,
-                    args={
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+
+    study.version = 810
+    link_manager.create_link(
+        study,
+        LinkDTO(
+            area1="test",
+            area2="test2",
+        ),
+    )
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [
+            CommandDTO(
+                action=CommandName.CREATE_LINK.value,
+                args={
+                    "area1": "test",
+                    "area2": "test2",
+                    "parameters": {
                         "area1": "test",
                         "area2": "test2",
-                        "parameters": {
-                            "area1": "test",
-                            "area2": "test2",
-                            "hurdles_cost": False,
-                            "loop_flow": False,
-                            "use_phase_shifter": False,
-                            "transmission_capacities": TransmissionCapacity.ENABLED,
-                            "asset_type": AssetType.AC,
-                            "display_comments": True,
-                            "comments": "",
-                            "colorr": 112,
-                            "colorg": 112,
-                            "colorb": 112,
-                            "link_width": 1.0,
-                            "link_style": LinkStyle.PLAIN,
-                        },
+                        "hurdles_cost": False,
+                        "loop_flow": False,
+                        "use_phase_shifter": False,
+                        "transmission_capacities": TransmissionCapacity.ENABLED,
+                        "asset_type": AssetType.AC,
+                        "display_comments": True,
+                        "comments": "",
+                        "colorr": 112,
+                        "colorg": 112,
+                        "colorb": 112,
+                        "link_width": 1.0,
+                        "link_style": LinkStyle.PLAIN,
                     },
-                    study_version=study_version,
-                ),
-            ],
-            RequestParameters(DEFAULT_ADMIN_USER),
-        )
-        link_manager.delete_link(study, "test", "test2")
-        variant_study_service.append_commands.assert_called_with(
-            variant_id,
-            [
-                CommandDTO(
-                    action=CommandName.REMOVE_LINK.value,
-                    args={"area1": "test", "area2": "test2"},
-                    study_version=study_version,
-                ),
-            ],
-            RequestParameters(DEFAULT_ADMIN_USER),
-        )
-        area_manager.delete_area(study, "test2")
-        variant_study_service.append_commands.assert_called_with(
-            variant_id,
-            [
-                CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}, study_version=study_version),
-            ],
-            RequestParameters(DEFAULT_ADMIN_USER),
-        )
+                },
+                study_version=study_version,
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+    link_manager.delete_link(study, "test", "test2")
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [
+            CommandDTO(
+                action=CommandName.REMOVE_LINK.value,
+                args={"area1": "test", "area2": "test2"},
+                study_version=study_version,
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+    area_manager.delete_area(study, "test2")
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [
+            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}, study_version=study_version),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
 
 
 def test_get_all_area():

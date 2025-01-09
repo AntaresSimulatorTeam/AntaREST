@@ -231,13 +231,11 @@ class ThermalClusterTimeSeriesGeneratorTask:
         repository: StudyMetadataRepository,
         storage_service: StudyStorageService,
         event_bus: IEventBus,
-        jwt_user: JWTUser,
     ):
         self._study_id = _study_id
         self.repository = repository
         self.storage_service = storage_service
         self.event_bus = event_bus
-        self.jwt_user = jwt_user
 
     def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
@@ -249,7 +247,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             command = GenerateThermalClusterTimeSeries(
                 command_context=command_context, study_version=file_study.config.version
             )
-            execute_or_add_commands(study, file_study, [command], self.storage_service, listener, self.jwt_user)
+            execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
 
             if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
@@ -2586,7 +2584,6 @@ class StudyService:
             repository=self.repository,
             storage_service=self.storage_service,
             event_bus=self.event_bus,
-            jwt_user=params.user,  # type: ignore
         )
 
         return self.task_service.add_task(

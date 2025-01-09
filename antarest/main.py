@@ -275,7 +275,7 @@ def fastapi_app(
         config=RATE_LIMIT_CONFIG,
     )
 
-    application.add_middleware(CurrentUserMiddleware)
+    application.add_middleware(CurrentUserMiddleware, auth=auth_manager)
 
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
     services = create_services(config, app_ctxt)

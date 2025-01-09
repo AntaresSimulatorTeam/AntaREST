@@ -15,7 +15,6 @@ import typing as t
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import CommandApplicationError
-from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.serialization import AntaresBaseModel
 from antarest.login.utils import get_current_user
@@ -38,10 +37,9 @@ def execute_or_add_commands(
     commands: t.Sequence[ICommand],
     storage_service: StudyStorageService,
     listener: t.Optional[ICommandListener] = None,
-    jwt_user: t.Optional[JWTUser] = None,
 ) -> None:
     # get current user if not in session, otherwise get session user
-    current_user = get_current_user() or jwt_user
+    current_user = get_current_user()
 
     if isinstance(study, RawStudy):
         executed_commands: t.MutableSequence[ICommand] = []

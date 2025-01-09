@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import contextlib
 import typing as t
 from contextvars import ContextVar
 from typing import Optional
@@ -17,31 +18,50 @@ from typing import Optional
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp
 from typing_extensions import override
 
 from antarest.core.jwt import JWTUser
-from antarest.core.serialization import from_json
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
+from antarest.login.auth import Auth
 
-_current_user: ContextVar[t.Optional[AuthJWT]] = ContextVar("_current_user", default=None)
+_current_user: ContextVar[t.Optional[JWTUser]] = ContextVar("_current_user", default=None)
 
 
 class CurrentUserMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app: ASGIApp, auth: Auth) -> None:
+        super().__init__(app)
+        self.auth = auth
+
     @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         global _current_user
-        auth_jwt = AuthJWT(Request(request.scope))
-        _current_user.set(auth_jwt)
+        auth_jwt = AuthJWT(request)
+
+        try:
+            jwt_user = self.auth.get_current_user(auth_jwt)  # fail when no cookies provided
+        except AuthJWTException:
+            # fall into this block in testing context
+            jwt_user = None
+
+        _current_user.set(jwt_user)
 
         response = await call_next(request)
         return response
 
 
 def get_current_user() -> Optional[JWTUser]:
-    auth_jwt = _current_user.get()
-    if auth_jwt:
-        json_data = from_json(auth_jwt.get_jwt_subject())
-        current_user = JWTUser.model_validate(json_data)
-    else:
-        current_user = None
+    current_user = _current_user.get()
     return current_user
+
+@contextlib.contextmanager
+def current_user_context(token: JWTUser) -> JWTUser:
+    global _current_user
+    jwt_user = token
+    _current_user.set(jwt_user)
+
+    try:
+        yield _current_user.get()
+    finally:
+        _current_user.set(None)
