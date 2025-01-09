@@ -16,8 +16,8 @@ import { StudyMetadata, StudyType } from "@/common/types";
 
 function mkStudyMetadata(folder: string, workspace: string): StudyMetadata {
   return {
-    id: "xxxxxxxxxx",
-    name: "XXXXXXXXXX",
+    id: "test-study-id",
+    name: "Test Study",
     creationDate: "2024-01-01",
     modificationDate: "2024-01-02",
     owner: { id: 1, name: "Owner 1" },
@@ -201,6 +201,13 @@ export const FIXTURES = {
         workspace: "a",
         parentPath: "/a",
       },
+      {
+        name: "folder3",
+        path: "/folder3",
+        workspace: "a",
+        parentPath: "/a",
+        hasChildren: true,
+      },
     ],
     expected: {
       name: "Root",
@@ -212,6 +219,12 @@ export const FIXTURES = {
           children: [
             { name: "folder1", path: "/a/folder1", children: [] },
             { name: "folder2", path: "/a/folder2", children: [] },
+            {
+              name: "folder3",
+              path: "/a/folder3",
+              children: [],
+              hasChildren: true,
+            },
           ],
         },
       ],

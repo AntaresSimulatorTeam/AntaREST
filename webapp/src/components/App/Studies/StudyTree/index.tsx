@@ -85,19 +85,20 @@ function StudyTree() {
     if (itemId === "root") {
       try {
         treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
-        pathsToFetch = treeAfterWorkspacesUpdate.children
-          .filter((t) => t.name !== "default") // We don't fetch the default workspace subfolders, api don't allow it
-          .map((child) => `root${child.path}`);
       } catch (error) {
         enqueueErrorSnackbar(
-          "studies.tree.error.failToFetchWorkspace",
+          t("studies.tree.error.failToFetchWorkspace"),
           toError(error),
         );
       }
+      pathsToFetch = treeAfterWorkspacesUpdate.children
+        .filter((t) => t.name !== "default") // We don't fetch the default workspace subfolders, api don't allow it
+        .map((child) => `root${child.path}`);
     } else {
       // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
       pathsToFetch = [`root${selectedNode.path}`];
     }
+
     const [treeAfterSubfoldersUpdate, failedPath] =
       await fetchAndInsertSubfolders(pathsToFetch, treeAfterWorkspacesUpdate);
     if (failedPath.length > 0) {

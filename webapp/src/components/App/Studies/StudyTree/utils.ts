@@ -113,6 +113,7 @@ function insertFolderIfNotExist(
           path: `${folder.parentPath}/${folder.name}`,
           name: folder.name,
           children: [],
+          hasChildren: folder.hasChildren,
         },
       ],
     };
@@ -202,6 +203,7 @@ export async function fetchAndInsertSubfolders(
   const results = await Promise.allSettled(
     paths.map((path) => fetchSubfolders(path)),
   );
+  console.log("results", results);
   return results.reduce<[StudyTreeNode, string[]]>(
     ([tree, failed], result, index) => {
       if (result.status === "fulfilled") {
