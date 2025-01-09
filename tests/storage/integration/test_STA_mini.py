@@ -252,7 +252,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
             },
             True,
         ),
-        (
+        pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
             {
                 "columns": [0, 1, 2, 3, 4, 5, 6, 7],
@@ -260,11 +260,13 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
                 "data": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760,
             },
             True,
+            id="empty_matrix_formatted",
         ),
-        (
+        pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
             np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760).tobytes(),
             False,
+            id="empty_matrix_unformatted",
         ),
         (
             f"/v1/studies/{UUID}/raw?path=input/reserves/fr",
