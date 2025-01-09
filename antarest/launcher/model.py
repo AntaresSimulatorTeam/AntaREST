@@ -17,6 +17,7 @@ from datetime import datetime
 from pydantic import Field
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serialization import AntaresBaseModel, from_json
@@ -157,9 +158,11 @@ class JobLog(Base):  # type: ignore
     # that the comparison is based on the database identity of the objects.
     # So, implementing `__eq__` and `__ne__` is not necessary.
 
+    @override
     def __str__(self) -> str:
         return f"Job log #{self.id} {self.log_type}: '{self.message}'"
 
+    @override
     def __repr__(self) -> str:
         return (
             f"<JobLog(id={self.id!r},"
@@ -212,9 +215,11 @@ class JobResult(Base):  # type: ignore
     # that the comparison is based on the database identity of the objects.
     # So, implementing `__eq__` and `__ne__` is not necessary.
 
+    @override
     def __str__(self) -> str:
         return f"Job result #{self.id} (study '{self.study_id}'): {self.job_status}"
 
+    @override
     def __repr__(self) -> str:
         return (
             f"<JobResult(id={self.id!r},"

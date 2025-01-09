@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -26,6 +27,7 @@ class InputThermalPreproAreaThermal(FolderNode):
     - `modulation.txt` (matrix): Modulation matrix (hourly)
     """
 
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "data": InputSeriesMatrix(self.context, self.config.next_file("data.txt"), freq=MatrixFrequency.DAILY),

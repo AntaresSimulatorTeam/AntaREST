@@ -16,6 +16,7 @@ from pathlib import Path
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import DTO
@@ -47,6 +48,7 @@ class EnrModelling(EnumIgnoreCase):
     AGGREGATED = "aggregated"
     CLUSTERS = "clusters"
 
+    @override
     def __str__(self) -> str:
         """Return the string representation of the enum value."""
         return self.value
@@ -283,6 +285,26 @@ class FileStudyTreeConfig(DTO):
         if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_year
         return self.areas[area].filters_year
+
+
+# Invalid chars was taken from Antares Simulator (C++).
+_sub_invalid_chars = re.compile(r"[^a-zA-Z0-9_(),& -]+").sub
+
+
+def transform_name_to_id(name: str, lower: bool = True) -> str:
+    """
+    Transform a name into an identifier by replacing consecutive
+    invalid characters by a single white space, and then whitespaces
+    are striped from both ends.
+
+    Valid characters are `[a-zA-Z0-9_(),& -]` (including space).
+
+    Args:
+        name: The name to convert.
+        lower: The flag used to turn the identifier in lower case.
+    """
+    valid_id = _sub_invalid_chars(" ", name).strip()
+    return valid_id.lower() if lower else valid_id
 
 
 class FileStudyTreeConfigDTO(AntaresBaseModel):

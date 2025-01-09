@@ -12,15 +12,17 @@
 
 import typing as t
 
-from pydantic import model_validator
+from pydantic import field_validator
+from typing_extensions import override
 
-from antarest.core.model import JSON, LowerCaseStr
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableProperties,
-    create_renewable_config,
-    create_renewable_properties,
+from antarest.core.model import JSON
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    EnrModelling,
+    FileStudyTreeConfig,
+    transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import create_renewable_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
@@ -43,16 +45,17 @@ class CreateRenewablesCluster(ICommand):
     # ==================
 
     area_id: str
-    cluster_name: LowerCaseStr
-    parameters: RenewableProperties
+    cluster_name: str
+    parameters: t.Dict[str, t.Any]
 
-    @model_validator(mode="before")
-    def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        # Validate parameters
-        args = {"name": values["cluster_name"], **values["parameters"]}
-        values["parameters"] = create_renewable_properties(values["study_version"], **args)
-        return values
+    @field_validator("cluster_name")
+    def validate_cluster_name(cls, val: str) -> str:
+        valid_name = transform_name_to_id(val, lower=False)
+        if valid_name != val:
+            raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
+        return val
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:
             # Since version 8.1 of the solver, we can use renewable clusters
@@ -100,14 +103,20 @@ class CreateRenewablesCluster(ICommand):
             {"cluster_id": cluster.id},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
 
+        # default values
+        if "ts-interpretation" not in self.parameters:
+            self.parameters["ts-interpretation"] = "power-generation"
+        self.parameters.setdefault("name", self.cluster_name)
+
         cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
-        config[cluster_id] = self.parameters.model_dump(mode="json", by_alias=True)
+        config[cluster_id] = self.parameters
 
         # Series identifiers are in lower case.
         series_id = cluster_id.lower()
@@ -127,17 +136,19 @@ class CreateRenewablesCluster(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
                 "cluster_name": self.cluster_name,
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
+                "parameters": self.parameters,
             },
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(
             self.command_name.value
@@ -147,33 +158,32 @@ class CreateRenewablesCluster(ICommand):
             + self.cluster_name
         )
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, CreateRenewablesCluster):
             return False
         simple_match = self.area_id == other.area_id and self.cluster_name == other.cluster_name
         if not equal:
             return simple_match
-        self_params = self.parameters.model_dump(mode="json", by_alias=True)
-        other_params = other.parameters.model_dump(mode="json", by_alias=True)
-        return simple_match and self_params == other_params
+        return simple_match and self.parameters == other.parameters
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         other = t.cast(CreateRenewablesCluster, other)
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         commands: t.List[ICommand] = []
-        self_params = self.parameters.model_dump(mode="json", by_alias=True)
-        other_params = other.parameters.model_dump(mode="json", by_alias=True)
-        if self_params != other_params:
+        if self.parameters != other.parameters:
             commands.append(
                 UpdateConfig(
                     target=f"input/renewables/clusters/{self.area_id}/list/{self.cluster_name}",
-                    data=other_params,
+                    data=other.parameters,
                     command_context=self.command_context,
                     study_version=self.study_version,
                 )
             )
         return commands
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

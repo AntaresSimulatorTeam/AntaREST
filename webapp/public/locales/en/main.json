@@ -44,6 +44,7 @@
   "global.date": "Date",
   "global.general": "General",
   "global.files": "Files",
+  "global.rawFile": "Raw file",
   "global.none": "None",
   "global.upload": "Upload",
   "global.key": "Key",

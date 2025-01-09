@@ -28,13 +28,12 @@ from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_7, Study
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
     Thermal870Properties,
     ThermalConfigType,
     create_thermal_config,
-    create_thermal_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -349,6 +348,7 @@ class ThermalManager:
             ThermalClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
             in the provided cluster_data.
         """
+
         study_version = StudyVersion.parse(study.version)
         file_study = self._get_file_study(study)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
@@ -357,19 +357,19 @@ class ThermalManager:
         except KeyError:
             raise ThermalClusterNotFound(path, cluster_id) from None
         else:
-            old_properties = create_thermal_properties(study_version, **values)
+            old_config = create_thermal_config(study_version, **values)
 
         # Use Python values to synchronize Config and Form values
         new_values = cluster_data.model_dump(mode="json", by_alias=False, exclude_none=True)
-        new_properties = old_properties.copy(exclude={"id"}, update=new_values)
+        new_config = old_config.copy(exclude={"id"}, update=new_values)
+        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
         data: t.Dict[str, t.Any] = {}
-        for updated_field, updated_value in new_values.items():
-            if updated_field in old_properties.model_fields:
-                field_info = old_properties.model_fields[updated_field]
-                field_name = field_info.alias if field_info.alias else updated_field
-                data[field_name] = updated_value
+        for field_name, field in new_config.model_fields.items():
+            if field_name in new_values:
+                name = field.alias if field.alias else field_name
+                data[name] = new_data[name]
 
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -381,7 +381,7 @@ class ThermalManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = {**new_properties.model_dump(mode="json", by_alias=False), "id": cluster_id}
+        values = {**new_config.model_dump(mode="json", by_alias=False), "id": cluster_id}
         return ThermalClusterOutput.model_validate(values)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
@@ -431,8 +431,9 @@ class ThermalManager:
         Raises:
             ClusterAlreadyExists: If a cluster with the new name already exists in the area.
         """
-        new_id = transform_name_to_id(new_cluster_name)
-        if any(new_id == cluster.id for cluster in self.get_clusters(study, area_id)):
+        new_id = transform_name_to_id(new_cluster_name, lower=False)
+        lower_new_id = new_id.lower()
+        if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
             raise DuplicateThermalCluster(area_id, new_id)
 
         # Cluster duplication
@@ -444,22 +445,23 @@ class ThermalManager:
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
+        lower_source_id = source_id.lower()
         source_paths = [
-            f"input/thermal/series/{area_id}/{source_id}/series",
-            f"input/thermal/prepro/{area_id}/{source_id}/modulation",
-            f"input/thermal/prepro/{area_id}/{source_id}/data",
+            f"input/thermal/series/{area_id}/{lower_source_id}/series",
+            f"input/thermal/prepro/{area_id}/{lower_source_id}/modulation",
+            f"input/thermal/prepro/{area_id}/{lower_source_id}/data",
         ]
         new_paths = [
-            f"input/thermal/series/{area_id}/{new_id}/series",
-            f"input/thermal/prepro/{area_id}/{new_id}/modulation",
-            f"input/thermal/prepro/{area_id}/{new_id}/data",
+            f"input/thermal/series/{area_id}/{lower_new_id}/series",
+            f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
+            f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
         study_version = StudyVersion.parse(study.version)
         if study_version >= STUDY_VERSION_8_7:
-            source_paths.append(f"input/thermal/series/{area_id}/{source_id}/CO2Cost")
-            source_paths.append(f"input/thermal/series/{area_id}/{source_id}/fuelCost")
-            new_paths.append(f"input/thermal/series/{area_id}/{new_id}/CO2Cost")
-            new_paths.append(f"input/thermal/series/{area_id}/{new_id}/fuelCost")
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
+            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
+            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
 
         # Prepare and execute commands
         commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]
@@ -477,7 +479,8 @@ class ThermalManager:
         return ThermalClusterOutput(**new_config.model_dump(mode="json", by_alias=False))
 
     def validate_series(self, study: Study, area_id: str, cluster_id: str) -> bool:
-        thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{cluster_id.lower()}")
+        lower_cluster_id = cluster_id.lower()
+        thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
         series_path = [thermal_cluster_path / "series"]
         if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
             series_path.append(thermal_cluster_path / "CO2Cost")

@@ -13,6 +13,8 @@
 import enum
 import typing
 
+from typing_extensions import override
+
 
 class EnumIgnoreCase(enum.StrEnum):
     """
@@ -35,6 +37,7 @@ class EnumIgnoreCase(enum.StrEnum):
     """
 
     @classmethod
+    @override
     def _missing_(cls, value: object) -> typing.Optional["EnumIgnoreCase"]:
         if isinstance(value, str):
             for member in cls:

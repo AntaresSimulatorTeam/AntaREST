@@ -166,7 +166,7 @@ describe("useMatrix", () => {
   describe("File operations", () => {
     test("should handle file import", async () => {
       const mockFile = new File([""], "test.csv", { type: "text/csv" });
-      vi.mocked(rawStudy.importFile).mockResolvedValue();
+      vi.mocked(rawStudy.uploadFile).mockResolvedValue();
 
       const hook = await setupHook();
 
@@ -174,7 +174,7 @@ describe("useMatrix", () => {
         await hook.result.current.handleUpload(mockFile);
       });
 
-      expect(rawStudy.importFile).toHaveBeenCalledWith({
+      expect(rawStudy.uploadFile).toHaveBeenCalledWith({
         file: mockFile,
         studyId: DATA.studyId,
         path: DATA.url,

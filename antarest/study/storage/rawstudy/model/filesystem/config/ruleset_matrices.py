@@ -15,6 +15,7 @@ import typing as t
 import numpy as np
 import pandas as pd
 import typing_extensions as te
+from typing_extensions import override
 
 SCENARIO_TYPES = {
     "l": "load",
@@ -107,6 +108,7 @@ class RulesetMatrices:
         self.scenarios: _ScenarioMapping = {}
         self._setup()
 
+    @override
     def __str__(self) -> str:
         lines = []
         for symbol, scenario_type in self.scenario_types.items():

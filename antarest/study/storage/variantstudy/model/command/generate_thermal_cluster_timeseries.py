@@ -21,6 +21,7 @@ import pandas as pd
 from antares.tsgen.duration_generator import ProbabilityLaw
 from antares.tsgen.random_generator import MersenneTwisterRNG
 from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluster, TimeseriesGenerator
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
@@ -47,9 +48,11 @@ class GenerateThermalClusterTimeSeries(ICommand):
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
     version: int = 1
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         return CommandOutput(status=True, message="Nothing to do"), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         study_path = study_data.config.study_path
         with tempfile.TemporaryDirectory(suffix=TS_GEN_SUFFIX, prefix=TS_GEN_PREFIX, dir=study_path.parent) as path:
@@ -141,22 +144,27 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     e.args = (f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0],)
                     raise
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value)
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         # Only used inside the cli app that no one uses I believe.
         if not isinstance(other, GenerateThermalClusterTimeSeries):
             return False
         return True
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         # Only used inside the cli app that no one uses I believe.
         raise NotImplementedError()
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         # This is used to get used matrices and not remove them inside the garbage collector loop.
         return []

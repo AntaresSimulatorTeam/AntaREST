@@ -39,7 +39,7 @@ import {
 } from "../../shared/utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
-import { importFile } from "../../../../../services/api/studies/raw";
+import { uploadFile } from "../../../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import usePrompt from "../../../../../hooks/usePrompt";
 import { Aggregate, Column, Operation } from "../../shared/constants";
@@ -251,7 +251,8 @@ export function useMatrix(
 
   const handleUpload = async (file: File) => {
     try {
-      await importFile({ file, studyId, path: url });
+      await uploadFile({ file, studyId, path: url });
+      // TODO: update the API to return the uploaded file data and remove this
       await fetchMatrix();
     } catch (e) {
       enqueueErrorSnackbar(t("matrix.error.import"), e as Error);

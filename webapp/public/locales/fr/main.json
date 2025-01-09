@@ -44,6 +44,7 @@
   "global.date": "Date",
   "global.general": "Général",
   "global.files": "Fichiers",
+  "global.rawFile": "Fichier brut",
   "global.none": "Aucun",
   "global.upload": "Charger",
   "global.key": "Clé",
