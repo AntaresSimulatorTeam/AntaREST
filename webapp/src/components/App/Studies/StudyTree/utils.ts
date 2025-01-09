@@ -162,8 +162,8 @@ async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
     // Under root there're workspaces not subfolders
     return [];
   }
-  if (!path.startsWith("/")) {
-    console.error("path here should start with / ", path);
+  if (!path.startsWith("root/")) {
+    console.error("path here should start with root/ ", path);
     return [];
   }
   // less than 2 parts means we're at the root level
