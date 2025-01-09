@@ -296,16 +296,16 @@ class TaskJobService(ITaskService):
                 type=EventType.TASK_ADDED,
                 payload=TaskEventPayload(
                     id=task.id,
-                    message=custom_event_messages.start
-                    if custom_event_messages is not None
-                    else f"Task {task.id} added",
+                    message=(
+                        custom_event_messages.start if custom_event_messages is not None else f"Task {task.id} added"
+                    ),
                     type=task.type,
                     study_id=task.ref_id,
                 ).model_dump(),
                 permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages, request_params.user)
+        future = self.threadpool.submit(self._run_task, action, task.id, request_params.user, custom_event_messages)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> t.Callable[[Event], t.Awaitable[None]]:
@@ -401,8 +401,8 @@ class TaskJobService(ITaskService):
         self,
         callback: Task,
         task_id: str,
+        jwt_user: JWTUser,
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
-        jwt_user: JWTUser = None,
     ) -> None:
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
@@ -421,9 +421,11 @@ class TaskJobService(ITaskService):
                         type=EventType.TASK_RUNNING,
                         payload=TaskEventPayload(
                             id=task_id,
-                            message=custom_event_messages.running
-                            if custom_event_messages is not None
-                            else f"Task {task_id} is running",
+                            message=(
+                                custom_event_messages.running
+                                if custom_event_messages is not None
+                                else f"Task {task_id} is running"
+                            ),
                             type=task_type,
                             study_id=study_id,
                         ).model_dump(),
