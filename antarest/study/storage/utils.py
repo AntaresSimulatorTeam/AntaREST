@@ -479,6 +479,6 @@ def should_ignore_folder_for_scan(path: Path, filter_in: t.List[str], filter_out
 
     return not (
         path.is_dir()
-        and any([re.search(regex, path.name) for regex in filter_in])
-        and not any([re.search(regex, path.name) for regex in filter_out])
+        and any(re.search(regex, path.name) for regex in filter_in)
+        and not any(re.search(regex, path.name) for regex in filter_out)
     )
