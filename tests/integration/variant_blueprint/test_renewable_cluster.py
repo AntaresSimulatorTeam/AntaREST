@@ -17,7 +17,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from tests.integration.utils import wait_task_completion
 
 
@@ -76,7 +76,7 @@ class TestRenewableCluster:
         area_fr_id = transform_name_to_id("FR")
 
         cluster_fr1 = "Oleron"
-        cluster_fr1_id = transform_name_to_id(cluster_fr1)
+        cluster_fr1_id = transform_name_to_id(cluster_fr1, lower=False)
         args = {
             "area_id": area_fr_id,
             "cluster_name": cluster_fr1_id,
@@ -95,7 +95,7 @@ class TestRenewableCluster:
         res.raise_for_status()
 
         cluster_fr2 = "La_Rochelle"
-        cluster_fr2_id = transform_name_to_id(cluster_fr2)
+        cluster_fr2_id = transform_name_to_id(cluster_fr2, lower=False)
         args = {
             "area_id": area_fr_id,
             "cluster_name": cluster_fr2_id,
@@ -124,9 +124,9 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "wind offshore",
-            "id": "oleron",
-            "name": cluster_fr1.lower(),
+            "group": "Wind Offshore",
+            "id": "Oleron",
+            "name": cluster_fr1,
             "nominalCapacity": 2500.0,
             "tsInterpretation": "power-generation",
             "unitCount": 1,
@@ -141,9 +141,9 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": False,
-            "group": "solar pv",
-            "id": "la_rochelle",
-            "name": cluster_fr2.lower(),
+            "group": "Solar PV",
+            "id": "La_Rochelle",
+            "name": cluster_fr2,
             "nominalCapacity": 3500.0,
             "tsInterpretation": "power-generation",
             "unitCount": 4,
@@ -201,10 +201,10 @@ class TestRenewableCluster:
         area_it_id = transform_name_to_id("IT")
 
         cluster_it1 = "Oléron"
-        cluster_it1_id = transform_name_to_id(cluster_it1)
+        cluster_it1_id = transform_name_to_id(cluster_it1, lower=False)
         args = {
             "area_id": area_it_id,
-            "cluster_name": cluster_it1,
+            "cluster_name": cluster_it1_id,
             "parameters": {
                 "group": "wind offshore",
                 "name": cluster_it1,
@@ -228,9 +228,9 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "wind offshore",
-            "id": "ol ron",
-            "name": cluster_it1.lower(),
+            "group": "Wind Offshore",
+            "id": "Ol ron",
+            "name": cluster_it1,
             "nominalCapacity": 1000.0,
             "tsInterpretation": "production-factor",
             "unitCount": 1,
@@ -274,11 +274,9 @@ class TestRenewableCluster:
                 "list": {
                     cluster_fr1_id: {
                         "group": "wind offshore",
-                        "name": cluster_fr1.lower(),
+                        "name": cluster_fr1,
                         "nominalcapacity": 2500,
                         "ts-interpretation": "power-generation",
-                        "unitcount": 1,
-                        "enabled": True,
                     },
                 }
             },
@@ -286,11 +284,10 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1.lower(),
+                        "name": cluster_it1,
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
-                        "enabled": True,
                     }
                 }
             },
@@ -320,11 +317,10 @@ class TestRenewableCluster:
                 "list": {
                     cluster_it1_id: {
                         "group": "wind offshore",
-                        "name": cluster_it1.lower(),
+                        "name": cluster_it1,
                         "nominalcapacity": 1000,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
-                        "enabled": True,
                     }
                 }
             },

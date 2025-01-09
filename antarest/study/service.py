@@ -30,6 +30,7 @@ from antares.study.version import StudyVersion
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -212,6 +213,7 @@ class TaskProgressRecorder(ICommandListener):
     def __init__(self, notifier: ITaskNotifier) -> None:
         self.notifier = notifier
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return self.notifier.notify_progress(progress)
 
@@ -1598,6 +1600,7 @@ class StudyService:
                         # Can happen with data with only one column. In this case, we don't care about the delimiter.
                         delimiter = "\t"
                     df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+                    df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
                     matrix = df.to_numpy(dtype=np.float64)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(

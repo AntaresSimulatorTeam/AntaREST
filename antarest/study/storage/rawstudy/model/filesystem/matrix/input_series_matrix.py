@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 from numpy import typing as npt
 from pandas.errors import EmptyDataError
+from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
@@ -89,6 +90,7 @@ class InputSeriesMatrix(MatrixNode):
                 final_matrix = pd.DataFrame(self.default_empty)
             return final_matrix
 
+    @override
     def parse_as_json(self, file_path: t.Optional[Path] = None) -> JSON:
         df = self.parse_as_dataframe(file_path)
         stopwatch = StopWatch()
@@ -96,6 +98,7 @@ class InputSeriesMatrix(MatrixNode):
         stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
         return data
 
+    @override
     def check_errors(
         self,
         data: JSON,
@@ -128,6 +131,7 @@ class InputSeriesMatrix(MatrixNode):
         target_path.unlink(missing_ok=True)
         shutil.copy(self._infer_path(), target_path)
 
+    @override
     def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix
         filename = self.config.path.name
@@ -146,3 +150,7 @@ class InputSeriesMatrix(MatrixNode):
         else:
             content = self.config.path.read_bytes()
         return OriginalFile(content=content, suffix=suffix, filename=filename)
+
+    @override
+    def get_default_empty_matrix(self) -> t.Optional[npt.NDArray[np.float64]]:
+        return self.default_empty

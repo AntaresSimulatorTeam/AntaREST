@@ -13,11 +13,12 @@
 import typing as t
 
 from antares.study.version import StudyVersion
-from pydantic import Field, ValidationError
+from pydantic import Field
+from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
@@ -35,6 +36,7 @@ class LocalTSGenerationBehavior(EnumIgnoreCase):
     FORCE_NO_GENERATION = "force no generation"
     FORCE_GENERATION = "force generation"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
@@ -48,6 +50,7 @@ class LawOption(EnumIgnoreCase):
     UNIFORM = "uniform"
     GEOMETRIC = "geometric"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
@@ -58,21 +61,23 @@ class ThermalClusterGroup(EnumIgnoreCase):
     The group `OTHER1` is used by default.
     """
 
-    NUCLEAR = "nuclear"
-    LIGNITE = "lignite"
-    HARD_COAL = "hard coal"
-    GAS = "gas"
-    OIL = "oil"
-    MIXED_FUEL = "mixed fuel"
-    OTHER1 = "other 1"
-    OTHER2 = "other 2"
-    OTHER3 = "other 3"
-    OTHER4 = "other 4"
+    NUCLEAR = "Nuclear"
+    LIGNITE = "Lignite"
+    HARD_COAL = "Hard Coal"
+    GAS = "Gas"
+    OIL = "Oil"
+    MIXED_FUEL = "Mixed Fuel"
+    OTHER1 = "Other 1"
+    OTHER2 = "Other 2"
+    OTHER3 = "Other 3"
+    OTHER4 = "Other 4"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
+    @override
     def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
         """
         Retrieves the default group or the matched group when an unknown value is encountered.
@@ -80,8 +85,10 @@ class ThermalClusterGroup(EnumIgnoreCase):
         if isinstance(value, str):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
-            if any(value.lower() == group.value for group in cls):
+            if any(value.upper() == group.value.upper() for group in cls):
                 return t.cast(ThermalClusterGroup, super()._missing_(value))
+            # If a group is not found, return the default group ('OTHER1' by default).
+            # Note that 'OTHER' is an alias for 'OTHER1'.
             return cls.OTHER1
         return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
 
@@ -328,7 +335,7 @@ class Thermal870Properties(Thermal860Properties):
     )
 
 
-class ThermalConfig(ThermalProperties, LowerCaseIdentifier):
+class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
     """
     Thermal properties with section ID.
 
@@ -349,7 +356,7 @@ class ThermalConfig(ThermalProperties, LowerCaseIdentifier):
     AttributeError: 'ThermalConfig' object has no attribute 'nh3'"""
 
 
-class Thermal860Config(Thermal860Properties, LowerCaseIdentifier):
+class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
     Thermal properties for study in version 860
 
@@ -371,7 +378,7 @@ class Thermal860Config(Thermal860Properties, LowerCaseIdentifier):
     """
 
 
-class Thermal870Config(Thermal870Properties, LowerCaseIdentifier):
+class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
     """
     Thermal properties for study in version 8.7 or above.
 
@@ -402,7 +409,6 @@ class Thermal870Config(Thermal870Properties, LowerCaseIdentifier):
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
 ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
-ThermalPropertiesType = t.Union[Thermal870Properties, Thermal860Properties, ThermalProperties]
 
 
 def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
@@ -421,28 +427,6 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
         return Thermal860Config
     else:
         return ThermalConfig
-
-
-def create_thermal_properties(study_version: StudyVersion, **kwargs: t.Any) -> ThermalPropertiesType:
-    """
-    Factory method to create thermal properties.
-
-    Args:
-        study_version: The version of the study.
-        **kwargs: The properties to be used to initialize the model.
-
-    Returns:
-        The thermal properties.
-
-    Raises:
-        ValueError: If the study version is not supported.
-    """
-    if study_version >= 870:
-        return Thermal870Properties.model_validate(kwargs)
-    elif study_version == 860:
-        return Thermal860Properties.model_validate(kwargs)
-    else:
-        return ThermalProperties.model_validate(kwargs)
 
 
 def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:

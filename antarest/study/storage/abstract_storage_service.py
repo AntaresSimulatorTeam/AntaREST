@@ -18,6 +18,8 @@ from abc import ABC
 from pathlib import Path
 from uuid import uuid4
 
+from typing_extensions import override
+
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -63,6 +65,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self.patch_service = patch_service
         self.cache = cache
 
+    @override
     def patch_update_study_metadata(
         self,
         study: T,
@@ -82,6 +85,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         remove_from_cache(self.cache, study.id)
         return self.get_study_information(study)
 
+    @override
     def get_study_information(
         self,
         study: T,
@@ -129,6 +133,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             tags=[tag.label for tag in study.tags],
         )
 
+    @override
     def get(
         self,
         metadata: T,
@@ -170,6 +175,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         del study
         return data
 
+    @override
     def get_file(
         self,
         metadata: T,
@@ -194,6 +200,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         return file_node.get_file_content()
 
+    @override
     def get_study_sim_result(
         self,
         study: T,
@@ -243,6 +250,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                     )
         return results
 
+    @override
     def import_output(
         self,
         metadata: T,
@@ -302,6 +310,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         return output_full_name
 
+    @override
     def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
         """
         Export and compress the study inside a 7zip file.
@@ -326,6 +335,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
         return target
 
+    @override
     def export_output(self, metadata: T, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
@@ -358,6 +368,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
         return study_additional_data
 
+    @override
     def archive_study_output(self, study: T, output_id: str) -> bool:
         try:
             archive_dir(
@@ -375,6 +386,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
             )
             return False
 
+    @override
     def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
         if not (Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}").exists():
             logger.warning(

@@ -16,7 +16,10 @@ from enum import StrEnum
 from pathlib import Path
 from typing import List, Optional, Union, cast
 
+import numpy as np
 import pandas as pd
+from numpy import typing as npt
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -64,6 +67,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         LazyNode.__init__(self, context, config)
         self.freq = freq
 
+    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,
@@ -72,6 +76,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     ) -> str:
         return f"matrixfile://{self.config.path.name}"
 
+    @override
     def normalize(self) -> None:
         # noinspection SpellCheckingInspection
         """
@@ -95,6 +100,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
             self.config.path.unlink()
 
+    @override
     def denormalize(self) -> None:
         """
         Read the matrix ID from the matrix link, retrieve the original matrix
@@ -114,6 +120,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self.dump(matrix)
         self.get_link_path().unlink()
 
+    @override
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -122,16 +129,25 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
         file_path, tmp_dir = self._get_real_file_path()
-        if not formatted:
-            if file_path.exists():
-                return file_path.read_bytes()
 
+        if formatted:
+            return self.parse_as_json(file_path)
+
+        if not file_path.exists():
             logger.warning(f"Missing file {self.config.path}")
             if tmp_dir:
                 tmp_dir.cleanup()
             return b""
 
-        return self.parse_as_json(file_path)
+        file_content = file_path.read_bytes()
+        if file_content != b"":
+            return file_content
+
+        # If the content is empty, we should return the default matrix to do the same as `parse_as_json()`
+        default_matrix = self.get_default_empty_matrix()
+        if default_matrix is None:
+            return b""
+        return default_matrix.tobytes()
 
     @abstractmethod
     def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
@@ -140,6 +156,14 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_default_empty_matrix(self) -> Optional[npt.NDArray[np.float64]]:
+        """
+        Returns the default matrix to return when the existing one is empty
+        """
+        raise NotImplementedError()
+
+    @override
     def dump(
         self,
         data: Union[bytes, JSON],
