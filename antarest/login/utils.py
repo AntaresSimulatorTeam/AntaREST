@@ -57,7 +57,7 @@ def get_current_user() -> Optional[JWTUser]:
 
 
 @contextlib.contextmanager
-def current_user_context(token: JWTUser) -> t.Generator[JWTUser|None]:
+def current_user_context(token: JWTUser) -> t.Iterator[JWTUser|None]:
     global _current_user
     jwt_user = token
     _current_user.set(jwt_user)

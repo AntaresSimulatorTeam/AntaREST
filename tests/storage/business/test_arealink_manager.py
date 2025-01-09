@@ -86,6 +86,7 @@ def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
     )
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
+
 @current_user_context(token=DEFAULT_ADMIN_USER)
 @with_db_context
 def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
@@ -125,9 +126,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
 
     area_manager.create_area(study, AreaCreationDTO(name="test", type=AreaType.AREA))
     assert len(empty_study.config.areas.keys()) == 1
-    assert (
-        json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
-    )
+    assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
 
     area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
     assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
@@ -176,9 +175,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         RequestParameters(DEFAULT_ADMIN_USER),
     )
     assert (empty_study.config.study_path / "patch.json").exists()
-    assert (
-        json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
-    )
+    assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
 
     area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
     variant_study_service.append_commands.assert_called_with(
