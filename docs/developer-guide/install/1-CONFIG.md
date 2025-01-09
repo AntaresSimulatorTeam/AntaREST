@@ -332,7 +332,7 @@ default:
 
 ## **matrixstore_format**
 
-- **Type:** String, possible values: `tsv` or `hdf` or `parquet`
+- **Type:** String, possible values: `tsv`, `hdf`, `parquet` or `feather`
 - **Default value:** `tsv`
 - **Description:** Matrixstore internal storage format. `tsv` is the Antares studies format but to improve performance
 and to reduce the disk space allocated to these matrices, you can choose other formats supported by the app. 

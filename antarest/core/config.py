@@ -38,6 +38,7 @@ class InternalMatrixFormat(StrEnum):
     TSV = "tsv"
     HDF = "hdf"
     PARQUET = "parquet"
+    FEATHER = "feather"
 
     def load_matrix(self, path: Path) -> npt.NDArray[np.float64]:
         if self == InternalMatrixFormat.TSV or path.stat().st_size == 0:
@@ -47,6 +48,8 @@ class InternalMatrixFormat(StrEnum):
             return df.to_numpy(dtype=np.float64)
         elif self == InternalMatrixFormat.PARQUET:
             return pd.read_parquet(path).to_numpy(dtype=np.float64)
+        elif self == InternalMatrixFormat.FEATHER:
+            return pd.read_feather(path).to_numpy(dtype=np.float64)
         else:
             raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
@@ -57,6 +60,8 @@ class InternalMatrixFormat(StrEnum):
             dataframe.to_hdf(str(path), key="data")
         elif self == InternalMatrixFormat.PARQUET:
             dataframe.to_parquet(path, compression=None)
+        elif self == InternalMatrixFormat.FEATHER:
+            dataframe.to_feather(path)
         else:
             raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
