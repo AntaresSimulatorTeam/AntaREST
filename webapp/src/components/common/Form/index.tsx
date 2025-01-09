@@ -13,7 +13,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef } from "react";
 import {
   DeepPartial,
   FieldPath,
@@ -54,12 +54,12 @@ import {
   toAutoSubmitConfig,
 } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
-import usePrompt from "../../../hooks/usePrompt";
 import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
 import { mergeSxProp } from "../../../utils/muiUtils";
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 
 export interface AutoSubmitConfig {
   enable: boolean;
@@ -132,7 +132,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const { t } = useTranslation();
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
 
-  const [isInProgress, setIsInProgress] = useState(false);
   const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(
     false,
     750,
@@ -246,31 +245,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
     [isSubmitSuccessful],
   );
 
-  // Prevent browser close if a submit is pending
-  useEffect(() => {
-    const listener = (event: BeforeUnloadEvent) => {
-      if (isInProgress) {
-        // eslint-disable-next-line no-param-reassign
-        event.returnValue = t("form.submit.inProgress");
-      } else if (isDirty) {
-        // eslint-disable-next-line no-param-reassign
-        event.returnValue = t("form.changeNotSaved");
-      }
-    };
-
-    window.addEventListener("beforeunload", listener);
-
-    return () => {
-      window.removeEventListener("beforeunload", listener);
-    };
-  }, [t, isInProgress, isDirty]);
+  useFormCloseProtection({ isSubmitting, isDirty });
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
   useEffect(() => setRef(apiRef, formApiPlus));
-
-  usePrompt(t("form.submit.inProgress"), isInProgress);
-  usePrompt(t("form.changeNotSaved"), isDirty && !isInProgress);
 
   ////////////////////////////////////////////////////////////////
   // Submit
@@ -322,9 +301,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
               ? err.response?.data.description
               : err?.toString(),
           });
-        })
-        .finally(() => {
-          setIsInProgress(false);
         });
     }, onInvalid);
 
@@ -334,8 +310,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);
 
   const requestSubmit = () => {
-    setIsInProgress(true);
-
     if (autoSubmitConfig.enable) {
       submitDebounced();
     } else {
