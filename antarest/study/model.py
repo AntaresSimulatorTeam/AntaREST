@@ -333,7 +333,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
     workspace: str
     name: str
     has_children: bool = Field(
-        serialization_alias="hasChildren"
+        alias="hasChildren",
     )  # true when has non study folder children (false when has no children or only study children)
 
     @computed_field(alias="parentPath")

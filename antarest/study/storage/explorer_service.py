@@ -47,7 +47,7 @@ class Explorer:
                 has_children = has_non_study_folder(child)
                 directories.append(
                     NonStudyFolderDTO(
-                        path=child_rel_path, workspace=workspace_name, name=child.name, has_children=has_children
+                        path=child_rel_path, workspace=workspace_name, name=child.name, hasChildren=has_children
                     )
                 )
         return directories
