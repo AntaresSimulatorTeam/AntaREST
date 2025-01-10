@@ -413,14 +413,22 @@ function Form<TFieldValues extends FieldValues, TContext>(
               <>
                 <Tooltip title={t("global.undo")}>
                   <span>
-                    <IconButton size="small" onClick={undo} disabled={!canUndo}>
+                    <IconButton
+                      size="small"
+                      onClick={undo}
+                      disabled={!canUndo || isSubmitting}
+                    >
                       <UndoIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
                 <Tooltip title={t("global.redo")}>
                   <span>
-                    <IconButton size="small" onClick={redo} disabled={!canRedo}>
+                    <IconButton
+                      size="small"
+                      onClick={redo}
+                      disabled={!canRedo || isSubmitting}
+                    >
                       <RedoIcon />
                     </IconButton>
                   </span>
