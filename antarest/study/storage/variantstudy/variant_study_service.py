@@ -49,7 +49,7 @@ from antarest.core.serialization import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this, suppress_exception
+from antarest.core.utils.utils import UUID_PATTERN, assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
@@ -971,20 +971,28 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             task_id = self.generate_task(metadata)
             self.task_service.await_task(task_id, timeout)
             result = self.task_service.status_task(task_id, RequestParameters(DEFAULT_ADMIN_USER))
-            if result.result and result.result.success:
+            if not result.result:
+                raise ValueError("No task result")
+            if result.result.success:
                 # OK, the study has been generated
                 return
-            raise ValueError("No task result or result failed")
+            # The variant generation failed, we have to raise a clear exception.
+            error_msg = result.result.message
+            stripped_msg = error_msg.removeprefix(
+                f"Task {task_id} failed: Unhandled exception 417: Failed to generate variant study {metadata.id}"
+            )
+            final_msg = stripped_msg.splitlines()[0]
+            raise ValueError(final_msg)
 
         except concurrent.futures.TimeoutError as e:
             # Raise a REQUEST_TIMEOUT error (408)
             logger.error(f"⚡ Timeout while generating variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationTimeoutError(f"Timeout while generating {metadata.id}") from None
+            raise VariantGenerationTimeoutError(f"Timeout while generating variant {metadata.id}") from None
 
         except Exception as e:
             # raise a EXPECTATION_FAILED error (417)
             logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating {metadata.id}") from None
+            raise VariantGenerationError(f"Error while generating variant {metadata.id} {e.args[0]}") from None
 
     @staticmethod
     def _get_snapshot_last_executed_command_index(
