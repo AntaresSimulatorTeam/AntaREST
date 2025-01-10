@@ -2,7 +2,7 @@ name: main
 on:
   push:
     branches:
-      - "fake"
+      - "**"
 
 jobs:
   python-lint:
