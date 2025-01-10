@@ -28,7 +28,7 @@ import { SubmitHandlerPlus } from "./Form/types";
 import TableForm from "./TableForm";
 import UsePromiseCond from "./utils/UsePromiseCond";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import EmptyView from "./page/SimpleContent";
+import EmptyView from "./page/EmptyView";
 import { useTranslation } from "react-i18next";
 
 export interface TableModeProps<T extends TableModeType = TableModeType> {

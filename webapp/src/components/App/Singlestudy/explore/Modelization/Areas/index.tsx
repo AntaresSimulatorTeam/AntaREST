@@ -14,7 +14,7 @@
 
 import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../../../../common/types";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/EmptyView";
 import AreaPropsView from "./AreaPropsView";
 import AreasTab from "./AreasTab";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";

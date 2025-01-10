@@ -32,7 +32,7 @@ import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import TableMode from "../../../../common/TableMode";
 import SplitView from "../../../../common/SplitView";
 import ViewWrapper from "../../../../common/page/ViewWrapper";
-import EmptyView from "@/components/common/page/SimpleContent";
+import EmptyView from "@/components/common/page/EmptyView";
 
 function TableModeList() {
   const { t } = useTranslation();
