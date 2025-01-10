@@ -42,14 +42,14 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serialization import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import UUID_PATTERN, assert_this, suppress_exception
+from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
