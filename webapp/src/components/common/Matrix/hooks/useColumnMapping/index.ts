@@ -46,7 +46,7 @@ import { Column } from "../../shared/constants";
  *   - dataToGrid: (dataCoord: Item) => Item
  *     Converts data coordinates to grid coordinates.
  */
-export function useColumnMapping(columns: EnhancedGridColumn[]) {
+export function useColumnMapping(columns: readonly EnhancedGridColumn[]) {
   return useMemo(() => {
     const dataColumnIndices = columns.reduce((acc, col, index) => {
       if (col.type === Column.Number) {

@@ -12,16 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import DataEditor, {
+import {
   GridCellKind,
-  GridColumn,
-  Item,
-  NumberCell,
-  TextCell,
+  type GridColumn,
+  type Item,
+  type NumberCell,
+  type TextCell,
 } from "@glideapps/glide-data-grid";
 import { useMemo } from "react";
 import { darkTheme, readOnlyDarkTheme } from "../../styles";
 import { formatGridNumber } from "../../shared/utils";
+import DataGrid from "@/components/common/DataGrid";
 
 type CellValue = number | string;
 
@@ -81,17 +82,13 @@ export function MatrixGridSynthesis({
 
   return (
     <div style={{ width, height }}>
-      <DataEditor
+      <DataGrid
         theme={theme}
-        width="100%"
         height="100%"
         rows={data.length}
         columns={columns}
         getCellContent={getCellContent}
         rowMarkers="both"
-        smoothScrollX
-        smoothScrollY
-        rowHeight={30}
         getCellsForSelection
       />
     </div>
