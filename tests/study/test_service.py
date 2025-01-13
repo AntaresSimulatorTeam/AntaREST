@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -49,3 +50,30 @@ def test_gest_disk_usage__unknown_format(tmp_path: Path) -> None:
     path.touch()
     with pytest.raises(NotADirectoryError):
         get_disk_usage(path)
+
+
+def test_gest_disk_usage_exceptions(tmp_path: Path) -> None:
+    """
+    This test ensures that the 'get_disk_usage' function handles exceptions appropriately.
+    """
+    with patch("os.scandir", side_effect=FileNotFoundError("File doesn't exist")):
+        disk_usage = get_disk_usage(tmp_path)
+        assert disk_usage == 0
+
+    (tmp_path / "file.txt").touch()
+    with patch("os.DirEntry.is_file", side_effect=FileNotFoundError("File doesn't exist")):
+        disk_usage = get_disk_usage(tmp_path)
+        assert disk_usage == 0
+
+    with patch("os.DirEntry.stat", side_effect=FileNotFoundError("File doesn't exist")):
+        disk_usage = get_disk_usage(tmp_path)
+        assert disk_usage == 0
+
+    (tmp_path / "study").mkdir()
+    with patch("os.DirEntry.is_dir", side_effect=FileNotFoundError("File doesn't exist")):
+        disk_usage = get_disk_usage(tmp_path)
+        assert disk_usage == 0
+
+    with patch("os.scandir", side_effect=PermissionError("Access denied")):
+        disk_usage = get_disk_usage(tmp_path)
+        assert disk_usage == 0
