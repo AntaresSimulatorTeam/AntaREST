@@ -14,6 +14,7 @@ import calendar
 import logging
 import math
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -463,7 +464,7 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
     return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
-def should_ignore_folder_for_scan(path: Path) -> bool:
+def should_ignore_folder_for_scan(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
     if is_aw_no_scan(path):
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
@@ -476,4 +477,8 @@ def should_ignore_folder_for_scan(path: Path) -> bool:
         logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
         return True
 
-    return False
+    return not (
+        path.is_dir()
+        and any(re.search(regex, path.name) for regex in filter_in)
+        and not any(re.search(regex, path.name) for regex in filter_out)
+    )
