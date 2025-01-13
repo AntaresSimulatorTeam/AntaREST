@@ -171,6 +171,11 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
     )
 
 
+buffer = io.BytesIO()
+np.savetxt(buffer, np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760), delimiter="\t")
+expected_min_gen_response = buffer.getvalue()
+
+
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output, formatted",
@@ -264,7 +269,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
         ),
         pytest.param(
             f"/v1/studies/{UUID}/raw?path=input/misc-gen/miscgen-fr",
-            np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760).tobytes(),
+            expected_min_gen_response,
             False,
             id="empty_matrix_unformatted",
         ),
