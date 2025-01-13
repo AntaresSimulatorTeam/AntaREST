@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type { IdType } from "@/common/types";
 import {
   GridCellKind,
   type Item,
@@ -21,17 +20,18 @@ import {
   type FillHandleDirection,
 } from "@glideapps/glide-data-grid";
 import type { DeepPartial } from "react-hook-form";
-import { FormEvent, useCallback, useState } from "react";
-import DataGrid from "./DataGrid";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import DataGrid, { DataGridProps } from "./DataGrid";
 import {
   Box,
   Divider,
   IconButton,
+  setRef,
   SxProps,
   Theme,
   Tooltip,
 } from "@mui/material";
-import useUndo from "use-undo";
+import useUndo, { type Actions } from "use-undo";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
@@ -42,53 +42,88 @@ import * as R from "ramda";
 import { SubmitHandlerPlus } from "./Form/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import { useUpdateEffect } from "react-use";
+import { toError } from "@/utils/fnUtils";
 
-type GridFieldValuesByRow = Record<
-  IdType,
-  Record<string, string | boolean | number>
->;
+type Data = Record<string, Record<string, string | boolean | number>>;
+
+export interface DataGridFormState {
+  isDirty: boolean;
+  isSubmitting: boolean;
+}
+
+export interface DataGridFormApi<TData extends Data> {
+  data: TData;
+  setData: Actions<TData>["set"];
+  formState: DataGridFormState;
+}
 
 export interface DataGridFormProps<
-  TFieldValues extends GridFieldValuesByRow = GridFieldValuesByRow,
+  TData extends Data = Data,
   SubmitReturnValue = unknown,
 > {
-  defaultData: TFieldValues;
-  columns: ReadonlyArray<GridColumn & { id: keyof TFieldValues }>;
+  defaultData: TData;
+  columns: ReadonlyArray<GridColumn & { id: keyof TData[string] }>;
+  rowMarkers?: DataGridProps["rowMarkers"];
   allowedFillDirections?: FillHandleDirection;
-  onSubmit?: (
-    data: SubmitHandlerPlus<TFieldValues>,
+  enableColumnResize?: boolean;
+  onSubmit: (
+    data: SubmitHandlerPlus<TData>,
     event?: React.BaseSyntheticEvent,
   ) => void | Promise<SubmitReturnValue>;
   onSubmitSuccessful?: (
-    data: SubmitHandlerPlus<TFieldValues>,
+    data: SubmitHandlerPlus<TData>,
     submitResult: SubmitReturnValue,
   ) => void;
+  onStateChange?: (state: DataGridFormState) => void;
   sx?: SxProps<Theme>;
   extraActions?: React.ReactNode;
+  apiRef?: React.Ref<DataGridFormApi<TData>>;
 }
 
-function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
+function DataGridForm<TData extends Data>({
   defaultData,
   columns,
   allowedFillDirections = "vertical",
+  enableColumnResize,
+  rowMarkers,
   onSubmit,
   onSubmitSuccessful,
+  onStateChange,
   sx,
   extraActions,
-}: DataGridFormProps<TFieldValues>) {
+  apiRef,
+}: DataGridFormProps<TData>) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedData, setSavedData] = useState(defaultData);
-  const [{ present: data }, { set, undo, redo, canUndo, canRedo }] =
+  const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] =
     useUndo(defaultData);
 
-  const isSubmitAllowed = savedData !== data;
+  // Shallow comparison to check if the data has changed.
+  // So even if the content are the same, we consider it as dirty.
+  // Deep comparison fix the issue but with big data it can be slow.
+  const isDirty = savedData !== data;
 
-  useFormCloseProtection({
-    isSubmitting,
-    isDirty: isSubmitAllowed,
-  });
+  const rowNames = Object.keys(data);
+
+  const formState = useMemo<DataGridFormState>(
+    () => ({
+      isDirty,
+      isSubmitting,
+    }),
+    [isDirty, isSubmitting],
+  );
+
+  useFormCloseProtection({ isSubmitting, isDirty });
+
+  useUpdateEffect(() => onStateChange?.(formState), [formState]);
+
+  useEffect(
+    () => setRef(apiRef, { data, setData, formState }),
+    [apiRef, data, setData, formState],
+  );
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -96,14 +131,13 @@ function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
 
   const getRowAndColumnNames = (location: Item) => {
     const [colIndex, rowIndex] = location;
-    const rowNames = Object.keys(data);
     const columnIds = columns.map((column) => column.id);
 
     return [rowNames[rowIndex], columnIds[colIndex]];
   };
 
   const getDirtyValues = () => {
-    return Object.keys(data).reduce((acc, rowName) => {
+    return rowNames.reduce((acc, rowName) => {
       const rowData = data[rowName];
       const savedRowData = savedData[rowName];
 
@@ -125,11 +159,11 @@ function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
       }
 
       return acc;
-    }, {} as DeepPartial<TFieldValues>);
+    }, {} as DeepPartial<TData>);
   };
 
   ////////////////////////////////////////////////////////////////
-  // Callbacks
+  // Content
   ////////////////////////////////////////////////////////////////
 
   const getCellContent = useCallback<DataEditorProps["getCellContent"]>(
@@ -182,7 +216,7 @@ function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
   ////////////////////////////////////////////////////////////////
 
   const handleCellsEdited: DataEditorProps["onCellsEdited"] = (items) => {
-    set(
+    setData(
       items.reduce((acc, { location, value }) => {
         const [rowName, columnName] = getRowAndColumnNames(location);
         const newValue = value.data;
@@ -204,12 +238,8 @@ function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
     return true;
   };
 
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!onSubmit) {
-      return;
-    }
 
     setIsSubmitting(true);
 
@@ -218,17 +248,15 @@ function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
       dirtyValues: getDirtyValues(),
     };
 
-    Promise.resolve(onSubmit(dataArg, event))
-      .then((submitRes) => {
-        setSavedData(data);
-        onSubmitSuccessful?.(dataArg, submitRes);
-      })
-      .catch((err) => {
-        enqueueErrorSnackbar(t("form.submit.error"), err);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+    try {
+      const submitRes = await onSubmit(dataArg, event);
+      setSavedData(data);
+      onSubmitSuccessful?.(dataArg, submitRes);
+    } catch (err) {
+      enqueueErrorSnackbar(t("form.submit.error"), toError(err));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -247,19 +275,22 @@ function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
         sx,
       )}
       component="form"
-      onSubmit={handleFormSubmit}
+      onSubmit={handleSubmit}
     >
       <DataGrid
         getCellContent={getCellContent}
         columns={columns}
-        rows={Object.keys(data).length}
+        rows={rowNames.length}
         onCellsEdited={handleCellsEdited}
-        rowMarkers={{
-          kind: "clickable-string",
-          getTitle: (index) => Object.keys(data)[index],
-        }}
+        rowMarkers={
+          rowMarkers || {
+            kind: "clickable-string",
+            getTitle: (index) => rowNames[index],
+          }
+        }
         fillHandle
         allowedFillDirections={allowedFillDirections}
+        enableColumnResize={enableColumnResize}
         getCellsForSelection
       />
       <Box
@@ -275,7 +306,7 @@ function DataGridForm<TFieldValues extends GridFieldValuesByRow>({
           <LoadingButton
             type="submit"
             size="small"
-            disabled={!isSubmitAllowed}
+            disabled={!isDirty}
             loading={isSubmitting}
             loadingPosition="start"
             variant="contained"

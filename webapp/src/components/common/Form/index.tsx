@@ -97,7 +97,7 @@ export interface FormProps<
   allowSubmitOnPristine?: boolean;
   enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
-  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext> | undefined>;
+  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
