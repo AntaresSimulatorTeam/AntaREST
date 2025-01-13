@@ -109,7 +109,7 @@ describe("StudyTree Utils", () => {
         ],
       };
 
-      const workspaces: string[] = ["a", "workspace1", "workspace2"];
+      const workspaces = ["a", "workspace1", "workspace2"];
       const result = insertWorkspacesIfNotExist(tree, workspaces);
       expect(result).toEqual(expected);
     });

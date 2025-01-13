@@ -89,8 +89,8 @@ function StudiesList(props: StudiesListProps) {
   const sortLabelId = useRef(uuidv4()).current;
   const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
-  const [confirmFolderScan, setConfirmFolderScan] = useState<boolean>(false);
-  const [isRecursiveScan, setIsRecursiveScan] = useState<boolean>(false);
+  const [confirmFolderScan, setConfirmFolderScan] = useState(false);
+  const [isRecursiveScan, setIsRecursiveScan] = useState(false);
 
   useEffect(() => {
     setFolderList(folder.split("/"));

@@ -26,3 +26,9 @@ export interface NonStudyFolderDTO {
   parentPath: string;
   hasChildren?: boolean;
 }
+
+export interface StudyTreeNodeProps {
+  studyTreeNode: StudyTreeNode;
+  parentId: string;
+  onNodeClick: (id: string, node: StudyTreeNode) => void;
+}

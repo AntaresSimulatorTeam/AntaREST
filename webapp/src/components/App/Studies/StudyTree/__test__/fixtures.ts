@@ -14,7 +14,7 @@
 
 import { StudyMetadata, StudyType } from "@/common/types";
 
-function mkStudyMetadata(folder: string, workspace: string): StudyMetadata {
+function createStudyMetadata(folder: string, workspace: string): StudyMetadata {
   return {
     id: "test-study-id",
     name: "Test Study",
@@ -235,7 +235,7 @@ export const FIXTURES = {
 export const FIXTURES_BUILD_STUDY_TREE = {
   simpleCase: {
     name: "Basic case",
-    studies: [mkStudyMetadata("plop1/plop2/myFolder", "workspace")],
+    studies: [createStudyMetadata("studies/team1/myFolder", "workspace")],
     expected: {
       name: "root",
       path: "",
@@ -245,12 +245,12 @@ export const FIXTURES_BUILD_STUDY_TREE = {
           path: "/workspace",
           children: [
             {
-              name: "plop1",
-              path: "/workspace/plop1",
+              name: "studies",
+              path: "/workspace/studies",
               children: [
                 {
-                  name: "plop2",
-                  path: "/workspace/plop1/plop2",
+                  name: "team1",
+                  path: "/workspace/studies/team1",
                   children: [],
                 },
               ],
@@ -263,10 +263,10 @@ export const FIXTURES_BUILD_STUDY_TREE = {
   multiplieStudies: {
     name: "Multiple studies case",
     studies: [
-      mkStudyMetadata("plop1/plop2/xxx1", "workspace"),
-      mkStudyMetadata("plop1/plop3/xxx2", "workspace"),
-      mkStudyMetadata("plop1/plop4/xxx3", "workspace"),
-      mkStudyMetadata("plouf1/plouf2/xxx4", "workspace2"),
+      createStudyMetadata("studies/team1/study", "workspace"),
+      createStudyMetadata("studies/team2/study", "workspace"),
+      createStudyMetadata("studies/team3/study", "workspace"),
+      createStudyMetadata("archives/team4/study", "workspace2"),
     ],
     expected: {
       name: "root",
@@ -277,22 +277,22 @@ export const FIXTURES_BUILD_STUDY_TREE = {
           path: "/workspace",
           children: [
             {
-              name: "plop1",
-              path: "/workspace/plop1",
+              name: "studies",
+              path: "/workspace/studies",
               children: [
                 {
-                  name: "plop2",
-                  path: "/workspace/plop1/plop2",
+                  name: "team1",
+                  path: "/workspace/studies/team1",
                   children: [],
                 },
                 {
-                  name: "plop3",
-                  path: "/workspace/plop1/plop3",
+                  name: "team2",
+                  path: "/workspace/studies/team2",
                   children: [],
                 },
                 {
-                  name: "plop4",
-                  path: "/workspace/plop1/plop4",
+                  name: "team3",
+                  path: "/workspace/studies/team3",
                   children: [],
                 },
               ],
@@ -304,12 +304,12 @@ export const FIXTURES_BUILD_STUDY_TREE = {
           path: "/workspace2",
           children: [
             {
-              name: "plouf1",
-              path: "/workspace2/plouf1",
+              name: "archives",
+              path: "/workspace2/archives",
               children: [
                 {
-                  name: "plouf2",
-                  path: "/workspace2/plouf1/plouf2",
+                  name: "team4",
+                  path: "/workspace2/archives/team4",
                   children: [],
                 },
               ],

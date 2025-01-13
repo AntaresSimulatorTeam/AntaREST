@@ -17,7 +17,6 @@ import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import { updateStudyFilters } from "../../../../redux/ducks/studies";
-import TreeItemEnhanced from "../../../common/TreeItemEnhanced";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import * as R from "ramda";
@@ -27,6 +26,7 @@ import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 import { fetchAndInsertSubfolders, fetchAndInsertWorkspaces } from "./utils";
 import { useTranslation } from "react-i18next";
 import { toError } from "@/utils/fnUtils";
+import StudyTreeNodeComponent from "./StudyTreeNode";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
@@ -129,41 +129,6 @@ function StudyTree() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  const buildTree = (children: StudyTreeNode[], parentId?: string) => {
-    return children.map((child) => {
-      const shouldDisplayLoading =
-        child.hasChildren && child.children.length === 0;
-      const id = parentId ? `${parentId}/${child.name}` : child.name;
-
-      if (shouldDisplayLoading) {
-        return (
-          <TreeItemEnhanced
-            key={id}
-            itemId={id}
-            label={child.name}
-            onClick={() => handleTreeItemClick(id, child)}
-          >
-            <TreeItemEnhanced
-              key={id + "loading"}
-              itemId={id + "loading"}
-              label={t("studies.tree.fetchFolderLoading")}
-            />
-          </TreeItemEnhanced>
-        );
-      }
-      return (
-        <TreeItemEnhanced
-          key={id}
-          itemId={id}
-          label={child.name}
-          onClick={() => handleTreeItemClick(id, child)}
-        >
-          {buildTree(child.children, id)}
-        </TreeItemEnhanced>
-      );
-    });
-  };
-
   return (
     <SimpleTreeView
       defaultExpandedItems={[...getParentPaths(folder), folder]}
@@ -177,7 +142,11 @@ function StudyTree() {
         overflowX: "hidden",
       }}
     >
-      {buildTree([studiesTree])}
+      <StudyTreeNodeComponent
+        studyTreeNode={studiesTree}
+        parentId=""
+        onNodeClick={handleTreeItemClick}
+      />
     </SimpleTreeView>
   );
 }

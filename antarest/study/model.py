@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, Field, PlainSerializer, computed_field, field_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -345,7 +345,9 @@ class NonStudyFolderDTO(AntaresBaseModel):
     name: str
     has_children: bool = Field(
         alias="hasChildren",
-    )  # true when has non study folder children (false when has no children or only study children)
+    )  # true when has at least one non-study-folder children
+
+    model_config = ConfigDict(populate_by_name=True)
 
     @computed_field(alias="parentPath")
     def parent_path(self) -> Path:
