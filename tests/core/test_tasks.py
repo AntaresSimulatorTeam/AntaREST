@@ -610,7 +610,7 @@ nominalcapacity = 14.0
 @with_db_context
 def test_task_user(core_config: Config, event_bus: IEventBus):
     """
-        Check if the user who submit a task is actually the owner of this task.
+    Check if the user who submit a task is actually the owner of this task.
     """
     # Create a user who has no admin rights
     regular_user = User(id=99, name="regular")
