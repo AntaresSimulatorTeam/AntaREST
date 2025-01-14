@@ -80,7 +80,7 @@ def test_gest_disk_usage_exceptions(tmp_path: Path) -> None:
         disk_usage = get_disk_usage(tmp_path)
         assert disk_usage == 0
 
-    # Mocks the case where the 2nd file raises an exception. We should have the first file size in the result
-    with patch("os.DirEntry.is_file", side_effect=[False, True, False, FileNotFoundError("File doesn't exist")]):
+    # Mocks the case where the first file raises an exception. We should see the second file size in the result
+    with patch("os.DirEntry.is_file", side_effect=[False, FileNotFoundError("File doesn't exist"), False, True]):
         disk_usage = get_disk_usage(tmp_path)
         assert disk_usage == 2
