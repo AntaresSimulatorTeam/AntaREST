@@ -45,6 +45,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
+from antarest.login.utils import get_current_user
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
@@ -627,12 +628,14 @@ def test_task_user(core_config: Config, event_bus: IEventBus):
     def action_task(notifier: ITaskNotifier) -> TaskResult:
         notifier.notify_message("start")
 
-        print("task operating ...")
+        # get current user
+        current_user = get_current_user()
 
         notifier.notify_message("end")
-        return TaskResult(success=True, message="success", return_value="success")
+        # must set the task 'result' field at regular_user.id
+        return TaskResult(success=True, message="success", return_value=str(current_user.id))
 
-    task = task_job_service.add_task(
+    result = task_job_service.add_task(
         action=action_task,
         name="task_test_2",
         task_type=TaskType.SCAN,
@@ -642,10 +645,11 @@ def test_task_user(core_config: Config, event_bus: IEventBus):
         request_params=RequestParameters(jwt_user),
     )
 
-    task_job_service.await_task(task, 10)
+    task_job_service.await_task(result, 10)
 
     # Check whether the owner is the created user and not the admin one
     task_list = task_job_service.list_tasks(TaskListFilter(), RequestParameters(jwt_user))
     assert len(task_list) == 1
     assert task_list[0].owner != DEFAULT_ADMIN_USER.id
     assert task_list[0].owner == jwt_user.id
+    assert task_list[0].result == jwt_user.id
