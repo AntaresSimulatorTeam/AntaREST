@@ -37,18 +37,19 @@ class CurrentUserMiddleware(BaseHTTPMiddleware):
     @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         global _current_user
-        auth_jwt = AuthJWT(request)
 
         try:
-            jwt_user = self.auth.get_current_user(auth_jwt)  # fail when no cookies provided
-        except AuthJWTException:
-            # fall into this block in testing context
+            auth_jwt = AuthJWT(request)
+            # TODO: here we turn the user token into a jwt_user object.
+            # this process exists in other places and must be done once instead
+            jwt_user = self.auth.get_current_user(auth_jwt)  # fail when no cookies are provided
+        except Exception:
             jwt_user = None
 
         _current_user.set(jwt_user)
 
-        response = await call_next(request)
-        return response
+        with current_user_context(jwt_user):
+            return await call_next(request)
 
 
 def get_current_user() -> Optional[JWTUser]:
@@ -59,10 +60,8 @@ def get_current_user() -> Optional[JWTUser]:
 @contextlib.contextmanager
 def current_user_context(token: JWTUser) -> t.Iterator[JWTUser | None]:
     global _current_user
-    jwt_user = token
-    _current_user.set(jwt_user)
+    _current_user.set(token)
 
-    try:
-        yield _current_user.get()
-    finally:
-        _current_user.set(None)
+    yield _current_user.get()
+
+    _current_user.set(None)

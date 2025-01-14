@@ -26,6 +26,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
@@ -139,6 +140,9 @@ class TestVariantStudyService:
         db.session.add(user)
         db.session.commit()
 
+        # define user token
+        jwt_user = Mock(spec=JWTUser, id=user.id, impersonator=user.id, is_site_admin=Mock(return_value=True))
+
         # noinspection PyArgumentList
         group = Group(id="my-group", name="group")
         db.session.add(group)
@@ -173,7 +177,7 @@ class TestVariantStudyService:
             "My Variant Study",
             params=Mock(
                 spec=RequestParameters,
-                user=Mock(impersonator=user.id, is_site_admin=Mock(return_value=True)),
+                user=jwt_user,
             ),
         )
 
@@ -212,7 +216,7 @@ class TestVariantStudyService:
             study_version=study_version,
         )
 
-        with patch("antarest.study.business.utils.get_current_user", return_value=DEFAULT_ADMIN_USER):
+        with current_user_context(jwt_user):
             execute_or_add_commands(
                 variant_study,
                 file_study,
