@@ -280,9 +280,22 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
-MONTHS = calendar.month_name[1:]
+MONTHS = {
+    "January": 1,
+    "February": 2,
+    "March": 3,
+    "April": 4,
+    "May": 5,
+    "June": 6,
+    "July": 7,
+    "August": 8,
+    "September": 9,
+    "October": 10,
+    "November": 11,
+    "December": 12,
+}
 
-DAY_NAMES = calendar.day_name[:]
+DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
 def get_start_date(
@@ -307,7 +320,7 @@ def get_start_date(
     start_offset = t.cast(int, config.get("simulation.start"))
     end = t.cast(int, config.get("simulation.end"))
 
-    starting_month_index = MONTHS.index(starting_month.title()) + 1
+    starting_month_index = MONTHS[starting_month.title()]
     starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
