@@ -652,4 +652,4 @@ def test_task_user(core_config: Config, event_bus: IEventBus):
     assert len(task_list) == 1
     assert task_list[0].owner != DEFAULT_ADMIN_USER.id
     assert task_list[0].owner == jwt_user.id
-    assert task_list[0].result == jwt_user.id
+    assert task_list[0].result.return_value == str(jwt_user.id)
