@@ -147,7 +147,9 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         default_matrix = self.get_default_empty_matrix()
         if default_matrix is None:
             return b""
-        return default_matrix.tobytes()
+        buffer = io.BytesIO()
+        np.savetxt(buffer, default_matrix, delimiter="\t")
+        return buffer.getvalue()
 
     @abstractmethod
     def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
