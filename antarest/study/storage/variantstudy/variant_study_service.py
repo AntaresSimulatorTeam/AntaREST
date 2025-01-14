@@ -978,11 +978,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 return
             # The variant generation failed, we have to raise a clear exception.
             error_msg = result.result.message
-            stripped_msg = error_msg.removeprefix(
-                f"Task {task_id} failed: Unhandled exception 417: Failed to generate variant study {metadata.id}"
-            )
-            final_msg = stripped_msg.splitlines()[0]
-            raise ValueError(final_msg)
+            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {metadata.id}")
+            raise ValueError(stripped_msg)
 
         except concurrent.futures.TimeoutError as e:
             # Raise a REQUEST_TIMEOUT error (408)
@@ -992,7 +989,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         except Exception as e:
             # raise a EXPECTATION_FAILED error (417)
             logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {metadata.id} {e.args[0]}") from None
+            raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
 
     @staticmethod
     def _get_snapshot_last_executed_command_index(
