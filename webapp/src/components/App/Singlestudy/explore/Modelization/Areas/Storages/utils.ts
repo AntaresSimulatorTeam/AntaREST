@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata, Area } from "../../../../../../../common/types";
+import type { StudyMetadata, Area } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
@@ -70,10 +70,8 @@ export function getStoragesTotals(storages: Storage[]) {
   );
 }
 
-const getStoragesUrl = (
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-): string => `/v1/studies/${studyId}/areas/${areaId}/storages`;
+const getStoragesUrl = (studyId: StudyMetadata["id"], areaId: Area["name"]): string =>
+  `/v1/studies/${studyId}/areas/${areaId}/storages`;
 
 const getStorageUrl = (
   studyId: StudyMetadata["id"],
@@ -85,10 +83,7 @@ const getStorageUrl = (
 // API
 ////////////////////////////////////////////////////////////////
 
-export async function getStorages(
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-) {
+export async function getStorages(studyId: StudyMetadata["id"], areaId: Area["name"]) {
   const res = await client.get<Storage[]>(getStoragesUrl(studyId, areaId));
   return res.data;
 }
@@ -98,9 +93,7 @@ export async function getStorage(
   areaId: Area["name"],
   storageId: Storage["id"],
 ) {
-  const res = await client.get<Storage>(
-    getStorageUrl(studyId, areaId, storageId),
-  );
+  const res = await client.get<Storage>(getStorageUrl(studyId, areaId, storageId));
   return res.data;
 }
 
@@ -110,10 +103,7 @@ export async function updateStorage(
   storageId: Storage["id"],
   data: Partial<Storage>,
 ) {
-  const res = await client.patch<Storage>(
-    getStorageUrl(studyId, areaId, storageId),
-    data,
-  );
+  const res = await client.patch<Storage>(getStorageUrl(studyId, areaId, storageId), data);
   return res.data;
 }
 

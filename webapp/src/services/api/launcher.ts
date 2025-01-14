@@ -15,8 +15,6 @@
 import client from "./client";
 
 export async function getJobProgress(param: { id: string }) {
-  const res = await client.get<number>(
-    `/v1/launcher/jobs/${param.id}/progress`,
-  );
+  const res = await client.get<number>(`/v1/launcher/jobs/${param.id}/progress`);
   return res.data;
 }

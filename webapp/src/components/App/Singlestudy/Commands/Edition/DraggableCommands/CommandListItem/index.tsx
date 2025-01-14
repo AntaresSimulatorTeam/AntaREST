@@ -13,9 +13,9 @@
  */
 
 // @flow
-import { CSSProperties, useState } from "react";
-import { DraggableProvided } from "react-beautiful-dnd";
-import ReactJson, { InteractionProps } from "react-json-view";
+import { useState } from "react";
+import type { DraggableProvided } from "react-beautiful-dnd";
+import ReactJson, { type InteractionProps } from "react-json-view";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
@@ -28,9 +28,9 @@ import {
   styled,
   Typography,
 } from "@mui/material";
-import { CommandItem } from "../../commandTypes";
+import type { CommandItem } from "../../commandTypes";
 import CommandImportButton from "../CommandImportButton";
-import { CommandResultDTO } from "../../../../../../../common/types";
+import type { CommandResultDTO } from "../../../../../../../common/types";
 import LogModal from "../../../../../../common/LogModal";
 import {
   detailsStyle,
@@ -56,7 +56,7 @@ export const Item = styled(Box)(({ theme }) => ({
 
 interface StyleType {
   provided: DraggableProvided;
-  style: CSSProperties;
+  style: React.CSSProperties;
   isDragging: boolean;
 }
 function getStyle({ provided, style, isDragging }: StyleType) {
@@ -72,9 +72,7 @@ function getStyle({ provided, style, isDragging }: StyleType) {
   const marginBottom = 8;
   const withSpacing = {
     ...combined,
-    height: isDragging
-      ? combined.height
-      : (combined.height as number) - marginBottom,
+    height: isDragging ? combined.height : (combined.height as number) - marginBottom,
     marginBottom,
   };
   return withSpacing;
@@ -83,7 +81,7 @@ function getStyle({ provided, style, isDragging }: StyleType) {
 interface PropsType {
   provided: DraggableProvided;
   item: CommandItem;
-  style: CSSProperties;
+  style: React.CSSProperties;
   isDragging: boolean;
   index: number;
   generationStatus: boolean;
@@ -128,7 +126,7 @@ function CommandListItem({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setJsonData(json as any);
       await onCommandImport(index, json);
-    } catch (e) {
+    } catch {
       setJsonData(oldJson);
     }
   };
@@ -144,20 +142,14 @@ function CommandListItem({
     }
     return (
       <>
-        {!generationStatus && (
-          <StyledDeleteIcon onClick={() => onDelete(index)} />
-        )}
+        {!generationStatus && <StyledDeleteIcon onClick={() => onDelete(index)} />}
         {item.results !== undefined && (
           <InfoIcon
             sx={{
               ...headerIconStyle,
-              color: (item.results as CommandResultDTO).success
-                ? "success.main"
-                : "error.main",
+              color: (item.results as CommandResultDTO).success ? "success.main" : "error.main",
               "&:header": {
-                color: (item.results as CommandResultDTO).success
-                  ? "success.dark"
-                  : "error.dark",
+                color: (item.results as CommandResultDTO).success ? "success.dark" : "error.dark",
               },
             }}
             onClick={() => setLogModalOpen(true)}
@@ -176,10 +168,7 @@ function CommandListItem({
       onTopVisible={expandedIndex === index}
     >
       <Item>
-        <DraggableAccorderon
-          isDragging={isDragging}
-          expanded={expandedIndex === index}
-        >
+        <DraggableAccorderon isDragging={isDragging} expanded={expandedIndex === index}>
           <AccordionSummary
             expandIcon={<ExpandMore />}
             aria-controls="panel1a-content"
@@ -195,14 +184,9 @@ function CommandListItem({
             <Box sx={{ ...detailsStyle }}>
               <Header>
                 {item.updated && (
-                  <SaveOutlinedIcon
-                    sx={{ ...headerIconStyle }}
-                    onClick={() => onSave(index)}
-                  />
+                  <SaveOutlinedIcon sx={{ ...headerIconStyle }} onClick={() => onSave(index)} />
                 )}
-                {!generationStatus && (
-                  <CommandImportButton onImport={onImport} />
-                )}
+                {!generationStatus && <CommandImportButton onImport={onImport} />}
                 {!generationStatus && (
                   <CloudDownloadOutlinedIcon
                     sx={{ ...headerIconStyle }}

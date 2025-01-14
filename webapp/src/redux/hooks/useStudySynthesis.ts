@@ -14,27 +14,23 @@
 
 import { useState } from "react";
 import { useAsync } from "react-use";
-import { StudyMetadata } from "../../common/types";
-import { AppState } from "../ducks";
+import type { StudyMetadata } from "../../common/types";
+import type { AppState } from "../ducks";
 import { createStudySynthesis } from "../ducks/studySyntheses";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 import { getStudySynthesis } from "../selectors";
 import { PromiseStatus, type TPromiseStatus } from "../../hooks/usePromise";
-import { Response } from "../../components/common/utils/UsePromiseCond";
+import type { Response } from "../../components/common/utils/UsePromiseCond";
 
 export interface UseStudySynthesisProps<T> {
   studyId: StudyMetadata["id"];
   selector?: (state: AppState, studyId: StudyMetadata["id"]) => T;
 }
 
-export default function useStudySynthesis<T>(
-  props: UseStudySynthesisProps<T>,
-): Response<T> {
+export default function useStudySynthesis<T>(props: UseStudySynthesisProps<T>): Response<T> {
   const { studyId, selector } = props;
-  const isSynthesisExist = useAppSelector(
-    (state) => !!getStudySynthesis(state, studyId),
-  );
+  const isSynthesisExist = useAppSelector((state) => !!getStudySynthesis(state, studyId));
   const data = useAppSelector((state) =>
     isSynthesisExist && selector ? selector(state, studyId) : undefined,
   );

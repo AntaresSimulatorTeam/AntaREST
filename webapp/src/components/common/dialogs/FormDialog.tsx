@@ -15,23 +15,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@mui/material";
 import { useId, useState } from "react";
-import { FieldValues, FormState } from "react-hook-form";
+import type { FieldValues, FormState } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
 import * as RA from "ramda-adjunct";
 import SaveIcon from "@mui/icons-material/Save";
-import BasicDialog, { BasicDialogProps } from "./BasicDialog";
-import Form, { FormProps } from "../Form";
+import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
+import Form, { type FormProps } from "../Form";
 
-type SuperType<
-  TFieldValues extends FieldValues,
-  TContext,
-  SubmitReturnValue,
-> = Omit<BasicDialogProps, "onSubmit" | "onInvalid" | "children"> &
-  Omit<
-    FormProps<TFieldValues, TContext, SubmitReturnValue>,
-    "hideSubmitButton"
-  >;
+type SuperType<TFieldValues extends FieldValues, TContext, SubmitReturnValue> = Omit<
+  BasicDialogProps,
+  "onSubmit" | "onInvalid" | "children"
+> &
+  Omit<FormProps<TFieldValues, TContext, SubmitReturnValue>, "hideSubmitButton">;
 
 export interface FormDialogProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -45,11 +41,9 @@ export interface FormDialogProps<
 
 // TODO: `formState.isSubmitting` doesn't update when auto submit enabled
 
-function FormDialog<
-  TFieldValues extends FieldValues,
-  TContext,
-  SubmitReturnValue,
->(props: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>) {
+function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValue>(
+  props: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>,
+) {
   const {
     config,
     onSubmit,
@@ -126,13 +120,7 @@ function FormDialog<
               disabled={!isSubmitAllowed}
               loading={isSubmitting}
               loadingPosition="start"
-              startIcon={
-                RA.isNotUndefined(submitButtonIcon) ? (
-                  submitButtonIcon
-                ) : (
-                  <SaveIcon />
-                )
-              }
+              startIcon={RA.isNotUndefined(submitButtonIcon) ? submitButtonIcon : <SaveIcon />}
             >
               {submitButtonText || t("global.save")}
             </LoadingButton>

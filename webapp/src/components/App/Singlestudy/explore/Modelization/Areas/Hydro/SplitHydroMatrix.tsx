@@ -13,9 +13,9 @@
  */
 
 import { Box } from "@mui/material";
-import SplitView, { SplitViewProps } from "../../../../../../common/SplitView";
+import SplitView, { type SplitViewProps } from "../../../../../../common/SplitView";
 import HydroMatrix from "./HydroMatrix";
-import { HydroMatrixType } from "./utils";
+import type { HydroMatrixType } from "./utils";
 
 interface Props {
   types: [HydroMatrixType, HydroMatrixType];
@@ -32,11 +32,7 @@ function SplitHydroMatrix({ types, direction, sizes, form: Form }: Props) {
           <Form />
         </Box>
       )}
-      <SplitView
-        id={`hydro-${types[0]}-${types[1]}`}
-        direction={direction}
-        sizes={sizes}
-      >
+      <SplitView id={`hydro-${types[0]}-${types[1]}`} direction={direction} sizes={sizes}>
         <HydroMatrix type={types[0]} />
         <HydroMatrix type={types[1]} />
       </SplitView>

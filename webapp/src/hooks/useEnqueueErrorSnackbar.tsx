@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { ProviderContext, useSnackbar } from "notistack";
+import { useSnackbar, type ProviderContext } from "notistack";
 import { useCallback } from "react";
-import { L } from "ts-toolbelt";
+import type { L } from "ts-toolbelt";
 import SnackErrorMessage from "../components/common/SnackErrorMessage";
 
 type EnqueueErrorType = ProviderContext["enqueueSnackbar"];
@@ -32,9 +32,7 @@ function useEnqueueErrorSnackbar(): EnqueueErrorSnackbarType {
       return enqueueSnackbar(message, {
         variant: "error",
         persist: true,
-        content: (key, msg) => (
-          <SnackErrorMessage id={key} message={msg} details={details} />
-        ),
+        content: (key, msg) => <SnackErrorMessage id={key} message={msg} details={details} />,
       });
     },
     [enqueueSnackbar],

@@ -17,23 +17,14 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import {
-  GroupDTO,
-  RoleType,
-  UserDetailsDTO,
-} from "../../../../../common/types";
+import type { GroupDTO, RoleType, UserDetailsDTO } from "../../../../../common/types";
 import { createRole, deleteUserRoles } from "../../../../../services/api/user";
-import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
-import { UserEdit } from "..";
+import UserFormDialog, { type UserFormDialogProps } from "./UserFormDialog";
+import type { UserEdit } from "..";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 
-type InheritPropsToOmit =
-  | "title"
-  | "titleIcon"
-  | "defaultValues"
-  | "onSubmit"
-  | "onCancel";
+type InheritPropsToOmit = "title" | "titleIcon" | "defaultValues" | "onSubmit" | "onCancel";
 
 interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
   user: UserDetailsDTO;
@@ -43,8 +34,7 @@ interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
 }
 
 function UpdateUserDialog(props: Props) {
-  const { user, closeDialog, editUser, reloadFetchUsers, ...dialogProps } =
-    props;
+  const { user, closeDialog, editUser, reloadFetchUsers, ...dialogProps } = props;
   const { t } = useTranslation();
   const mounted = usePromiseWrapper();
   const { enqueueSnackbar } = useSnackbar();
@@ -75,13 +65,12 @@ function UpdateUserDialog(props: Props) {
     try {
       await mounted(deleteUserRoles(user.id));
 
-      const promises = permissions.map(
-        (perm: { group: GroupDTO; type: RoleType }) =>
-          createRole({
-            group_id: perm.group.id,
-            type: perm.type,
-            identity_id: user.id,
-          }),
+      const promises = permissions.map((perm: { group: GroupDTO; type: RoleType }) =>
+        createRole({
+          group_id: perm.group.id,
+          type: perm.type,
+          identity_id: user.id,
+        }),
       );
 
       const res = await mounted(Promise.all(promises));
@@ -102,10 +91,7 @@ function UpdateUserDialog(props: Props) {
       // Because we cannot recover roles eventually deleted/created
       reloadFetchUsers();
 
-      enqueueErrorSnackbar(
-        t("settings.error.userRolesSave", { 0: user.name }),
-        e as Error,
-      );
+      enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: user.name }), e as Error);
     }
 
     closeDialog();

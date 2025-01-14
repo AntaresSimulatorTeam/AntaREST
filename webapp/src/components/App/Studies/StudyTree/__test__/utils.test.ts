@@ -13,22 +13,15 @@
  */
 
 import { FIXTURES, FIXTURES_BUILD_STUDY_TREE } from "./fixtures";
-import {
-  buildStudyTree,
-  insertFoldersIfNotExist,
-  insertWorkspacesIfNotExist,
-} from "../utils";
-import { NonStudyFolderDTO, StudyTreeNode } from "../types";
+import { buildStudyTree, insertFoldersIfNotExist, insertWorkspacesIfNotExist } from "../utils";
+import type { NonStudyFolderDTO, StudyTreeNode } from "../types";
 
 describe("StudyTree Utils", () => {
   describe("mergeStudyTreeAndFolders", () => {
-    test.each(Object.values(FIXTURES))(
-      "$name",
-      ({ studyTree, folders, expected }) => {
-        const result = insertFoldersIfNotExist(studyTree, folders);
-        expect(result).toEqual(expected);
-      },
-    );
+    test.each(Object.values(FIXTURES))("$name", ({ studyTree, folders, expected }) => {
+      const result = insertFoldersIfNotExist(studyTree, folders);
+      expect(result).toEqual(expected);
+    });
 
     test("should handle empty study tree", () => {
       const emptyTree: StudyTreeNode = {
@@ -114,12 +107,9 @@ describe("StudyTree Utils", () => {
       expect(result).toEqual(expected);
     });
 
-    test.each(Object.values(FIXTURES_BUILD_STUDY_TREE))(
-      "$name",
-      ({ studies, expected }) => {
-        const result = buildStudyTree(studies);
-        expect(result).toEqual(expected);
-      },
-    );
+    test.each(Object.values(FIXTURES_BUILD_STUDY_TREE))("$name", ({ studies, expected }) => {
+      const result = buildStudyTree(studies);
+      expect(result).toEqual(expected);
+    });
   });
 });

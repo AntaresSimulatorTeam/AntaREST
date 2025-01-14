@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { O } from "ts-toolbelt";
-import { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
-import { StudyMetadata } from "@/common/types";
-import { PartialExceptFor } from "@/utils/tsUtils";
+import type { O } from "ts-toolbelt";
+import type { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
+import type { StudyMetadata } from "@/common/types";
+import type { PartialExceptFor } from "@/utils/tsUtils";
 
 export type TTransmissionCapacity = O.UnionOf<typeof TransmissionCapacity>;
 
@@ -42,8 +42,7 @@ export interface LinkDTO {
   filterYearByYear?: string;
 }
 
-export interface CreateLinkParams
-  extends PartialExceptFor<LinkDTO, "area1" | "area2"> {
+export interface CreateLinkParams extends PartialExceptFor<LinkDTO, "area1" | "area2"> {
   studyId: StudyMetadata["id"];
 }
 

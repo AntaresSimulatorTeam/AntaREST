@@ -19,10 +19,10 @@ import type {
   LaunchJobProgressDTO,
   StudyMetadata,
 } from "@/common/types";
-import { WsEventType } from "./constants";
-import { O } from "ts-toolbelt";
-import { FileDownloadDTO } from "../api/downloads";
-import { TaskDTO, TTaskType } from "../api/tasks/types";
+import type { WsEventType } from "./constants";
+import type { O } from "ts-toolbelt";
+import type { FileDownloadDTO } from "../api/downloads";
+import type { TaskDTO, TTaskType } from "../api/tasks/types";
 
 /**
  * Copyright (c) 2024, RTE (https://www.rte-france.com)

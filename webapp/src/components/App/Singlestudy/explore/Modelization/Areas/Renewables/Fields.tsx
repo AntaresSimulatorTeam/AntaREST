@@ -19,11 +19,7 @@ import StringFE from "../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
-import {
-  RENEWABLE_GROUPS,
-  RenewableCluster,
-  TS_INTERPRETATION_OPTIONS,
-} from "./utils";
+import { RENEWABLE_GROUPS, TS_INTERPRETATION_OPTIONS, type RenewableCluster } from "./utils";
 
 function Fields() {
   const [t] = useTranslation();
@@ -36,12 +32,7 @@ function Fields() {
   return (
     <>
       <Fieldset legend={t("global.general")}>
-        <StringFE
-          label={t("global.name")}
-          name="name"
-          control={control}
-          disabled
-        />
+        <StringFE label={t("global.name")} name="name" control={control} disabled />
         <SelectFE
           label={t("global.group")}
           name="group"

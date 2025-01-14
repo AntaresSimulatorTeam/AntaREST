@@ -13,14 +13,14 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
   getOptimizationFormFields,
-  OptimizationFormFields,
   setOptimizationFormFields,
+  type OptimizationFormFields,
 } from "./utils";
 
 function Optimization() {
@@ -30,9 +30,7 @@ function Optimization() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<OptimizationFormFields>,
-  ) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<OptimizationFormFields>) => {
     return setOptimizationFormFields(study.id, data.dirtyValues);
   };
 

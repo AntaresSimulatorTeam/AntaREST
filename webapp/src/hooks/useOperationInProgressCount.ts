@@ -29,9 +29,7 @@ function useOperationInProgressCount() {
     delete: 0,
   });
 
-  const makeOperationMethods = (
-    operation: keyof typeof opsInProgressCount,
-  ) => ({
+  const makeOperationMethods = (operation: keyof typeof opsInProgressCount) => ({
     increment: (number = 1) => {
       setOpsInProgressCount((prev) => ({
         ...prev,

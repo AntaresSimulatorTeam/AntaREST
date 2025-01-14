@@ -13,14 +13,14 @@
  */
 
 import { useState } from "react";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box, Tooltip } from "@mui/material";
 import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { getStudyJobLog } from "../../../services/api/study";
 import LogModal from "../../common/LogModal";
-import { LaunchJob } from "../../../common/types";
+import type { LaunchJob } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 
 interface PropsType {
@@ -36,8 +36,7 @@ function LaunchJobLogView(props: PropsType) {
   const [jobIdDetail, setJobIdDetail] = useState<string>();
   const [followLogs, setFollowLogs] = useState<boolean>(false);
   const [logModalContent, setLogModalContent] = useState<string | undefined>();
-  const [logModalContentLoading, setLogModalContentLoading] =
-    useState<boolean>(false);
+  const [logModalContentLoading, setLogModalContentLoading] = useState<boolean>(false);
 
   const openLogView = (jobId: string, errorLogs = false) => {
     setJobIdDetail(jobId);
@@ -45,10 +44,7 @@ function LaunchJobLogView(props: PropsType) {
     setFollowLogs(!errorLogs);
     (async () => {
       try {
-        const logData = await getStudyJobLog(
-          jobId,
-          errorLogs ? "STDERR" : "STDOUT",
-        );
+        const logData = await getStudyJobLog(jobId, errorLogs ? "STDERR" : "STDOUT");
         setLogModalContent(logData);
       } catch (e) {
         enqueueErrorSnackbar(t("study.failtofetchlogs"), e as AxiosError);
@@ -78,10 +74,7 @@ function LaunchJobLogView(props: PropsType) {
               },
             }}
           >
-            <InsertDriveFileIcon
-              sx={{ fontSize: 22 }}
-              onClick={() => openLogView(job.id)}
-            />
+            <InsertDriveFileIcon sx={{ fontSize: 22 }} onClick={() => openLogView(job.id)} />
           </Box>
         </Tooltip>
       )}

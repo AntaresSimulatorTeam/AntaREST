@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
+import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Button, Tab, Skeleton } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import Table from "./Table";
-import { getScenarioConfigByType, SCENARIOS, ScenarioType } from "./utils";
+import { getScenarioConfigByType, SCENARIOS, type ScenarioType } from "./utils";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import withAreas from "./withAreas";
 import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
@@ -35,16 +35,12 @@ const EnhancedTable = withAreas(Table);
 
 function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
-  const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(
-    SCENARIOS[0],
-  );
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(SCENARIOS[0]);
 
   const config = usePromiseWithSnackbarError(
     () => getScenarioConfigByType(study.id, selectedScenario),
     {
-      errorMessage: t(
-        "study.configuration.general.mcScenarioBuilder.noConfig.error",
-      ),
+      errorMessage: t("study.configuration.general.mcScenarioBuilder.noConfig.error"),
     },
   );
 
@@ -80,27 +76,17 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
               <Tab
                 key={type}
                 value={type}
-                label={t(
-                  `study.configuration.general.mcScenarioBuilder.tab.${type}`,
-                )}
+                label={t(`study.configuration.general.mcScenarioBuilder.tab.${type}`)}
               />
             ))}
           </TabList>
         </Box>
         {SCENARIOS.map((type) => (
-          <TabPanel
-            key={type}
-            value={type}
-            sx={{ px: 1, height: 1, overflow: "auto" }}
-          >
+          <TabPanel key={type} value={type} sx={{ px: 1, height: 1, overflow: "auto" }}>
             <UsePromiseCond
               response={config}
-              ifFulfilled={(data) => (
-                <EnhancedTable type={type} config={data} />
-              )}
-              ifPending={() => (
-                <Skeleton sx={{ height: 1, transform: "none" }} />
-              )}
+              ifFulfilled={(data) => <EnhancedTable type={type} config={data} />}
+              ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
             />
           </TabPanel>
         ))}

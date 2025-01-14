@@ -18,17 +18,12 @@ import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import Tree from "./Tree";
 import Data from "./Data";
-import { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../common/types";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import { getStudyData } from "../../../../../services/api/study";
 import DebugContext from "./DebugContext";
-import {
-  getFileType,
-  type TreeData,
-  type FileInfo,
-  type TreeFolder,
-} from "./utils";
+import { getFileType, type TreeData, type FileInfo, type TreeFolder } from "./utils";
 import * as R from "ramda";
 import SplitView from "../../../../common/SplitView";
 import { useUpdateEffect } from "react-use";
@@ -66,9 +61,7 @@ function Debug() {
     const firstChildTreeData = R.path<TreeData>([firstChildName], res.data);
 
     const pathInUrlParts = pathInUrl?.split("/");
-    const urlPathTreeData = pathInUrlParts
-      ? R.path<TreeData>(pathInUrlParts, res.data)
-      : null;
+    const urlPathTreeData = pathInUrlParts ? R.path<TreeData>(pathInUrlParts, res.data) : null;
 
     let fileInfo: FileInfo | null = null;
 

@@ -52,9 +52,7 @@ function DynamicList<T extends { id: string }>({
               <Grid item xs={2} md={1}>
                 <IconButton
                   onClick={() => onDelete(index)}
-                  disabled={
-                    disableDelete?.(item) ?? (items.length === 1 && !allowEmpty)
-                  }
+                  disabled={disableDelete?.(item) ?? (items.length === 1 && !allowEmpty)}
                 >
                   <RemoveCircleOutlineIcon />
                 </IconButton>

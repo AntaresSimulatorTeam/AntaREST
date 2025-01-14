@@ -17,10 +17,7 @@ import { Box, useTheme } from "@mui/material";
 import { getStudyData } from "../../../../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import {
-  Light as SyntaxHighlighter,
-  type SyntaxHighlighterProps,
-} from "react-syntax-highlighter";
+import { Light as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
@@ -66,13 +63,7 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({
-  studyId,
-  filePath,
-  filename,
-  fileType,
-  canEdit,
-}: DataCompProps) {
+function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 

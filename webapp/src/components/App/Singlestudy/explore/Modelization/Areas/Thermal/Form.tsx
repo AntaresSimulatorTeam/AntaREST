@@ -17,16 +17,12 @@ import { Box, Button } from "@mui/material";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import Form from "../../../../../../common/Form";
 import Fields from "./Fields";
 import Matrix from "./Matrix";
-import {
-  ThermalCluster,
-  getThermalCluster,
-  updateThermalCluster,
-} from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import { getThermalCluster, updateThermalCluster, type ThermalCluster } from "./utils";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
@@ -91,11 +87,7 @@ function ThermalForm() {
             height: "75vh",
           }}
         >
-          <Matrix
-            study={study}
-            areaId={areaId}
-            clusterId={nameToId(clusterId)}
-          />
+          <Matrix study={study} areaId={areaId} clusterId={nameToId(clusterId)} />
         </Box>
       </Box>
     </Box>

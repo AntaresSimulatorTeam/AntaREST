@@ -17,7 +17,7 @@ import axios from "axios";
 import moment from "moment";
 import { initAxiosClient } from "./api/client";
 import { initRawAxiosClient } from "./api/auth";
-import { APIVersion, getVersion } from "./api/misc";
+import { getVersion, type APIVersion } from "./api/misc";
 
 const info = debug("antares:config:info");
 const warn = debug("antares:config:warn");
@@ -33,8 +33,7 @@ moment.locale("fr", {
     "janvier_février_mars_avril_mai_juin_juillet_août_septembre_octobre_novembre_décembre".split(
       "_",
     ),
-  monthsShort:
-    "janv._févr._mars_avr._mai_juin_juil._août_sept._oct._nov._déc.".split("_"),
+  monthsShort: "janv._févr._mars_avr._mai_juin_juil._août_sept._oct._nov._déc.".split("_"),
   monthsParseExact: true,
   weekdays: "dimanche_lundi_mardi_mercredi_jeudi_vendredi_samedi".split("_"),
   weekdaysShort: "dim._lun._mar._mer._jeu._ven._sam.".split("_"),
@@ -123,24 +122,20 @@ let config = {
       }
     : {
         baseUrl: window.location.origin,
-        wsUrl: `ws${window.location.protocol === "https:" ? "s" : ""}://${
-          window.location.host
-        }`,
+        wsUrl: `ws${window.location.protocol === "https:" ? "s" : ""}://${window.location.host}`,
       }),
 } as Config;
 
 export const getConfig = (): Readonly<Config> => config;
 
-export const initConfig = async (
-  callback: (appConfig: Config) => void,
-): Promise<void> => {
+export const initConfig = async (callback: (appConfig: Config) => void): Promise<void> => {
   try {
     const res = await axios.get("/config.json", { baseURL: "/" });
     config = {
       ...config,
       ...res.data,
     };
-  } catch (e) {
+  } catch {
     warn("Failed to retrieve site config. Will use default env configuration.");
   }
 
@@ -153,7 +148,7 @@ export const initConfig = async (
       ...config,
       version: res,
     };
-  } catch (e) {
+  } catch {
     warn("Failed to retrieve API Version");
   }
 

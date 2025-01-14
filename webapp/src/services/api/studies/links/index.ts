@@ -12,23 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/common/types";
 import client from "../../client";
 import type { CreateLinkParams, DeleteLinkParams, LinkDTO } from "./types";
 
 export async function createLink(params: CreateLinkParams) {
   const { studyId, ...body } = params;
-  const { data } = await client.post<LinkDTO>(
-    `/v1/studies/${params.studyId}/links`,
-    body,
-  );
+  const { data } = await client.post<LinkDTO>(`/v1/studies/${params.studyId}/links`, body);
   return data;
 }
 
 export async function getLinks(params: { studyId: StudyMetadata["id"] }) {
-  const { data } = await client.get<LinkDTO[]>(
-    `/v1/studies/${params.studyId}/links`,
-  );
+  const { data } = await client.get<LinkDTO[]>(`/v1/studies/${params.studyId}/links`);
   return data;
 }
 

@@ -17,15 +17,15 @@ import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import {
   RENEWABLE_GROUPS,
-  RenewableGroup,
   createRenewableCluster,
   deleteRenewableClusters,
   duplicateRenewableCluster,
   getRenewableClusters,
   type RenewableClusterWithCapacity,
+  type RenewableGroup,
 } from "./utils";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -36,7 +36,7 @@ import {
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "../common/clustersUtils";
-import { TRow } from "../../../../../../common/GroupedDataTable/types";
+import type { TRow } from "../../../../../../common/GroupedDataTable/types";
 import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 
@@ -49,26 +49,24 @@ function Renewables() {
   const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
 
-  const { data: clustersWithCapacity = [], isLoading } =
-    usePromiseWithSnackbarError<RenewableClusterWithCapacity[]>(
-      async () => {
-        const clusters = await getRenewableClusters(study.id, areaId);
-        return clusters?.map(addClusterCapacity);
-      },
-      {
-        resetDataOnReload: true,
-        errorMessage: t("studies.error.retrieveData"),
-        deps: [study.id, areaId],
-      },
-    );
-
-  const [totals, setTotals] = useState(
-    getClustersWithCapacityTotals(clustersWithCapacity),
+  const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
+    RenewableClusterWithCapacity[]
+  >(
+    async () => {
+      const clusters = await getRenewableClusters(study.id, areaId);
+      return clusters?.map(addClusterCapacity);
+    },
+    {
+      resetDataOnReload: true,
+      errorMessage: t("studies.error.retrieveData"),
+      deps: [study.id, areaId],
+    },
   );
 
+  const [totals, setTotals] = useState(getClustersWithCapacityTotals(clustersWithCapacity));
+
   const columns = useMemo(() => {
-    const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } =
-      totals;
+    const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
 
     return [
       columnHelper.accessor("enabled", {
@@ -86,9 +84,7 @@ function Renewables() {
         size: 50,
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
-          <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {cell.getValue()}
-          </Box>
+          <Box sx={{ color: "info.main", fontWeight: "bold" }}>{cell.getValue()}</Box>
         ),
         Footer: () => <Box color="warning.main">{totalUnitCount}</Box>,
       }),
@@ -97,24 +93,19 @@ function Renewables() {
         size: 220,
         Cell: ({ cell }) => cell.getValue().toFixed(1),
       }),
-      columnHelper.accessor(
-        (row) => toCapacityString(row.enabledCapacity, row.installedCapacity),
-        {
-          header: "Enabled / Installed (MW)",
-          size: 220,
-          aggregationFn: capacityAggregationFn(),
-          AggregatedCell: ({ cell }) => (
-            <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-              {cell.getValue()}
-            </Box>
-          ),
-          Footer: () => (
-            <Box color="warning.main">
-              {toCapacityString(totalEnabledCapacity, totalInstalledCapacity)}
-            </Box>
-          ),
-        },
-      ),
+      columnHelper.accessor((row) => toCapacityString(row.enabledCapacity, row.installedCapacity), {
+        header: "Enabled / Installed (MW)",
+        size: 220,
+        aggregationFn: capacityAggregationFn(),
+        AggregatedCell: ({ cell }) => (
+          <Box sx={{ color: "info.main", fontWeight: "bold" }}>{cell.getValue()}</Box>
+        ),
+        Footer: () => (
+          <Box color="warning.main">
+            {toCapacityString(totalEnabledCapacity, totalInstalledCapacity)}
+          </Box>
+        ),
+      }),
     ];
   }, [totals]);
 
@@ -127,16 +118,8 @@ function Renewables() {
     return addClusterCapacity(cluster);
   };
 
-  const handleDuplicate = async (
-    row: RenewableClusterWithCapacity,
-    newName: string,
-  ) => {
-    const cluster = await duplicateRenewableCluster(
-      study.id,
-      areaId,
-      row.id,
-      newName,
-    );
+  const handleDuplicate = async (row: RenewableClusterWithCapacity, newName: string) => {
+    const cluster = await duplicateRenewableCluster(study.id, areaId, row.id, newName);
 
     return { ...row, ...cluster };
   };

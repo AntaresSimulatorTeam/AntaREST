@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata, StudyType } from "@/common/types";
+import { StudyType, type StudyMetadata } from "@/common/types";
 
 function createStudyMetadata(folder: string, workspace: string): StudyMetadata {
   return {
@@ -139,9 +139,7 @@ export const FIXTURES = {
             {
               name: "suba",
               path: "/a/suba",
-              children: [
-                { name: "folder1", path: "/a/suba/folder1", children: [] },
-              ],
+              children: [{ name: "folder1", path: "/a/suba/folder1", children: [] }],
             },
           ],
         },

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ChipProps } from "@mui/material";
+import type { ChipProps } from "@mui/material";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -54,10 +54,7 @@ export interface AddItemDialogProps {
 // Functions
 ////////////////////////////////////////////////////////////////
 
-export function performColumnOperation(
-  operation: ColumnOperation,
-  values: number[],
-): number {
+export function performColumnOperation(operation: ColumnOperation, values: number[]): number {
   switch (operation) {
     case ColumnOperation.SUM:
       return values.reduce((acc, value) => acc + value, 0);
@@ -70,10 +67,7 @@ export function performColumnOperation(
   }
 }
 
-export function calculateColumnResults(
-  columns: Column[],
-  items: Item[],
-): ColumnResult {
+export function calculateColumnResults(columns: Column[], items: Item[]): ColumnResult {
   const columnResults: ColumnResult = {};
 
   columns.forEach((column) => {
@@ -82,10 +76,7 @@ export function calculateColumnResults(
         .filter((item) => item.columns[column.name] !== undefined)
         .map((item) => item.columns[column.name]);
 
-      columnResults[column.name] = performColumnOperation(
-        column.operation,
-        values as number[],
-      );
+      columnResults[column.name] = performColumnOperation(column.operation, values as number[]);
     }
   });
 

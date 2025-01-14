@@ -13,16 +13,16 @@
  */
 
 import * as R from "ramda";
-import { UseAsyncEntityStateResponse } from "../hooks/useAsyncAppSelector";
+import type { UseAsyncEntityStateResponse } from "../hooks/useAsyncAppSelector";
 import { FetchStatus } from "../utils";
 
 export interface UseAsyncAppSelectorCondProps<
   Entity,
   Selected,
-  Response extends UseAsyncEntityStateResponse<
+  Response extends UseAsyncEntityStateResponse<Entity, Selected> = UseAsyncEntityStateResponse<
     Entity,
     Selected
-  > = UseAsyncEntityStateResponse<Entity, Selected>,
+  >,
 > {
   response: Response;
   ifLoading?: () => React.ReactNode;
@@ -39,10 +39,7 @@ function UseAsyncAppSelectorCond<Entity, Selected>(
   return (
     <>
       {R.cond([
-        [
-          R.either(R.equals(FetchStatus.Idle), R.equals(FetchStatus.Loading)),
-          () => ifLoading?.(),
-        ],
+        [R.either(R.equals(FetchStatus.Idle), R.equals(FetchStatus.Loading)), () => ifLoading?.()],
         [R.equals(FetchStatus.Failed), () => ifFailed?.(error)],
         [R.equals(FetchStatus.Succeeded), () => ifSucceeded?.(value)],
       ])(status)}

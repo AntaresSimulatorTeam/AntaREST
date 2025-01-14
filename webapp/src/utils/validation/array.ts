@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ValidationReturn } from "@/common/types";
+import type { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
 import * as R from "ramda";
 
@@ -40,10 +40,7 @@ interface ArrayValidationOptions {
  * @param [options.allowDuplicate=false] - Sets whether duplicate values are allowed or not.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
-export function validateArray<T>(
-  value: T[],
-  options?: ArrayValidationOptions,
-): ValidationReturn;
+export function validateArray<T>(value: T[], options?: ArrayValidationOptions): ValidationReturn;
 
 export function validateArray<T>(
   options?: ArrayValidationOptions,

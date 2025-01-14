@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { FunctionComponent, ReactNode, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -32,13 +32,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
-import {
-  keyframes,
-  styled,
-  SvgIconProps,
-  Tooltip,
-  useTheme,
-} from "@mui/material";
+import { keyframes, styled, Tooltip, useTheme, type SvgIconProps } from "@mui/material";
 import { useMount } from "react-use";
 import logo from "../../../assets/img/logo.png";
 import NotificationBadge from "../../App/Tasks/NotificationBadge";
@@ -99,11 +93,11 @@ interface MenuItem {
   link: string;
   newTab?: boolean;
   strict?: boolean;
-  icon: FunctionComponent<SvgIconProps>;
+  icon: React.FunctionComponent<SvgIconProps>;
 }
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 function MenuWrapper(props: Props) {
@@ -161,7 +155,7 @@ function MenuWrapper(props: Props) {
 
   const settings = navigation[navigation.length - 1];
 
-  const drawMenuItem = (elm: MenuItem): ReactNode => {
+  const drawMenuItem = (elm: MenuItem): React.ReactNode => {
     const tooltipTitle = extended ? "" : t(elm.id);
 
     if (elm.id === "tasks.title") {
@@ -172,9 +166,7 @@ function MenuWrapper(props: Props) {
               to={elm.link}
               end={elm.strict}
               style={({ isActive }) => ({
-                background: isActive
-                  ? theme.palette.primary.outlinedHoverBackground
-                  : undefined,
+                background: isActive ? theme.palette.primary.outlinedHoverBackground : undefined,
               })}
             >
               <NotificationBadge>
@@ -203,9 +195,7 @@ function MenuWrapper(props: Props) {
               to={elm.link}
               end={elm.strict}
               style={({ isActive }) => ({
-                background: isActive
-                  ? theme.palette.primary.outlinedHoverBackground
-                  : undefined,
+                background: isActive ? theme.palette.primary.outlinedHoverBackground : undefined,
               })}
             >
               <NavListItemIcon>
@@ -253,9 +243,7 @@ function MenuWrapper(props: Props) {
               )}
             </NavLink>
             {extended && (
-              <Tooltip
-                title={`${versionInfo.version} (${versionInfo.gitcommit})`}
-              >
+              <Tooltip title={`${versionInfo.version} (${versionInfo.gitcommit})`}>
                 <Typography
                   style={{
                     color: theme.palette.secondary.main,
@@ -284,10 +272,7 @@ function MenuWrapper(props: Props) {
         <Divider />
         <List>
           {drawMenuItem(settings)}
-          <Tooltip
-            title={t(extended ? "" : "logout.title")}
-            placement="right-end"
-          >
+          <Tooltip title={t(extended ? "" : "logout.title")} placement="right-end">
             <NavListItem onClick={() => setOpenLogoutDialog(true)}>
               <NavInternalLink to="#">
                 <NavListItemIcon sx={{ color: "grey.400" }}>
@@ -297,10 +282,7 @@ function MenuWrapper(props: Props) {
               </NavInternalLink>
             </NavListItem>
           </Tooltip>
-          <Tooltip
-            title={t(extended ? "" : "button.expand")}
-            placement="right-end"
-          >
+          <Tooltip title={t(extended ? "" : "button.expand")} placement="right-end">
             <NavListItem onClick={() => dispatch(setMenuCollapse(extended))}>
               <NavInternalLink to="#">
                 <NavListItemIcon sx={{ color: "grey.400" }}>
@@ -319,9 +301,7 @@ function MenuWrapper(props: Props) {
             alert="warning"
             open
           >
-            <Typography sx={{ px: 3, py: 1 }}>
-              {t("dialog.message.logout")}
-            </Typography>
+            <Typography sx={{ px: 3, py: 1 }}>{t("dialog.message.logout")}</Typography>
           </ConfirmationDialog>
         )}
       </NavDrawer>

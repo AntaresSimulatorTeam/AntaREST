@@ -12,19 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { PromiseStatus, UsePromiseResponse } from "../../../hooks/usePromise";
+import { PromiseStatus, type UsePromiseResponse } from "../../../hooks/usePromise";
 import SimpleLoader from "../loaders/SimpleLoader";
 import EmptyView from "../page/EmptyView";
 
-export type Response<T = unknown> = Pick<
-  UsePromiseResponse<T>,
-  "data" | "status" | "error"
->;
+export type Response<T = unknown> = Pick<UsePromiseResponse<T>, "data" | "status" | "error">;
 
-export function mergeResponses<T1, T2>(
-  res1: Response<T1>,
-  res2: Response<T2>,
-): Response<[T1, T2]> {
+export function mergeResponses<T1, T2>(res1: Response<T1>, res2: Response<T2>): Response<[T1, T2]> {
   function getMergedStatus() {
     const preResolvedStatus = [
       PromiseStatus.Idle,
@@ -41,10 +35,7 @@ export function mergeResponses<T1, T2>(
     ...res1,
     ...res2,
     status,
-    data:
-      status === PromiseStatus.Fulfilled
-        ? [res1.data as T1, res2.data as T2]
-        : undefined,
+    data: status === PromiseStatus.Fulfilled ? [res1.data as T1, res2.data as T2] : undefined,
     error: res1.error || res2.error,
   };
 }

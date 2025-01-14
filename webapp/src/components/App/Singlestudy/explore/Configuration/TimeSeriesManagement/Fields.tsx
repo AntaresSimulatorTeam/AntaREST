@@ -12,18 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from "@mui/material";
-import { capitalize } from "lodash";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import capitalize from "lodash/capitalize";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../common/Form";
-import { TSFormFields, TSType } from "./utils";
+import { TSType, type TSFormFields } from "./utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useTranslation } from "react-i18next";
 import { validateNumber } from "@/utils/validation/number";
@@ -67,19 +60,13 @@ function Fields() {
           }}
         >
           <TableRow>
-            <TableCell sx={{ fontWeight: "bold" }}>
-              {capitalize(TSType.Thermal)}
-            </TableCell>
+            <TableCell sx={{ fontWeight: "bold" }}>{capitalize(TSType.Thermal)}</TableCell>
             <TableCell align="center">
               <BooleanFE
                 name={"thermal.stochasticTsStatus"}
                 control={control}
-                trueText={t(
-                  "study.configuration.tsManagement.status.toBeGenerated",
-                )}
-                falseText={t(
-                  "study.configuration.tsManagement.status.readyMade",
-                )}
+                trueText={t("study.configuration.tsManagement.status.toBeGenerated")}
+                falseText={t("study.configuration.tsManagement.status.readyMade")}
                 variant="outlined"
                 size="small"
               />

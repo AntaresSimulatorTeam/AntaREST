@@ -14,14 +14,14 @@
 
 import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
-  AdequacyPatchFormFields,
   getAdequacyPatchFormFields,
   setAdequacyPatchFormFields,
+  type AdequacyPatchFormFields,
 } from "./utils";
 import TableMode from "../../../../../common/TableMode";
 import TabsView from "../../../../../common/TabsView";
@@ -34,9 +34,7 @@ function AdequacyPatch() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<AdequacyPatchFormFields>,
-  ) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<AdequacyPatchFormFields>) => {
     return setAdequacyPatchFormFields(study.id, data.dirtyValues);
   };
 
@@ -64,13 +62,7 @@ function AdequacyPatch() {
         },
         {
           label: t("study.configuration.adequacyPatch.tab.perimeter"),
-          content: (
-            <TableMode
-              studyId={study.id}
-              type="areas"
-              columns={["adequacyPatchMode"]}
-            />
-          ),
+          content: <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />,
         },
       ]}
     />

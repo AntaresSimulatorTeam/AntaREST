@@ -12,21 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { DialogProps } from "@mui/material";
+import type { DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../common/types";
 import { moveStudy } from "../../../services/api/study";
 import FormDialog from "../../common/dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../common/Form/types";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import * as R from "ramda";
 import { validatePath } from "@/utils/validation/string";
 
-function formalizePath(
-  path: string | undefined,
-  studyId?: StudyMetadata["id"],
-) {
+function formalizePath(path: string | undefined, studyId?: StudyMetadata["id"]) {
   const trimmedPath = path?.trim();
 
   if (!trimmedPath) {
@@ -71,9 +68,7 @@ function MoveStudyDialog(props: Props) {
     return moveStudy(study.id, path);
   };
 
-  const handleSubmitSuccessful = (
-    data: SubmitHandlerPlus<typeof defaultValues>,
-  ) => {
+  const handleSubmitSuccessful = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     onClose();
 
     enqueueSnackbar(

@@ -15,7 +15,7 @@
 import SettingsIcon from "@mui/icons-material/Settings";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
-import { SyntheticEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import RootPage from "../../common/page/RootPage";
 import Groups from "./Groups";
@@ -24,10 +24,7 @@ import Tokens from "./Tokens";
 import Users from "./Users";
 import General from "./General";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import {
-  isAuthUserAdmin,
-  isAuthUserInGroupAdmin,
-} from "../../../redux/selectors";
+import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../../redux/selectors";
 import { tuple } from "../../../utils/tsUtils";
 
 function Settings() {
@@ -40,8 +37,7 @@ function Settings() {
     return [
       tuple(t("global.general"), () => <General />),
       isUserAdmin && tuple(t("global.users"), () => <Users />),
-      (isUserAdmin || isUserInGroupAdmin) &&
-        tuple(t("global.group"), () => <Groups />),
+      (isUserAdmin || isUserInGroupAdmin) && tuple(t("global.group"), () => <Groups />),
       tuple(t("global.tokens"), () => <Tokens />),
       isUserAdmin && tuple(t("global.maintenance"), () => <Maintenance />),
     ].filter(Boolean);
@@ -51,7 +47,7 @@ function Settings() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleTabChange = (event: SyntheticEvent, newValue: string) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setTabValue(newValue);
   };
 

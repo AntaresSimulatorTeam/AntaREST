@@ -15,10 +15,10 @@
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { usePromise } from "react-use";
 import * as R from "ramda";
-import { StudyPublicMode } from "../../../common/types";
+import type { StudyPublicMode } from "../../../common/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { createStudy } from "../../../redux/ducks/studies";
 import { getStudyVersionsFormatted, getGroups } from "../../../redux/selectors";
@@ -29,7 +29,7 @@ import StringFE from "../../common/fieldEditors/StringFE";
 import SelectFE from "../../common/fieldEditors/SelectFE";
 import Fieldset from "../../common/Fieldset";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import { SubmitHandlerPlus } from "../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../common/Form/types";
 import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
 
 const logErr = debug("antares:createstudyform:error");
@@ -80,10 +80,7 @@ function CreateStudyDialog(props: Props) {
         });
       } catch (e) {
         logErr("Failed to create new study", name, e);
-        enqueueErrorSnackbar(
-          t("studies.error.createStudy", { studyname: name }),
-          e as AxiosError,
-        );
+        enqueueErrorSnackbar(t("studies.error.createStudy", { studyname: name }), e as AxiosError);
       }
       onClose();
     } else {

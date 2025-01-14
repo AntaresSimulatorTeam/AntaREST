@@ -44,9 +44,7 @@ export const mockHTMLCanvasElement = () => {
     }),
     fillRect: vi.fn(),
     clearRect: vi.fn(),
-    getImageData: vi
-      .fn()
-      .mockReturnValue({ data: new Uint8ClampedArray(), width: 0, height: 0 }),
+    getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(), width: 0, height: 0 }),
     save: vi.fn(),
     fillText: vi.fn(),
     restore: vi.fn(),

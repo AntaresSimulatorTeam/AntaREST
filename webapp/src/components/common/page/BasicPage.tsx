@@ -13,14 +13,13 @@
  */
 
 import { Box, Divider } from "@mui/material";
-import { PropsWithChildren, ReactNode } from "react";
 
 interface Props {
-  header?: ReactNode;
+  header?: React.ReactNode;
   hideHeaderDivider?: boolean;
 }
 
-function BasicPage(props: PropsWithChildren<Props>) {
+function BasicPage(props: React.PropsWithChildren<Props>) {
   const { header, hideHeaderDivider, children } = props;
 
   return (

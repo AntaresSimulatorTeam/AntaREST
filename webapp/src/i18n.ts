@@ -36,9 +36,7 @@ i18n
     defaultNS: "main",
     // i18next-http-backend
     backend: {
-      loadPath: `${
-        import.meta.env.BASE_URL
-      }locales/{{lng}}/{{ns}}.json?id=${__BUILD_TIMESTAMP__}`,
+      loadPath: `${import.meta.env.BASE_URL}locales/{{lng}}/{{ns}}.json?id=${__BUILD_TIMESTAMP__}`,
     },
     // i18next-browser-languagedetector
     detection: {

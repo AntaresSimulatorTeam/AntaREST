@@ -32,10 +32,7 @@ function HeaderRight() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleImport = (
-    file: File,
-    onUploadProgress: (progress: number) => void,
-  ) => {
+  const handleImport = (file: File, onUploadProgress: (progress: number) => void) => {
     return dispatch(
       createStudy({
         file,
@@ -68,10 +65,7 @@ function HeaderRight() {
         {t("global.create")}
       </Button>
       {openCreateDialog && (
-        <CreateStudyDialog
-          open={openCreateDialog}
-          onClose={() => setOpenCreateDialog(false)}
-        />
+        <CreateStudyDialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} />
       )}
       {openUploadDialog && (
         <UploadDialog

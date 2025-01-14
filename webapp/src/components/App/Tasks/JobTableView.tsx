@@ -29,18 +29,18 @@ import {
   MenuItem,
   Tooltip,
   Button,
-  SelectChangeEvent,
   Checkbox,
   FormControlLabel,
   Typography,
   Skeleton,
+  type SelectChangeEvent,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { grey } from "@mui/material/colors";
-import { TaskView } from "../../../common/types";
+import type { TaskView } from "../../../common/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { getLauncherMetrics } from "../../../services/api/study";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
@@ -72,8 +72,7 @@ function JobTableView(props: PropType) {
   const [t] = useTranslation();
   const [sorted, setSorted] = useState<string>();
   const [filterType, setFilterType] = useState<FilterListType | "">("");
-  const [filterRunningStatus, setFilterRunningStatus] =
-    useState<boolean>(false);
+  const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
   const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
 
   const launcherMetrics = usePromiseWithSnackbarError(getLauncherMetrics, {
@@ -178,18 +177,11 @@ function JobTableView(props: PropType) {
             </Button>
           </Tooltip>
           <FormControlLabel
-            control={
-              <Checkbox
-                checked={filterRunningStatus}
-                onChange={handleFilterStatusChange}
-              />
-            }
+            control={<Checkbox checked={filterRunningStatus} onChange={handleFilterStatusChange} />}
             label={t("tasks.runningTasks") as string}
           />
           <FormControl variant="outlined" sx={{ m: 1, mr: 3, minWidth: 160 }}>
-            <InputLabel id="jobsView-select-outlined-label">
-              {t("tasks.typeFilter")}
-            </InputLabel>
+            <InputLabel id="jobsView-select-outlined-label">{t("tasks.typeFilter")}</InputLabel>
             <Select
               labelId="jobsView-select-outlined-label"
               id="jobsView-select-outlined"
@@ -224,11 +216,7 @@ function JobTableView(props: PropType) {
               <TableCell>{t("global.jobs")}</TableCell>
               <TableCell align="right">{t("study.type")}</TableCell>
               <TableCell align="right">
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="flex-end"
-                >
+                <Box display="flex" alignItems="center" justifyContent="flex-end">
                   {t("global.date")}
                   {!sorted ? (
                     <ArrowDropUpIcon
@@ -277,9 +265,7 @@ function JobTableView(props: PropType) {
                   <TableCell component="th" scope="row">
                     {row.name}
                   </TableCell>
-                  <TableCell align="right">
-                    {t(`tasks.type.${row.type}`)}
-                  </TableCell>
+                  <TableCell align="right">{t(`tasks.type.${row.type}`)}</TableCell>
                   <TableCell align="right">{row.dateView}</TableCell>
                   <TableCell align="right">{row.action}</TableCell>
                 </TableRow>

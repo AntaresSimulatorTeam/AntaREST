@@ -13,7 +13,6 @@
  */
 
 import { useState, forwardRef, useCallback } from "react";
-import * as React from "react";
 import { useSnackbar, SnackbarContent } from "notistack";
 import axios from "axios";
 import {
@@ -59,91 +58,83 @@ interface Props {
   details: string | Error;
 }
 
-const SnackErrorMessage = forwardRef<HTMLDivElement, Props>(
-  (props: Props, ref) => {
-    const { closeSnackbar } = useSnackbar();
-    const [expanded, setExpanded] = useState(false);
-    const { id, message, details } = props;
+const SnackErrorMessage = forwardRef<HTMLDivElement, Props>((props: Props, ref) => {
+  const { closeSnackbar } = useSnackbar();
+  const [expanded, setExpanded] = useState(false);
+  const { id, message, details } = props;
 
-    const handleExpandClick = useCallback(() => {
-      setExpanded((oldExpanded) => !oldExpanded);
-    }, []);
+  const handleExpandClick = useCallback(() => {
+    setExpanded((oldExpanded) => !oldExpanded);
+  }, []);
 
-    const handleDismiss = useCallback(() => {
-      closeSnackbar(id);
-    }, [id, closeSnackbar]);
+  const handleDismiss = useCallback(() => {
+    closeSnackbar(id);
+  }, [id, closeSnackbar]);
 
-    return (
-      <Snackbar ref={ref}>
-        <Card
+  return (
+    <Snackbar ref={ref}>
+      <Card
+        sx={{
+          bgcolor: "error.main",
+          width: "100%",
+          color: "white",
+        }}
+      >
+        <CardActions
           sx={{
-            bgcolor: "error.main",
-            width: "100%",
-            color: "white",
+            root: {
+              padding: "8px 8px 8px 16px",
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
           }}
         >
-          <CardActions
+          <CancelRoundedIcon sx={{ width: "20px", height: "20px", mx: 1 }} />
+          <Typography variant="subtitle2">{message}</Typography>
+          <Box ml="auto">
+            <ExpandButton aria-label="Show more" expanded={expanded} onClick={handleExpandClick}>
+              <ExpandMoreIcon />
+            </ExpandButton>
+            <ExpandButton onClick={handleDismiss}>
+              <CloseRoundedIcon />
+            </ExpandButton>
+          </Box>
+        </CardActions>
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          <Paper
             sx={{
-              root: {
-                padding: "8px 8px 8px 16px",
-                justifyContent: "space-between",
-                alignItems: "center",
-              },
+              p: 2,
+              whiteSpace: "pre-wrap",
+              borderTopLeftRadius: 0,
+              borderTopRightRadius: 0,
+              maxHeight: "200px",
+              overflow: "auto",
             }}
           >
-            <CancelRoundedIcon sx={{ width: "20px", height: "20px", mx: 1 }} />
-            <Typography variant="subtitle2">{message}</Typography>
-            <Box ml="auto">
-              <ExpandButton
-                aria-label="Show more"
-                expanded={expanded}
-                onClick={handleExpandClick}
-              >
-                <ExpandMoreIcon />
-              </ExpandButton>
-              <ExpandButton onClick={handleDismiss}>
-                <CloseRoundedIcon />
-              </ExpandButton>
-            </Box>
-          </CardActions>
-          <Collapse in={expanded} timeout="auto" unmountOnExit>
-            <Paper
-              sx={{
-                p: 2,
-                whiteSpace: "pre-wrap",
-                borderTopLeftRadius: 0,
-                borderTopRightRadius: 0,
-                maxHeight: "200px",
-                overflow: "auto",
-              }}
-            >
-              {axios.isAxiosError(details) ? (
-                <Grid container spacing={1} sx={{ width: 1, height: 1, mt: 1 }}>
-                  <Grid item xs={6}>
-                    <Label>Status: </Label>
-                    <Typography>{details.response?.status}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Label>Exception: </Label>
-                    <Typography>{details.response?.data.exception}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Label>Description: </Label>
-                    <Typography>
-                      {details.response?.data.description}
-                    </Typography>
-                  </Grid>
+            {axios.isAxiosError(details) ? (
+              <Grid container spacing={1} sx={{ width: 1, height: 1, mt: 1 }}>
+                <Grid item xs={6}>
+                  <Label>Status: </Label>
+                  <Typography>{details.response?.status}</Typography>
                 </Grid>
-              ) : (
-                details.toString()
-              )}
-            </Paper>
-          </Collapse>
-        </Card>
-      </Snackbar>
-    );
-  },
-);
+                <Grid item xs={6}>
+                  <Label>Exception: </Label>
+                  <Typography>{details.response?.data.exception}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Label>Description: </Label>
+                  <Typography>{details.response?.data.description}</Typography>
+                </Grid>
+              </Grid>
+            ) : (
+              details.toString()
+            )}
+          </Paper>
+        </Collapse>
+      </Card>
+    </Snackbar>
+  );
+});
 
 SnackErrorMessage.displayName = "SnackErrorMessage";
 

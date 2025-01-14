@@ -14,8 +14,9 @@
 
 import { Fragment } from "react";
 import { Box, Typography, Divider, Tooltip } from "@mui/material";
-import { CommandItem } from "../../commandTypes";
-import { PersonOutlineOutlined, UpdateOutlined } from "@mui/icons-material";
+import type { CommandItem } from "../../commandTypes";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { enUS, fr } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -45,15 +46,13 @@ function CommandDetails({ item }: Props) {
   const [t] = useTranslation();
   const details = [
     {
-      icon: <PersonOutlineOutlined sx={{ fontSize: 20 }} />,
+      icon: <PersonOutlineOutlinedIcon sx={{ fontSize: 20 }} />,
       text: item.user || t("global.unknown"),
     },
     {
-      icon: <UpdateOutlined sx={{ fontSize: 20 }} />,
+      icon: <UpdateOutlinedIcon sx={{ fontSize: 20 }} />,
       text: item.updatedAt ? formatDate(item.updatedAt) : t("global.unknown"),
-      tooltip: item.updatedAt
-        ? formatDateWithLocale(item.updatedAt)
-        : t("global.unknown"),
+      tooltip: item.updatedAt ? formatDateWithLocale(item.updatedAt) : t("global.unknown"),
     },
   ];
 
@@ -61,9 +60,7 @@ function CommandDetails({ item }: Props) {
     <Box sx={{ display: "flex" }}>
       {details.map((detail, index) => (
         <Fragment key={index}>
-          {index > 0 && (
-            <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-          )}
+          {index > 0 && <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />}
           <Box sx={{ display: "flex", alignItems: "center", gap: "4px" }}>
             {detail.icon}
             {detail.tooltip ? (

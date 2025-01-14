@@ -36,7 +36,7 @@ import { translateWithColon } from "../../../utils/i18nUtils";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { PromiseAny } from "../../../utils/tsUtils";
+import type { PromiseAny } from "../../../utils/tsUtils";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
 import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
@@ -57,9 +57,7 @@ export interface GroupedDataTableProps<
   onDataChange?: (data: TData[]) => void;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((count: number) => string);
-  fillPendingRow?: (
-    pendingRow: TRow<TGroups[number]>,
-  ) => TRow<TGroups[number]> & Partial<TData>;
+  fillPendingRow?: (pendingRow: TRow<TGroups[number]>) => TRow<TGroups[number]> & Partial<TData>;
 }
 
 // Use ids to identify default columns (instead of `accessorKey`),
@@ -68,10 +66,7 @@ export interface GroupedDataTableProps<
 const GROUP_COLUMN_ID = "_group";
 const NAME_COLUMN_ID = "_name";
 
-function GroupedDataTable<
-  TGroups extends string[],
-  TData extends TRow<TGroups[number]>,
->({
+function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[number]>>({
   data,
   columns,
   groups,
@@ -85,9 +80,7 @@ function GroupedDataTable<
   fillPendingRow,
 }: GroupedDataTableProps<TGroups, TData>) {
   const { t } = useTranslation();
-  const [openDialog, setOpenDialog] = useState<
-    "add" | "duplicate" | "delete" | ""
-  >("");
+  const [openDialog, setOpenDialog] = useState<"add" | "duplicate" | "delete" | "">("");
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -101,10 +94,7 @@ function GroupedDataTable<
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => onDataChange?.(tableData), [tableData]);
 
-  const existingNames = useMemo(
-    () => tableData.map((row) => row.name.toLowerCase()),
-    [tableData],
-  );
+  const existingNames = useMemo(() => tableData.map((row) => row.name.toLowerCase()), [tableData]);
 
   const tableColumns = useMemo<Array<MRT_ColumnDef<TData>>>(
     () => [
@@ -160,13 +150,7 @@ function GroupedDataTable<
               const CellComp = column.Cell;
 
               if (isPendingRow(row.original)) {
-                return (
-                  <Skeleton
-                    width={80}
-                    height={24}
-                    sx={{ display: "inline-block" }}
-                  />
-                );
+                return <Skeleton width={80} height={24} sx={{ display: "inline-block" }} />;
               }
 
               return CellComp ? <CellComp {...props} /> : renderedCellValue;
@@ -207,9 +191,7 @@ function GroupedDataTable<
           }
 
           const isGrouped = row.getIsGrouped();
-          const rowIds = isGrouped
-            ? row.getLeafRows().map((r) => r.id)
-            : [row.id];
+          const rowIds = isGrouped ? row.getLeafRows().map((r) => r.id) : [row.id];
 
           setRowSelection((prev) => {
             const newValue = isGrouped
@@ -280,9 +262,7 @@ function GroupedDataTable<
     }),
   });
 
-  const selectedRows = table
-    .getSelectedRowModel()
-    .rows.map((row) => row.original);
+  const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
   const selectedRow = selectedRows.length === 1 ? selectedRows[0] : null;
 
   ////////////////////////////////////////////////////////////////
@@ -382,9 +362,7 @@ function GroupedDataTable<
 
     const rowsToDelete = selectedRows;
 
-    setTableData((prevTableData) =>
-      prevTableData.filter((row) => !rowsToDelete.includes(row)),
-    );
+    setTableData((prevTableData) => prevTableData.filter((row) => !rowsToDelete.includes(row)));
 
     deleteOps.increment();
 

@@ -12,11 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Area,
-  Cluster,
-  StudyMetadata,
-} from "../../../../../../../common/types";
+import type { Area, Cluster, StudyMetadata } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 import type { ClusterWithCapacity } from "../common/clustersUtils";
@@ -79,10 +75,7 @@ export const TS_GENERATION_OPTIONS = [
 
 export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
 
-export const COST_GENERATION_OPTIONS = [
-  "SetManually",
-  "useCostTimeseries",
-] as const;
+export const COST_GENERATION_OPTIONS = ["SetManually", "useCostTimeseries"] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -93,9 +86,7 @@ export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
 type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 type CostGeneration = (typeof COST_GENERATION_OPTIONS)[number];
-type ThermalPollutants = {
-  [K in (typeof THERMAL_POLLUTANTS)[number]]: number;
-};
+type ThermalPollutants = Record<(typeof THERMAL_POLLUTANTS)[number], number>;
 
 export interface ThermalCluster extends ThermalPollutants {
   id: string;
@@ -131,10 +122,8 @@ export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;
 // Functions
 ////////////////////////////////////////////////////////////////
 
-const getClustersUrl = (
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-): string => `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
+const getClustersUrl = (studyId: StudyMetadata["id"], areaId: Area["name"]): string =>
+  `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
 
 const getClusterUrl = (
   studyId: StudyMetadata["id"],
@@ -146,13 +135,8 @@ const getClusterUrl = (
 // API
 ////////////////////////////////////////////////////////////////
 
-export async function getThermalClusters(
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-) {
-  const res = await client.get<ThermalCluster[]>(
-    getClustersUrl(studyId, areaId),
-  );
+export async function getThermalClusters(studyId: StudyMetadata["id"], areaId: Area["name"]) {
+  const res = await client.get<ThermalCluster[]>(getClustersUrl(studyId, areaId));
   return res.data;
 }
 
@@ -161,9 +145,7 @@ export async function getThermalCluster(
   areaId: Area["name"],
   clusterId: Cluster["id"],
 ) {
-  const res = await client.get<ThermalCluster>(
-    getClusterUrl(studyId, areaId, clusterId),
-  );
+  const res = await client.get<ThermalCluster>(getClusterUrl(studyId, areaId, clusterId));
   return res.data;
 }
 
@@ -173,10 +155,7 @@ export async function updateThermalCluster(
   clusterId: Cluster["id"],
   data: Partial<ThermalCluster>,
 ) {
-  const res = await client.patch<ThermalCluster>(
-    getClusterUrl(studyId, areaId, clusterId),
-    data,
-  );
+  const res = await client.patch<ThermalCluster>(getClusterUrl(studyId, areaId, clusterId), data);
   return res.data;
 }
 
@@ -185,10 +164,7 @@ export async function createThermalCluster(
   areaId: Area["name"],
   data: PartialExceptFor<ThermalCluster, "name">,
 ) {
-  const res = await client.post<ThermalCluster>(
-    getClustersUrl(studyId, areaId),
-    data,
-  );
+  const res = await client.post<ThermalCluster>(getClustersUrl(studyId, areaId), data);
   return res.data;
 }
 

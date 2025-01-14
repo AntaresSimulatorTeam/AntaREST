@@ -23,9 +23,6 @@ export const COLUMNS = {
     createNumericColumn("num2"),
     createColumn("agg", Column.Aggregate),
   ],
-  nonData: [
-    createColumn("text", Column.Text),
-    createColumn("date", Column.DateTime),
-  ],
+  nonData: [createColumn("text", Column.Text), createColumn("date", Column.DateTime)],
   dataOnly: [createNumericColumn("num1"), createNumericColumn("num2")],
 };

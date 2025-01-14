@@ -12,14 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { MRT_AggregationFn } from "material-react-table";
-import { ThermalClusterWithCapacity } from "../Thermal/utils";
-import { RenewableClusterWithCapacity } from "../Renewables/utils";
+import type { MRT_AggregationFn } from "material-react-table";
+import type { ThermalClusterWithCapacity } from "../Thermal/utils";
+import type { RenewableClusterWithCapacity } from "../Renewables/utils";
 
-export function toCapacityString(
-  enabledCapacity: number,
-  installedCapacity: number,
-) {
+export function toCapacityString(enabledCapacity: number, installedCapacity: number) {
   return `${Math.round(enabledCapacity)} / ${Math.round(installedCapacity)}`;
 }
 

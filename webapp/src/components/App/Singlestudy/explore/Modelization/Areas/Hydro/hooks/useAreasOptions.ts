@@ -14,15 +14,13 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../../../redux/selectors";
-import { DynamicListProps } from "../../../../../../../common/DynamicList";
-import { AreaCoefficientItem } from "../utils";
+import type { DynamicListProps } from "../../../../../../../common/DynamicList";
+import type { AreaCoefficientItem } from "../utils";
 
-export function useAreasOptions(
-  fields: AreaCoefficientItem[],
-): DynamicListProps["options"] {
+export function useAreasOptions(fields: AreaCoefficientItem[]): DynamicListProps["options"] {
   const {
     study: { id: studyId },
   } = useOutletContext<{ study: StudyMetadata }>();

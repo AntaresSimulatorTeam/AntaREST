@@ -15,20 +15,20 @@
 import { useOutletContext } from "react-router";
 import * as R from "ramda";
 import { useState } from "react";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
 import Fields from "./Fields";
 import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";
 import ScenarioPlaylistDialog from "./dialogs/ScenarioPlaylistDialog";
 import {
-  GeneralFormFields,
   getGeneralFormFields,
   hasDayField,
   pickDayFields,
-  SetDialogStateType,
   setGeneralFormFields,
+  type GeneralFormFields,
+  type SetDialogStateType,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import ScenarioBuilderDialog from "./dialogs/ScenarioBuilderDialog";
 
 function General() {
@@ -71,33 +71,15 @@ function General() {
       {R.cond([
         [
           R.equals("thematicTrimming"),
-          () => (
-            <ThematicTrimmingDialog
-              open
-              study={study}
-              onClose={handleCloseDialog}
-            />
-          ),
+          () => <ThematicTrimmingDialog open study={study} onClose={handleCloseDialog} />,
         ],
         [
           R.equals("scenarioBuilder"),
-          () => (
-            <ScenarioBuilderDialog
-              open
-              study={study}
-              onClose={handleCloseDialog}
-            />
-          ),
+          () => <ScenarioBuilderDialog open study={study} onClose={handleCloseDialog} />,
         ],
         [
           R.equals("scenarioPlaylist"),
-          () => (
-            <ScenarioPlaylistDialog
-              open
-              study={study}
-              onClose={handleCloseDialog}
-            />
-          ),
+          () => <ScenarioPlaylistDialog open study={study} onClose={handleCloseDialog} />,
         ],
       ])(dialog)}
     </>

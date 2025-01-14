@@ -12,15 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import HT from "handsontable";
+import type HT from "handsontable";
 import * as RA from "ramda-adjunct";
 import { useMemo } from "react";
 import type { IdType } from "../../../common/types";
 import { useFormContextPlus } from "../Form";
-import Handsontable, {
-  HandsontableProps,
-  HotTableClass,
-} from "../Handsontable";
+import Handsontable, { type HandsontableProps, type HotTableClass } from "../Handsontable";
 
 type Row = { id: IdType } & HT.RowObject;
 
@@ -32,12 +29,7 @@ export interface TableProps extends Omit<HandsontableProps, "rowHeaders"> {
 }
 
 function Table(props: TableProps) {
-  const {
-    data,
-    rowHeaders = (row: Row) => String(row.id),
-    tableRef,
-    ...restProps
-  } = props;
+  const { data, rowHeaders = (row: Row) => String(row.id), tableRef, ...restProps } = props;
 
   const { setValues } = useFormContextPlus();
 
@@ -49,9 +41,7 @@ function Table(props: TableProps) {
             (longestHeaderLength, row) => {
               const headerLength = rowHeaders(row).length;
 
-              return longestHeaderLength > headerLength
-                ? longestHeaderLength
-                : headerLength;
+              return longestHeaderLength > headerLength ? longestHeaderLength : headerLength;
             },
             10, // To force minimum size
           ) * 8,
@@ -62,22 +52,25 @@ function Table(props: TableProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleAfterChange: HandsontableProps["afterChange"] =
-    function afterChange(this: unknown, changes, ...rest): void {
-      const newValues = changes?.reduce(
-        (acc, [row, column, _, nextValue]) => {
-          acc[`${data[row].id}.${column}`] = nextValue;
-          return acc;
-        },
-        {} as Record<string, unknown>,
-      );
+  const handleAfterChange: HandsontableProps["afterChange"] = function afterChange(
+    this: unknown,
+    changes,
+    ...rest
+  ): void {
+    const newValues = changes?.reduce(
+      (acc, [row, column, _, nextValue]) => {
+        acc[`${data[row].id}.${column}`] = nextValue;
+        return acc;
+      },
+      {} as Record<string, unknown>,
+    );
 
-      if (newValues) {
-        setValues(newValues);
-      }
+    if (newValues) {
+      setValues(newValues);
+    }
 
-      restProps.afterChange?.call(this, changes, ...rest);
-    };
+    restProps.afterChange?.call(this, changes, ...rest);
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -93,11 +86,7 @@ function Table(props: TableProps) {
       manualRowResize
       {...restProps}
       data={data}
-      rowHeaders={
-        RA.isFunction(rowHeaders)
-          ? (index) => rowHeaders(data[index])
-          : rowHeaders
-      }
+      rowHeaders={RA.isFunction(rowHeaders) ? (index) => rowHeaders(data[index]) : rowHeaders}
       afterChange={handleAfterChange}
       ref={tableRef}
     />

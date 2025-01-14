@@ -13,17 +13,17 @@
  */
 
 import { useEffect, useState } from "react";
-import { ColorResult, MaterialPicker } from "react-color";
+import { MaterialPicker, type ColorResult } from "react-color";
 import { Box, TextField, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { LinkElement, UpdateAreaUi } from "../../../../../../../common/types";
+import type { LinkElement, UpdateAreaUi } from "../../../../../../../common/types";
 import AreaLinks from "./AreaLinks";
 
 import AreaLink from "./AreaLink";
 
 import { AreaColorPicker, AreaHuePicker } from "./style";
 import DeleteAreaDialog from "./DeleteAreaDialog";
-import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
+import type { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLayer } from "../../../../../../../redux/selectors";
 

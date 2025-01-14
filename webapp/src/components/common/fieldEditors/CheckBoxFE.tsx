@@ -14,11 +14,11 @@
 
 import {
   Checkbox,
-  CheckboxProps,
   FormControl,
   FormControlLabel,
-  FormControlLabelProps,
   FormHelperText,
+  type CheckboxProps,
+  type FormControlLabelProps,
 } from "@mui/material";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
@@ -45,22 +45,12 @@ function CheckBoxFE(props: CheckBoxFEProps) {
     ...checkboxProps
   } = props;
 
-  const fieldEditor = (
-    <Checkbox
-      {...checkboxProps}
-      checked={value}
-      defaultChecked={defaultValue}
-    />
-  );
+  const fieldEditor = <Checkbox {...checkboxProps} checked={value} defaultChecked={defaultValue} />;
 
   return (
     <FormControl className={className} sx={sx} error={error}>
       {label ? (
-        <FormControlLabel
-          control={fieldEditor}
-          label={label}
-          labelPlacement={labelPlacement}
-        />
+        <FormControlLabel control={fieldEditor} label={label} labelPlacement={labelPlacement} />
       ) : (
         fieldEditor
       )}

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { DependencyList } from "react";
-import { useNavigate, To } from "react-router-dom";
+import type { DependencyList } from "react";
+import { useNavigate, type To } from "react-router-dom";
 import { useUpdateEffect } from "react-use";
 
 interface UseNavigateOnConditionOptions {

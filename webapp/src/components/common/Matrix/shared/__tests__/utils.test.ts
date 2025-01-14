@@ -32,9 +32,7 @@ import {
 describe("Matrix Utils", () => {
   beforeAll(() => {
     vi.mock("date-fns", async () => {
-      const actual = (await vi.importActual(
-        "date-fns",
-      )) as typeof import("date-fns");
+      const actual = (await vi.importActual("date-fns")) as typeof import("date-fns");
       return {
         ...actual,
         format: vi.fn((date: Date, formatString: string) => {
@@ -51,40 +49,32 @@ describe("Matrix Utils", () => {
   });
 
   describe("DateTime Generation", () => {
-    test.each(DATE_TIME_TEST_CASES)(
-      "generates correct $name",
-      ({ config, expected }) => {
-        const result = generateDateTime(config);
-        expect(result).toEqual(expected);
-      },
-    );
+    test.each(DATE_TIME_TEST_CASES)("generates correct $name", ({ config, expected }) => {
+      const result = generateDateTime(config);
+      expect(result).toEqual(expected);
+    });
   });
 
   describe("Time Series Column Generation", () => {
-    test.each(COLUMN_TEST_CASES)(
-      "handles $name correctly",
-      ({ input, expectedLength }) => {
-        const result = generateTimeSeriesColumns(input);
-        expect(result).toHaveLength(expectedLength);
+    test.each(COLUMN_TEST_CASES)("handles $name correctly", ({ input, expectedLength }) => {
+      const result = generateTimeSeriesColumns(input);
+      expect(result).toHaveLength(expectedLength);
 
-        if (expectedLength > 0) {
-          if (input.startIndex) {
-            expect(result[0].id).toBe(`data${input.startIndex}`);
-            expect(result[0].title).toBe(
-              `${input.prefix || "TS"} ${input.startIndex}`,
-            );
-          } else {
-            expect(result[0]).toEqual({
-              id: "data1",
-              title: "TS 1",
-              type: Column.Number,
-              style: "normal",
-              editable: input.editable ?? true,
-            });
-          }
+      if (expectedLength > 0) {
+        if (input.startIndex) {
+          expect(result[0].id).toBe(`data${input.startIndex}`);
+          expect(result[0].title).toBe(`${input.prefix || "TS"} ${input.startIndex}`);
+        } else {
+          expect(result[0]).toEqual({
+            id: "data1",
+            title: "TS 1",
+            type: Column.Number,
+            style: "normal",
+            editable: input.editable ?? true,
+          });
         }
-      },
-    );
+      }
+    });
   });
 
   describe("Matrix Aggregates Calculation", () => {
@@ -127,11 +117,8 @@ describe("Matrix Utils", () => {
   });
 
   describe("Aggregate Type Configuration", () => {
-    test.each(AGGREGATE_CONFIG_CASES)(
-      "handles $name correctly",
-      ({ aggregates, expected }) => {
-        expect(getAggregateTypes(aggregates)).toEqual(expected);
-      },
-    );
+    test.each(AGGREGATE_CONFIG_CASES)("handles $name correctly", ({ aggregates, expected }) => {
+      expect(getAggregateTypes(aggregates)).toEqual(expected);
+    });
   });
 });
