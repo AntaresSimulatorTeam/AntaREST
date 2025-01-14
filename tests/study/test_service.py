@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from pathlib import Path
 from unittest.mock import patch
 
@@ -56,11 +55,15 @@ def test_gest_disk_usage_exceptions(tmp_path: Path) -> None:
     """
     This test ensures that the 'get_disk_usage' function handles exceptions appropriately.
     """
+    for folder in ["study", "study2"]:
+        (tmp_path / folder).mkdir()
+        file_path = tmp_path / folder / "file.txt"
+        file_path.write_bytes(b"10")
+
     with patch("os.scandir", side_effect=FileNotFoundError("File doesn't exist")):
         disk_usage = get_disk_usage(tmp_path)
         assert disk_usage == 0
 
-    (tmp_path / "file.txt").touch()
     with patch("os.DirEntry.is_file", side_effect=FileNotFoundError("File doesn't exist")):
         disk_usage = get_disk_usage(tmp_path)
         assert disk_usage == 0
@@ -69,7 +72,6 @@ def test_gest_disk_usage_exceptions(tmp_path: Path) -> None:
         disk_usage = get_disk_usage(tmp_path)
         assert disk_usage == 0
 
-    (tmp_path / "study").mkdir()
     with patch("os.DirEntry.is_dir", side_effect=FileNotFoundError("File doesn't exist")):
         disk_usage = get_disk_usage(tmp_path)
         assert disk_usage == 0
@@ -77,3 +79,8 @@ def test_gest_disk_usage_exceptions(tmp_path: Path) -> None:
     with patch("os.scandir", side_effect=PermissionError("Access denied")):
         disk_usage = get_disk_usage(tmp_path)
         assert disk_usage == 0
+
+    # Mocks the case where the 2nd file raises an exception. We should have the first file size in the result
+    with patch("os.DirEntry.is_file", side_effect=[False, True, False, FileNotFoundError("File doesn't exist")]):
+        disk_usage = get_disk_usage(tmp_path)
+        assert disk_usage == 2

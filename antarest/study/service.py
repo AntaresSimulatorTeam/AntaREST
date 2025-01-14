@@ -189,10 +189,11 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
     with contextlib.suppress(FileNotFoundError, PermissionError):
         with os.scandir(path) as it:
             for entry in it:
-                if entry.is_file():
-                    total_size += entry.stat().st_size
-                elif entry.is_dir():
-                    total_size += get_disk_usage(path=str(entry.path))
+                with contextlib.suppress(FileNotFoundError, PermissionError):
+                    if entry.is_file():
+                        total_size += entry.stat().st_size
+                    elif entry.is_dir():
+                        total_size += get_disk_usage(path=str(entry.path))
     return total_size
 
 
