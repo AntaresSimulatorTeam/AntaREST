@@ -837,11 +837,17 @@ class BindingConstraintManager:
             args["coeffs"] = self.terms_to_coeffs(source_constraint.terms)
 
         # Retrieval of the source constraint matrices
-        # todo add matrices
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        if file_study.config.version < STUDY_VERSION_8_7:
+            matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
+            args["values"] = matrix["data"]
+        else:
+            print("ok")
+            # todo add matrices for v8.7+
 
         # Creates and applies constraint
         command = CreateBindingConstraint(**args)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         # Returns the new constraint
