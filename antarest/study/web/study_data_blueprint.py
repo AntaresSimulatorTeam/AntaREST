@@ -1347,17 +1347,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def duplicate_binding_constraint(
         uuid: str,
-        source_id: str,
+        binding_constraint_id: str,
         new_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ConstraintOutput:
         logger.info(
-            f"Duplicates constraint {source_id} for study {uuid}",
+            f"Duplicates constraint {binding_constraint_id} for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.duplicate_binding_constraint(study, source_id, new_name)
+        return study_service.binding_constraint_manager.duplicate_binding_constraint(
+            study, binding_constraint_id, new_name
+        )
 
     @bp.delete(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",

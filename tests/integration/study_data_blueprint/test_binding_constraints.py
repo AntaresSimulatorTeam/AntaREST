@@ -463,6 +463,16 @@ class TestBindingConstraints:
         assert len(dataframe["columns"]) == 3  # less, equal, greater
 
         # =============================
+        # CONSTRAINT DUPLICATION
+        # =============================
+
+        # todo
+        duplicated_name = "BC_4"
+        res = client.post(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", params={"new_name": duplicated_name})
+        print("///////")
+        print(res.json())
+
+        # =============================
         # ERRORS
         # =============================
 
