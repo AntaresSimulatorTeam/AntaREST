@@ -808,7 +808,7 @@ class BindingConstraintManager:
             The duplicated constraint configuration.
 
         Raises:
-            DuplicateConstraintName: If a constraint with the new name already exists in the area.
+            DuplicateConstraintName: If a constraint with the new name already exists in the study.
         """
 
         # Checks if the new constraint already exists
