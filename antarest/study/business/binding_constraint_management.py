@@ -842,7 +842,7 @@ class BindingConstraintManager:
             matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
             args["values"] = matrix["data"]
         else:
-            correspondance_map = {
+            correspondence_map = {
                 "lt": TermMatrices.LESS.value,
                 "gt": TermMatrices.GREATER.value,
                 "eq": TermMatrices.EQUAL.value,
@@ -852,7 +852,7 @@ class BindingConstraintManager:
                 matrix = file_study.tree.get(["input", "bindingconstraints", matrix_name.format(bc_id=source_id)])[
                     "data"
                 ]
-                command_attribute = correspondance_map[matrix_name.removeprefix("{bc_id}_")]
+                command_attribute = correspondence_map[matrix_name.removeprefix("{bc_id}_")]
                 args[command_attribute] = matrix
 
         # Creates and applies constraint
