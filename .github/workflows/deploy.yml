@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "xpress-for-desktop-build"
 
 jobs:
   binary:
