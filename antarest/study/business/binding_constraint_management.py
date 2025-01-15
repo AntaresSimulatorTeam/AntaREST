@@ -842,12 +842,21 @@ class BindingConstraintManager:
             matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
             args["values"] = matrix["data"]
         else:
-            print("ok")
-            # todo add matrices for v8.7+
+            correspondance_map = {
+                "lt": TermMatrices.LESS.value,
+                "gt": TermMatrices.GREATER.value,
+                "eq": TermMatrices.EQUAL.value,
+            }
+            source_matrices = OPERATOR_MATRIX_FILE_MAP[source_constraint.operator]
+            for matrix_name in source_matrices:
+                matrix = file_study.tree.get(["input", "bindingconstraints", matrix_name.format(bc_id=source_id)])[
+                    "data"
+                ]
+                command_attribute = correspondance_map[matrix_name.removeprefix("{bc_id}_")]
+                args[command_attribute] = matrix
 
         # Creates and applies constraint
         command = CreateBindingConstraint(**args)
-
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         # Returns the new constraint
