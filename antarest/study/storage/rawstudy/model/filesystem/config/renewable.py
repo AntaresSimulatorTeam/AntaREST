@@ -19,7 +19,7 @@ from typing_extensions import override
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
 
 class TimeSeriesInterpretation(EnumIgnoreCase):
@@ -45,15 +45,15 @@ class RenewableClusterGroup(EnumIgnoreCase):
     If not specified, the renewable cluster will be part of the group "Other RES 1".
     """
 
-    THERMAL_SOLAR = "solar thermal"
-    PV_SOLAR = "solar pv"
-    ROOFTOP_SOLAR = "solar rooftop"
-    WIND_ON_SHORE = "wind onshore"
-    WIND_OFF_SHORE = "wind offshore"
-    OTHER1 = "other res 1"
-    OTHER2 = "other res 2"
-    OTHER3 = "other res 3"
-    OTHER4 = "other res 4"
+    THERMAL_SOLAR = "Solar Thermal"
+    PV_SOLAR = "Solar PV"
+    ROOFTOP_SOLAR = "Solar Rooftop"
+    WIND_ON_SHORE = "Wind Onshore"
+    WIND_OFF_SHORE = "Wind Offshore"
+    OTHER1 = "Other RES 1"
+    OTHER2 = "Other RES 2"
+    OTHER3 = "Other RES 3"
+    OTHER4 = "Other RES 4"
 
     @override
     def __repr__(self) -> str:
@@ -68,7 +68,7 @@ class RenewableClusterGroup(EnumIgnoreCase):
         if isinstance(value, str):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
-            if any(value.lower() == group.value for group in cls):
+            if any(value.upper() == group.value.upper() for group in cls):
                 return t.cast(RenewableClusterGroup, super()._missing_(value))
             # If a group is not found, return the default group ('OTHER1' by default).
             return cls.OTHER1
@@ -94,7 +94,7 @@ class RenewableProperties(ClusterProperties):
     )
 
 
-class RenewableConfig(RenewableProperties, LowerCaseIdentifier):
+class RenewableConfig(RenewableProperties, IgnoreCaseIdentifier):
     """
     Configuration of a renewable cluster.
 
@@ -113,7 +113,6 @@ class RenewableConfig(RenewableProperties, LowerCaseIdentifier):
 
 
 RenewableConfigType = RenewableConfig
-RenewablePropertiesType = RenewableProperties
 
 
 def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableConfig]:
@@ -128,25 +127,6 @@ def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableCon
     """
     if study_version >= STUDY_VERSION_8_1:
         return RenewableConfig
-    raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
-
-
-def create_renewable_properties(study_version: StudyVersion, **kwargs: t.Any) -> RenewablePropertiesType:
-    """
-    Factory method to create renewable properties.
-
-    Args:
-        study_version: The version of the study.
-        **kwargs: The properties to be used to initialize the model.
-
-    Returns:
-        The renewable properties.
-
-    Raises:
-        ValueError: If the study version is not supported.
-    """
-    if study_version >= STUDY_VERSION_8_1:
-        return RenewableProperties.model_validate(kwargs)
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 
 

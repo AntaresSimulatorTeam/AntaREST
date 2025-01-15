@@ -49,7 +49,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.utils.string import to_camel_case
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
 from tests.integration.utils import wait_task_completion
 
@@ -63,7 +63,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "01_solar",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -87,7 +87,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "02_wind_on",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -111,7 +111,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "03_wind_off",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -135,7 +135,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "04_res",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -159,7 +159,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "05_nuclear",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -183,7 +183,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "06_coal",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -207,7 +207,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "07_gas",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -231,7 +231,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "08_non-res",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -255,7 +255,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "other 1",
+        "group": "Other 1",
         "id": "09_hydro_pump",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -374,14 +374,12 @@ class TestThermal:
         )
         assert res.status_code == 200, res.json()
         fr_gas_conventional_id = res.json()["id"]
-        assert fr_gas_conventional_id == transform_name_to_id(fr_gas_conventional)
+        assert fr_gas_conventional_id == transform_name_to_id(fr_gas_conventional, lower=False)
         # noinspection SpellCheckingInspection
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_props,
             "id": fr_gas_conventional_id,
             **{p: pollutants_values for p in pollutants_names},
-            "name": fr_gas_conventional_props["name"].lower(),
-            "group": fr_gas_conventional_props["group"].lower(),
         }
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_cfg,
@@ -428,18 +426,17 @@ class TestThermal:
         assert res.json() == EXISTING_CLUSTERS + [fr_gas_conventional_cfg]
 
         # updating properties
-        name = "FR_Gas conventional old 1"
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
             json={
-                "name": name,
+                "name": "FR_Gas conventional old 1",
                 "nominalCapacity": 32.1,
             },
         )
         assert res.status_code == 200, res.json()
         fr_gas_conventional_cfg = {
             **fr_gas_conventional_cfg,
-            "name": name.lower(),
+            "name": "FR_Gas conventional old 1",
             "nominalCapacity": 32.1,
         }
         assert res.json() == fr_gas_conventional_cfg
@@ -512,8 +509,8 @@ class TestThermal:
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
         duplicated_config = dict(fr_gas_conventional_cfg)
-        duplicated_config["name"] = new_name.lower()
-        duplicated_id = transform_name_to_id(new_name)
+        duplicated_config["name"] = new_name
+        duplicated_id = transform_name_to_id(new_name, lower=False)
         duplicated_config["id"] = duplicated_id
         # takes the update into account
         if version >= 860:
@@ -629,7 +626,7 @@ class TestThermal:
         )
         assert res.status_code == 403, res.json()
         description = res.json()["description"]
-        assert all([elm in description for elm in [fr_gas_conventional.lower(), "binding constraint"]])
+        assert all([elm in description for elm in [fr_gas_conventional, "binding constraint"]])
         assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
         # delete the binding constraint
@@ -670,7 +667,7 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         deleted_clusters = [other_cluster_id1, other_cluster_id2, fr_gas_conventional_id]
         for cluster in res.json():
-            assert transform_name_to_id(cluster["name"]) not in deleted_clusters
+            assert transform_name_to_id(cluster["name"], lower=False) not in deleted_clusters
 
         # ===========================
         #  THERMAL CLUSTER ERRORS
@@ -759,7 +756,7 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         obj = res.json()
         # If a group is not found, return the default group ('OTHER1' by default).
-        assert obj["group"] == "other 1"
+        assert obj["group"] == "Other 1"
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
@@ -839,7 +836,7 @@ class TestThermal:
         assert res.status_code == 409, res.json()
         obj = res.json()
         description = obj["description"]
-        assert new_name.lower() in description
+        assert new_name.upper() in description
         assert obj["exception"] == "DuplicateThermalCluster"
 
     @pytest.fixture(name="base_study_id")
@@ -921,14 +918,14 @@ class TestThermal:
         )
         assert res.status_code in {200, 201}, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["name"] == new_name.lower()
+        assert cluster_cfg["name"] == new_name
         new_id = cluster_cfg["id"]
 
         # Check that the duplicate has the right properties
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "nuclear"
+        assert cluster_cfg["group"] == "Nuclear"
         assert cluster_cfg["unitCount"] == 13
         assert cluster_cfg["nominalCapacity"] == 42500
         assert cluster_cfg["marginalCost"] == 0.2
