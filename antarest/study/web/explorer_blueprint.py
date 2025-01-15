@@ -57,9 +57,6 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
             List of sub directories
 
         """
-        # time.sleep(random.choice([0, 1, 2]))
-        # if random.choice([True, True, False]):
-        #     raise Exception("Random error occurred")
         logger.info(f"Listing directory {path} in workspace {workspace}")
         return explorer.list_dir(workspace, path)
 
@@ -80,9 +77,6 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
             List of workspace
 
         """
-        # time.sleep(random.choice([0, 1, 2]))
-        # if random.choice([True, True, False]):
-        #     raise Exception("Random error occurred")
         logger.info("Listing workspaces")
         return explorer.list_workspaces()
 
