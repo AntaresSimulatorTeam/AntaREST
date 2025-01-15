@@ -819,18 +819,35 @@ class BindingConstraintManager:
                 f"A binding constraint with the same name already exists: {new_constraint_name}."
             )
 
-        # Retrieval of the source constraint properties and matrices
+        # Retrieval of the source constraint properties
         source_constraint = next(iter(bc for bc in existing_constraints if bc.id == source_id), None)
         if not source_constraint:
             raise BindingConstraintNotFound(f"Binding constraint '{source_id}' not found")
 
-        # todo
+        new_constraint = {
+            "name": new_constraint_name,
+            **source_constraint.model_dump(mode="json", exclude={"terms", "name", "id"}),
+        }
+        args = {
+            **new_constraint,
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "study_version": StudyVersion.parse(study.version),
+        }
+        if source_constraint.terms:
+            args["coeffs"] = self.terms_to_coeffs(source_constraint.terms)
 
-        # Creates and applies the command
-        # todo
+        # Retrieval of the source constraint matrices
+        # todo add matrices
 
-        # Returns the created object
-        # todo
+        # Creates and applies constraint
+        command = CreateBindingConstraint(**args)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        # Returns the new constraint
+        source_constraint.name = new_constraint_name
+        source_constraint.id = new_constraint_id
+        return source_constraint
 
     def update_binding_constraint(
         self,
