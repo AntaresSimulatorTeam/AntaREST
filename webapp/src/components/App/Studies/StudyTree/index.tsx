@@ -107,7 +107,7 @@ function StudyTree() {
           path: failedPath.join(" "),
           interpolation: { escapeValue: false },
         }),
-        t("studies.tree.error.detailsInConsole"),
+        "",
       );
     }
     setStudiesTree(treeAfterSubfoldersUpdate);
