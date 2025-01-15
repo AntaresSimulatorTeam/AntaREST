@@ -969,6 +969,44 @@ class TestBindingConstraints:
         assert len(binding_constraints_list) == 2
 
         # =============================
+        # CONSTRAINT DUPLICATION
+        # =============================
+
+        # Change source constraint matrix to ensure it will be copied correctly
+        new_matrix = np.ones((366, 1)).tolist()
+        res = client.post(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_lt"},
+            json=new_matrix,
+        )
+        res.raise_for_status()
+
+        # Get the source constraint properties to ensure there are copied correctly
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}")
+        res.raise_for_status()
+        current_constraint = res.json()
+        current_constraint.pop("name")
+        current_constraint.pop("id")
+
+        # Duplicates the constraint
+        duplicated_name = "BC_4"
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}", params={"new_name": duplicated_name}
+        )
+        res.raise_for_status()
+        duplicated_constraint = res.json()
+
+        # Asserts the duplicated constraint has the right name and the right properties
+        assert duplicated_constraint.pop("name") == duplicated_name
+        new_id = duplicated_constraint.pop("id")
+        assert current_constraint == duplicated_constraint
+
+        # Asserts the matrix is duplicated correctly
+        res = client.get(f"/v1/studies/{study_id}/raw", params={"path": f"input/bindingconstraints/{new_id}_lt"})
+        res.raise_for_status()
+        assert res.json()["data"] == new_matrix
+
+        # =============================
         #  ERRORS
         # =============================
 
