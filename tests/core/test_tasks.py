@@ -155,10 +155,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     assert failed_task is not None
     assert failed_task.status == TaskStatus.FAILED.value
     assert failed_task.result_status is False
-    assert failed_task.result_msg == (
-        f"Task {failed_id} failed: Unhandled exception this action failed"
-        f"\nSee the logs for detailed information and the error traceback."
-    )
+    assert failed_task.result_msg == "this action failed"
     assert failed_task.completion_date is not None
 
     # Test Case: add a task that succeeds and wait for it

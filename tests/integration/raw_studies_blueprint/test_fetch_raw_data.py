@@ -48,6 +48,12 @@ def _check_endpoint_response(
         assert task["status"] == TaskStatus.FAILED.value
         assert not task["result"]["success"]
         assert expected_msg in task["result"]["message"]
+        # Check the message users will see inside the front-end (GET /comments endpoint will fail)
+        res = client.get(f"/v1/studies/{study_id}/comments")
+        assert res.status_code == 417
+        response = res.json()
+        assert response["exception"] == "VariantGenerationError"
+        assert response["description"] == f"Error while generating variant {study_id} : {expected_msg}"
         # We have to delete the command to make the variant "clean" again.
         res = client.get(f"/v1/studies/{study_id}/commands")
         cmd_id = res.json()[-1]["id"]
@@ -365,7 +371,7 @@ class TestFetchRawData:
 
         # try to delete expansion folder
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
-        expected_msg = "you are not allowed to delete this resource"
+        expected_msg = "you are not allowed to delete this resource : expansion"
         _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
 
         # try to delete a file which isn't inside the 'User' folder
@@ -447,13 +453,13 @@ class TestFetchRawData:
 
         # try to create a folder inside the 'expansion` folder
         expansion_folder = "user/expansion/wrong_folder"
-        expected_msg = "you are not allowed to create a resource here"
+        expected_msg = "you are not allowed to create a resource here: expansion/wrong_folder"
         res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
         _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
         # try to create an already existing folder
         existing_folder = "user/folder_1"
-        expected_msg = "the given resource already exists"
+        expected_msg = "the given resource already exists: folder_1"
         res = client.put(raw_url, params={"path": existing_folder, **additional_params})
         _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
