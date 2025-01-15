@@ -53,7 +53,7 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
   });
 };
 
-export const getWorkspaces = async (): Promise<string[]> => {
+export const getWorkspaces = async () => {
   const res = await client.get<Workspace[]>(
     `/v1/private/explorer/_list_workspaces`,
   );
@@ -67,10 +67,7 @@ export const getWorkspaces = async (): Promise<string[]> => {
  * @param folderPath - path starting from the workspace root (not including the workspace name)
  * @returns list of folders that are not studies, under the given path
  */
-export const getFolders = async (
-  workspace: string,
-  folderPath: string,
-): Promise<NonStudyFolderDTO[]> => {
+export const getFolders = async (workspace: string, folderPath: string) => {
   const res = await client.get<NonStudyFolderDTO[]>(
     `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderPath)}`,
   );
@@ -463,10 +460,7 @@ export const updateStudyMetadata = async (
   return res.data;
 };
 
-export const scanFolder = async (
-  folderPath: string,
-  recursive = false,
-): Promise<void> => {
+export const scanFolder = async (folderPath: string, recursive = false) => {
   await client.post(
     `/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}&recursive=${recursive}`,
   );
