@@ -795,6 +795,43 @@ class BindingConstraintManager:
         new_constraint["id"] = bc_id
         return self.constraint_model_adapter(new_constraint, version)
 
+    def duplicate_binding_constraint(self, study: Study, source_id: str, new_constraint_name: str) -> ConstraintOutput:
+        """
+        Creates a duplicate constraint with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            source_id: The identifier of the constraint to be duplicated.
+            new_constraint_name: The new name for the duplicated constraint.
+
+        Returns:
+            The duplicated constraint configuration.
+
+        Raises:
+            DuplicateConstraintName: If a constraint with the new name already exists in the area.
+        """
+
+        # Checks if the new constraint already exists
+        new_constraint_id = transform_name_to_id(new_constraint_name)
+        existing_constraints = self.get_binding_constraints(study)
+        if new_constraint_id in {bc.id for bc in existing_constraints}:
+            raise DuplicateConstraintName(
+                f"A binding constraint with the same name already exists: {new_constraint_name}."
+            )
+
+        # Retrieval of the source constraint properties and matrices
+        source_constraint = next(iter(bc for bc in existing_constraints if bc.id == source_id), None)
+        if not source_constraint:
+            raise BindingConstraintNotFound(f"Binding constraint '{source_id}' not found")
+
+        # todo
+
+        # Creates and applies the command
+        # todo
+
+        # Returns the created object
+        # todo
+
     def update_binding_constraint(
         self,
         study: Study,
