@@ -488,11 +488,10 @@ class TaskJobService(ITaskService):
 
             try:
                 with db():
-                    result_msg = f"{err_msg}\nSee the logs for detailed information and the error traceback."
                     db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
                         {
                             TaskJob.status: TaskStatus.FAILED.value,
-                            TaskJob.result_msg: result_msg,
+                            TaskJob.result_msg: str(exc),
                             TaskJob.result_status: False,
                             TaskJob.completion_date: datetime.datetime.utcnow(),
                         }
