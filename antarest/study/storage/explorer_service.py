@@ -19,7 +19,8 @@ from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
     has_non_study_folder,
-    is_non_study_folder,
+    is_study_folder,
+    should_ignore_folder_for_scan,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,8 +41,16 @@ class Explorer:
         workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         directories = []
-        for child in directory_path.iterdir():
-            if is_non_study_folder(child):
+        try:
+            children = list(directory_path.iterdir())
+        except PermissionError:
+            children = []  # we don't want to try to read folders we can't access
+        for child in children:
+            if (
+                child.is_dir()
+                and not is_study_folder(child)
+                and not should_ignore_folder_for_scan(child, workspace.filter_in, workspace.filter_out)
+            ):
                 # we don't want to expose the full absolute path on the server
                 child_rel_path = child.relative_to(workspace.path)
                 has_children = has_non_study_folder(child)

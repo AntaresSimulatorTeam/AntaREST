@@ -56,9 +56,6 @@ def test_get(tmp_path: str, project_path) -> None:
     data = {"titi": 43}
     sub_route = "settings"
 
-    path = path_study / "settings"
-    key = "titi"
-
     study = Mock()
     study.get.return_value = data
     study_factory = Mock()
@@ -98,13 +95,13 @@ def test_get(tmp_path: str, project_path) -> None:
                 status=TaskStatus.COMPLETED,
                 creation_date_utc="",
                 completion_date_utc=None,
-                result=TaskResult(success=False, message=""),
+                result=TaskResult(success=False, message="error message"),
             ),
         ]:
             yield t
 
     study_service.task_service.status_task.side_effect = task_status()
-    with pytest.raises(VariantGenerationError, match="Error while generating study2.py"):
+    with pytest.raises(VariantGenerationError, match="Error while generating variant study2.py error message"):
         study_service.get(metadata=metadata, url=sub_route, depth=2)
     study_service.task_service.await_task.assert_called()
 
