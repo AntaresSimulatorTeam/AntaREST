@@ -42,6 +42,7 @@ export default memo(function StudyTreeNode({
       </TreeItemEnhanced>
     );
   }
+
   return (
     <TreeItemEnhanced
       itemId={id}
