@@ -505,8 +505,6 @@ def has_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[
 
 
 def is_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
-    if not path.is_dir():
-        return False
     if is_study_folder(path):
         return False
     if should_ignore_folder_for_scan(path, filter_in, filter_out):
