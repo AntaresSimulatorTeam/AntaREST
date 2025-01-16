@@ -166,6 +166,15 @@ def create_study_variant_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[CommandDTOAPI]:
+        """
+        Get the list of commands of a variant.
+
+        Parameters:
+        - `uuid`: the study id
+
+        Returns:
+        - The list of variant commands
+        """
         logger.info(
             f"Fetching command list of variant study {uuid}",
             extra={"user": current_user.id},
@@ -207,6 +216,16 @@ def create_study_variant_routes(
         commands: List[CommandDTOAPI] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Optional[List[str]]:
+        """
+        Append a list of commands to a variant study.
+
+        Parameters:
+        - `uuid`: the study id
+        - `commands`: the list of commands
+
+        Returns:
+        - The list of the newly appended commands if the study is a variant, None otherwise.
+        """
         logger.info(
             f"Appending new command to variant study {uuid}",
             extra={"user": current_user.id},
