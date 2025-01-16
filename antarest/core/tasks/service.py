@@ -24,6 +24,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
+from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
@@ -40,6 +41,7 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import retry
+from antarest.login.utils import current_user_context
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
@@ -294,16 +296,16 @@ class TaskJobService(ITaskService):
                 type=EventType.TASK_ADDED,
                 payload=TaskEventPayload(
                     id=task.id,
-                    message=custom_event_messages.start
-                    if custom_event_messages is not None
-                    else f"Task {task.id} added",
+                    message=(
+                        custom_event_messages.start if custom_event_messages is not None else f"Task {task.id} added"
+                    ),
                     type=task.type,
                     study_id=task.ref_id,
                 ).model_dump(),
                 permissions=PermissionInfo(owner=request_params.user.impersonator),
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages)
+        future = self.threadpool.submit(self._run_task, action, task.id, request_params.user, custom_event_messages)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> t.Callable[[Event], t.Awaitable[None]]:
@@ -399,83 +401,87 @@ class TaskJobService(ITaskService):
         self,
         callback: Task,
         task_id: str,
+        jwt_user: JWTUser,
         custom_event_messages: t.Optional[CustomTaskEventMessages] = None,
     ) -> None:
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
         try:
             # attention: this function is executed in a thread, not in the main process
-            with db():
-                # Important to keep this retry for now,
-                # in case commit is not visible (read from replica ...)
-                task = retry(lambda: self.repo.get_or_raise(task_id))
-                task_type = task.type
-                study_id = task.ref_id
+            with current_user_context(token=jwt_user):
+                with db():
+                    # Important to keep this retry for now,
+                    # in case commit is not visible (read from replica ...)
+                    task = retry(lambda: self.repo.get_or_raise(task_id))
+                    task_type = task.type
+                    study_id = task.ref_id
 
-            self.event_bus.push(
-                Event(
-                    type=EventType.TASK_RUNNING,
-                    payload=TaskEventPayload(
-                        id=task_id,
-                        message=custom_event_messages.running
-                        if custom_event_messages is not None
-                        else f"Task {task_id} is running",
-                        type=task_type,
-                        study_id=study_id,
-                    ).model_dump(),
-                    permissions=PermissionInfo(public_mode=PublicMode.READ),
-                    channel=EventChannelDirectory.TASK + task_id,
+                self.event_bus.push(
+                    Event(
+                        type=EventType.TASK_RUNNING,
+                        payload=TaskEventPayload(
+                            id=task_id,
+                            message=(
+                                custom_event_messages.running
+                                if custom_event_messages is not None
+                                else f"Task {task_id} is running"
+                            ),
+                            type=task_type,
+                            study_id=study_id,
+                        ).model_dump(),
+                        permissions=PermissionInfo(public_mode=PublicMode.READ),
+                        channel=EventChannelDirectory.TASK + task_id,
+                    )
                 )
-            )
 
-            logger.info(f"Starting task {task_id}")
-            with db():
-                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                    {TaskJob.status: TaskStatus.RUNNING.value}
+                logger.info(f"Starting task {task_id}")
+                with db():
+                    db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                        {TaskJob.status: TaskStatus.RUNNING.value}
+                    )
+                    db.session.commit()
+                logger.info(f"Task {task_id} set to RUNNING")
+
+                with db():
+                    # We must use the DB session attached to the current thread
+                    result = callback(TaskLogAndProgressRecorder(task_id, db.session, self.event_bus))
+
+                status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
+                logger.info(f"Task {task_id} ended with status {status}")
+
+                with db():
+                    # Do not use the `timezone.utc` timezone to preserve a naive datetime.
+                    completion_date = datetime.datetime.utcnow() if status.is_final() else None
+                    db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
+                        {
+                            TaskJob.status: status.value,
+                            TaskJob.result_msg: result.message,
+                            TaskJob.result_status: result.success,
+                            TaskJob.result: result.return_value,
+                            TaskJob.completion_date: completion_date,
+                        }
+                    )
+                    db.session.commit()
+
+                event_type = {True: EventType.TASK_COMPLETED, False: EventType.TASK_FAILED}[result.success]
+                event_msg = {True: "completed", False: "failed"}[result.success]
+                self.event_bus.push(
+                    Event(
+                        type=event_type,
+                        payload=TaskEventPayload(
+                            id=task_id,
+                            message=(
+                                custom_event_messages.end
+                                if custom_event_messages is not None
+                                else f"Task {task_id} {event_msg}"
+                            ),
+                            type=task_type,
+                            study_id=study_id,
+                        ).model_dump(),
+                        permissions=PermissionInfo(public_mode=PublicMode.READ),
+                        channel=EventChannelDirectory.TASK + task_id,
+                    )
                 )
-                db.session.commit()
-            logger.info(f"Task {task_id} set to RUNNING")
-
-            with db():
-                # We must use the DB session attached to the current thread
-                result = callback(TaskLogAndProgressRecorder(task_id, db.session, self.event_bus))
-
-            status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
-            logger.info(f"Task {task_id} ended with status {status}")
-
-            with db():
-                # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                completion_date = datetime.datetime.utcnow() if status.is_final() else None
-                db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                    {
-                        TaskJob.status: status.value,
-                        TaskJob.result_msg: result.message,
-                        TaskJob.result_status: result.success,
-                        TaskJob.result: result.return_value,
-                        TaskJob.completion_date: completion_date,
-                    }
-                )
-                db.session.commit()
-
-            event_type = {True: EventType.TASK_COMPLETED, False: EventType.TASK_FAILED}[result.success]
-            event_msg = {True: "completed", False: "failed"}[result.success]
-            self.event_bus.push(
-                Event(
-                    type=event_type,
-                    payload=TaskEventPayload(
-                        id=task_id,
-                        message=(
-                            custom_event_messages.end
-                            if custom_event_messages is not None
-                            else f"Task {task_id} {event_msg}"
-                        ),
-                        type=task_type,
-                        study_id=study_id,
-                    ).model_dump(),
-                    permissions=PermissionInfo(public_mode=PublicMode.READ),
-                    channel=EventChannelDirectory.TASK + task_id,
-                )
-            )
         except Exception as exc:
             err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
             logger.error(err_msg, exc_info=exc)
