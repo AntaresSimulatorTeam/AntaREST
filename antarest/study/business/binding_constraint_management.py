@@ -795,6 +795,75 @@ class BindingConstraintManager:
         new_constraint["id"] = bc_id
         return self.constraint_model_adapter(new_constraint, version)
 
+    def duplicate_binding_constraint(self, study: Study, source_id: str, new_constraint_name: str) -> ConstraintOutput:
+        """
+        Creates a duplicate constraint with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            source_id: The identifier of the constraint to be duplicated.
+            new_constraint_name: The new name for the duplicated constraint.
+
+        Returns:
+            The duplicated constraint configuration.
+
+        Raises:
+            DuplicateConstraintName: If a constraint with the new name already exists in the study.
+        """
+
+        # Checks if the new constraint already exists
+        new_constraint_id = transform_name_to_id(new_constraint_name)
+        existing_constraints = self.get_binding_constraints(study)
+        if new_constraint_id in {bc.id for bc in existing_constraints}:
+            raise DuplicateConstraintName(
+                f"A binding constraint with the same name already exists: {new_constraint_name}."
+            )
+
+        # Retrieval of the source constraint properties
+        source_constraint = next(iter(bc for bc in existing_constraints if bc.id == source_id), None)
+        if not source_constraint:
+            raise BindingConstraintNotFound(f"Binding constraint '{source_id}' not found")
+
+        new_constraint = {
+            "name": new_constraint_name,
+            **source_constraint.model_dump(mode="json", exclude={"terms", "name", "id"}),
+        }
+        args = {
+            **new_constraint,
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "study_version": StudyVersion.parse(study.version),
+        }
+        if source_constraint.terms:
+            args["coeffs"] = self.terms_to_coeffs(source_constraint.terms)
+
+        # Retrieval of the source constraint matrices
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        if file_study.config.version < STUDY_VERSION_8_7:
+            matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
+            args["values"] = matrix["data"]
+        else:
+            correspondence_map = {
+                "lt": TermMatrices.LESS.value,
+                "gt": TermMatrices.GREATER.value,
+                "eq": TermMatrices.EQUAL.value,
+            }
+            source_matrices = OPERATOR_MATRIX_FILE_MAP[source_constraint.operator]
+            for matrix_name in source_matrices:
+                matrix = file_study.tree.get(["input", "bindingconstraints", matrix_name.format(bc_id=source_id)])[
+                    "data"
+                ]
+                command_attribute = correspondence_map[matrix_name.removeprefix("{bc_id}_")]
+                args[command_attribute] = matrix
+
+        # Creates and applies constraint
+        command = CreateBindingConstraint(**args)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        # Returns the new constraint
+        source_constraint.name = new_constraint_name
+        source_constraint.id = new_constraint_id
+        return source_constraint
+
     def update_binding_constraint(
         self,
         study: Study,
