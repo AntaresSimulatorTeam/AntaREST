@@ -482,7 +482,9 @@ class TestBindingConstraints:
 
         # Duplicates the constraint
         duplicated_name = "BC_4"
-        res = client.post(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", params={"new_name": duplicated_name})
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", params={"new_constraint_name": duplicated_name}
+        )
         res.raise_for_status()
         duplicated_constraint = res.json()
 
@@ -502,13 +504,15 @@ class TestBindingConstraints:
 
         # Asserts duplication fails if given an non-exisiting constraint
         fake_name = "fake_name"
-        res = client.post(f"/v1/studies/{study_id}/bindingconstraints/{fake_name}", params={"new_name": "aa"})
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{fake_name}", params={"new_constraint_name": "aa"}
+        )
         assert res.status_code == 404
         assert res.json()["exception"] == "BindingConstraintNotFound"
         assert res.json()["description"] == f"Binding constraint '{fake_name}' not found"
 
         # Asserts duplication fails if given an already existing name
-        res = client.post(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", params={"new_name": bc_id})
+        res = client.post(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", params={"new_constraint_name": bc_id})
         assert res.status_code == 409
         assert res.json()["exception"] == "DuplicateConstraintName"
         assert res.json()["description"] == f"A binding constraint with the same name already exists: {bc_id}."
@@ -991,7 +995,8 @@ class TestBindingConstraints:
         # Duplicates the constraint
         duplicated_name = "BC_4"
         res = client.post(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}", params={"new_name": duplicated_name}
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            params={"new_constraint_name": duplicated_name},
         )
         res.raise_for_status()
         duplicated_constraint = res.json()
