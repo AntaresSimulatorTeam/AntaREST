@@ -40,13 +40,11 @@ class Explorer:
         workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         directories = []
-        children = []
-
         try:
-            # this block is skipper in case of permission error
+            # this block is skipped in case of permission error
             children = list(directory_path.iterdir())
             for child in children:
-                # if we can't acess one child we skip it
+                # if we can't access one child we skip it
                 try:
                     if is_non_study_folder(child, workspace.filter_in, workspace.filter_out):
                         # we don't want to expose the full absolute path on the server
