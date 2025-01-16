@@ -47,6 +47,7 @@ from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
+from antarest.login.utils import CurrentUserMiddleware
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.service_creator import SESSION_ARGS, Module, create_services, init_db_engine
 from antarest.singleton_services import start_all_services
@@ -139,7 +140,7 @@ def fastapi_app(
     # Database
     engine = init_db_engine(config_file, config, auto_upgrade_db)
     application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
-    # Since Starlette Version 0.24.0, the middlewares are lazily build inside this function
+    # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
     # But we need to instantiate this middleware as it's needed for the study service.
     # So we manually instantiate it here.
     DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
@@ -273,6 +274,8 @@ def fastapi_app(
         ),
         config=RATE_LIMIT_CONFIG,
     )
+
+    application.add_middleware(CurrentUserMiddleware, auth=auth_manager)
 
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
     services = create_services(config, app_ctxt)

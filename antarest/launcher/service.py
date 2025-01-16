@@ -251,13 +251,7 @@ class LauncherService:
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(
-            study_uuid,
-            job_uuid,
-            solver_version,
-            launcher_parameters,
-            params,
-        )
+        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters)
 
         self.event_bus.push(
             Event(
