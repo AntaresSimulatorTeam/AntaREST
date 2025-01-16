@@ -19,8 +19,7 @@ from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
     has_non_study_folder,
-    is_study_folder,
-    should_ignore_folder_for_scan,
+    is_non_study_folder,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,24 +40,24 @@ class Explorer:
         workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         directories = []
+        children = []
+
         try:
+            # this block is skipper in case of permission error
             children = list(directory_path.iterdir())
-        except PermissionError:
-            children = []  # we don't want to try to read folders we can't access
-        for child in children:
-            if (
-                child.is_dir()
-                and not is_study_folder(child)
-                and not should_ignore_folder_for_scan(child, workspace.filter_in, workspace.filter_out)
-            ):
-                # we don't want to expose the full absolute path on the server
-                child_rel_path = child.relative_to(workspace.path)
-                has_children = has_non_study_folder(child)
-                directories.append(
-                    NonStudyFolderDTO(
-                        path=child_rel_path, workspace=workspace_name, name=child.name, has_children=has_children
+            for child in children:
+                # if we can't acess one child we skip it
+                if is_non_study_folder(child, workspace.filter_in, workspace.filter_out):
+                    # we don't want to expose the full absolute path on the server
+                    child_rel_path = child.relative_to(workspace.path)
+                    has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
+                    directories.append(
+                        NonStudyFolderDTO(
+                            path=child_rel_path, workspace=workspace_name, name=child.name, has_children=has_children
+                        )
                     )
-                )
+        except PermissionError as e:
+            logger.warning(f"Permission error while listing {directory_path}: {e}")
         return directories
 
     def list_workspaces(
