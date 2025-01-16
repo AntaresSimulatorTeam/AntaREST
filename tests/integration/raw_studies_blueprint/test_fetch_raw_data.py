@@ -27,6 +27,9 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
+    default_data_matrix,
+)
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
 
@@ -271,15 +274,12 @@ class TestFetchRawData:
         first_row = [float(x) for x in actual_lines[0].split("\t")]
         assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
 
-        # If ask for an empty matrix, we should have an empty binary content
-        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False})
-        assert res.status_code == 200, res.json()
-        assert res.content == b""
-
-        # But, if we use formatted = True, we should have a JSON objet representing and empty matrix
+        # If ask for an empty matrix, we should return its default value
         res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
         assert res.status_code == 200, res.json()
-        assert res.json() == {"index": [], "columns": [], "data": []}
+        assert res.json()["index"] == list(range(365))
+        assert res.json()["columns"] == list(range(6))
+        assert res.json()["data"] == default_data_matrix.tolist()
 
         # Some files can be corrupted
         user_folder_dir = study_dir.joinpath("user/bad")
