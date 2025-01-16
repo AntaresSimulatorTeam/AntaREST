@@ -921,6 +921,22 @@ class TestBindingConstraints:
         binding_constraints_list = preparer.get_binding_constraints(study_id)
         assert len(binding_constraints_list) == 2
 
+        # Delete multiple binding constraint
+
+        preparer.create_binding_constraint(study_id, name="bc1", group="grp1", **args)
+        preparer.create_binding_constraint(study_id, name="bc2", group="grp2", **args)
+
+        res = client.request(
+            "DELETE",
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=["bc1", "bc2"],
+        )
+        assert res.status_code == 200, res.json()
+
+        # Asserts that the deletion worked
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 2
+
         # =============================
         #  ERRORS
         # =============================

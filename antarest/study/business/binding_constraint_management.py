@@ -70,6 +70,9 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
@@ -947,6 +950,28 @@ class BindingConstraintManager:
         command = RemoveBindingConstraint(
             id=bc.id, command_context=command_context, study_version=file_study.config.version
         )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+    def remove_multiple_binding_constraints(self, study: Study, binding_constraints_ids: t.List[str]) -> None:
+        """
+        Removes multiple binding constraints from a study.
+
+        Args:
+            study: The study from which to remove the constraint.
+            binding_constraints_ids: The ID sof the binding constraints to remove.
+
+        Raises:
+            BindingConstraintNotFound: If no binding constraint with the specified ID is found.
+        """
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        command = RemoveMultipleBindingConstraints(
+            ids=binding_constraints_ids,
+            command_context=command_context,
+            study_version=file_study.config.version,
+        )
+
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def _update_constraint_with_terms(
