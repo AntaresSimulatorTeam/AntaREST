@@ -498,10 +498,7 @@ def should_ignore_folder_for_scan(path: Path, filter_in: t.List[str], filter_out
 
 
 def has_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
-    for sub_path in path.iterdir():
-        if is_non_study_folder(sub_path, filter_in, filter_out):
-            return True
-    return False
+    return any(is_non_study_folder(sub_path, filter_in, filter_out) for sub_path in path.iterdir())
 
 
 def is_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
