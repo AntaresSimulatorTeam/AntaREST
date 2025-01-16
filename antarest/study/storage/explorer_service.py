@@ -47,15 +47,21 @@ class Explorer:
             children = list(directory_path.iterdir())
             for child in children:
                 # if we can't acess one child we skip it
-                if is_non_study_folder(child, workspace.filter_in, workspace.filter_out):
-                    # we don't want to expose the full absolute path on the server
-                    child_rel_path = child.relative_to(workspace.path)
-                    has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
-                    directories.append(
-                        NonStudyFolderDTO(
-                            path=child_rel_path, workspace=workspace_name, name=child.name, has_children=has_children
+                try:
+                    if is_non_study_folder(child, workspace.filter_in, workspace.filter_out):
+                        # we don't want to expose the full absolute path on the server
+                        child_rel_path = child.relative_to(workspace.path)
+                        has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
+                        directories.append(
+                            NonStudyFolderDTO(
+                                path=child_rel_path,
+                                workspace=workspace_name,
+                                name=child.name,
+                                has_children=has_children,
+                            )
                         )
-                    )
+                except PermissionError as e:
+                    logger.warning(f"Permission error while accessing {child} or one of its children: {e}")
         except PermissionError as e:
             logger.warning(f"Permission error while listing {directory_path}: {e}")
         return directories

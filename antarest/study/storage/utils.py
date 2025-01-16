@@ -478,49 +478,37 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
 
 
 def should_ignore_folder_for_scan(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
-    try:
-        if is_aw_no_scan(path):
-            logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
-            return True
-
-        if is_temporary_upgrade_dir(path):
-            logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
-            return True
-
-        if is_ts_gen_tmp_dir(path):
-            logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
-            return True
-
-        return not (
-            path.is_dir()
-            and any(re.search(regex, path.name) for regex in filter_in)
-            and not any(re.search(regex, path.name) for regex in filter_out)
-        )
-    except PermissionError as e:
-        logger.warning(f"Permission error while accessing {path}: {e}")
+    if is_aw_no_scan(path):
+        logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
+
+    if is_temporary_upgrade_dir(path):
+        logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
+        return True
+
+    if is_ts_gen_tmp_dir(path):
+        logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
+        return True
+
+    return not (
+        path.is_dir()
+        and any(re.search(regex, path.name) for regex in filter_in)
+        and not any(re.search(regex, path.name) for regex in filter_out)
+    )
 
 
 def has_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
-    try:
-        for sub_path in path.iterdir():
-            if is_non_study_folder(sub_path, filter_in, filter_out):
-                return True
-        return False
-    except PermissionError as e:
-        logger.warning(f"Permission error while accessing {path}: {e}")
-        return False
+    for sub_path in path.iterdir():
+        if is_non_study_folder(sub_path, filter_in, filter_out):
+            return True
+    return False
 
 
 def is_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
-    try:
-        if not path.is_dir():
-            return False
-        if is_study_folder(path):
-            return False
-        if should_ignore_folder_for_scan(path, filter_in, filter_out):
-            return False
-        return True
-    except PermissionError as e:
-        logger.warning(f"Permission error while accessing {path}: {e}")
+    if not path.is_dir():
         return False
+    if is_study_folder(path):
+        return False
+    if should_ignore_folder_for_scan(path, filter_in, filter_out):
+        return False
+    return True
