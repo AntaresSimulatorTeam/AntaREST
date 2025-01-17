@@ -27,6 +27,36 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+CLUSTER_ARGS = {
+    "area_id": "area_name",
+    "cluster_name": "cluster_name",
+    "parameters": {
+        "co2": 0.0,
+        "enabled": True,
+        "fixed-cost": 0.0,
+        "gen-ts": "use global",
+        "group": "other 1",
+        "law.forced": "uniform",
+        "law.planned": "uniform",
+        "marginal-cost": 2.0,
+        "market-bid-cost": 2.0,
+        "min-down-time": 1,
+        "min-stable-power": 0.0,
+        "min-up-time": 1,
+        "must-run": False,
+        "name": "cluster_name",
+        "nominalcapacity": 2.0,
+        "spinning": 0.0,
+        "spread-cost": 0.0,
+        "startup-cost": 0.0,
+        "unitcount": 2,
+        "volatility.forced": 0.0,
+        "volatility.planned": 0.0,
+    },
+    "prepro": "prepro",
+    "modulation": "modulation",
+}
+
 COMMANDS: List[CommandDTO] = [
     CommandDTO(action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8),
     CommandDTO(
@@ -171,54 +201,12 @@ COMMANDS: List[CommandDTO] = [
     ),
     CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
-        args={
-            "area_id": "area_name",
-            "cluster_name": "cluster_name",
-            "parameters": {
-                "group": "group",
-                "unitcount": "unitcount",
-                "nominalcapacity": "nominalcapacity",
-                "marginal-cost": "marginal-cost",
-                "market-bid-cost": "market-bid-cost",
-            },
-            "prepro": "prepro",
-            "modulation": "modulation",
-        },
-        study_version=STUDY_VERSION_8_8,
+        args=CLUSTER_ARGS,
+        study_version=STUDY_VERSION_8_2,
     ),
     CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
-        args=[
-            {
-                "area_id": "area_name",
-                "cluster_name": "cluster_name",
-                "parameters": {
-                    "co2": 0.0,
-                    "enabled": True,
-                    "fixed-cost": 0.0,
-                    "gen-ts": "use global",
-                    "group": "other 1",
-                    "law.forced": "uniform",
-                    "law.planned": "uniform",
-                    "marginal-cost": 2.0,
-                    "market-bid-cost": 2.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
-                    "must-run": False,
-                    "name": "cluster_name",
-                    "nominalcapacity": 2.0,
-                    "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "startup-cost": 0.0,
-                    "unitcount": 2,
-                    "volatility.forced": 0.0,
-                    "volatility.planned": 0.0,
-                },
-                "prepro": "prepro",
-                "modulation": "modulation",
-            }
-        ],
+        args=[CLUSTER_ARGS],
         study_version=STUDY_VERSION_8_2,
     ),
     CommandDTO(
