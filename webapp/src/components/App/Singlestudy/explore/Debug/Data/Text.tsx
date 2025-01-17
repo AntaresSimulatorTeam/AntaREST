@@ -31,7 +31,7 @@ import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
-import EmptyView from "@/components/common/page/SimpleContent";
+import EmptyView from "@/components/common/page/EmptyView";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { getRawFile } from "@/services/api/studies/raw";
 

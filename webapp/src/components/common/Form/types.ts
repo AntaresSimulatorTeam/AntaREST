@@ -26,7 +26,6 @@ import {
 } from "react-hook-form";
 
 export interface SubmitHandlerPlus<
-  // TODO Make parameter required
   TFieldValues extends FieldValues = FieldValues,
 > {
   values: TFieldValues;
