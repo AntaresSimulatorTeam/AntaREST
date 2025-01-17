@@ -597,9 +597,6 @@ class BindingConstraintManager:
         file_study = storage_service.get_raw(study)
         existing_constraints = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        if not existing_constraints:
-            raise BindingConstraintNotFound(f"Binding constraint(s) '{bc_ids}' not found")
-
         existing_ids = {constraint["id"] for constraint in existing_constraints.values()}
 
         missing_bc_ids = [bc_id for bc_id in bc_ids if bc_id not in existing_ids]
@@ -1042,7 +1039,7 @@ class BindingConstraintManager:
 
         Args:
             study: The study from which to remove the constraint.
-            binding_constraints_ids: The ID sof the binding constraints to remove.
+            binding_constraints_ids: The IDs of the binding constraints to remove.
 
         Raises:
             BindingConstraintNotFound: If at least one binding constraint within the specified list is not found.

@@ -32,7 +32,7 @@ class RemoveMultipleBindingConstraints(ICommand):
     command_name: CommandName = CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS
     version: int = 1
 
-    # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINT` command:
+    # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINTS` command:
     ids: t.List[str]
 
     @override
@@ -46,34 +46,30 @@ class RemoveMultipleBindingConstraints(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        # If at least one bc is missing in the database, we raise an error
-        already_existing_ids = {obj.id for obj in study_data.config.bindings}
-        missing_bc_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
-        if missing_bc_ids:
-            return CommandOutput(status=False, message=f"Binding constraint(s) '{missing_bc_ids}' not found")
+        self._apply_config(study_data.config)
 
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
 
-        deleted_binding_constraints = {}
+        deleted_binding_constraints = []
 
         for key in list(binding_constraints.keys()):
             if binding_constraints[key].get("id") in self.ids:
-                deleted_binding_constraints[key] = binding_constraints.pop(key)
+                deleted_binding_constraints.append(binding_constraints.pop(key))
 
         study_data.tree.save(
             binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
 
+        existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
         for bc in deleted_binding_constraints:
             if study_data.config.version < STUDY_VERSION_8_7:
-                study_data.tree.delete(["input", "bindingconstraints", deleted_binding_constraints[bc].get("id")])
+                study_data.tree.delete(["input", "bindingconstraints", bc.get("id")])
             else:
-                existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
                 for term in ["lt", "gt", "eq"]:
-                    matrix_id = f"{deleted_binding_constraints[bc].get('id')}_{term}"
+                    matrix_id = f"{bc.get('id')}_{term}"
                     if matrix_id in existing_files:
                         study_data.tree.delete(["input", "bindingconstraints", matrix_id])
 

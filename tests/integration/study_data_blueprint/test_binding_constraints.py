@@ -973,7 +973,6 @@ class TestBindingConstraints:
         assert len(binding_constraints_list) == 2
 
         # Delete multiple binding constraint
-
         preparer.create_binding_constraint(study_id, name="bc1", group="grp1", **args)
         preparer.create_binding_constraint(study_id, name="bc2", group="grp2", **args)
 
@@ -993,6 +992,8 @@ class TestBindingConstraints:
         # Asserts that the deletion worked
         binding_constraints_list = preparer.get_binding_constraints(study_id)
         assert len(binding_constraints_list) == 2
+        actual_ids = [constraint["id"] for constraint in binding_constraints_list]
+        assert actual_ids == ["binding_constraint_1", "binding_constraint_3"]
 
         groups = preparer.get_binding_constraints_groups(study_id)
         assert len(groups) == 2

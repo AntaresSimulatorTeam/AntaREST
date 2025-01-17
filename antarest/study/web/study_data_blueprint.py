@@ -1381,7 +1381,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.delete(
         "/studies/{uuid}/bindingconstraints",
         tags=[APITag.study_data],
-        summary="Delete multiple binding constraint",
+        summary="Delete multiple binding constraints",
         response_model=None,
     )
     def delete_multiple_binding_constraints(
