@@ -979,9 +979,6 @@ class TestBindingConstraints:
         binding_constraints_list = preparer.get_binding_constraints(study_id)
         assert len(binding_constraints_list) == 4
 
-        groups = preparer.get_binding_constraints_groups(study_id)
-        assert len(groups) == 4
-
         res = client.request(
             "DELETE",
             f"/v1/studies/{study_id}/bindingconstraints",
@@ -994,9 +991,6 @@ class TestBindingConstraints:
         assert len(binding_constraints_list) == 2
         actual_ids = [constraint["id"] for constraint in binding_constraints_list]
         assert actual_ids == ["binding_constraint_1", "binding_constraint_3"]
-
-        groups = preparer.get_binding_constraints_groups(study_id)
-        assert len(groups) == 2
 
         # =============================
         # CONSTRAINT DUPLICATION

@@ -38,15 +38,18 @@ class RemoveMultipleBindingConstraints(ICommand):
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         # If at least one bc is missing in the database, we raise an error
-        already_existing_ids = {obj.id for obj in study_data.bindings}
+        already_existing_ids = {binding.id for binding in study_data.bindings}
         missing_bc_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
         if missing_bc_ids:
-            return CommandOutput(status=False, message=f"Binding constraint not found: '{missing_bc_ids}'"), dict()
+            return CommandOutput(status=False, message=f"Binding constraint not found: '{missing_bc_ids}'"), {}
         return CommandOutput(status=True), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        self._apply_config(study_data.config)
+        command_output, _ = self._apply_config(study_data.config)
+
+        if not command_output.status:
+            return command_output
 
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
@@ -77,7 +80,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         removed_groups = old_groups - new_groups
         remove_bc_from_scenario_builder(study_data, removed_groups)
 
-        return self._apply_config(study_data.config)[0]
+        return command_output
 
     @override
     def to_dto(self) -> CommandDTO:
