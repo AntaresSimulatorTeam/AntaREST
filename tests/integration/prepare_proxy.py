@@ -344,6 +344,20 @@ class PreparerProxy:
         binding_constraints_list = t.cast(t.List[t.Dict[str, t.Any]], res.json())
         return binding_constraints_list
 
+    def get_binding_constraints_groups(self, study_id: str) -> t.List[str]:
+        """
+        Get the binding constraints groups of a study.
+
+        Args:
+            study_id: The ID of the study.
+
+        Returns:
+            The list of constraint unique groups.
+        """
+        binding_constraints_list = self.get_binding_constraints(study_id)
+        groups = list({item['group'] for item in binding_constraints_list})
+        return groups
+
     def drop_all_commands(self, variant_id: str) -> None:
         """
         Drop all commands of a variant.
