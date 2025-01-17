@@ -17,6 +17,7 @@ from pydantic import Field, model_validator
 __all__ = "LowerCaseIdentifier"
 
 from antarest.core.serialization import AntaresBaseModel
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 
 
 class LowerCaseIdentifier(
@@ -30,22 +31,6 @@ class LowerCaseIdentifier(
     """
 
     id: str = Field(description="ID (section name)", pattern=r"[a-zA-Z0-9_(),& -]+")
-
-    @classmethod
-    def generate_id(cls, name: str) -> str:
-        """
-        Generate an ID from a name.
-
-        Args:
-            name: Name of a section read from an INI file
-
-        Returns:
-            The ID of the section.
-        """
-        # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
-
-        return transform_name_to_id(name)
 
     @model_validator(mode="before")
     def validate_id(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
@@ -64,12 +49,12 @@ class LowerCaseIdentifier(
             if storage_id := values.get("id"):
                 # If the ID is provided, it comes from a INI section name.
                 # In some legacy case, the ID was in lower case, so we need to convert it.
-                values["id"] = cls.generate_id(storage_id)
+                values["id"] = transform_name_to_id(storage_id)
                 return values
             if not values.get("name"):
                 return values
             name = values["name"]
-            if storage_id := cls.generate_id(name):
+            if storage_id := transform_name_to_id(name):
                 values["id"] = storage_id
             else:
                 raise ValueError(f"Invalid name '{name}'.")

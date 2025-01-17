@@ -326,7 +326,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                     raise ValueError(msg)
                 errors.append(msg)
 
-    def get_lowered_content(
+    def _get_lowered_content(
         self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False
     ) -> SUB_JSON:
         output = self._get(url, depth, expanded, get_node=False)
@@ -358,7 +358,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            info = self.get_lowered_content([])  # We read the cluster ids in lower case
+            info = self._get_lowered_content([])  # We read the cluster ids in lower case
             assert isinstance(info, dict)
             obj = data
             if isinstance(data, str):

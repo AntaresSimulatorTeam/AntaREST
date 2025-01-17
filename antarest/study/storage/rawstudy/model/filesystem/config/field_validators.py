@@ -105,10 +105,3 @@ def transform_name_to_id(name: str) -> str:
         name: The name to convert.
     """
     return _sub_invalid_chars(" ", name).strip().lower()
-
-
-def validate_id_against_name(name: str) -> str:
-    to_return = transform_name_to_id(name)
-    if not to_return:
-        raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-    return to_return

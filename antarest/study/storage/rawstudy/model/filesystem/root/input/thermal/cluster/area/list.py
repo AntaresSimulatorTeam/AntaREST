@@ -41,7 +41,7 @@ class InputThermalClustersAreaList(IniFileNode):
     def get(
         self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> SUB_JSON:
-        return super().get_lowered_content(url, depth, expanded)
+        return super()._get_lowered_content(url, depth, expanded)
 
     @override
     def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:
