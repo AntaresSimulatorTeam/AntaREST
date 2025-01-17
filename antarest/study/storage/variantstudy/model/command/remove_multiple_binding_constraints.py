@@ -17,6 +17,7 @@ from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import DEFAULT_GROUP
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -36,15 +37,20 @@ class RemoveMultipleBindingConstraints(ICommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+        # If at least one bc is missing in the database, we raise an error
+        already_existing_ids = {obj.id for obj in study_data.bindings}
+        missing_bc_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
+        if missing_bc_ids:
+            return CommandOutput(status=False, message=f"Binding constraint not found: '{missing_bc_ids}'"), dict()
         return CommandOutput(status=True), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         # If at least one bc is missing in the database, we raise an error
         already_existing_ids = {obj.id for obj in study_data.config.bindings}
-        missing_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
-        if len(missing_ids) > 0:
-            return CommandOutput(status=False, message=f"Binding constraint not found: '{missing_ids}'")
+        missing_bc_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
+        if missing_bc_ids:
+            return CommandOutput(status=False, message=f"Binding constraint(s) '{missing_bc_ids}' not found")
 
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
@@ -73,29 +79,9 @@ class RemoveMultipleBindingConstraints(ICommand):
 
         new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
         removed_groups = old_groups - new_groups
-        self.remove_bc_from_scenario_builder(study_data, removed_groups)
+        remove_bc_from_scenario_builder(study_data, removed_groups)
 
         return self._apply_config(study_data.config)[0]
-
-    def remove_bc_from_scenario_builder(self, study_data: FileStudy, removed_groups: t.Set[str]) -> None:
-        """
-        Update the scenario builder by removing the rows that correspond to the BC groups to remove.
-
-        NOTE: this update can be very long if the scenario builder configuration is large.
-        """
-        if not removed_groups:
-            return
-
-        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
-
-        for ruleset in rulesets.values():
-            for key in list(ruleset):
-                # The key is in the form "symbol,group,year"
-                symbol, *parts = key.split(",")
-                if symbol == "bc" and parts[0] in removed_groups:
-                    del ruleset[key]
-
-        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     @override
     def to_dto(self) -> CommandDTO:

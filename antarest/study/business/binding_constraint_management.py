@@ -592,6 +592,21 @@ class BindingConstraintManager:
                     coeffs[term.id].append(term.offset)
         return coeffs
 
+    def check_binding_constraints_exists(self, study: Study, bc_ids: t.List[str]) -> None:
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        existing_constraints = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+
+        if not existing_constraints:
+            raise BindingConstraintNotFound(f"Binding constraint(s) '{bc_ids}' not found")
+
+        existing_ids = {constraint["id"] for constraint in existing_constraints.values()}
+
+        missing_bc_ids = [bc_id for bc_id in bc_ids if bc_id not in existing_ids]
+
+        if missing_bc_ids:
+            raise BindingConstraintNotFound(f"Binding constraint(s) '{missing_bc_ids}' not found")
+
     def get_binding_constraint(self, study: Study, bc_id: str) -> ConstraintOutput:
         """
         Retrieves a binding constraint by its ID within a given study.
@@ -1032,6 +1047,9 @@ class BindingConstraintManager:
         Raises:
             BindingConstraintNotFound: If no binding constraint with the specified ID is found.
         """
+
+        self.check_binding_constraints_exists(study, binding_constraints_ids)
+
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
