@@ -43,7 +43,8 @@ class ClusteredRenewableClusterConfig(IniFileNode):
     def get(
         self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> SUB_JSON:
-        return super()._get_lowered_content(url, depth, expanded)
+        func = lambda value: str(value).lower()
+        return super()._get_content_with_specific_parsing(url, depth, expanded, {"group": func}, func)
 
     @override
     def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:

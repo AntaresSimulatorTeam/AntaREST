@@ -326,28 +326,45 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                     raise ValueError(msg)
                 errors.append(msg)
 
-    def _get_lowered_content(
-        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False
+    def _get_content_with_specific_parsing(
+        self,
+        url: t.Optional[t.List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        parsing_methods_for_values: t.Optional[dict[str, t.Callable[[t.Any], str]]] = None,
+        parsing_method_for_keys: t.Optional[t.Callable[[t.Any], str]] = None,
     ) -> SUB_JSON:
+        if not parsing_method_for_keys and not parsing_methods_for_values:  # We can use the classic method
+            return self.get(url, depth, expanded)
+
         output = self._get(url, depth, expanded, get_node=False)
         assert not isinstance(output, INode)
         if depth <= -1 and expanded:
             return output
 
-        # We need to lower the group attribute and the cluster ids
         if not url:
             assert isinstance(output, dict)
             for key in list(output.keys()):
-                new_key = str(key).lower()
-                output[new_key] = output.pop(key)
-                if "group" in output[new_key]:
-                    output[new_key]["group"] = str(output[new_key]["group"]).lower()
+                new_key = key
+                if parsing_method_for_keys:
+                    new_key = parsing_method_for_keys(key)
+                    output[new_key] = output.pop(key)
+                if parsing_methods_for_values:
+                    for parsed_key, method in parsing_methods_for_values.items():
+                        if parsed_key in output[new_key]:
+                            output[new_key][parsed_key] = method(output[new_key][parsed_key])
+
         elif len(url) == 1:
             assert isinstance(output, dict)
-            if "group" in output:
-                output["group"] = str(output["group"]).lower()
-        elif len(url) == 2 and url[1] == "group":
-            output = str(output).lower()
+            if parsing_methods_for_values:
+                for parsed_key, method in parsing_methods_for_values.items():
+                    if parsed_key in output:
+                        output[parsed_key] = method(output[parsed_key])
+
+        elif len(url) == 2:
+            if parsing_methods_for_values and url[1] in parsing_methods_for_values:
+                output = parsing_methods_for_values[url[1]](output)
+
         return output
 
     def _save_content_with_lowered_keys(self, data: SUB_JSON, url: t.List[str]) -> None:
@@ -358,7 +375,8 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            info = self._get_lowered_content([])  # We read the INI file keys in lower case
+            # We read the INI file keys in lower case
+            info = self._get_content_with_specific_parsing([], -1, False, None, lambda value: str(value).lower())
             assert isinstance(info, dict)
             obj = data
             if isinstance(data, str):
