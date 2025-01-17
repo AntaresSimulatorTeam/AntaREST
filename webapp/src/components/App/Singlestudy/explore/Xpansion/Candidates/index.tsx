@@ -41,7 +41,7 @@ import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/EmptyView";
 import SplitView from "../../../../../common/SplitView";
 import { getLinks } from "@/services/api/studies/links";
 import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";

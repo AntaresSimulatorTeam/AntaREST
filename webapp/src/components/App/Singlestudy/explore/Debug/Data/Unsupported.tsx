@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/EmptyView";
 import BlockIcon from "@mui/icons-material/Block";
 import { Filename, Flex, Menubar } from "./styles";
 import type { DataCompProps } from "../utils";

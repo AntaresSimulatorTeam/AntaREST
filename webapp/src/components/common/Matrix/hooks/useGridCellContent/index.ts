@@ -108,7 +108,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
  */
 export function useGridCellContent(
   data: number[][],
-  columns: EnhancedGridColumn[],
+  columns: readonly EnhancedGridColumn[],
   gridToData: (cell: Item) => Item | null,
   dateTime?: string[],
   aggregates?: Partial<MatrixAggregates>,
