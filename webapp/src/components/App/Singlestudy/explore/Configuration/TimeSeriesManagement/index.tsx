@@ -31,7 +31,7 @@ function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const [launchTaskInProgress, setLaunchTaskInProgress] = useState(false);
-  const apiRef = useRef<UseFormReturnPlus<TSFormFields>>();
+  const apiRef = useRef<UseFormReturnPlus<TSFormFields>>(null);
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,

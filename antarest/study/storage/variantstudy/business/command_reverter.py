@@ -38,6 +38,9 @@ from antarest.study.storage.variantstudy.model.command.remove_binding_constraint
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
@@ -162,6 +165,14 @@ class CommandReverter:
         base: FileStudy,
     ) -> t.List[ICommand]:
         raise NotImplementedError("The revert function for RemoveBindingConstraint is not available")
+
+    @staticmethod
+    def _revert_remove_multiple_binding_constraints(
+        base_command: RemoveMultipleBindingConstraints,
+        history: t.List["ICommand"],
+        base: FileStudy,
+    ) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for RemoveMultipleBindingConstraints is not available")
 
     @staticmethod
     def _revert_update_scenario_builder(

@@ -972,6 +972,26 @@ class TestBindingConstraints:
         binding_constraints_list = preparer.get_binding_constraints(study_id)
         assert len(binding_constraints_list) == 2
 
+        # Delete multiple binding constraint
+        preparer.create_binding_constraint(study_id, name="bc1", group="grp1", **args)
+        preparer.create_binding_constraint(study_id, name="bc2", group="grp2", **args)
+
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 4
+
+        res = client.request(
+            "DELETE",
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=["bc1", "bc2"],
+        )
+        assert res.status_code == 200, res.json()
+
+        # Asserts that the deletion worked
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 2
+        actual_ids = [constraint["id"] for constraint in binding_constraints_list]
+        assert actual_ids == ["binding_constraint_1", "binding_constraint_3"]
+
         # =============================
         # CONSTRAINT DUPLICATION
         # =============================
@@ -1014,6 +1034,22 @@ class TestBindingConstraints:
         # =============================
         #  ERRORS
         # =============================
+
+        # Deletion multiple binding constraints, one does not exist. Make sure none is deleted
+
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 3
+
+        res = client.request(
+            "DELETE",
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=["binding_constraint_1", "binding_constraint_2", "binding_constraint_3"],
+        )
+        assert res.status_code == 404, res.json()
+        assert res.json()["description"] == "Binding constraint(s) '['binding_constraint_2']' not found"
+
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 3
 
         # Creation with wrong matrix according to version
         for operator in ["less", "equal", "greater", "both"]:
