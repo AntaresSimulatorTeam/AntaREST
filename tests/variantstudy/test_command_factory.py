@@ -160,6 +160,16 @@ COMMANDS: List[CommandDTO] = [
         action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args={"ids": ["id"]},
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args=[{"ids": ["id"]}],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         args={
             "area_id": "area_name",
