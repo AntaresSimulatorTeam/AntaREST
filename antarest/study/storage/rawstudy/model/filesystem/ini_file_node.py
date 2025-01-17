@@ -350,7 +350,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             output = str(output).lower()
         return output
 
-    def _save_lowered_content(self, data: SUB_JSON, url: t.List[str]) -> None:
+    def _save_content_with_lowered_keys(self, data: SUB_JSON, url: t.List[str]) -> None:
         self._assert_not_in_zipped_file()
         with FileLock(
             str(
@@ -358,7 +358,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            info = self._get_lowered_content([])  # We read the cluster ids in lower case
+            info = self._get_lowered_content([])  # We read the INI file keys in lower case
             assert isinstance(info, dict)
             obj = data
             if isinstance(data, str):
@@ -367,7 +367,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             if len(url) not in {1, 2}:
                 info = t.cast(JSON, obj)
             else:
-                lowered_id = str(url[0]).lower()  # We lower the given cluster id
+                lowered_id = str(url[0]).lower()  # We lower the INI file keys
                 if len(url) == 2:
                     info.setdefault(lowered_id, {})[url[1]] = obj
                 else:

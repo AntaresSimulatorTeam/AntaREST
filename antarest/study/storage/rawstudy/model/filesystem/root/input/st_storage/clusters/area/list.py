@@ -47,4 +47,4 @@ class InputSTStorageAreaList(IniFileNode):
 
     @override
     def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:
-        super()._save_lowered_content(data, url or [])
+        super()._save_content_with_lowered_keys(data, url or [])
