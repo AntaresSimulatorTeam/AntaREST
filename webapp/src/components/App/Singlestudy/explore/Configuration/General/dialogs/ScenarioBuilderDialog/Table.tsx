@@ -21,7 +21,7 @@ import {
   updateScenarioBuilderConfig,
 } from "./utils";
 import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import EmptyView from "../../../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../../../common/page/EmptyView";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../../../../../../utils/fnUtils";
 import { useOutletContext } from "react-router";

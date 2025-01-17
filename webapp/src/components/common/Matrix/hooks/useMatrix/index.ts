@@ -41,9 +41,9 @@ import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 import { uploadFile } from "../../../../../services/api/studies/raw";
 import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import usePrompt from "../../../../../hooks/usePrompt";
 import { Aggregate, Column, Operation } from "../../shared/constants";
 import { aggregatesTheme } from "../../styles";
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -83,11 +83,10 @@ export function useMatrix(
     [aggregatesConfig],
   );
 
-  // Display warning prompts to prevent unintended navigation
-  // 1. When the matrix is currently being submitted
-  usePrompt(t("form.submit.inProgress"), isSubmitting);
-  // 2. When there are unsaved changes in the matrix
-  usePrompt(t("form.changeNotSaved"), currentState.pendingUpdates.length > 0);
+  useFormCloseProtection({
+    isSubmitting,
+    isDirty: currentState.pendingUpdates.length > 0,
+  });
 
   const fetchMatrix = async (loadingState = true) => {
     // !NOTE This is a temporary solution to ensure the matrix is up to date

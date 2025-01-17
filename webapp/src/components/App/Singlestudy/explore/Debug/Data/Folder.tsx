@@ -36,7 +36,7 @@ import {
   canEditFile,
 } from "../utils";
 import { Fragment, useState } from "react";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/EmptyView";
 import { useTranslation } from "react-i18next";
 import { Filename, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";

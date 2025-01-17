@@ -21,7 +21,7 @@ import ButtonBack from "@/components/common/ButtonBack";
 import { getMatrix } from "@/services/api/matrix";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
-import EmptyView from "@/components/common/page/SimpleContent";
+import EmptyView from "@/components/common/page/EmptyView";
 import { GridOff } from "@mui/icons-material";
 
 interface MatrixContentProps {
