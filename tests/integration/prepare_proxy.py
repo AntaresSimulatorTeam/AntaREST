@@ -355,7 +355,7 @@ class PreparerProxy:
             The list of constraint unique groups.
         """
         binding_constraints_list = self.get_binding_constraints(study_id)
-        groups = list({item['group'] for item in binding_constraints_list})
+        groups = list({item["group"] for item in binding_constraints_list})
         return groups
 
     def drop_all_commands(self, variant_id: str) -> None:
