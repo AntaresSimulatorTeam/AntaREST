@@ -1045,7 +1045,7 @@ class BindingConstraintManager:
             binding_constraints_ids: The ID sof the binding constraints to remove.
 
         Raises:
-            BindingConstraintNotFound: If no binding constraint with the specified ID is found.
+            BindingConstraintNotFound: If at least one binding constraint within the specified list is not found.
         """
 
         self.check_binding_constraints_exists(study, binding_constraints_ids)
