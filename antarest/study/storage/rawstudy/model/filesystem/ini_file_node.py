@@ -350,7 +350,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             output = str(output).lower()
         return output
 
-    def save_lowered_content(self, data: SUB_JSON, url: t.List[str]) -> None:
+    def _save_lowered_content(self, data: SUB_JSON, url: t.List[str]) -> None:
         self._assert_not_in_zipped_file()
         with FileLock(
             str(
