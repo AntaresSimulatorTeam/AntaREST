@@ -20,7 +20,7 @@ import { getStudyData } from "../../../services/api/study";
 import usePromise from "../../../hooks/usePromise";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
-import EmptyView from "../page/SimpleContent";
+import EmptyView from "../page/EmptyView";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
 import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
 import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";

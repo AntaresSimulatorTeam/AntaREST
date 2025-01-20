@@ -63,7 +63,7 @@ import { Column } from "@/components/common/Matrix/shared/constants.ts";
 import SplitView from "../../../../../common/SplitView/index.tsx";
 import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";
-import EmptyView from "../../../../../common/page/SimpleContent.tsx";
+import EmptyView from "../../../../../common/page/EmptyView.tsx";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
 import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
 import { ResultMatrixDTO } from "@/components/common/Matrix/shared/types.ts";
