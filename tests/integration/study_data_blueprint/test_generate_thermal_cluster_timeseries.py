@@ -41,7 +41,7 @@ class TestGenerateThermalClusterTimeseries:
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
         # Set nb timeseries thermal to 3.
         nb_years = 3
-        res = client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": nb_years})
+        res = client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": {"number": nb_years}})
         assert res.status_code in {200, 201}
 
         # Create 1 cluster in area1
@@ -157,7 +157,7 @@ class TestGenerateThermalClusterTimeseries:
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=860)
         area_id = preparer.create_area(study_id, name="test")["id"]
-        res = client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": 10})
+        res = client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": {"number": 10}})
         cluster_id = "cluster_test"
         assert res.status_code in {200, 201}
 

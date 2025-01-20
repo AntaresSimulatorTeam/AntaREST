@@ -1225,11 +1225,11 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {"thermal": 1}
-    client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": 2})
+    assert res_ts_config_json == {"thermal": {"number": 1}}
+    client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": {"number": 2}})
     res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {"thermal": 2}
+    assert res_ts_config_json == {"thermal": {"number": 2}}
 
     # Renewable form
 

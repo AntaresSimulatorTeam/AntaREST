@@ -10,23 +10,28 @@
 #
 # This file is part of the Antares project.
 
+from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
-from antarest.study.business.utils import GENERAL_DATA_PATH, FormFieldsBaseModel, execute_or_add_commands
+from antarest.study.business.utils import GENERAL_DATA_PATH, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
+class TSConfigFields(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
+    number: int
+
+
 @all_optional_model
-class TSFormFields(FormFieldsBaseModel):
-    thermal: int
+class TSConfigDTO(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
+    thermal: TSConfigFields
 
 
 class TimeSeriesConfigManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_values(self, study: Study) -> TSFormFields:
+    def get_values(self, study: Study) -> TSConfigDTO:
         """
         Get Time-Series generation values
         """
@@ -35,10 +40,10 @@ class TimeSeriesConfigManager:
         url.extend(["general", "nbtimeseriesthermal"])
         nb_ts_gen_thermal = file_study.tree.get(url)
 
-        args = {"thermal": nb_ts_gen_thermal}
-        return TSFormFields.model_validate(args)
+        args = {"thermal": TSConfigFields(number=nb_ts_gen_thermal)}
+        return TSConfigDTO.model_validate(args)
 
-    def set_values(self, study: Study, field_values: TSFormFields) -> None:
+    def set_values(self, study: Study, field_values: TSConfigDTO) -> None:
         """
         Set Time-Series generation values
         """
@@ -48,7 +53,7 @@ class TimeSeriesConfigManager:
             url = f"{GENERAL_DATA_PATH}/general/nbtimeseriesthermal"
             command = UpdateConfig(
                 target=url,
-                data=field_values.thermal,
+                data=field_values.thermal.number,
                 command_context=self.storage_service.variant_study_service.command_factory.command_context,
                 study_version=file_study.config.version,
             )
