@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from
 import capitalize from "lodash/capitalize";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../common/Form";
-import { TSType, type TSFormFields } from "./utils";
+import type { TSConfigDTO, TSType } from "@/services/api/studies/timeseries/types.ts";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useTranslation } from "react-i18next";
 import { validateNumber } from "@/utils/validation/number";
@@ -24,7 +24,7 @@ import { validateNumber } from "@/utils/validation/number";
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
 function Fields() {
-  const { control, watch } = useFormContextPlus<TSFormFields>();
+  const { control, watch } = useFormContextPlus<TSConfigDTO>();
   const isReadyMade = watch("thermal.stochasticTsStatus") === false;
   const { t } = useTranslation();
 
