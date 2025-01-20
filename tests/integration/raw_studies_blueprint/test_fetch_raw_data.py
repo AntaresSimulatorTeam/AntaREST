@@ -219,8 +219,9 @@ class TestFetchRawData:
                 b"1;1;1;1;1\r1;1;1;1;1",
                 b"0,000000;0,000000;0,000000;0,000000\n0,000000;0,000000;0,000000;0,000000",
                 b"1;2;3;;;\n4;5;6;;;\n",
+                b"1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n",
             ],
-            ["\t", "\t", ",", "\t", ";", ";", ";", ";"],
+            ["\t", "\t", ",", "\t", ";", ";", ";", ";", ";"],
         ):
             res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(content)})
             assert res.status_code == 204, res.json()
