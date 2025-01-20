@@ -23,9 +23,18 @@ import type { StudyTreeNode, NonStudyFolderDTO } from "./types";
  * @returns A tree structure representing the studies.
  */
 export function buildStudyTree(studies: StudyMetadata[]) {
+  // It is important to initialize the root node with the default workspace as a child
+  // Otherwise we won't see the default workspace if no study has a path (which only
+  // happens when a user moves a study to another folder)
   const tree: StudyTreeNode = {
     name: "root",
-    children: [],
+    children: [
+      {
+        name: "default",
+        children: [],
+        path: "/default",
+      },
+    ],
     path: "",
   };
 
