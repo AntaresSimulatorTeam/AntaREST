@@ -7,8 +7,6 @@ Create Date: 2025-01-20 10:11:01.293931
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import table, column
-from sqlalchemy.orm import Session
 
 # revision identifiers, used by Alembic.
 revision = 'dadad513f1b6'
@@ -29,15 +27,6 @@ def upgrade():
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-
-    # Fill the table
-    bind = op.get_bind()
-    session = Session(bind=bind)
-    ts_gen_table = table("study_nb_ts_gen", column("id"), column("links"))
-    study_table = table('study', column('id'))
-    study_ids = session.query(study_table).all()
-    data_to_insert = [{'id': study_id[0], 'links': 1} for study_id in study_ids]
-    op.bulk_insert(ts_gen_table, data_to_insert)
 
     op.create_table(
         "links_ts_gen_properties",

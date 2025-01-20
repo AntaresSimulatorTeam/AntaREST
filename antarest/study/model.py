@@ -102,7 +102,9 @@ class TSGeneration(Base):  # type:ignore
 
     __tablename__ = "study_nb_ts_gen"
 
-    id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    id: str = Column(
+        String(36), ForeignKey("study.id", ondelete="CASCADE"), primary_key=True, index=True, nullable=False
+    )
     links: int = Column(Integer, default=1, nullable=False)
 
 
