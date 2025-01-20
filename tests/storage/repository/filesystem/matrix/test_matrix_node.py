@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
 
+import numpy as np
 import pandas as pd  # type: ignore
+from numpy import typing as npt
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -40,6 +42,9 @@ class MockMatrixNode(MatrixNode):
 
     def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
         return MOCK_MATRIX_JSON
+
+    def get_default_empty_matrix(self) -> Optional[npt.NDArray[np.float64]]:
+        pass
 
     def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         pass  # not used

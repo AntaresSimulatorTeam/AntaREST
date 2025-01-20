@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import calendar
 import copy
 import fnmatch
 import typing as t
@@ -19,6 +18,7 @@ from pathlib import Path
 import pandas as pd
 
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7
+from antarest.study.storage.utils import MONTHS
 
 
 class _MatrixProfile(t.NamedTuple):
@@ -112,7 +112,7 @@ _SPECIFIC_MATRICES = {
     "input/hydro/common/capacity/inflowPattern_*": _MatrixProfile(cols=["Inflow Pattern (X)"], rows=[]),
     "input/hydro/prepro/*/energy": _MatrixProfile(
         cols=["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
-        rows=calendar.month_name[1:],
+        rows=list(MONTHS.keys()),
     ),
     "input/thermal/prepro/*/*/modulation": _MatrixProfile(
         cols=["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -38,6 +38,7 @@ from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     parse_bindings_coeffs_and_save_into_config,
 )
+from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -503,24 +504,3 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         if not equal:
             return self.name == other.name
         return super().match(other, equal)
-
-
-def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set[str]) -> None:
-    """
-    Update the scenario builder by removing the rows that correspond to the BC groups to remove.
-
-    NOTE: this update can be very long if the scenario builder configuration is large.
-    """
-    if not removed_groups:
-        return
-
-    rulesets = study_data.tree.get(["settings", "scenariobuilder"])
-
-    for ruleset in rulesets.values():
-        for key in list(ruleset):
-            # The key is in the form "symbol,group,year"
-            symbol, *parts = key.split(",")
-            if symbol == "bc" and parts[0] in removed_groups:
-                del ruleset[key]
-
-    study_data.tree.save(rulesets, ["settings", "scenariobuilder"])

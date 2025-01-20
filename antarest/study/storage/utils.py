@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ import calendar
 import logging
 import math
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -279,9 +280,22 @@ def assert_permission(
 
 MATRIX_INPUT_DAYS_COUNT = 365
 
-MONTHS = calendar.month_name[1:]
+MONTHS = {
+    "January": 1,
+    "February": 2,
+    "March": 3,
+    "April": 4,
+    "May": 5,
+    "June": 6,
+    "July": 7,
+    "August": 8,
+    "September": 9,
+    "October": 10,
+    "November": 11,
+    "December": 12,
+}
 
-DAY_NAMES = calendar.day_name[:]
+DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
 def get_start_date(
@@ -306,7 +320,7 @@ def get_start_date(
     start_offset = t.cast(int, config.get("simulation.start"))
     end = t.cast(int, config.get("simulation.end"))
 
-    starting_month_index = MONTHS.index(starting_month.title()) + 1
+    starting_month_index = MONTHS[starting_month.title()]
     starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
@@ -463,7 +477,7 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
     return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
-def should_ignore_folder_for_scan(path: Path) -> bool:
+def should_ignore_folder_for_scan(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
     if is_aw_no_scan(path):
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
@@ -476,4 +490,20 @@ def should_ignore_folder_for_scan(path: Path) -> bool:
         logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
         return True
 
-    return False
+    return not (
+        path.is_dir()
+        and any(re.search(regex, path.name) for regex in filter_in)
+        and not any(re.search(regex, path.name) for regex in filter_out)
+    )
+
+
+def has_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
+    return any(is_non_study_folder(sub_path, filter_in, filter_out) for sub_path in path.iterdir())
+
+
+def is_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
+    if is_study_folder(path):
+        return False
+    if should_ignore_folder_for_scan(path, filter_in, filter_out):
+        return False
+    return True

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -150,3 +150,7 @@ class InputSeriesMatrix(MatrixNode):
         else:
             content = self.config.path.read_bytes()
         return OriginalFile(content=content, suffix=suffix, filename=filename)
+
+    @override
+    def get_default_empty_matrix(self) -> t.Optional[npt.NDArray[np.float64]]:
+        return self.default_empty

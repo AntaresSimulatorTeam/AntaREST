@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, PlainSerializer, field_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -334,7 +334,7 @@ class StudyFolder:
     groups: t.List[Group]
 
 
-class NonStudyFolder(AntaresBaseModel):
+class NonStudyFolderDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
     so the user can navigate in the hierarchy
@@ -343,6 +343,24 @@ class NonStudyFolder(AntaresBaseModel):
     path: Path
     workspace: str
     name: str
+    has_children: bool = Field(
+        alias="hasChildren",
+    )  # true when has at least one non-study-folder children
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @computed_field(alias="parentPath")
+    def parent_path(self) -> Path:
+        """
+        This computed field is convenient for the front.
+
+        This field is also aliased as parentPath to match the front-end naming convention.
+
+        Returns: the parent path of the current directory. Starting with the workspace as a root directory (we want /workspafe/folder1/sub... and not workspace/folder1/fsub... ).
+        """
+        workspace_path = Path(f"/{self.workspace}")
+        full_path = workspace_path.joinpath(self.path)
+        return full_path.parent
 
 
 class WorkspaceMetadata(AntaresBaseModel):

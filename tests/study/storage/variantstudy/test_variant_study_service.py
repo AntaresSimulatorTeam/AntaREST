@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,7 +14,7 @@ import datetime
 import re
 import typing
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -26,6 +26,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
@@ -139,6 +140,9 @@ class TestVariantStudyService:
         db.session.add(user)
         db.session.commit()
 
+        # define user token
+        jwt_user = Mock(spec=JWTUser, id=user.id, impersonator=user.id, is_site_admin=Mock(return_value=True))
+
         # noinspection PyArgumentList
         group = Group(id="my-group", name="group")
         db.session.add(group)
@@ -173,7 +177,7 @@ class TestVariantStudyService:
             "My Variant Study",
             params=Mock(
                 spec=RequestParameters,
-                user=Mock(impersonator=user.id, is_site_admin=Mock(return_value=True)),
+                user=jwt_user,
             ),
         )
 
@@ -212,12 +216,13 @@ class TestVariantStudyService:
             study_version=study_version,
         )
 
-        execute_or_add_commands(
-            variant_study,
-            file_study,
-            commands=[create_area_fr, create_st_storage],
-            storage_service=study_storage_service,
-        )
+        with current_user_context(jwt_user):
+            execute_or_add_commands(
+                variant_study,
+                file_study,
+                commands=[create_area_fr, create_st_storage],
+                storage_service=study_storage_service,
+            )
 
         ## Run the "generate" task
         actual_uui = variant_study_service.generate_task(

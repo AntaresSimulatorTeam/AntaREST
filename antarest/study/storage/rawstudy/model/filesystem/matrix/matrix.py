@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,7 +16,9 @@ from enum import StrEnum
 from pathlib import Path
 from typing import List, Optional, Union, cast
 
+import numpy as np
 import pandas as pd
+from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.model import JSON
@@ -127,21 +129,39 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
         file_path, tmp_dir = self._get_real_file_path()
-        if not formatted:
-            if file_path.exists():
-                return file_path.read_bytes()
 
+        if formatted:
+            return self.parse_as_json(file_path)
+
+        if not file_path.exists():
             logger.warning(f"Missing file {self.config.path}")
             if tmp_dir:
                 tmp_dir.cleanup()
             return b""
 
-        return self.parse_as_json(file_path)
+        file_content = file_path.read_bytes()
+        if file_content != b"":
+            return file_content
+
+        # If the content is empty, we should return the default matrix to do the same as `parse_as_json()`
+        default_matrix = self.get_default_empty_matrix()
+        if default_matrix is None:
+            return b""
+        buffer = io.BytesIO()
+        np.savetxt(buffer, default_matrix, delimiter="\t")
+        return buffer.getvalue()
 
     @abstractmethod
     def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
         """
         Parse the matrix content and return it as a JSON object
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_default_empty_matrix(self) -> Optional[npt.NDArray[np.float64]]:
+        """
+        Returns the default matrix to return when the existing one is empty
         """
         raise NotImplementedError()
 

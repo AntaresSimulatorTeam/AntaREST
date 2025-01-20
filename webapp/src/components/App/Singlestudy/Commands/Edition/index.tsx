@@ -57,7 +57,7 @@ import {
 } from "../../../../../services/webSocket/ws";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
-import EmptyView from "../../../../common/page/SimpleContent";
+import EmptyView from "../../../../common/page/EmptyView";
 import { TaskStatus } from "../../../../../services/api/tasks/constants";
 import type {
   TaskEventPayload,
