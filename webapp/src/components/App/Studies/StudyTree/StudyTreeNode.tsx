@@ -13,6 +13,7 @@
  */
 
 import { memo } from "react";
+import { sortBy, prop } from "ramda";
 import { StudyTreeNodeProps } from "./types";
 import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 import { t } from "i18next";
@@ -43,13 +44,15 @@ export default memo(function StudyTreeNode({
     );
   }
 
+  const sortedChildren = sortBy(prop("name"), studyTreeNode.children);
+
   return (
     <TreeItemEnhanced
       itemId={id}
       label={studyTreeNode.name}
       onClick={() => onNodeClick(id, studyTreeNode)}
     >
-      {studyTreeNode.children.map((child) => (
+      {sortedChildren.map((child) => (
         <StudyTreeNode
           key={`${id}/${child.name}`}
           studyTreeNode={child}
