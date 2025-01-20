@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 import typing as t
 
 import numpy as np
+from typing_extensions import override
 
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -54,6 +55,7 @@ class UpdateScenarioBuilder(ICommand):
 
     data: t.Union[t.Dict[str, t.Any], t.Mapping[str, t.Any], t.MutableMapping[str, t.Any]]
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Apply the command to the study data.
@@ -95,17 +97,21 @@ class UpdateScenarioBuilder(ICommand):
         study_data.tree.save(curr_cfg, url)  # type: ignore
         return CommandOutput(status=True)
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return CommandOutput(status=True), {}
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_SCENARIO_BUILDER.value, args={"data": self.data}, study_version=self.study_version
         )
 
+    @override
     def match_signature(self) -> str:
         return CommandName.UPDATE_SCENARIO_BUILDER.value
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         if not isinstance(other, UpdateScenarioBuilder):
             return False
@@ -113,8 +119,10 @@ class UpdateScenarioBuilder(ICommand):
             return self.data == other.data
         return True
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

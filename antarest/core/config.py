@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -263,6 +263,8 @@ class LocalConfig:
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
     time_limit: TimeLimitConfig = TimeLimitConfig()
+    xpress_dir: Optional[str] = None
+    local_workspace: Path = Path("./local_workspace")
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LocalConfig":
@@ -278,10 +280,14 @@ class LocalConfig:
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
+        xpress_dir = data.get("xpress_dir", defaults.xpress_dir)
+        local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else defaults.local_workspace
         return cls(
             binaries={str(v): Path(p) for v, p in binaries.items()},
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
+            xpress_dir=xpress_dir,
+            local_workspace=local_workspace,
         )
 
     @classmethod

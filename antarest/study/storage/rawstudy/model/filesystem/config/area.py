@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,6 +17,7 @@ Object model used to read and update area configuration.
 import typing as t
 
 from pydantic import Field, field_validator, model_validator
+from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
@@ -185,6 +186,7 @@ class AreaUI(IniProperties):
     def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
         return validate_colors(values)
 
+    @override
     def to_config(self) -> t.Dict[str, t.Any]:
         """
         Convert the object to a dictionary for writing to a configuration file:
@@ -342,6 +344,7 @@ class UIProperties(IniProperties):
 
         return values
 
+    @override
     def to_config(self) -> t.Dict[str, t.Dict[str, t.Any]]:
         """
         Convert the object to a dictionary for writing to a configuration file:

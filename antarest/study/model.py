@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,7 +20,7 @@ from enum import StrEnum
 from pathlib import Path
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, PlainSerializer, field_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -32,6 +32,7 @@ from sqlalchemy import (  # type: ignore
     String,
 )
 from sqlalchemy.orm import relationship  # type: ignore
+from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
@@ -104,10 +105,12 @@ class StudyGroup(Base):  # type:ignore
     group_id: str = Column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
     study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
 
+    @override
     def __str__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         return f"[{cls_name}] study_id={self.study_id}, group={self.group_id}"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         study_id = self.study_id
@@ -130,10 +133,12 @@ class StudyTag(Base):  # type:ignore
     study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
     tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
 
+    @override
     def __str__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         return f"[{cls_name}] study_id={self.study_id}, tag={self.tag}"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         study_id = self.study_id
@@ -159,9 +164,11 @@ class Tag(Base):  # type:ignore
 
     studies: t.List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
+    @override
     def __str__(self) -> str:  # pragma: no cover
         return t.cast(str, self.label)
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         label = self.label
@@ -195,6 +202,7 @@ class StudyAdditionalData(Base):  # type:ignore
     horizon = Column(String)
     patch = Column(String(), index=True, nullable=True)
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
             return False
@@ -245,6 +253,7 @@ class Study(Base):  # type: ignore
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
+    @override
     def __str__(self) -> str:
         cls = self.__class__.__name__
         return (
@@ -259,6 +268,7 @@ class Study(Base):  # type: ignore
             f" groups={[str(u) + ',' for u in self.groups]}"
         )
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, Study):
             return False
@@ -300,6 +310,7 @@ class RawStudy(Study):
         "polymorphic_identity": "rawstudy",
     }
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
             return False
@@ -324,7 +335,7 @@ class StudyFolder:
     groups: t.List[Group]
 
 
-class NonStudyFolder(AntaresBaseModel):
+class NonStudyFolderDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
     so the user can navigate in the hierarchy
@@ -333,6 +344,24 @@ class NonStudyFolder(AntaresBaseModel):
     path: Path
     workspace: str
     name: str
+    has_children: bool = Field(
+        alias="hasChildren",
+    )  # true when has at least one non-study-folder children
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @computed_field(alias="parentPath")
+    def parent_path(self) -> Path:
+        """
+        This computed field is convenient for the front.
+
+        This field is also aliased as parentPath to match the front-end naming convention.
+
+        Returns: the parent path of the current directory. Starting with the workspace as a root directory (we want /workspafe/folder1/sub... and not workspace/folder1/fsub... ).
+        """
+        workspace_path = Path(f"/{self.workspace}")
+        full_path = workspace_path.joinpath(self.path)
+        return full_path.parent
 
 
 class WorkspaceMetadata(AntaresBaseModel):

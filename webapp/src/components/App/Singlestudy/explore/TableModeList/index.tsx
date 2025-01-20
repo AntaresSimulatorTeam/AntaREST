@@ -12,11 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
-import { MenuItem } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Button } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useUpdateEffect } from "react-use";
 import { useTranslation } from "react-i18next";
+import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuidv4 } from "uuid";
 import PropertiesView from "../../../../common/PropertiesView";
@@ -32,6 +33,7 @@ import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import TableMode from "../../../../common/TableMode";
 import SplitView from "../../../../common/SplitView";
 import ViewWrapper from "../../../../common/page/ViewWrapper";
+import EmptyView from "@/components/common/page/EmptyView";
 
 function TableModeList() {
   const { t } = useTranslation();
@@ -56,6 +58,13 @@ function TableModeList() {
   const dialogTemplate =
     dialog && templates.find((tp) => tp.id === dialog.templateId);
 
+  // Handle automatic selection of the first element
+  useEffect(() => {
+    if (templates.length > 0 && !selectedTemplate) {
+      setSelectedTemplateId(templates[0].id);
+    }
+  }, [templates, selectedTemplate]);
+
   // Update local storage
   useUpdateEffect(() => {
     storage.setItem(
@@ -76,7 +85,25 @@ function TableModeList() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDeleteTemplate = () => {
+  const handleEditClick = () => {
+    if (selectedTemplate) {
+      setDialog({
+        type: "edit",
+        templateId: selectedTemplate.id,
+      });
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (selectedTemplate) {
+      setDialog({
+        type: "delete",
+        templateId: selectedTemplate.id,
+      });
+    }
+  };
+
+  const handleDelete = () => {
     setTemplates((templates) =>
       templates.filter((tp) => tp.id !== dialog?.templateId),
     );
@@ -98,45 +125,41 @@ function TableModeList() {
               currentElement={selectedTemplate?.id}
               currentElementKeyToTest="id"
               setSelectedItem={({ id }) => setSelectedTemplateId(id)}
-              contextMenuContent={({ element, close }) => (
-                <>
-                  <MenuItem
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDialog({
-                        type: "edit",
-                        templateId: element.id,
-                      });
-                      close();
-                    }}
-                  >
-                    Edit
-                  </MenuItem>
-                  <MenuItem
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDialog({
-                        type: "delete",
-                        templateId: element.id,
-                      });
-                      close();
-                    }}
-                  >
-                    Delete
-                  </MenuItem>
-                </>
-              )}
             />
           }
           onAdd={() => setDialog({ type: "add", templateId: "" })}
         />
         {/* Right */}
         <ViewWrapper>
+          {!templates.length && (
+            <EmptyView title={t("study.tableMode.empty")} />
+          )}
           {selectedTemplate && (
             <TableMode
               studyId={study.id}
               type={selectedTemplate.type}
               columns={selectedTemplate.columns}
+              extraActions={
+                <>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditIcon />}
+                    onClick={handleEditClick}
+                  >
+                    {t("global.edit")}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={handleDeleteClick}
+                  >
+                    {t("global.delete")}
+                  </Button>
+                </>
+              }
             />
           )}
         </ViewWrapper>
@@ -162,7 +185,7 @@ function TableModeList() {
         <ConfirmationDialog
           titleIcon={DeleteIcon}
           alert="warning"
-          onConfirm={handleDeleteTemplate}
+          onConfirm={handleDelete}
           onCancel={closeDialog}
           open
         >

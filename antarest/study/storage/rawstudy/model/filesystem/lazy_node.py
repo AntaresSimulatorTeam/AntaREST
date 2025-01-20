@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,13 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
+
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -93,6 +94,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         else:
             return self.load(url, depth, expanded, formatted)
 
+    @override
     def get(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -104,6 +106,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         assert not isinstance(output, INode)
         return output
 
+    @override
     def get_node(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -112,6 +115,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         assert isinstance(output, INode)
         return output
 
+    @override
     def delete(self, url: t.Optional[t.List[str]] = None) -> None:
         self._assert_url_end(url)
         if self.get_link_path().exists():
@@ -123,6 +127,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
 
+    @override
     def save(self, data: t.Union[str, bytes, S], url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)

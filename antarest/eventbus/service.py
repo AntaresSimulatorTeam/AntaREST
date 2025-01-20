@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,6 +17,8 @@ import threading
 import time
 import uuid
 from typing import Awaitable, Callable, Dict, List, Optional
+
+from typing_extensions import override
 
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.eventbus.business.interfaces import IEventBusBackend
@@ -39,12 +41,15 @@ class EventBusService(IEventBus):
         if autostart:
             self.start()
 
+    @override
     def push(self, event: Event) -> None:
         self.backend.push_event(event)
 
+    @override
     def queue(self, event: Event, queue: str) -> None:
         self.backend.queue_event(event, queue)
 
+    @override
     def add_queue_consumer(self, listener: Callable[[Event], Awaitable[None]], queue: str) -> str:
         with self.lock:
             listener_id = str(uuid.uuid4())
@@ -53,12 +58,14 @@ class EventBusService(IEventBus):
             self.consumers[queue][listener_id] = listener
             return listener_id
 
+    @override
     def remove_queue_consumer(self, listener_id: str) -> None:
         with self.lock:
             for queue in self.consumers:
                 if listener_id in self.consumers[queue]:
                     del self.consumers[queue][listener_id]
 
+    @override
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
@@ -71,6 +78,7 @@ class EventBusService(IEventBus):
                 self.listeners[listener_type][listener_id] = listener
             return listener_id
 
+    @override
     def remove_listener(self, listener_id: str) -> None:
         with self.lock:
             for listener_type in self.listeners:
@@ -130,6 +138,7 @@ class EventBusService(IEventBus):
         loop = asyncio.new_event_loop() if new_loop else asyncio.get_event_loop()
         loop.run_until_complete(self._run_loop())
 
+    @override
     def start(self, threaded: bool = True) -> None:
         if threaded:
             t = threading.Thread(

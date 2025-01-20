@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -195,6 +195,7 @@ class TestTableMode:
             "colorg",
             "colorr",
             "displayComments",
+            "comments",
             "filterSynthesis",
             "filterYearByYear",
             "hurdlesCost",
@@ -247,6 +248,7 @@ class TestTableMode:
                 "colorg": 150,
                 "colorr": 200,
                 "displayComments": False,
+                "comments": "",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
                 "linkWidth": 2,
@@ -262,6 +264,7 @@ class TestTableMode:
                 "colorg": 112,
                 "colorb": 112,
                 "displayComments": True,
+                "comments": "",
                 "hurdlesCost": False,
                 "linkStyle": "plain",
                 "linkWidth": 1,
@@ -277,6 +280,7 @@ class TestTableMode:
                 "colorg": 150,
                 "colorr": 200,
                 "displayComments": True,
+                "comments": "",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
                 "linkWidth": 1,
@@ -292,6 +296,7 @@ class TestTableMode:
                 "colorg": 112,
                 "colorr": 112,
                 "displayComments": True,
+                "comments": "",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
                 "linkWidth": 1,

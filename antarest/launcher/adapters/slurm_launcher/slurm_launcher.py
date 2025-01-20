@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -28,12 +28,12 @@ from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
 from antareslauncher.study_dto import StudyDTO
 from filelock import FileLock
+from typing_extensions import override
 
 from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -589,13 +589,9 @@ class SlurmLauncher(AbstractLauncher):
 
         return self.launcher_args
 
+    @override
     def run_study(
-        self,
-        study_uuid: str,
-        job_id: str,
-        version: SolverVersion,
-        launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
+        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         thread = threading.Thread(
             target=self._run_study,
@@ -604,6 +600,7 @@ class SlurmLauncher(AbstractLauncher):
         )
         thread.start()
 
+    @override
     def get_log(self, job_id: str, log_type: LogType) -> t.Optional[str]:
         log_path: t.Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
@@ -621,6 +618,7 @@ class SlurmLauncher(AbstractLauncher):
 
         return _listen_to_kill_job
 
+    @override
     def kill_job(self, job_id: str, dispatch: bool = True) -> None:
         launcher_args = LauncherArgs(self.launcher_args)
         for study in self.data_repo_tinydb.get_list_of_studies():

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -661,6 +661,8 @@ class TestSTStorage:
                 "inflows": ANY,
             },
             "version": 1,
+            "updated_at": ANY,
+            "user_name": ANY,
         }
         assert actual == expected
 
@@ -685,6 +687,8 @@ class TestSTStorage:
                 "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
             },
             "version": 1,
+            "updated_at": ANY,
+            "user_name": ANY,
         }
         assert actual == expected
 
@@ -715,6 +719,8 @@ class TestSTStorage:
                 },
             ],
             "version": 1,
+            "updated_at": ANY,
+            "user_name": ANY,
         }
         assert actual == expected
 

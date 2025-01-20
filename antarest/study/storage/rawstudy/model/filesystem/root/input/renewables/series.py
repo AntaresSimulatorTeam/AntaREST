@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -19,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class ClusteredRenewableSeries(FolderNode):
+    @override
     def build(self) -> TREE:
         series_config = self.config.next_file("series.txt")
         children: TREE = {
@@ -41,6 +43,7 @@ class ClusteredRenewableClusterSeries(FolderNode):
         super().__init__(context, config)
         self.area = area
 
+    @override
     def build(self) -> TREE:
         # Note that cluster IDs may not be in lower case, but series IDs are.
         series_ids = map(str.lower, self.config.get_renewable_ids(self.area))
@@ -52,6 +55,7 @@ class ClusteredRenewableClusterSeries(FolderNode):
 
 
 class ClusteredRenewableAreaSeries(FolderNode):
+    @override
     def build(self) -> TREE:
         return {
             area: ClusteredRenewableClusterSeries(self.context, self.config.next_file(area), area)

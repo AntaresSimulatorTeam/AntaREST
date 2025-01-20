@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -45,6 +45,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
+from antarest.login.utils import get_current_user
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
@@ -155,10 +156,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     assert failed_task is not None
     assert failed_task.status == TaskStatus.FAILED.value
     assert failed_task.result_status is False
-    assert failed_task.result_msg == (
-        f"Task {failed_id} failed: Unhandled exception this action failed"
-        f"\nSee the logs for detailed information and the error traceback."
-    )
+    assert failed_task.result_msg == "this action failed"
     assert failed_task.completion_date is not None
 
     # Test Case: add a task that succeeds and wait for it
@@ -204,21 +202,22 @@ class DummyWorker(AbstractWorker):
         return TaskResult(success=True, message="")
 
 
-def test_repository(db_session: Session) -> None:
+@with_db_context
+def test_repository() -> None:
     # Prepare two users in the database
     user1_id = 9
-    db_session.add(User(id=user1_id, name="John"))
+    db.session.add(User(id=user1_id, name="John"))
     user2_id = 10
-    db_session.add(User(id=user2_id, name="Jane"))
-    db_session.commit()
+    db.session.add(User(id=user2_id, name="Jane"))
+    db.session.commit()
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
-    db_session.commit()
+    db.session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db.session.commit()
 
     # Create a TaskJobService
-    task_job_repo = TaskJobRepository(db_session)
+    task_job_repo = TaskJobRepository()
 
     new_task = TaskJob(name="foo", owner_id=user1_id, type=TaskType.COPY)
 
@@ -282,10 +281,10 @@ def test_repository(db_session: Session) -> None:
     assert len(new_task.logs) == 2
     assert new_task.logs[0].message == "hello"
 
-    assert len(db_session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 2
+    assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 2
 
     task_job_repo.delete(new_task.id)
-    assert len(db_session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 0
+    assert len(db.session.query(TaskJobLog).where(TaskJobLog.task_id == new_task.id).all()) == 0
     assert task_job_repo.get(new_task.id) is None
 
 
@@ -390,21 +389,22 @@ def test_cancel_orphan_tasks(
             assert (datetime.datetime.utcnow() - updated_task_job.completion_date).seconds <= max_diff_seconds
 
 
-def test_get_progress(db_session: Session, admin_user: JWTUser, core_config: Config, event_bus: IEventBus) -> None:
+@with_db_context
+def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEventBus) -> None:
     # Prepare two users in the database
     user1_id = 9
-    db_session.add(User(id=user1_id, name="John"))
+    db.session.add(User(id=user1_id, name="John"))
     user2_id = 10
-    db_session.add(User(id=user2_id, name="Jane"))
-    db_session.commit()
+    db.session.add(User(id=user2_id, name="Jane"))
+    db.session.commit()
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db_session.add(RawStudy(id=study_id, name="foo", version="860"))
-    db_session.commit()
+    db.session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db.session.commit()
 
     # Create a TaskJobService
-    task_job_repo = TaskJobRepository(db_session)
+    task_job_repo = TaskJobRepository()
 
     # User 1 launches a ts generation
     first_task = TaskJob(
@@ -451,12 +451,12 @@ def test_get_progress(db_session: Session, admin_user: JWTUser, core_config: Con
         service.get_task_progress(wrong_id, RequestParameters(user))
 
 
+@with_db_context
 def test_ts_generation_task(
     tmp_path: Path,
     core_config: Config,
     admin_user: JWTUser,
     raw_study_service: RawStudyService,
-    db_session: Session,
 ) -> None:
     # =======================
     #  SET UP
@@ -465,7 +465,7 @@ def test_ts_generation_task(
     event_bus = DummyEventBusService()
 
     # Create a TaskJobService and add tasks
-    task_job_repo = TaskJobRepository(db_session)
+    task_job_repo = TaskJobRepository()
 
     # Create a TaskJobService
     task_job_service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
@@ -474,8 +474,14 @@ def test_ts_generation_task(
     raw_study_path = tmp_path / "study"
 
     regular_user = User(id=99, name="regular")
-    db_session.add(regular_user)
-    db_session.commit()
+    jwt_user = Mock(
+        spec=JWTUser,
+        id=regular_user.id,
+        type="users",
+        impersonator=regular_user.id,
+    )
+    db.session.add(regular_user)
+    db.session.commit()
 
     raw_study = RawStudy(
         id="my_raw_study",
@@ -490,8 +496,8 @@ def test_ts_generation_task(
         path=str(raw_study_path),
     )
     study_metadata_repository = StudyMetadataRepository(Mock(), None)
-    db_session.add(raw_study)
-    db_session.commit()
+    db.session.add(raw_study)
+    db.session.commit()
 
     # Set up the Raw Study
     raw_study_service.create(raw_study)
@@ -570,12 +576,12 @@ nominalcapacity = 14.0
         ref_id=raw_study.id,
         progress=0,
         custom_event_messages=None,
-        request_params=RequestParameters(DEFAULT_ADMIN_USER),
+        request_params=RequestParameters(jwt_user),
     )
 
     # Await task
     study_service.task_service.await_task(task_id, 2)
-    tasks = study_service.task_service.list_tasks(TaskListFilter(), RequestParameters(DEFAULT_ADMIN_USER))
+    tasks = study_service.task_service.list_tasks(TaskListFilter(), RequestParameters(jwt_user))
     assert len(tasks) == 1
     task = tasks[0]
     assert task.ref_id == raw_study.id
@@ -597,3 +603,50 @@ nominalcapacity = 14.0
 
     assert events[4].type == EventType.STUDY_EDITED
     assert events[5].type == EventType.TASK_COMPLETED
+
+
+@with_db_context
+def test_task_user(core_config: Config, event_bus: IEventBus):
+    """
+    Check if the user who submit a task is actually the owner of this task.
+    """
+    # Create a user who has no admin rights
+    regular_user = User(id=99, name="regular")
+    db.session.add(regular_user)
+
+    # Define its token
+    jwt_user = Mock(spec=JWTUser, id=regular_user.id, type="users", impersonator=regular_user.id)
+
+    # Launch the task
+    task_job_repository = TaskJobRepository()
+    task_job_service = TaskJobService(config=core_config, repository=task_job_repository, event_bus=event_bus)
+
+    # Newly created user initialize a task
+    def action_task(notifier: ITaskNotifier) -> TaskResult:
+        notifier.notify_message("start")
+
+        # get current user
+        current_user = get_current_user()
+
+        notifier.notify_message("end")
+        # must set the task 'result' field at regular_user.id
+        return TaskResult(success=True, message="success", return_value=str(current_user.id))
+
+    result = task_job_service.add_task(
+        action=action_task,
+        name="task_test_2",
+        task_type=TaskType.SCAN,
+        ref_id=None,
+        progress=None,
+        custom_event_messages=None,
+        request_params=RequestParameters(jwt_user),
+    )
+
+    task_job_service.await_task(result, 10)
+
+    # Check whether the owner is the created user and not the admin one
+    task_list = task_job_service.list_tasks(TaskListFilter(), RequestParameters(jwt_user))
+    assert len(task_list) == 1
+    assert task_list[0].owner != DEFAULT_ADMIN_USER.id
+    assert task_list[0].owner == jwt_user.id
+    assert task_list[0].result.return_value == str(jwt_user.id)

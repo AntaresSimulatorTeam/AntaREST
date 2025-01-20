@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,8 @@ import logging
 import threading
 import time
 from typing import Dict, List, Optional
+
+from typing_extensions import override
 
 from antarest.core.config import CacheConfig
 from antarest.core.interfaces.cache import ICache
@@ -40,6 +42,7 @@ class LocalCache(ICache):
             daemon=True,
         )
 
+    @override
     def start(self) -> None:
         self.checker_thread.start()
 
@@ -55,6 +58,7 @@ class LocalCache(ICache):
                 for id in to_delete:
                     del self.cache[id]
 
+    @override
     def put(self, id: str, data: JSON, duration: int = 3600) -> None:  # Duration in second
         with self.lock:
             logger.info(f"Adding cache key {id}")
@@ -64,6 +68,7 @@ class LocalCache(ICache):
                 duration=duration,
             )
 
+    @override
     def get(self, id: str, refresh_duration: Optional[int] = None) -> Optional[JSON]:
         res = None
         with self.lock:
@@ -76,12 +81,14 @@ class LocalCache(ICache):
                 res = self.cache[id].data
         return res
 
+    @override
     def invalidate(self, id: str) -> None:
         with self.lock:
             logger.info(f"Removing cache key {id}")
             if id in self.cache:
                 del self.cache[id]
 
+    @override
     def invalidate_all(self, ids: List[str]) -> None:
         with self.lock:
             logger.info(f"Removing cache keys {ids}")

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 from typing import Any, Dict, List, Optional, Tuple
+
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -37,6 +39,7 @@ class UpdateComments(ICommand):
 
     comments: str
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return (
             CommandOutput(
@@ -46,6 +49,7 @@ class UpdateComments(ICommand):
             dict(),
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         replace_comment_data: JSON = {"settings": {"comments": self.comments.encode("utf-8")}}
 
@@ -54,6 +58,7 @@ class UpdateComments(ICommand):
         output, _ = self._apply_config(study_data.config)
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_COMMENTS.value,
@@ -63,16 +68,20 @@ class UpdateComments(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, UpdateComments):
             return False
         return not equal or (self.comments == other.comments and equal)
 
+    @override
     def _create_diff(self, other: "ICommand") -> List["ICommand"]:
         return [other]
 
+    @override
     def get_inner_matrices(self) -> List[str]:
         return []

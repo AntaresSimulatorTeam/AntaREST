@@ -33,6 +33,15 @@ interface StringValidationOptions {
  * Validates the input string against a variety of checks including length restrictions,
  * character validations, and uniqueness against provided arrays of existing and excluded values.
  *
+ * @example
+ * validateString("foo", { allowSpaces: false }); // true
+ * validateNumber("foo bar", { allowSpaces: false }); // Error message
+ *
+ * @example <caption>With currying.</caption>
+ * const fn = validateString({ allowSpaces: false });
+ * fn("foo"); // true
+ * fn("foo bar"); // Error message
+ *
  * @param value - The string to validate. Leading and trailing spaces will be trimmed.
  * @param options - Configuration options for validation. (Optional)
  * @param [options.existingValues=[]] - An array of strings to check against for duplicates. Comparison is case-insensitive by default.
@@ -49,7 +58,22 @@ interface StringValidationOptions {
 export function validateString(
   value: string,
   options?: StringValidationOptions,
-): ValidationReturn {
+): ValidationReturn;
+
+export function validateString(
+  options?: StringValidationOptions,
+): (value: string) => ValidationReturn;
+
+export function validateString(
+  valueOrOpts?: string | StringValidationOptions,
+  options: StringValidationOptions = {},
+): ValidationReturn | ((value: string) => ValidationReturn) {
+  if (typeof valueOrOpts !== "string") {
+    return (v: string) => validateString(v, valueOrOpts);
+  }
+
+  const value = valueOrOpts;
+
   const {
     existingValues = [],
     excludedValues = [],
@@ -60,7 +84,7 @@ export function validateString(
     editedValue = "",
     minLength = 0,
     maxLength = 255,
-  } = options || {};
+  } = options;
 
   const trimmedValue = value.trim();
 
@@ -182,4 +206,80 @@ function generatePattern(
   const specialCharsPattern =
     allowSpecialChars && specialChars ? escapeSpecialChars(specialChars) : "";
   return basePattern + spacePattern + specialCharsPattern + "]*$";
+}
+
+interface PathValidationOptions {
+  allowToStartWithSlash?: boolean;
+  allowToEndWithSlash?: boolean;
+  allowEmpty?: boolean;
+}
+
+/**
+ * Validates a path against specified criteria.
+ *
+ * @example
+ * validatePath("foo/bar", { allowToEndWithSlash: false }); // true
+ * validatePath("foo/bar/", { allowToEndWithSlash: false }); // Error message
+ *
+ * @example <caption>With currying.</caption>
+ * const fn = validateString({ allowToEndWithSlash: false });
+ * fn("foo/bar"); // true
+ * fn("foo/bar/"); // Error message
+ *
+ * @param path - The string to validate.
+ * @param options - Configuration options for validation. (Optional)
+ * @param [options.allowToStartWithSlash=true] - Indicates if the path is allowed to start with a '/'.
+ * @param [options.allowToEndWithSlash=true] - Indicates if the path is allowed to end with a '/'.
+ * @param [options.allowEmpty=false] - Indicates if an empty path is allowed.
+ * @returns True if validation is successful, or a localized error message if it fails.
+ */
+export function validatePath(
+  path: string,
+  options?: PathValidationOptions,
+): ValidationReturn;
+
+export function validatePath(
+  options?: PathValidationOptions,
+): (value: string) => ValidationReturn;
+
+export function validatePath(
+  pathOrOpts?: string | PathValidationOptions,
+  options: PathValidationOptions = {},
+): ValidationReturn | ((value: string) => ValidationReturn) {
+  if (typeof pathOrOpts !== "string") {
+    return (v: string) => validatePath(v, pathOrOpts);
+  }
+
+  const path = pathOrOpts;
+
+  const {
+    allowToStartWithSlash = true,
+    allowToEndWithSlash = true,
+    allowEmpty = false,
+  } = options;
+
+  if (!path) {
+    return allowEmpty ? true : t("form.field.required");
+  }
+
+  if (!allowToStartWithSlash && path.startsWith("/")) {
+    return t("form.field.path.startWithSlashNotAllowed");
+  }
+
+  if (!allowToEndWithSlash && path.endsWith("/")) {
+    return t("form.field.path.endWithSlashNotAllowed");
+  }
+
+  if (
+    path
+      .replace(/^\//, "") // Remove first "/" if present
+      .replace(/\/$/, "") // Remove last "/" if present
+      .split("/")
+      .map((v) => v.trim())
+      .includes("")
+  ) {
+    return t("form.field.path.invalid");
+  }
+
+  return true;
 }

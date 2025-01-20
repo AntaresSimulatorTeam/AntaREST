@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ import logging
 from typing import List, Optional
 
 from redis.client import Redis
+from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import JSON
@@ -31,10 +32,12 @@ class RedisCache(ICache):
     def __init__(self, redis_client: Redis):  # type: ignore
         self.redis = redis_client
 
+    @override
     def start(self) -> None:
         # Assuming the Redis service is already running; no need to start it here.
         pass
 
+    @override
     def put(self, id: str, data: JSON, duration: int = 3600) -> None:
         redis_element = RedisCacheElement(duration=duration, data=data)
         redis_key = f"cache:{id}"
@@ -42,6 +45,7 @@ class RedisCache(ICache):
         self.redis.set(redis_key, redis_element.model_dump_json())
         self.redis.expire(redis_key, duration)
 
+    @override
     def get(self, id: str, refresh_timeout: Optional[int] = None) -> Optional[JSON]:
         redis_key = f"cache:{id}"
         result = self.redis.get(redis_key)
@@ -58,10 +62,12 @@ class RedisCache(ICache):
         logger.info(f"Cache key {id} not found")
         return None
 
+    @override
     def invalidate(self, id: str) -> None:
         logger.info(f"Removing cache key {id}")
         self.redis.delete(f"cache:{id}")
 
+    @override
     def invalidate_all(self, ids: List[str]) -> None:
         logger.info(f"Removing cache keys {ids}")
         self.redis.delete(*[f"cache:{id}" for id in ids])

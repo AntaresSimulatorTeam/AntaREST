@@ -54,7 +54,7 @@ function PropertiesView({
         <SearchFE onSearchValueChange={onSearchFilterChange} />
       )}
       {onAdd && (
-        <Box sx={{ display: "flex", px: 1, mb: 1 }}>
+        <Box sx={{ display: "flex", px: 1, my: 1 }}>
           <Button
             color="primary"
             variant="contained"

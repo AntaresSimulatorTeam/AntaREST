@@ -14,7 +14,7 @@
 
 import { PromiseStatus, UsePromiseResponse } from "../../../hooks/usePromise";
 import SimpleLoader from "../loaders/SimpleLoader";
-import EmptyView from "../page/SimpleContent";
+import EmptyView from "../page/EmptyView";
 
 export type Response<T = unknown> = Pick<
   UsePromiseResponse<T>,

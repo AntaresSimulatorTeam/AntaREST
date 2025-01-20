@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -155,6 +155,8 @@ class TestCreateRenewablesCluster:
             "id": None,
             "version": 1,
             "study_version": STUDY_VERSION_8_8,
+            "updated_at": None,
+            "user_id": None,
         }
 
 

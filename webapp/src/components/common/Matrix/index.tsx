@@ -21,7 +21,7 @@ import { useOutletContext } from "react-router";
 import { StudyMetadata } from "../../../common/types";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 import MatrixActions from "./components/MatrixActions";
-import EmptyView from "../page/SimpleContent";
+import EmptyView from "../page/EmptyView";
 import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { AggregateConfig } from "./shared/types";
 import { GridOff } from "@mui/icons-material";
@@ -83,6 +83,7 @@ function Matrix({
     canUndo,
     canRedo,
     reload,
+    rowCount,
   } = useMatrix(
     study.id,
     url,
@@ -136,7 +137,7 @@ function Matrix({
           data={data}
           aggregates={aggregates}
           columns={columns}
-          rows={data.length}
+          rows={rowCount ?? data.length}
           rowHeaders={customRowHeaders}
           dateTime={dateTime}
           onCellEdit={handleCellEdit}

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,8 @@ import datetime
 import logging
 import time
 import typing as t
+
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import TaskAlreadyRunning
@@ -90,6 +92,7 @@ class AutoArchiveService(IService):
                 params=RequestParameters(DEFAULT_ADMIN_USER),
             )
 
+    @override
     def _loop(self) -> None:
         while True:
             try:

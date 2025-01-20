@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -41,10 +41,12 @@ import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/EmptyView";
 import SplitView from "../../../../../common/SplitView";
 import { getLinks } from "@/services/api/studies/links";
 import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
 
 function Candidates() {
   const [t] = useTranslation();
@@ -63,7 +65,7 @@ function Candidates() {
 
   const {
     data: candidates,
-    isLoading,
+    isLoading: isCandidatesLoading,
     isRejected,
     reload,
   } = usePromiseWithSnackbarError(
@@ -96,22 +98,30 @@ function Candidates() {
     },
   );
 
-  const { data: capaLinks } = usePromiseWithSnackbarError(
-    async () => {
-      if (!study) {
+  const { data: capaLinks, isLoading: isLinksLoading } =
+    usePromiseWithSnackbarError(
+      async () => {
+        if (!study) {
+          return {};
+        }
+        const exist = await xpansionConfigurationExist(study.id);
+        if (exist) {
+          return {
+            capacities: await getAllCapacities(study.id),
+            links: await getLinks({ studyId: study.id }),
+          };
+        }
         return {};
-      }
-      const exist = await xpansionConfigurationExist(study.id);
-      if (exist) {
-        return {
-          capacities: await getAllCapacities(study.id),
-          links: await getLinks({ studyId: study.id }),
-        };
-      }
-      return {};
-    },
-    { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
-  );
+      },
+      { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
+    );
+
+  // Handle automatic selection of the first element
+  useEffect(() => {
+    if (candidates && candidates.length > 0 && !selectedItem) {
+      setSelectedItem(candidates[0].name);
+    }
+  }, [candidates, selectedItem]);
 
   const deleteXpansion = async () => {
     try {
@@ -224,13 +234,17 @@ function Candidates() {
     }
   };
 
+  if (isCandidatesLoading || isLinksLoading) {
+    return <SimpleLoader />;
+  }
+
   if (isRejected) {
     return <EmptyView title={t("xpansion.error.loadConfiguration")} />;
   }
 
   return (
     <>
-      <SplitView id="xpansion">
+      <SplitView id="xpansion" sizes={[10, 90]}>
         <Box>
           <XpansionPropsView
             candidateList={candidates || []}
@@ -241,11 +255,15 @@ function Candidates() {
           />
         </Box>
         <Box>
-          <Box width="100%" height="100%" boxSizing="border-box">
-            {renderView()}
-          </Box>
+          <ViewWrapper>
+            {!candidates?.length ? (
+              <EmptyView title={t("xpansion.candidates.empty")} />
+            ) : (
+              renderView()
+            )}
+          </ViewWrapper>
           <Backdrop
-            open={isLoading && !candidates}
+            open={isCandidatesLoading && !candidates}
             sx={{
               position: "absolute",
               zIndex: (theme) => theme.zIndex.drawer + 1,

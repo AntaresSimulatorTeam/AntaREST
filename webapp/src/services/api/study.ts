@@ -13,7 +13,7 @@
  */
 
 import { AxiosRequestConfig } from "axios";
-import { isBoolean, trimCharsStart } from "ramda-adjunct";
+import * as RA from "ramda-adjunct";
 import client from "./client";
 import {
   FileStudyTreeConfigDTO,
@@ -34,6 +34,11 @@ import { getConfig } from "../config";
 import { convertStudyDtoToMetadata } from "../utils";
 import { FileDownloadTask } from "./downloads";
 import { StudyMapDistrict } from "../../redux/ducks/studyMaps";
+import { NonStudyFolderDTO } from "@/components/App/Studies/StudyTree/types";
+
+interface Workspace {
+  name: string;
+}
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies`);
@@ -46,6 +51,27 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
     const study = rawStudyList[sid];
     return convertStudyDtoToMetadata(sid, study);
   });
+};
+
+export const getWorkspaces = async () => {
+  const res = await client.get<Workspace[]>(
+    `/v1/private/explorer/_list_workspaces`,
+  );
+  return res.data.map((folder) => folder.name);
+};
+
+/**
+ * Call the explorer API to get the list of folders in a workspace
+ *
+ * @param workspace - workspace name
+ * @param folderPath - path starting from the workspace root (not including the workspace name)
+ * @returns list of folders that are not studies, under the given path
+ */
+export const getFolders = async (workspace: string, folderPath: string) => {
+  const res = await client.get<NonStudyFolderDTO[]>(
+    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderPath)}`,
+  );
+  return res.data;
 };
 
 export const getStudyVersions = async (): Promise<string[]> => {
@@ -135,7 +161,7 @@ export const editStudy = async (
   depth = 1,
 ): Promise<void> => {
   let formattedData: unknown = data;
-  if (isBoolean(data)) {
+  if (RA.isBoolean(data)) {
     formattedData = JSON.stringify(data);
   }
   const res = await client.post(
@@ -163,11 +189,10 @@ export const copyStudy = async (
   return res.data;
 };
 
-export const moveStudy = async (sid: string, folder: string): Promise<void> => {
-  const folderWithId = trimCharsStart("/", `${folder.trim()}/${sid}`);
-  await client.put(
-    `/v1/studies/${sid}/move?folder_dest=${encodeURIComponent(folderWithId)}`,
-  );
+export const moveStudy = async (studyId: string, folder: string) => {
+  await client.put(`/v1/studies/${studyId}/move`, null, {
+    params: { folder_dest: folder },
+  });
 };
 
 export const archiveStudy = async (sid: string): Promise<void> => {
@@ -435,8 +460,10 @@ export const updateStudyMetadata = async (
   return res.data;
 };
 
-export const scanFolder = async (folderPath: string): Promise<void> => {
-  await client.post(`/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}`);
+export const scanFolder = async (folderPath: string, recursive = false) => {
+  await client.post(
+    `/v1/watcher/_scan?path=${encodeURIComponent(folderPath)}&recursive=${recursive}`,
+  );
 };
 
 export const getStudyLayers = async (uuid: string): Promise<StudyLayer[]> => {

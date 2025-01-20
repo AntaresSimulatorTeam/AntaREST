@@ -63,10 +63,12 @@ import { Column } from "@/components/common/Matrix/shared/constants.ts";
 import SplitView from "../../../../../common/SplitView/index.tsx";
 import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";
-import EmptyView from "../../../../../common/page/SimpleContent.tsx";
+import EmptyView from "../../../../../common/page/EmptyView.tsx";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
 import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
 import { ResultMatrixDTO } from "@/components/common/Matrix/shared/types.ts";
+
+type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -84,7 +86,11 @@ function ResultDetails() {
   const [itemType, setItemType] = useState(OutputItemType.Areas);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [searchValue, setSearchValue] = useState("");
+  // Store filtered headers and their original indices separately
+  // This allows us to correctly map the data rows to their corresponding headers
+  // when some columns are filtered out
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
+  const [headerIndices, setHeaderIndices] = useState<number[]>([]);
   const isSynthesis = itemType === OutputItemType.Synthesis;
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -143,16 +149,24 @@ function ResultDetails() {
       }
 
       const res = await getStudyData(study.id, path);
-      // TODO add backend parse
+
       if (typeof res === "string") {
         const fixed = res
           .replace(/NaN/g, '"NaN"')
           .replace(/Infinity/g, '"Infinity"');
 
-        return JSON.parse(fixed);
+        const parsed = JSON.parse(fixed);
+
+        return {
+          ...parsed,
+          indices: Array.from({ length: parsed.columns.length }, (_, i) => i),
+        };
       }
 
-      return res;
+      return {
+        ...res,
+        indices: Array.from({ length: res.columns.length }, (_, i) => i),
+      };
     },
     {
       resetDataOnReload: true,
@@ -160,6 +174,19 @@ function ResultDetails() {
       deps: [study.id, path],
     },
   );
+
+  // Transform the matrix data by keeping only the columns that match our filters
+  // headerIndices contains the original positions of our kept columns, ensuring
+  // the data stays aligned with its corresponding headers
+  const filteredData = useMemo(() => {
+    if (!matrixRes.data) {
+      return [];
+    }
+
+    return matrixRes.data.data.map((row) => {
+      return headerIndices.map((index) => row[index]);
+    });
+  }, [matrixRes.data, headerIndices]);
 
   const synthesisRes = usePromise(
     () => {
@@ -211,6 +238,11 @@ function ResultDetails() {
     if (newValue && newValue !== itemType) {
       setItemType(newValue);
     }
+  };
+
+  const handleColHeadersChange: SetResultColHeaders = (headers, indices) => {
+    setResultColHeaders(headers);
+    setHeaderIndices(indices);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -295,7 +327,7 @@ function ResultDetails() {
               studyId={study.id}
               path={path}
               colHeaders={matrixRes.data?.columns || []}
-              onColHeadersChange={setResultColHeaders}
+              onColHeadersChange={handleColHeadersChange}
             />
             <UsePromiseCond
               response={mergeResponses(outputRes, matrixRes)}
@@ -313,8 +345,8 @@ function ResultDetails() {
                     ) : (
                       <MatrixGrid
                         key={`grid-${resultColHeaders.length}`}
-                        data={matrix.data}
-                        rows={matrix.data.length}
+                        data={filteredData}
+                        rows={filteredData.length}
                         columns={resultColumns}
                         dateTime={dateTime}
                         readOnly

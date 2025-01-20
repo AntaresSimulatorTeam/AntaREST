@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -127,8 +127,6 @@ def set_up_xpansion_manager(tmp_path: Path) -> t.Tuple[FileStudy, RawStudy, Xpan
                     "log_level": 0,
                     "separation_parameter": 0.5,
                     "batch_size": 96,
-                    "yearly-weights": "",
-                    "additional-constraints": "",
                     "timelimit": int(1e12),
                 },
                 "weights": {},
@@ -228,8 +226,6 @@ def test_update_xpansion_settings(tmp_path: Path) -> None:
         "max_iteration": 123,
         "uc_type": UcType.EXPANSION_FAST,
         "master": Master.INTEGER,
-        "yearly-weights": "",
-        "additional-constraints": "",
         "relaxed_optimality_gap": "1.2%",  # percentage
         "relative_gap": 1e-12,
         "batch_size": 4,
@@ -461,6 +457,63 @@ def test_update_constraints(tmp_path: Path) -> None:
 
     actual_settings = xpansion_manager.update_xpansion_constraints_settings(study, "")
     assert actual_settings.additional_constraints == ""
+
+
+@pytest.mark.unit_test
+def test_update_constraints_via_the_front(tmp_path: Path) -> None:
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
+    empty_study.tree.save({"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}})
+
+    # asserts we can update a field without writing the field additional constraint in the file
+    front_settings = UpdateXpansionSettings(master="relaxed")
+    xpansion_manager.update_xpansion_settings(study, front_settings)
+    json_content = empty_study.tree.get(["user", "expansion", "settings"])
+    assert "additional-constraints" not in json_content
+    assert json_content["master"] == "relaxed"
+
+    # asserts the front-end can fill additional constraints
+    new_constraint = {"additional-constraints": "constraints.txt"}
+    front_settings = UpdateXpansionSettings.model_validate(new_constraint)
+    actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
+    assert actual_settings.additional_constraints == "constraints.txt"
+    json_content = empty_study.tree.get(["user", "expansion", "settings"])
+    assert json_content["additional-constraints"] == "constraints.txt"
+
+    # asserts the front-end can unselect this constraint by not filling it
+    front_settings = UpdateXpansionSettings()
+    actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
+    assert actual_settings.additional_constraints == ""
+    json_content = empty_study.tree.get(["user", "expansion", "settings"])
+    assert "additional-constraints" not in json_content
+
+
+@pytest.mark.unit_test
+def test_update_weights_via_the_front(tmp_path: Path) -> None:
+    # Same test as the one for constraints
+    empty_study, study, xpansion_manager = set_up_xpansion_manager(tmp_path)
+    empty_study.tree.save({"user": {"expansion": {"weights": {"weights.txt": b"0"}}}})
+
+    # asserts we can update a field without writing the field yearly-weights in the file
+    front_settings = UpdateXpansionSettings(master="relaxed")
+    xpansion_manager.update_xpansion_settings(study, front_settings)
+    json_content = empty_study.tree.get(["user", "expansion", "settings"])
+    assert "yearly-weights" not in json_content
+    assert json_content["master"] == "relaxed"
+
+    # asserts the front-end can fill yearly weights
+    new_constraint = {"yearly-weights": "weights.txt"}
+    front_settings = UpdateXpansionSettings.model_validate(new_constraint)
+    actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
+    assert actual_settings.yearly_weights == "weights.txt"
+    json_content = empty_study.tree.get(["user", "expansion", "settings"])
+    assert json_content["yearly-weights"] == "weights.txt"
+
+    # asserts the front-end can unselect this weight by not filling it
+    front_settings = UpdateXpansionSettings()
+    actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
+    assert actual_settings.yearly_weights == ""
+    json_content = empty_study.tree.get(["user", "expansion", "settings"])
+    assert "yearly-weights" not in json_content
 
 
 @pytest.mark.unit_test

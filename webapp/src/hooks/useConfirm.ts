@@ -22,7 +22,35 @@ function errorFunction() {
 /**
  * Hook that allows to wait for a confirmation from the user with a `Promise`.
  * It is intended to be used in conjunction with a confirm view (like `ConfirmationDialog`).
- 
+ *
+ * @example
+ * ```tsx
+ * const action = useConfirm();
+ *
+ * return (
+ *   <>
+ *     <Button
+ *       onClick={() => {
+ *         action.showConfirm().then((confirm) => {
+ *           if (confirm) {
+ *             // ...
+ *           }
+ *         });
+ *       }}
+ *     >
+ *       Action
+ *     </Button>
+ *     <ConfirmationDialog
+ *       open={action.isPending}
+ *       onConfirm={action.yes}
+ *       onCancel={action.no}
+ *     >
+ *       Are you sure?
+ *     </ConfirmationDialog>
+ *   </>
+ * );
+ * ```
+ *
  * @returns An object with the following properties:
  * - `showConfirm`: A function that returns a `Promise` that resolves to `true` if the user confirms,
  *   `false` if the user refuses, and `null` if the user cancel.

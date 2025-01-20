@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 import typing as t
 
 from pydantic import Field, ValidationInfo, field_validator
+from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
@@ -49,6 +50,7 @@ class ReplaceMatrix(ICommand):
     def matrix_validator(cls, matrix: t.Union[t.List[t.List[MatrixData]], str], values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         return (
             CommandOutput(
@@ -58,6 +60,7 @@ class ReplaceMatrix(ICommand):
             {},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         if self.target[0] == "@":
             self.target = AliasDecoder.decode(self.target, study_data)
@@ -89,6 +92,7 @@ class ReplaceMatrix(ICommand):
         output, _ = self._apply_config(study_data.config)
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
@@ -99,9 +103,11 @@ class ReplaceMatrix(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, ReplaceMatrix):
             return False
@@ -109,9 +115,11 @@ class ReplaceMatrix(ICommand):
             return self.target == other.target and self.matrix == other.matrix
         return self.target == other.target
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return [other]
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]
