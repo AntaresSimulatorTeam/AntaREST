@@ -26,7 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from helpers import with_db_context
+from tests.helpers import with_db_context
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def file_study_820(tmpdir: Path) -> FileStudy:
 
 
 @with_db_context
-def test_ts_field_values(
+def test_nominal_case(
     file_study_820: FileStudy, raw_study_service: RawStudyService, variant_study_service: VariantStudyService
 ):
     # Checks default value
