@@ -20,7 +20,6 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 @all_optional_model
 class TSFormFields(FormFieldsBaseModel):
     thermal: int
-    links: int
 
 
 class TimeSeriesConfigManager:

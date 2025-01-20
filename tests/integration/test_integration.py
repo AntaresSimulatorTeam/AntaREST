@@ -1223,101 +1223,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Time-series form
 
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
+    res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {
-        "load": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "hydro": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "thermal": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "renewables": {
-            "stochasticTsStatus": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "ntc": {"stochasticTsStatus": False, "intraModal": False},
-    }
-    client.put(
-        f"/v1/studies/{study_id}/config/timeseries/form",
-        json={
-            "thermal": {"stochasticTsStatus": True},
-            "load": {
-                "stochasticTsStatus": True,
-                "storeInInput": True,
-                "seasonCorrelation": "monthly",
-            },
-        },
-    )
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
+    assert res_ts_config_json == {"thermal": 1}
+    client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": 2})
+    res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {
-        "load": {
-            "stochasticTsStatus": True,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "monthly",
-            "storeInInput": True,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "hydro": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "thermal": {
-            "stochasticTsStatus": True,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "renewables": {
-            "stochasticTsStatus": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "ntc": {"stochasticTsStatus": False, "intraModal": False},
-    }
+    assert res_ts_config_json == {"thermal": 2}
 
     # Renewable form
 
