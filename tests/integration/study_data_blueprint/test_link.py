@@ -199,8 +199,10 @@ class TestLink:
             "lawForced": "uniform",
             "lawPlanned": "uniform",
             "forceNoGeneration": True,
+            "nominalCapacity": 0.0,
+            "unitCount": 1,
         }
-        assert expected == res.json()
+        assert res.json() == expected
         res = client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
         res.raise_for_status()
 
@@ -223,6 +225,13 @@ class TestLink:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "forceNoGeneration": True,
+            "nominalCapacity": 0.0,
+            "unitCount": 1,
         }
         res = client.post(
             f"/v1/studies/{study_id}/links",
@@ -334,8 +343,15 @@ class TestLink:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "forceNoGeneration": True,
+            "nominalCapacity": 0.0,
+            "unitCount": 1,
         }
-        assert expected == res.json()
+        assert res.json() == expected
 
         # Test create link with double value in filter
 
@@ -363,8 +379,15 @@ class TestLink:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "forceNoGeneration": True,
+            "nominalCapacity": 0.0,
+            "unitCount": 1,
         }
-        assert expected == res.json()
+        assert res.json() == expected
 
     def test_create_link_810(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
