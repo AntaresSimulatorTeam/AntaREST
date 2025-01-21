@@ -37,8 +37,7 @@ type RowMarkers =
 
 type RowMarkersOptions = Exclude<RowMarkers, string>;
 
-export interface DataGridProps
-  extends Omit<DataEditorProps, "rowMarkers" | "onGridSelectionChange" | "gridSelection"> {
+export interface DataGridProps extends Omit<DataEditorProps, "rowMarkers" | "gridSelection"> {
   rowMarkers?: RowMarkers;
   enableColumnResize?: boolean;
 }
@@ -61,6 +60,7 @@ function DataGrid(props: DataGridProps) {
     onColumnResizeEnd,
     enableColumnResize = true,
     freezeColumns,
+    onGridSelectionChange,
     ...rest
   } = props;
 
@@ -70,9 +70,9 @@ function DataGrid(props: DataGridProps) {
   const adjustedFreezeColumns = isStringRowMarkers ? (freezeColumns || 0) + 1 : freezeColumns;
 
   const [columns, setColumns] = useState(columnsFromProps);
-  const [selection, setSelection] = useState<GridSelection>({
-    columns: CompactSelection.empty(),
+  const [gridSelection, setGridSelection] = useState<GridSelection>({
     rows: CompactSelection.empty(),
+    columns: CompactSelection.empty(),
   });
 
   // Add a column for the "string" row markers if needed
@@ -223,7 +223,7 @@ function DataGrid(props: DataGridProps) {
         if (newSelection.current) {
           // Select the whole row when clicking on a row marker cell
           if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
-            setSelection({
+            setGridSelection({
               ...newSelection,
               current: undefined,
               rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
@@ -249,8 +249,7 @@ function DataGrid(props: DataGridProps) {
           //     // rowsLength
           //   ]),
           // });
-
-          setSelection({
+          setGridSelection({
             ...newSelection,
             columns: newSelection.columns.remove(0),
           });
@@ -259,7 +258,8 @@ function DataGrid(props: DataGridProps) {
         }
       }
 
-      setSelection(newSelection);
+      setGridSelection(newSelection);
+      onGridSelectionChange?.(newSelection);
     }
   };
 
@@ -287,7 +287,7 @@ function DataGrid(props: DataGridProps) {
       onColumnResize={handleColumnResize}
       onColumnResizeStart={handleColumnResizeStart}
       onColumnResizeEnd={handleColumnResizeEnd}
-      gridSelection={selection}
+      gridSelection={gridSelection}
       onGridSelectionChange={handleGridSelectionChange}
       freezeColumns={adjustedFreezeColumns}
     />
