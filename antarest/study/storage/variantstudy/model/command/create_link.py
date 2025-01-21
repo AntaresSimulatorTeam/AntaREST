@@ -17,10 +17,11 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkValidationError
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.link_model import LinkInternal
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.model import STUDY_VERSION_8_2, LinksParametersTsGeneration, NbYearsTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -278,6 +279,16 @@ class CreateLink(AbstractLinkCommand):
 
         area_from = data["area_from"]
         area_to = data["area_to"]
+
+        study_id = study_data.config.study_id
+        with db():
+            link_info = db.session.query(NbYearsTsGeneration).filter_by(study_id=study_id).first()
+            if link_info:
+                # The DB is up-to-date, we have to fill it.
+                # If it was empty, we shouldn't fill it here.
+                db.session.add(LinksParametersTsGeneration(study_id=study_id, area_from=area_from, area_to=area_to))
+                # todo: get the default matrix. How ????
+                db.session.commit()
 
         study_data.tree.save(validated_properties, ["input", "links", area_from, "properties", area_to])
 

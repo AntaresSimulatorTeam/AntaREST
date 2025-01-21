@@ -28,6 +28,7 @@ def upgrade():
         sa.PrimaryKeyConstraint("id"),
     )
 
+    default_boolean = sa.text('1') if op.get_context().dialect.name == 'sqlite' else 't'
     op.create_table(
         "links_parameters_ts_generation",
         sa.Column("id", sa.Integer()),
@@ -35,13 +36,13 @@ def upgrade():
         sa.Column("area_to", sa.String(), nullable=False),
         sa.Column("prepro", sa.String(), nullable=False),
         sa.Column("modulation", sa.String(), nullable=False),
-        sa.Column("unit_count", sa.Integer(), nullable=False),
-        sa.Column("nominal_capacity", sa.Float(), nullable=False),
+        sa.Column("unit_count", sa.Integer(), nullable=False, server_default="1"),
+        sa.Column("nominal_capacity", sa.Float(), nullable=False, server_default="0"),
         sa.Column("law_planned", sa.Enum('uniform', 'geometric', name='lawplanned'), nullable=False),
         sa.Column("law_forced", sa.Enum('uniform', 'geometric', name='lawforced'), nullable=False),
-        sa.Column("volatility_planned", sa.String(), nullable=False),
-        sa.Column("volatility_forced", sa.String(), nullable=False),
-        sa.Column("force_no_generation", sa.Boolean(), nullable=False),
+        sa.Column("volatility_planned", sa.String(), nullable=False, server_default="0"),
+        sa.Column("volatility_forced", sa.String(), nullable=False, server_default="0"),
+        sa.Column("force_no_generation", sa.Boolean(), nullable=False, server_default=default_boolean),
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id"],

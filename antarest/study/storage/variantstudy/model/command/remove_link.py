@@ -15,7 +15,8 @@ import typing as t
 from pydantic import field_validator, model_validator
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.model import STUDY_VERSION_8_2, LinksParametersTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -139,7 +140,7 @@ class RemoveLink(ICommand):
             The status of the operation and a message.
         """
 
-        output = self._check_link_exists(study_data.config)[0]
+        output = self._apply_config(study_data.config)[0]
 
         if output.status:
             if study_data.config.version < STUDY_VERSION_8_2:
@@ -152,7 +153,17 @@ class RemoveLink(ICommand):
 
             self._remove_link_from_scenario_builder(study_data)
 
-        return self._apply_config(study_data.config)[0]
+        with db():
+            removed_link = (
+                db.session.query(LinksParametersTsGeneration)
+                .filter_by(study_id=study_data.config.study_id, area_from=self.area1, area_to=self.area2)
+                .first()
+            )
+            if removed_link:  # The DB can be empty for the considered study as we're filling it on the fly
+                db.session.delete(removed_link)
+                db.session.commit()
+
+        return output
 
     @override
     def to_dto(self) -> CommandDTO:
