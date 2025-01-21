@@ -56,6 +56,11 @@ class TestLink:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "forceNoGeneration": True,
         }
         assert expected == res.json()
 
@@ -180,6 +185,11 @@ class TestLink:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "forceNoGeneration": True,
         }
         assert expected == res.json()
         res = client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
