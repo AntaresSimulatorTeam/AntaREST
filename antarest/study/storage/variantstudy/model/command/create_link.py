@@ -287,7 +287,6 @@ class CreateLink(AbstractLinkCommand):
                 # The DB is up-to-date, we have to fill it.
                 # If it was empty, we shouldn't fill it here.
                 db.session.add(LinksParametersTsGeneration(study_id=study_id, area_from=area_from, area_to=area_to))
-                # todo: get the default matrix. How ????
                 db.session.commit()
 
         study_data.tree.save(validated_properties, ["input", "links", area_from, "properties", area_to])
