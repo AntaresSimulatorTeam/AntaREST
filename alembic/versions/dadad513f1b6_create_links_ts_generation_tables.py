@@ -17,7 +17,7 @@ depends_on = None
 
 def upgrade():
     op.create_table(
-        "study_nb_ts_gen",
+        "nb_years_ts_generation",
         sa.Column("id", sa.String(length=36), nullable=False),
         sa.Column("links", sa.Integer(), server_default="1", nullable=False),
         sa.ForeignKeyConstraint(
@@ -29,7 +29,7 @@ def upgrade():
     )
 
     op.create_table(
-        "links_ts_gen_properties",
+        "links_parameters_ts_generation",
         sa.Column("id", sa.Integer()),
         sa.Column("area_from", sa.String(), nullable=False),
         sa.Column("area_to", sa.String(), nullable=False),
