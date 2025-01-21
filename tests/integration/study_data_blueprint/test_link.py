@@ -61,8 +61,10 @@ class TestLink:
             "lawForced": "uniform",
             "lawPlanned": "uniform",
             "forceNoGeneration": True,
+            "nominalCapacity": 0.0,
+            "unitCount": 1,
         }
-        assert expected == res.json()
+        assert res.json() == expected
 
         # Test update link same area
 
@@ -101,10 +103,17 @@ class TestLink:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "forceNoGeneration": True,
+            "nominalCapacity": 0.0,
+            "unitCount": 1,
         }
-        assert expected == res.json()
+        assert res.json() == expected
 
-        # Test update link with non existing area
+        # Test update link with non-existing area
 
         res = client.put(
             f"/v1/studies/{study_id}/links/{area1_id}/id_do_not_exist",
