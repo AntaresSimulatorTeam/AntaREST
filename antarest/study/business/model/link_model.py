@@ -19,6 +19,7 @@ from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case, to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption
 
 
 class AssetType(EnumIgnoreCase):
@@ -139,7 +140,7 @@ FILTER_VALUES: t.List[FilterOption] = [
 ]
 
 
-class LinkBaseDTO(AntaresBaseModel):
+class LinkIniDTO(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     hurdles_cost: bool = False
@@ -156,6 +157,22 @@ class LinkBaseDTO(AntaresBaseModel):
     link_style: LinkStyle = LinkStyle.PLAIN
     filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
     filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+
+
+class LinkTsGeneration(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    unit_count: int = 1
+    nominal_capacity: float = 0
+    law_planned: LawOption = LawOption.UNIFORM
+    law_forced: LawOption = LawOption.UNIFORM
+    volatility_planned: float = Field(default=0.0, ge=0, le=1)
+    volatility_forced: float = Field(default=0.0, ge=0, le=1)
+    force_no_generation: bool = True
+
+
+class LinkBaseDTO(LinkIniDTO, LinkTsGeneration):
+    pass
 
 
 class Area(AntaresBaseModel):
