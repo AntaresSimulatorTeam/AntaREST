@@ -122,7 +122,7 @@ class LinksParametersTsGeneration(Base):  # type:ignore
     unit_count = Column(Integer, nullable=False, default=1)
     nominal_capacity = Column(Float, nullable=False, default=0)
     law_planned = Column(Enum(LawOption), default=LawOption.UNIFORM, nullable=False)
-    law_uniform = Column(Enum(LawOption), default=LawOption.UNIFORM, nullable=False)
+    law_forced = Column(Enum(LawOption), default=LawOption.UNIFORM, nullable=False)
     volatility_planned = Column(Float, nullable=False, default=0)
     volatility_forced = Column(Float, nullable=False, default=0)
     force_no_generation = Column(Boolean, nullable=False, default=True)
