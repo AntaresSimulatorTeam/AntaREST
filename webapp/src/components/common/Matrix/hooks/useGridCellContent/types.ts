@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { GridCell, Item } from "@glideapps/glide-data-grid";
+import type { GridCell, Item } from "@glideapps/glide-data-grid";
 import type { EnhancedGridColumn, MatrixAggregates } from "../../shared/types";
 
 export type GridToDataFunction = (cell: Item) => Item | null;

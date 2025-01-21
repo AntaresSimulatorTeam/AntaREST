@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,12 +20,12 @@ import {
   Select,
   MenuItem,
   ListItemText,
-  SelectChangeEvent,
   ListItemIcon,
   Tooltip,
   FormControl,
   InputLabel,
   IconButton,
+  type SelectChangeEvent,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
@@ -36,16 +36,16 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import FolderIcon from "@mui/icons-material/Folder";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import RadarIcon from "@mui/icons-material/Radar";
-import { FixedSizeGrid, GridOnScrollProps } from "react-window";
+import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
-import { AxiosError } from "axios";
-import { StudyMetadata } from "../../../../common/types";
+import type { AxiosError } from "axios";
+import type { StudyMetadata } from "../../../../common/types";
 import { STUDIES_LIST_HEADER_HEIGHT } from "../../../../theme";
 import {
   setStudyScrollPosition,
-  StudiesSortConf,
   updateStudiesSortConf,
   updateStudyFilters,
+  type StudiesSortConf,
 } from "../../../../redux/ducks/studies";
 import LauncherDialog from "../LauncherDialog";
 import useDebounce from "../../../../hooks/useDebounce";
@@ -75,15 +75,11 @@ function StudiesList(props: StudiesListProps) {
   const { studyIds } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const [studyToLaunch, setStudyToLaunch] = useState<
-    StudyMetadata["id"] | null
-  >(null);
+  const [studyToLaunch, setStudyToLaunch] = useState<StudyMetadata["id"] | null>(null);
   const scrollPosition = useAppSelector(getStudiesScrollPosition);
   const sortConf = useAppSelector(getStudiesSortConf);
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
-  const strictFolderFilter = useAppSelector(
-    (state) => getStudyFilters(state).strictFolder,
-  );
+  const strictFolderFilter = useAppSelector((state) => getStudyFilters(state).strictFolder);
   const [folderList, setFolderList] = useState(folder.split("/"));
   const dispatch = useAppDispatch();
   const sortLabelId = useRef(uuidv4()).current;
@@ -215,10 +211,7 @@ function StudiesList(props: StudiesListProps) {
           alignItems="center"
           boxSizing="border-box"
         >
-          <Breadcrumbs
-            separator={<NavigateNextIcon fontSize="small" />}
-            aria-label="breadcrumb"
-          >
+          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
             {folderList.map((fol, index) => {
               const path = folderList.slice(0, index + 1).join("/");
               if (index === 0) {
@@ -363,11 +356,7 @@ function StudiesList(props: StudiesListProps) {
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: "30px" }}>
-                      {conf.order === "ascend" ? (
-                        <ArrowUpwardIcon />
-                      ) : (
-                        <ArrowDownwardIcon />
-                      )}
+                      {conf.order === "ascend" ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
                     </ListItemIcon>
                     <ListItemText primary={name} />
                   </MenuItem>
@@ -382,8 +371,7 @@ function StudiesList(props: StudiesListProps) {
           {({ height, width }) => {
             const paddedWidth = width - 10;
             const columnWidth =
-              paddedWidth /
-              Math.max(Math.floor(paddedWidth / CARD_TARGET_WIDTH), 1);
+              paddedWidth / Math.max(Math.floor(paddedWidth / CARD_TARGET_WIDTH), 1);
             const columnCount = Math.floor(paddedWidth / columnWidth);
             const rowHeight = CARD_HEIGHT;
 
@@ -417,11 +405,7 @@ function StudiesList(props: StudiesListProps) {
         </AutoSizer>
       </Box>
       {studyToLaunch && (
-        <LauncherDialog
-          open
-          studyIds={[studyToLaunch]}
-          onClose={() => setStudyToLaunch(null)}
-        />
+        <LauncherDialog open studyIds={[studyToLaunch]} onClose={() => setStudyToLaunch(null)} />
       )}
     </Box>
   );

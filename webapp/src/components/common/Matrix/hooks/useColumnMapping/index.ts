@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,8 +13,8 @@
  */
 
 import { useMemo } from "react";
-import { Item } from "@glideapps/glide-data-grid";
-import { EnhancedGridColumn } from "../../shared/types";
+import type { Item } from "@glideapps/glide-data-grid";
+import type { EnhancedGridColumn } from "../../shared/types";
 import { Column } from "../../shared/constants";
 
 /**
@@ -60,10 +60,7 @@ export function useColumnMapping(columns: readonly EnhancedGridColumn[]) {
       return dataColIndex !== -1 ? [dataColIndex, row] : null;
     };
 
-    const dataToGrid = ([col, row]: Item): Item => [
-      dataColumnIndices[col],
-      row,
-    ];
+    const dataToGrid = ([col, row]: Item): Item => [dataColumnIndices[col], row];
 
     return { gridToData, dataToGrid };
   }, [columns]);

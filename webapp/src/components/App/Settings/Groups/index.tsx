@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -25,16 +25,16 @@ import {
   Typography,
 } from "@mui/material";
 import { produce } from "immer";
-import { ReactNode, useMemo, useReducer, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
-import { Action } from "redux";
+import type { Action } from "redux";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import * as R from "ramda";
 import GroupIcon from "@mui/icons-material/Group";
 import { useSnackbar } from "notistack";
-import { GroupDetailsDTO } from "../../../../common/types";
+import type { GroupDetailsDTO } from "../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import { deleteGroup, getGroups } from "../../../../services/api/user";
 import { sortByName } from "../../../../services/utils";
@@ -59,11 +59,7 @@ export type GroupEdit = Partial<GroupDetailsDTO> & {
 };
 
 interface GroupAction extends Action<string> {
-  payload?:
-    | GroupDetailsDTO["id"]
-    | GroupDetailsDTO
-    | GroupDetailsDTO[]
-    | GroupEdit;
+  payload?: GroupDetailsDTO["id"] | GroupDetailsDTO | GroupDetailsDTO[] | GroupEdit;
 }
 
 const reducer = produce<GroupDetailsDTO[], [GroupAction]>((draft, action) => {
@@ -171,10 +167,7 @@ function Groups() {
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(
-          t("settings.error.groupDelete", { 0: group.name }),
-          err,
-        );
+        enqueueErrorSnackbar(t("settings.error.groupDelete", { 0: group.name }), err);
       })
       .finally(() => {
         setGroupsInLoading((prev) => prev.filter((u) => u !== group));
@@ -208,7 +201,7 @@ function Groups() {
                 <ListItem key={v} disablePadding>
                   <Skeleton sx={{ width: 1, height: 50 }} />
                 </ListItem>
-              )) as ReactNode,
+              )) as React.ReactNode,
           ],
           // Group list
           [
@@ -227,10 +220,7 @@ function Groups() {
                         <IconButton onClick={() => setGroupToEdit(group)}>
                           <EditIcon />
                         </IconButton>
-                        <IconButton
-                          edge="end"
-                          onClick={() => setGroupToDelete(group)}
-                        >
+                        <IconButton edge="end" onClick={() => setGroupToDelete(group)}>
                           <DeleteIcon />
                         </IconButton>
                       </>

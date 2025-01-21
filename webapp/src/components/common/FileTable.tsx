@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Divider,
@@ -35,12 +35,12 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
-import { GenericInfo } from "../../common/types";
+import type { GenericInfo } from "../../common/types";
 import DownloadLink from "./DownloadLink";
 import UploadDialog from "./dialogs/UploadDialog";
 
 interface PropType {
-  title: ReactNode;
+  title: React.ReactNode;
   content: GenericInfo[];
   onDelete?: (id: string) => Promise<void>;
   onRead: (id: string) => Promise<void> | void;
@@ -70,13 +70,7 @@ function FileTable(props: PropType) {
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
   return (
-    <Box
-      display="flex"
-      overflow="hidden"
-      width="100%"
-      height="100%"
-      flexDirection="column"
-    >
+    <Box display="flex" overflow="hidden" width="100%" height="100%" flexDirection="column">
       {title}
       <Divider sx={{ mt: 1, mb: 2 }} />
       {allowImport && (
@@ -109,9 +103,7 @@ function FileTable(props: PropType) {
                   },
                 })}
               >
-                <TableCell sx={{ color: "text.secondary" }}>
-                  {t("xpansion.fileName")}
-                </TableCell>
+                <TableCell sx={{ color: "text.secondary" }}>{t("xpansion.fileName")}</TableCell>
                 <TableCell align="right" sx={{ color: "text.secondary" }}>
                   {t("xpansion.options")}
                 </TableCell>
@@ -132,18 +124,14 @@ function FileTable(props: PropType) {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       {copyId && (
                         <IconButton
-                          onClick={() =>
-                            navigator.clipboard.writeText(row.id as string)
-                          }
+                          onClick={() => navigator.clipboard.writeText(row.id as string)}
                           sx={{
                             mx: 1,
                             color: "action.active",
                           }}
                         >
                           <Tooltip title={t("global.copyId") as string}>
-                            <ContentCopyIcon
-                              sx={{ height: "20px", width: "20px" }}
-                            />
+                            <ContentCopyIcon sx={{ height: "20px", width: "20px" }} />
                           </Tooltip>
                         </IconButton>
                       )}
@@ -180,9 +168,7 @@ function FileTable(props: PropType) {
                     )}
                     {allowDelete && (
                       <IconButton
-                        onClick={() =>
-                          setOpenConfirmationModal(row.id as string)
-                        }
+                        onClick={() => setOpenConfirmationModal(row.id as string)}
                         sx={{
                           color: "error.light",
                         }}

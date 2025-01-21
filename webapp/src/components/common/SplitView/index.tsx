@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import Split, { SplitProps } from "react-split";
+import Split, { type SplitProps } from "react-split";
 import { Box } from "@mui/material";
 import storage from "../../../services/utils/localStorage";
 import "./style.css";

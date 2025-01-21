@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -18,13 +18,13 @@ import { useMatrix } from "./hooks/useMatrix";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../common/types";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 import MatrixActions from "./components/MatrixActions";
 import EmptyView from "../page/EmptyView";
-import { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { AggregateConfig } from "./shared/types";
-import { GridOff } from "@mui/icons-material";
+import type { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import type { AggregateConfig } from "./shared/types";
+import GridOffIcon from "@mui/icons-material/GridOff";
 import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
 
 interface MatrixProps {
@@ -60,9 +60,7 @@ function Matrix({
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(
-    undefined,
-  );
+  const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(undefined);
 
   // TODO: split `useMatrix` into smaller units
   const {
@@ -131,7 +129,7 @@ function Matrix({
       </MatrixHeader>
       <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
       {!data[0]?.length ? (
-        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOff} />
+        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
       ) : (
         <MatrixGrid
           data={data}

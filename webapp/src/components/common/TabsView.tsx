@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { TabContext, TabList, TabListProps, TabPanel } from "@mui/lab";
+import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
 import { useState } from "react";
 
@@ -60,11 +60,7 @@ function TabsView({ items, onChange, divider }: TabsViewProps) {
           </TabList>
         </Box>
         {items.map(({ content }, index) => (
-          <TabPanel
-            key={index}
-            value={index.toString()}
-            sx={{ px: 0, pb: 0, overflow: "auto" }}
-          >
+          <TabPanel key={index} value={index.toString()} sx={{ px: 0, pb: 0, overflow: "auto" }}>
             {content}
           </TabPanel>
         ))}

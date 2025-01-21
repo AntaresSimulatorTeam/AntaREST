@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,16 +14,16 @@
 
 import {
   FormControl,
-  InputBaseProps,
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent,
-  SxProps,
-  Theme,
+  type InputBaseProps,
+  type SelectChangeEvent,
+  type SxProps,
+  type Theme,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { GenericInfo } from "../../common/types";
+import type { GenericInfo } from "../../common/types";
 import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
@@ -68,11 +68,7 @@ function SelectSingle(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <FormControl
-      variant={variant}
-      sx={mergeSxProp({ m: 0, width: 200 }, sx)}
-      required={required}
-    >
+    <FormControl variant={variant} sx={mergeSxProp({ m: 0, width: 200 }, sx)} required={required}>
       <InputLabel id={`single-checkbox-label-${name}`}>{label}</InputLabel>
       <Select
         {...props}
@@ -83,8 +79,7 @@ function SelectSingle(props: Props) {
         disabled={disabled}
         onChange={
           handleChange
-            ? (e: SelectChangeEvent<unknown>) =>
-                handleChange(name, e.target.value as string)
+            ? (e: SelectChangeEvent<unknown>) => handleChange(name, e.target.value as string)
             : basicHandleChange
         }
       >

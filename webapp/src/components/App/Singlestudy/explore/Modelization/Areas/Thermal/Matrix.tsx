@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,7 +17,7 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { Cluster, StudyMetadata } from "../../../../../../../common/types";
+import type { Cluster, StudyMetadata } from "../../../../../../../common/types";
 import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "./utils";
 import Matrix from "../../../../../../common/Matrix";
 
@@ -74,10 +74,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
 
   // Filter matrix data based on the study version.
   const filteredMatrices = useMemo(
-    () =>
-      MATRICES.filter(({ minVersion }) =>
-        minVersion ? studyVersion >= minVersion : true,
-      ),
+    () => MATRICES.filter(({ minVersion }) => (minVersion ? studyVersion >= minVersion : true)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [studyVersion],
   );

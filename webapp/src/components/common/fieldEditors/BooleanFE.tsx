@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,13 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { SelectProps } from "@mui/material";
+import type { SelectProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
-import SelectFE, { SelectFEProps } from "./SelectFE";
+import SelectFE, { type SelectFEProps } from "./SelectFE";
 
-export interface BooleanFEProps
-  extends Omit<SelectFEProps, "options" | "multiple" | "onChange"> {
+export interface BooleanFEProps extends Omit<SelectFEProps, "options" | "multiple" | "onChange"> {
   defaultValue?: boolean;
   value?: boolean;
   trueText?: string;
@@ -44,16 +43,7 @@ function toValidEvent<T extends { target: { value: unknown } }>(event: T) {
 }
 
 function BooleanFE(props: BooleanFEProps) {
-  const {
-    defaultValue,
-    value,
-    trueText,
-    falseText,
-    onChange,
-    onBlur,
-    inputRef,
-    ...rest
-  } = props;
+  const { defaultValue, value, trueText, falseText, onChange, onBlur, inputRef, ...rest } = props;
 
   return (
     <SelectFE

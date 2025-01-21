@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -31,27 +31,22 @@ import {
 import { useTranslation } from "react-i18next";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import { useEffect, useId, useState } from "react";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import * as RA from "ramda-adjunct";
 import { useUpdateEffect } from "react-use";
-import { FieldPath, FieldValues } from "react-hook-form";
+import type { FieldPath, FieldValues } from "react-hook-form";
 import StringFE from "../StringFE";
 import reactHookFormSupport, {
-  ReactHookFormSupportProps,
+  type ReactHookFormSupportProps,
 } from "../../../../hoc/reactHookFormSupport";
 import {
   createFakeBlurEventHandler,
   createFakeChangeEventHandler,
   createFakeInputElement,
-  FakeBlurEventHandler,
-  FakeChangeEventHandler,
-  InputObject,
+  type FakeBlurEventHandler,
+  type FakeChangeEventHandler,
+  type InputObject,
 } from "../../../../utils/feUtils";
 import { makeLabel, makeListItems } from "./utils";
 
@@ -91,9 +86,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
   } = props;
 
   const { t } = useTranslation();
-  const [listItems, setListItems] = useState(() =>
-    makeListItems(value || defaultValue || []),
-  );
+  const [listItems, setListItems] = useState(() => makeListItems(value || defaultValue || []));
   const [selectedOption, setSelectedOption] = useState<TOption | null>(null);
   const droppableId = useId();
 
@@ -152,8 +145,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
       sx={[
         {
           p: 2,
-          backgroundImage:
-            "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         },
         !!error && {
           border: "1px solid",
@@ -175,12 +167,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
           }}
           autoHighlight
           renderInput={(params) => (
-            <StringFE
-              {...params}
-              sx={{ m: 0 }}
-              size="small"
-              variant="outlined"
-            />
+            <StringFE {...params} sx={{ m: 0 }} size="small" variant="outlined" />
           )}
         />
         <Button
@@ -189,10 +176,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
           onClick={() => {
             setSelectedOption(null);
             if (selectedOption) {
-              setListItems((items) => [
-                ...items,
-                ...makeListItems([optionToItem(selectedOption)]),
-              ]);
+              setListItems((items) => [...items, ...makeListItems([optionToItem(selectedOption)])]);
             }
           }}
           disabled={!selectedOption}
@@ -203,11 +187,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
       <DragDropContext onDragEnd={onItemDragEnd}>
         <Droppable droppableId={droppableId}>
           {(provided) => (
-            <List
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              sx={{ pb: 0 }}
-            >
+            <List {...provided.droppableProps} ref={provided.innerRef} sx={{ pb: 0 }}>
               {listItems.map((item, index) => (
                 <Draggable key={item.id} draggableId={item.id} index={index}>
                   {(provided, snapshot) => (
@@ -228,9 +208,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
                         <IconButton
                           edge="end"
                           onClick={() => {
-                            setListItems(
-                              listItems.filter(({ id }) => id !== item.id),
-                            );
+                            setListItems(listItems.filter(({ id }) => id !== item.id));
                           }}
                         >
                           <RemoveCircleIcon />
@@ -239,11 +217,7 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
                       disablePadding
                       dense
                     >
-                      <ListItemButton
-                        sx={{ cursor: "inherit" }}
-                        disableRipple
-                        disableGutters
-                      >
+                      <ListItemButton sx={{ cursor: "inherit" }} disableRipple disableGutters>
                         <ListItemIcon sx={{ minWidth: 0, pr: 2, pl: 1 }}>
                           <DragHandleIcon />
                         </ListItemIcon>

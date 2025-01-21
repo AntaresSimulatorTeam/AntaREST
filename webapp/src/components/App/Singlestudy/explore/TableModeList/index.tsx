@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -23,10 +23,8 @@ import { v4 as uuidv4 } from "uuid";
 import PropertiesView from "../../../../common/PropertiesView";
 import ListElement from "../common/ListElement";
 import type { TableTemplate } from "./utils";
-import storage, {
-  StorageKey,
-} from "../../../../../services/utils/localStorage";
-import { StudyMetadata } from "../../../../../common/types";
+import storage, { StorageKey } from "../../../../../services/utils/localStorage";
+import type { StudyMetadata } from "../../../../../common/types";
 import CreateTemplateTableDialog from "./dialogs/CreateTemplateTableDialog";
 import UpdateTemplateTableDialog from "./dialogs/UpdateTemplateTableDialog";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
@@ -39,14 +37,13 @@ function TableModeList() {
   const { t } = useTranslation();
 
   const [templates, setTemplates] = useState<TableTemplate[]>(() => {
-    const list =
-      storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
+    const list = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
     return list.map((tp) => ({ ...tp, id: uuidv4() }));
   });
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState<
-    TableTemplate["id"] | undefined
-  >(templates[0]?.id);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<TableTemplate["id"] | undefined>(
+    templates[0]?.id,
+  );
 
   const [dialog, setDialog] = useState<{
     type: "add" | "edit" | "delete";
@@ -55,8 +52,7 @@ function TableModeList() {
 
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const selectedTemplate = templates.find((tp) => tp.id === selectedTemplateId);
-  const dialogTemplate =
-    dialog && templates.find((tp) => tp.id === dialog.templateId);
+  const dialogTemplate = dialog && templates.find((tp) => tp.id === dialog.templateId);
 
   // Handle automatic selection of the first element
   useEffect(() => {
@@ -104,9 +100,7 @@ function TableModeList() {
   };
 
   const handleDelete = () => {
-    setTemplates((templates) =>
-      templates.filter((tp) => tp.id !== dialog?.templateId),
-    );
+    setTemplates((templates) => templates.filter((tp) => tp.id !== dialog?.templateId));
     closeDialog();
   };
 
@@ -131,9 +125,7 @@ function TableModeList() {
         />
         {/* Right */}
         <ViewWrapper>
-          {!templates.length && (
-            <EmptyView title={t("study.tableMode.empty")} />
-          )}
+          {!templates.length && <EmptyView title={t("study.tableMode.empty")} />}
           {selectedTemplate && (
             <TableMode
               studyId={study.id}

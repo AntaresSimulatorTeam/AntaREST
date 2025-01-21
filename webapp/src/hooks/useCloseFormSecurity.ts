@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,10 +20,7 @@ export interface UseFormCloseProtectionParams {
   isDirty: boolean;
 }
 
-function useFormCloseProtection({
-  isSubmitting,
-  isDirty,
-}: UseFormCloseProtectionParams) {
+function useFormCloseProtection({ isSubmitting, isDirty }: UseFormCloseProtectionParams) {
   const { t } = useTranslation();
 
   usePrompt(t("form.submit.inProgress"), isSubmitting);

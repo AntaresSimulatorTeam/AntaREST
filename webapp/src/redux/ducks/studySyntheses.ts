@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -18,7 +18,7 @@ import {
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import {
+import type {
   FileStudyTreeConfigDTO,
   GenericInfo,
   LaunchJobDTO,
@@ -26,19 +26,14 @@ import {
   LinkElement,
 } from "../../common/types";
 import * as api from "../../services/api/study";
-import {
-  getStudyMapsIds,
-  getStudySynthesis,
-  getStudySynthesisIds,
-} from "../selectors";
-import { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
+import { getStudyMapsIds, getStudySynthesis, getStudySynthesisIds } from "../selectors";
+import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 import { setStudyMap } from "./studyMaps";
 
-export const studySynthesesAdapter =
-  createEntityAdapter<FileStudyTreeConfigDTO>({
-    selectId: (studyData) => studyData.study_id,
-  });
+export const studySynthesesAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
+  selectId: (studyData) => studyData.study_id,
+});
 
 export interface StudySynthesesState
   extends ReturnType<typeof studySynthesesAdapter.getInitialState> {
@@ -59,13 +54,13 @@ const n = makeActionName("studySyntheses");
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
-export const setCurrentArea = createAction<
-  NonNullable<StudySynthesesState["currentArea"]>
->(n("SET_CURRENT_AREA"));
+export const setCurrentArea = createAction<NonNullable<StudySynthesesState["currentArea"]>>(
+  n("SET_CURRENT_AREA"),
+);
 
-export const setCurrentLink = createAction<
-  NonNullable<StudySynthesesState["currentLink"]>
->(n("SET_CURRENT_LINK"));
+export const setCurrentLink = createAction<NonNullable<StudySynthesesState["currentLink"]>>(
+  n("SET_CURRENT_LINK"),
+);
 
 export const setCurrentBindingConst = createAction<
   NonNullable<StudySynthesesState["currentBindingConst"]>
@@ -120,20 +115,16 @@ export const createStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO,
   FileStudyTreeConfigDTO["study_id"],
   AppAsyncThunkConfig
->(
-  n("CREATE_STUDY_SYNTHESIS"),
-  async (studyId, { dispatch, rejectWithValue }) => {
-    try {
-      // Fetch study synthesis data
-      const studyData: FileStudyTreeConfigDTO =
-        await api.getStudySynthesis(studyId);
-      initDefaultAreaLinkSelection(dispatch, studyData);
-      return studyData;
-    } catch (err) {
-      return rejectWithValue(err);
-    }
-  },
-);
+>(n("CREATE_STUDY_SYNTHESIS"), async (studyId, { dispatch, rejectWithValue }) => {
+  try {
+    // Fetch study synthesis data
+    const studyData: FileStudyTreeConfigDTO = await api.getStudySynthesis(studyId);
+    initDefaultAreaLinkSelection(dispatch, studyData);
+    return studyData;
+  } catch (err) {
+    return rejectWithValue(err);
+  }
+});
 
 export const setStudySynthesis = createAsyncThunk<
   FileStudyTreeConfigDTO,

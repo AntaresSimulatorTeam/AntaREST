@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,11 +14,11 @@
 
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useState } from "react";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useOutletContext } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../common/types";
 import {
   createXpansionConfiguration,
   xpansionConfigurationExist,
@@ -27,7 +27,7 @@ import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackba
 import TabWrapper from "../TabWrapper";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
-import { Add } from "@mui/icons-material";
+import AddIcon from "@mui/icons-material/Add";
 
 function Xpansion() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -35,13 +35,10 @@ function Xpansion() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [exist, setExist] = useState<boolean>(false);
 
-  const res = usePromiseWithSnackbarError(
-    () => xpansionConfigurationExist(study.id),
-    {
-      errorMessage: t("xpansion.error.loadConfiguration"),
-      deps: [exist],
-    },
-  );
+  const res = usePromiseWithSnackbarError(() => xpansionConfigurationExist(study.id), {
+    errorMessage: t("xpansion.error.loadConfiguration"),
+    deps: [exist],
+  });
 
   const tabList = useMemo(
     () => [
@@ -87,10 +84,7 @@ function Xpansion() {
         await createXpansionConfiguration(study.id);
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.createConfiguration"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t("xpansion.error.createConfiguration"), e as AxiosError);
     } finally {
       setExist(true);
     }
@@ -119,17 +113,13 @@ function Xpansion() {
               color="primary"
               variant="contained"
               size="small"
-              startIcon={<Add />}
+              startIcon={<AddIcon />}
               onClick={createXpansion}
             >
               {t("xpansion.newXpansionConfig")}
             </Button>
           ) : (
-            <TabWrapper
-              study={study}
-              tabStyle="withoutBorder"
-              tabList={tabList}
-            />
+            <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />
           )
         }
       />

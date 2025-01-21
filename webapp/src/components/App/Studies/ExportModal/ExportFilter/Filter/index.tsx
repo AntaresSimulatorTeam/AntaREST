@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,11 +15,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TextField } from "@mui/material";
-import {
-  Area,
-  Set,
-  StudyOutputDownloadType,
-} from "../../../../../../common/types";
+import { StudyOutputDownloadType, type Area, type Set } from "../../../../../../common/types";
 import SelectMulti from "../../../../../common/SelectMulti";
 import { Root } from "./style";
 import MultipleLinkElement from "./MultipleLinkElement";
@@ -50,9 +46,7 @@ function Filter(props: PropTypes) {
     setFilterInValue,
     setFilterOutValue,
   } = props;
-  const [areasOrDistrictsList, setAreasOrDistrictsList] = useState<string[]>(
-    [],
-  );
+  const [areasOrDistrictsList, setAreasOrDistrictsList] = useState<string[]>([]);
 
   useEffect(() => {
     const getAreasOrDistrictsList = (): string[] => {
@@ -107,14 +101,8 @@ function Filter(props: PropTypes) {
         values={filterValue}
         onChange={setFilterValue}
       />
-      <SingleLinkElement
-        label={t("study.filterIn")}
-        onChange={setFilterInValue}
-      />
-      <SingleLinkElement
-        label={t("study.filterOut")}
-        onChange={setFilterOutValue}
-      />
+      <SingleLinkElement label={t("study.filterIn")} onChange={setFilterInValue} />
+      <SingleLinkElement label={t("study.filterOut")} onChange={setFilterOutValue} />
     </Root>
   );
 }

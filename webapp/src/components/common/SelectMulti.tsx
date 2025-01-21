@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import * as React from "react";
 import {
   Box,
   Checkbox,
@@ -22,11 +21,11 @@ import {
   ListItemText,
   MenuItem,
   Select,
-  SelectChangeEvent,
-  SxProps,
-  Theme,
+  type SelectChangeEvent,
+  type SxProps,
+  type Theme,
 } from "@mui/material";
-import { GenericInfo } from "../../common/types";
+import type { GenericInfo } from "../../common/types";
 import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
@@ -41,8 +40,7 @@ interface Props {
 }
 
 function SelectMulti(props: Props) {
-  const { name, list, data, setValue, placeholder, tagsMode, sx, required } =
-    props;
+  const { name, list, data, setValue, placeholder, tagsMode, sx, required } = props;
 
   const handleChange = (event: SelectChangeEvent<string[]>) => {
     const {
@@ -55,9 +53,7 @@ function SelectMulti(props: Props) {
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
       {selected.map((value) => {
         const element = list.find((item) =>
-          typeof item.id === "string"
-            ? item.id === value
-            : item.id.toString() === value,
+          typeof item.id === "string" ? item.id === value : item.id.toString() === value,
         );
         if (element) {
           return <Chip key={element.id} label={element.name} />;
@@ -72,9 +68,7 @@ function SelectMulti(props: Props) {
       .map(
         (elm) =>
           list.find((item) =>
-            typeof item.id === "string"
-              ? item.id === elm
-              : item.id.toString() === elm,
+            typeof item.id === "string" ? item.id === elm : item.id.toString() === elm,
           )?.name,
       )
       .join(", ");

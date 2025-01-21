@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,24 +13,21 @@
  */
 
 import { useEffect, useState } from "react";
-import { StudyMetadata } from "../../common/types";
+import type { StudyMetadata } from "../../common/types";
 import usePromise from "../../hooks/usePromise";
-import {
-  getTableMode,
-  setTableMode,
-} from "../../services/api/studies/tableMode";
-import {
+import { getTableMode, setTableMode } from "../../services/api/studies/tableMode";
+import type {
   TableData,
   TableModeColumnsForType,
   TableModeType,
 } from "../../services/api/studies/tableMode/types";
-import { SubmitHandlerPlus } from "./Form/types";
+import type { SubmitHandlerPlus } from "./Form/types";
 import UsePromiseCond from "./utils/UsePromiseCond";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import EmptyView from "./page/EmptyView";
 import { useTranslation } from "react-i18next";
 import DataGridForm, { type DataGridFormProps } from "./DataGridForm";
-import { startCase } from "lodash";
+import startCase from "lodash/startCase";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 
 export interface TableModeProps<T extends TableModeType = TableModeType> {
@@ -47,9 +44,7 @@ function TableMode<T extends TableModeType>({
   extraActions,
 }: TableModeProps<T>) {
   const { t } = useTranslation();
-  const [gridColumns, setGridColumns] = useState<
-    DataGridFormProps<TableData>["columns"]
-  >([]);
+  const [gridColumns, setGridColumns] = useState<DataGridFormProps<TableData>["columns"]>([]);
   const columnsDep = columns.join(",");
 
   const res = usePromise(

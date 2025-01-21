@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,8 +16,8 @@
 // Enums
 ////////////////////////////////////////////////////////////////
 
-import { DeepPartial } from "redux";
-import { Area, StudyMetadata } from "../../../../../../../common/types";
+import type { DeepPartial } from "redux";
+import type { Area, StudyMetadata } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 
 enum AdequacyPatchMode {
@@ -55,10 +55,7 @@ export const ADEQUACY_PATCH_OPTIONS = Object.values(AdequacyPatchMode);
 // Functions
 ////////////////////////////////////////////////////////////////
 
-function makeRequestURL(
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-): string {
+function makeRequestURL(studyId: StudyMetadata["id"], areaId: Area["name"]): string {
   return `/v1/studies/${studyId}/areas/${areaId}/properties/form`;
 }
 

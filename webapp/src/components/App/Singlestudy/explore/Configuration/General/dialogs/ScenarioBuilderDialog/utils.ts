@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { AxiosResponse } from "axios";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { AxiosResponse } from "axios";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
@@ -165,16 +165,11 @@ const handlers: {
  * @param config - The initial scenario configuration object.
  * @returns The processed configuration object.
  */
-function handleGenericConfig(
-  config: GenericScenarioConfig,
-): GenericScenarioConfig {
-  return Object.entries(config).reduce<GenericScenarioConfig>(
-    (acc, [areaId, yearlyValue]) => {
-      acc[areaId] = yearlyValue;
-      return acc;
-    },
-    {},
-  );
+function handleGenericConfig(config: GenericScenarioConfig): GenericScenarioConfig {
+  return Object.entries(config).reduce<GenericScenarioConfig>((acc, [areaId, yearlyValue]) => {
+    acc[areaId] = yearlyValue;
+    return acc;
+  }, {});
 }
 
 /**
@@ -183,9 +178,7 @@ function handleGenericConfig(
  * @param config - The initial clusters based scenario configuration.
  * @returns Object containing separated areas and cluster configurations.
  */
-function handleClustersConfig(
-  config: ClustersScenarioConfig,
-): ClustersHandlerReturn {
+function handleClustersConfig(config: ClustersScenarioConfig): ClustersHandlerReturn {
   return Object.entries(config).reduce<ClustersHandlerReturn>(
     (acc, [areaId, clusterConfig]) => {
       acc.areas.push(areaId);

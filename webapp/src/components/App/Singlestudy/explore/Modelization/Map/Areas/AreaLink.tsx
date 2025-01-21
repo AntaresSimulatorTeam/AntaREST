@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,11 +13,8 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { LinkElement } from "../../../../../../../common/types";
-import {
-  setCurrentArea,
-  setCurrentLink,
-} from "../../../../../../../redux/ducks/studySyntheses";
+import type { LinkElement } from "../../../../../../../common/types";
+import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 
 import {
