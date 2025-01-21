@@ -14,18 +14,18 @@
 
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import {
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,
-  OptimizationFormFields,
   SIMPLEX_OPTIMIZATION_RANGE_OPTIONS,
   toBooleanIfNeeded,
   TRANSMISSION_CAPACITIES_OPTIONS,
   UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS,
+  type OptimizationFormFields,
 } from "./utils";
 
 interface Props {
@@ -42,9 +42,7 @@ function Fields(props: Props) {
     <Box>
       <Fieldset legend={t("study.configuration.optimization.legend.general")}>
         <SelectFE
-          label={t(
-            "study.configuration.optimization.unfeasibleProblemBehavior",
-          )}
+          label={t("study.configuration.optimization.unfeasibleProblemBehavior")}
           options={UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS}
           name="unfeasibleProblemBehavior"
           control={control}
@@ -85,13 +83,9 @@ function Fields(props: Props) {
           rules={{ setValueAs: toBooleanIfNeeded }}
         />
       </Fieldset>
-      <Fieldset
-        legend={t("study.configuration.optimization.legend.thermalClusters")}
-      >
+      <Fieldset legend={t("study.configuration.optimization.legend.thermalClusters")}>
         <SwitchFE
-          label={t(
-            "study.configuration.optimization.thermalClustersMinStablePower",
-          )}
+          label={t("study.configuration.optimization.thermalClustersMinStablePower")}
           name="thermalClustersMinStablePower"
           control={control}
         />

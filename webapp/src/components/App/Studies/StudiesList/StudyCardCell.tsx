@@ -14,10 +14,10 @@
 
 import { memo } from "react";
 import { Box, Skeleton } from "@mui/material";
-import { GridChildComponentProps, areEqual } from "react-window";
-import { StudyMetadata } from "../../../../common/types";
+import { areEqual, type GridChildComponentProps } from "react-window";
+import type { StudyMetadata } from "../../../../common/types";
 import StudyCard from "../StudyCard";
-import { StudiesListProps } from ".";
+import type { StudiesListProps } from ".";
 
 type Props = GridChildComponentProps<{
   setStudyToLaunch: (id: StudyMetadata["id"]) => void;
@@ -77,8 +77,7 @@ const StudyCardCell = memo<Props>(
     const { isScrolling: prevIsScrolling, ...prevRest } = prevProps;
     const { isScrolling: nextIsScrolling, ...nextRest } = nextProps;
     return (
-      !!(nextIsScrolling === prevIsScrolling || nextIsScrolling) &&
-      areEqual(prevRest, nextRest)
+      !!(nextIsScrolling === prevIsScrolling || nextIsScrolling) && areEqual(prevRest, nextRest)
     );
   },
 );

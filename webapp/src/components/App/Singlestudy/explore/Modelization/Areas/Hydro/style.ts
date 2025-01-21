@@ -22,6 +22,5 @@ export const FormBox = styled(Box)(({ theme }) => ({
 }));
 
 export const FormPaper = styled(Paper)(() => ({
-  backgroundImage:
-    "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+  backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
 }));

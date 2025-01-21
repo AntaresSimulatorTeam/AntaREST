@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../common/types";
 import client from "../client";
 
 /**
@@ -22,11 +22,7 @@ import client from "../client";
  * @param params.studyId - The study ID.
  * @returns A promise that returns the task ID if fulfilled.
  */
-export async function generateTimeSeries(params: {
-  studyId: StudyMetadata["id"];
-}) {
-  const { data } = await client.put<string>(
-    `/v1/studies/${params.studyId}/timeseries/generate`,
-  );
+export async function generateTimeSeries(params: { studyId: StudyMetadata["id"] }) {
+  const { data } = await client.put<string>(`/v1/studies/${params.studyId}/timeseries/generate`);
   return data;
 }

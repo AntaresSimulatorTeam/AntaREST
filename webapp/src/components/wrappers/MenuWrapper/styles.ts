@@ -26,8 +26,7 @@ export const Root = styled(Box)({
   width: "100vw",
   height: "100vh",
   overflow: "hidden",
-  background:
-    "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
+  background: "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
 });
 
 export const TootlbarContent = styled(Box, {
@@ -125,8 +124,7 @@ export const NavListItemIcon = styled(ListItemIcon)({
 });
 
 const options = {
-  shouldForwardProp: (propName: PropertyKey): boolean =>
-    propName !== "extended",
+  shouldForwardProp: (propName: PropertyKey): boolean => propName !== "extended",
 };
 
 export const NavDrawer = styled(

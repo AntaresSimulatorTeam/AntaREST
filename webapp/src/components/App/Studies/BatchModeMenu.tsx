@@ -53,10 +53,7 @@ function BatchModeMenu(props: Props) {
     >
       {selectionMode && (
         <>
-          <Button
-            disabled={selectedIds.length === 0}
-            onClick={() => setOpenLaunchModal(true)}
-          >
+          <Button disabled={selectedIds.length === 0} onClick={() => setOpenLaunchModal(true)}>
             <>
               <BoltIcon
                 sx={{
@@ -67,13 +64,7 @@ function BatchModeMenu(props: Props) {
               {t("global.launch")}
             </>
           </Button>
-          {openLaunchModal && (
-            <LauncherDialog
-              open
-              studyIds={selectedIds}
-              onClose={handlerClose}
-            />
-          )}
+          {openLaunchModal && <LauncherDialog open studyIds={selectedIds} onClose={handlerClose} />}
         </>
       )}
       <Tooltip title={t("studies.batchMode") as string}>

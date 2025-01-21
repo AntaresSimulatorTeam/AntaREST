@@ -23,10 +23,7 @@ import RootPage from "../../common/page/RootPage";
 import HeaderTopRight from "./HeaderTopRight";
 import HeaderBottom from "./HeaderBottom";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
-import {
-  getStudiesState,
-  getStudyIdsFilteredAndSorted,
-} from "../../../redux/selectors";
+import { getStudiesState, getStudyIdsFilteredAndSorted } from "../../../redux/selectors";
 import useAsyncAppSelector from "../../../redux/hooks/useAsyncAppSelector";
 import FilterDrawer from "./FilterDrawer";
 import UseAsyncAppSelectorCond from "../../../redux/components/UseAsyncAppSelectorCond";
@@ -50,9 +47,7 @@ function Studies() {
       title={t("global.studies")}
       titleIcon={TravelExploreOutlinedIcon}
       headerTopRight={<HeaderTopRight />}
-      headerBottom={
-        <HeaderBottom onOpenFilterClick={() => setOpenFilter(true)} />
-      }
+      headerBottom={<HeaderBottom onOpenFilterClick={() => setOpenFilter(true)} />}
     >
       <Box
         sx={{

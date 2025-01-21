@@ -13,16 +13,16 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 import Form from "../../../../../../../common/Form";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
   getManagementOptionsFormFields,
-  HydroFormFields,
   setManagementOptionsFormFields,
+  type HydroFormFields,
 } from "./utils";
 
 function ManagementOptions() {

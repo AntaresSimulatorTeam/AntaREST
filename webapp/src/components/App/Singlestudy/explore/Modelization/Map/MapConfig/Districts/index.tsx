@@ -15,15 +15,13 @@
 import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
-import { Add, Edit } from "@mui/icons-material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import {
-  getAreas,
-  getStudyMapDistrictsById,
-} from "../../../../../../../../redux/selectors";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import { getAreas, getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import TableForm from "../../../../../../../common/TableForm";
 import CreateDistrictDialog from "./CreateDistrictDialog";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
@@ -36,15 +34,10 @@ function Districts() {
   const [t] = useTranslation();
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const districtsById = useAppSelector(getStudyMapDistrictsById);
-  const [createDistrictDialogOpen, setCreateDistrictDialogOpen] =
-    useState(false);
-  const [updateDistrictDialogOpen, setUpdateDistrictDialogOpen] =
-    useState(false);
+  const [createDistrictDialogOpen, setCreateDistrictDialogOpen] = useState(false);
+  const [updateDistrictDialogOpen, setUpdateDistrictDialogOpen] = useState(false);
 
-  const columns = useMemo(
-    () => Object.keys(districtsById).map((id) => id),
-    [districtsById],
-  );
+  const columns = useMemo(() => Object.keys(districtsById).map((id) => id), [districtsById]);
 
   const defaultValues = useMemo(() => {
     const districts = Object.values(districtsById);
@@ -79,9 +72,7 @@ function Districts() {
         if (data.dirtyValues[areaId]?.[districtId]) {
           areasByDistrict[districtId].push(areaId);
         } else {
-          areasByDistrict[districtId] = areasByDistrict[districtId].filter(
-            (id) => id !== areaId,
-          );
+          areasByDistrict[districtId] = areasByDistrict[districtId].filter((id) => id !== areaId);
         }
       });
     });
@@ -119,7 +110,7 @@ function Districts() {
           color="primary"
           variant="outlined"
           size="small"
-          startIcon={<Add />}
+          startIcon={<AddIcon />}
           onClick={() => setCreateDistrictDialogOpen(true)}
           sx={{ mr: 1 }}
         >
@@ -129,7 +120,7 @@ function Districts() {
           color="primary"
           variant="outlined"
           size="small"
-          startIcon={<Edit />}
+          startIcon={<EditIcon />}
           onClick={() => setUpdateDistrictDialogOpen(true)}
         >
           {t("study.modelization.map.districts.edit")}

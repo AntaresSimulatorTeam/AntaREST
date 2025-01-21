@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { History, Transition } from "history";
+import type { History, Transition } from "history";
 import { useContext, useEffect } from "react";
 import { UNSAFE_NavigationContext as NavigationContext } from "react-router-dom";
 import useAutoUpdateRef from "./useAutoUpdateRef";

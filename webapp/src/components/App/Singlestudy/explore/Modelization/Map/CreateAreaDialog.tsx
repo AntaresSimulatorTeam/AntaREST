@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";
 import Fieldset from "../../../../../common/Fieldset";
@@ -72,8 +72,7 @@ function CreateAreaDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              validate: (v) =>
-                validateString(v, { existingValues: existingAreas }),
+              validate: (v) => validateString(v, { existingValues: existingAreas }),
             }}
           />
         </Fieldset>

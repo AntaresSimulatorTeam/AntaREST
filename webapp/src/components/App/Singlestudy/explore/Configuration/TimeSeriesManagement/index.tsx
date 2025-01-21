@@ -15,12 +15,9 @@
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
-import type {
-  SubmitHandlerPlus,
-  UseFormReturnPlus,
-} from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
-import { DEFAULT_VALUES, setTimeSeriesFormFields, TSFormFields } from "./utils";
+import { DEFAULT_VALUES, setTimeSeriesFormFields, type TSFormFields } from "./utils";
 import { useTranslation } from "react-i18next";
 import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
 import { generateTimeSeries } from "../../../../../../services/api/studies/timeseries";

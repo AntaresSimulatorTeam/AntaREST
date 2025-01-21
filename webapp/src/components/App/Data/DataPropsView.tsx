@@ -13,7 +13,7 @@
  */
 
 import { useState } from "react";
-import { MatrixDataSetDTO, MatrixInfoDTO } from "../../../common/types";
+import type { MatrixDataSetDTO, MatrixInfoDTO } from "../../../common/types";
 import PropertiesView from "../../common/PropertiesView";
 import DataListing from "./DataListing";
 import { StyledListingBox } from "./styles";
@@ -33,9 +33,7 @@ function DataPropsView(props: PropTypes) {
     return dataset.filter(
       (item) =>
         item.name.search(input) >= 0 ||
-        !!item.matrices.find(
-          (matrix: MatrixInfoDTO) => matrix.id.search(input) >= 0,
-        ),
+        !!item.matrices.find((matrix: MatrixInfoDTO) => matrix.id.search(input) >= 0),
     );
   };
 

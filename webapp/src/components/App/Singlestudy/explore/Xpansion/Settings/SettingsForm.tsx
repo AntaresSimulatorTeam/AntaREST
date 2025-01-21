@@ -16,13 +16,8 @@ import { useState, useEffect } from "react";
 import { Box, Divider, Typography, Button, TextField } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
-import { XpansionResourceType, XpansionSettings } from "../types";
-import {
-  Fields,
-  SelectFields,
-  Title,
-  StyledVisibilityIcon,
-} from "../share/styles";
+import { XpansionResourceType, type XpansionSettings } from "../types";
+import { Fields, SelectFields, Title, StyledVisibilityIcon } from "../share/styles";
 import SelectSingle from "../../../../../common/SelectSingle";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
@@ -39,10 +34,8 @@ interface PropType {
 
 function SettingsForm(props: PropType) {
   const [t] = useTranslation();
-  const { settings, constraints, weights, candidates, updateSettings, onRead } =
-    props;
-  const [currentSettings, setCurrentSettings] =
-    useState<XpansionSettings>(settings);
+  const { settings, constraints, weights, candidates, updateSettings, onRead } = props;
+  const [currentSettings, setCurrentSettings] = useState<XpansionSettings>(settings);
   const [saveAllowed, setSaveAllowed] = useState<boolean>(false);
 
   const ucType = ["expansion_fast", "expansion_accurate"];
@@ -80,11 +73,7 @@ function SettingsForm(props: PropType) {
   return (
     <Box sx={{ px: 1 }}>
       <Box>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="flex-end"
-        >
+        <Box display="flex" justifyContent="space-between" alignItems="flex-end">
           <Title>{t("xpansion.optimization")}</Title>
           <Button
             variant="outlined"
@@ -105,9 +94,7 @@ function SettingsForm(props: PropType) {
             disabled={!saveAllowed}
           >
             <SaveIcon sx={{ m: 0.2, width: "16px", height: "16px" }} />
-            <Typography sx={{ m: 0.2, fontSize: "12px" }}>
-              {t("global.save")}
-            </Typography>
+            <Typography sx={{ m: 0.2, fontSize: "12px" }}>{t("global.save")}</Typography>
           </Button>
         </Box>
         <Divider sx={{ mt: 1, mb: 2 }} />
@@ -154,9 +141,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.optimalityGap")}
             variant="filled"
             value={currentSettings.optimality_gap}
-            onChange={(e) =>
-              handleChange("optimality_gap", parseFloat(e.target.value))
-            }
+            onChange={(e) => handleChange("optimality_gap", parseFloat(e.target.value))}
             sx={{ mb: 1 }}
             inputProps={{ min: 0 }}
           />
@@ -165,9 +150,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.relativeGap")}
             variant="filled"
             value={currentSettings.relative_gap}
-            onChange={(e) =>
-              handleChange("relative_gap", parseFloat(e.target.value))
-            }
+            onChange={(e) => handleChange("relative_gap", parseFloat(e.target.value))}
             sx={{ mb: 1 }}
             inputProps={{ min: 0 }}
           />
@@ -176,9 +159,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.relaxedOptimalityGap")}
             variant="filled"
             value={currentSettings.relaxed_optimality_gap}
-            onChange={(e) =>
-              handleChange("relaxed_optimality_gap", e.target.value)
-            }
+            onChange={(e) => handleChange("relaxed_optimality_gap", e.target.value)}
             sx={{ mb: 1 }}
             inputProps={{ min: 0 }}
           />
@@ -225,9 +206,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.batchSize")}
             variant="filled"
             value={currentSettings.batch_size}
-            onChange={(e) =>
-              handleChange("batch_size", parseInt(e.target.value, 10))
-            }
+            onChange={(e) => handleChange("batch_size", parseInt(e.target.value, 10))}
             sx={{ mb: 1 }}
             inputProps={{ min: 0 }}
           />
@@ -236,9 +215,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.logLevel")}
             variant="filled"
             value={currentSettings.log_level}
-            onChange={(e) =>
-              handleChange("log_level", parseInt(e.target.value, 10))
-            }
+            onChange={(e) => handleChange("log_level", parseInt(e.target.value, 10))}
             inputProps={{ min: 0, max: 3, step: 1 }}
             sx={{ mb: 1 }}
           />
@@ -277,10 +254,7 @@ function SettingsForm(props: PropType) {
             <StyledVisibilityIcon
               onClick={() =>
                 currentSettings["yearly-weights"] &&
-                onRead(
-                  XpansionResourceType.weights,
-                  currentSettings["yearly-weights"] || "",
-                )
+                onRead(XpansionResourceType.weights, currentSettings["yearly-weights"] || "")
               }
             />
           </SelectFields>
@@ -330,20 +304,14 @@ function SettingsForm(props: PropType) {
             value={currentSettings.sensitivity_config?.epsilon}
             label={t("xpansion.epsilon")}
             onChange={(e) =>
-              handleObjectChange(
-                "sensitivity_config",
-                "epsilon",
-                parseFloat(e.target.value),
-              )
+              handleObjectChange("sensitivity_config", "epsilon", parseFloat(e.target.value))
             }
             inputProps={{ min: 0 }}
           />
           <SwitchFE
             value={currentSettings.sensitivity_config?.capex}
             label={t("xpansion.capex")}
-            onChange={(e, checked) =>
-              handleObjectChange("sensitivity_config", "capex", checked)
-            }
+            onChange={(e, checked) => handleObjectChange("sensitivity_config", "capex", checked)}
           />
           <SelectFE
             sx={{ minWidth: "200px" }}
@@ -351,11 +319,7 @@ function SettingsForm(props: PropType) {
             multiple
             value={currentSettings.sensitivity_config?.projection || []}
             onChange={(e) =>
-              handleObjectChange(
-                "sensitivity_config",
-                "projection",
-                e.target.value as string[],
-              )
+              handleObjectChange("sensitivity_config", "projection", e.target.value as string[])
             }
             variant="filled"
             options={candidates}

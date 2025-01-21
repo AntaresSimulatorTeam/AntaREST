@@ -12,22 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useEffect, forwardRef, ChangeEvent } from "react";
-import {
-  Box,
-  TextField,
-  Typography,
-  Button,
-  Checkbox,
-  Chip,
-  Tooltip,
-} from "@mui/material";
+import { useState, useEffect, forwardRef } from "react";
+import { Box, TextField, Typography, Button, Checkbox, Chip, Tooltip } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import axios, { AxiosError } from "axios";
+import axios, { type AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
 import { getGroups } from "../../../services/api/user";
-import { GroupDTO, MatrixDataSetDTO } from "../../../common/types";
+import type { GroupDTO, MatrixDataSetDTO } from "../../../common/types";
 import { saveMatrix } from "./utils";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
@@ -104,7 +96,7 @@ function DatasetCreationDialog(props: PropTypes) {
     }
   };
 
-  const onUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { target } = e;
     if (target && target.files && target.files.length === 1) {
       setCurrentFile(target.files[0]);
@@ -115,9 +107,7 @@ function DatasetCreationDialog(props: PropTypes) {
     if (add) {
       setSelectedGroupList(selectedGroupList.concat([item]));
     } else {
-      setSelectedGroupList(
-        selectedGroupList.filter((elm) => item.id !== elm.id),
-      );
+      setSelectedGroupList(selectedGroupList.filter((elm) => item.id !== elm.id));
     }
   };
 
@@ -133,7 +123,7 @@ function DatasetCreationDialog(props: PropTypes) {
           setPublicStatus(data.public);
           setName(data.name);
         }
-      } catch (e) {
+      } catch {
         enqueueSnackbar(t("settings.error.groupsError"), {
           variant: "error",
         });
@@ -150,10 +140,7 @@ function DatasetCreationDialog(props: PropTypes) {
       return (
         <Box sx={{ height: "200px", width: "100%" }}>
           {uploadProgress < 100 ? (
-            <SimpleLoader
-              message="data.uploadingmatrix"
-              progress={uploadProgress}
-            />
+            <SimpleLoader message="data.uploadingmatrix" progress={uploadProgress} />
           ) : (
             <SimpleLoader message="data.analyzingmatrix" />
           )}
@@ -238,10 +225,7 @@ function DatasetCreationDialog(props: PropTypes) {
                 >
                   {currentFile ? currentFile.name : t("global.chooseFile")}
                 </Typography>
-                <Tooltip
-                  title={t("data.message.uploadHelp") as string}
-                  placement="top"
-                >
+                <Tooltip title={t("data.message.uploadHelp") as string} placement="top">
                   <HelperIcon />
                 </Tooltip>
               </label>
@@ -287,9 +271,7 @@ function DatasetCreationDialog(props: PropTypes) {
               }}
             >
               {groupList.map((item) => {
-                const index = selectedGroupList.findIndex(
-                  (elm) => item.id === elm.id,
-                );
+                const index = selectedGroupList.findIndex((elm) => item.id === elm.id);
                 if (index >= 0) {
                   return (
                     <Chip
@@ -301,11 +283,7 @@ function DatasetCreationDialog(props: PropTypes) {
                   );
                 }
                 return (
-                  <Chip
-                    key={item.id}
-                    label={item.name}
-                    onClick={() => onGroupClick(true, item)}
-                  />
+                  <Chip key={item.id} label={item.name} onClick={() => onGroupClick(true, item)} />
                 );
               })}
             </Box>

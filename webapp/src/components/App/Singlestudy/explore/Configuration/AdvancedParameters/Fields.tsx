@@ -19,7 +19,6 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import {
-  AdvancedParamsFormFields,
   HYDRO_HEURISTIC_POLICY_OPTIONS,
   INITIAL_RESERVOIR_OPTIONS,
   HYDRO_PRICING_MODE_OPTIONS,
@@ -31,9 +30,10 @@ import {
   SIMULATION_CORES_OPTIONS,
   RENEWABLE_GENERATION_OPTIONS,
   UnitCommitmentMode,
+  type AdvancedParamsFormFields,
 } from "./utils";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 
 function Fields() {
   const [t] = useTranslation();
@@ -47,43 +47,29 @@ function Fields() {
 
   return (
     <Box>
-      <Fieldset
-        legend={t(
-          "study.configuration.advancedParameters.seedsForRandomNumbers",
-        )}
-      >
+      <Fieldset legend={t("study.configuration.advancedParameters.seedsForRandomNumbers")}>
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.windTimeSeriesGeneration",
-          )}
+          label={t("study.configuration.advancedParameters.windTimeSeriesGeneration")}
           name="seedTsgenWind"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.loadTimeSeriesGeneration",
-          )}
+          label={t("study.configuration.advancedParameters.loadTimeSeriesGeneration")}
           name="seedTsgenLoad"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.hydroTimeSeriesGeneration",
-          )}
+          label={t("study.configuration.advancedParameters.hydroTimeSeriesGeneration")}
           name="seedTsgenHydro"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.thermalTimeSeriesGeneration",
-          )}
+          label={t("study.configuration.advancedParameters.thermalTimeSeriesGeneration")}
           name="seedTsgenThermal"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.solarTimeSeriesGeneration",
-          )}
+          label={t("study.configuration.advancedParameters.solarTimeSeriesGeneration")}
           name="seedTsgenSolar"
           control={control}
         />
@@ -93,73 +79,51 @@ function Fields() {
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.noiseOnUnsuppliedEnergyCosts",
-          )}
+          label={t("study.configuration.advancedParameters.noiseOnUnsuppliedEnergyCosts")}
           name="seedUnsuppliedEnergyCosts"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.noiseOnSpilledEnergyCosts",
-          )}
+          label={t("study.configuration.advancedParameters.noiseOnSpilledEnergyCosts")}
           name="seedSpilledEnergyCosts"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.noiseOnThermalPlantsCosts",
-          )}
+          label={t("study.configuration.advancedParameters.noiseOnThermalPlantsCosts")}
           name="seedThermalCosts"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.noiseOnVirtualHydroCosts",
-          )}
+          label={t("study.configuration.advancedParameters.noiseOnVirtualHydroCosts")}
           name="seedHydroCosts"
           control={control}
         />
         <NumberFE
-          label={t(
-            "study.configuration.advancedParameters.seedInitialReservoirLevels",
-          )}
+          label={t("study.configuration.advancedParameters.seedInitialReservoirLevels")}
           name="seedInitialReservoirLevels"
           control={control}
         />
       </Fieldset>
 
-      <Fieldset
-        legend={t(
-          "study.configuration.advancedParameters.spatialTimeSeriesCorrelation",
-        )}
-      >
+      <Fieldset legend={t("study.configuration.advancedParameters.spatialTimeSeriesCorrelation")}>
         <SelectFE
           multiple
-          label={t(
-            "study.configuration.advancedParameters.accuracyOnCorrelation",
-          )}
+          label={t("study.configuration.advancedParameters.accuracyOnCorrelation")}
           options={SPATIAL_CORRELATIONS_OPTIONS}
           name="accuracyOnCorrelation"
           control={control}
         />
       </Fieldset>
 
-      <Fieldset
-        legend={t("study.configuration.advancedParameters.otherPreferences")}
-      >
+      <Fieldset legend={t("study.configuration.advancedParameters.otherPreferences")}>
         <SelectFE
-          label={t(
-            "study.configuration.advancedParameters.initialReservoirLevels",
-          )}
+          label={t("study.configuration.advancedParameters.initialReservoirLevels")}
           options={INITIAL_RESERVOIR_OPTIONS}
           name="initialReservoirLevels"
           control={control}
         />
         <SelectFE
-          label={t(
-            "study.configuration.advancedParameters.hydroHeuristicPolicy",
-          )}
+          label={t("study.configuration.advancedParameters.hydroHeuristicPolicy")}
           options={HYDRO_HEURISTIC_POLICY_OPTIONS}
           name="hydroHeuristicPolicy"
           control={control}
@@ -183,9 +147,7 @@ function Fields() {
           control={control}
         />
         <SelectFE
-          label={t(
-            "study.configuration.advancedParameters.dayAheadReserveManagement",
-          )}
+          label={t("study.configuration.advancedParameters.dayAheadReserveManagement")}
           options={RESERVE_MANAGEMENT_OPTIONS}
           name="dayAheadReserveManagement"
           control={control}
@@ -194,9 +156,7 @@ function Fields() {
           label={t("study.configuration.advancedParameters.unitCommitmentMode")}
           options={UNIT_COMMITMENT_MODE_OPTIONS.filter(
             (v) => v !== UnitCommitmentMode.MILP || studyVersion >= 880,
-          ).map((v) =>
-            v === UnitCommitmentMode.MILP ? { label: "MILP", value: v } : v,
-          )}
+          ).map((v) => (v === UnitCommitmentMode.MILP ? { label: "MILP", value: v } : v))}
           name="unitCommitmentMode"
           control={control}
         />
@@ -208,9 +168,7 @@ function Fields() {
         />
         {studyVersion >= 810 && (
           <SelectFE
-            label={t(
-              "study.configuration.advancedParameters.renewableGenerationModeling",
-            )}
+            label={t("study.configuration.advancedParameters.renewableGenerationModeling")}
             options={RENEWABLE_GENERATION_OPTIONS}
             name="renewableGenerationModelling"
             control={control}

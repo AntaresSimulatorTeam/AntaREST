@@ -16,12 +16,11 @@ import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { createTableTemplate, type TableTemplate } from "../utils";
 import TableTemplateFormDialog, {
-  TableTemplateFormDialogProps,
+  type TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
-interface Props
-  extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {
+interface Props extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {
   setTemplates: React.Dispatch<React.SetStateAction<TableTemplate[]>>;
   templates: TableTemplate[];
 }
@@ -37,10 +36,7 @@ function CreateTemplateTableDialog(props: Props) {
   const handleSubmit = (data: SubmitHandlerPlus<TableTemplate>) => {
     const { name, type, columns } = data.values;
 
-    setTemplates((templates) => [
-      ...templates,
-      createTableTemplate(name, type, columns),
-    ]);
+    setTemplates((templates) => [...templates, createTableTemplate(name, type, columns)]);
 
     onCancel();
   };

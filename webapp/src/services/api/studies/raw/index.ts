@@ -34,13 +34,10 @@ import type {
 export async function getMatrixFile(params: GetMatrixFileParams) {
   const { studyId, ...queryParams } = params;
 
-  const { data } = await client.get<Blob>(
-    `/v1/studies/${studyId}/raw/download`,
-    {
-      params: queryParams,
-      responseType: "blob",
-    },
-  );
+  const { data } = await client.get<Blob>(`/v1/studies/${studyId}/raw/download`, {
+    params: queryParams,
+    responseType: "blob",
+  });
   return data;
 }
 
@@ -96,15 +93,12 @@ export async function deleteFile(params: DeleteFileParams) {
 export async function getRawFile(params: GetRawFileParams) {
   const { studyId, path } = params;
 
-  const { data, headers } = await client.get<File>(
-    `/v1/studies/${studyId}/raw/original-file`,
-    {
-      params: {
-        path,
-      },
-      responseType: "blob",
+  const { data, headers } = await client.get<File>(`/v1/studies/${studyId}/raw/original-file`, {
+    params: {
+      path,
     },
-  );
+    responseType: "blob",
+  });
 
   // Get the original file name from the response Headers
   const contentDisposition = headers["content-disposition"];

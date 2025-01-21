@@ -18,8 +18,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
-import { Accept, useDropzone } from "react-dropzone";
-import { StudyMetadata } from "../../../common/types";
+import { useDropzone, type Accept } from "react-dropzone";
+import type { StudyMetadata } from "../../../common/types";
 import { useSnackbar } from "notistack";
 import { uploadFile } from "../../../services/api/studies/raw";
 

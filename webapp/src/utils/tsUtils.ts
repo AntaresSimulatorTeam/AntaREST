@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { O } from "ts-toolbelt";
+import type { O } from "ts-toolbelt";
 
 /**
  * Allow to use `any` with `Promise` type without disabling ESLint rule.

@@ -19,17 +19,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import {
-  BotCreateDTO,
-  BotDTO,
-  GroupDTO,
-  RoleType,
-} from "../../../../../common/types";
+import type { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createBot } from "../../../../../services/api/user";
 import OkDialog from "../../../../common/dialogs/OkDialog";
-import TokenFormDialog, { TokenFormDialogProps } from "./TokenFormDialog";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import TokenFormDialog, { type TokenFormDialogProps } from "./TokenFormDialog";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
@@ -56,16 +51,12 @@ function CreateTokenDialog(props: Props) {
     const { name, permissions } = data.values;
 
     try {
-      const roles = permissions.map(
-        (perm: { group: GroupDTO; type: RoleType }) => ({
-          group: perm.group.id,
-          role: perm.type,
-        }),
-      ) as BotCreateDTO["roles"];
+      const roles = permissions.map((perm: { group: GroupDTO; type: RoleType }) => ({
+        group: perm.group.id,
+        role: perm.type,
+      })) as BotCreateDTO["roles"];
 
-      const tokenValue = await mounted(
-        createBot({ name, is_author: false, roles }),
-      );
+      const tokenValue = await mounted(createBot({ name, is_author: false, roles }));
 
       setTokenValueToDisplay(tokenValue);
 
@@ -73,10 +64,7 @@ function CreateTokenDialog(props: Props) {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("settings.error.tokenSave", { 0: name }),
-        e as Error,
-      );
+      enqueueErrorSnackbar(t("settings.error.tokenSave", { 0: name }), e as Error);
       closeDialog();
     } finally {
       reloadFetchTokens();
@@ -84,9 +72,7 @@ function CreateTokenDialog(props: Props) {
   };
 
   const handleCopyClick = () => {
-    navigator.clipboard
-      .writeText(tokenValueToDisplay)
-      .then(() => setShowCopiedTooltip(true));
+    navigator.clipboard.writeText(tokenValueToDisplay).then(() => setShowCopiedTooltip(true));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -122,10 +108,7 @@ function CreateTokenDialog(props: Props) {
             }}
           >
             {tokenValueToDisplay}
-            <IconButton
-              sx={{ position: "absolute", right: 3, bottom: 3 }}
-              size="large"
-            >
+            <IconButton sx={{ position: "absolute", right: 3, bottom: 3 }} size="large">
               <Tooltip
                 open={showCopiedTooltip}
                 PopperProps={{

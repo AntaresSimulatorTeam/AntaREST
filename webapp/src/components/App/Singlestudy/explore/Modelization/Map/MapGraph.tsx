@@ -12,22 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { AxiosError } from "axios";
-import { DebouncedFunc } from "lodash";
-import { RefObject, useEffect, useState } from "react";
-import { Graph, GraphLink, GraphNode } from "react-d3-graph";
+import type { AxiosError } from "axios";
+import type { DebouncedFunc } from "lodash";
+import { useEffect, useState } from "react";
+import { Graph, type GraphLink, type GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import { LinkProperties, StudyMetadata } from "../../../../../../common/types";
+import type { LinkProperties, StudyMetadata } from "../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  createStudyMapLink,
-  StudyMapNode,
-} from "../../../../../../redux/ducks/studyMaps";
-import {
-  setCurrentArea,
-  setCurrentLink,
-} from "../../../../../../redux/ducks/studySyntheses";
+import { createStudyMapLink, type StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
+import { setCurrentArea, setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLayer } from "../../../../../../redux/selectors";
@@ -40,7 +34,7 @@ interface Props {
   width: number;
   links: LinkProperties[];
   nodes: StudyMapNode[];
-  graph: RefObject<Graph<StudyMapNode & GraphNode, LinkProperties & GraphLink>>;
+  graph: React.RefObject<Graph<StudyMapNode & GraphNode, LinkProperties & GraphLink>>;
   onNodePositionChange: (id: string, x: number, y: number) => void;
   zoomLevel: number;
   setZoomLevel: DebouncedFunc<(zoom: number) => void>;
@@ -123,8 +117,7 @@ function MapGraph({
 
   const handleOnClickLink = (source: string, target: string) => {
     const isTempLink =
-      links.find((link) => link.source === source && link.target === target)
-        ?.temp || false;
+      links.find((link) => link.source === source && link.target === target)?.temp || false;
 
     if (!isTempLink) {
       dispatch(setCurrentArea(""));
@@ -141,11 +134,7 @@ function MapGraph({
   };
 
   const handleNodePositionChange = (id: string, x: number, y: number) => {
-    return onNodePositionChange(
-      id,
-      x - width / INITIAL_ZOOM / 2 - 0,
-      -y + height / 2 + 0,
-    );
+    return onNodePositionChange(id, x - width / INITIAL_ZOOM / 2 - 0, -y + height / 2 + 0);
   };
 
   const onZoomChange = (previousZoom: number, newZoom: number) => {
@@ -175,9 +164,7 @@ function MapGraph({
         },
         node: {
           renderLabel: false,
-          viewGenerator: (node) => (
-            <Node node={node} linkCreation={handleLinkCreation} />
-          ),
+          viewGenerator: (node) => <Node node={node} linkCreation={handleLinkCreation} />,
         },
         link: {
           color: "#a3a3a3",

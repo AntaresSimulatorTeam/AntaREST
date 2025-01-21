@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import { Box, styled, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { isStringEmpty, isUserAdmin } from "../../../services/utils";
 import { getMessageInfo as getMessageInfoAPI } from "../../../services/api/maintenance";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -51,10 +51,7 @@ function MessageInfoDialog() {
         const tmpMessage = await getMessageInfoAPI();
         dispatch(setMessageInfo(isStringEmpty(tmpMessage) ? "" : tmpMessage));
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("maintenance.error.messageInfoError"),
-          e as AxiosError,
-        );
+        enqueueErrorSnackbar(t("maintenance.error.messageInfoError"), e as AxiosError);
       }
     };
     init();

@@ -30,7 +30,7 @@ import Form from "../common/Form";
 import StringFE from "../common/fieldEditors/StringFE";
 import PasswordFE from "../common/fieldEditors/PasswordFE";
 import UsePromiseCond from "../common/utils/UsePromiseCond";
-import { SubmitHandlerPlus } from "../common/Form/types";
+import type { SubmitHandlerPlus } from "../common/Form/types";
 
 interface FormValues {
   username: string;
@@ -110,11 +110,7 @@ function LoginWrapper(props: Props) {
               flexWrap="nowrap"
               boxSizing="border-box"
             >
-              <img
-                src={topRightBackground}
-                alt="logo"
-                style={{ height: "auto" }}
-              />
+              <img src={topRightBackground} alt="logo" style={{ height: "auto" }} />
             </Box>
             <Box
               flexGrow={1}
@@ -142,12 +138,7 @@ function LoginWrapper(props: Props) {
                   boxSizing="border-box"
                 >
                   <img src={logo} alt="logo" style={{ height: "96px" }} />
-                  <Typography
-                    variant="h4"
-                    component="h4"
-                    color="primary"
-                    my={2}
-                  >
+                  <Typography variant="h4" component="h4" color="primary" my={2}>
                     Antares Web
                   </Typography>
                 </Box>

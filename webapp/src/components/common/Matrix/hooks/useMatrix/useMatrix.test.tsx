@@ -18,12 +18,12 @@ import * as apiMatrix from "@/services/api/matrix";
 import * as apiStudy from "@/services/api/study";
 import * as rawStudy from "@/services/api/studies/raw";
 import {
-  MatrixEditDTO,
-  MatrixIndex,
   Operator,
   StudyOutputDownloadLevelDTO,
+  type MatrixEditDTO,
+  type MatrixIndex,
 } from "@/common/types";
-import { GridUpdate, MatrixDataDTO } from "../../shared/types";
+import type { GridUpdate, MatrixDataDTO } from "../../shared/types";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 
 vi.mock("@/services/api/matrix");
@@ -51,11 +51,7 @@ const DATA = {
   } as MatrixIndex,
 };
 
-const createGridUpdate = (
-  row: number,
-  col: number,
-  value: number,
-): GridUpdate => ({
+const createGridUpdate = (row: number, col: number, value: number): GridUpdate => ({
   coordinates: [row, col],
   value: {
     kind: GridCellKind.Number,
@@ -77,9 +73,7 @@ const setupHook = async ({
   vi.mocked(apiStudy.getStudyData).mockResolvedValue(mockData);
   vi.mocked(apiMatrix.getStudyMatrixIndex).mockResolvedValue(mockIndex);
 
-  const hook = renderHook(() =>
-    useMatrix(DATA.studyId, DATA.url, true, true, true),
-  );
+  const hook = renderHook(() => useMatrix(DATA.studyId, DATA.url, true, true, true));
 
   await waitFor(() => {
     expect(hook.result.current.isLoading).toBe(false);
@@ -154,11 +148,7 @@ describe("useMatrix", () => {
         operation: { operation: Operator.EQ, value: 5 },
       };
 
-      expect(apiMatrix.updateMatrix).toHaveBeenCalledWith(
-        DATA.studyId,
-        DATA.url,
-        [expectedEdit],
-      );
+      expect(apiMatrix.updateMatrix).toHaveBeenCalledWith(DATA.studyId, DATA.url, [expectedEdit]);
       expect(hook.result.current.pendingUpdatesCount).toBe(0);
     });
   });

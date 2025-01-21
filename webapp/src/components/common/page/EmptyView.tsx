@@ -15,7 +15,7 @@
 import { useTranslation } from "react-i18next";
 import LiveHelpRoundedIcon from "@mui/icons-material/LiveHelpRounded";
 import { Box } from "@mui/material";
-import { SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 
 export interface EmptyViewProps {
   title?: string;
@@ -23,11 +23,7 @@ export interface EmptyViewProps {
   extraActions?: React.ReactNode;
 }
 
-function EmptyView({
-  title,
-  icon: Icon = LiveHelpRoundedIcon,
-  extraActions,
-}: EmptyViewProps) {
+function EmptyView({ title, icon: Icon = LiveHelpRoundedIcon, extraActions }: EmptyViewProps) {
   const { t } = useTranslation();
 
   return (

@@ -14,25 +14,22 @@
 
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box, Paper } from "@mui/material";
-import { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../common/FileTable";
 import { Title } from "./share/styles";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
-import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 interface PropTypes {
   addResource: (studyId: string, file: File) => Promise<void>;
   deleteResource: (studyId: string, filename: string) => Promise<void>;
-  fetchResourceContent: (
-    studyId: string,
-    filename: string,
-  ) => Promise<MatrixDataDTO | string>;
+  fetchResourceContent: (studyId: string, filename: string) => Promise<MatrixDataDTO | string>;
   listResources: (studyId: string) => Promise<string[] | undefined>;
   errorMessages?: {
     add?: string;
@@ -69,9 +66,7 @@ function FileList(props: PropTypes) {
       }
     },
     {
-      errorMessage: t(
-        errorMessages?.list || "xpansion.error.loadConfiguration",
-      ),
+      errorMessage: t(errorMessages?.list || "xpansion.error.loadConfiguration"),
     },
   );
 
@@ -88,10 +83,7 @@ function FileList(props: PropTypes) {
           await addResource(study.id, file);
         }
       } catch (e) {
-        enqueueErrorSnackbar(
-          t(errorMessages?.add || "xpansion.error.addFile"),
-          e as AxiosError,
-        );
+        enqueueErrorSnackbar(t(errorMessages?.add || "xpansion.error.addFile"), e as AxiosError);
       } finally {
         reload();
       }
@@ -105,10 +97,7 @@ function FileList(props: PropTypes) {
         setViewDialog({ filename, content });
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        t(errorMessages?.fetchOne || "xpansion.error.getFile"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t(errorMessages?.fetchOne || "xpansion.error.getFile"), e as AxiosError);
     }
   };
 

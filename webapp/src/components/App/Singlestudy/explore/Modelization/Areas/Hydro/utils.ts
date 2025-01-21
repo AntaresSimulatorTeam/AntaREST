@@ -12,11 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import {
-  MatrixDataDTO,
-  AggregateConfig,
-} from "../../../../../../common/Matrix/shared/types";
-import { SplitViewProps } from "../../../../../../common/SplitView";
+import type { MatrixDataDTO, AggregateConfig } from "../../../../../../common/Matrix/shared/types";
+import type { SplitViewProps } from "../../../../../../common/SplitView";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
 import InflowStructure from "./InflowStructure";
@@ -175,13 +172,7 @@ export const MATRICES: Matrices = {
   [HydroMatrix.OverallMonthlyHydro]: {
     title: "Overall Monthly Hydro",
     url: "input/hydro/prepro/{areaId}/energy",
-    columns: [
-      "Expectation (MWh)",
-      "Std Deviation (MWh)",
-      "Min. (MWh)",
-      "Max. (MWh)",
-      "ROR Share",
-    ],
+    columns: ["Expectation (MWh)", "Std Deviation (MWh)", "Min. (MWh)", "Max. (MWh)", "ROR Share"],
     rowHeaders: [
       "January",
       "February",

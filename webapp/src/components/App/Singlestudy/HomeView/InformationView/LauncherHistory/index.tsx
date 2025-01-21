@@ -15,26 +15,16 @@
 import { Box, Paper, styled, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import HistoryIcon from "@mui/icons-material/History";
 import moment from "moment";
-import {
-  LaunchJob,
-  LaunchJobsProgress,
-  StudyMetadata,
-} from "../../../../../../common/types";
-import {
-  getStudyJobs,
-  mapLaunchJobDTO,
-} from "../../../../../../services/api/study";
-import {
-  addWsEventListener,
-  subscribeWsChannels,
-} from "../../../../../../services/webSocket/ws";
+import type { LaunchJob, LaunchJobsProgress, StudyMetadata } from "../../../../../../common/types";
+import { getStudyJobs, mapLaunchJobDTO } from "../../../../../../services/api/study";
+import { addWsEventListener, subscribeWsChannels } from "../../../../../../services/webSocket/ws";
 import JobStepper from "./JobStepper";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { getJobProgress } from "../../../../../../services/api/launcher";
-import { WsEvent } from "@/services/webSocket/types";
+import type { WsEvent } from "@/services/webSocket/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 const TitleHeader = styled(Box)(({ theme }) => ({
@@ -53,8 +43,7 @@ function LauncherHistory(props: Props) {
   const { study } = props;
   const [t] = useTranslation();
   const [studyJobs, setStudyJobs] = useState<LaunchJob[]>([]);
-  const [studyJobsProgress, setStudyJobsProgress] =
-    useState<LaunchJobsProgress>({});
+  const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const handleEvents = useCallback(
@@ -120,34 +109,22 @@ function LauncherHistory(props: Props) {
           );
 
           setStudyJobsProgress(
-            jobProgress.reduce(
-              (agg, cur) => ({ ...agg, [cur.id]: cur.progress }),
-              initJobProgress,
-            ),
+            jobProgress.reduce((agg, cur) => ({ ...agg, [cur.id]: cur.progress }), initJobProgress),
           );
 
           setStudyJobs(
             data.sort((j1, j2) => {
               const defaultCompletionDate = moment();
-              const j1CompletionDate =
-                j1.completionDate || defaultCompletionDate;
-              const j2CompletionDate =
-                j2.completionDate || defaultCompletionDate;
+              const j1CompletionDate = j1.completionDate || defaultCompletionDate;
+              const j2CompletionDate = j2.completionDate || defaultCompletionDate;
               if (j1CompletionDate === j2CompletionDate) {
-                return moment(j1.creationDate).isAfter(moment(j2.creationDate))
-                  ? -1
-                  : 1;
+                return moment(j1.creationDate).isAfter(moment(j2.creationDate)) ? -1 : 1;
               }
-              return moment(j1CompletionDate).isAfter(moment(j2CompletionDate))
-                ? -1
-                : 1;
+              return moment(j1CompletionDate).isAfter(moment(j2CompletionDate)) ? -1 : 1;
             }),
           );
         } catch (e) {
-          enqueueErrorSnackbar(
-            t("global.error.failedtoretrievejobs"),
-            e as AxiosError,
-          );
+          enqueueErrorSnackbar(t("global.error.failedtoretrievejobs"), e as AxiosError);
         }
       };
       fetchStudyJob(study.id);

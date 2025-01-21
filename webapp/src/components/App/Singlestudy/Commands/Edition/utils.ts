@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { CommandDTO, CommandResultDTO } from "../../../../../common/types";
+import type { CommandDTO, CommandResultDTO } from "../../../../../common/types";
 import { TaskStatus } from "../../../../../services/api/tasks/constants";
-import { TaskDTO } from "../../../../../services/api/tasks/types";
-import { CommandEnum, CommandItem, JsonCommandItem } from "./commandTypes";
+import type { TaskDTO } from "../../../../../services/api/tasks/types";
+import { CommandEnum, type CommandItem, type JsonCommandItem } from "./commandTypes";
 
 export const CommandList = [
   CommandEnum.CREATE_AREA,
@@ -34,11 +34,7 @@ export const CommandList = [
 ];
 
 // a little function to help us with reordering the result
-export const reorder = <T>(
-  list: T[],
-  startIndex: number,
-  endIndex: number,
-): T[] => {
+export const reorder = <T>(list: T[], startIndex: number, endIndex: number): T[] => {
   const result = Array.from(list);
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
@@ -46,9 +42,7 @@ export const reorder = <T>(
   return result;
 };
 
-export const fromCommandDTOToCommandItem = (
-  commands: CommandDTO[],
-): CommandItem[] => {
+export const fromCommandDTOToCommandItem = (commands: CommandDTO[]): CommandItem[] => {
   return commands.map((elm) => ({
     id: elm?.id,
     action: elm.action,
@@ -60,9 +54,7 @@ export const fromCommandDTOToCommandItem = (
   }));
 };
 
-export const fromCommandDTOToJsonCommand = (
-  commands: CommandDTO[],
-): JsonCommandItem[] => {
+export const fromCommandDTOToJsonCommand = (commands: CommandDTO[]): JsonCommandItem[] => {
   const dtoItems: JsonCommandItem[] = commands.map((elm) => ({
     action: elm.action,
     args: elm.args,
@@ -104,9 +96,7 @@ export const updateCommandResults = (
   const tmpCommands: CommandItem[] = generationCommands.concat([]);
   for (const commandResult of commandResults) {
     if (studyId === commandResult.study_id) {
-      const index = tmpCommands.findIndex(
-        (item) => item.id === commandResult.id,
-      );
+      const index = tmpCommands.findIndex((item) => item.id === commandResult.id);
       tmpCommands[index] = { ...tmpCommands[index], results: commandResult };
     }
   }

@@ -17,13 +17,13 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogProps,
+  type DialogProps,
   DialogTitle,
   styled,
-  DialogContentProps,
+  type DialogContentProps,
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import { SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import * as R from "ramda";
 import { mergeSxProp } from "../../../utils/muiUtils";
 
@@ -60,15 +60,7 @@ const AlertBorder = styled("span", {
 }));
 
 function BasicDialog(props: BasicDialogProps) {
-  const {
-    title,
-    titleIcon,
-    children,
-    actions,
-    alert,
-    contentProps,
-    ...dialogProps
-  } = props;
+  const { title, titleIcon, children, actions, alert, contentProps, ...dialogProps } = props;
   const TitleIcon = titleIcon;
 
   return (
@@ -90,16 +82,9 @@ function BasicDialog(props: BasicDialogProps) {
       )}
       <DialogContent
         {...contentProps}
-        sx={mergeSxProp(
-          { display: "flex", flexDirection: "column" },
-          contentProps?.sx,
-        )}
+        sx={mergeSxProp({ display: "flex", flexDirection: "column" }, contentProps?.sx)}
       >
-        {RA.isString(children) ? (
-          <DialogContentText>{children}</DialogContentText>
-        ) : (
-          children
-        )}
+        {RA.isString(children) ? <DialogContentText>{children}</DialogContentText> : children}
       </DialogContent>
       {actions && <DialogActions>{actions}</DialogActions>}
     </Dialog>

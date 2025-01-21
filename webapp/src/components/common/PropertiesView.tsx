@@ -12,17 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { ReactNode } from "react";
-import { Box, Button, SxProps, Theme } from "@mui/material";
+import { Box, Button, type SxProps, type Theme } from "@mui/material";
 import SearchFE from "./fieldEditors/SearchFE";
 import { mergeSxProp } from "../../utils/muiUtils";
-import { Add } from "@mui/icons-material";
+import AddIcon from "@mui/icons-material/Add";
 import { useTranslation } from "react-i18next";
 
 interface PropsType {
-  topContent?: ReactNode;
-  mainContent: ReactNode | undefined;
-  secondaryContent?: ReactNode;
+  topContent?: React.ReactNode;
+  mainContent: React.ReactNode | undefined;
+  secondaryContent?: React.ReactNode;
   onSearchFilterChange?: (value: string) => void;
   onAdd?: () => void;
   sx?: SxProps<Theme>;
@@ -50,16 +49,14 @@ function PropertiesView({
         sx,
       )}
     >
-      {onSearchFilterChange && (
-        <SearchFE onSearchValueChange={onSearchFilterChange} />
-      )}
+      {onSearchFilterChange && <SearchFE onSearchValueChange={onSearchFilterChange} />}
       {onAdd && (
         <Box sx={{ display: "flex", px: 1, my: 1 }}>
           <Button
             color="primary"
             variant="contained"
             size="small"
-            startIcon={<Add />}
+            startIcon={<AddIcon />}
             onClick={onAdd}
             sx={{
               display: "flex",

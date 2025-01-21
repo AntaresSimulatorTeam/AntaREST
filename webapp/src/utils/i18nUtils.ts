@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { L } from "ts-toolbelt";
-import i18n, { SUPPORTED_LANGUAGES } from "../i18n";
+import type { L } from "ts-toolbelt";
+import i18n, { type SUPPORTED_LANGUAGES } from "../i18n";
 
 type Lang = L.UnionOf<typeof SUPPORTED_LANGUAGES>;
 

@@ -13,9 +13,9 @@
  */
 
 import { configureStore } from "@reduxjs/toolkit";
-import { ThunkAction } from "redux-thunk";
-import { AnyAction } from "redux";
-import rootReducer, { AppState } from "./ducks";
+import type { ThunkAction } from "redux-thunk";
+import type { AnyAction } from "redux";
+import rootReducer, { type AppState } from "./ducks";
 import localStorageMiddleware from "./middlewares/localStorageMiddleware";
 
 const store = configureStore({

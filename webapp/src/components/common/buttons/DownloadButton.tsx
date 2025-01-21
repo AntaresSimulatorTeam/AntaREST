@@ -13,7 +13,7 @@
  */
 
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import SplitButton, { SplitButtonProps } from "./SplitButton";
+import SplitButton, { type SplitButtonProps } from "./SplitButton";
 import { useState } from "react";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { useTranslation } from "react-i18next";
@@ -35,16 +35,9 @@ export type DownloadButtonProps<OptionValue extends string> = {
     }
 );
 
-function DownloadButton<OptionValue extends string>(
-  props: DownloadButtonProps<OptionValue>,
-) {
+function DownloadButton<OptionValue extends string>(props: DownloadButtonProps<OptionValue>) {
   const { t } = useTranslation();
-  const {
-    disabled,
-    formatOptions,
-    onClick,
-    children: label = t("global.export"),
-  } = props;
+  const { disabled, formatOptions, onClick, children: label = t("global.export") } = props;
   const [isDownloading, setIsDownloading] = useState(false);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
@@ -94,11 +87,7 @@ function DownloadButton<OptionValue extends string>(
       {label}
     </SplitButton>
   ) : (
-    <LoadingButton
-      {...btnProps}
-      {...loadingBtnProps}
-      onClick={() => handleDownload()}
-    >
+    <LoadingButton {...btnProps} {...loadingBtnProps} onClick={() => handleDownload()}>
       {label}
     </LoadingButton>
   );

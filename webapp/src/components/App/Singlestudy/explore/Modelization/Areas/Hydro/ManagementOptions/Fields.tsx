@@ -17,16 +17,16 @@ import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
-import { INITIALIZE_RESERVOIR_DATE_OPTIONS, HydroFormFields } from "./utils";
+import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
 
 function Fields() {
   const { control, watch } = useFormContextPlus<HydroFormFields>();
-  const [
-    reservoirDisabled,
-    waterValuesDisabled,
-    heuristicDisabled,
-    leeWayDisabled,
-  ] = watch(["reservoir", "useWater", "useHeuristic", "useLeeway"]);
+  const [reservoirDisabled, waterValuesDisabled, heuristicDisabled, leeWayDisabled] = watch([
+    "reservoir",
+    "useWater",
+    "useHeuristic",
+    "useLeeway",
+  ]);
 
   return (
     <>
@@ -37,23 +37,11 @@ function Fields() {
           control={control}
           sx={{ alignSelf: "center" }}
         />
-        <NumberFE
-          name="interDailyBreakdown"
-          label="Inter Daily Breakdown"
-          control={control}
-        />
-        <NumberFE
-          name="intraDailyModulation"
-          label="Intra-daily modulation"
-          control={control}
-        />
+        <NumberFE name="interDailyBreakdown" label="Inter Daily Breakdown" control={control} />
+        <NumberFE name="intraDailyModulation" label="Intra-daily modulation" control={control} />
       </Fieldset>
       <Fieldset legend="Reservoir management">
-        <SwitchFE
-          name="reservoir"
-          label="Reservoir management"
-          control={control}
-        />
+        <SwitchFE name="reservoir" label="Reservoir management" control={control} />
         <SwitchFE
           name="hardBounds"
           label="Hard bounds on rules curves"
@@ -108,8 +96,7 @@ function Fields() {
           label="Power to level modulations"
           control={control}
           disabled={
-            (!waterValuesDisabled || !leeWayDisabled) &&
-            (!waterValuesDisabled || heuristicDisabled)
+            (!waterValuesDisabled || !leeWayDisabled) && (!waterValuesDisabled || heuristicDisabled)
           }
         />
         <NumberFE

@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import { useTranslation } from "react-i18next";
-import { AllClustersAndLinks } from "../../../../../../../../../common/types";
+import type { AllClustersAndLinks } from "../../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
 import NumberFE from "../../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../../common/Form";
@@ -29,10 +29,7 @@ interface Props {
   constraintTerms: ConstraintTerm[];
 }
 
-export default function AddConstraintTermForm({
-  options,
-  constraintTerms,
-}: Props) {
+export default function AddConstraintTermForm({ options, constraintTerms }: Props) {
   const { control, setValue } = useFormContextPlus<ConstraintTerm>();
 
   const [t] = useTranslation();
@@ -77,11 +74,7 @@ export default function AddConstraintTermForm({
         }
         right={
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <OptionsList
-              isLink={isLink}
-              list={options}
-              constraintTerms={constraintTerms}
-            />
+            <OptionsList isLink={isLink} list={options} constraintTerms={constraintTerms} />
           </Box>
         }
       />

@@ -12,23 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import {
-  BindingConstraint,
-  OPERATORS,
-  OUTPUT_FILTERS,
-  TIME_STEPS,
-} from "./utils";
+import { type BindingConstraint, OPERATORS, OUTPUT_FILTERS, TIME_STEPS } from "./utils";
 
 import Fieldset from "../../../../../../common/Fieldset";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Button } from "@mui/material";
-import { Dataset } from "@mui/icons-material";
+import DatasetIcon from "@mui/icons-material/Dataset";
 import { validateString } from "@/utils/validation/string";
 import ConstraintMatrix from "./Matrix";
 
@@ -76,11 +71,7 @@ function Fields({ study, constraintId }: Props) {
 
   return (
     <>
-      <Fieldset
-        legend={t("global.general")}
-        fieldWidth={280}
-        sx={{ py: 1, flexWrap: "wrap" }}
-      >
+      <Fieldset legend={t("global.general")} fieldWidth={280} sx={{ py: 1, flexWrap: "wrap" }}>
         <SwitchFE
           name="enabled"
           label={t("study.modelization.bindingConst.enabled")}
@@ -165,7 +156,7 @@ function Fields({ study, constraintId }: Props) {
           variant="contained"
           size="small"
           color="secondary"
-          startIcon={<Dataset />}
+          startIcon={<DatasetIcon />}
           onClick={() => setMatrixDialogOpen(true)}
           sx={{ mt: 2 }}
         >

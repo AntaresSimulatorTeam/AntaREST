@@ -14,7 +14,7 @@
 
 import { renderHook } from "@testing-library/react";
 import { useColumnMapping } from "..";
-import { Item } from "@glideapps/glide-data-grid";
+import type { Item } from "@glideapps/glide-data-grid";
 import { createCoordinate, renderColumnMapping } from "./utils";
 import { COLUMNS } from "./fixtures";
 
@@ -28,10 +28,9 @@ describe("useColumnMapping", () => {
     });
 
     test("should memoize the result", () => {
-      const { result, rerender } = renderHook(
-        (props) => useColumnMapping(props.columns),
-        { initialProps: { columns: COLUMNS.mixed } },
-      );
+      const { result, rerender } = renderHook((props) => useColumnMapping(props.columns), {
+        initialProps: { columns: COLUMNS.mixed },
+      });
 
       const initialResult = result.current;
       rerender({ columns: COLUMNS.mixed });

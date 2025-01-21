@@ -38,18 +38,14 @@ describe("validateString", () => {
   });
 
   test("should handle length restrictions", () => {
-    expect(validateString("abc", { minLength: 5 })).toBe(
-      'form.field.minLength: {"length":5}',
-    );
+    expect(validateString("abc", { minLength: 5 })).toBe('form.field.minLength: {"length":5}');
     expect(validateString("abcdefghijk", { maxLength: 10 })).toBe(
       'form.field.maxLength: {"length":10}',
     );
   });
 
   test("should handle space restrictions", () => {
-    expect(validateString("no spaces", { allowSpaces: false })).toBe(
-      "form.field.spacesNotAllowed",
-    );
+    expect(validateString("no spaces", { allowSpaces: false })).toBe("form.field.spacesNotAllowed");
   });
 
   test("should handle special character restrictions", () => {
@@ -71,9 +67,9 @@ describe("validateString", () => {
   });
 
   test("should handle duplicate checks", () => {
-    expect(
-      validateString("existing", { existingValues: ["EXISTING", "other"] }),
-    ).toBe("form.field.duplicate");
+    expect(validateString("existing", { existingValues: ["EXISTING", "other"] })).toBe(
+      "form.field.duplicate",
+    );
     expect(
       validateString("existing", {
         existingValues: ["EXISTING", "other"],
@@ -83,9 +79,9 @@ describe("validateString", () => {
   });
 
   test("should handle excluded values", () => {
-    expect(
-      validateString("excluded", { excludedValues: ["EXCLUDED", "other"] }),
-    ).toBe('form.field.notAllowedValue: {"0":"excluded"}');
+    expect(validateString("excluded", { excludedValues: ["EXCLUDED", "other"] })).toBe(
+      'form.field.notAllowedValue: {"0":"excluded"}',
+    );
     expect(
       validateString("excluded", {
         excludedValues: ["EXCLUDED", "other"],
@@ -119,38 +115,26 @@ describe("validatePassword", () => {
   });
 
   test("should check minimum length", () => {
-    expect(validatePassword("Short1!")).toBe(
-      'form.field.minLength: {"length":8}',
-    );
+    expect(validatePassword("Short1!")).toBe('form.field.minLength: {"length":8}');
   });
 
   test("should check maximum length", () => {
-    expect(validatePassword("A".repeat(51) + "a1!")).toBe(
-      'form.field.maxLength: {"length":50}',
-    );
+    expect(validatePassword("A".repeat(51) + "a1!")).toBe('form.field.maxLength: {"length":50}');
   });
 
   test("should require lowercase letters", () => {
-    expect(validatePassword("UPPERCASE123!")).toBe(
-      "form.field.requireLowercase",
-    );
+    expect(validatePassword("UPPERCASE123!")).toBe("form.field.requireLowercase");
   });
 
   test("should require uppercase letters", () => {
-    expect(validatePassword("lowercase123!")).toBe(
-      "form.field.requireUppercase",
-    );
+    expect(validatePassword("lowercase123!")).toBe("form.field.requireUppercase");
   });
 
   test("should require digits", () => {
-    expect(validatePassword("UpperAndLowercase!")).toBe(
-      "form.field.requireDigit",
-    );
+    expect(validatePassword("UpperAndLowercase!")).toBe("form.field.requireDigit");
   });
 
   test("should require special characters", () => {
-    expect(validatePassword("UpperAndLowercase123")).toBe(
-      "form.field.requireSpecialChars",
-    );
+    expect(validatePassword("UpperAndLowercase123")).toBe("form.field.requireSpecialChars");
   });
 });

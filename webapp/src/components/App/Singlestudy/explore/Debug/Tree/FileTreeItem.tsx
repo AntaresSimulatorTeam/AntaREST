@@ -13,7 +13,7 @@
  */
 
 import { Box } from "@mui/material";
-import { TreeData, getFileType, getFileIcon, isFolder } from "../utils";
+import { getFileType, getFileIcon, isFolder, type TreeData } from "../utils";
 import DebugContext from "../DebugContext";
 import { useContext } from "react";
 import TreeItemEnhanced from "../../../../../common/TreeItemEnhanced";

@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Box, TextField, TextFieldProps, InputAdornment } from "@mui/material";
-import { ChangeEvent, useRef, useState } from "react";
-import { ColorResult, SketchPicker } from "react-color";
+import { Box, TextField, InputAdornment, type TextFieldProps } from "@mui/material";
+import { useRef, useState } from "react";
+import { SketchPicker, type ColorResult } from "react-color";
 import SquareRoundedIcon from "@mui/icons-material/SquareRounded";
 import { useClickAway, useKey, useUpdateEffect } from "react-use";
 import { rgbToString, stringToRGB } from "./utils";
@@ -22,17 +22,13 @@ import { mergeSxProp } from "../../../../utils/muiUtils";
 import { composeRefs } from "../../../../utils/reactUtils";
 import reactHookFormSupport from "../../../../hoc/reactHookFormSupport";
 
-export type ColorPickerFEProps = Omit<
-  TextFieldProps,
-  "type" | "defaultChecked"
-> & {
+export type ColorPickerFEProps = Omit<TextFieldProps, "type" | "defaultChecked"> & {
   value?: string; // Format: R,G,B - ex: "255,255,255"
   defaultValue?: string;
 };
 
 function ColorPickerFE(props: ColorPickerFEProps) {
-  const { value, defaultValue, onChange, sx, inputRef, ...textFieldProps } =
-    props;
+  const { value, defaultValue, onChange, sx, inputRef, ...textFieldProps } = props;
   const [currentColor, setCurrentColor] = useState(defaultValue || value || "");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const internalRef = useRef<HTMLInputElement>();
@@ -53,16 +49,14 @@ function ColorPickerFE(props: ColorPickerFEProps) {
   ////////////////////////////////////////////////////////////////
 
   const handleChange = ({ hex, rgb }: ColorResult) => {
-    setCurrentColor(
-      ["transparent", "#0000"].includes(hex) ? "" : rgbToString(rgb),
-    );
+    setCurrentColor(["transparent", "#0000"].includes(hex) ? "" : rgbToString(rgb));
   };
 
   const handleChangeComplete = () => {
     onChange?.({
       target: internalRef.current,
       type: "change",
-    } as ChangeEvent<HTMLInputElement>);
+    } as React.ChangeEvent<HTMLInputElement>);
   };
 
   ////////////////////////////////////////////////////////////////

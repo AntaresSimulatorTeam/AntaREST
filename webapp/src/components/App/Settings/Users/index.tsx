@@ -26,12 +26,12 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { useMemo, useReducer, useState, ReactNode } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PersonIcon from "@mui/icons-material/Person";
 import { produce } from "immer";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
-import { Action } from "redux";
+import type { Action } from "redux";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { deleteUser, getUsers } from "../../../../services/api/user";
@@ -40,7 +40,7 @@ import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import Header from "./Header";
 import { RESERVED_USER_NAMES } from "../utils";
-import { UserDetailsDTO } from "../../../../common/types";
+import type { UserDetailsDTO } from "../../../../common/types";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../../services/utils";
 import { isSearchMatching } from "../../../../utils/stringUtils";
@@ -154,10 +154,7 @@ function Users() {
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(
-          t("settings.error.userDelete", { 0: user.name }),
-          err,
-        );
+        enqueueErrorSnackbar(t("settings.error.userDelete", { 0: user.name }), err);
       })
       .finally(() => {
         setUsersInLoading((prev) => prev.filter((u) => u !== user));
@@ -191,7 +188,7 @@ function Users() {
                 <ListItem key={v} disablePadding>
                   <Skeleton sx={{ width: 1, height: 50 }} />
                 </ListItem>
-              )) as ReactNode,
+              )) as React.ReactNode,
           ],
           // User list
           [
@@ -210,10 +207,7 @@ function Users() {
                         <IconButton onClick={() => setUserToEdit(user)}>
                           <EditIcon />
                         </IconButton>
-                        <IconButton
-                          edge="end"
-                          onClick={() => setUserToDelete(user)}
-                        >
+                        <IconButton edge="end" onClick={() => setUserToDelete(user)}>
                           <DeleteIcon />
                         </IconButton>
                       </>

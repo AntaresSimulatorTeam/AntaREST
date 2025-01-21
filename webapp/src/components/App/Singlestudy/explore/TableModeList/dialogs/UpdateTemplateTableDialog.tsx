@@ -15,13 +15,12 @@
 import { useTranslation } from "react-i18next";
 import EditIcon from "@mui/icons-material/Edit";
 import TableTemplateFormDialog, {
-  TableTemplateFormDialogProps,
+  type TableTemplateFormDialogProps,
 } from "./TableTemplateFormDialog";
-import { TableTemplate } from "../utils";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { TableTemplate } from "../utils";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 
-interface Props
-  extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {
+interface Props extends Pick<TableTemplateFormDialogProps, "open" | "onCancel"> {
   defaultValues: TableTemplate;
   setTemplates: React.Dispatch<React.SetStateAction<TableTemplate[]>>;
   templates: TableTemplate[];
@@ -36,9 +35,7 @@ function UpdateTemplateTableDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    setTemplates((templates) =>
-      templates.map((t) => (t.id === data.values.id ? data.values : t)),
-    );
+    setTemplates((templates) => templates.map((t) => (t.id === data.values.id ? data.values : t)));
 
     onCancel();
   };

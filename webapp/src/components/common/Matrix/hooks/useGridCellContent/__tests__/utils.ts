@@ -18,8 +18,7 @@ import { useColumnMapping } from "../../useColumnMapping";
 import { useGridCellContent } from "..";
 import type { RenderOptions } from "../types";
 
-export const createCoordinate = (col: number, row: number): Item =>
-  [col, row] as Item;
+export const createCoordinate = (col: number, row: number): Item => [col, row] as Item;
 
 export const renderGridCellContent = ({
   data,
@@ -33,14 +32,7 @@ export const renderGridCellContent = ({
   const { gridToData } = mappingResult.current;
 
   const { result } = renderHook(() =>
-    useGridCellContent(
-      data,
-      columns,
-      gridToData,
-      dateTime,
-      aggregates,
-      rowHeaders,
-    ),
+    useGridCellContent(data, columns, gridToData, dateTime, aggregates, rowHeaders),
   );
 
   return result.current;

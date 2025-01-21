@@ -20,10 +20,7 @@ export interface UseFormCloseProtectionParams {
   isDirty: boolean;
 }
 
-function useFormCloseProtection({
-  isSubmitting,
-  isDirty,
-}: UseFormCloseProtectionParams) {
+function useFormCloseProtection({ isSubmitting, isDirty }: UseFormCloseProtectionParams) {
   const { t } = useTranslation();
 
   usePrompt(t("form.submit.inProgress"), isSubmitting);

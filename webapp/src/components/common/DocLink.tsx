@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Help } from "@mui/icons-material";
-import { Tooltip, IconButton, SxProps, Theme } from "@mui/material";
+import HelpIcon from "@mui/icons-material/Help";
+import { Tooltip, IconButton, type SxProps, type Theme } from "@mui/material";
 
 interface Props {
   to: string;
@@ -23,13 +23,8 @@ interface Props {
 function DocLink({ to, sx }: Props) {
   return (
     <Tooltip title="View documentation" sx={sx}>
-      <IconButton
-        href={to}
-        target="_blank"
-        rel="noopener noreferrer"
-        color="default"
-      >
-        <Help />
+      <IconButton href={to} target="_blank" rel="noopener noreferrer" color="default">
+        <HelpIcon />
       </IconButton>
     </Tooltip>
   );

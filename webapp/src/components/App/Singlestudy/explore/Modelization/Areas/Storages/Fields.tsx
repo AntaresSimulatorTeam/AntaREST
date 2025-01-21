@@ -20,9 +20,9 @@ import StringFE from "../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../common/Form";
-import { STORAGE_GROUPS, Storage } from "./utils";
+import { STORAGE_GROUPS, type Storage } from "./utils";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import { validateNumber } from "@/utils/validation/number";
 
 function Fields() {
@@ -38,12 +38,7 @@ function Fields() {
   return (
     <>
       <Fieldset legend={t("global.general")}>
-        <StringFE
-          label={t("global.name")}
-          name="name"
-          control={control}
-          disabled
-        />
+        <StringFE label={t("global.name")} name="name" control={control} disabled />
         <SelectFE
           label={t("global.group")}
           name="group"
@@ -83,9 +78,7 @@ function Fields() {
           </Box>
         </Tooltip>
         <Tooltip
-          title={t(
-            "study.modelization.storages.withdrawalNominalCapacity.info",
-          )}
+          title={t("study.modelization.storages.withdrawalNominalCapacity.info")}
           arrow
           placement="top"
         >

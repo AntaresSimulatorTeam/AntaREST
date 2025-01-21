@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { TextField, TextFieldProps } from "@mui/material";
+import { TextField, type TextFieldProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
