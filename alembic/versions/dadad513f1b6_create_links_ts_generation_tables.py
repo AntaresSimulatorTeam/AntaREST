@@ -54,5 +54,5 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table("study_nb_ts_gen")
-    op.drop_table("links_ts_gen_properties")
+    op.drop_table("nb_years_ts_generation")
+    op.drop_table("links_parameters_ts_generation")
