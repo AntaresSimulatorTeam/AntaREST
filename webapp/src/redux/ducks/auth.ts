@@ -14,13 +14,13 @@
 
 import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
 import { jwtDecode, type JwtPayload } from "jwt-decode";
-import { UserInfo } from "../../common/types";
+import type { UserInfo } from "../../common/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
 import { isUserExpired } from "../../services/utils";
 import { closeWs, initWs, reloadWs } from "../../services/webSocket/ws";
 import { getAuthUser } from "../selectors";
-import { AppAsyncThunkConfig } from "../store";
+import type { AppAsyncThunkConfig } from "../store";
 import { createThunk, makeActionName } from "../utils";
 
 export interface AuthState {
@@ -49,40 +49,39 @@ export const logout = createThunk(n("LOGOUT"), () => {
   closeWs();
 });
 
-export const refresh = createAsyncThunk<
-  UserInfo | undefined,
-  void,
-  AppAsyncThunkConfig
->(n("REFRESH"), async (_, { dispatch, getState, rejectWithValue }) => {
-  const state = getState();
-  const user = getAuthUser(state);
+export const refresh = createAsyncThunk<UserInfo | undefined, void, AppAsyncThunkConfig>(
+  n("REFRESH"),
+  async (_, { dispatch, getState, rejectWithValue }) => {
+    const state = getState();
+    const user = getAuthUser(state);
 
-  if (user && isUserExpired(user)) {
-    try {
-      const tokens = await authApi.refresh(user.refreshToken);
-      const decoded = jwtDecode<JwtPayload>(tokens.access_token);
-      const newUserData = JSON.parse(decoded.sub as string) as AccessTokenSub;
+    if (user && isUserExpired(user)) {
+      try {
+        const tokens = await authApi.refresh(user.refreshToken);
+        const decoded = jwtDecode<JwtPayload>(tokens.access_token);
+        const newUserData = JSON.parse(decoded.sub as string) as AccessTokenSub;
 
-      const userUpdated = {
-        ...user,
-        ...newUserData,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        expirationDate: decoded.exp,
-      };
+        const userUpdated = {
+          ...user,
+          ...newUserData,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          expirationDate: decoded.exp,
+        };
 
-      clientApi.setAuth(tokens.access_token);
-      reloadWs(dispatch, userUpdated);
+        clientApi.setAuth(tokens.access_token);
+        reloadWs(dispatch, userUpdated);
 
-      return userUpdated;
-    } catch (err) {
-      dispatch(logout());
-      return rejectWithValue(err);
+        return userUpdated;
+      } catch (err) {
+        dispatch(logout());
+        return rejectWithValue(err);
+      }
     }
-  }
 
-  return user;
-});
+    return user;
+  },
+);
 
 export const login = createAsyncThunk<
   UserInfo | undefined,
@@ -130,10 +129,7 @@ export const login = createAsyncThunk<
 export default createReducer(initialState, (builder) => {
   builder
     .addCase(logout, () => ({}))
-    .addMatcher(
-      isAnyOf(login.fulfilled, refresh.fulfilled),
-      (draftState, action) => {
-        draftState.user = action.payload;
-      },
-    );
+    .addMatcher(isAnyOf(login.fulfilled, refresh.fulfilled), (draftState, action) => {
+      draftState.user = action.payload;
+    });
 });

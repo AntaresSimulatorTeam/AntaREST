@@ -12,37 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import {
-  TableRow,
-  TableCell,
-  IconButton,
-  Box,
-  Typography,
-} from "@mui/material";
+import { TableRow, TableCell, IconButton, Box, Typography } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { ChangeEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import TableRowItem from "./TableRowItem";
-import { Item, Column, calculateColumnResults } from "./utils";
+import { calculateColumnResults, type Item, type Column } from "./utils";
 
 interface Props {
   itemsByGroup: { group?: string; items: Item[] };
   columns: Column[];
   selected: string[];
-  onClick: (e: ChangeEvent<HTMLInputElement>, id: string) => void;
+  onClick: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void;
 }
 
-function TableRowGroup({
-  itemsByGroup: { group, items },
-  columns,
-  selected,
-  onClick,
-}: Props) {
+function TableRowGroup({ itemsByGroup: { group, items }, columns, selected, onClick }: Props) {
   const [openRow, setOpenRow] = useState(false);
-  const columnResults = useMemo(
-    () => calculateColumnResults(columns, items),
-    [columns, items],
-  );
+  const columnResults = useMemo(() => calculateColumnResults(columns, items), [columns, items]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

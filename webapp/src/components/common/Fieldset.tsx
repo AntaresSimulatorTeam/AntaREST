@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, BoxProps, Divider, SxProps, Theme } from "@mui/material";
+import { Box, Divider, type BoxProps, type SxProps, type Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { mergeSxProp } from "../../utils/muiUtils";
 
@@ -26,14 +26,7 @@ interface FieldsetProps {
 }
 
 function Fieldset(props: FieldsetProps) {
-  const {
-    legend,
-    children,
-    sx,
-    contentProps,
-    fullFieldWidth = false,
-    fieldWidth = 220,
-  } = props;
+  const { legend, children, sx, contentProps, fullFieldWidth = false, fieldWidth = 220 } = props;
 
   return (
     <Box
@@ -67,11 +60,7 @@ function Fieldset(props: FieldsetProps) {
     >
       {legend && (
         <>
-          {RA.isString(legend) ? (
-            <Box component="legend">{legend}</Box>
-          ) : (
-            legend
-          )}
+          {RA.isString(legend) ? <Box component="legend">{legend}</Box> : legend}
           <Divider sx={{ mt: 1 }} />
         </>
       )}

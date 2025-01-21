@@ -13,33 +13,30 @@
  */
 
 import { useEffect, useState } from "react";
-import * as React from "react";
-import { styled, SxProps, Theme } from "@mui/material";
+import { styled, type SxProps, type Theme } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
-import { StudyMetadata } from "../../../../common/types";
+import type { StudyMetadata } from "../../../../common/types";
 import { mergeSxProp } from "../../../../utils/muiUtils";
 
 export const StyledTabs = styled(Tabs, {
   shouldForwardProp: (prop) => prop !== "border" && prop !== "tabStyle",
-})<{ border?: boolean; tabStyle?: "normal" | "withoutBorder" }>(
-  ({ theme, border, tabStyle }) => ({
-    width: "98%",
-    height: "50px",
-    ...(border === true && {
-      borderBottom: 1,
-      borderColor: "divider",
-    }),
-    ...(tabStyle &&
-      tabStyle === "withoutBorder" && {
-        "& .MuiTabs-indicator": {
-          display: "none",
-        },
-      }),
+})<{ border?: boolean; tabStyle?: "normal" | "withoutBorder" }>(({ theme, border, tabStyle }) => ({
+  width: "98%",
+  height: "50px",
+  ...(border === true && {
+    borderBottom: 1,
+    borderColor: "divider",
   }),
-);
+  ...(tabStyle &&
+    tabStyle === "withoutBorder" && {
+      "& .MuiTabs-indicator": {
+        display: "none",
+      },
+    }),
+}));
 
 interface TabItem {
   label: string;
@@ -106,12 +103,7 @@ function TabWrapper({ study, tabList, border, tabStyle, sx }: Props) {
           variant="scrollable"
         >
           {tabList.map((tab) => (
-            <Tab
-              key={tab.path}
-              label={tab.label}
-              disabled={tab.disabled}
-              wrapped
-            />
+            <Tab key={tab.path} label={tab.label} disabled={tab.disabled} wrapped />
           ))}
         </StyledTabs>
       </Box>

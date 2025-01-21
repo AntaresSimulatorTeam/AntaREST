@@ -16,15 +16,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { useTranslation } from "react-i18next";
-import { Graph, GraphLink, GraphNode } from "react-d3-graph";
-import { AxiosError } from "axios";
+import type { Graph, GraphLink, GraphNode } from "react-d3-graph";
+import type { AxiosError } from "axios";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import {
-  LinkProperties,
-  StudyMetadata,
-  UpdateAreaUi,
-} from "../../../../../../common/types";
+import type { LinkProperties, StudyMetadata, UpdateAreaUi } from "../../../../../../common/types";
 import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";
@@ -42,9 +38,9 @@ import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import MapConfig from "./MapConfig";
 import useStudyMaps from "../../../../../../redux/hooks/useStudyMaps";
 import {
-  StudyMapNode,
   createStudyMapNode,
   updateStudyMapNode,
+  type StudyMapNode,
 } from "../../../../../../redux/ducks/studyMaps";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import MapHeader from "./MapHeader";
@@ -62,13 +58,10 @@ function Map() {
   const [openConfig, setOpenConfig] = useState(false);
   const [zoomLevel, setZoomLevel] = useDebouncedState(INITIAL_ZOOM, 250);
   const previousNode = useRef<string>();
-  const graphRef =
-    useRef<Graph<GraphNode & StudyMapNode, GraphLink & LinkProperties>>(null);
+  const graphRef = useRef<Graph<GraphNode & StudyMapNode, GraphLink & LinkProperties>>(null);
   const currentLayerId = useAppSelector(getCurrentLayer);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
-  const studyLinks = useAppSelector((state) =>
-    getStudyMapLinks(state, study.id),
-  );
+  const studyLinks = useAppSelector((state) => getStudyMapLinks(state, study.id));
   const mapLinks = useMemo(
     () =>
       R.map(
@@ -182,11 +175,7 @@ function Map() {
         <>
           <SplitView id="map" sizes={[10, 90]}>
             <Box>
-              <Areas
-                onAdd={() => setOpenDialog(true)}
-                nodes={mapNodes}
-                updateUI={updateUI}
-              />
+              <Areas onAdd={() => setOpenDialog(true)} nodes={mapNodes} updateUI={updateUI} />
             </Box>
             <Box>
               {openConfig ? (

@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Area } from "../../../../../../common/types";
+import type { Area } from "../../../../../../common/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";
@@ -35,9 +35,7 @@ function AreaPropsView(props: PropsType) {
     const filter = (): Area[] => {
       if (areas) {
         return areas.filter(
-          (s) =>
-            !areaNameFilter ||
-            s.name.search(new RegExp(areaNameFilter, "i")) !== -1,
+          (s) => !areaNameFilter || s.name.search(new RegExp(areaNameFilter, "i")) !== -1,
         );
       }
       return [];

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Action, combineReducers } from "redux";
-import { L } from "ts-toolbelt";
+import { combineReducers, type Action } from "redux";
+import type { L } from "ts-toolbelt";
 import studies from "./studies";
 import users from "./users";
 import groups from "./groups";

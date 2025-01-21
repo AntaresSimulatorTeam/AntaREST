@@ -13,7 +13,7 @@
  */
 
 import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
-import { SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 
 export interface ActionsMenuItem {
@@ -55,9 +55,7 @@ function ActionsMenu({ anchorEl, open, onClose, items }: Props) {
                   }}
                 />
               </ListItemIcon>
-              <ListItemText sx={{ color: item.color }}>
-                {t(item.key)}
-              </ListItemText>
+              <ListItemText sx={{ color: item.color }}>{t(item.key)}</ListItemText>
             </MenuItem>
           ),
       )}

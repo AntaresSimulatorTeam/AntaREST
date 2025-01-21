@@ -32,10 +32,7 @@ function Tree(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleExpandedItemsChange = (
-    event: React.SyntheticEvent,
-    itemIds: string[],
-  ) => {
+  const handleExpandedItemsChange = (event: React.SyntheticEvent, itemIds: string[]) => {
     setExpandedItems(itemIds);
   };
 
@@ -59,12 +56,7 @@ function Tree(props: Props) {
       onExpandedItemsChange={handleExpandedItemsChange}
     >
       {Object.keys(data).map((filename) => (
-        <FileTreeItem
-          key={filename}
-          name={filename}
-          treeData={data[filename]}
-          path=""
-        />
+        <FileTreeItem key={filename} name={filename} treeData={data[filename]} path="" />
       ))}
     </SimpleTreeView>
   );

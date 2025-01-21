@@ -12,12 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { ReactNode } from "react";
-import { Divider, Box, SxProps, Theme } from "@mui/material";
+import { Divider, Box, type SxProps, type Theme } from "@mui/material";
 
 interface Props {
-  left: ReactNode;
-  right: ReactNode;
+  left: React.ReactNode;
+  right: React.ReactNode;
   sx?: SxProps<Theme>;
 }
 
@@ -54,11 +53,7 @@ function SplitLayoutView(props: Props) {
       >
         {left}
       </Box>
-      <Divider
-        sx={{ width: "1px", height: "96%" }}
-        orientation="vertical"
-        variant="middle"
-      />
+      <Divider sx={{ width: "1px", height: "96%" }} orientation="vertical" variant="middle" />
       <Box
         className="SplitLayoutView__Right"
         width="calc(80% - 1px)"

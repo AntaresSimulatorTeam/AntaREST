@@ -13,12 +13,12 @@
  */
 
 import { useMemo } from "react";
-import { FieldPath } from "react-hook-form";
+import type { FieldPath } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../common/Fieldset";
-import { ControlPlus } from "../../../../common/Form/types";
-import { FilteringType } from "./types";
+import type { ControlPlus } from "../../../../common/Form/types";
+import type { FilteringType } from "./types";
 
 interface FilterFieldValues {
   filterSynthesis: FilteringType[];
@@ -54,9 +54,7 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
       control={control}
       rules={{
         onAutoSubmit: (value) => {
-          const selection = value
-            ? (value as string[]).filter((val) => val !== "")
-            : [];
+          const selection = value ? (value as string[]).filter((val) => val !== "") : [];
           onAutoSubmit(filterName, selection.join(", "));
         },
       }}

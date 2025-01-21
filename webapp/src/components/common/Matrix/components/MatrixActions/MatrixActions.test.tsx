@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import React from "react";
+import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MatrixActions from ".";

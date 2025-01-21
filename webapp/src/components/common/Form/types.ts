@@ -13,7 +13,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
+import type {
   Control,
   DeepPartial,
   FieldPath,
@@ -25,16 +25,12 @@ import {
   UseFormReturn,
 } from "react-hook-form";
 
-export interface SubmitHandlerPlus<
-  TFieldValues extends FieldValues = FieldValues,
-> {
+export interface SubmitHandlerPlus<TFieldValues extends FieldValues = FieldValues> {
   values: TFieldValues;
   dirtyValues: DeepPartial<TFieldValues>;
 }
 
-export type AutoSubmitHandler<TFieldValue = any> = (
-  value: TFieldValue,
-) => any | Promise<any>;
+export type AutoSubmitHandler<TFieldValue = any> = (value: TFieldValue) => any | Promise<any>;
 
 export type RegisterOptionsPlus<
   TFieldValues extends FieldValues = FieldValues,
@@ -43,17 +39,15 @@ export type RegisterOptionsPlus<
   onAutoSubmit?: AutoSubmitHandler<FieldPathValue<TFieldValues, TFieldName>>;
 };
 
-export type UseFormRegisterPlus<
-  TFieldValues extends FieldValues = FieldValues,
-> = <TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>(
+export type UseFormRegisterPlus<TFieldValues extends FieldValues = FieldValues> = <
+  TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>(
   name: TFieldName,
   options?: RegisterOptionsPlus<TFieldValues, TFieldName>,
 ) => UseFormRegisterReturn<TFieldName>;
 
-export interface ControlPlus<
-  TFieldValues extends FieldValues = FieldValues,
-  TContext = any,
-> extends Control<TFieldValues, TContext> {
+export interface ControlPlus<TFieldValues extends FieldValues = FieldValues, TContext = any>
+  extends Control<TFieldValues, TContext> {
   register: UseFormRegisterPlus<TFieldValues>;
 }
 
@@ -62,10 +56,8 @@ export type UseFormSetValues<TFieldValues extends FieldValues> = (
   options?: SetValueConfig,
 ) => void;
 
-export interface UseFormReturnPlus<
-  TFieldValues extends FieldValues = FieldValues,
-  TContext = any,
-> extends UseFormReturn<TFieldValues, TContext> {
+export interface UseFormReturnPlus<TFieldValues extends FieldValues = FieldValues, TContext = any>
+  extends UseFormReturn<TFieldValues, TContext> {
   register: UseFormRegisterPlus<TFieldValues>;
   control: ControlPlus<TFieldValues, TContext>;
   setValues: UseFormSetValues<TFieldValues>;

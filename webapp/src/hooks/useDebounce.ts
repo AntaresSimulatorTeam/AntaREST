@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import {
-  debounce,
+import type {
   DebouncedFunc,
   DebouncedFuncLeading,
   DebounceSettings,
   DebounceSettingsLeading,
 } from "lodash";
+import debounce from "lodash/debounce";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef } from "react";
-import { F } from "ts-toolbelt";
+import type { F } from "ts-toolbelt";
 
 export interface UseDebounceParams extends DebounceSettings {
   wait?: number;
@@ -39,9 +39,7 @@ const toParams = R.cond<[WaitOrParams | undefined], UseDebounceParams>([
 function useDebounce<T extends F.Function, U extends WaitOrParams>(
   fn: T,
   params?: U,
-): U extends DebounceSettingsLeading
-  ? DebouncedFuncLeading<T>
-  : DebouncedFunc<T> {
+): U extends DebounceSettingsLeading ? DebouncedFuncLeading<T> : DebouncedFunc<T> {
   const { wait, ...options } = toParams(params);
   const fnRef = useRef(fn);
 

@@ -74,16 +74,10 @@ function MapConfig({ onClose }: Props) {
               <Tab label="Districts" value="districts" />
             </TabList>
           </Box>
-          <TabPanel
-            value="layers"
-            sx={{ p: 0, pt: 2, flexGrow: 1, overflow: "hidden" }}
-          >
+          <TabPanel value="layers" sx={{ p: 0, pt: 2, flexGrow: 1, overflow: "hidden" }}>
             <Layers />
           </TabPanel>
-          <TabPanel
-            value="districts"
-            sx={{ p: 0, pt: 2, flexGrow: 1, overflow: "hidden" }}
-          >
+          <TabPanel value="districts" sx={{ p: 0, pt: 2, flexGrow: 1, overflow: "hidden" }}>
             <Districts />
           </TabPanel>
         </TabContext>

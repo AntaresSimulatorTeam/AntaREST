@@ -14,13 +14,12 @@
 
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import { Box } from "@mui/material";
-import { PropsWithChildren } from "react";
 
 interface Props {
   onRemove: () => void;
 }
 
-export default function OffsetInput(props: PropsWithChildren<Props>) {
+export default function OffsetInput(props: React.PropsWithChildren<Props>) {
   const { onRemove, children } = props;
   return (
     <Box

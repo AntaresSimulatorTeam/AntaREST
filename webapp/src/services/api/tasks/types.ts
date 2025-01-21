@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { O } from "ts-toolbelt";
+import type { O } from "ts-toolbelt";
 import type { IdentityDTO, StudyMetadata } from "../../../common/types";
-import { TaskStatus, TaskType } from "./constants";
+import type { TaskStatus, TaskType } from "./constants";
 
 export type TTaskStatus = O.UnionOf<typeof TaskStatus>;
 

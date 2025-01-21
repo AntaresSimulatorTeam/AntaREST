@@ -14,7 +14,7 @@
 
 import { getMatrixFile, getRawFile } from "../../../services/api/studies/raw";
 import { downloadFile } from "../../../utils/fileUtils";
-import { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../common/types";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
 import type { TTableExportFormat } from "@/services/api/studies/raw/types";
@@ -69,10 +69,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
 
     const extension = format === "csv (semicolon)" ? "csv" : format;
 
-    return downloadFile(
-      matrixFile,
-      `matrix_${studyId}_${path.replace("/", "_")}.${extension}`,
-    );
+    return downloadFile(matrixFile, `matrix_${studyId}_${path.replace("/", "_")}.${extension}`);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -80,11 +77,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DownloadButton
-      formatOptions={options}
-      onClick={handleDownload}
-      disabled={!path || disabled}
-    >
+    <DownloadButton formatOptions={options} onClick={handleDownload} disabled={!path || disabled}>
       {label}
     </DownloadButton>
   );

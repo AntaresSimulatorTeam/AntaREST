@@ -27,12 +27,7 @@ interface Props {
   zoomLevel: number;
 }
 
-function MapControlButtons({
-  onZoomIn,
-  onZoomOut,
-  onOpenConfig,
-  zoomLevel,
-}: Props) {
+function MapControlButtons({ onZoomIn, onZoomOut, onOpenConfig, zoomLevel }: Props) {
   return (
     <Box
       sx={{

@@ -13,13 +13,10 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import EmptyView from "../../../../../common/page/EmptyView";
 import BindingConstPropsView from "./BindingConstPropsView";
-import {
-  getBindingConst,
-  getCurrentBindingConstId,
-} from "../../../../../../redux/selectors";
+import { getBindingConst, getCurrentBindingConstId } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
@@ -39,9 +36,7 @@ function BindingConstraints() {
 
   const currentConstraintId = useAppSelector(getCurrentBindingConstId);
 
-  const bindingConstraints = useAppSelector((state) =>
-    getBindingConst(state, study.id),
-  );
+  const bindingConstraints = useAppSelector((state) => getBindingConst(state, study.id));
 
   const constraintsRes = usePromise(
     () => getBindingConstraintList(study.id),

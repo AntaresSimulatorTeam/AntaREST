@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Cluster } from "../../../../../../../common/types";
+import type { Cluster } from "../../../../../../../common/types";
 import Matrix from "../../../../../../common/Matrix";
 
 interface Props {

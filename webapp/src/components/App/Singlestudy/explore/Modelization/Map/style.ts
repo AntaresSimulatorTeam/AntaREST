@@ -14,7 +14,7 @@
 
 import { styled, Box, Chip } from "@mui/material";
 import mapbackground from "../../../../../../assets/img/mapbackground.png";
-import { getTextColor, RGB } from "./utils";
+import { getTextColor, type RGB } from "./utils";
 
 ////////////////////////////////////////////////////////////////
 // Map(index.tsx)
@@ -57,35 +57,31 @@ export interface NodeProps {
   rgbcolor: number[];
 }
 
-export const NodeDefault = styled(Chip)<NodeProps>(
-  ({ theme, nodecolor, rgbcolor }) => ({
-    backgroundColor: nodecolor,
-    "&:hover": {
-      color: "white",
-      "& .MuiChip-deleteIcon": {
-        color: "white",
-        display: "block",
-      },
-    },
+export const NodeDefault = styled(Chip)<NodeProps>(({ theme, nodecolor, rgbcolor }) => ({
+  backgroundColor: nodecolor,
+  "&:hover": {
+    color: "white",
     "& .MuiChip-deleteIcon": {
-      display: "none",
-      fontSize: 20,
-      marginLeft: 5,
-      "&:hover": {
-        color: theme.palette.primary.main,
-      },
+      color: "white",
+      display: "block",
     },
-    "& .MuiChip-label": {
-      textOverflow: "unset",
+  },
+  "& .MuiChip-deleteIcon": {
+    display: "none",
+    fontSize: 20,
+    marginLeft: 5,
+    "&:hover": {
+      color: theme.palette.primary.main,
     },
-    color: getTextColor(rgbcolor as RGB),
-  }),
-);
+  },
+  "& .MuiChip-label": {
+    textOverflow: "unset",
+  },
+  color: getTextColor(rgbcolor as RGB),
+}));
 
-export const NodeHighlighted = styled(Chip)<NodeProps>(
-  ({ nodecolor, rgbcolor }) => ({
-    color: getTextColor(rgbcolor as RGB),
-    backgroundColor: `rgba(${rgbcolor[0]}, ${rgbcolor[1]}, ${rgbcolor[2]}, 0.6) !important`,
-    outline: `2px dashed ${nodecolor}`,
-  }),
-);
+export const NodeHighlighted = styled(Chip)<NodeProps>(({ nodecolor, rgbcolor }) => ({
+  color: getTextColor(rgbcolor as RGB),
+  backgroundColor: `rgba(${rgbcolor[0]}, ${rgbcolor[1]}, ${rgbcolor[2]}, 0.6) !important`,
+  outline: `2px dashed ${nodecolor}`,
+}));

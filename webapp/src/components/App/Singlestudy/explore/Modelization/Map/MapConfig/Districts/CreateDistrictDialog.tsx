@@ -18,8 +18,8 @@ import { useOutletContext } from "react-router";
 import { useMemo } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
@@ -93,8 +93,7 @@ function CreateDistrictDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              validate: (v) =>
-                validateString(v, { existingValues: existingDistricts }),
+              validate: (v) => validateString(v, { existingValues: existingDistricts }),
             }}
             sx={{ m: 0 }}
           />

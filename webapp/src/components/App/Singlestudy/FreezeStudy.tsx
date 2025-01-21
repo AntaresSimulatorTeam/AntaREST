@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/common/types";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
 import type { TaskDTO, TTaskType } from "@/services/api/tasks/types";
@@ -24,15 +24,7 @@ import {
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
-import {
-  Backdrop,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Backdrop, Button, List, ListItem, ListItemText, Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
 import { useTranslation } from "react-i18next";
@@ -128,9 +120,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
         case WsEventType.TaskFailed: {
           const { id, message } = event.payload;
           setBlockingTasks((tasks) =>
-            tasks.map((task) =>
-              task.id === id ? { ...task, error: message } : task,
-            ),
+            tasks.map((task) => (task.id === id ? { ...task, error: message } : task)),
           );
           unsubscribeWsChannels(getChannel(id));
           break;
@@ -138,9 +128,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
         case WsEventType.TaskCompleted: {
           const { id } = event.payload;
           setBlockingTasks((tasks) =>
-            tasks.map((task) =>
-              task.id === id ? { ...task, progress: PROGRESS_COMPLETE } : task,
-            ),
+            tasks.map((task) => (task.id === id ? { ...task, progress: PROGRESS_COMPLETE } : task)),
           );
           unsubscribeWsChannels(getChannel(id));
           break;
@@ -207,16 +195,10 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           {blockingTasks.map(({ id, type, progress, error }) => (
             <ListItem key={id}>
               <ListItemText
-                primary={
-                  <LinearProgressWithLabel value={progress} error={!!error} />
-                }
+                primary={<LinearProgressWithLabel value={progress} error={!!error} />}
                 secondary={
                   <>
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      color="textPrimary"
-                    >
+                    <Typography component="span" variant="body2" color="textPrimary">
                       {t(`tasks.type.${type}`)}
                     </Typography>
                     {error && (

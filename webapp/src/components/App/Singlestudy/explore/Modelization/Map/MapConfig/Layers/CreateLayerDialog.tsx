@@ -15,12 +15,12 @@
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useOutletContext } from "react-router";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useMemo } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
@@ -56,9 +56,7 @@ function CreateLayerDialog(props: Props) {
 
   const handleSubmit = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     try {
-      dispatch(
-        createStudyMapLayer({ studyId: study.id, name: data.values.name }),
-      );
+      dispatch(createStudyMapLayer({ studyId: study.id, name: data.values.name }));
     } catch (e) {
       enqueueErrorSnackbar(t("study.error.createLayer"), e as AxiosError);
     }
@@ -88,8 +86,7 @@ function CreateLayerDialog(props: Props) {
           control={control}
           fullWidth
           rules={{
-            validate: (v) =>
-              validateString(v, { existingValues: existingLayers }),
+            validate: (v) => validateString(v, { existingValues: existingLayers }),
           }}
         />
       )}

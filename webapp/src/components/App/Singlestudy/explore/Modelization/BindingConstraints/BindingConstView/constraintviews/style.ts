@@ -19,8 +19,7 @@ export const ConstraintElementRoot = styled(Paper)(({ theme }) => ({
   flexDirection: "column",
   padding: theme.spacing(1),
   borderRadius: 5,
-  backgroundImage:
-    "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+  backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
 }));
 
 export const ConstraintElementData = styled(Box)(({ theme }) => ({

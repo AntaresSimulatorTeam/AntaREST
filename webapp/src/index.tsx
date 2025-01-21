@@ -17,7 +17,7 @@ import { Provider } from "react-redux";
 import { StyledEngineProvider } from "@mui/material";
 import "./index.css";
 import App from "./components/App";
-import { Config, initConfig } from "./services/config";
+import { initConfig, type Config } from "./services/config";
 import storage, { StorageKey } from "./services/utils/localStorage";
 import store from "./redux/store";
 

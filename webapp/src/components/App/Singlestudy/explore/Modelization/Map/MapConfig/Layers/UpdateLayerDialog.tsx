@@ -14,13 +14,14 @@
 
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { Delete, Edit } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { Button, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
@@ -67,9 +68,7 @@ function UpdateLayerDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>,
-  ) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { layerId, name } = data.values;
 
     if (layerId && name) {
@@ -95,7 +94,7 @@ function UpdateLayerDialog(props: Props) {
   return (
     <FormDialog
       title={t("study.modelization.map.layers.edit")}
-      titleIcon={Edit}
+      titleIcon={EditIcon}
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
@@ -138,7 +137,7 @@ function UpdateLayerDialog(props: Props) {
             color="error"
             variant="outlined"
             size="small"
-            startIcon={<Delete />}
+            startIcon={<DeleteIcon />}
             disabled={getValues("layerId") === ""}
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}

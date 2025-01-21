@@ -12,31 +12,28 @@
  * This file is part of the Antares project.
  */
 
-import { ReactNode, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import debug from "debug";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
-import { useSnackbar, VariantType } from "notistack";
+import { useSnackbar, type VariantType } from "notistack";
 import { red } from "@mui/material/colors";
 import { getTask } from "../../../services/api/tasks";
 import { addWsEventListener } from "../../../services/webSocket/ws";
-import {
-  incrementTaskNotifications,
-  resetTaskNotifications,
-} from "../../../redux/ducks/ui";
+import { incrementTaskNotifications, resetTaskNotifications } from "../../../redux/ducks/ui";
 import { getTaskNotificationsCount } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { TaskType } from "../../../services/api/tasks/constants";
 import { WsEventType } from "@/services/webSocket/constants";
-import { WsEvent } from "@/services/webSocket/types";
+import type { WsEvent } from "@/services/webSocket/types";
 
 const logError = debug("antares:downloadbadge:error");
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 function NotificationBadge(props: Props) {

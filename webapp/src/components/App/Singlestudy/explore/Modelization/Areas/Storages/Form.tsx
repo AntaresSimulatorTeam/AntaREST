@@ -18,13 +18,13 @@ import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import Form from "../../../../../../common/Form";
 import Fields from "./Fields";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import { Storage, getStorage, updateStorage } from "./utils";
+import { getStorage, updateStorage, type Storage } from "./utils";
 import Matrix from "./Matrix";
 import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
 import { nameToId } from "../../../../../../../services/utils";
@@ -103,11 +103,7 @@ function Storages() {
             height: "70vh",
           }}
         >
-          <Matrix
-            study={study}
-            areaId={areaId}
-            storageId={nameToId(storageId)}
-          />
+          <Matrix study={study} areaId={areaId} storageId={nameToId(storageId)} />
         </Box>
       </Box>
     </Box>

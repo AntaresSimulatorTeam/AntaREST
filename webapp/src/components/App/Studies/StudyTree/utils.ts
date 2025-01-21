@@ -13,8 +13,8 @@
  */
 
 import * as api from "../../../../services/api/study";
-import { StudyMetadata } from "../../../../common/types";
-import { StudyTreeNode, NonStudyFolderDTO } from "./types";
+import type { StudyMetadata } from "../../../../common/types";
+import type { StudyTreeNode, NonStudyFolderDTO } from "./types";
 
 /**
  * Builds a tree structure from a list of study metadata.
@@ -50,9 +50,7 @@ export function buildStudyTree(studies: StudyMetadata[]) {
         child = {
           name: folderName,
           children: [],
-          path: current.path
-            ? `${current.path}/${folderName}`
-            : `/${folderName}`,
+          path: current.path ? `${current.path}/${folderName}` : `/${folderName}`,
         };
 
         current.children.push(child);
@@ -72,8 +70,8 @@ export function buildStudyTree(studies: StudyMetadata[]) {
  *
  * If the folder is already in the tree, the tree returnred will be equal to the tree given to the function.
  *
- * @param studiesTree study tree to insert the folder into
- * @param folder folder to inert into the tree
+ * @param studiesTree - study tree to insert the folder into
+ * @param folder - folder to inert into the tree
  * @returns study tree with the folder inserted if it wasn't already there.
  * New branch is created if it contain the folder otherwise the branch is left unchanged.
  */
@@ -89,9 +87,7 @@ function insertFolderIfNotExist(
 
   // direct child case
   if (folder.parentPath == currentNodePath) {
-    const folderExists = studiesTree.children.find(
-      (child) => child.name === folder.name,
-    );
+    const folderExists = studiesTree.children.find((child) => child.name === folder.name);
     if (folderExists) {
       return {
         ...studiesTree,
@@ -122,9 +118,7 @@ function insertFolderIfNotExist(
   // not a direct child, but does belong to this branch so recursively walk though the tree
   return {
     ...studiesTree,
-    children: studiesTree.children.map((child) =>
-      insertFolderIfNotExist(child, folder),
-    ),
+    children: studiesTree.children.map((child) => insertFolderIfNotExist(child, folder)),
   };
 }
 
@@ -135,10 +129,10 @@ function insertFolderIfNotExist(
  *
  * The folders are inserted in the order they are given.
  *
- * @param studiesTree study tree to insert the folder into
- * @param folders folders to inert into the tree
- * @param studiesTree study tree to insert the folder into
- * @param folder folder to inert into the tree
+ * @param studiesTree - study tree to insert the folder into
+ * @param folders - folders to inert into the tree
+ * @param studiesTree - study tree to insert the folder into
+ * @param folder - folder to inert into the tree
  * @returns study tree with the folder inserted if it wasn't already there.
  * New branch is created if it contain the folder otherwise the branch is left unchanged.
  */
@@ -154,7 +148,7 @@ export function insertFoldersIfNotExist(
 /**
  * Call the explorer api to fetch the subfolders under the given path.
  *
- * @param path path of the subfolder to fetch, should sart with root, e.g. root/workspace/folder1
+ * @param path - path of the subfolder to fetch, should sart with root, e.g. root/workspace/folder1
  * @returns list of subfolders under the given path
  */
 async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
@@ -191,8 +185,8 @@ async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
  *
  * This function doesn't mutate the tree, it returns a new tree with the subfolders inserted
  *
- * @param paths list of paths to fetch the subfolders for
- * @param studiesTree study tree to insert the subfolders into
+ * @param paths - list of paths to fetch the subfolders for
+ * @param studiesTree - study tree to insert the subfolders into
  * @returns a tuple with study tree with the subfolders inserted if they weren't already there and path for which
  * the fetch failed.
  */
@@ -200,9 +194,7 @@ export async function fetchAndInsertSubfolders(
   paths: string[],
   studiesTree: StudyTreeNode,
 ): Promise<[StudyTreeNode, string[]]> {
-  const results = await Promise.allSettled(
-    paths.map((path) => fetchSubfolders(path)),
-  );
+  const results = await Promise.allSettled(paths.map((path) => fetchSubfolders(path)));
   return results.reduce<[StudyTreeNode, string[]]>(
     ([tree, failed], result, index) => {
       if (result.status === "fulfilled") {
@@ -220,14 +212,11 @@ export async function fetchAndInsertSubfolders(
  *
  * This function doesn't mutate the tree, it returns a new tree with the workspace inserted.
  *
- * @param workspace key of the workspace
- * @param stydyTree study tree to insert the workspace into
+ * @param workspace - key of the workspace
+ * @param stydyTree - study tree to insert the workspace into
  * @returns study tree with the empty workspace inserted if it wasn't already there.
  */
-function insertWorkspaceIfNotExist(
-  stydyTree: StudyTreeNode,
-  workspace: string,
-): StudyTreeNode {
+function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string): StudyTreeNode {
   const emptyNode = {
     name: workspace,
     path: `/${workspace}`,
@@ -249,8 +238,8 @@ function insertWorkspaceIfNotExist(
  *
  * The workspaces are inserted in the order they are given.
  *
- * @param workspaces workspaces to insert into the tree
- * @param stydyTree study tree to insert the workspaces into
+ * @param workspaces - workspaces to insert into the tree
+ * @param stydyTree - study tree to insert the workspaces into
  * @returns study tree with the empty workspaces inserted if they weren't already there.
  */
 export function insertWorkspacesIfNotExist(
@@ -270,12 +259,10 @@ export function insertWorkspacesIfNotExist(
  *
  * This function doesn't mutate the tree, it returns a new tree with the workspaces inserted.
  *
- * @param studyTree study tree to insert the workspaces into
+ * @param studyTree - study tree to insert the workspaces into
  * @returns study tree with the workspaces inserted if they weren't already there.
  */
-export async function fetchAndInsertWorkspaces(
-  studyTree: StudyTreeNode,
-): Promise<StudyTreeNode> {
+export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promise<StudyTreeNode> {
   const workspaces = await api.getWorkspaces();
   return insertWorkspacesIfNotExist(studyTree, workspaces);
 }

@@ -18,13 +18,13 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectProps,
+  type SelectProps,
 } from "@mui/material";
 import { useMemo, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import * as RA from "ramda-adjunct";
-import { startCase } from "lodash";
-import { O } from "ts-toolbelt";
+import startCase from "lodash/startCase";
+import type { O } from "ts-toolbelt";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 type OptionObj<T extends O.Object = O.Object> = {
@@ -44,9 +44,7 @@ function formatOptions(
   startCaseLabel: boolean,
 ): Array<OptionObj<{ id: string }>> {
   return options.map((opt) => ({
-    ...(RA.isPlainObj(opt)
-      ? opt
-      : { label: startCaseLabel ? startCase(opt) : opt, value: opt }),
+    ...(RA.isPlainObj(opt) ? opt : { label: startCaseLabel ? startCase(opt) : opt, value: opt }),
     id: uuidv4(),
   }));
 }

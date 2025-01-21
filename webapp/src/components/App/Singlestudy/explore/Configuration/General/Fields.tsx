@@ -17,18 +17,18 @@ import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useEffect } from "react";
 import * as RA from "ramda-adjunct";
-import { Validate } from "react-hook-form";
+import type { Validate } from "react-hook-form";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import {
   BuildingMode,
   BUILDING_MODE_OPTIONS,
   FIRST_JANUARY_OPTIONS,
-  GeneralFormFields,
   MODE_OPTIONS,
-  SetDialogStateType,
   WEEK_OPTIONS,
   YEAR_OPTIONS,
+  type GeneralFormFields,
+  type SetDialogStateType,
 } from "./utils";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useFormContextPlus } from "../../../../../common/Form";
@@ -45,14 +45,7 @@ function Fields(props: Props) {
   const { setDialog } = props;
   const [t] = useTranslation();
   const { control, setValue, watch } = useFormContextPlus<GeneralFormFields>();
-  const [
-    buildingMode,
-    selectionMode,
-    firstDay,
-    lastDay,
-    filtering,
-    thematicTrimming,
-  ] = watch([
+  const [buildingMode, selectionMode, firstDay, lastDay, filtering, thematicTrimming] = watch([
     "buildingMode",
     "selectionMode",
     "firstDay",
@@ -94,10 +87,7 @@ function Fields(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDayValidation: Validate<number, GeneralFormFields> = (
-    value,
-    formValues,
-  ) => {
+  const handleDayValidation: Validate<number, GeneralFormFields> = (value, formValues) => {
     if (value < 1 || Number.isNaN(value)) {
       return t("form.field.minValue", { 0: 1 });
     }
@@ -105,23 +95,14 @@ function Fields(props: Props) {
       return false;
     }
     if (formValues.leapYear) {
-      return value <= 366
-        ? true
-        : t("study.configuration.general.day.error.leapYearMax");
+      return value <= 366 ? true : t("study.configuration.general.day.error.leapYearMax");
     }
-    return value <= 365
-      ? true
-      : t("study.configuration.general.day.error.nonLeapYearMax");
+    return value <= 365 ? true : t("study.configuration.general.day.error.nonLeapYearMax");
   };
 
-  const handleNbYearsValidation: Validate<number, GeneralFormFields> = (
-    value,
-    formValues,
-  ) => {
+  const handleNbYearsValidation: Validate<number, GeneralFormFields> = (value, formValues) => {
     if (formValues.buildingMode === BuildingMode.Derated) {
-      return value === 1
-        ? true
-        : t("study.configuration.general.nbYears.error.derated");
+      return value === 1 ? true : t("study.configuration.general.nbYears.error.derated");
     }
     if (value < 1) {
       return t("form.field.minValue", { 0: 1 });
@@ -174,12 +155,7 @@ function Fields(props: Props) {
         />
       </Fieldset>
       <Fieldset legend={t("study.configuration.general.legend.calendar")}>
-        <StringFE
-          name="horizon"
-          label="Horizon"
-          variant="filled"
-          control={control}
-        />
+        <StringFE name="horizon" label="Horizon" variant="filled" control={control} />
         <SelectFE
           name="firstMonth"
           label={t("study.configuration.general.year")}

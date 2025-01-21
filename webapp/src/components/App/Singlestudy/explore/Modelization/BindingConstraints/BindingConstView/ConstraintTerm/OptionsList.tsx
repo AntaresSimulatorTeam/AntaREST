@@ -14,9 +14,9 @@
 
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AllClustersAndLinks } from "../../../../../../../../common/types";
+import type { AllClustersAndLinks } from "../../../../../../../../common/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
-import { ConstraintTerm, generateTermId, isTermExist } from "../utils";
+import { generateTermId, isTermExist, type ConstraintTerm } from "../utils";
 import { Box } from "@mui/material";
 
 interface Option {
@@ -66,9 +66,7 @@ export default function OptionsList({
     const relatedOptions = isLink ? list.links : list.clusters;
 
     // Attempt to find the option that matches the selected area
-    const foundOption = relatedOptions.find(
-      ({ element }) => element.id === selectedArea,
-    );
+    const foundOption = relatedOptions.find(({ element }) => element.id === selectedArea);
 
     if (!foundOption) {
       return [];
@@ -76,29 +74,17 @@ export default function OptionsList({
 
     return foundOption.item_list.reduce<Option[]>((acc, { id, name }) => {
       const termId = generateTermId(
-        isLink
-          ? { area1: selectedArea, area2: id }
-          : { area: selectedArea, cluster: id },
+        isLink ? { area1: selectedArea, area2: id } : { area: selectedArea, cluster: id },
       );
 
       // Check if the id is valid
-      if (
-        id === selectedClusterOrArea ||
-        !isTermExist(constraintTerms, termId)
-      ) {
+      if (id === selectedClusterOrArea || !isTermExist(constraintTerms, termId)) {
         acc.push({ name, id: id.toLowerCase() });
       }
 
       return acc;
     }, []);
-  }, [
-    selectedArea,
-    isLink,
-    list.links,
-    list.clusters,
-    selectedClusterOrArea,
-    constraintTerms,
-  ]);
+  }, [selectedArea, isLink, list.links, list.clusters, selectedClusterOrArea, constraintTerms]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -112,9 +98,7 @@ export default function OptionsList({
     setSelectedClusterOrArea(value);
     saveValue({
       ...term,
-      data: isLink
-        ? { area1: selectedArea, area2: value }
-        : { area: selectedArea, cluster: value },
+      data: isLink ? { area1: selectedArea, area2: value } : { area: selectedArea, cluster: value },
     });
   };
 
@@ -144,9 +128,7 @@ export default function OptionsList({
         label={t(`study.${isLink ? "area2" : "cluster"}`)}
         data={selectedClusterOrArea.toLowerCase()}
         list={clusterOrAreaOptions}
-        handleChange={(key, value) =>
-          handleClusterOrAreaChange(value as string)
-        }
+        handleChange={(key, value) => handleClusterOrAreaChange(value as string)}
         sx={{
           minWidth: 300,
         }}

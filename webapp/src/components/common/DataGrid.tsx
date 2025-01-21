@@ -38,10 +38,7 @@ type RowMarkers =
 type RowMarkersOptions = Exclude<RowMarkers, string>;
 
 export interface DataGridProps
-  extends Omit<
-    DataEditorProps,
-    "rowMarkers" | "onGridSelectionChange" | "gridSelection"
-  > {
+  extends Omit<DataEditorProps, "rowMarkers" | "onGridSelectionChange" | "gridSelection"> {
   rowMarkers?: RowMarkers;
   enableColumnResize?: boolean;
 }
@@ -49,10 +46,7 @@ export interface DataGridProps
 function isStringRowMarkerOptions(
   rowMarkerOptions: RowMarkersOptions,
 ): rowMarkerOptions is StringRowMarkerOptions {
-  return (
-    rowMarkerOptions.kind === "string" ||
-    rowMarkerOptions.kind === "clickable-string"
-  );
+  return rowMarkerOptions.kind === "string" || rowMarkerOptions.kind === "clickable-string";
 }
 
 function DataGrid(props: DataGridProps) {
@@ -73,9 +67,7 @@ function DataGrid(props: DataGridProps) {
   const rowMarkersOptions: RowMarkersOptions =
     typeof rowMarkers === "string" ? { kind: rowMarkers } : rowMarkers;
   const isStringRowMarkers = isStringRowMarkerOptions(rowMarkersOptions);
-  const adjustedFreezeColumns = isStringRowMarkers
-    ? (freezeColumns || 0) + 1
-    : freezeColumns;
+  const adjustedFreezeColumns = isStringRowMarkers ? (freezeColumns || 0) + 1 : freezeColumns;
 
   const [columns, setColumns] = useState(columnsFromProps);
   const [selection, setSelection] = useState<GridSelection>({
@@ -86,9 +78,7 @@ function DataGrid(props: DataGridProps) {
   // Add a column for the "string" row markers if needed
   useEffect(() => {
     setColumns(
-      isStringRowMarkers
-        ? [{ id: "", title: "" }, ...columnsFromProps]
-        : columnsFromProps,
+      isStringRowMarkers ? [{ id: "", title: "" }, ...columnsFromProps] : columnsFromProps,
     );
   }, [columnsFromProps, isStringRowMarkers]);
 
@@ -114,10 +104,7 @@ function DataGrid(props: DataGridProps) {
     return onFalse(adjustedColIndex);
   };
 
-  const ifNotStringRowMarkers = (
-    colIndex: number,
-    fn: (colIndex: number) => void,
-  ) => {
+  const ifNotStringRowMarkers = (colIndex: number, fn: (colIndex: number) => void) => {
     return ifElseStringRowMarkers(colIndex, voidFn, fn);
   };
 
@@ -160,10 +147,7 @@ function DataGrid(props: DataGridProps) {
   // Edition
   ////////////////////////////////////////////////////////////////
 
-  const handleCellEdited: DataEditorProps["onCellEdited"] = (
-    location,
-    value,
-  ) => {
+  const handleCellEdited: DataEditorProps["onCellEdited"] = (location, value) => {
     const [colIndex, rowIndex] = location;
 
     ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
@@ -201,52 +185,33 @@ function DataGrid(props: DataGridProps) {
       ? (column, newSize, colIndex, newSizeWithGrow) => {
           if (enableColumnResize) {
             setColumns(
-              columns.map((col, index) =>
-                index === colIndex ? { ...col, width: newSize } : col,
-              ),
+              columns.map((col, index) => (index === colIndex ? { ...col, width: newSize } : col)),
             );
           }
 
           if (onColumnResize) {
             ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
-              onColumnResize(
-                column,
-                newSize,
-                adjustedColIndex,
-                newSizeWithGrow,
-              );
+              onColumnResize(column, newSize, adjustedColIndex, newSizeWithGrow);
             });
           }
         }
       : undefined;
 
-  const handleColumnResizeStart: DataEditorProps["onColumnResizeStart"] =
-    onColumnResizeStart
-      ? (column, newSize, colIndex, newSizeWithGrow) => {
-          ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
-            onColumnResizeStart(
-              column,
-              newSize,
-              adjustedColIndex,
-              newSizeWithGrow,
-            );
-          });
-        }
-      : undefined;
+  const handleColumnResizeStart: DataEditorProps["onColumnResizeStart"] = onColumnResizeStart
+    ? (column, newSize, colIndex, newSizeWithGrow) => {
+        ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
+          onColumnResizeStart(column, newSize, adjustedColIndex, newSizeWithGrow);
+        });
+      }
+    : undefined;
 
-  const handleColumnResizeEnd: DataEditorProps["onColumnResizeEnd"] =
-    onColumnResizeEnd
-      ? (column, newSize, colIndex, newSizeWithGrow) => {
-          ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
-            onColumnResizeEnd(
-              column,
-              newSize,
-              adjustedColIndex,
-              newSizeWithGrow,
-            );
-          });
-        }
-      : undefined;
+  const handleColumnResizeEnd: DataEditorProps["onColumnResizeEnd"] = onColumnResizeEnd
+    ? (column, newSize, colIndex, newSizeWithGrow) => {
+        ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
+          onColumnResizeEnd(column, newSize, adjustedColIndex, newSizeWithGrow);
+        });
+      }
+    : undefined;
 
   ////////////////////////////////////////////////////////////////
   // Selection
@@ -257,16 +222,11 @@ function DataGrid(props: DataGridProps) {
       if (isStringRowMarkers) {
         if (newSelection.current) {
           // Select the whole row when clicking on a row marker cell
-          if (
-            rowMarkersOptions.kind === "clickable-string" &&
-            newSelection.current.cell[0] === 0
-          ) {
+          if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
             setSelection({
               ...newSelection,
               current: undefined,
-              rows: CompactSelection.fromSingleSelection(
-                newSelection.current.cell[1],
-              ),
+              rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
             });
 
             return;

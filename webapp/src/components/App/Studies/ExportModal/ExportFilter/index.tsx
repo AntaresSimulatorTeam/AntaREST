@@ -14,15 +14,15 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import range from "lodash/range";
 import { Box, Checkbox, FormControlLabel, styled } from "@mui/material";
 import {
-  Area,
-  Set as District,
-  FileStudyTreeConfigDTO,
-  StudyOutputDownloadDTO,
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
+  type Area,
+  type Set as District,
+  type FileStudyTreeConfigDTO,
+  type StudyOutputDownloadDTO,
 } from "../../../../../common/types";
 import Filter from "./Filter";
 import TagSelect from "./TagSelect";
@@ -55,9 +55,7 @@ function ExportFilterModal(props: PropTypes) {
     nbYear: -1,
   });
   const [areaList, setAreaList] = useState<Record<string, Area>>({});
-  const [districtList, setDistrictList] = useState<Record<string, District>>(
-    {},
-  );
+  const [districtList, setDistrictList] = useState<Record<string, District>>({});
 
   const typeList: string[] = [
     StudyOutputDownloadType.AREAS,
@@ -113,7 +111,7 @@ function ExportFilterModal(props: PropTypes) {
       {byYear.isByYear && byYear.nbYear > 0 && (
         <SelectMulti
           name={t("study.years")}
-          list={_.range(byYear.nbYear).map((elm) => ({
+          list={range(byYear.nbYear).map((elm) => ({
             id: elm.toString(),
             name: elm.toString(),
           }))}
@@ -145,25 +143,17 @@ function ExportFilterModal(props: PropTypes) {
         areas={areaList}
         sets={districtList}
         filterValue={filter.filter ? filter.filter : []}
-        setFilterValue={(elm: string[]) =>
-          setFilter({ ...filter, filter: elm })
-        }
+        setFilterValue={(elm: string[]) => setFilter({ ...filter, filter: elm })}
         filterInValue={filter.filterIn ? filter.filterIn : ""}
-        setFilterInValue={(elm: string) =>
-          setFilter({ ...filter, filterIn: elm })
-        }
+        setFilterInValue={(elm: string) => setFilter({ ...filter, filterIn: elm })}
         filterOutValue={filter.filterOut ? filter.filterOut : ""}
-        setFilterOutValue={(elm: string) =>
-          setFilter({ ...filter, filterOut: elm })
-        }
+        setFilterOutValue={(elm: string) => setFilter({ ...filter, filterOut: elm })}
       />
       <FormControlLabel
         control={
           <Checkbox
             checked={filter.synthesis}
-            onChange={(e, checked) =>
-              setFilter({ ...filter, synthesis: checked })
-            }
+            onChange={(e, checked) => setFilter({ ...filter, synthesis: checked })}
             name={t("study.synthesis")}
           />
         }
@@ -174,9 +164,7 @@ function ExportFilterModal(props: PropTypes) {
         control={
           <Checkbox
             checked={filter.includeClusters}
-            onChange={(e, checked) =>
-              setFilter({ ...filter, includeClusters: checked })
-            }
+            onChange={(e, checked) => setFilter({ ...filter, includeClusters: checked })}
             name={t("study.includeClusters")}
           />
         }

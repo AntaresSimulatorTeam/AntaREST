@@ -13,11 +13,9 @@
  */
 
 import { Box } from "@mui/material";
-import { startCase } from "lodash";
+import startCase from "lodash/startCase";
 import { useTranslation } from "react-i18next";
-import FormDialog, {
-  FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
+import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
 import ListFE from "../../../../../common/fieldEditors/ListFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
@@ -36,14 +34,10 @@ export interface TableTemplateFormDialogProps
 }
 
 function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
-  const { open, title, titleIcon, config, onSubmit, onCancel, templates } =
-    props;
+  const { open, title, titleIcon, config, onSubmit, onCancel, templates } = props;
   const { t } = useTranslation();
 
-  const existingTables = useMemo(
-    () => templates.map(({ name }) => name),
-    [templates],
-  );
+  const existingTables = useMemo(() => templates.map(({ name }) => name), [templates]);
 
   const typeOptions = useMemo(
     () =>

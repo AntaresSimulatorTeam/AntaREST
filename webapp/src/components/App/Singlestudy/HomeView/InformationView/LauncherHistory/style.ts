@@ -12,12 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Box,
-  StepConnector,
-  stepConnectorClasses,
-  styled,
-} from "@mui/material";
+import { Box, StepConnector, stepConnectorClasses, styled } from "@mui/material";
 
 export const JobRoot = styled(Box, {
   shouldForwardProp: (prop) => prop !== "jobLength",

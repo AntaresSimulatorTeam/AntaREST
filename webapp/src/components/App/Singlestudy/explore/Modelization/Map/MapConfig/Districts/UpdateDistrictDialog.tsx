@@ -14,13 +14,14 @@
 
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { Delete, Edit } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import { Button, Typography } from "@mui/material";
 import { useState } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
@@ -62,9 +63,7 @@ function UpdateDistrictDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>,
-  ) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { districtId, output, comments } = data.values;
     dispatch(
       updateStudyMapDistrict({
@@ -92,7 +91,7 @@ function UpdateDistrictDialog(props: Props) {
   return (
     <FormDialog
       title={t("study.modelization.map.districts.edit")}
-      titleIcon={Edit}
+      titleIcon={EditIcon}
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
@@ -110,14 +109,8 @@ function UpdateDistrictDialog(props: Props) {
             control={control}
             onChange={(e) => {
               setValue("name", districtsById[e.target.value as string].name);
-              setValue(
-                "output",
-                districtsById[e.target.value as string].output,
-              );
-              setValue(
-                "comments",
-                districtsById[e.target.value as string].comments,
-              );
+              setValue("output", districtsById[e.target.value as string].output);
+              setValue("comments", districtsById[e.target.value as string].comments);
             }}
           />
           <StringFE
@@ -147,7 +140,7 @@ function UpdateDistrictDialog(props: Props) {
             variant="outlined"
             size="small"
             disabled={getValues("districtId") === ""}
-            startIcon={<Delete />}
+            startIcon={<DeleteIcon />}
             onClick={() => setOpenConfirmationModal(true)}
             sx={{ mr: 1 }}
           >

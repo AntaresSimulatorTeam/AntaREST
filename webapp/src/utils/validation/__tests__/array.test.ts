@@ -55,14 +55,10 @@ describe("validateArray", () => {
   });
 
   test("should handle both options simultaneously", () => {
-    expect(validateArray([], { allowEmpty: true, allowDuplicate: false })).toBe(
-      true,
+    expect(validateArray([], { allowEmpty: true, allowDuplicate: false })).toBe(true);
+    expect(validateArray([1, 1], { allowEmpty: true, allowDuplicate: true })).toBe(true);
+    expect(validateArray([1, 1], { allowEmpty: true, allowDuplicate: false })).toBe(
+      "form.field.duplicateNotAllowed",
     );
-    expect(
-      validateArray([1, 1], { allowEmpty: true, allowDuplicate: true }),
-    ).toBe(true);
-    expect(
-      validateArray([1, 1], { allowEmpty: true, allowDuplicate: false }),
-    ).toBe("form.field.duplicateNotAllowed");
   });
 });

@@ -13,11 +13,7 @@
  */
 
 /* eslint-disable no-param-reassign */
-import {
-  GenericInfo,
-  StudyMetadata,
-  VariantTree,
-} from "../../../../../common/types";
+import type { GenericInfo, StudyMetadata, VariantTree } from "../../../../../common/types";
 
 export interface StudyTree {
   name: string;
@@ -63,10 +59,7 @@ const convertVariantTreeToStudyTree = (tree: VariantTree): StudyTree => {
   return nodeDatum;
 };
 
-const buildTree = async (
-  node: StudyTree,
-  childrenTree: VariantTree,
-): Promise<void> => {
+const buildTree = async (node: StudyTree, childrenTree: VariantTree): Promise<void> => {
   if ((childrenTree.children || []).length === 0) {
     node.drawOptions.depth = 1;
     node.drawOptions.nbAllChildrens = 0;

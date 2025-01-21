@@ -13,15 +13,12 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import EmptyView from "../../../../../common/page/EmptyView";
 import AreaPropsView from "./AreaPropsView";
 import AreasTab from "./AreasTab";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
-import {
-  getStudySynthesis,
-  getCurrentArea,
-} from "../../../../../../redux/selectors";
+import { getStudySynthesis, getCurrentArea } from "../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
@@ -53,20 +50,14 @@ function Areas() {
   return (
     <SplitView id="areas" sizes={[10, 90]}>
       {/* Left */}
-      <AreaPropsView
-        studyId={study.id}
-        onClick={handleAreaClick}
-        currentArea={currentArea?.id}
-      />
+      <AreaPropsView studyId={study.id} onClick={handleAreaClick} currentArea={currentArea?.id} />
       {/* Right */}
       <ViewWrapper>
         <UsePromiseCond
           response={res}
           ifFulfilled={(renewablesClustering) =>
             currentArea ? (
-              <AreasTab
-                renewablesClustering={renewablesClustering !== "aggregated"}
-              />
+              <AreasTab renewablesClustering={renewablesClustering !== "aggregated"} />
             ) : (
               <EmptyView title="No areas" />
             )

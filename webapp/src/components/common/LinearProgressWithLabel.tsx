@@ -47,24 +47,14 @@ function LinearProgressWithLabel(props: LinearProgressWithLabelProps) {
   const { value, tooltip, error, sx } = props;
   const progress = R.clamp(0, 100, value || 0);
   const hasError = error === true || typeof error === "string";
-  const variant =
-    typeof value === "number" || hasError ? "determinate" : "indeterminate";
+  const variant = typeof value === "number" || hasError ? "determinate" : "indeterminate";
 
   const { t } = useTranslation();
 
   const content = (
-    <Box
-      sx={mergeSxProp(
-        { display: "flex", alignItems: "center", height: 22 },
-        sx,
-      )}
-    >
+    <Box sx={mergeSxProp({ display: "flex", alignItems: "center", height: 22 }, sx)}>
       <Box sx={{ width: "100%", mr: 1 }}>
-        <LinearProgress
-          value={progress}
-          variant={variant}
-          color={getColor(value, hasError)}
-        />
+        <LinearProgress value={progress} variant={variant} color={getColor(value, hasError)} />
       </Box>
       {variant === "determinate" && (
         <Box sx={{ minWidth: 35, display: "flex", gap: 1 }}>

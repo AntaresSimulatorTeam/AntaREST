@@ -12,19 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import {
-  BaseGridColumn,
-  EditableGridCell,
-  Item,
-} from "@glideapps/glide-data-grid";
-import { Aggregate, Column, Operation, TimeFrequency } from "./constants";
+import type { BaseGridColumn, EditableGridCell, Item } from "@glideapps/glide-data-grid";
+import type { Aggregate, Column, Operation, TimeFrequency } from "./constants";
 
 // Derived types
 export type ColumnType = (typeof Column)[keyof typeof Column];
 export type OperationType = (typeof Operation)[keyof typeof Operation];
 export type AggregateType = (typeof Aggregate)[keyof typeof Aggregate];
-export type TimeFrequencyType =
-  (typeof TimeFrequency)[keyof typeof TimeFrequency];
+export type TimeFrequencyType = (typeof TimeFrequency)[keyof typeof TimeFrequency];
 
 export type DateIncrementFunction = (date: Date, amount: number) => Date;
 export type FormatFunction = (date: Date, firstWeekSize: number) => string;

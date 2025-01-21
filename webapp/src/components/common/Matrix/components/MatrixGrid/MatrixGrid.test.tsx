@@ -14,7 +14,7 @@
 
 import { render } from "@testing-library/react";
 import Box from "@mui/material/Box";
-import MatrixGrid, { MatrixGridProps } from ".";
+import MatrixGrid, { type MatrixGridProps } from ".";
 import type { EnhancedGridColumn } from "../../shared/types";
 import { mockGetBoundingClientRect } from "../../../../../tests/mocks/mockGetBoundingClientRect";
 import { mockHTMLCanvasElement } from "../../../../../tests/mocks/mockHTMLCanvasElement";
@@ -72,22 +72,12 @@ const renderMatrixGrid = ({
 }: RenderMatrixOptions = {}) => {
   return render(
     <Box style={{ width, height }}>
-      <MatrixGrid
-        data={data}
-        rows={rows}
-        columns={columns}
-        width="100%"
-        height="100%"
-      />
+      <MatrixGrid data={data} rows={rows} columns={columns} width="100%" height="100%" />
     </Box>,
   );
 };
 
-const assertDimensions = (
-  element: HTMLElement,
-  expectedWidth: number,
-  expectedHeight: number,
-) => {
+const assertDimensions = (element: HTMLElement, expectedWidth: number, expectedHeight: number) => {
   const rect = element.getBoundingClientRect();
   expect(rect.width).toBe(expectedWidth);
   expect(rect.height).toBe(expectedHeight);
@@ -130,13 +120,7 @@ describe("MatrixGrid", () => {
 
       rerender(
         <Box style={{ width: "300px", height: "400px" }}>
-          <MatrixGrid
-            data={DATA}
-            rows={2}
-            columns={COLUMNS}
-            width="100%"
-            height="100%"
-          />
+          <MatrixGrid data={DATA} rows={2} columns={COLUMNS} width="100%" height="100%" />
         </Box>,
       );
 

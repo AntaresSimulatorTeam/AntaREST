@@ -13,7 +13,7 @@
  */
 
 import * as R from "ramda";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import client from "../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
@@ -84,11 +84,7 @@ export interface GeneralFormFields {
   thematicTrimming?: boolean;
 }
 
-export type SetDialogStateType =
-  | "thematicTrimming"
-  | "scenarioPlaylist"
-  | "scenarioBuilder"
-  | "";
+export type SetDialogStateType = "thematicTrimming" | "scenarioPlaylist" | "scenarioBuilder" | "";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -147,11 +143,7 @@ export function setGeneralFormFields(
   return client.put(makeRequestURL(studyId), values);
 }
 
-export const hasDayField = R.anyPass([
-  R.has("firstDay"),
-  R.has("lastDay"),
-  R.has("leapYear"),
-]);
+export const hasDayField = R.anyPass([R.has("firstDay"), R.has("lastDay"), R.has("leapYear")]);
 
 export const pickDayFields = (
   values: GeneralFormFields,

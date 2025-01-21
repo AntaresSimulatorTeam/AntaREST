@@ -16,14 +16,14 @@ import { Grid } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useState } from "react";
 import Form from "../../../../../../../common/Form";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import {
-  CorrelationFormFields,
   getCorrelationFormFields,
   setCorrelationFormFields,
+  type CorrelationFormFields,
 } from "./utils";
 import Fields from "./Fields";
 import HydroMatrixDialog from "../HydroMatrixDialog";

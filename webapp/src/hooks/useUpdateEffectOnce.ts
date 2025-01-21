@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useRef } from "react";
+import { useRef, type useEffect } from "react";
 import { useUpdateEffect } from "react-use";
 
 /**

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { HTMLInputTypeAttribute } from "react";
+import type { HTMLInputTypeAttribute } from "react";
 
 export interface InputObject {
   value: unknown;
@@ -33,18 +33,14 @@ export interface FakeBlurEventHandler {
   type: "blur";
 }
 
-export function createFakeChangeEventHandler(
-  target: Target,
-): FakeChangeEventHandler {
+export function createFakeChangeEventHandler(target: Target): FakeChangeEventHandler {
   return {
     target,
     type: "change",
   };
 }
 
-export function createFakeBlurEventHandler(
-  target: Target,
-): FakeBlurEventHandler {
+export function createFakeBlurEventHandler(target: Target): FakeBlurEventHandler {
   return {
     target,
     type: "blur",

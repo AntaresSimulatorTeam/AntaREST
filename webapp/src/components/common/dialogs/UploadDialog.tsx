@@ -14,36 +14,25 @@
 
 import { useEffect, useState } from "react";
 import { Box, Button, LinearProgress, Paper, Typography } from "@mui/material";
-import { FileRejection, useDropzone, type Accept } from "react-dropzone";
+import { useDropzone, type Accept, type FileRejection } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import BasicDialog, { BasicDialogProps } from "./BasicDialog";
+import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 import { blue, grey } from "@mui/material/colors";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
 import { enqueueSnackbar } from "notistack";
-import { PromiseAny } from "../../../utils/tsUtils";
+import type { PromiseAny } from "../../../utils/tsUtils";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
 interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
   dropzoneText?: string;
   accept?: Accept;
   onCancel: VoidFunction;
-  onImport: (
-    file: File,
-    setUploadProgress: (progress: number) => void,
-  ) => PromiseAny;
+  onImport: (file: File, setUploadProgress: (progress: number) => void) => PromiseAny;
 }
 
 function UploadDialog(props: UploadDialogProps) {
-  const {
-    dropzoneText,
-    accept,
-    onImport,
-    onCancel,
-    onClose,
-    title,
-    ...dialogProps
-  } = props;
+  const { dropzoneText, accept, onImport, onCancel, onClose, title, ...dialogProps } = props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [isUploading, setIsUploading] = useState(false);
@@ -129,11 +118,7 @@ function UploadDialog(props: UploadDialogProps) {
       <Box sx={{ pt: 1 }}>
         {isUploading ? (
           <LinearProgress
-            variant={
-              uploadProgress > 2 && uploadProgress < 98
-                ? "determinate"
-                : "indeterminate"
-            }
+            variant={uploadProgress > 2 && uploadProgress < 98 ? "determinate" : "indeterminate"}
             value={Math.max(0, Math.min(100, uploadProgress))}
           />
         ) : (

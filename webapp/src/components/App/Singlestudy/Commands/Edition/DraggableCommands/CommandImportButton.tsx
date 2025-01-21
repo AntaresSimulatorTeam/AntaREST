@@ -51,7 +51,7 @@ function CommandImportButton(props: PropTypes) {
           const json = JSON.parse(text as string);
           onImport(json);
         }
-      } catch (error) {
+      } catch {
         enqueueSnackbar(t("variants.error.jsonParsing"), {
           variant: "error",
         });
@@ -64,11 +64,7 @@ function CommandImportButton(props: PropTypes) {
 
   return (
     <Box display="flex" alignItems="center">
-      <ButtonBase
-        type="submit"
-        sx={{ width: "auto", height: "auto" }}
-        onClick={onButtonClick}
-      >
+      <ButtonBase type="submit" sx={{ width: "auto", height: "auto" }} onClick={onButtonClick}>
         <CloudUploadOutlinedIcon
           sx={{
             width: "24px",

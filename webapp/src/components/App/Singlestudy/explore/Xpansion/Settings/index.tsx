@@ -14,11 +14,11 @@
 
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { StudyMetadata } from "../../../../../../common/types";
-import { XpansionResourceType, XpansionSettings } from "../types";
+import type { StudyMetadata } from "../../../../../../common/types";
+import { XpansionResourceType, type XpansionSettings } from "../types";
 import {
   getXpansionSettings,
   getAllConstraints,
@@ -135,10 +135,7 @@ function Settings() {
   const getResourceContent = async (resourceType: string, filename: string) => {
     try {
       if (study) {
-        const content = await resourceContentFetcher(resourceType)(
-          study.id,
-          filename,
-        );
+        const content = await resourceContentFetcher(resourceType)(study.id, filename);
         setResourceViewDialog({
           filename,
           content,

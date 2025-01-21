@@ -12,40 +12,30 @@
  * This file is part of the Antares project.
  */
 
-import { AxiosRequestConfig } from "axios";
-import {
+import type { AxiosRequestConfig } from "axios";
+import type {
   XpansionCandidate,
   XpansionSettings,
 } from "../../components/App/Singlestudy/explore/Xpansion/types";
 import client from "./client";
-import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
-export const createXpansionConfiguration = async (
-  uuid: string,
-): Promise<void> => {
+export const createXpansionConfiguration = async (uuid: string): Promise<void> => {
   const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion`);
   return res.data;
 };
 
-export const deleteXpansionConfiguration = async (
-  uuid: string,
-): Promise<void> => {
+export const deleteXpansionConfiguration = async (uuid: string): Promise<void> => {
   const res = await client.delete(`/v1/studies/${uuid}/extensions/xpansion`);
   return res.data;
 };
 
-export const getXpansionSettings = async (
-  uuid: string,
-): Promise<XpansionSettings> => {
-  const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/settings`,
-  );
+export const getXpansionSettings = async (uuid: string): Promise<XpansionSettings> => {
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/settings`);
   return res.data;
 };
 
-export const xpansionConfigurationExist = async (
-  uuid: string,
-): Promise<boolean> => {
+export const xpansionConfigurationExist = async (uuid: string): Promise<boolean> => {
   try {
     await client.get(`/v1/studies/${uuid}/extensions/xpansion/settings`);
     return Promise.resolve(true);
@@ -63,41 +53,23 @@ export const updateXpansionSettings = async (
   uuid: string,
   settings: XpansionSettings,
 ): Promise<XpansionSettings> => {
-  const res = await client.put(
-    `/v1/studies/${uuid}/extensions/xpansion/settings`,
-    settings,
-  );
+  const res = await client.put(`/v1/studies/${uuid}/extensions/xpansion/settings`, settings);
   return res.data;
 };
 
-export const getCandidate = async (
-  uuid: string,
-  name: string,
-): Promise<XpansionCandidate> => {
-  const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/candidates/${name}`,
-  );
+export const getCandidate = async (uuid: string, name: string): Promise<XpansionCandidate> => {
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/candidates/${name}`);
   // Truc url encode
   return res.data;
 };
 
-export const getAllCandidates = async (
-  uuid: string,
-): Promise<XpansionCandidate[]> => {
-  const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/candidates`,
-  );
+export const getAllCandidates = async (uuid: string): Promise<XpansionCandidate[]> => {
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/candidates`);
   return res.data;
 };
 
-export const addCandidate = async (
-  uuid: string,
-  candidate: XpansionCandidate,
-): Promise<void> => {
-  const res = await client.post(
-    `/v1/studies/${uuid}/extensions/xpansion/candidates`,
-    candidate,
-  );
+export const addCandidate = async (uuid: string, candidate: XpansionCandidate): Promise<void> => {
+  const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion/candidates`, candidate);
   return res.data;
 };
 
@@ -106,21 +78,13 @@ export const updateCandidate = async (
   name: string,
   data: XpansionCandidate,
 ): Promise<XpansionCandidate> => {
-  const res = await client.put(
-    `/v1/studies/${uuid}/extensions/xpansion/candidates/${name}`,
-    data,
-  );
+  const res = await client.put(`/v1/studies/${uuid}/extensions/xpansion/candidates/${name}`, data);
   return res.data;
 };
 
-export const deleteCandidate = async (
-  uuid: string,
-  name: string,
-): Promise<void> => {
+export const deleteCandidate = async (uuid: string, name: string): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/extensions/xpansion/candidates/${encodeURIComponent(
-      name,
-    )}`,
+    `/v1/studies/${uuid}/extensions/xpansion/candidates/${encodeURIComponent(name)}`,
   );
   return res.data;
 };
@@ -151,32 +115,18 @@ export const uploadFile = async (
   return res.data;
 };
 
-export const addConstraints = async (
-  uuid: string,
-  file: File,
-): Promise<void> => {
-  await uploadFile(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints`,
-    file,
-  );
+export const addConstraints = async (uuid: string, file: File): Promise<void> => {
+  await uploadFile(`/v1/studies/${uuid}/extensions/xpansion/resources/constraints`, file);
 };
 
-export const deleteConstraints = async (
-  uuid: string,
-  filename: string,
-): Promise<void> => {
+export const deleteConstraints = async (uuid: string, filename: string): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints/${encodeURIComponent(
-      filename,
-    )}`,
+    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints/${encodeURIComponent(filename)}`,
   );
   return res.data;
 };
 
-export const getConstraint = async (
-  uuid: string,
-  filename: string,
-): Promise<string> => {
+export const getConstraint = async (uuid: string, filename: string): Promise<string> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/constraints/${filename}`,
   );
@@ -184,35 +134,22 @@ export const getConstraint = async (
 };
 
 export const getAllConstraints = async (uuid: string): Promise<string[]> => {
-  const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/constraints`,
-  );
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/resources/constraints`);
   return res.data;
 };
 
 export const addWeight = async (uuid: string, file: File): Promise<void> => {
-  await uploadFile(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/weights`,
-    file,
-  );
+  await uploadFile(`/v1/studies/${uuid}/extensions/xpansion/resources/weights`, file);
 };
 
-export const deleteWeight = async (
-  uuid: string,
-  filename: string,
-): Promise<void> => {
+export const deleteWeight = async (uuid: string, filename: string): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/weights/${encodeURIComponent(
-      filename,
-    )}`,
+    `/v1/studies/${uuid}/extensions/xpansion/resources/weights/${encodeURIComponent(filename)}`,
   );
   return res.data;
 };
 
-export const getWeight = async (
-  uuid: string,
-  filename: string,
-): Promise<string> => {
+export const getWeight = async (uuid: string, filename: string): Promise<string> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/weights/${filename}`,
   );
@@ -220,35 +157,22 @@ export const getWeight = async (
 };
 
 export const getAllWeights = async (uuid: string): Promise<string[]> => {
-  const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/weights`,
-  );
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/resources/weights`);
   return res.data;
 };
 
 export const addCapacity = async (uuid: string, file: File): Promise<void> => {
-  await uploadFile(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities`,
-    file,
-  );
+  await uploadFile(`/v1/studies/${uuid}/extensions/xpansion/resources/capacities`, file);
 };
 
-export const deleteCapacity = async (
-  uuid: string,
-  filename: string,
-): Promise<void> => {
+export const deleteCapacity = async (uuid: string, filename: string): Promise<void> => {
   const res = await client.delete(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities/${encodeURIComponent(
-      filename,
-    )}`,
+    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities/${encodeURIComponent(filename)}`,
   );
   return res.data;
 };
 
-export const getCapacity = async (
-  uuid: string,
-  filename: string,
-): Promise<MatrixDataDTO> => {
+export const getCapacity = async (uuid: string, filename: string): Promise<MatrixDataDTO> => {
   const res = await client.get(
     `/v1/studies/${uuid}/extensions/xpansion/resources/capacities/${filename}`,
   );
@@ -256,9 +180,7 @@ export const getCapacity = async (
 };
 
 export const getAllCapacities = async (uuid: string): Promise<string[]> => {
-  const res = await client.get(
-    `/v1/studies/${uuid}/extensions/xpansion/resources/capacities`,
-  );
+  const res = await client.get(`/v1/studies/${uuid}/extensions/xpansion/resources/capacities`);
   return res.data;
 };
 

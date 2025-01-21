@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { SxProps, Theme } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material";
 
 export function mergeSxProp(
   target: SxProps<Theme> = {},

@@ -12,15 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import {
-  BrowserRouter as Router,
-  Navigate,
-  Route,
-  Routes,
-  Outlet,
-} from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Route, Routes, Outlet } from "react-router-dom";
 import { CssBaseline, IconButton, ThemeProvider } from "@mui/material";
-import { SnackbarKey, SnackbarProvider, useSnackbar } from "notistack";
+import { SnackbarProvider, useSnackbar, type SnackbarKey } from "notistack";
 import maintheme from "../../theme";
 import MenuWrapper from "../wrappers/MenuWrapper";
 import Studies from "./Studies";
@@ -99,10 +93,7 @@ function App() {
                     <Route index element={<Studies />} />
                     <Route path=":studyId" element={<Outlet />}>
                       <Route index element={<SingleStudy />} />
-                      <Route
-                        path="explore"
-                        element={<SingleStudy isExplorer />}
-                      >
+                      <Route path="explore" element={<SingleStudy isExplorer />}>
                         <Route path="modelization" element={<Modelization />}>
                           <Route path="map" element={<Map />}>
                             <Route path="layers" element={<Layers />} />
@@ -112,50 +103,23 @@ function App() {
                             <Route path="properties" element={<Properties />} />
                             <Route path="load" element={<Load />} />
                             <Route path="thermal" element={<Thermal />} />
-                            <Route
-                              path="thermal/:clusterId"
-                              element={<ThermalForm />}
-                            />
+                            <Route path="thermal/:clusterId" element={<ThermalForm />} />
                             <Route path="storages" element={<Storages />} />
-                            <Route
-                              path="storages/:storageId"
-                              element={<StorageForm />}
-                            />
-                            <Route
-                              path="hydro"
-                              element={<Navigate to="management" replace />}
-                            />
+                            <Route path="storages/:storageId" element={<StorageForm />} />
+                            <Route path="hydro" element={<Navigate to="management" replace />} />
                             <Route path="hydro" element={<Hydro />}>
-                              <Route
-                                path="management"
-                                element={<ManagementOptions />}
-                              />
-                              <Route
-                                path="allocation"
-                                element={<Allocation />}
-                              />
-                              <Route
-                                path="correlation"
-                                element={<Correlation />}
-                              />
+                              <Route path="management" element={<ManagementOptions />} />
+                              <Route path="allocation" element={<Allocation />} />
+                              <Route path="correlation" element={<Correlation />} />
                               {HYDRO_ROUTES.map(
-                                ({
-                                  path,
-                                  type,
-                                  isSplitView,
-                                  splitConfig,
-                                  form,
-                                }) => {
+                                ({ path, type, isSplitView, splitConfig, form }) => {
                                   return isSplitView && splitConfig ? (
                                     <Route
                                       key={path}
                                       path={path}
                                       element={
                                         <SplitHydroMatrix
-                                          types={[
-                                            type,
-                                            splitConfig.partnerType,
-                                          ]}
+                                          types={[type, splitConfig.partnerType]}
                                           direction={splitConfig.direction}
                                           sizes={splitConfig.sizes}
                                           form={form}
@@ -175,34 +139,22 @@ function App() {
                             <Route path="wind" element={<Wind />} />
                             <Route path="solar" element={<Solar />} />
                             <Route path="renewables" element={<Renewables />} />
-                            <Route
-                              path="renewables/:clusterId"
-                              element={<RenewableForm />}
-                            />
+                            <Route path="renewables/:clusterId" element={<RenewableForm />} />
                             <Route path="reserves" element={<Reserve />} />
                             <Route path="miscGen" element={<MiscGen />} />
                             <Route index element={<Properties />} />
                             <Route path="*" element={<Properties />} />
                           </Route>
                           <Route path="links" element={<Links />} />
-                          <Route
-                            path="bindingcontraint"
-                            element={<BindingConstraints />}
-                          />
+                          <Route path="bindingcontraint" element={<BindingConstraints />} />
                           <Route index element={<Map />} />
                           <Route path="*" element={<Map />} />
                         </Route>
-                        <Route
-                          path="configuration"
-                          element={<Configuration />}
-                        />
+                        <Route path="configuration" element={<Configuration />} />
                         <Route path="tablemode" element={<TableModeList />} />
                         <Route path="xpansion" element={<Xpansion />}>
                           <Route path="candidates" element={<Candidates />} />
-                          <Route
-                            path="settings"
-                            element={<XpansionSettings />}
-                          />
+                          <Route path="settings" element={<XpansionSettings />} />
                           <Route path="constraints" element={<Constraints />} />
                           <Route path="weights" element={<Weights />} />
                           <Route path="capacities" element={<Capacities />} />

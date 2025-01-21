@@ -18,7 +18,7 @@ import * as R from "ramda";
 // Enums
 ////////////////////////////////////////////////////////////////
 
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import client from "../../../../../../services/api/client";
 
 enum UnfeasibleProblemBehavior {
@@ -54,10 +54,7 @@ enum TransmissionCapacities {
 export interface OptimizationFormFields {
   bindingConstraints: boolean;
   hurdleCosts: boolean;
-  transmissionCapacities:
-    | boolean
-    | LegacyTransmissionCapacities.Infinite
-    | TransmissionCapacities;
+  transmissionCapacities: boolean | LegacyTransmissionCapacities.Infinite | TransmissionCapacities;
   thermalClustersMinStablePower: boolean;
   thermalClustersMinUdTime: boolean;
   dayAheadReserve: boolean;
@@ -73,18 +70,10 @@ export interface OptimizationFormFields {
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS = Object.values(
-  UnfeasibleProblemBehavior,
-);
-export const SIMPLEX_OPTIMIZATION_RANGE_OPTIONS = Object.values(
-  SimplexOptimizationRange,
-);
-export const LEGACY_TRANSMISSION_CAPACITIES_OPTIONS = Object.values(
-  LegacyTransmissionCapacities,
-);
-export const TRANSMISSION_CAPACITIES_OPTIONS = Object.values(
-  TransmissionCapacities,
-);
+export const UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS = Object.values(UnfeasibleProblemBehavior);
+export const SIMPLEX_OPTIMIZATION_RANGE_OPTIONS = Object.values(SimplexOptimizationRange);
+export const LEGACY_TRANSMISSION_CAPACITIES_OPTIONS = Object.values(LegacyTransmissionCapacities);
+export const TRANSMISSION_CAPACITIES_OPTIONS = Object.values(TransmissionCapacities);
 
 ////////////////////////////////////////////////////////////////
 // Functions

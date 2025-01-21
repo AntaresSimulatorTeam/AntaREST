@@ -13,7 +13,7 @@
  */
 
 import { Box, styled, Typography } from "@mui/material";
-import { Theme } from "@glideapps/glide-data-grid";
+import type { Theme } from "@glideapps/glide-data-grid";
 
 export const MatrixContainer = styled(Box)(() => ({
   width: "100%",

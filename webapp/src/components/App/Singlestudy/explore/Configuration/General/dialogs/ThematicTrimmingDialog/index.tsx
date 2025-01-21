@@ -22,14 +22,11 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import * as R from "ramda";
-import * as RA from "ramda-adjunct";
+import type * as RA from "ramda-adjunct";
 import { useState } from "react";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import {
-  SubmitHandlerPlus,
-  UseFormReturnPlus,
-} from "../../../../../../../common/Form/types";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "../../../../../../../common/Form/types";
 import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
 import { isSearchMatching } from "../../../../../../../../utils/stringUtils";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
@@ -130,35 +127,18 @@ function ThematicTrimmingDialog(props: Props) {
               size="small"
             />
             <Stack direction="row" spacing={1}>
-              <Button
-                {...commonBtnProps}
-                onClick={handleUpdateConfig(api, R.T)}
-              >
-                {t(
-                  "study.configuration.general.thematicTrimming.action.enableAll",
-                )}
+              <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.T)}>
+                {t("study.configuration.general.thematicTrimming.action.enableAll")}
               </Button>
-              <Button
-                {...commonBtnProps}
-                onClick={handleUpdateConfig(api, R.F)}
-              >
-                {t(
-                  "study.configuration.general.thematicTrimming.action.disableAll",
-                )}
+              <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.F)}>
+                {t("study.configuration.general.thematicTrimming.action.disableAll")}
               </Button>
-              <Button
-                {...commonBtnProps}
-                onClick={handleUpdateConfig(api, R.not)}
-              >
-                {t(
-                  "study.configuration.general.thematicTrimming.action.reverse",
-                )}
+              <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.not)}>
+                {t("study.configuration.general.thematicTrimming.action.reverse")}
               </Button>
               <Divider orientation="vertical" flexItem />
               <Button {...commonBtnProps} onClick={() => setExpanded({})}>
-                {t(
-                  "study.configuration.general.thematicTrimming.action.collapseAll",
-                )}
+                {t("study.configuration.general.thematicTrimming.action.collapseAll")}
               </Button>
             </Stack>
           </Stack>
@@ -181,9 +161,7 @@ function ThematicTrimmingDialog(props: Props) {
                 disableGutters
               >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  {t(
-                    `study.configuration.general.thematicTrimming.group.${group}`,
-                  )}
+                  {t(`study.configuration.general.thematicTrimming.group.${group}`)}
                 </AccordionSummary>
                 <AccordionDetails>
                   <Grid container spacing={1} sx={{ overflow: "auto", p: 1 }}>

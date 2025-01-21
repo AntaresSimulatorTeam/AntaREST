@@ -13,10 +13,10 @@
  */
 
 import { Typography, Grid } from "@mui/material";
-import { FieldArrayWithId } from "react-hook-form";
+import type { FieldArrayWithId } from "react-hook-form";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../common/Form";
-import { AllocationFormFields } from "./utils";
+import type { AllocationFormFields } from "./utils";
 import { validateNumber } from "@/utils/validation/number";
 
 interface Props {

@@ -14,17 +14,17 @@
 
 import moment from "moment";
 import debug from "debug";
-import i18n, { TFunction } from "i18next";
+import i18n, { type TFunction } from "i18next";
 import * as R from "ramda";
 import {
-  StudyMetadataDTO,
-  StudyMetadata,
-  JWTGroup,
-  UserInfo,
   RoleType,
-  VariantTreeDTO,
-  VariantTree,
-  GenericInfo,
+  type StudyMetadataDTO,
+  type StudyMetadata,
+  type JWTGroup,
+  type UserInfo,
+  type VariantTreeDTO,
+  type VariantTree,
+  type GenericInfo,
 } from "../../common/types";
 import { getMaintenanceMode, getMessageInfo } from "../api/maintenance";
 import { getConfig } from "../config";
@@ -55,9 +55,7 @@ export const convertStudyDtoToMetadata = (
   tags: metadata.tags,
 });
 
-export const convertVariantTreeDTO = (
-  variantTree: VariantTreeDTO,
-): VariantTree => ({
+export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree => ({
   node: convertStudyDtoToMetadata(variantTree.node.id, variantTree.node),
   children: (variantTree.children || []).map((child: VariantTreeDTO) =>
     convertVariantTreeDTO(child),
@@ -75,17 +73,12 @@ export const isUserAdmin = (user?: UserInfo): boolean => {
 };
 
 export const isUserExpired = (user: UserInfo): boolean => {
-  return (
-    !user.expirationDate ||
-    moment.unix(user.expirationDate) < moment().add(5, "s")
-  );
+  return !user.expirationDate || moment.unix(user.expirationDate) < moment().add(5, "s");
 };
 
 export const isGroupAdmin = (user?: UserInfo): boolean => {
   if (user) {
-    const adminElm = user.groups.find(
-      (elm: JWTGroup) => elm.role === RoleType.ADMIN,
-    );
+    const adminElm = user.groups.find((elm: JWTGroup) => elm.role === RoleType.ADMIN);
     return !!adminElm;
   }
   return false;
@@ -126,8 +119,7 @@ export const hasAuthorization = (
       return (
         study.groups.findIndex((studyGroupElm) =>
           user.groups.find(
-            (userGroupElm) =>
-              studyGroupElm.id === userGroupElm.id && userGroupElm.role >= role,
+            (userGroupElm) => studyGroupElm.id === userGroupElm.id && userGroupElm.role >= role,
           ),
         ) >= 0
       );
@@ -147,10 +139,7 @@ export const convertUTCToLocalTime = (date: string): string =>
   moment.utc(date).local().format("YYYY-MM-DD HH:mm:ss");
 
 export const modificationDate = (date: string): moment.Duration =>
-  moment.duration(
-    moment(Date.now()).diff(moment(convertUTCToLocalTime(date))),
-    "milliseconds",
-  );
+  moment.duration(moment(Date.now()).diff(moment(convertUTCToLocalTime(date))), "milliseconds");
 
 export const exportText = (fileData: string, filename: string): void => {
   const blob = new Blob([fileData], { type: "application/txt" });
@@ -201,8 +190,7 @@ export const getInitMessageInfo = async (): Promise<string> => {
   return "";
 };
 
-export const isStringEmpty = (data: string): boolean =>
-  data.replace(/\s/g, "") === "";
+export const isStringEmpty = (data: string): boolean => data.replace(/\s/g, "") === "";
 
 export const buildModificationDate = (
   date: string,
@@ -210,24 +198,17 @@ export const buildModificationDate = (
   language = "en",
 ): string => {
   const duration = modificationDate(date);
-  return duration
-    .locale(language.substring(0, 2) === "fr" ? "fr" : "en")
-    .humanize();
+  return duration.locale(language.substring(0, 2) === "fr" ? "fr" : "en").humanize();
 };
 
 export const countAllChildrens = (tree: VariantTree): number => {
   if (tree.children.length > 0) {
-    return tree.children
-      .map((elm) => 1 + countAllChildrens(elm))
-      .reduce((acc, curr) => acc + curr);
+    return tree.children.map((elm) => 1 + countAllChildrens(elm)).reduce((acc, curr) => acc + curr);
   }
   return 0;
 };
 
-export const findNodeInTree = (
-  studyId: string,
-  tree: VariantTree,
-): VariantTree | undefined => {
+export const findNodeInTree = (studyId: string, tree: VariantTree): VariantTree | undefined => {
   if (studyId === tree.node.id) {
     return tree;
   }
@@ -250,10 +231,7 @@ export const createListFromTree = (tree: VariantTree): GenericInfo[] => {
   return res;
 };
 
-export const sortByProp = <T extends object>(
-  getProp: (obj: T) => string,
-  list: T[],
-): T[] => {
+export const sortByProp = <T extends object>(getProp: (obj: T) => string, list: T[]): T[] => {
   return R.sortBy(R.compose(R.toLower, getProp), list);
 };
 
@@ -273,11 +251,7 @@ export const transformNameToId = (name: string): string => {
   let duppl = false;
   let id = "";
 
-  for (
-    let char, index = 0, str = name, { length } = str;
-    index < length;
-    index += 1
-  ) {
+  for (let char, index = 0, str = name, { length } = str; index < length; index += 1) {
     char = str[index];
 
     if (

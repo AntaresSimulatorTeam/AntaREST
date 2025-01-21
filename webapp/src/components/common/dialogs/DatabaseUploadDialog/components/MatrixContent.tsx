@@ -15,14 +15,14 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Divider, Typography } from "@mui/material";
-import { MatrixInfoDTO, MatrixDTO } from "@/common/types";
+import type { MatrixInfoDTO, MatrixDTO } from "@/common/types";
 import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
 import ButtonBack from "@/components/common/ButtonBack";
 import { getMatrix } from "@/services/api/matrix";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
 import EmptyView from "@/components/common/page/EmptyView";
-import { GridOff } from "@mui/icons-material";
+import GridOffIcon from "@mui/icons-material/GridOff";
 
 interface MatrixContentProps {
   matrix: MatrixInfoDTO;
@@ -32,12 +32,9 @@ interface MatrixContentProps {
 function MatrixContent({ matrix, onBack }: MatrixContentProps) {
   const { t } = useTranslation();
 
-  const { data: matrixData } = usePromiseWithSnackbarError<MatrixDTO>(
-    () => getMatrix(matrix.id),
-    {
-      errorMessage: t("data.error.matrix"),
-    },
-  );
+  const { data: matrixData } = usePromiseWithSnackbarError<MatrixDTO>(() => getMatrix(matrix.id), {
+    errorMessage: t("data.error.matrix"),
+  });
 
   const matrixColumns = useMemo(
     () =>
@@ -66,7 +63,7 @@ function MatrixContent({ matrix, onBack }: MatrixContentProps) {
       </Box>
       <Divider sx={{ mt: 1, mb: 2 }} />
       {!matrixData.data[0]?.length ? (
-        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOff} />
+        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
       ) : (
         <MatrixGrid
           data={matrixData.data}

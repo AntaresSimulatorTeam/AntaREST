@@ -14,8 +14,8 @@
 
 import type { AxiosRequestConfig } from "axios";
 import type { StudyMetadata } from "../../../../common/types";
-import { O } from "ts-toolbelt";
-import { TableExportFormat } from "./constants";
+import type { O } from "ts-toolbelt";
+import type { TableExportFormat } from "./constants";
 
 // Available export formats for matrix tables
 export type TTableExportFormat = O.UnionOf<typeof TableExportFormat>;

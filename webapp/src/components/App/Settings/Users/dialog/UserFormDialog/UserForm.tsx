@@ -31,23 +31,19 @@ import {
   ListItemIcon,
   ListItemText,
   CircularProgress,
-  SelectChangeEvent,
+  type SelectChangeEvent,
 } from "@mui/material";
 import { Controller, useFieldArray } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
-import {
-  RESERVED_GROUP_NAMES,
-  RESERVED_USER_NAMES,
-  ROLE_TYPE_KEYS,
-} from "../../../utils";
-import { GroupDTO, RoleType } from "../../../../../../common/types";
+import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
+import { RoleType, type GroupDTO } from "../../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups, getUsers } from "../../../../../../services/api/user";
-import { UserFormDialogProps } from ".";
-import { UseFormReturnPlus } from "../../../../../common/Form/types";
+import type { UserFormDialogProps } from ".";
+import type { UseFormReturnPlus } from "../../../../../common/Form/types";
 import { validatePassword, validateString } from "@/utils/validation/string";
 
 interface Props extends UseFormReturnPlus {
@@ -91,9 +87,7 @@ function UserForm(props: Props) {
     if (!groups) {
       return [];
     }
-    return sortByName(
-      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)),
-    );
+    return sortByName(groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)));
   }, [groups]);
 
   ////////////////////////////////////////////////////////////////
@@ -148,8 +142,7 @@ function UserForm(props: Props) {
             {...commonTextFieldProps}
             {...register("confirmPassword", {
               validate: (v) =>
-                v === getValues("password") ||
-                t("settings.user.form.error.passwordMismatch"),
+                v === getValues("password") || t("settings.user.form.error.passwordMismatch"),
             })}
           />
         </>
@@ -159,8 +152,7 @@ function UserForm(props: Props) {
         sx={{
           p: 2,
           mt: 2,
-          backgroundImage:
-            "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
         <Typography>{t("global.permissions")}</Typography>
@@ -232,11 +224,7 @@ function UserForm(props: Props) {
                   disablePadding
                   dense
                 >
-                  <ListItemButton
-                    sx={{ cursor: "default" }}
-                    disableRipple
-                    disableGutters
-                  >
+                  <ListItemButton sx={{ cursor: "default" }} disableRipple disableGutters>
                     <ListItemIcon sx={{ minWidth: 0, p: "0 15px 0 5px" }}>
                       <GroupIcon />
                     </ListItemIcon>

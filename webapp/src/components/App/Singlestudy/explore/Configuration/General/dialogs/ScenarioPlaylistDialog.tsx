@@ -16,23 +16,20 @@ import { Button, ButtonGroup, Divider } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as R from "ramda";
-import * as RA from "ramda-adjunct";
+import type * as RA from "ramda-adjunct";
 import type { StudyMetadata } from "../../../../../../../common/types";
 import usePromise from "../../../../../../../hooks/usePromise";
 import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import DataGridForm, {
-  DataGridFormState,
   type DataGridFormApi,
+  type DataGridFormState,
 } from "@/components/common/DataGridForm";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import useConfirm from "@/hooks/useConfirm";
 import type { PlaylistData } from "@/services/api/studies/config/playlist/types";
-import {
-  getPlaylistData,
-  setPlaylistData,
-} from "@/services/api/studies/config/playlist";
+import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
 
 interface Props {
@@ -48,10 +45,7 @@ function ScenarioPlaylistDialog(props: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const closeAction = useConfirm();
-  const res = usePromise(
-    () => getPlaylistData({ studyId: study.id }),
-    [study.id],
-  );
+  const res = usePromise(() => getPlaylistData({ studyId: study.id }), [study.id]);
 
   const columns = useMemo(() => {
     return [
@@ -139,26 +133,18 @@ function ScenarioPlaylistDialog(props: Props) {
               sx={{ justifyContent: "flex-end", mb: 1 }}
             >
               <Button color="secondary" onClick={handleUpdateStatus(R.T)}>
-                {t(
-                  "study.configuration.general.mcScenarioPlaylist.action.enableAll",
-                )}
+                {t("study.configuration.general.mcScenarioPlaylist.action.enableAll")}
               </Button>
               <Button color="secondary" onClick={handleUpdateStatus(R.F)}>
-                {t(
-                  "study.configuration.general.mcScenarioPlaylist.action.disableAll",
-                )}
+                {t("study.configuration.general.mcScenarioPlaylist.action.disableAll")}
               </Button>
               <Divider orientation="vertical" flexItem />
               <Button color="secondary" onClick={handleUpdateStatus(R.not)}>
-                {t(
-                  "study.configuration.general.mcScenarioPlaylist.action.reverse",
-                )}
+                {t("study.configuration.general.mcScenarioPlaylist.action.reverse")}
               </Button>
               <Divider orientation="vertical" flexItem />
               <Button color="secondary" onClick={handleResetWeights}>
-                {t(
-                  "study.configuration.general.mcScenarioPlaylist.action.resetWeights",
-                )}
+                {t("study.configuration.general.mcScenarioPlaylist.action.resetWeights")}
               </Button>
             </ButtonGroup>
             <DataGridForm

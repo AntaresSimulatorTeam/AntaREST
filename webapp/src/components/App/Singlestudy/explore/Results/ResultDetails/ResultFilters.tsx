@@ -21,9 +21,9 @@ import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import { clamp, equals } from "ramda";
-import { useState, useMemo, useEffect, ChangeEvent } from "react";
-import { FilterListOff } from "@mui/icons-material";
+import * as R from "ramda";
+import { useState, useMemo, useEffect } from "react";
+import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
 
 interface ColumnHeader {
@@ -81,16 +81,15 @@ function ResultFilters({
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
 
-  const { localValue: localYear, handleChange: debouncedYearChange } =
-    useDebouncedField({
-      value: year,
-      onChange: setYear,
-      delay: 500,
-      transformValue: (value: number) => clamp(1, maxYear, value),
-    });
+  const { localValue: localYear, handleChange: debouncedYearChange } = useDebouncedField({
+    value: year,
+    onChange: setYear,
+    delay: 500,
+    transformValue: (value: number) => R.clamp(1, maxYear, value),
+  });
 
   const filtersApplied = useMemo(() => {
-    return !equals(filters, defaultFilters);
+    return !R.equals(filters, defaultFilters);
   }, [filters]);
 
   const parsedHeaders = useMemo(() => {
@@ -114,10 +113,7 @@ function ResultFilters({
       .filter((header) => {
         // Apply search filter
         if (filters.search) {
-          const matchesVariable = matchesSearchTerm(
-            header.variable,
-            filters.search,
-          );
+          const matchesVariable = matchesSearchTerm(header.variable, filters.search);
 
           const matchesUnit = matchesSearchTerm(header.unit, filters.search);
 
@@ -164,7 +160,7 @@ function ResultFilters({
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleYearChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleYearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
     debouncedYearChange(value);
   };
@@ -266,7 +262,7 @@ function ResultFilters({
           disabled={!filtersApplied}
           sx={{ ml: 1 }}
         >
-          <FilterListOff />
+          <FilterListOffIcon />
         </IconButton>
       ),
     },

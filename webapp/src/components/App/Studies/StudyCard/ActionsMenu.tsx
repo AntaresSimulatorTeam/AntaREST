@@ -14,13 +14,7 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { archiveStudy, copyStudy, unarchiveStudy } from "@/services/api/study";
-import {
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  type MenuProps,
-} from "@mui/material";
+import { ListItemIcon, ListItemText, Menu, MenuItem, type MenuProps } from "@mui/material";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -61,10 +55,7 @@ function ActionsMenu(props: Props) {
 
   const handleUnarchiveClick = () => {
     unarchiveStudy(study.id).catch((err) => {
-      enqueueErrorSnackbar(
-        t("studies.error.unarchive", { studyname: study.name }),
-        err,
-      );
+      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), err);
       logError("Failed to unarchive study", study, err);
     });
 
@@ -73,10 +64,7 @@ function ActionsMenu(props: Props) {
 
   const handleArchiveClick = () => {
     archiveStudy(study.id).catch((err) => {
-      enqueueErrorSnackbar(
-        t("studies.error.archive", { studyname: study.name }),
-        err,
-      );
+      enqueueErrorSnackbar(t("studies.error.archive", { studyname: study.name }), err);
       logError("Failed to archive study", study, err);
     });
 
@@ -84,11 +72,7 @@ function ActionsMenu(props: Props) {
   };
 
   const handleCopyClick = () => {
-    copyStudy(
-      study.id,
-      `${study.name} (${t("studies.copySuffix")})`,
-      false,
-    ).catch((err) => {
+    copyStudy(study.id, `${study.name} (${t("studies.copySuffix")})`, false).catch((err) => {
       enqueueErrorSnackbar(t("studies.error.copyStudy"), err);
       logError("Failed to copy study", study, err);
     });
@@ -139,36 +123,11 @@ function ActionsMenu(props: Props) {
   return (
     <Menu open={!!anchorEl} anchorEl={anchorEl} keepMounted onClose={onClose}>
       {[
-        menuItem(
-          !study.archived,
-          t("global.launch"),
-          BoltIcon,
-          handleLaunchClick,
-        ),
-        menuItem(
-          !study.archived,
-          t("study.properties"),
-          EditOutlinedIcon,
-          handlePropertiesClick,
-        ),
-        menuItem(
-          !study.archived,
-          t("global.copy"),
-          FileCopyOutlinedIcon,
-          handleCopyClick,
-        ),
-        menuItem(
-          study.managed,
-          t("studies.moveStudy"),
-          DriveFileMoveIcon,
-          handleMoveClick,
-        ),
-        menuItem(
-          !study.archived,
-          t("global.export"),
-          DownloadOutlinedIcon,
-          handleExportClick,
-        ),
+        menuItem(!study.archived, t("global.launch"), BoltIcon, handleLaunchClick),
+        menuItem(!study.archived, t("study.properties"), EditOutlinedIcon, handlePropertiesClick),
+        menuItem(!study.archived, t("global.copy"), FileCopyOutlinedIcon, handleCopyClick),
+        menuItem(study.managed, t("studies.moveStudy"), DriveFileMoveIcon, handleMoveClick),
+        menuItem(!study.archived, t("global.export"), DownloadOutlinedIcon, handleExportClick),
         menuItem(
           study.archived,
           t("global.unarchive"),

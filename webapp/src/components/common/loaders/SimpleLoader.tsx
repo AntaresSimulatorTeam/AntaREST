@@ -43,12 +43,7 @@ function SimpleLoader(props: PropTypes) {
         height="100%"
         zIndex={999}
       >
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-        >
+        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center">
           {progress === undefined ? (
             <CircularProgress sx={{ width: "98px", height: "98px" }} />
           ) : (

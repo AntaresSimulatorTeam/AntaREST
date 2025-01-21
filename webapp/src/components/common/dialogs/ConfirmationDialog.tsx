@@ -14,10 +14,9 @@
 
 import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import BasicDialog, { BasicDialogProps } from "./BasicDialog";
+import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 
-export interface ConfirmationDialogProps
-  extends Omit<BasicDialogProps, "actions"> {
+export interface ConfirmationDialogProps extends Omit<BasicDialogProps, "actions"> {
   cancelButtonText?: string;
   confirmButtonText?: string;
   onConfirm: VoidFunction;
@@ -25,14 +24,8 @@ export interface ConfirmationDialogProps
 }
 
 function ConfirmationDialog(props: ConfirmationDialogProps) {
-  const {
-    cancelButtonText,
-    confirmButtonText,
-    onConfirm,
-    onCancel,
-    onClose,
-    ...basicDialogProps
-  } = props;
+  const { cancelButtonText, confirmButtonText, onConfirm, onCancel, onClose, ...basicDialogProps } =
+    props;
 
   const { t } = useTranslation();
 
@@ -40,9 +33,7 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClose = (
-    ...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>
-  ) => {
+  const handleClose = (...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>) => {
     onCancel();
     onClose?.(...args);
   };
@@ -58,9 +49,7 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
       {...basicDialogProps}
       actions={
         <>
-          <Button onClick={onCancel}>
-            {cancelButtonText || t("button.no")}
-          </Button>
+          <Button onClick={onCancel}>{cancelButtonText || t("button.no")}</Button>
           <Button onClick={onConfirm} variant="contained">
             {confirmButtonText || t("button.yes")}
           </Button>
