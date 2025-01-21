@@ -282,7 +282,7 @@ class CreateLink(AbstractLinkCommand):
 
         study_id = study_data.config.study_id
         with db():
-            link_info = db.session.query(NbYearsTsGeneration).filter_by(study_id=study_id).first()
+            link_info = db.session.query(NbYearsTsGeneration).filter_by(id=study_id).first()
             if link_info:
                 # The DB is up-to-date, we have to fill it.
                 # If it was empty, we shouldn't fill it here.
