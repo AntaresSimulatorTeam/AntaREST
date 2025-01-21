@@ -104,12 +104,8 @@ class RemoveLink(ICommand):
             A tuple containing the command output and a dictionary of extra data.
             On success, the dictionary contains the source and target areas.
         """
-        output, data = self._check_link_exists(study_cfg)
-
-        if output.status:
-            del study_cfg.areas[self.area1].links[self.area2]
-
-        return output, data
+        del study_cfg.areas[self.area1].links[self.area2]
+        return CommandOutput(status=True, message=f"Link between '{self.area1}' and '{self.area2}' removed"), {}
 
     def _remove_link_from_scenario_builder(self, study_data: FileStudy) -> None:
         """
@@ -140,18 +136,19 @@ class RemoveLink(ICommand):
             The status of the operation and a message.
         """
 
-        output = self._apply_config(study_data.config)[0]
+        output = self._check_link_exists(study_data.config)[0]
+        if not output.status:
+            return output
 
-        if output.status:
-            if study_data.config.version < STUDY_VERSION_8_2:
-                study_data.tree.delete(["input", "links", self.area1, self.area2])
-            else:
-                study_data.tree.delete(["input", "links", self.area1, f"{self.area2}_parameters"])
-                study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_direct"])
-                study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_indirect"])
-            study_data.tree.delete(["input", "links", self.area1, "properties", self.area2])
+        if study_data.config.version < STUDY_VERSION_8_2:
+            study_data.tree.delete(["input", "links", self.area1, self.area2])
+        else:
+            study_data.tree.delete(["input", "links", self.area1, f"{self.area2}_parameters"])
+            study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_direct"])
+            study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_indirect"])
+        study_data.tree.delete(["input", "links", self.area1, "properties", self.area2])
 
-            self._remove_link_from_scenario_builder(study_data)
+        self._remove_link_from_scenario_builder(study_data)
 
         with db():
             removed_link = (
@@ -163,7 +160,7 @@ class RemoveLink(ICommand):
                 db.session.delete(removed_link)
                 db.session.commit()
 
-        return output
+        return self._apply_config(study_data.config)[0]
 
     @override
     def to_dto(self) -> CommandDTO:
