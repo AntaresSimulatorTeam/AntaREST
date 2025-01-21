@@ -13,7 +13,9 @@ import typing as t
 
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import LinkInternal
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.business.model.link_model import LinkInternal, LinkTsGeneration
+from antarest.study.model import LinksParametersTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -50,14 +52,37 @@ class UpdateLink(AbstractLinkCommand):
 
         properties = study_data.tree.get(["input", "links", self.area1, "properties", self.area2])
 
-        new_properties = LinkInternal.model_validate(self.parameters).model_dump(include=self.parameters, by_alias=True)
+        internal_link = LinkInternal.model_validate(self.parameters)
 
-        properties.update(new_properties)
-
+        # Updates ini properties
+        new_ini_properties = internal_link.model_dump(include=self.parameters, by_alias=True)
+        properties.update(new_ini_properties)
         study_data.tree.save(properties, ["input", "links", self.area1, "properties", self.area2])
 
         output, _ = self._apply_config(study_data.config)
 
+        # Updates DB properties
+        includes = set(LinkTsGeneration.model_fields.keys())
+        db_properties = LinkTsGeneration.model_validate(internal_link.model_dump(mode="json", include=includes))
+
+        with db():
+            study_id = study_data.config.study_id
+            new_parameters = LinksParametersTsGeneration(
+                study_id=study_id,
+                area_from=self.area1,
+                area_to=self.area2,
+                unit_count=db_properties.unit_count,
+                nominal_capacity=db_properties.nominal_capacity,
+                law_planned=db_properties.law_planned,
+                law_forced=db_properties.law_forced,
+                volatility_planned=db_properties.volatility_planned,
+                volatility_forced=db_properties.volatility_forced,
+                force_no_generation=db_properties.force_no_generation,
+            )
+            db.session.merge(new_parameters)
+            db.session.commit()
+
+        # Updates matrices
         if self.series:
             self.save_series(self.area1, self.area2, study_data, version)
 
