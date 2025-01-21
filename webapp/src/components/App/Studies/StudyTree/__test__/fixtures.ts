@@ -312,11 +312,6 @@ export const FIXTURES_BUILD_STUDY_TREE = {
           path: "/workspace2",
           children: [
             {
-              name: "default",
-              path: "/default",
-              children: [],
-            },
-            {
               name: "archives",
               path: "/workspace2/archives",
               children: [
