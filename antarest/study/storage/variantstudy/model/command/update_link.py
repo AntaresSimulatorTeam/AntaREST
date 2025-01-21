@@ -14,8 +14,8 @@ import typing as t
 from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.business.model.link_model import LinkInternal, LinkTsGeneration
-from antarest.study.model import LinksParametersTsGeneration
+from antarest.study.business.model.link_model import Area, LinkInternal, LinkTsGeneration
+from antarest.study.model import STUDY_VERSION_8_2, LinksParametersTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -55,7 +55,10 @@ class UpdateLink(AbstractLinkCommand):
         internal_link = LinkInternal.model_validate(self.parameters)
 
         # Updates ini properties
-        new_ini_properties = internal_link.model_dump(include=self.parameters, by_alias=True)
+        to_exclude = set(Area.model_fields.keys() & LinkTsGeneration.model_fields.keys())
+        if version < STUDY_VERSION_8_2:
+            to_exclude.update("filter-synthesis", "filter-year-by-year")
+        new_ini_properties = internal_link.model_dump(by_alias=True, exclude=to_exclude)
         properties.update(new_ini_properties)
         study_data.tree.save(properties, ["input", "links", self.area1, "properties", self.area2])
 
