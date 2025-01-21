@@ -194,7 +194,7 @@ class LinkDTO(Area, LinkBaseDTO):
         if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
-        data = self.model_dump()
+        data = self.model_dump(mode="json")
 
         if version < STUDY_VERSION_8_2:
             data["filter_synthesis"] = None
@@ -222,6 +222,15 @@ class LinkInternal(AntaresBaseModel):
     link_style: LinkStyle = LinkStyle.PLAIN
     filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
     filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+
+    # Ts-generation part
+    unit_count: int = 1
+    nominal_capacity: float = 0
+    law_planned: LawOption = LawOption.UNIFORM
+    law_forced: LawOption = LawOption.UNIFORM
+    volatility_planned: float = Field(default=0.0, ge=0, le=1)
+    volatility_forced: float = Field(default=0.0, ge=0, le=1)
+    force_no_generation: bool = True
 
     def to_dto(self) -> LinkDTO:
         data = self.model_dump()
