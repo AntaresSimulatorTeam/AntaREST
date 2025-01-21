@@ -16,10 +16,11 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.study.business.link_management import LinkInternal
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, RawStudy
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -57,9 +58,13 @@ class TestCreateLink:
                 study_version=STUDY_VERSION_8_8,
             )
 
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext, db_session: Session):
         study_version = empty_study.config.version
         study_path = empty_study.config.study_path
+        raw_study = RawStudy(id=empty_study.config.study_id, version=str(study_version), path=str(study_path))
+        db_session.add(raw_study)
+        db_session.commit()
+
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
 
