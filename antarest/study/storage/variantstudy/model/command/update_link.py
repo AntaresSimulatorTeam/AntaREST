@@ -85,6 +85,7 @@ class UpdateLink(AbstractLinkCommand):
                     new_parameters = LinkTsGeneration.model_validate(old_props).to_db_model(
                         study_id, self.area1, self.area2
                     )
+                    # We should keep the same matrices
                     new_parameters.modulation = old_parameters.modulation
                     new_parameters.project = old_parameters.prepro
                 db.session.merge(new_parameters)
