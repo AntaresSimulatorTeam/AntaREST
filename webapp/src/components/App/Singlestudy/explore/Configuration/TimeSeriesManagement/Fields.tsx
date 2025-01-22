@@ -16,16 +16,17 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from
 import capitalize from "lodash/capitalize";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../common/Form";
-import type { TSConfigDTO, TSType } from "@/services/api/studies/timeseries/types.ts";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useTranslation } from "react-i18next";
 import { validateNumber } from "@/utils/validation/number";
+import type { TSConfigValues } from "./utils";
+import { TSType } from "@/services/api/studies/timeseries/constants";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
 function Fields() {
-  const { control, watch } = useFormContextPlus<TSConfigDTO>();
-  const isReadyMade = watch("thermal.stochasticTsStatus") === false;
+  const { control, watch } = useFormContextPlus<TSConfigValues>();
+  const formValues = watch();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -59,29 +60,31 @@ function Fields() {
             },
           }}
         >
-          <TableRow>
-            <TableCell sx={{ fontWeight: "bold" }}>{capitalize(TSType.Thermal)}</TableCell>
-            <TableCell align="center">
-              <BooleanFE
-                name={"thermal.stochasticTsStatus"}
-                control={control}
-                trueText={t("study.configuration.tsManagement.status.toBeGenerated")}
-                falseText={t("study.configuration.tsManagement.status.readyMade")}
-                variant="outlined"
-                size="small"
-              />
-            </TableCell>
-            <TableCell align="center">
-              <NumberFE
-                name={"thermal.number"}
-                control={control}
-                size="small"
-                disabled={isReadyMade}
-                rules={{ validate: validateNumber({ min: 1 }) }}
-                sx={{ width: 110 }}
-              />
-            </TableCell>
-          </TableRow>
+          {Object.values(TSType).map((type) => (
+            <TableRow key={type}>
+              <TableCell sx={{ fontWeight: "bold" }}>{capitalize(type)}</TableCell>
+              <TableCell align="center">
+                <BooleanFE
+                  name={`${type}.stochasticTsStatus` as const}
+                  control={control}
+                  trueText={t("study.configuration.tsManagement.status.toBeGenerated")}
+                  falseText={t("study.configuration.tsManagement.status.readyMade")}
+                  variant="outlined"
+                  size="small"
+                />
+              </TableCell>
+              <TableCell align="center">
+                <NumberFE
+                  name={`${type}.number` as const}
+                  control={control}
+                  size="small"
+                  disabled={formValues[type].stochasticTsStatus === false}
+                  rules={{ validate: validateNumber({ min: 1 }) }}
+                  sx={{ width: 110 }}
+                />
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </TableContainer>

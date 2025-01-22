@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata } from "../../../../common/types.ts";
+import type { StudyMetadata } from "../../../../common/types.ts";
 import client from "../../client.ts";
-import type {SetTimeSeriesConfigParams} from "@/services/api/studies/timeseries/types.ts";
+import type { SetTimeSeriesConfigParams } from "@/services/api/studies/timeseries/types.ts";
 
 /**
  * Launches time series generation task for the specified study.
@@ -28,9 +28,6 @@ export async function generateTimeSeries(params: { studyId: StudyMetadata["id"] 
   return data;
 }
 
-
-export async function setTimeSeriesConfig(
-    {studyId, values}: SetTimeSeriesConfigParams
-) {
+export async function setTimeSeriesConfig<T>({ studyId, values }: SetTimeSeriesConfigParams<T>) {
   await client.put(`v1/studies/${studyId}/timeseries/config`, values);
 }

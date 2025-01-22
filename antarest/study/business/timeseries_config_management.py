@@ -18,13 +18,13 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
-class TSConfigFields(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
+class TSTypeConfig(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
     number: int
 
 
 @all_optional_model
 class TSConfigDTO(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
-    thermal: TSConfigFields
+    thermal: TSTypeConfig
 
 
 class TimeSeriesConfigManager:
@@ -40,7 +40,7 @@ class TimeSeriesConfigManager:
         url.extend(["general", "nbtimeseriesthermal"])
         nb_ts_gen_thermal = file_study.tree.get(url)
 
-        args = {"thermal": TSConfigFields(number=nb_ts_gen_thermal)}
+        args = {"thermal": TSTypeConfig(number=nb_ts_gen_thermal)}
         return TSConfigDTO.model_validate(args)
 
     def set_values(self, study: Study, field_values: TSConfigDTO) -> None:

@@ -21,22 +21,14 @@ import { useTranslation } from "react-i18next";
 import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
-import {setTimeSeriesConfig, generateTimeSeries} from "@/services/api/studies/timeseries";
-import type {TSConfigDTO} from "@/services/api/studies/timeseries/types.ts";
-import {DeepPartial} from "react-hook-form";
-
-export const DEFAULT_VALUES: DeepPartial<TSConfigDTO> = {
-  thermal: {
-    number: 1,
-  },
-};
-
+import { setTimeSeriesConfig, generateTimeSeries } from "@/services/api/studies/timeseries";
+import { DEFAULT_VALUES, toConfigDTO, type TSConfigValues } from "./utils";
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const [launchTaskInProgress, setLaunchTaskInProgress] = useState(false);
-  const apiRef = useRef<UseFormReturnPlus<TSConfigDTO>>(null);
+  const apiRef = useRef<UseFormReturnPlus<TSConfigValues>>(null);
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,
@@ -48,8 +40,8 @@ function TimeSeriesManagement() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<TSConfigDTO>) => {
-    return setTimeSeriesConfig({studyId: study.id, values: data.values});
+  const handleSubmit = (data: SubmitHandlerPlus<TSConfigValues>) => {
+    return setTimeSeriesConfig({ studyId: study.id, values: toConfigDTO(data.values) });
   };
 
   const handleSubmitSuccessful = async () => {

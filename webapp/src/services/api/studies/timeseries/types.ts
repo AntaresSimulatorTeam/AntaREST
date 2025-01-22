@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -11,23 +11,22 @@
  *
  * This file is part of the Antares project.
  */
-import {StudyMetadata} from "@/common/types.ts";
-import {DeepPartial} from "react-hook-form";
 
-export enum TSType {
-  Thermal = "thermal"
-}
+import type { StudyMetadata } from "@/common/types.ts";
+import type { DeepPartial } from "react-hook-form";
+import type { F, O } from "ts-toolbelt";
+import type { TSType } from "./constants";
 
-interface TSConfigFields {
+export type TTSType = O.UnionOf<typeof TSType>;
+
+export interface TSTypeConfig {
   number: number;
 }
 
-export interface TSConfigDTO
-  {
-  [TSType.Thermal]: TSConfigFields;
-}
+export type TSConfigDTO = Record<TTSType, TSTypeConfig>;
 
-export interface SetTimeSeriesConfigParams {
-    studyId: StudyMetadata["id"],
-    values: DeepPartial<TSConfigDTO>,
+export interface SetTimeSeriesConfigParams<T> {
+  studyId: StudyMetadata["id"];
+  // Extra fields not allowed by the API
+  values: DeepPartial<F.Exact<T, TSConfigDTO>>;
 }
