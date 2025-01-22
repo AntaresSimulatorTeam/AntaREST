@@ -23,9 +23,10 @@ from antarest.study.model import (
     STUDY_VERSION_9_1,
     STUDY_VERSION_9_2,
 )
+from antarest.study.storage.rawstudy.ini_reader import ReaderOptions, ini_reader_options
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import LOWER_CASE_MATCHER, IniFileNode
 
 _TSNumber: te.TypeAlias = int
 _HydroLevel: te.TypeAlias = float
@@ -84,9 +85,7 @@ class ScenarioBuilder(IniFileNode):
             self._populate_hydro_generation_power_rules(rules)
 
         super().__init__(
-            context=context,
-            config=config,
-            types={"Default Ruleset": rules},
+            context=context, config=config, types={"Default Ruleset": rules}, section_matcher=LOWER_CASE_MATCHER
         )
 
     def _populate_load_hydro_wind_solar_rules(self, rules: _Rules) -> None:
@@ -126,14 +125,14 @@ class ScenarioBuilder(IniFileNode):
             rules[f"hgp,{area_id},0"] = _TSNumber
 
     @override
-    def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
+    def _build_options(self, url: t.List[str]) -> ReaderOptions:
         # If the URL contains 2 elements, we can filter the options based on the generator type.
         if len(url) == 2:
             section, symbol = url
             if re.fullmatch(r"\w+", symbol):
                 # Mutate the URL to get all values matching the generator type.
                 url[:] = [section]
-                return {"section": section, "option_regex": f"{symbol},.*"}
+                return ini_reader_options(section=section, option_regex=f"{symbol},.*")
 
         # If the URL contains 3 elements, we can filter on the generator type and area (or group for BC).
         elif len(url) == 3:
@@ -142,7 +141,7 @@ class ScenarioBuilder(IniFileNode):
                 # Mutate the URL to get all values matching the generator type.
                 url[:] = [section]
                 area_re = re.escape(area)
-                return {"section": section, "option_regex": f"{symbol},{area_re},.*"}
+                return ini_reader_options(section=section, option_regex=f"{symbol},{area_re},.*")
 
         # If the URL contains 4 elements, we can filter on the generator type, area, and cluster.
         elif len(url) == 4:
@@ -153,10 +152,10 @@ class ScenarioBuilder(IniFileNode):
                 if symbol in ("t", "r"):
                     area_re = re.escape(area)
                     cluster_re = re.escape(cluster)
-                    return {"section": section, "option_regex": rf"{symbol},{area_re},\d+,{cluster_re}"}
+                    return ini_reader_options(section=section, option_regex=rf"{symbol},{area_re},\d+,{cluster_re}")
                 elif symbol == "ntc":
                     area1_re = re.escape(area)
                     area2_re = re.escape(cluster)
-                    return {"section": section, "option_regex": f"{symbol},{area1_re},{area2_re},.*"}
+                    return ini_reader_options(section=section, option_regex=f"{symbol},{area1_re},{area2_re},.*")
 
-        return super()._get_filtering_kwargs(url)
+        return super()._build_options(url)

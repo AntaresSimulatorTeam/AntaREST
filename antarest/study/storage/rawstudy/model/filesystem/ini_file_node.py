@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import contextlib
+import dataclasses
 import functools
 import io
 import logging
@@ -18,7 +19,9 @@ import os
 import tempfile
 import typing as t
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable, List, Optional, Tuple
 
 import py7zr
 import pydantic_core
@@ -28,11 +31,46 @@ from typing_extensions import override
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
 from antarest.core.serialization import from_json
-from antarest.study.storage.rawstudy.ini_reader import IniReader, IReader
+from antarest.study.storage.rawstudy.ini_reader import (
+    IniReader,
+    IReader,
+    OptionKey,
+    ReaderOptions,
+    ValueParser,
+    ini_reader_options,
+)
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+
+SectionMatcher = Callable[[str], str]
+
+
+def _lower_case(input: str) -> str:
+    return input.lower()
+
+
+LOWER_CASE_MATCHER: SectionMatcher = _lower_case
+
+
+@dataclass(frozen=True)
+class IniLocation:
+    """
+    Defines a location in INI file data.
+    """
+
+    section: Optional[str] = None
+    key: Optional[str] = None
+
+
+def url_to_location(url: List[str]) -> IniLocation:
+    if len(url) == 2:
+        return IniLocation(section=url[0], key=url[1])
+    elif len(url) == 1:
+        return IniLocation(section=url[0])
+    else:
+        return IniLocation()
 
 
 class IniFileNodeWarning(UserWarning):
@@ -74,6 +112,18 @@ def log_warning(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
 
 
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
+    """
+    Common parent class for all INI files.
+
+    Some behaviour can be overriden for specific files, see args.
+
+    Args:
+        value_parsers: Defines how specific options should be parsed,
+            for example to specify it should be parsed as str, or lower case ...
+        section_matcher: Defines how section names are matched when
+            retrieving and updating data (for example matching in lower case)
+    """
+
     def __init__(
         self,
         context: ContextServer,
@@ -81,6 +131,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         types: t.Optional[t.Dict[str, t.Any]] = None,
         reader: t.Optional[IReader] = None,
         writer: t.Optional[IniWriter] = None,
+        section_matcher: Optional[SectionMatcher] = None,
     ):
         super().__init__(config)
         self.context = context
@@ -88,6 +139,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.types = types or {}
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
+        self.section_matcher = section_matcher
 
     def _get(
         self,
@@ -106,49 +158,49 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             return {}
 
         url = url or []
-        kwargs = self._get_filtering_kwargs(url)
+        options = self._build_options(url)
 
         if self.config.archive_path:
             inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
             if self.config.archive_path.suffix == ".zip":
                 with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
                     with io.TextIOWrapper(zipped_folder.open(inside_archive_path)) as f:
-                        data = self.reader.read(f, **kwargs)
+                        data = self.reader.read(f, options)
             elif self.config.archive_path.suffix == ".7z":
                 with py7zr.SevenZipFile(self.config.archive_path, mode="r") as zipped_folder:
                     with io.TextIOWrapper(zipped_folder.read([inside_archive_path])[inside_archive_path]) as f:
-                        data = self.reader.read(f, **kwargs)
+                        data = self.reader.read(f, options)
             else:
                 raise ShouldNotHappenException(f"Unsupported archived study format: {self.config.archive_path.suffix}")
         else:
-            data = self.reader.read(self.path, **kwargs)
+            data = self.reader.read(self.path, options)
 
-        data = self._handle_urls(data, depth, url)
+        data = self._filter_for_url(data, depth, url)
         return t.cast(SUB_JSON, data)
 
-    @staticmethod
-    def _handle_urls(data: t.Dict[str, t.Any], depth: int, url: t.List[str]) -> t.Dict[str, t.Any]:
-        if len(url) == 2:
-            if url[0] in data and url[1] in data[url[0]]:
-                data = data[url[0]][url[1]]
-            else:
-                # lower keys to find a match
-                data = {k.lower(): v for k, v in {k.lower(): v for k, v in data.items()}[url[0].lower()].items()}[
-                    url[1].lower()
-                ]
-        elif len(url) == 1:
-            if url[0] in data:
-                data = data[url[0]]
-            else:
-                # lower keys to find a match
-                data = {k.lower(): v for k, v in data.items()}[url[0].lower()]
-
+    def _find_matching_section(self, data: JSON, section: str) -> str:
+        if self.section_matcher:
+            original_keys = {self.section_matcher(k): k for k in data.keys()}
+            matcher = self.section_matcher(section)
+            return original_keys.get(matcher, None)
         else:
-            data = {k: {} for k in data} if depth == 1 else data
-        return data
+            return section
+
+    def _filter_for_url(self, data: JSON, depth: int, url: t.List[str]) -> JSON:
+        location = url_to_location(url)
+        if not location.section and not location.key:
+            if depth == 1:  # truncate to only keys
+                data = dict((k, {}) for k in data.keys())
+            return data
+        section = self._find_matching_section(data, location.section)
+        section_data = data[section]
+        if location.key:
+            return section_data[location.key]
+        else:
+            return section_data
 
     # noinspection PyMethodMayBeStatic
-    def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
+    def _build_options(self, url: t.List[str]) -> ReaderOptions:
         """
         Extracts the filtering arguments from the URL components.
 
@@ -163,11 +215,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         if len(url) > 2:
             raise ValueError(f"Invalid URL: {url!r}")
         elif len(url) == 2:
-            return {"section": url[0], "option": url[1]}
+            return ini_reader_options(section=url[0], option=url[1])
         elif len(url) == 1:
-            return {"section": url[0]}
+            return ini_reader_options(section=url[0])
         else:
-            return {}
+            return ini_reader_options()
 
     @override
     def get(
@@ -200,20 +252,27 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            info = self.reader.read(self.path) if self.path.exists() else {}
-            obj = data
+            existing_data = self.reader.read(self.path) if self.path.exists() else {}
+            new_data = data
             if isinstance(data, str):
                 with contextlib.suppress(pydantic_core.ValidationError):
-                    obj = from_json(data)
-            if len(url) == 2:
-                if url[0] not in info:
-                    info[url[0]] = {}
-                info[url[0]][url[1]] = obj
-            elif len(url) == 1:
-                info[url[0]] = obj
+                    new_data = from_json(data)
+
+            # Depending on the specified location, the behaviour differs
+            loc = url_to_location(url)
+            if loc.section and loc.key:
+                # Only update the specified option
+                section = self._find_matching_section(existing_data, loc.section) or loc.section
+                existing_data.setdefault(section, {})[loc.key] = new_data
+            elif loc.section:
+                # Updates the whole section (replaces the existing data)
+                section = self._find_matching_section(existing_data, loc.section) or loc.section
+                existing_data[section] = new_data
             else:
-                info = t.cast(JSON, obj)
-            self.writer.write(info, self.path)
+                # Replace the whole data
+                existing_data = new_data
+
+            self.writer.write(existing_data, self.path)
 
     @log_warning
     @override
@@ -325,69 +384,3 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 if raising:
                     raise ValueError(msg)
                 errors.append(msg)
-
-    def _get_content_with_specific_parsing(
-        self,
-        url: t.Optional[t.List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        parsing_methods_for_values: t.Optional[dict[str, t.Callable[[t.Any], str]]] = None,
-        parsing_method_for_keys: t.Optional[t.Callable[[t.Any], str]] = None,
-    ) -> SUB_JSON:
-        if not parsing_method_for_keys and not parsing_methods_for_values:  # We can use the classic method
-            return self.get(url, depth, expanded)
-
-        output = self._get(url, depth, expanded, get_node=False)
-        assert not isinstance(output, INode)
-        if depth <= -1 and expanded:
-            return output
-
-        if not url:
-            assert isinstance(output, dict)
-            for key in list(output.keys()):
-                new_key = key
-                if parsing_method_for_keys:
-                    new_key = parsing_method_for_keys(key)
-                    output[new_key] = output.pop(key)
-                if parsing_methods_for_values:
-                    for parsed_key, method in parsing_methods_for_values.items():
-                        if parsed_key in output[new_key]:
-                            output[new_key][parsed_key] = method(output[new_key][parsed_key])
-
-        elif len(url) == 1:
-            assert isinstance(output, dict)
-            if parsing_methods_for_values:
-                for parsed_key, method in parsing_methods_for_values.items():
-                    if parsed_key in output:
-                        output[parsed_key] = method(output[parsed_key])
-
-        elif len(url) == 2:
-            if parsing_methods_for_values and url[1] in parsing_methods_for_values:
-                output = parsing_methods_for_values[url[1]](output)
-
-        return output
-
-    def _save_content_with_lowered_keys(self, data: SUB_JSON, url: t.List[str]) -> None:
-        self._assert_not_in_zipped_file()
-        with FileLock(
-            str(
-                Path(tempfile.gettempdir())
-                / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
-            )
-        ):
-            # We read the INI file keys in lower case
-            info = self._get_content_with_specific_parsing([], -1, False, None, lambda value: str(value).lower())
-            assert isinstance(info, dict)
-            obj = data
-            if isinstance(data, str):
-                with contextlib.suppress(pydantic_core.ValidationError):
-                    obj = from_json(data)
-            if len(url) not in {1, 2}:
-                info = t.cast(JSON, obj)
-            else:
-                lowered_id = str(url[0]).lower()  # We lower the INI file keys
-                if len(url) == 2:
-                    info.setdefault(lowered_id, {})[url[1]] = obj
-                else:
-                    info[lowered_id] = obj
-            self.writer.write(info, self.path)

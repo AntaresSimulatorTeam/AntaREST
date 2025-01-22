@@ -14,9 +14,14 @@ import typing as t
 from typing_extensions import override
 
 from antarest.core.model import SUB_JSON
+from antarest.study.storage.rawstudy.ini_reader import LOWER_CASE_PARSER, IniReader, OptionKey
+from antarest.study.storage.rawstudy.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import LOWER_CASE_MATCHER, IniFileNode
+
+_VALUE_PARSERS = {OptionKey(None, "group"): LOWER_CASE_PARSER}
+_VALUE_SERIALIZERS = {OptionKey(None, "group"): LOWER_CASE_SERIALIZER}
 
 
 class InputSTStorageAreaList(IniFileNode):
@@ -37,15 +42,11 @@ class InputSTStorageAreaList(IniFileNode):
         # - a withdrawal nominal capacity (double > 0)
         # - an injection nominal capacity (double > 0)
         types = {st_storage_id: dict for st_storage_id in config.get_st_storage_ids(area)}
-        super().__init__(context, config, types)
-
-    @override
-    def get(
-        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
-    ) -> SUB_JSON:
-        func = lambda value: str(value).lower()
-        return super()._get_content_with_specific_parsing(url, depth, expanded, {"group": func}, func)
-
-    @override
-    def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:
-        super()._save_content_with_lowered_keys(data, url or [])
+        super().__init__(
+            context,
+            config,
+            types,
+            reader=IniReader(value_parsers=_VALUE_PARSERS),
+            writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
+            section_matcher=LOWER_CASE_MATCHER,
+        )

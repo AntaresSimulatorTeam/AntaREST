@@ -13,12 +13,13 @@
 import json
 import typing as t
 from pathlib import Path
+from typing import Optional
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json, to_json
-from antarest.study.storage.rawstudy.ini_reader import IReader
+from antarest.study.storage.rawstudy.ini_reader import IReader, ReaderOptions
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -31,7 +32,7 @@ class JsonReader(IReader):
     """
 
     @override
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
+    def read(self, path: t.Any, options: Optional[ReaderOptions] = None) -> JSON:
         content: t.Union[str, bytes]
 
         if isinstance(path, (Path, str)):

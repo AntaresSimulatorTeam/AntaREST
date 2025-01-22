@@ -119,7 +119,7 @@ class CreateCluster(ICommand):
 
         cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
-        config[cluster_id] = self.parameters.model_dump(mode="json", by_alias=True)
+        config[self.cluster_name] = self.parameters.model_dump(mode="json", by_alias=True)
 
         # Series identifiers are in lower case.
         series_id = cluster_id.lower()

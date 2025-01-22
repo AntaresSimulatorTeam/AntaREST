@@ -19,8 +19,10 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.model import JSON
+from antarest.study.model import STUDY_VERSION_9_1
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
 
 
 def build_dataset(study_dir: Path) -> t.Tuple[Path, JSON]:
@@ -315,17 +317,16 @@ def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]
         """
     )
     ini_path.write_text(ini_content)
-    node = IniFileNode(
+    node = ScenarioBuilder(
         context=Mock(),
         config=FileStudyTreeConfig(
             study_path=tmp_path,
             path=ini_path,
-            version=-1,
+            version=STUDY_VERSION_9_1,
             study_id="id",
             areas={},
             outputs={},
         ),
-        types={},
     )
     expected_ruleset = {"key_float": 2.1, "key_int": 1, "key_str": "value1"}
     ruleset = node.get(url)

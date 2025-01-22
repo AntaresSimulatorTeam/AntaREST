@@ -76,9 +76,9 @@ class TestLowerCase:
         # Also checks the GET /raw endpoint
         res = client.get(f"/v1/studies/{study_id}/raw?path=input/{cluster_type}/clusters/{area1_id}/list")
         cluster_list = res.json()
-        assert list(cluster_list.keys()) == [lowered_name]
-        assert cluster_list[lowered_name]["name"] == cluster_name
-        assert cluster_list[lowered_name]["group"] == lowered_grp
+        assert list(cluster_list.keys()) == [cluster_name]
+        assert cluster_list[cluster_name]["name"] == cluster_name
+        assert cluster_list[cluster_name]["group"] == lowered_grp
 
         # Try to update a property
         if cluster_type == "st-storage":

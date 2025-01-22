@@ -14,7 +14,13 @@ import io
 import textwrap
 from pathlib import Path
 
-from antarest.study.storage.rawstudy.ini_reader import IniReader, SimpleKeyValueReader
+from antarest.study.storage.rawstudy.ini_reader import (
+    IniReader,
+    OptionKey,
+    ReaderOptions,
+    SimpleKeyValueReader,
+    ini_reader_options,
+)
 
 
 class TestIniReader:
@@ -265,13 +271,15 @@ class TestIniReader:
 
         reader = IniReader()
 
+        options = ini_reader_options(section="part1")
         # exact match
-        actual = reader.read(path, section="part1")
+        actual = reader.read(path, options)
         expected = {"part1": {"foo": 5, "bar": "hello"}}
         assert actual == expected
 
         # regex match
-        actual = reader.read(path, section_regex="part.*")
+        options = ini_reader_options(section_regex="part.*")
+        actual = reader.read(path, options)
         expected = {
             "part1": {"foo": 5, "bar": "hello"},
             "part2": {"foo": 6, "bar": "salut"},
@@ -300,28 +308,57 @@ class TestIniReader:
         reader = IniReader()
 
         # exact match
-        actual = reader.read(path, option="foo")
+        actual = reader.read(path, ini_reader_options(option="foo"))
         expected = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
         assert actual == expected
 
         # regex match
-        actual = reader.read(path, option_regex="fo.*")
+        actual = reader.read(path, ini_reader_options(option_regex="fo.*"))
         expected = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
         assert actual == expected
 
         # exact match with section
-        actual = reader.read(path, section="part2", option="foo")
+        actual = reader.read(path, ini_reader_options(section="part2", option="foo"))
         expected = {"part2": {"foo": 6}}
         assert actual == expected
 
         # regex match with section
-        actual = reader.read(path, section_regex="part.*", option="foo")
+        actual = reader.read(path, ini_reader_options(section_regex="part.*", option="foo"))
         expected = {"part1": {"foo": 5}, "part2": {"foo": 6}}
         assert actual == expected
 
         # regex match with section and option
-        actual = reader.read(path, section_regex="part.*", option_regex=".*a.*")
+        actual = reader.read(path, ini_reader_options(section_regex="part.*", option_regex=".*a.*"))
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "salut"}}
+        assert actual == expected
+
+    def test_read__with_parser(self, tmp_path):
+        path = Path(tmp_path) / "test.ini"
+        path.write_text(
+            textwrap.dedent(
+                """
+                [part1]
+                bar = Hello
+                
+                [part2]
+                bar = Hello
+                """
+            )
+        )
+
+        reader = IniReader()
+
+        def to_lower(input: str) -> str:
+            return input.lower()
+
+        value_parsers = {OptionKey("part2", "bar"): to_lower}
+        actual = reader.read(path, ini_reader_options(value_parsers=value_parsers))
+        expected = {"part1": {"bar": "Hello"}, "part2": {"bar": "hello"}}
+        assert actual == expected
+
+        value_parsers = {OptionKey(None, "bar"): to_lower}
+        actual = reader.read(path, ini_reader_options(value_parsers=value_parsers))
+        expected = {"part1": {"bar": "hello"}, "part2": {"bar": "hello"}}
         assert actual == expected
 
 

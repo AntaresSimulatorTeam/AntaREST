@@ -10,14 +10,12 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
-
-from typing_extensions import override
-
-from antarest.core.model import SUB_JSON
+from antarest.study.storage.rawstudy.ini_reader import LOWER_CASE_PARSER, IniReader, OptionKey
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+
+_VALUE_PARSERS = {OptionKey(None, "group"): LOWER_CASE_PARSER}
 
 
 # noinspection SpellCheckingInspection
@@ -39,12 +37,4 @@ class BindingConstraintsIni(IniFileNode):
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        super().__init__(context, config, types={})
-
-    @override
-    def get(
-        self, url: t.Optional[t.List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
-    ) -> SUB_JSON:
-        return super()._get_content_with_specific_parsing(
-            url, depth, expanded, {"group": lambda value: str(value).lower()}, None
-        )
+        super().__init__(context, config, types={}, reader=IniReader(value_parsers=_VALUE_PARSERS))
