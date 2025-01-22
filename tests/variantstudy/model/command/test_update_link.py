@@ -10,27 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from unittest.mock import Mock
-
-import numpy as np
-import pytest
-from pydantic import ValidationError
-from sqlalchemy.orm import Session
-
-from antarest.core.exceptions import LinkValidationError
-from antarest.study.business.link_management import LinkInternal
-from antarest.study.model import STUDY_VERSION_8_8, LinksParametersTsGeneration, RawStudy
+from antarest.study.model import LinksParametersTsGeneration, RawStudy
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
-from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from core.utils.fastapi_sqlalchemy import db
 from db_statement_recorder import DBStatementRecorder
