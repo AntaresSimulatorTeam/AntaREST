@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,10 +15,10 @@
 import debug from "debug";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useMemo } from "react";
-import { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../common/types";
 import {
   addStudyGroup,
   changePublicMode,
@@ -34,7 +34,7 @@ import StringFE from "../../common/fieldEditors/StringFE";
 import SelectFE from "../../common/fieldEditors/SelectFE";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 import Fieldset from "../../common/Fieldset";
-import { SubmitHandlerPlus } from "../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../common/Form/types";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import { updateStudy } from "../../../redux/ducks/studies";
 import { validateString } from "@/utils/validation/string";
@@ -73,9 +73,7 @@ function PropertiesDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>,
-  ) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { name, tags, groups, publicMode } = data.dirtyValues;
     const { id: studyId } = study;
 
@@ -100,13 +98,9 @@ function PropertiesDialog(props: Props) {
         const toDelete = R.difference(defaultValues.groups, groups);
         const toAdd = R.difference(groups, defaultValues.groups);
 
-        await Promise.all(
-          toDelete.map((id) => deleteStudyGroup(studyId, id as string)),
-        );
+        await Promise.all(toDelete.map((id) => deleteStudyGroup(studyId, id as string)));
 
-        await Promise.all(
-          toAdd.map((id) => addStudyGroup(studyId, id as string)),
-        );
+        await Promise.all(toAdd.map((id) => addStudyGroup(studyId, id as string)));
       }
 
       if (updateStudyData) {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import Button from "@mui/material/Button";
-import ButtonGroup, { ButtonGroupProps } from "@mui/material/ButtonGroup";
+import ButtonGroup, { type ButtonGroupProps } from "@mui/material/ButtonGroup";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Grow from "@mui/material/Grow";

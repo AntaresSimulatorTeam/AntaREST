@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -30,12 +30,7 @@ function CommandsDrawer(props: Props) {
   const { open, onClose, studyId } = props;
 
   return (
-    <CommandDrawer
-      variant="temporary"
-      anchor="right"
-      open={open}
-      onClose={onClose}
-    >
+    <CommandDrawer variant="temporary" anchor="right" open={open} onClose={onClose}>
       <Toolbar sx={{ py: 3 }}>
         <TitleContainer>
           <Typography sx={{ color: "grey.500", fontSize: "0.9em" }}>

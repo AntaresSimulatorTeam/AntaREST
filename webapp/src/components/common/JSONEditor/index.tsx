@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,15 +13,12 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import JSONEditorClass, {
-  type JSONEditorOptions,
-  type HistoryItem,
-} from "jsoneditor";
+import JSONEditorClass, { type JSONEditorOptions, type HistoryItem } from "jsoneditor";
 import { useMemo, useRef } from "react";
 import { useDeepCompareEffect, useMount } from "react-use";
 import "jsoneditor/dist/jsoneditor.min.css";
 import "./dark-theme.css";
-import { PromiseAny } from "../../../utils/tsUtils";
+import type { PromiseAny } from "../../../utils/tsUtils";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 import { createSaveButton } from "./utils";
 import * as R from "ramda";
@@ -98,17 +95,14 @@ function JSONEditor(props: JSONEditorProps) {
     // Use undo/redo history to determine if the JSON is dirty
     if (editor?.history?.history) {
       updateSaveState(
-        presentHistoryItem.current !==
-          (editor.history.history[editor.history.index] ?? null),
+        presentHistoryItem.current !== (editor.history.history[editor.history.index] ?? null),
       );
     } else {
       updateSaveState(true);
     }
   }
 
-  function handleModeChange(
-    ...args: Parameters<NonNullable<JSONEditorOptions["onModeChange"]>>
-  ) {
+  function handleModeChange(...args: Parameters<NonNullable<JSONEditorOptions["onModeChange"]>>) {
     callbackOptionsRef.current.onModeChange?.(...args);
     // Menu is reset when the mode changes
     initSave();
@@ -134,8 +128,7 @@ function JSONEditor(props: JSONEditorProps) {
         updateSaveState(false);
         onSaveSuccessful?.(json);
 
-        presentHistoryItem.current =
-          editor?.history?.history?.[editor.history.index] ?? null;
+        presentHistoryItem.current = editor?.history?.history?.[editor.history.index] ?? null;
       } catch (err) {
         enqueueErrorSnackbar("test", toError(err));
       }
@@ -171,9 +164,7 @@ function JSONEditor(props: JSONEditorProps) {
     // Changing the mode resets undo/redo history and undo/redo are not available in all modes.
     // So the change mode mode button is disabled when the JSON is dirty.
 
-    const editorModeBtn = editorRef.current?.menu.querySelector(
-      "button.jsoneditor-modes",
-    );
+    const editorModeBtn = editorRef.current?.menu.querySelector("button.jsoneditor-modes");
 
     if (enable) {
       editorModeBtn?.setAttribute("disabled", "");

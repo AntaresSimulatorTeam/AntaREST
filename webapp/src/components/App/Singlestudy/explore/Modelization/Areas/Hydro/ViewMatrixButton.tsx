@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -24,12 +24,7 @@ function ViewMatrixButton({ label, onClick }: Props) {
   const { t } = useTranslation();
 
   return (
-    <Button
-      variant="outlined"
-      size="small"
-      sx={{ mt: 3, mr: 3 }}
-      onClick={onClick}
-    >
+    <Button variant="outlined" size="small" sx={{ mt: 3, mr: 3 }} onClick={onClick}>
       {t(label)}
     </Button>
   );

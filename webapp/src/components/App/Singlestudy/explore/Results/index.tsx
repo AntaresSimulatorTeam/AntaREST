@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -39,7 +39,7 @@ import * as R from "ramda";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { grey } from "@mui/material/colors";
 import moment from "moment";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import {
   archiveOutput,
@@ -49,11 +49,7 @@ import {
   getStudyOutputs,
   unarchiveOutput,
 } from "../../../../../services/api/study";
-import {
-  LaunchJob,
-  StudyMetadata,
-  StudyOutput,
-} from "../../../../../common/types";
+import type { LaunchJob, StudyMetadata, StudyOutput } from "../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
@@ -81,10 +77,7 @@ type DialogState =
     }
   | EmptyObject;
 
-const combineJobsAndOutputs = (
-  jobs: LaunchJob[],
-  outputs: StudyOutput[],
-): OutputDetail[] => {
+const combineJobsAndOutputs = (jobs: LaunchJob[], outputs: StudyOutput[]): OutputDetail[] => {
   const runningJobs: OutputDetail[] = jobs
     .filter((job) => !job.completionDate)
     .map((job) => {
@@ -106,9 +99,7 @@ const combineJobsAndOutputs = (
       outputDetail.creationDate = relatedJob.creationDate;
       outputDetail.job = relatedJob;
     } else {
-      const dateComponents = output.name.match(
-        "(\\d{4})(\\d{2})(\\d{2})-(\\d{2})(\\d{2}).*",
-      );
+      const dateComponents = output.name.match("(\\d{4})(\\d{2})(\\d{2})-(\\d{2})(\\d{2}).*");
       if (dateComponents) {
         outputDetail.completionDate = `${dateComponents[1]}-${dateComponents[2]}-${dateComponents[3]} ${dateComponents[4]}:${dateComponents[5]}`;
       }
@@ -132,11 +123,13 @@ function Results() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
 
-  const { data: studyJobs, isLoading: studyJobsLoading } =
-    usePromiseWithSnackbarError(() => getStudyJobs(study.id), {
+  const { data: studyJobs, isLoading: studyJobsLoading } = usePromiseWithSnackbarError(
+    () => getStudyJobs(study.id),
+    {
       errorMessage: t("results.error.jobs"),
       deps: [study.id],
-    });
+    },
+  );
 
   const {
     data: studyOutputs,
@@ -152,18 +145,14 @@ function Results() {
       return combineJobsAndOutputs(studyJobs, studyOutputs).sort((a, b) => {
         if (!a.completionDate || !b.completionDate) {
           if (!a.completionDate && !b.completionDate) {
-            return moment(a.creationDate).isAfter(moment(b.creationDate))
-              ? -1
-              : 1;
+            return moment(a.creationDate).isAfter(moment(b.creationDate)) ? -1 : 1;
           }
           if (!a.completionDate) {
             return -1;
           }
           return 1;
         }
-        return moment(a.completionDate).isAfter(moment(b.completionDate))
-          ? -1
-          : 1;
+        return moment(a.completionDate).isAfter(moment(b.completionDate)) ? -1 : 1;
       });
     }
     return [];
@@ -188,10 +177,7 @@ function Results() {
             sx={iconStyle}
             onClick={async () => {
               handler().catch((e) => {
-                enqueueErrorSnackbar(
-                  t(errorMessage, { outputname: output.name }),
-                  e as AxiosError,
-                );
+                enqueueErrorSnackbar(t(errorMessage, { outputname: output.name }), e as AxiosError);
               });
             }}
           />
@@ -249,11 +235,7 @@ function Results() {
             >
               <TableCell>{t("global.name")}</TableCell>
               <TableCell align="right">
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="flex-end"
-                >
+                <Box display="flex" alignItems="center" justifyContent="flex-end">
                   {t("global.date")}
                 </Box>
               </TableCell>
@@ -374,11 +356,7 @@ function Results() {
                           </Box>
                         </TableCell>
                         <TableCell align="right">
-                          <Box
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="flex-end"
-                          >
+                          <Box display="flex" alignItems="center" justifyContent="flex-end">
                             {renderArchiveTool(row)}
                             {row.completionDate && row.job && (
                               <Box sx={{ height: "24px", margin: 0.5 }}>
@@ -395,13 +373,7 @@ function Results() {
                               </Box>
                             )}
 
-                            {row.job && (
-                              <LaunchJobLogView
-                                job={row.job}
-                                logButton
-                                logErrorButton
-                              />
-                            )}
+                            {row.job && <LaunchJobLogView job={row.job} logButton logErrorButton />}
                             {row.job?.status === "success" && (
                               <Tooltip title="Digest">
                                 <EqualizerIcon

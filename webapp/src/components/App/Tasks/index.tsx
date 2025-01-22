@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,21 +14,14 @@
 
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import moment from "moment";
-import {
-  useTheme,
-  Typography,
-  Box,
-  CircularProgress,
-  Tooltip,
-  Chip,
-} from "@mui/material";
+import { useTheme, Typography, Box, CircularProgress, Tooltip, Chip } from "@mui/material";
 import { Link } from "react-router-dom";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 import BlockIcon from "@mui/icons-material/Block";
 import InfoIcon from "@mui/icons-material/Info";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
@@ -40,25 +33,18 @@ import RootPage from "../../common/page/RootPage";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
 import DownloadLink from "../../common/DownloadLink";
 import LogModal from "../../common/LogModal";
-import {
-  addWsEventListener,
-  subscribeWsChannels,
-} from "../../../services/webSocket/ws";
+import { addWsEventListener, subscribeWsChannels } from "../../../services/webSocket/ws";
 import JobTableView from "./JobTableView";
 import { convertUTCToLocalTime } from "../../../services/utils/index";
-import {
-  downloadJobOutput,
-  killStudy,
-  getStudyJobs,
-} from "../../../services/api/study";
+import { downloadJobOutput, killStudy, getStudyJobs } from "../../../services/api/study";
 import {
   convertFileDownloadDTO,
-  FileDownload,
   getDownloadUrl,
   getDownloadsList,
+  type FileDownload,
 } from "../../../services/api/downloads";
 import { fetchStudies } from "../../../redux/ducks/studies";
-import { LaunchJob, LaunchJobsProgress, TaskView } from "../../../common/types";
+import type { LaunchJob, LaunchJobsProgress, TaskView } from "../../../common/types";
 import { getTask, getTasks } from "../../../services/api/tasks";
 import LaunchJobLogView from "./LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -70,7 +56,7 @@ import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import { getJobProgress } from "../../../services/api/launcher";
 import type { TaskDTO } from "../../../services/api/tasks/types";
 import { TaskStatus, TaskType } from "../../../services/api/tasks/constants";
-import { WsEvent } from "@/services/webSocket/types";
+import type { WsEvent } from "@/services/webSocket/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 const logError = debug("antares:studymanagement:error");
@@ -83,16 +69,11 @@ function JobsListing() {
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
   const [tasks, setTasks] = useState<TaskDTO[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [openConfirmationDialog, setOpenConfirmationDialog] = useState<
-    string | undefined
-  >();
-  const [messageModalOpen, setMessageModalOpen] = useState<
-    string | undefined
-  >();
+  const [openConfirmationDialog, setOpenConfirmationDialog] = useState<string | undefined>();
+  const [messageModalOpen, setMessageModalOpen] = useState<string | undefined>();
   const studies = useAppSelector(getStudies);
   const dispatch = useAppDispatch();
-  const [studyJobsProgress, setStudyJobsProgress] =
-    useState<LaunchJobsProgress>({});
+  const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
 
   const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
@@ -107,12 +88,7 @@ function JobsListing() {
       setDownloads(dlList);
 
       const allTasks = await getTasks({
-        status: [
-          TaskStatus.Running,
-          TaskStatus.Pending,
-          TaskStatus.Failed,
-          TaskStatus.Completed,
-        ],
+        status: [TaskStatus.Running, TaskStatus.Pending, TaskStatus.Failed, TaskStatus.Completed],
         type: [
           TaskType.Copy,
           TaskType.Archive,
@@ -143,17 +119,11 @@ function JobsListing() {
       );
 
       setStudyJobsProgress(
-        jobProgress.reduce(
-          (agg, cur) => ({ ...agg, [cur.id]: cur.progress }),
-          initJobProgress,
-        ),
+        jobProgress.reduce((agg, cur) => ({ ...agg, [cur.id]: cur.progress }), initJobProgress),
       );
     } catch (e) {
       logError("woops", e);
-      enqueueErrorSnackbar(
-        t("global.error.failedtoretrievejobs"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t("global.error.failedtoretrievejobs"), e as AxiosError);
     } finally {
       setLoaded(true);
     }
@@ -168,11 +138,7 @@ function JobsListing() {
     } else if (job.status === "running") {
       color = theme.palette.warning.main;
     }
-    return (
-      <FiberManualRecordIcon
-        style={{ color, fontSize: "10px", marginRight: "8px" }}
-      />
-    );
+    return <FiberManualRecordIcon style={{ color, fontSize: "10px", marginRight: "8px" }} />;
   };
 
   const renderTags = (job: LaunchJob) => {
@@ -223,31 +189,19 @@ function JobsListing() {
 
   useEffect(() => {
     const listener = async (ev: WsEvent) => {
-      if (
-        ev.type === WsEventType.TaskCompleted ||
-        ev.type === WsEventType.TaskFailed
-      ) {
+      if (ev.type === WsEventType.TaskCompleted || ev.type === WsEventType.TaskFailed) {
         const taskId = ev.payload.id;
         if (tasks?.find((task) => task.id === taskId)) {
           try {
             const updatedTask = await getTask({ id: taskId });
-            setTasks(
-              tasks
-                .filter((task) => task.id !== updatedTask.id)
-                .concat([updatedTask]),
-            );
+            setTasks(tasks.filter((task) => task.id !== updatedTask.id).concat([updatedTask]));
           } catch (error) {
             logError(error);
           }
         }
       } else if (ev.type === WsEventType.DownloadCreated) {
-        setDownloads(
-          (downloads || []).concat([convertFileDownloadDTO(ev.payload)]),
-        );
-      } else if (
-        ev.type === WsEventType.DownloadReady ||
-        ev.type === WsEventType.DownloadFailed
-      ) {
+        setDownloads((downloads || []).concat([convertFileDownloadDTO(ev.payload)]));
+      } else if (ev.type === WsEventType.DownloadReady || ev.type === WsEventType.DownloadFailed) {
         setDownloads(
           (downloads || []).map((d) => {
             const fileDownload = ev.payload;
@@ -300,10 +254,7 @@ function JobsListing() {
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
               {renderStatus(job)}
-              <Link
-                style={{ textDecoration: "none" }}
-                to={`/studies/${encodeURI(job.studyId)}`}
-              >
+              <Link style={{ textDecoration: "none" }} to={`/studies/${encodeURI(job.studyId)}`}>
                 <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
                   {studies.find((s) => s.id === job.studyId)?.name ||
                     `${t("global.unknown")} (${job.id})`}
@@ -331,26 +282,14 @@ function JobsListing() {
               fontSize: "0.85rem",
             }}
           >
-            <Box
-              width="168px"
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
+            <Box width="168px" display="flex" justifyContent="space-between" alignItems="center">
               <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
               {convertUTCToLocalTime(job.creationDate)}
             </Box>
-            <Box
-              width="168px"
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
+            <Box width="168px" display="flex" justifyContent="space-between" alignItems="center">
               {job.completionDate && (
                 <>
-                  <EventAvailableIcon
-                    sx={{ fontSize: 16, marginRight: "0.5em" }}
-                  />
+                  <EventAvailableIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
                   {convertUTCToLocalTime(job.completionDate)}
                 </>
               )}
@@ -407,11 +346,7 @@ function JobsListing() {
     () =>
       downloads.map((download) => ({
         id: download.id,
-        name: (
-          <Box sx={{ color: "white", fontSize: "0.95rem" }}>
-            {download.name}
-          </Box>
-        ),
+        name: <Box sx={{ color: "white", fontSize: "0.95rem" }}>{download.name}</Box>,
         dateView: (
           <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
             {`(${t("downloads.expirationDate")} : ${convertUTCToLocalTime(
@@ -452,17 +387,12 @@ function JobsListing() {
               </DownloadLink>
             ) : (
               <Tooltip title={t("global.loading") as string}>
-                <CircularProgress
-                  color="primary"
-                  style={{ width: "18px", height: "18px" }}
-                />
+                <CircularProgress color="primary" style={{ width: "18px", height: "18px" }} />
               </Tooltip>
             )}
           </Box>
         ),
-        date: moment(download.expirationDate)
-          .subtract(1, "days")
-          .format("YYYY-MM-DD HH:mm:ss"),
+        date: moment(download.expirationDate).subtract(1, "days").format("YYYY-MM-DD HH:mm:ss"),
         type: "DOWNLOAD",
         status: !download.ready && !download.failed ? "running" : "",
       })),
@@ -473,11 +403,7 @@ function JobsListing() {
     () =>
       tasks.map((task) => ({
         id: task.id,
-        name: (
-          <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
-            {task.name}
-          </Typography>
-        ),
+        name: <Typography sx={{ color: "white", fontSize: "0.95rem" }}>{task.name}</Typography>,
         dateView: (
           <Box
             sx={{
@@ -489,26 +415,14 @@ function JobsListing() {
               fontSize: "0.85rem",
             }}
           >
-            <Box
-              width="165px"
-              display="flex"
-              justifyContent="flex-start"
-              alignItems="center"
-            >
+            <Box width="165px" display="flex" justifyContent="flex-start" alignItems="center">
               <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
               {convertUTCToLocalTime(task.creation_date_utc)}
             </Box>
-            <Box
-              width="165px"
-              display="flex"
-              justifyContent="flex-start"
-              alignItems="center"
-            >
+            <Box width="165px" display="flex" justifyContent="flex-start" alignItems="center">
               {task.completion_date_utc && (
                 <>
-                  <EventAvailableIcon
-                    sx={{ fontSize: 16, marginRight: "0.5em" }}
-                  />
+                  <EventAvailableIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
                   {convertUTCToLocalTime(task.completion_date_utc)}
                 </>
               )}
@@ -519,10 +433,7 @@ function JobsListing() {
           <Box>
             {!task.completion_date_utc && (
               <Tooltip title={t("global.loading") as string}>
-                <CircularProgress
-                  color="primary"
-                  style={{ width: "18px", height: "18px" }}
-                />
+                <CircularProgress color="primary" style={{ width: "18px", height: "18px" }} />
               </Tooltip>
             )}
             {task.result && !task.result.success && (
@@ -558,17 +469,9 @@ function JobsListing() {
 
   return (
     <RootPage title={t("tasks.title")} titleIcon={AssignmentIcon}>
-      <Box
-        flexGrow={1}
-        overflow="hidden"
-        width="100%"
-        display="flex"
-        position="relative"
-      >
+      <Box flexGrow={1} overflow="hidden" width="100%" display="flex" position="relative">
         {!loaded && <SimpleLoader />}
-        {loaded && (
-          <JobTableView content={content || []} refresh={() => init(false)} />
-        )}
+        {loaded && <JobTableView content={content || []} refresh={() => init(false)} />}
         {openConfirmationDialog && (
           <ConfirmationDialog
             title={t("dialog.title.confirmation")}

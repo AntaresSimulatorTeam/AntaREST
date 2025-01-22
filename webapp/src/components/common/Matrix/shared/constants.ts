@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,20 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import {
-  DateIncrementFunction,
-  FormatFunction,
-  TimeFrequencyType,
-} from "./types";
+import type { DateIncrementFunction, FormatFunction, TimeFrequencyType } from "./types";
 import {
   addYears,
   addMonths,
   addWeeks,
   startOfWeek,
-  FirstWeekContainsDate,
   addDays,
   addHours,
   format,
+  type FirstWeekContainsDate,
 } from "date-fns";
 import { t } from "i18next";
 import { getLocale } from "./utils";
@@ -110,7 +106,6 @@ export const TIME_FREQUENCY_CONFIG: Record<
   },
   [TimeFrequency.Hourly]: {
     increment: addHours,
-    format: (date: Date) =>
-      format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
+    format: (date: Date) => format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
   },
 };

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { History, Transition } from "history";
+import type { History, Transition } from "history";
 import { useContext, useEffect } from "react";
 import { UNSAFE_NavigationContext as NavigationContext } from "react-router-dom";
 import useAutoUpdateRef from "./useAutoUpdateRef";

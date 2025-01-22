@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Area, LinkElement, Simulation } from "../../../../../../common/types";
+import type { Area, LinkElement, Simulation } from "../../../../../../common/types";
 
 export enum OutputItemType {
   Areas = "areas",
@@ -85,9 +85,7 @@ export const SYNTHESIS_ITEMS = [
 
 // Allow the possibilty to use OR operator on search using pipe
 export function matchesSearchTerm(text: string, searchTerm: string): boolean {
-  const searchTerms = searchTerm
-    .split("|")
-    .map((term) => term.trim().toLowerCase());
+  const searchTerms = searchTerm.split("|").map((term) => term.trim().toLowerCase());
 
   return searchTerms.some((term) => text.toLowerCase().includes(term));
 }

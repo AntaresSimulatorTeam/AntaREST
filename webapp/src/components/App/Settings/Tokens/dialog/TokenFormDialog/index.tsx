@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,13 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog, {
-  FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
+import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
 import TokenForm from "./TokenForm";
 
-export interface TokenFormDialogProps
-  extends Omit<FormDialogProps, "children"> {
+export interface TokenFormDialogProps extends Omit<FormDialogProps, "children"> {
   onlyPermissions?: boolean;
 }
 
@@ -27,9 +24,7 @@ function TokenFormDialog(props: TokenFormDialogProps) {
 
   return (
     <FormDialog maxWidth="sm" {...dialogProps}>
-      {(formObj) => (
-        <TokenForm onlyPermissions={onlyPermissions} {...formObj} />
-      )}
+      {(formObj) => <TokenForm onlyPermissions={onlyPermissions} {...formObj} />}
     </FormDialog>
   );
 }

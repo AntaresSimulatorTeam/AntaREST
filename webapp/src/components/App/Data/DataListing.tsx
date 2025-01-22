@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,9 +15,9 @@
 import { memo } from "react";
 import { Typography, Box, styled } from "@mui/material";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
+import { FixedSizeList, areEqual, type ListChildComponentProps } from "react-window";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
-import { MatrixDataSetDTO } from "../../../common/types";
+import type { MatrixDataSetDTO } from "../../../common/types";
 
 const ROW_ITEM_SIZE = 45;
 const BUTTONS_SIZE = 40;
@@ -107,11 +107,7 @@ function DataListing(props: PropsType) {
             const idealHeight = ROW_ITEM_SIZE * datasets.length;
             return (
               <StyledList
-                height={
-                  idealHeight > height
-                    ? height + ROW_ITEM_SIZE - BUTTONS_SIZE
-                    : idealHeight
-                }
+                height={idealHeight > height ? height + ROW_ITEM_SIZE - BUTTONS_SIZE : idealHeight}
                 width={width}
                 itemCount={datasets.length}
                 itemSize={ROW_ITEM_SIZE}

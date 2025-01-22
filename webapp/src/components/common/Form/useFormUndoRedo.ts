@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import useUndo, { Actions } from "use-undo";
-import { FieldValues } from "react-hook-form";
+import useUndo, { type Actions } from "use-undo";
+import type { FieldValues } from "react-hook-form";
 import { useCallback, useEffect, useRef } from "react";
 import * as R from "ramda";
-import { UseFormReturnPlus } from "./types";
+import type { UseFormReturnPlus } from "./types";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
 
 enum ActionType {
@@ -38,10 +38,7 @@ function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
 
   useEffect(
     () => {
-      if (
-        lastAction.current === ActionType.Undo ||
-        lastAction.current === ActionType.Redo
-      ) {
+      if (lastAction.current === ActionType.Undo || lastAction.current === ActionType.Redo) {
         const newValues = state.present || initialDefaultValues;
         if (newValues) {
           setValues(newValues);
@@ -65,8 +62,7 @@ function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
 
   const setWrapper = useCallback<Actions<TFieldValues>["set"]>(
     (newPresent, checkpoint) => {
-      const currentPresent =
-        dataRef.current.state.present || dataRef.current.initialDefaultValues;
+      const currentPresent = dataRef.current.state.present || dataRef.current.initialDefaultValues;
 
       // Don't set after an undo or redo without changes.
       // * Don't use shallow equality, because it can be a deep object.

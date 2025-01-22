@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,7 +28,7 @@ import {
   getMatrixList,
   getExportMatrixUrl,
 } from "../../../services/api/matrix";
-import { MatrixInfoDTO, MatrixDataSetDTO } from "../../../common/types";
+import type { MatrixInfoDTO, MatrixDataSetDTO } from "../../../common/types";
 import DatasetCreationDialog from "./DatasetCreationDialog";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import RootPage from "../../common/page/RootPage";
@@ -52,15 +52,10 @@ function Data() {
 
   // User modal
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const [openConfirmationModal, setOpenConfirmationModal] =
-    useState<boolean>(false);
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
   const [matrixModal, setMatrixModal] = useState<boolean>(false);
-  const [currentData, setCurrentData] = useState<
-    MatrixDataSetDTO | undefined
-  >();
-  const [currentMatrix, setCurrentMatrix] = useState<
-    MatrixInfoDTO | undefined
-  >();
+  const [currentData, setCurrentData] = useState<MatrixDataSetDTO | undefined>();
+  const [currentMatrix, setCurrentMatrix] = useState<MatrixInfoDTO | undefined>();
 
   const handleCreation = () => {
     setCurrentData(undefined);
@@ -170,9 +165,7 @@ function Data() {
               <FileTable
                 title={
                   user &&
-                  user.id ===
-                    dataList.find((item) => item.id === selectedItem)?.owner
-                      .id ? (
+                  user.id === dataList.find((item) => item.id === selectedItem)?.owner.id ? (
                     <Box
                       sx={{
                         display: "flex",
@@ -188,10 +181,7 @@ function Data() {
                           lineHeight: 1.334,
                         }}
                       >
-                        {`Matrices - ${
-                          dataList.find((item) => item.id === selectedItem)
-                            ?.name
-                        }`}
+                        {`Matrices - ${dataList.find((item) => item.id === selectedItem)?.name}`}
                       </Typography>
                       <Box>
                         <IconButton>
@@ -238,9 +228,7 @@ function Data() {
                         alignItems: "center",
                       }}
                     >
-                      {`Matrices - ${
-                        dataList.find((item) => item.id === selectedItem)?.name
-                      }`}
+                      {`Matrices - ${dataList.find((item) => item.id === selectedItem)?.name}`}
                     </Typography>
                   )
                 }
@@ -258,11 +246,7 @@ function Data() {
       )}
       {!loaded && <SimpleLoader />}
       {matrixModal && currentMatrix && (
-        <MatrixDialog
-          matrix={currentMatrix}
-          open={matrixModal}
-          onClose={onMatrixModalClose}
-        />
+        <MatrixDialog matrix={currentMatrix} open={matrixModal} onClose={onMatrixModalClose} />
       )}
       {openModal && (
         <DatasetCreationDialog

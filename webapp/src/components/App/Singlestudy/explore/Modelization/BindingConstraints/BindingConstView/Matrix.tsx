@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,13 +13,11 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
-import { Operator } from "./utils";
+import type { StudyMetadata } from "../../../../../../../common/types";
+import type { Operator } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
 import { Box, Button } from "@mui/material";
-import BasicDialog, {
-  BasicDialogProps,
-} from "../../../../../../common/dialogs/BasicDialog";
+import BasicDialog, { type BasicDialogProps } from "../../../../../../common/dialogs/BasicDialog";
 import Matrix from "../../../../../../common/Matrix";
 
 interface Props {
@@ -30,13 +28,7 @@ interface Props {
   onClose: () => void;
 }
 
-function ConstraintMatrix({
-  study,
-  operator,
-  constraintId,
-  open,
-  onClose,
-}: Props) {
+function ConstraintMatrix({ study, operator, constraintId, open, onClose }: Props) {
   const { t } = useTranslation();
   const dialogProps: BasicDialogProps = {
     open,
@@ -91,9 +83,7 @@ function ConstraintMatrix({
               </Box>
               <Box sx={{ px: 2 }}>
                 <Matrix
-                  title={t(
-                    "study.modelization.bindingConst.timeSeries.greater",
-                  )}
+                  title={t("study.modelization.bindingConst.timeSeries.greater")}
                   url={`input/bindingconstraints/${constraintId}_gt`}
                 />
               </Box>

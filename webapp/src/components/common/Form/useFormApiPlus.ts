@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
+import type {
   BatchFieldArrayUpdate,
   FieldPath,
   FieldValue,
@@ -23,9 +23,9 @@ import {
   UseFormUnregister,
 } from "react-hook-form";
 import * as RA from "ramda-adjunct";
-import { MutableRefObject, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
-import {
+import type {
   UseFormRegisterPlus,
   UseFormReturnPlus,
   UseFormSetValues,
@@ -35,26 +35,18 @@ import {
 interface Params<TFieldValues extends FieldValues, TContext> {
   formApi: UseFormReturn<TFieldValues, TContext>;
   isAutoSubmitEnabled: boolean;
-  fieldAutoSubmitListeners: MutableRefObject<
+  fieldAutoSubmitListeners: React.MutableRefObject<
     Record<string, AutoSubmitHandler<FieldValue<TFieldValues>> | undefined>
   >;
-  fieldsChangeDuringAutoSubmitting: MutableRefObject<
-    Array<FieldPath<TFieldValues>>
-  >;
+  fieldsChangeDuringAutoSubmitting: React.MutableRefObject<Array<FieldPath<TFieldValues>>>;
   submit: VoidFunction;
 }
 
 function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
   params: Params<TFieldValues, TContext>,
 ): UseFormReturnPlus<TFieldValues, TContext> {
-  const {
-    formApi,
-    fieldAutoSubmitListeners,
-    fieldsChangeDuringAutoSubmitting,
-    ...data
-  } = params;
-  const { register, unregister, getValues, setValue, control, formState } =
-    formApi;
+  const { formApi, fieldAutoSubmitListeners, fieldsChangeDuringAutoSubmitting, ...data } = params;
+  const { register, unregister, getValues, setValue, control, formState } = formApi;
   const { isSubmitting, isLoading, defaultValues } = formState;
 
   const getDefaultValues = (): TFieldValues => ({
@@ -62,9 +54,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
     ...defaultValues,
   });
 
-  const initialDefaultValues = useRef(
-    isLoading ? undefined : getDefaultValues(),
-  );
+  const initialDefaultValues = useRef(isLoading ? undefined : getDefaultValues());
 
   // Prevent to add the values in `useMemo`'s deps
   const dataRef = useAutoUpdateRef({
@@ -84,10 +74,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
 
   const formApiPlus = useMemo(
     () => {
-      const registerWrapper: UseFormRegisterPlus<TFieldValues> = (
-        name,
-        options,
-      ) => {
+      const registerWrapper: UseFormRegisterPlus<TFieldValues> = (name, options) => {
         if (options?.onAutoSubmit) {
           fieldAutoSubmitListeners.current[name] = options.onAutoSubmit;
         }
@@ -113,10 +100,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
         return register(name, newOptions);
       };
 
-      const unregisterWrapper: UseFormUnregister<TFieldValues> = (
-        name,
-        options,
-      ) => {
+      const unregisterWrapper: UseFormUnregister<TFieldValues> = (name, options) => {
         if (dataRef.current.isAutoSubmitEnabled) {
           const names = RA.ensureArray(name) as Array<Path<TFieldValues>>;
           names.forEach((n) => {
@@ -126,11 +110,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
         return unregister(name, options);
       };
 
-      const setValueWrapper: UseFormSetValue<TFieldValues> = (
-        name,
-        value,
-        options,
-      ) => {
+      const setValueWrapper: UseFormSetValue<TFieldValues> = (name, value, options) => {
         const newOptions: typeof options = {
           shouldDirty: true, // False by default
           ...options,

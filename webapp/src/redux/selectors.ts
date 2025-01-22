@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,8 +13,8 @@
  */
 
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import { last } from "ramda";
-import {
+import * as R from "ramda";
+import type {
   AllClustersAndLinks,
   Area,
   Cluster,
@@ -25,21 +25,18 @@ import {
 } from "../common/types";
 import { filterStudies, sortStudies } from "../utils/studiesUtils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
-import { AppState } from "./ducks";
-import { AuthState } from "./ducks/auth";
-import { GroupsState } from "./ducks/groups";
-import { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
+import type { AppState } from "./ducks";
+import type { AuthState } from "./ducks/auth";
+import type { GroupsState } from "./ducks/groups";
+import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
+import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
+import type { UIState } from "./ducks/ui";
+import type { UsersState } from "./ducks/users";
 import {
-  studySynthesesAdapter,
-  StudySynthesesState,
-} from "./ducks/studySyntheses";
-import { UIState } from "./ducks/ui";
-import { UsersState } from "./ducks/users";
-import {
-  StudyMapNode,
-  StudyMapLink,
+  type StudyMapNode,
+  type StudyMapLink,
   studyMapsAdapter,
-  StudyMapsState,
+  type StudyMapsState,
 } from "./ducks/studyMaps";
 import { makeLinkId } from "./utils";
 import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
@@ -68,14 +65,11 @@ export const getStudiesStatus = (state: AppState): StudiesState["status"] => {
   return getStudiesState(state).status;
 };
 
-export const getStudiesScrollPosition = (
-  state: AppState,
-): StudiesState["scrollPosition"] => {
+export const getStudiesScrollPosition = (state: AppState): StudiesState["scrollPosition"] => {
   return getStudiesState(state).scrollPosition;
 };
 
-const studiesSelectors =
-  createEntityAdapter<StudyMetadata>().getSelectors(getStudiesState);
+const studiesSelectors = createEntityAdapter<StudyMetadata>().getSelectors(getStudiesState);
 
 export const getStudies = studiesSelectors.selectAll;
 
@@ -85,9 +79,7 @@ export const getStudyIds = studiesSelectors.selectIds;
 
 export const getStudy = studiesSelectors.selectById;
 
-export const getFavoriteStudyIds = (
-  state: AppState,
-): StudiesState["favorites"] => {
+export const getFavoriteStudyIds = (state: AppState): StudiesState["favorites"] => {
   return getStudiesState(state).favorites;
 };
 
@@ -101,10 +93,7 @@ export const getFavoriteStudies = createSelector(
   },
 );
 
-export const isStudyFavorite = (
-  state: AppState,
-  id: StudyMetadata["id"],
-): boolean => {
+export const isStudyFavorite = (state: AppState, id: StudyMetadata["id"]): boolean => {
   return getFavoriteStudyIds(state).includes(id);
 };
 
@@ -126,31 +115,21 @@ export const getStudiesFilteredAndSorted = createSelector(
   },
 );
 
-export const getStudyIdsFilteredAndSorted = createSelector(
-  getStudiesFilteredAndSorted,
-  (studies) => studies.map((study) => study.id),
+export const getStudyIdsFilteredAndSorted = createSelector(getStudiesFilteredAndSorted, (studies) =>
+  studies.map((study) => study.id),
 );
 
-export const getStudiesTree = createSelector(getStudies, (studies) =>
-  buildStudyTree(studies),
-);
+export const getStudiesTree = createSelector(getStudies, (studies) => buildStudyTree(studies));
 
-export const getStudyVersions = (
-  state: AppState,
-): StudiesState["versionList"] => {
+export const getStudyVersions = (state: AppState): StudiesState["versionList"] => {
   return getStudiesState(state).versionList;
 };
 
-export const getLatestStudyVersion = (
-  state: AppState,
-): StudyMetadata["version"] | null => {
-  return last(getStudyVersions(state)) ?? null;
+export const getLatestStudyVersion = (state: AppState): StudyMetadata["version"] | null => {
+  return R.last(getStudyVersions(state)) ?? null;
 };
 
-export const getStudyVersionsFormatted = createSelector(
-  getStudyVersions,
-  convertVersions,
-);
+export const getStudyVersionsFormatted = createSelector(getStudyVersions, convertVersions);
 
 export const getCurrentStudyId = (state: AppState): StudiesState["current"] => {
   return getStudiesState(state).current;
@@ -174,8 +153,7 @@ export const isCurrentStudyFavorite = createSelector(
 
 const getUsersState = (state: AppState): UsersState => state.users;
 
-const usersSelectors =
-  createEntityAdapter<UserDetailsDTO>().getSelectors(getUsersState);
+const usersSelectors = createEntityAdapter<UserDetailsDTO>().getSelectors(getUsersState);
 
 export const getUsers = usersSelectors.selectAll;
 
@@ -191,8 +169,7 @@ export const getUser = usersSelectors.selectById;
 
 const getGroupsState = (state: AppState): GroupsState => state.groups;
 
-const groupsSelectors =
-  createEntityAdapter<GroupDetailsDTO>().getSelectors(getGroupsState);
+const groupsSelectors = createEntityAdapter<GroupDetailsDTO>().getSelectors(getGroupsState);
 
 export const getGroups = groupsSelectors.selectAll;
 
@@ -209,9 +186,7 @@ export const getGroup = groupsSelectors.selectById;
 export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
-const studySynthesesSelectors = studySynthesesAdapter.getSelectors(
-  getStudySynthesesState,
-);
+const studySynthesesSelectors = studySynthesesAdapter.getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
 
@@ -256,9 +231,7 @@ export const getArea = createSelector(
   (synthesis, areaId) => synthesis?.areas[areaId],
 );
 
-export const getCurrentAreaId = (
-  state: AppState,
-): StudySynthesesState["currentArea"] => {
+export const getCurrentAreaId = (state: AppState): StudySynthesesState["currentArea"] => {
   return getStudySynthesesState(state).currentArea;
 };
 
@@ -295,16 +268,12 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
   return links;
 });
 
-export const getCurrentLinkId = (
-  state: AppState,
-): StudySynthesesState["currentLink"] => {
+export const getCurrentLinkId = (state: AppState): StudySynthesesState["currentLink"] => {
   return getStudySynthesesState(state).currentLink;
 };
 
-export const getCurrentLink = createSelector(
-  getLinks,
-  getCurrentLinkId,
-  (links, linkId) => links.find((link) => link.name === linkId),
+export const getCurrentLink = createSelector(getLinks, getCurrentLinkId, (links, linkId) =>
+  links.find((link) => link.name === linkId),
 );
 
 export const getCurrentAreaLinks = createSelector(
@@ -335,8 +304,7 @@ export const getCurrentClusters = (
 ): Cluster[] => {
   const currentStudyState = getStudySynthesesState(state);
   const { currentArea } = currentStudyState;
-  const clusters =
-    currentStudyState.entities[studyId]?.areas[currentArea][type];
+  const clusters = currentStudyState.entities[studyId]?.areas[currentArea][type];
   return clusters || [];
 };
 
@@ -344,39 +312,34 @@ export const getBindingConst = createSelector(getStudySynthesis, (studyData) =>
   studyData ? studyData.bindings || [] : [],
 );
 
-export const getLinksAndClusters = createSelector(
-  getStudySynthesis,
-  (synthesis) => {
-    const linksAndClusters: AllClustersAndLinks = {
-      links: [],
-      clusters: [],
-    };
-    if (synthesis) {
-      const res = Object.keys(synthesis.areas).reduce((acc, areaId) => {
-        const area = { id: areaId, name: synthesis.areas[areaId].name };
-        acc.links.push({
-          element: area,
-          item_list: Object.keys(synthesis.areas[areaId].links).map(
-            (area2) => ({
-              id: area2,
-              name: synthesis.areas[area2].name,
-            }),
-          ),
-        });
-        acc.clusters.push({
-          element: area,
-          item_list: synthesis.areas[areaId].thermals.map((thermal) => ({
-            id: thermal.id,
-            name: thermal.name,
-          })),
-        });
-        return acc;
-      }, linksAndClusters);
-      return res;
-    }
-    return linksAndClusters;
-  },
-);
+export const getLinksAndClusters = createSelector(getStudySynthesis, (synthesis) => {
+  const linksAndClusters: AllClustersAndLinks = {
+    links: [],
+    clusters: [],
+  };
+  if (synthesis) {
+    const res = Object.keys(synthesis.areas).reduce((acc, areaId) => {
+      const area = { id: areaId, name: synthesis.areas[areaId].name };
+      acc.links.push({
+        element: area,
+        item_list: Object.keys(synthesis.areas[areaId].links).map((area2) => ({
+          id: area2,
+          name: synthesis.areas[area2].name,
+        })),
+      });
+      acc.clusters.push({
+        element: area,
+        item_list: synthesis.areas[areaId].thermals.map((thermal) => ({
+          id: thermal.id,
+          name: thermal.name,
+        })),
+      });
+      return acc;
+    }, linksAndClusters);
+    return res;
+  }
+  return linksAndClusters;
+});
 
 export const getStudyOutput = createSelector(
   getStudySynthesis,
@@ -392,8 +355,7 @@ export const getStudyOutput = createSelector(
 // Study Maps
 ////////////////////////////////////////////////////////////////
 
-export const getStudyMapsState = (state: AppState): StudyMapsState =>
-  state.studyMaps;
+export const getStudyMapsState = (state: AppState): StudyMapsState => state.studyMaps;
 
 const studyMapsSelectors = studyMapsAdapter.getSelectors(getStudyMapsState);
 
@@ -413,15 +375,11 @@ export const getCurrentStudyMapNode = createSelector(
     studyMapsById[currentStudyId]?.nodes[currentAreaId],
 );
 
-export const getStudyMapLayersById = (
-  state: AppState,
-): StudyMapsState["layers"] => {
+export const getStudyMapLayersById = (state: AppState): StudyMapsState["layers"] => {
   return getStudyMapsState(state).layers;
 };
 
-export const getCurrentLayer = (
-  state: AppState,
-): StudyMapsState["currentLayer"] => {
+export const getCurrentLayer = (state: AppState): StudyMapsState["currentLayer"] => {
   return getStudyMapsState(state).currentLayer;
 };
 
@@ -443,11 +401,7 @@ export const getStudyMapNodes = createSelector(
     if (synthesis && studyMap && currentLayerAreas) {
       const nodeUIList = Object.keys(studyMap?.nodes);
       return Object.keys(synthesis?.areas)
-        .filter(
-          (areaId) =>
-            currentLayerAreas.indexOf(areaId) !== -1 &&
-            nodeUIList.includes(areaId),
-        )
+        .filter((areaId) => currentLayerAreas.indexOf(areaId) !== -1 && nodeUIList.includes(areaId))
         .map((areaId) => studyMap?.nodes[areaId]);
     }
     return [];
@@ -468,9 +422,7 @@ export const getStudyMapLinks = createSelector(
       const areasUIList = Object.keys(studyMap.nodes);
       Object.keys(synthesis.areas)
         .filter(
-          (areaId) =>
-            currentLayerAreas.indexOf(areaId) !== -1 &&
-            areasUIList.includes(areaId),
+          (areaId) => currentLayerAreas.indexOf(areaId) !== -1 && areasUIList.includes(areaId),
         )
         .forEach((areaId) => {
           const area1 = {
@@ -503,9 +455,7 @@ export const getStudyMapLinks = createSelector(
   },
 );
 
-export const getStudyMapDistrictsById = (
-  state: AppState,
-): StudyMapsState["districts"] => {
+export const getStudyMapDistrictsById = (state: AppState): StudyMapsState["districts"] => {
   return getStudyMapsState(state).districts;
 };
 
@@ -515,21 +465,15 @@ export const getStudyMapDistrictsById = (
 
 const getUIState = (state: AppState): AppState["ui"] => state.ui;
 
-export const getWebSocketConnected = (
-  state: AppState,
-): UIState["webSocketConnected"] => {
+export const getWebSocketConnected = (state: AppState): UIState["webSocketConnected"] => {
   return getUIState(state).webSocketConnected;
 };
 
-export const getTaskNotificationsCount = (
-  state: AppState,
-): UIState["taskNotificationsCount"] => {
+export const getTaskNotificationsCount = (state: AppState): UIState["taskNotificationsCount"] => {
   return getUIState(state).taskNotificationsCount;
 };
 
-export const getMaintenanceMode = (
-  state: AppState,
-): UIState["maintenanceMode"] => {
+export const getMaintenanceMode = (state: AppState): UIState["maintenanceMode"] => {
   return getUIState(state).maintenanceMode;
 };
 

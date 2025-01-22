@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,26 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { UseFieldArrayAppend } from "react-hook-form";
-import FormDialog, {
-  FormDialogProps,
-} from "../../../../../../../common/dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { UseFieldArrayAppend } from "react-hook-form";
+import FormDialog, { type FormDialogProps } from "../../../../../../../common/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  isLinkTerm,
-  type BindingConstraint,
-  type ConstraintTerm,
-} from "../utils";
+import { isLinkTerm, type BindingConstraint, type ConstraintTerm } from "../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
 import { createConstraintTerm } from "../../../../../../../../services/api/studydata";
-import { AllClustersAndLinks } from "../../../../../../../../common/types";
+import type { AllClustersAndLinks } from "../../../../../../../../common/types";
 import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
-import { BaseSyntheticEvent } from "react";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 
 interface Props extends Omit<FormDialogProps, "children" | "handleSubmit"> {
@@ -123,7 +116,7 @@ function AddConstraintTermDialog({
    */
   const handleSubmit = async (
     { values }: SubmitHandlerPlus<ConstraintTerm>,
-    _event?: BaseSyntheticEvent,
+    _event?: React.BaseSyntheticEvent,
   ) => {
     try {
       const newTerm = {
@@ -141,10 +134,7 @@ function AddConstraintTermDialog({
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("study.error.createConstraintTerm"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t("study.error.createConstraintTerm"), e as AxiosError);
     } finally {
       onCancel();
     }
@@ -165,10 +155,7 @@ function AddConstraintTermDialog({
       <UsePromiseCond
         response={linksAndClusters}
         ifFulfilled={(data) => (
-          <AddConstraintTermForm
-            options={data}
-            constraintTerms={constraintTerms}
-          />
+          <AddConstraintTermForm options={data} constraintTerms={constraintTerms} />
         )}
       />
     </FormDialog>
