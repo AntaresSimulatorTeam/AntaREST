@@ -13,7 +13,8 @@
  */
 
 import { memo } from "react";
-import { sortBy, prop } from "ramda";
+import { useMemo } from "react";
+import * as R from "ramda";
 import type { StudyTreeNodeProps } from "./types";
 import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 import { t } from "i18next";
@@ -38,7 +39,10 @@ export default memo(function StudyTreeNode({
     );
   }
 
-  const sortedChildren = sortBy(prop("name"), studyTreeNode.children);
+  const sortedChildren = useMemo(
+    () => R.sortBy(R.prop("name"), studyTreeNode.children),
+    [studyTreeNode.children],
+  );
 
   return (
     <TreeItemEnhanced
