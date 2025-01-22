@@ -392,8 +392,8 @@ def test_get_all_area():
         {
             "a": {
                 "name": "A",
-                "unit_count": 1,
-                "nominal_capacity": 500,
+                "unitcount": 1,
+                "nominalcapacity": 500,
                 "min-stable-power": 200,
             }
         },
@@ -412,8 +412,8 @@ def test_get_all_area():
                     "id": "a",
                     "name": "A",
                     "enabled": True,
-                    "unit_count": 1,
-                    "nominal_capacity": 500,
+                    "unitcount": 1,
+                    "nominalcapacity": 500,
                     "group": None,
                     "min_stable_power": 200,
                     "min_up_time": None,
