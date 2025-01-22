@@ -17,7 +17,7 @@ import type { FieldValues } from "react-hook-form";
 import { useCallback, useEffect, useRef } from "react";
 import * as R from "ramda";
 import type { UseFormReturnPlus } from "./types";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import useAutoUpdateRef from "../../../hooks/useUpdatedRef";
 
 enum ActionType {
   Undo = "UNDO",

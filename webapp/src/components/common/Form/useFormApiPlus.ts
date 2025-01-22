@@ -24,7 +24,7 @@ import type {
 } from "react-hook-form";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef } from "react";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import useAutoUpdateRef from "../../../hooks/useUpdatedRef";
 import type {
   UseFormRegisterPlus,
   UseFormReturnPlus,

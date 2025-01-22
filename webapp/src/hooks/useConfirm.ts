@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import useAutoUpdateRef from "./useAutoUpdateRef";
+import useAutoUpdateRef from "./useUpdatedRef";
 
 function errorFunction() {
   throw new Error("Promise is not pending.");

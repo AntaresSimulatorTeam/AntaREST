@@ -16,7 +16,7 @@ import { type SnackbarKey, useSnackbar } from "notistack";
 import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
 import { toError } from "../utils/fnUtils";
 import { useCallback } from "react";
-import useAutoUpdateRef from "./useAutoUpdateRef";
+import useAutoUpdateRef from "./useUpdatedRef";
 
 interface UsePromiseHandlerParams<T extends unknown[], U> {
   fn: (...args: T) => Promise<U>;

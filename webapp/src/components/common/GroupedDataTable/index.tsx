@@ -33,7 +33,7 @@ import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
 import DuplicateDialog from "./DuplicateDialog";
 import { translateWithColon } from "../../../utils/i18nUtils";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import useAutoUpdateRef from "../../../hooks/useUpdatedRef";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import type { PromiseAny } from "../../../utils/tsUtils";

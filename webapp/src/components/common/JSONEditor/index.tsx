@@ -19,7 +19,7 @@ import { useDeepCompareEffect, useMount } from "react-use";
 import "jsoneditor/dist/jsoneditor.min.css";
 import "./dark-theme.css";
 import type { PromiseAny } from "../../../utils/tsUtils";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import useAutoUpdateRef from "../../../hooks/useUpdatedRef";
 import { createSaveButton } from "./utils";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
