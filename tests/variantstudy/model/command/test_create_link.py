@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.study.business.link_management import LinkInternal
-from antarest.study.model import STUDY_VERSION_8_8, RawStudy
+from antarest.study.model import STUDY_VERSION_8_8, LinksParametersTsGeneration, RawStudy
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -61,7 +61,8 @@ class TestCreateLink:
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext, db_session: Session):
         study_version = empty_study.config.version
         study_path = empty_study.config.study_path
-        raw_study = RawStudy(id=empty_study.config.study_id, version=str(study_version), path=str(study_path))
+        study_id = empty_study.config.study_id
+        raw_study = RawStudy(id=study_id, version=str(study_version), path=str(study_path))
         db_session.add(raw_study)
         db_session.commit()
 
@@ -164,6 +165,7 @@ class TestCreateLink:
             "display-comments": True,
             "filter-synthesis": "hourly",
             "filter-year-by-year": "hourly",
+            "unit_count": 56,
         }
 
         create_link_command: ICommand = CreateLink.model_validate(
@@ -208,6 +210,21 @@ class TestCreateLink:
         assert int(link_data[area3_id]["colorg"]) == parameters["colorg"]
         assert int(link_data[area3_id]["colorb"]) == parameters["colorb"]
         assert link_data[area3_id]["display-comments"] == parameters["display-comments"]
+        assert "unit_count" not in link_data[area3_id]  # asserts a DB field is not present inside the INI file
+
+        # Checks the DB state
+        ts_gen_properties = (
+            db_session.query(LinksParametersTsGeneration)
+            .filter_by(study_id=study_id, area_from=area1_id, area_to=area3_id)
+            .all()
+        )
+        assert len(ts_gen_properties) == 1
+        link_ts_gen_props = ts_gen_properties[0]
+        assert link_ts_gen_props.unit_count == parameters["unit_count"]
+        # Asserts the other values correspond to their default values
+        assert link_ts_gen_props.nominal_capacity == 0
+        assert link_ts_gen_props.volatility_forced == 0
+        assert link_ts_gen_props.prepro is None
 
         output = create_link_command.apply(
             study_data=empty_study,
