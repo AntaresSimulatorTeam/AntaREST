@@ -36,7 +36,7 @@ class LinkManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result: t.List[LinkDTO] = []
 
-        # todo: here call get_all_links_ts_generation_information
+        ts_generation_parameters = self.get_all_links_ts_generation_information(study.id)
 
         for area_id, area in file_study.config.areas.items():
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
@@ -45,7 +45,9 @@ class LinkManager:
                 link_tree_config: t.Dict[str, t.Any] = links_config[link]
                 link_tree_config.update({"area1": area_id, "area2": link})
 
-                # todo: check the DB map to update the link_tree_config
+                if area_id in ts_generation_parameters and link in ts_generation_parameters[area_id]:
+                    link_ts_generation = ts_generation_parameters[area_id][link]
+                    link_tree_config.update(link_ts_generation.model_dump(mode="json"))
 
                 link_internal = LinkInternal.model_validate(link_tree_config)
 
