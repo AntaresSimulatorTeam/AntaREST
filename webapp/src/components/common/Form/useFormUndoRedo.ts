@@ -17,7 +17,7 @@ import type { FieldValues } from "react-hook-form";
 import { useCallback, useEffect, useRef } from "react";
 import * as R from "ramda";
 import type { UseFormReturnPlus } from "./types";
-import useAutoUpdateRef from "../../../hooks/useUpdatedRef";
+import useUpdatedRef from "../../../hooks/useUpdatedRef";
 
 enum ActionType {
   Undo = "UNDO",
@@ -34,7 +34,7 @@ function useFormUndoRedo<TFieldValues extends FieldValues, TContext>(
   } = api;
   const [state, { undo, redo, set, ...rest }] = useUndo(initialDefaultValues);
   const lastAction = useRef<ActionType | "">("");
-  const dataRef = useAutoUpdateRef({ state, initialDefaultValues });
+  const dataRef = useUpdatedRef({ state, initialDefaultValues });
 
   useEffect(
     () => {

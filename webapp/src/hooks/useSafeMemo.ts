@@ -13,20 +13,26 @@
  */
 
 import { useState } from "react";
+import { useUpdateEffect } from "react-use";
 
-/* 
- "You may rely on useMemo as a performance optimization, not as a semantic
- guarantee. In the future, React may choose to “forget” some previously
- memoized values and recalculate them on next render, e.g. to free memory for
- offscreen components. Write your code so that it still works without useMemo —
- and then add it to optimize performance."
- Source: https://reactjs.org/docs/hooks-reference.html#usememo
-*/
+/**
+ * Hook that returns a memoized value with semantic guarantee.
+ *
+ * Semantic guarantee is not provided by `useMemo`, which is solely used
+ * for performance optimization (cf. https://react.dev/reference/react/useMemo#caveats).
+ *
+ * @param factory - A function that returns the value to memoize.
+ * @param deps - Dependencies that trigger the memoization.
+ * @returns The memoized value.
+ */
+function useSafeMemo<T>(factory: () => T, deps: React.DependencyList): T {
+  const [state, setState] = useState(factory);
 
-function useMemoLocked<T>(factory: () => T): T {
-  // eslint-disable-next-line react/hook-use-state
-  const [state] = useState(factory);
+  useUpdateEffect(() => {
+    setState(factory);
+  }, deps);
+
   return state;
 }
 
-export default useMemoLocked;
+export default useSafeMemo;

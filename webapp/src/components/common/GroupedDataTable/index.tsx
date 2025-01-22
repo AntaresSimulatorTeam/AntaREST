@@ -33,7 +33,7 @@ import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
 import DuplicateDialog from "./DuplicateDialog";
 import { translateWithColon } from "../../../utils/i18nUtils";
-import useAutoUpdateRef from "../../../hooks/useUpdatedRef";
+import useUpdatedRef from "../../../hooks/useUpdatedRef";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import type { PromiseAny } from "../../../utils/tsUtils";
@@ -85,7 +85,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   // Allow to use the last version of `onNameClick` in `tableColumns`
-  const callbacksRef = useAutoUpdateRef({ onNameClick });
+  const callbacksRef = useUpdatedRef({ onNameClick });
   const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
 

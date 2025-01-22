@@ -24,7 +24,7 @@ import type {
 } from "react-hook-form";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef } from "react";
-import useAutoUpdateRef from "../../../hooks/useUpdatedRef";
+import useUpdatedRef from "../../../hooks/useUpdatedRef";
 import type {
   UseFormRegisterPlus,
   UseFormReturnPlus,
@@ -57,7 +57,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
   const initialDefaultValues = useRef(isLoading ? undefined : getDefaultValues());
 
   // Prevent to add the values in `useMemo`'s deps
-  const dataRef = useAutoUpdateRef({
+  const dataRef = useUpdatedRef({
     ...data,
     // Don't read `formState` in `useMemo`. See `useEffect`'s comment below.
     isSubmitting,

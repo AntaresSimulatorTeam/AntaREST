@@ -15,7 +15,7 @@
 import type { History, Transition } from "history";
 import { useContext, useEffect } from "react";
 import { UNSAFE_NavigationContext as NavigationContext } from "react-router-dom";
-import useAutoUpdateRef from "./useUpdatedRef";
+import useUpdatedRef from "./useUpdatedRef";
 
 // * Workaround until it will be supported by react-router v6.
 // * Based on https://ui.dev/react-router-preventing-transitions
@@ -24,7 +24,7 @@ type Blocker = (tx: Transition) => void;
 
 function useBlocker(blocker: Blocker, when = true): void {
   const { navigator } = useContext(NavigationContext);
-  const blockerRef = useAutoUpdateRef(blocker);
+  const blockerRef = useUpdatedRef(blocker);
 
   useEffect(
     () => {
