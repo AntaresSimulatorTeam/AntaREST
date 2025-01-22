@@ -111,6 +111,8 @@ class TestUpdateLink:
             # todo: this check seems random, don't know why :/
             # assert len(db_recorder.sql_statements) == 2
 
+        # todo: Could be nice to check that the tree isn't called. Don't know how.
+
         # Checks the DB state. Old properties should remain the same and the new one should be updated
         ts_gen_properties = (
             db.session.query(LinksParametersTsGeneration)
