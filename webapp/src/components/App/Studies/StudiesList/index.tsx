@@ -258,7 +258,7 @@ function StudiesList(props: StudiesListProps) {
               </IconButton>
             </Tooltip>
           ) : (
-            <Tooltip title={t("studies.filters.showAllDescendants")}>
+            <Tooltip title={t("studies.filters.showChildrens")}>
               <IconButton onClick={toggleStrictFolder}>
                 <AccountTreeIcon color="secondary" />
               </IconButton>
