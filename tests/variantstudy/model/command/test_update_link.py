@@ -92,6 +92,7 @@ class TestUpdateLink:
         update_parameters = {"parameters": new_parameters, **command_parameters}
         # Removes the ini file to show we don't need it as we're only updating the DB
         ini_path.unlink()
+        UpdateLink.model_validate(update_parameters).apply(study_data=empty_study)
 
         # Checks the DB state. Old properties should remain the same and the new one should be updated
         ts_gen_properties = (
