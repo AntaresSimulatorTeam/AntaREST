@@ -39,6 +39,7 @@ from antarest.core.exceptions import (
     CommandApplicationError,
     FolderCreationNotAllowed,
     IncorrectPathError,
+    MatrixImportFailed,
     NotAManagedStudyException,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
@@ -208,7 +209,7 @@ def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
             df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
             matrix = df.to_numpy(dtype=np.float64)
             return matrix
-    raise ValueError("Could not import the matrix")
+    raise MatrixImportFailed("Could not parse the given matrix")
 
 
 def _get_path_inside_user_folder(

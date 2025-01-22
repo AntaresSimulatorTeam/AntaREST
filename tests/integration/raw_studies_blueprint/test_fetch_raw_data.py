@@ -282,13 +282,6 @@ class TestFetchRawData:
         assert res.status_code == 200, res.json()
         assert res.json() == {"index": [], "columns": [], "data": []}
 
-        # Some files can be corrupted
-        user_folder_dir = study_dir.joinpath("user/bad")
-        for file_path in user_folder_dir.glob("*.*"):
-            rel_path = file_path.relative_to(study_dir)
-            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
-            assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
-
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:
         res = client.get(raw_url, params={"path": "/input/areas/list", "depth": 1})
@@ -305,6 +298,23 @@ class TestFetchRawData:
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
             res = client.get(raw_url, params={"path": path, "depth": depth})
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
+
+        # =============================
+        #  ERRORS
+        # =============================
+
+        # Some files can be corrupted
+        user_folder_dir = study_dir.joinpath("user/bad")
+        for file_path in user_folder_dir.glob("*.*"):
+            rel_path = file_path.relative_to(study_dir)
+            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
+            assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
+
+        # Imports a wrongly formatted matrix
+        res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(b"BLABLABLA")})
+        assert res.status_code == 422
+        assert res.json()["exception"] == "MatrixImportFailed"
+        assert res.json()["description"] == "Could not parse the given matrix"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_delete_raw(
