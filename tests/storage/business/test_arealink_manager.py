@@ -13,7 +13,7 @@
 import json
 import uuid
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
@@ -436,7 +436,7 @@ def test_get_all_area():
         },
     ]
     areas = area_manager.get_all_areas(study, AreaType.AREA)
-    assert expected_areas == [area.model_dump() for area in areas]
+    assert [area.model_dump() for area in areas] == expected_areas
 
     expected_clusters = [
         {
@@ -538,7 +538,7 @@ def test_get_all_area():
         },
     ]
     links = link_manager.get_all_links(study)
-    assert [
+    assert [link.model_dump(mode="json") for link in links] == [
         {
             "area1": "a1",
             "area2": "a2",
@@ -556,6 +556,13 @@ def test_get_all_area():
             "loop_flow": False,
             "transmission_capacities": "enabled",
             "use_phase_shifter": False,
+            "force_no_generation": True,
+            "law_forced": "uniform",
+            "law_planned": "uniform",
+            "nominal_capacity": 0.0,
+            "unit_count": 1,
+            "volatility_forced": 0.0,
+            "volatility_planned": 0.0,
         },
         {
             "area1": "a1",
@@ -574,6 +581,13 @@ def test_get_all_area():
             "loop_flow": False,
             "transmission_capacities": "enabled",
             "use_phase_shifter": False,
+            "force_no_generation": True,
+            "law_forced": "uniform",
+            "law_planned": "uniform",
+            "nominal_capacity": 0.0,
+            "unit_count": 1,
+            "volatility_forced": 0.0,
+            "volatility_planned": 0.0,
         },
         {
             "area1": "a2",
@@ -592,8 +606,15 @@ def test_get_all_area():
             "loop_flow": False,
             "transmission_capacities": "enabled",
             "use_phase_shifter": False,
+            "force_no_generation": True,
+            "law_forced": "uniform",
+            "law_planned": "uniform",
+            "nominal_capacity": 0.0,
+            "unit_count": 1,
+            "volatility_forced": 0.0,
+            "volatility_planned": 0.0,
         },
-    ] == [link.model_dump(mode="json") for link in links]
+    ]
 
 
 def test_update_area():
@@ -675,8 +696,8 @@ def test_update_clusters():
         {
             "a": {
                 "name": "A",
-                "unitcount": 1,
-                "nominalcapacity": 500,
+                "unit_count": 1,
+                "nominal_capacity": 500,
                 "min-stable-power": 200,
             }
         }
