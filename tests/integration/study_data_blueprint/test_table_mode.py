@@ -326,7 +326,7 @@ class TestTableMode:
                 "comments": "",
                 "displayComments": True,
                 "forceNoGeneration": True,
-                "hurdlesCost": False,
+                "hurdlesCost": True,
                 "lawForced": "uniform",
                 "lawPlanned": "uniform",
                 "linkStyle": "plain",
