@@ -81,7 +81,8 @@ class TestUpdateLink:
 
         # Asserts the ini file is well modified (new value + old values unmodified)
         link = IniReader()
-        link_data = link.read(study_path / "input" / "links" / area1_id / "properties.ini")
+        ini_path = study_path / "input" / "links" / area1_id / "properties.ini"
+        link_data = link.read(ini_path)
         assert link_data[area2_id]["hurdles-cost"] == parameters["hurdles-cost"]
         assert link_data[area2_id]["asset-type"] == parameters["asset-type"]
         assert link_data[area2_id]["colorb"] == new_parameters["colorb"]
@@ -89,13 +90,13 @@ class TestUpdateLink:
         # Updating a DB property
         new_parameters = {"nominal_capacity": 111}
         update_parameters = {"parameters": new_parameters, **command_parameters}
+        # Removes the ini file to show we don't need it as we're only updating the DB
+        ini_path.unlink()
 
         with DBStatementRecorder(db.session.bind) as db_recorder:
             UpdateLink.model_validate(update_parameters).apply(study_data=empty_study)
             # todo: this check seems random, don't know why :/
-            # assert len(db_recorder.sql_statements) == 2
-
-        # todo: Could be nice to check that the tree isn't called. Don't know how.
+            # assert len(db_recorder.sql_statements) == 3
 
         # Checks the DB state. Old properties should remain the same and the new one should be updated
         ts_gen_properties = (
@@ -103,11 +104,8 @@ class TestUpdateLink:
             .filter_by(study_id=study_id, area_from=area1_id, area_to=area2_id)
             .all()
         )
-        # todo: Why do I have 2 entries here ????
-        """
         assert len(ts_gen_properties) == 1
         link_ts_gen_props = ts_gen_properties[0]
         assert link_ts_gen_props.unit_count == parameters["unit_count"]
         assert link_ts_gen_props.law_planned == parameters["law_planned"]
         assert link_ts_gen_props.nominal_capacity == new_parameters["nominal_capacity"]
-        """

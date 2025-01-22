@@ -51,8 +51,6 @@ class UpdateLink(AbstractLinkCommand):
         version = study_data.config.version
         area_from, area_to = sorted([self.area1, self.area2])
 
-        properties = study_data.tree.get(["input", "links", area_from, "properties", area_to])
-
         internal_link = LinkInternal.model_validate(self.parameters)
 
         # Updates ini properties
@@ -61,6 +59,7 @@ class UpdateLink(AbstractLinkCommand):
             to_exclude.update("filter-synthesis", "filter-year-by-year")
         new_ini_properties = internal_link.model_dump(by_alias=True, exclude=to_exclude, exclude_unset=True)
         if new_ini_properties:  # If no new INI properties were given we shouldn't update the INI file
+            properties = study_data.tree.get(["input", "links", area_from, "properties", area_to])
             properties.update(new_ini_properties)
             study_data.tree.save(properties, ["input", "links", area_from, "properties", area_to])
 
@@ -80,6 +79,8 @@ class UpdateLink(AbstractLinkCommand):
                 if not old_parameters:
                     db_properties = LinkTsGeneration.model_validate(db_properties_json)
                     new_parameters = db_properties.to_db_model(study_id, area_from, area_to)
+                    db.session.add(new_parameters)
+                    db.session.commit()
                 else:
                     old_props = LinkTsGeneration.from_db_model(old_parameters).model_dump(mode="json")
                     old_props.update(db_properties_json)
@@ -89,8 +90,10 @@ class UpdateLink(AbstractLinkCommand):
                     # We should keep the same matrices
                     new_parameters.modulation = old_parameters.modulation
                     new_parameters.project = old_parameters.prepro
-                db.session.merge(new_parameters)
-                db.session.commit()
+                    # todo: I should do it more efficiently but a merge creates 2 entry ...
+                    db.session.delete(old_parameters)
+                    db.session.add(new_parameters)
+                    db.session.commit()
 
         # Updates matrices
         if self.series:
