@@ -36,12 +36,16 @@ class LinkManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         result: t.List[LinkDTO] = []
 
+        # todo: here call get_all_links_ts_generation_information
+
         for area_id, area in file_study.config.areas.items():
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
 
             for link in area.links:
                 link_tree_config: t.Dict[str, t.Any] = links_config[link]
                 link_tree_config.update({"area1": area_id, "area2": link})
+
+                # todo: check the DB map to update the link_tree_config
 
                 link_internal = LinkInternal.model_validate(link_tree_config)
 
@@ -62,6 +66,19 @@ class LinkManager:
         updated_link = LinkInternal.model_validate(link_properties)
 
         return updated_link
+
+    @staticmethod
+    def get_all_links_ts_generation_information(study_id: str) -> t.Dict[str, t.Dict[str, LinkTsGeneration]]:
+        db_dictionnary: t.Dict[str, t.Dict[str, LinkTsGeneration]] = {}
+        with db():
+            all_links_parameters: t.List[LinksParametersTsGeneration] = (
+                db.session.query(LinksParametersTsGeneration).filter(study_id=study_id).all()
+            )
+            for link_parameters in all_links_parameters:
+                area_from = link_parameters.area_from
+                area_to = link_parameters.area_to
+                db_dictionnary.setdefault(area_from, {})[area_to] = LinkTsGeneration.from_db_model(link_parameters)
+        return db_dictionnary
 
     @staticmethod
     def get_single_link_ts_generation_information(study_id: str, area_from: str, area_to: str) -> LinkTsGeneration:
