@@ -79,8 +79,6 @@ class UpdateLink(AbstractLinkCommand):
                 if not old_parameters:
                     db_properties = LinkTsGeneration.model_validate(db_properties_json)
                     new_parameters = db_properties.to_db_model(study_id, area_from, area_to)
-                    db.session.add(new_parameters)
-                    db.session.commit()
                 else:
                     old_props = LinkTsGeneration.from_db_model(old_parameters).model_dump(mode="json")
                     old_props.update(db_properties_json)
@@ -90,10 +88,9 @@ class UpdateLink(AbstractLinkCommand):
                     # We should keep the same matrices
                     new_parameters.modulation = old_parameters.modulation
                     new_parameters.project = old_parameters.prepro
-                    # todo: I should do it more efficiently but a merge creates 2 entry ...
                     db.session.delete(old_parameters)
-                    db.session.add(new_parameters)
-                    db.session.commit()
+                db.session.add(new_parameters)
+                db.session.commit()
 
         # Updates matrices
         if self.series:

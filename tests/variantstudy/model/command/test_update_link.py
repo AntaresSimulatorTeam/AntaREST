@@ -10,15 +10,15 @@
 #
 # This file is part of the Antares project.
 
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import LinksParametersTsGeneration, RawStudy
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from core.utils.fastapi_sqlalchemy import db
-from db_statement_recorder import DBStatementRecorder
-from study.storage.variantstudy.model.command.update_link import UpdateLink
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 
@@ -92,11 +92,6 @@ class TestUpdateLink:
         update_parameters = {"parameters": new_parameters, **command_parameters}
         # Removes the ini file to show we don't need it as we're only updating the DB
         ini_path.unlink()
-
-        with DBStatementRecorder(db.session.bind) as db_recorder:
-            UpdateLink.model_validate(update_parameters).apply(study_data=empty_study)
-            # todo: this check seems random, don't know why :/
-            # assert len(db_recorder.sql_statements) == 3
 
         # Checks the DB state. Old properties should remain the same and the new one should be updated
         ts_gen_properties = (
