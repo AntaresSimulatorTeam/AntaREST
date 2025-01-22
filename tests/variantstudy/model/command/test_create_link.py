@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import configparser
 from unittest.mock import Mock
 
 import numpy as np
