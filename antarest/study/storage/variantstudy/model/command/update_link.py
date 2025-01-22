@@ -59,31 +59,33 @@ class UpdateLink(AbstractLinkCommand):
         if version < STUDY_VERSION_8_2:
             to_exclude.update("filter-synthesis", "filter-year-by-year")
         new_ini_properties = internal_link.model_dump(by_alias=True, exclude=to_exclude, exclude_unset=True)
-        properties.update(new_ini_properties)
-        study_data.tree.save(properties, ["input", "links", self.area1, "properties", self.area2])
+        if new_ini_properties:
+            properties.update(new_ini_properties)
+            study_data.tree.save(properties, ["input", "links", self.area1, "properties", self.area2])
 
         output, _ = self._apply_config(study_data.config)
 
         # Updates DB properties
         includes = set(LinkTsGeneration.model_fields.keys())
-        db_properties = LinkTsGeneration.model_validate(internal_link.model_dump(mode="json", include=includes))
-
-        with db():
-            study_id = study_data.config.study_id
-            new_parameters = LinksParametersTsGeneration(
-                study_id=study_id,
-                area_from=self.area1,
-                area_to=self.area2,
-                unit_count=db_properties.unit_count,
-                nominal_capacity=db_properties.nominal_capacity,
-                law_planned=db_properties.law_planned,
-                law_forced=db_properties.law_forced,
-                volatility_planned=db_properties.volatility_planned,
-                volatility_forced=db_properties.volatility_forced,
-                force_no_generation=db_properties.force_no_generation,
-            )
-            db.session.merge(new_parameters)
-            db.session.commit()
+        db_properties_json = internal_link.model_dump(mode="json", include=includes)
+        if db_properties_json:
+            db_properties = LinkTsGeneration.model_validate(db_properties_json)
+            with db():
+                study_id = study_data.config.study_id
+                new_parameters = LinksParametersTsGeneration(
+                    study_id=study_id,
+                    area_from=self.area1,
+                    area_to=self.area2,
+                    unit_count=db_properties.unit_count,
+                    nominal_capacity=db_properties.nominal_capacity,
+                    law_planned=db_properties.law_planned,
+                    law_forced=db_properties.law_forced,
+                    volatility_planned=db_properties.volatility_planned,
+                    volatility_forced=db_properties.volatility_forced,
+                    force_no_generation=db_properties.force_no_generation,
+                )
+                db.session.merge(new_parameters)
+                db.session.commit()
 
         # Updates matrices
         if self.series:
