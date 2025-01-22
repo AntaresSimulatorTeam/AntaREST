@@ -18,7 +18,7 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case, to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.model import STUDY_VERSION_8_2, LinksParametersTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption
 
 
@@ -169,6 +169,33 @@ class LinkTsGeneration(AntaresBaseModel):
     volatility_planned: float = Field(default=0.0, ge=0, le=1)
     volatility_forced: float = Field(default=0.0, ge=0, le=1)
     force_no_generation: bool = True
+
+    @staticmethod
+    def from_db_model(links_parameters_db: LinksParametersTsGeneration) -> "LinkTsGeneration":
+        args = {
+            "unit_count": links_parameters_db.unit_count,
+            "nominal_capacity": links_parameters_db.nominal_capacity,
+            "law_planned": links_parameters_db.law_planned,
+            "law_forced": links_parameters_db.law_forced,
+            "volatility_planned": links_parameters_db.volatility_planned,
+            "volatility_forced": links_parameters_db.volatility_forced,
+            "force_no_generation": links_parameters_db.force_no_generation,
+        }
+        return LinkTsGeneration.model_validate(args)
+
+    def to_db_model(self, study_id: str, area_from: str, area_to: str) -> LinksParametersTsGeneration:
+        return LinksParametersTsGeneration(
+            study_id=study_id,
+            area_from=area_from,
+            area_to=area_to,
+            unit_count=self.unit_count,
+            nominal_capacity=self.nominal_capacity,
+            law_planned=self.law_planned,
+            law_forced=self.law_forced,
+            volatility_planned=self.volatility_planned,
+            volatility_forced=self.volatility_forced,
+            force_no_generation=self.force_no_generation,
+        )
 
 
 class LinkBaseDTO(LinkIniDTO, LinkTsGeneration):
