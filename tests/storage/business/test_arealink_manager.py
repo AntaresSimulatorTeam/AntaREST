@@ -101,11 +101,10 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     link_manager = LinkManager(storage_service=storage_service)
 
     # Check `AreaManager` behaviour with a RAW study
-    study_id = str(uuid.uuid4())
     # noinspection PyArgumentList
     study_version = empty_study.config.version
     study = RawStudy(
-        id=study_id,
+        id=empty_study.config.study_id,
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
         version="820",
@@ -227,10 +226,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
     link_manager.create_link(
         study,
-        LinkDTO(
-            area1="test",
-            area2="test2",
-        ),
+        LinkDTO(area1="test", area2="test2", asset_type=AssetType.DC, unit_count=4),
     )
     variant_study_service.append_commands.assert_called_with(
         variant_id,
@@ -247,7 +243,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "loop_flow": False,
                         "use_phase_shifter": False,
                         "transmission_capacities": TransmissionCapacity.ENABLED,
-                        "asset_type": AssetType.AC,
+                        "asset_type": AssetType.DC,
                         "display_comments": True,
                         "comments": "",
                         "colorr": 112,
@@ -257,6 +253,13 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "link_style": LinkStyle.PLAIN,
                         "filter_synthesis": "hourly, daily, weekly, monthly, annual",
                         "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+                        "force_no_generation": True,
+                        "law_forced": "uniform",
+                        "law_planned": "uniform",
+                        "nominal_capacity": 0.0,
+                        "unit_count": 4,
+                        "volatility_forced": 0.0,
+                        "volatility_planned": 0.0,
                     },
                 },
                 study_version=study_version,
@@ -296,6 +299,13 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "colorb": 112,
                         "link_width": 1.0,
                         "link_style": LinkStyle.PLAIN,
+                        "force_no_generation": True,
+                        "law_forced": "uniform",
+                        "law_planned": "uniform",
+                        "nominal_capacity": 0.0,
+                        "unit_count": 1,
+                        "volatility_forced": 0.0,
+                        "volatility_planned": 0.0,
                     },
                 },
                 study_version=study_version,
@@ -382,8 +392,8 @@ def test_get_all_area():
         {
             "a": {
                 "name": "A",
-                "unitcount": 1,
-                "nominalcapacity": 500,
+                "unit_count": 1,
+                "nominal_capacity": 500,
                 "min-stable-power": 200,
             }
         },
@@ -402,8 +412,8 @@ def test_get_all_area():
                     "id": "a",
                     "name": "A",
                     "enabled": True,
-                    "unitcount": 1,
-                    "nominalcapacity": 500,
+                    "unit_count": 1,
+                    "nominal_capacity": 500,
                     "group": None,
                     "min_stable_power": 200,
                     "min_up_time": None,
