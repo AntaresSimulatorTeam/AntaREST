@@ -274,7 +274,7 @@ class CreateLink(AbstractLinkCommand):
         area_to = data["area_to"]
 
         # Saves ini properties
-        to_exclude = set(Area.model_fields.keys() & LinkTsGeneration.model_fields.keys())
+        to_exclude = set(Area.model_fields.keys() | LinkTsGeneration.model_fields.keys())
         if version < STUDY_VERSION_8_2:
             to_exclude.update("filter-synthesis", "filter-year-by-year")
         ini_properties = internal_link.model_dump(by_alias=True, exclude=to_exclude)

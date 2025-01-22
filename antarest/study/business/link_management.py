@@ -74,7 +74,7 @@ class LinkManager:
         db_dictionnary: t.Dict[str, t.Dict[str, LinkTsGeneration]] = {}
         with db():
             all_links_parameters: t.List[LinksParametersTsGeneration] = (
-                db.session.query(LinksParametersTsGeneration).filter(study_id=study_id).all()
+                db.session.query(LinksParametersTsGeneration).filter_by(study_id=study_id).all()
             )
             for link_parameters in all_links_parameters:
                 area_from = link_parameters.area_from
