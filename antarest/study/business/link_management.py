@@ -17,9 +17,10 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.core.model import JSON
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal, LinkTsGeneration
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import RawStudy, Study
+from antarest.study.model import LinksParametersTsGeneration, RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -55,9 +56,24 @@ class LinkManager:
 
         link_properties.update({"area1": link.area1, "area2": link.area2})
 
+        ts_generation_parameters = self.get_single_link_ts_generation_information(study.id, link.area1, link.area2)
+        link_properties.update(ts_generation_parameters.model_dump(mode="json"))
+
         updated_link = LinkInternal.model_validate(link_properties)
 
         return updated_link
+
+    @staticmethod
+    def get_single_link_ts_generation_information(study_id: str, area_from: str, area_to: str) -> LinkTsGeneration:
+        with db():
+            links_parameters = (
+                db.session.query(LinksParametersTsGeneration)
+                .filter_by(study_id=study_id, area_from=area_from, area_to=area_to)
+                .first()
+            )
+            if links_parameters:
+                return LinkTsGeneration.from_db_model(links_parameters)
+        return LinkTsGeneration()
 
     def create_link(self, study: Study, link_creation_dto: LinkDTO) -> LinkDTO:
         link = link_creation_dto.to_internal(StudyVersion.parse(study.version))
