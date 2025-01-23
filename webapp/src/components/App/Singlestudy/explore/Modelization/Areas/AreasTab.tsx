@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,7 +15,7 @@
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import TabWrapper from "../../TabWrapper";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../redux/selectors";
@@ -55,9 +55,7 @@ function AreasTab({ renewablesClustering }: Props) {
   }, [areaId, navigate, location.pathname]);
 
   const tabList = useMemo(() => {
-    const basePath = `/studies/${
-      study.id
-    }/explore/modelization/area/${encodeURI(areaId)}`;
+    const basePath = `/studies/${study.id}/explore/modelization/area/${encodeURI(areaId)}`;
 
     const tabs = [
       { label: "study.modelization.properties", pathSuffix: "properties" },

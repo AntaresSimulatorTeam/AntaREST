@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { Box, styled, Typography } from "@mui/material";
-import { Theme } from "@glideapps/glide-data-grid";
+import type { Theme } from "@glideapps/glide-data-grid";
 
 export const MatrixContainer = styled(Box)(() => ({
   width: "100%",

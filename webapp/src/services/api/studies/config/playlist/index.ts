@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,18 +19,13 @@ import type { PlaylistData, SetPlaylistDataParams } from "./types";
 
 const URL = "/v1/studies/{studyId}/config/playlist/form";
 
-export async function getPlaylistData(params: {
-  studyId: StudyMetadata["id"];
-}) {
+export async function getPlaylistData(params: { studyId: StudyMetadata["id"] }) {
   const url = format(URL, { studyId: params.studyId });
   const { data } = await client.get<PlaylistData>(url);
   return data;
 }
 
-export async function setPlaylistData({
-  studyId,
-  data,
-}: SetPlaylistDataParams) {
+export async function setPlaylistData({ studyId, data }: SetPlaylistDataParams) {
   const url = format(URL, { studyId });
   await client.put(url, data);
 }

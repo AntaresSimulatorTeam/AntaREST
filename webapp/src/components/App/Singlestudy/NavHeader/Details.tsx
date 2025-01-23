@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -27,7 +27,7 @@ import {
   countAllChildrens,
   displayVersionName,
 } from "../../../../services/utils";
-import { StudyMetadata, VariantTree } from "../../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../../common/types";
 import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
 
 const MAX_STUDY_TITLE_LENGTH = 45;
@@ -86,9 +86,7 @@ function Details({ study, parent, childrenTree }: Props) {
       </BoxContainer>
       <BoxContainer>
         <UpdateOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-        <TinyText>
-          {buildModificationDate(study.modificationDate, t, i18n.language)}
-        </TinyText>
+        <TinyText>{buildModificationDate(study.modificationDate, t, i18n.language)}</TinyText>
       </BoxContainer>
       <StyledDivider />
       <BoxContainer>

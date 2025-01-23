@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,17 +20,9 @@ import {
   type FillHandleDirection,
 } from "@glideapps/glide-data-grid";
 import type { DeepPartial } from "react-hook-form";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import DataGrid, { DataGridProps } from "./DataGrid";
-import {
-  Box,
-  Divider,
-  IconButton,
-  setRef,
-  SxProps,
-  Theme,
-  Tooltip,
-} from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import DataGrid, { type DataGridProps } from "./DataGrid";
+import { Box, Divider, IconButton, setRef, Tooltip, type SxProps, type Theme } from "@mui/material";
 import useUndo, { type Actions } from "use-undo";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
@@ -39,7 +31,7 @@ import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
 import { mergeSxProp } from "@/utils/muiUtils";
 import * as R from "ramda";
-import { SubmitHandlerPlus } from "./Form/types";
+import type { SubmitHandlerPlus } from "./Form/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 import { useUpdateEffect } from "react-use";
@@ -58,10 +50,7 @@ export interface DataGridFormApi<TData extends Data> {
   formState: DataGridFormState;
 }
 
-export interface DataGridFormProps<
-  TData extends Data = Data,
-  SubmitReturnValue = unknown,
-> {
+export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue = unknown> {
   defaultData: TData;
   columns: ReadonlyArray<GridColumn & { id: keyof TData[string] }>;
   rowMarkers?: DataGridProps["rowMarkers"];
@@ -71,10 +60,7 @@ export interface DataGridFormProps<
     data: SubmitHandlerPlus<TData>,
     event?: React.BaseSyntheticEvent,
   ) => void | Promise<SubmitReturnValue>;
-  onSubmitSuccessful?: (
-    data: SubmitHandlerPlus<TData>,
-    submitResult: SubmitReturnValue,
-  ) => void;
+  onSubmitSuccessful?: (data: SubmitHandlerPlus<TData>, submitResult: SubmitReturnValue) => void;
   onStateChange?: (state: DataGridFormState) => void;
   sx?: SxProps<Theme>;
   extraActions?: React.ReactNode;
@@ -98,10 +84,9 @@ function DataGridForm<TData extends Data>({
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedData, setSavedData] = useState(defaultData);
-  const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] =
-    useUndo(defaultData);
+  const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] = useUndo(defaultData);
 
-  // Shallow comparison to check if the data has changed.
+  // Reference comparison to check if the data has changed.
   // So even if the content are the same, we consider it as dirty.
   // Deep comparison fix the issue but with big data it can be slow.
   const isDirty = savedData !== data;
@@ -120,10 +105,7 @@ function DataGridForm<TData extends Data>({
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
-  useEffect(
-    () => setRef(apiRef, { data, setData, formState }),
-    [apiRef, data, setData, formState],
-  );
+  useEffect(() => setRef(apiRef, { data, setData, formState }), [apiRef, data, setData, formState]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -238,7 +220,7 @@ function DataGridForm<TData extends Data>({
     return true;
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setIsSubmitting(true);
@@ -317,30 +299,20 @@ function DataGridForm<TData extends Data>({
           <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
           <Tooltip title={t("global.undo")}>
             <span>
-              <IconButton
-                size="small"
-                onClick={undo}
-                disabled={!canUndo || isSubmitting}
-              >
+              <IconButton size="small" onClick={undo} disabled={!canUndo || isSubmitting}>
                 <UndoIcon />
               </IconButton>
             </span>
           </Tooltip>
           <Tooltip title={t("global.redo")}>
             <span>
-              <IconButton
-                size="small"
-                onClick={redo}
-                disabled={!canRedo || isSubmitting}
-              >
+              <IconButton size="small" onClick={redo} disabled={!canRedo || isSubmitting}>
                 <RedoIcon />
               </IconButton>
             </span>
           </Tooltip>
           {extraActions && (
-            <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>
-              {extraActions}
-            </Box>
+            <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>{extraActions}</Box>
           )}
         </Box>
       </Box>

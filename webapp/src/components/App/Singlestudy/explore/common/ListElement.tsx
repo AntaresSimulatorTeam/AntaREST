@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,12 +17,12 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  SxProps,
-  Theme,
   Tooltip,
+  type SxProps,
+  type Theme,
 } from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
-import { IdType } from "../../../../../common/types";
+import type { IdType } from "../../../../../common/types";
 import { mergeSxProp } from "../../../../../utils/muiUtils";
 
 interface Props<T> {
@@ -41,17 +41,10 @@ function ListElement<T extends { id?: IdType; name: string; label?: string }>({
   sx,
 }: Props<T>) {
   return (
-    <Box
-      width="100%"
-      flexGrow={1}
-      flexShrink={1}
-      sx={mergeSxProp({ overflow: "auto", py: 1 }, sx)}
-    >
+    <Box width="100%" flexGrow={1} flexShrink={1} sx={mergeSxProp({ overflow: "auto", py: 1 }, sx)}>
       {list.map((element, index) => (
         <ListItemButton
-          selected={
-            currentElement === element[currentElementKeyToTest || "name"]
-          }
+          selected={currentElement === element[currentElementKeyToTest || "name"]}
           onClick={() => setSelectedItem(element, index)}
           key={element.id || element.name}
           sx={{

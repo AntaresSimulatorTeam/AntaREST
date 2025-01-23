@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -25,23 +25,18 @@ import {
   Typography,
 } from "@mui/material";
 import { produce } from "immer";
-import { ReactNode, useMemo, useReducer, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
-import { Action } from "redux";
+import type { Action } from "redux";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
 import TokenIcon from "@mui/icons-material/Token";
 import * as R from "ramda";
 import { useSnackbar } from "notistack";
-import { BotDTO, BotDetailsDTO, UserDTO } from "../../../../common/types";
+import type { BotDTO, BotDetailsDTO, UserDTO } from "../../../../common/types";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
-import {
-  deleteBot,
-  getBots,
-  getUser,
-  getUsers,
-} from "../../../../services/api/user";
+import { deleteBot, getBots, getUser, getUsers } from "../../../../services/api/user";
 import { isUserAdmin, sortByProp } from "../../../../services/utils";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
@@ -65,27 +60,25 @@ interface TokenAction extends Action<string> {
   payload?: BotDTO["id"] | BotDTO | BotDTO[];
 }
 
-const reducer = produce<BotDetailsDtoWithUser[], [TokenAction]>(
-  (draft, action) => {
-    const { payload } = action;
+const reducer = produce<BotDetailsDtoWithUser[], [TokenAction]>((draft, action) => {
+  const { payload } = action;
 
-    switch (action.type) {
-      case TokenActionKind.ADD: {
-        draft.push(payload as BotDetailsDtoWithUser);
-        return;
-      }
-      case TokenActionKind.DELETE: {
-        const index = draft.findIndex((token) => token.id === payload);
-        if (index > -1) {
-          draft.splice(index, 1);
-        }
-        return;
-      }
-      case TokenActionKind.RESET:
-        return payload as BotDetailsDtoWithUser[];
+  switch (action.type) {
+    case TokenActionKind.ADD: {
+      draft.push(payload as BotDetailsDtoWithUser);
+      return;
     }
-  },
-);
+    case TokenActionKind.DELETE: {
+      const index = draft.findIndex((token) => token.id === payload);
+      if (index > -1) {
+        draft.splice(index, 1);
+      }
+      return;
+    }
+    case TokenActionKind.RESET:
+      return payload as BotDetailsDtoWithUser[];
+  }
+});
 
 function Tokens() {
   const [tokenToDisplayInfo, setTokenToDisplayInfo] = useState<BotDetailsDTO>();
@@ -175,10 +168,7 @@ function Tokens() {
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(
-          t("settings.error.tokenDelete", { 0: token.name }),
-          err,
-        );
+        enqueueErrorSnackbar(t("settings.error.tokenDelete", { 0: token.name }), err);
       })
       .finally(() => {
         setTokensInLoading((prev) => prev.filter((u) => u !== token));
@@ -212,7 +202,7 @@ function Tokens() {
                 <ListItem key={v} disablePadding>
                   <Skeleton sx={{ width: 1, height: 50 }} />
                 </ListItem>
-              )) as ReactNode,
+              )) as React.ReactNode,
           ],
           // Token list
           [
@@ -228,15 +218,10 @@ function Tokens() {
                       </Box>
                     ) : (
                       <>
-                        <IconButton
-                          onClick={() => setTokenToDisplayInfo(token)}
-                        >
+                        <IconButton onClick={() => setTokenToDisplayInfo(token)}>
                           <InfoIcon />
                         </IconButton>
-                        <IconButton
-                          edge="end"
-                          onClick={() => setTokenToDelete(token)}
-                        >
+                        <IconButton edge="end" onClick={() => setTokenToDelete(token)}>
                           <DeleteIcon />
                         </IconButton>
                       </>
@@ -252,9 +237,7 @@ function Tokens() {
                       primary={
                         <Box sx={{ display: "flex" }}>
                           {token.name}
-                          <Typography
-                            sx={{ ml: 2, opacity: 0.4, fontStyle: "italic" }}
-                          >
+                          <Typography sx={{ ml: 2, opacity: 0.4, fontStyle: "italic" }}>
                             {token.user.name}
                           </Typography>
                         </Box>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,9 +15,7 @@
 import { v4 as uuidv4 } from "uuid";
 import * as RA from "ramda-adjunct";
 
-export function makeListItems<T>(
-  value: readonly T[],
-): Array<{ id: string; value: T }> {
+export function makeListItems<T>(value: readonly T[]): Array<{ id: string; value: T }> {
   return value.map((v) => ({ id: uuidv4(), value: v }));
 }
 

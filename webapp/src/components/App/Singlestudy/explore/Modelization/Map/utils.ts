@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,8 +13,8 @@
  */
 
 import { useMemo } from "react";
-import { StudyLayer } from "../../../../../../common/types";
-import { StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
+import type { StudyLayer } from "../../../../../../common/types";
+import type { StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -61,10 +61,7 @@ export const getNodeWidth = (nodeText: string): number => {
   return fontSize * TEXT_SIZE * 6.5;
 };
 
-export function getUpdatedNode(
-  id: string,
-  nodeData: StudyMapNode[],
-): StudyMapNode | undefined {
+export function getUpdatedNode(id: string, nodeData: StudyMapNode[]): StudyMapNode | undefined {
   return nodeData.find((node) => node.id === id);
 }
 
@@ -73,9 +70,7 @@ const getLuminanace = (values: RGB): number => {
     const val = v / 255;
     return val <= 0.03928 ? val / 12.92 : ((val + 0.055) / 1.055) ** 2.4;
   });
-  return Number(
-    (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]).toFixed(3),
-  );
+  return Number((0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]).toFixed(3));
 };
 
 const getContrastRatio = (colorA: RGB, colorB: RGB): number => {
@@ -144,13 +139,6 @@ export function useRenderNodes(
           rgbColor,
         };
       }),
-    [
-      currentLayerId,
-      nodes,
-      centerVector.x,
-      realCenter.x,
-      realCenter.y,
-      centerVector.y,
-    ],
+    [currentLayerId, nodes, centerVector.x, realCenter.x, realCenter.y, centerVector.y],
   );
 }

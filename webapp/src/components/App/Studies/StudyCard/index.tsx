@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,7 +14,7 @@
 
 import { memo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import {
@@ -40,7 +40,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import debug from "debug";
 import { areEqual } from "react-window";
-import { StudyMetadata, StudyType } from "../../../../common/types";
+import { StudyType, type StudyMetadata } from "../../../../common/types";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
@@ -301,9 +301,7 @@ const StudyCard = memo((props: Props) => {
             }}
           >
             <ScheduleOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-            <TinyText noWrap>
-              {convertUTCToLocalTime(study.creationDate)}
-            </TinyText>
+            <TinyText noWrap>{convertUTCToLocalTime(study.creationDate)}</TinyText>
           </Box>
           <Box
             sx={{
@@ -312,9 +310,7 @@ const StudyCard = memo((props: Props) => {
             }}
           >
             <UpdateOutlinedIcon sx={{ color: "text.secondary" }} />
-            <TinyText>
-              {buildModificationDate(study.modificationDate, t, i18n.language)}
-            </TinyText>
+            <TinyText>{buildModificationDate(study.modificationDate, t, i18n.language)}</TinyText>
             <Divider flexItem orientation="vertical" />
             <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
           </Box>
@@ -348,12 +344,7 @@ const StudyCard = memo((props: Props) => {
           }}
         >
           {study.archived && (
-            <Chip
-              icon={<ArchiveOutlinedIcon />}
-              label="archive"
-              color="warning"
-              size="small"
-            />
+            <Chip icon={<ArchiveOutlinedIcon />} label="archive" color="warning" size="small" />
           )}
           {study.type === StudyType.VARIANT && (
             <Chip
@@ -371,12 +362,7 @@ const StudyCard = memo((props: Props) => {
             }}
           />
           {study.tags?.map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              size="small"
-              sx={{ bgcolor: indigo[300] }}
-            />
+            <Chip key={tag} label={tag} size="small" sx={{ bgcolor: indigo[300] }} />
           ))}
         </Box>
       </CardContent>
@@ -406,9 +392,7 @@ const StudyCard = memo((props: Props) => {
         />
       </CardActions>
       {/* Keep conditional rendering for dialogs and not use only `open` property, because API calls are made on mount */}
-      {openDialog === "properties" && (
-        <PropertiesDialog open onClose={closeDialog} study={study} />
-      )}
+      {openDialog === "properties" && <PropertiesDialog open onClose={closeDialog} study={study} />}
       {openDialog === "delete" && (
         <ConfirmationDialog
           open
@@ -420,12 +404,8 @@ const StudyCard = memo((props: Props) => {
           {t("studies.question.delete")}
         </ConfirmationDialog>
       )}
-      {openDialog === "export" && (
-        <ExportModal open onClose={closeDialog} study={study} />
-      )}
-      {openDialog === "move" && (
-        <MoveStudyDialog open onClose={closeDialog} study={study} />
-      )}
+      {openDialog === "export" && <ExportModal open onClose={closeDialog} study={study} />}
+      {openDialog === "move" && <MoveStudyDialog open onClose={closeDialog} study={study} />}
     </Card>
   );
 }, areEqual);

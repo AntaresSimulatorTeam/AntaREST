@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import { type SnackbarKey, useSnackbar } from "notistack";
 import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
 import { toError } from "../utils/fnUtils";
 import { useCallback } from "react";
-import useAutoUpdateRef from "./useAutoUpdateRef";
+import useUpdatedRef from "./useUpdatedRef";
 
 interface UsePromiseHandlerParams<T extends unknown[], U> {
   fn: (...args: T) => Promise<U>;
@@ -31,17 +31,14 @@ interface UsePromiseHandlerParams<T extends unknown[], U> {
  * @param params - The parameters.
  * @returns The promise handler.
  */
-function usePromiseHandler<T extends unknown[], U>(
-  params: UsePromiseHandlerParams<T, U>,
-) {
+function usePromiseHandler<T extends unknown[], U>(params: UsePromiseHandlerParams<T, U>) {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const paramsRef = useAutoUpdateRef(params);
+  const paramsRef = useUpdatedRef(params);
 
   const handlePromise = useCallback(
     async (...args: T) => {
-      const { fn, errorMessage, successMessage, pendingMessage } =
-        paramsRef.current;
+      const { fn, errorMessage, successMessage, pendingMessage } = paramsRef.current;
 
       let snackbarKey: SnackbarKey = "";
       let timeoutId = -1;

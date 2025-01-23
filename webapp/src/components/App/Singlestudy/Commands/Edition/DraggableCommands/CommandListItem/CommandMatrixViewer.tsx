@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,11 +13,11 @@
  */
 
 import { Box, Button } from "@mui/material";
-import { isString } from "ramda-adjunct";
+import * as RA from "ramda-adjunct";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import MatrixDialog from "../../../../../Data/MatrixDialog";
-import { CommandEnum, CommandItem } from "../../commandTypes";
+import { CommandEnum, type CommandItem } from "../../commandTypes";
 
 interface PropTypes {
   command: CommandItem;
@@ -31,7 +31,7 @@ function CommandMatrixViewer(props: PropTypes) {
   const [openViewer, setOpenViewer] = useState(false);
   const [t] = useTranslation();
 
-  if (action === CommandEnum.REPLACE_MATRIX && isString(matrixId)) {
+  if (action === CommandEnum.REPLACE_MATRIX && RA.isString(matrixId)) {
     return (
       <Box sx={{ mt: 1 }}>
         <Button

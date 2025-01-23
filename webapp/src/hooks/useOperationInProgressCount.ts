@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -29,9 +29,7 @@ function useOperationInProgressCount() {
     delete: 0,
   });
 
-  const makeOperationMethods = (
-    operation: keyof typeof opsInProgressCount,
-  ) => ({
+  const makeOperationMethods = (operation: keyof typeof opsInProgressCount) => ({
     increment: (number = 1) => {
       setOpsInProgressCount((prev) => ({
         ...prev,

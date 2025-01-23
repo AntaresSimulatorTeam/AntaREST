@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,17 +15,13 @@
 import debug from "debug";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { LaunchJobDTO, UserInfo } from "../../common/types";
+import type { LaunchJobDTO, UserInfo } from "../../common/types";
 import { getConfig } from "../config";
 import { isStringEmpty, isUserExpired } from "../utils";
-import { AppDispatch } from "../../redux/store";
+import type { AppDispatch } from "../../redux/store";
 import { refresh as refreshUser } from "../../redux/ducks/auth";
 import { deleteStudy, setStudy } from "../../redux/ducks/studies";
-import {
-  setMaintenanceMode,
-  setMessageInfo,
-  setWebSocketConnected,
-} from "../../redux/ducks/ui";
+import { setMaintenanceMode, setMessageInfo, setWebSocketConnected } from "../../redux/ducks/ui";
 import { refreshStudySynthesis } from "../../redux/ducks/studySyntheses";
 import type { WsEvent, WsEventListener } from "./types";
 import { WsChannel, WsEventType } from "./constants";
@@ -50,9 +46,7 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
 
   const config = getConfig();
 
-  webSocket = new WebSocket(
-    `${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`,
-  );
+  webSocket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
 
   if (!globalListenerAdded) {
     eventListeners.push(
@@ -93,10 +87,7 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
           dispatch(refreshUser()) // Reload WebSocket is called inside
             .unwrap()
             .catch((err) => {
-              logError(
-                "Should not happen because refresh is already guarded",
-                err,
-              );
+              logError("Should not happen because refresh is already guarded", err);
               reconnect();
             });
         } else {
@@ -148,9 +139,7 @@ export function subscribeWsChannels(channels: string | string[]) {
 }
 
 export function unsubscribeWsChannels(channels?: string | string[]) {
-  const channelList = channels
-    ? R.uniq(RA.ensureArray(channels))
-    : [...channelSubscribed];
+  const channelList = channels ? R.uniq(RA.ensureArray(channels)) : [...channelSubscribed];
 
   if (webSocket?.readyState === WebSocket.OPEN) {
     for (const channel of channelList) {
@@ -219,9 +208,7 @@ function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
   return function listener(e: WsEvent) {
     switch (e.type) {
       case WsEventType.StudyJobStarted: {
-        const unsubscribe = subscribeWsChannels(
-          WsChannel.JobStatus + e.payload.id,
-        );
+        const unsubscribe = subscribeWsChannels(WsChannel.JobStatus + e.payload.id);
         unsubscribeById[e.payload.id] = unsubscribe;
         break;
       }
@@ -250,9 +237,7 @@ function makeMaintenanceListener(dispatch: AppDispatch): WsEventListener {
         dispatch(setMaintenanceMode(e.payload));
         break;
       case WsEventType.MessageInfo:
-        dispatch(
-          setMessageInfo(isStringEmpty(e.payload) ? "" : (e.payload as string)),
-        );
+        dispatch(setMessageInfo(isStringEmpty(e.payload) ? "" : (e.payload as string)));
         break;
     }
   };

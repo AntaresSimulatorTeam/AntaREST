@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -21,8 +21,7 @@ function GlobalPageLoadingError() {
       display="flex"
       height="100vh"
       sx={{
-        background:
-          "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
+        background: "radial-gradient(ellipse at top right, #190520 0%, #190520 30%, #222333 100%)",
       }}
     >
       <Box
@@ -38,19 +37,8 @@ function GlobalPageLoadingError() {
       >
         <img src={topRightBackground} alt="logo" style={{ height: "auto" }} />
       </Box>
-      <Box
-        flexGrow={1}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        zIndex={999}
-      >
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          flexDirection="column"
-        >
+      <Box flexGrow={1} display="flex" alignItems="center" justifyContent="center" zIndex={999}>
+        <Box display="flex" justifyContent="center" alignItems="center" flexDirection="column">
           <Box
             display="flex"
             width="100%"

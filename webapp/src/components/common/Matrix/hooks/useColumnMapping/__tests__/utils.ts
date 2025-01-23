@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,14 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Item } from "@glideapps/glide-data-grid";
+import type { Item } from "@glideapps/glide-data-grid";
 import { renderHook } from "@testing-library/react";
 import type { ColumnType, EnhancedGridColumn } from "../../../shared/types";
 import { useColumnMapping } from "..";
 import { Column } from "../../../shared/constants";
 
-export const createCoordinate = (col: number, row: number): Item =>
-  [col, row] as Item;
+export const createCoordinate = (col: number, row: number): Item => [col, row] as Item;
 
 export const createColumn = (
   id: string,
@@ -33,8 +32,7 @@ export const createColumn = (
   editable,
 });
 
-export const createNumericColumn = (id: string) =>
-  createColumn(id, Column.Number, true);
+export const createNumericColumn = (id: string) => createColumn(id, Column.Number, true);
 
 export const renderColumnMapping = (columns: EnhancedGridColumn[]) =>
   renderHook(() => useColumnMapping(columns));

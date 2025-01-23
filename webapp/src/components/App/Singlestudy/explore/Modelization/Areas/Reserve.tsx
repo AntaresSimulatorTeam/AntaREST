@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,20 +19,13 @@ import Matrix from "../../../../../common/Matrix";
 function Reserve() {
   const currentArea = useAppSelector(getCurrentAreaId);
   const url = `input/reserves/${currentArea}`;
-  const columns = [
-    "Primary Res. (draft)",
-    "Strategic Res. (draft)",
-    "DSM",
-    "Day Ahead",
-  ];
+  const columns = ["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"];
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <Matrix url={url} customColumns={columns} aggregateColumns={["total"]} />
-  );
+  return <Matrix url={url} customColumns={columns} aggregateColumns={["total"]} />;
 }
 
 export default Reserve;

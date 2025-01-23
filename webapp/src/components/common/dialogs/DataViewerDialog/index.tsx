@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,7 +19,7 @@ import OkDialog from "../OkDialog";
 import SimpleLoader from "../../loaders/SimpleLoader";
 import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
 import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
-import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 interface Props {
   filename: string;
@@ -29,12 +29,8 @@ interface Props {
   isMatrix?: boolean;
 }
 
-function isMatrixData(
-  content: string | MatrixDataDTO,
-): content is MatrixDataDTO {
-  return (
-    typeof content === "object" && "data" in content && "columns" in content
-  );
+function isMatrixData(content: string | MatrixDataDTO): content is MatrixDataDTO {
+  return typeof content === "object" && "data" in content && "columns" in content;
 }
 
 /**
@@ -52,13 +48,7 @@ function isMatrixData(
  * @param [props.loading] - Flag indicating if the content is being loaded
  * @returns The rendered DataViewerDialog component
  */
-function DataViewerDialog({
-  filename,
-  content,
-  onClose,
-  isMatrix,
-  loading,
-}: Props) {
+function DataViewerDialog({ filename, content, onClose, isMatrix, loading }: Props) {
   const [t] = useTranslation();
 
   ////////////////////////////////////////////////////////////////

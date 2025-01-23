@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,15 +17,15 @@ import { useOutletContext } from "react-router";
 import { useState } from "react";
 import Form from "../../../../../../../common/Form";
 import Fields from "./Fields";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 import {
-  AllocationFormFields,
   getAllocationFormFields,
   setAllocationFormFields,
+  type AllocationFormFields,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import HydroMatrixDialog from "../HydroMatrixDialog";
 import { HydroMatrix } from "../utils";
 import { FormBox, FormPaper } from "../style";
@@ -56,8 +56,7 @@ function Allocation() {
     <FormBox>
       <FormPaper
         sx={{
-          backgroundImage:
-            "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
         <Grid container justifyContent="flex-end" alignItems="flex-start">

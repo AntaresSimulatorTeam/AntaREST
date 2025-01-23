@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Area, StudyMetadata } from "../../../../../../../../common/types";
+import type { Area, StudyMetadata } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
@@ -38,9 +38,7 @@ enum InitializeReservoirDate {
 // Constants
 ////////////////////////////////////////////////////////////////
 
-export const INITIALIZE_RESERVOIR_DATE_OPTIONS = Object.entries(
-  InitializeReservoirDate,
-)
+export const INITIALIZE_RESERVOIR_DATE_OPTIONS = Object.entries(InitializeReservoirDate)
   .splice(Object.keys(InitializeReservoirDate).length / 2)
   .map((options) => ({
     label: options[0],
@@ -73,10 +71,7 @@ export interface HydroFormFields {
 // Utils
 ////////////////////////////////////////////////////////////////
 
-function makeRequestURL(
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-): string {
+function makeRequestURL(studyId: StudyMetadata["id"], areaId: Area["name"]): string {
   return `v1/studies/${studyId}/areas/${areaId}/hydro/form`;
 }
 

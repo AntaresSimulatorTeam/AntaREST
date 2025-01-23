@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,11 +17,8 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import {
-  type MatrixItem,
-  type StudyMetadata,
-} from "../../../../../../../common/types";
-import { Storage } from "./utils";
+import { type MatrixItem, type StudyMetadata } from "../../../../../../../common/types";
+import type { Storage } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
 import Matrix from "../../../../../../common/Matrix";
 
@@ -114,10 +111,7 @@ function StorageMatrices({ areaId, storageId }: Props) {
                   >
                     {content.matrices.map(({ url, titleKey }) => (
                       <Box key={titleKey} sx={{ px: 2 }}>
-                        <Matrix
-                          url={url}
-                          title={t(`study.modelization.storages.${titleKey}`)}
-                        />
+                        <Matrix url={url} title={t(`study.modelization.storages.${titleKey}`)} />
                       </Box>
                     ))}
                   </SplitView>
@@ -125,9 +119,7 @@ function StorageMatrices({ areaId, storageId }: Props) {
                   <Matrix
                     key={content.matrix.titleKey}
                     url={content.matrix.url}
-                    title={t(
-                      `study.modelization.storages.${content.matrix.titleKey}`,
-                    )}
+                    title={t(`study.modelization.storages.${content.matrix.titleKey}`)}
                   />
                 )}
               </Box>

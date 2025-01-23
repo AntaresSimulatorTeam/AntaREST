@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,16 +13,16 @@
  */
 
 import { Box } from "@mui/material";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { editStudy } from "../../../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import Fieldset from "../../../../../../common/Fieldset";
-import { AutoSubmitHandler } from "../../../../../../common/Form/types";
-import { getLinkPath, LinkFields } from "./utils";
+import type { AutoSubmitHandler } from "../../../../../../common/Form/types";
+import { getLinkPath, type LinkFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import { LinkElement, StudyMetadata } from "../../../../../../../common/types";
+import type { LinkElement, StudyMetadata } from "../../../../../../../common/types";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";
@@ -41,7 +41,7 @@ function LinkForm(props: Props) {
     let version = 0;
     try {
       version = parseInt(study.version, 10);
-    } catch (e) {
+    } catch {
       version = 0;
     }
     return version >= 820;
@@ -72,12 +72,8 @@ function LinkForm(props: Props) {
   const columnsNames = [
     t("study.modelization.links.matrix.columns.transCapaDirect"),
     t("study.modelization.links.matrix.columns.transCapaIndirect"),
-    `${t(
-      "study.modelization.links.matrix.columns.hurdleCostsDirect",
-    )} (${area1}->${area2})`,
-    `${t(
-      "study.modelization.links.matrix.columns.hurdleCostsIndirect",
-    )} (${area2}->${area1})`,
+    `${t("study.modelization.links.matrix.columns.hurdleCostsDirect")} (${area1}->${area2})`,
+    `${t("study.modelization.links.matrix.columns.hurdleCostsIndirect")} (${area2}->${area1})`,
     t("study.modelization.links.matrix.columns.impedances"),
     t("study.modelization.links.matrix.columns.loopFlow"),
     t("study.modelization.links.matrix.columns.pShiftMin"),
@@ -232,9 +228,7 @@ function LinkForm(props: Props) {
         </Fieldset>
         <OutputFilters
           control={control}
-          onAutoSubmit={(filterName, value) =>
-            handleAutoSubmit(path[filterName], value)
-          }
+          onAutoSubmit={(filterName, value) => handleAutoSubmit(path[filterName], value)}
         />
         <Box
           sx={{

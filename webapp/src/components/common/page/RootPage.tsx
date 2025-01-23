@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import BasicPage from "./BasicPage";
 
@@ -26,14 +26,7 @@ interface Props {
 }
 
 function RootPage(props: Props) {
-  const {
-    title,
-    titleIcon,
-    headerTopRight,
-    headerBottom,
-    children,
-    hideHeaderDivider,
-  } = props;
+  const { title, titleIcon, headerTopRight, headerBottom, children, hideHeaderDivider } = props;
 
   const TitleIcon = titleIcon as SvgIconComponent;
 
