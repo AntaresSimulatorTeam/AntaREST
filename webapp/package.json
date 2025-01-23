@@ -10,7 +10,7 @@
     "dev": "vite",
     "lint": "tsc --noEmit && eslint . --report-unused-disable-directives",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest && npx cypress run",
     "test:ui": "vitest --ui"
   },
   "dependencies": {

@@ -11,9 +11,3 @@
  *
  * This file is part of the Antares project.
  */
-
-describe("template spec", () => {
-  it("passes", () => {
-    cy.visit("https://example.cypress.io");
-  });
-});
