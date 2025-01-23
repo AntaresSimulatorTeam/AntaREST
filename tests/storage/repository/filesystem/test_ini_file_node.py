@@ -20,8 +20,13 @@ import pytest
 
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_9_1
+from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import (
+    NAME_TO_ID_MATCHER,
+    IniFileNode,
+    SectionMatcher,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
 
 
@@ -291,6 +296,112 @@ def test_save(tmp_path: Path) -> None:
         """
     )
     assert ini_path.read_text().strip() == expected.strip()
+
+
+def _ini_node(tmp_path: Path, data: JSON = None, section_matcher: SectionMatcher = None) -> IniFileNode:
+    ini_path = tmp_path.joinpath("test.ini")
+    data = data or {
+        "part1": {
+            "key_float": 2.1,
+            "key_int": 1,
+            "key_str": "value1",
+        },
+        "part2": {
+            "key_float": 18,
+            "key_int": 5,
+            "key_str": "value2",
+        },
+    }
+    IniWriter().write(data=data, path=ini_path)
+
+    node = IniFileNode(
+        context=Mock(),
+        config=FileStudyTreeConfig(
+            study_path=tmp_path,
+            path=ini_path,
+            version=-1,
+            study_id="id",
+            areas={},
+            outputs={},
+        ),
+        section_matcher=section_matcher,
+    )
+    return node
+
+
+@pytest.fixture
+def ini_node(tmp_path: Path) -> IniFileNode:
+    return _ini_node(tmp_path)
+
+
+@pytest.fixture
+def ini_node_with_id_matching(tmp_path: Path) -> IniFileNode:
+    return _ini_node(tmp_path, section_matcher=NAME_TO_ID_MATCHER)
+
+
+@pytest.mark.unit_test
+def test_delete_section(ini_node: IniFileNode) -> None:
+    ini_node.delete(["Part1"])
+    assert ini_node.get() == {
+        "part2": {
+            "key_float": 18,
+            "key_int": 5,
+            "key_str": "value2",
+        },
+    }
+
+
+@pytest.mark.unit_test
+def test_delete_section_with_matching(ini_node_with_id_matching: IniFileNode) -> None:
+    ini_node = ini_node_with_id_matching
+    ini_node.delete(["Part1"])
+    assert ini_node.get() == {
+        "part2": {
+            "key_float": 18,
+            "key_int": 5,
+            "key_str": "value2",
+        },
+    }
+
+
+@pytest.mark.unit_test
+def test_delete_section_with_matching_2(tmp_path: Path) -> None:
+    ini_node = _ini_node(
+        tmp_path, section_matcher=NAME_TO_ID_MATCHER, data={"Grand'Maison": {"key_float": 18, "key_int": 5}}
+    )
+    ini_node.delete(["grand maison"])
+    assert ini_node.get() == {}
+
+
+@pytest.mark.unit_test
+def test_get_section_with_matching(tmp_path: Path) -> None:
+    ini_node = _ini_node(
+        tmp_path, section_matcher=NAME_TO_ID_MATCHER, data={"Grand'Maison": {"key_float": 18, "key_int": 5}}
+    )
+    ini_node.get(["grand maison"])
+    assert ini_node.get() == {"Grand'Maison": {"key_float": 18, "key_int": 5}}
+
+
+@pytest.mark.unit_test
+def test_delete_option(ini_node: IniFileNode) -> None:
+    ini_node.delete(["part1", "key_int"])
+    assert ini_node.get() == {
+        "part1": {
+            "key_float": 2.1,
+            "key_str": "value1",
+        },
+        "part2": {
+            "key_float": 18,
+            "key_int": 5,
+            "key_str": "value2",
+        },
+    }
+
+
+@pytest.mark.unit_test
+def test_delete_file(ini_node: IniFileNode) -> None:
+    ini_node.delete()
+    assert ini_node.get() == {}
 
 
 @pytest.mark.parametrize(

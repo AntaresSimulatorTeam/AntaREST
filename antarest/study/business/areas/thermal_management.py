@@ -317,7 +317,7 @@ class ThermalManager:
         # between the cluster name and the cluster ID (which is a section name).
         args = {
             "area_id": area_id,
-            "cluster_name": cluster.id,
+            "cluster_name": cluster.name,
             "parameters": cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
             "study_version": study_version,

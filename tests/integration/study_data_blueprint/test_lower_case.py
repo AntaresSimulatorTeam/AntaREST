@@ -47,23 +47,20 @@ class TestLowerCase:
             cluster_grp = "Battery"
             url = "storages"
         cluster_name = "Cluster 1"
-        lowered_name = cluster_name.lower()
         lowered_grp = cluster_grp.lower()
         res = client.post(
             f"/v1/studies/{study_id}/areas/{area1_id}/{url}", json={"name": cluster_name, "group": cluster_grp}
         )
         assert res.status_code == 200, res.json()
 
-        # Asserts the fields are written in lower case inside the ini file
+        # Asserts the group fields are written in lower case inside the ini file
         ini_path = study_path / "input" / cluster_type / "clusters" / area1_id / "list.ini"
         ini_content = IniReader().read(ini_path)
-        assert list(ini_content.keys()) == [lowered_name]
-        assert ini_content[lowered_name]["group"] == lowered_grp
+        assert list(ini_content.keys()) == [cluster_name]
+        assert ini_content[cluster_name]["group"] == lowered_grp
 
-        # Rewrite the cluster name in MAJ to mimic legacy clusters
+        # Rewrite the group in MAJ to mimic legacy clusters
         new_content = copy.deepcopy(ini_content)
-        new_content[cluster_name] = new_content.pop(lowered_name)
-        new_content[cluster_name]["name"] = cluster_name
         new_content[cluster_name]["group"] = cluster_grp
         IniWriter().write(new_content, ini_path)
 

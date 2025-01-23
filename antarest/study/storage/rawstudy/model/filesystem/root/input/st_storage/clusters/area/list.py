@@ -9,16 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import typing as t
 
-from typing_extensions import override
-
-from antarest.core.model import SUB_JSON
 from antarest.study.storage.rawstudy.ini_reader import LOWER_CASE_PARSER, IniReader, OptionKey
 from antarest.study.storage.rawstudy.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import LOWER_CASE_MATCHER, IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import NAME_TO_ID_MATCHER, IniFileNode
 
 _VALUE_PARSERS = {OptionKey(None, "group"): LOWER_CASE_PARSER}
 _VALUE_SERIALIZERS = {OptionKey(None, "group"): LOWER_CASE_SERIALIZER}
@@ -48,5 +44,5 @@ class InputSTStorageAreaList(IniFileNode):
             types,
             reader=IniReader(value_parsers=_VALUE_PARSERS),
             writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
-            section_matcher=LOWER_CASE_MATCHER,
+            section_matcher=NAME_TO_ID_MATCHER,
         )

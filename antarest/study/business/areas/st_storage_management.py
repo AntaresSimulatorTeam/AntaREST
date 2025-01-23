@@ -441,7 +441,7 @@ class STStorageManager:
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageNotFound(path, storage_id) from None
+            raise STStorageNotFound(path, storage_id)
         return create_storage_output(StudyVersion.parse(study.version), storage_id, config)
 
     def update_storage(

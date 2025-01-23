@@ -23,6 +23,7 @@ from antarest.core.model import JSON
 
 PrimitiveType = t.Union[str, int, float, bool]
 ValueParser = Callable[[str], PrimitiveType]
+SelectionPredicate = Callable[[str], bool]
 
 
 def _lower_case(input: str) -> str:
@@ -70,8 +71,8 @@ class ReaderOptions:
         option_regex: A compiled regex for matching option names.
     """
 
-    section_regex: t.Optional[t.Pattern[str]] = None
-    option_regex: t.Optional[t.Pattern[str]] = None
+    section_predicate: Optional[SelectionPredicate] = None
+    option_predicate: Optional[SelectionPredicate] = None
 
     def select_section_option(self, section: str, option: str = "") -> bool:
         """
@@ -84,9 +85,9 @@ class ReaderOptions:
         Returns:
             Whether the section and option match their respective regular expressions.
         """
-        if self.section_regex and not self.section_regex.fullmatch(section):
+        if self.section_predicate and not self.section_predicate(section):
             return False
-        if self.option_regex and option and not self.option_regex.fullmatch(option):
+        if option and self.option_predicate and not self.option_predicate(option):
             return False
         return True
 
@@ -108,20 +109,25 @@ def ini_reader_options(
         option: The option name to match (by default, all options are matched)
         section_regex: The regex for matching section names.
         option_regex: The regex for matching option names.
-        _unused: Placeholder for any unknown options.
 
     Returns:
         The newly created instance
     """
-    if section:
-        section_regex = re.compile(re.escape(section), re.IGNORECASE)
-    if option:
-        option_regex = re.compile(re.escape(option), re.IGNORECASE)
-    if isinstance(section_regex, str):
-        section_regex = re.compile(section_regex, re.IGNORECASE) if section_regex else None
-    if isinstance(option_regex, str):
-        option_regex = re.compile(option_regex, re.IGNORECASE) if option_regex else None
-    return ReaderOptions(section_regex=section_regex, option_regex=option_regex)
+    return ReaderOptions(
+        section_predicate=make_predicate(section, section_regex), option_predicate=make_predicate(option, option_regex)
+    )
+
+
+def make_predicate(
+    value: str = "", regex: t.Optional[t.Union[str, t.Pattern[str]]] = None
+) -> Optional[SelectionPredicate]:
+    if value:
+        option_regex = re.compile(re.escape(value), re.IGNORECASE)
+    elif isinstance(regex, str):
+        option_regex = re.compile(regex, re.IGNORECASE) if regex else None
+    else:
+        return None
+    return option_regex.fullmatch
 
 
 class IReader(ABC):

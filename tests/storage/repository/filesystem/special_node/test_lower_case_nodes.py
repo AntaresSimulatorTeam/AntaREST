@@ -87,15 +87,15 @@ def test_cluster_ini_list(tmp_path: Path, ini_node_cluster_class):
     node.save(data)
     # Asserts the data is saved correctly
     ini_content = IniReader().read(file_path)
-    assert ini_content == data
-    # Asserts cluster group and ids are returned in lower case
+    assert ini_content == {"Cluster 1": {"group": "gas"}}
+    # Asserts cluster group is returned in lower case
     content = node.get([])
     assert content == {"Cluster 1": {"group": "gas"}}
     # Asserts saving the group in upper case works and that it will be returned in lower case
     node.save("NUCLEAR", ["Cluster 1", "group"])
     content = node.get([])
     assert content == {"Cluster 1": {"group": "nuclear"}}
-    # Asserts updating the file with an id not in lower case will be done correctly
+    # Asserts updating the file with an id in lower case will be done correctly
     node.save({"params": "43"}, ["cluster 1"])
     content = node.get([])
     assert content == {"Cluster 1": {"params": 43}}

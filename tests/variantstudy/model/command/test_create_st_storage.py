@@ -305,7 +305,7 @@ class TestCreateSTStorage:
         # check the config
         config = recent_study.tree.get(["input", "st-storage", "clusters", cmd.area_id, "list"])
         expected = {
-            "storage1": {
+            "Storage1": {
                 "efficiency": 0.94,
                 "group": "battery",
                 "initiallevel": 0.5,
@@ -325,7 +325,7 @@ class TestCreateSTStorage:
         pmax_injection_id = service.create(pmax_injection)
         inflows_id = service.create(inflows)
         expected = {
-            "storage1": {
+            "Storage1": {
                 "pmax_injection": f"matrix://{pmax_injection_id}",
                 "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal(),
                 "lower_rule_curve": constants.get_st_storage_lower_rule_curve(),

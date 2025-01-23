@@ -137,7 +137,7 @@ class TestCreateCluster:
 
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
-        section = clusters[cluster_name.lower()]
+        section = clusters[cluster_name]
         assert str(section["name"]) == cluster_name
         assert str(section["group"]) == parameters["group"]
         assert int(section["unitcount"]) == int(parameters["unitcount"])

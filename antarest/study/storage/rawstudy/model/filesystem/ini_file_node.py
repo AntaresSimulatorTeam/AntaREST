@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import contextlib
-import dataclasses
 import functools
 import io
 import logging
@@ -21,7 +20,7 @@ import typing as t
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional
 
 import py7zr
 import pydantic_core
@@ -34,12 +33,13 @@ from antarest.core.serialization import from_json
 from antarest.study.storage.rawstudy.ini_reader import (
     IniReader,
     IReader,
-    OptionKey,
     ReaderOptions,
-    ValueParser,
+    SelectionPredicate,
     ini_reader_options,
+    make_predicate,
 )
 from antarest.study.storage.rawstudy.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
@@ -52,6 +52,7 @@ def _lower_case(input: str) -> str:
 
 
 LOWER_CASE_MATCHER: SectionMatcher = _lower_case
+NAME_TO_ID_MATCHER: SectionMatcher = transform_name_to_id
 
 
 @dataclass(frozen=True)
@@ -199,6 +200,12 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         else:
             return section_data
 
+    def _make_section_predicate(self, section: str) -> SelectionPredicate:
+        if self.section_matcher:
+            return lambda actual_section: self.section_matcher(section) == self.section_matcher(actual_section)
+        else:
+            return make_predicate(value=section)
+
     # noinspection PyMethodMayBeStatic
     def _build_options(self, url: t.List[str]) -> ReaderOptions:
         """
@@ -214,10 +221,13 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         """
         if len(url) > 2:
             raise ValueError(f"Invalid URL: {url!r}")
-        elif len(url) == 2:
-            return ini_reader_options(section=url[0], option=url[1])
-        elif len(url) == 1:
-            return ini_reader_options(section=url[0])
+        loc = url_to_location(url)
+        if loc.section and loc.key:
+            return ReaderOptions(
+                section_predicate=self._make_section_predicate(loc.section), option_predicate=make_predicate(loc.key)
+            )
+        elif loc.section:
+            return ReaderOptions(section_predicate=self._make_section_predicate(loc.section))
         else:
             return ini_reader_options()
 
@@ -306,35 +316,33 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 f"Cannot delete item {url!r}: URL should be fully resolved",
             )
 
+        loc = url_to_location(url)
+
         data = self.reader.read(self.path)
 
-        if url_len == 1:
-            section_name = url[0]
+        if loc.section and loc.key:
+            section = self._find_matching_section(data, loc.section)
+            if not section:
+                raise IniFileNodeWarning(
+                    self.config,
+                    f"Cannot delete section: Section [{loc.section}] not found",
+                )
             try:
-                del data[section_name]
+                del data[section][loc.key]
             except KeyError:
                 raise IniFileNodeWarning(
                     self.config,
-                    f"Cannot delete section: Section [{section_name}] not found",
+                    f"Cannot delete key: Key '{loc.key}' not found in section [{section}]",
                 ) from None
 
-        elif url_len == 2:
-            section_name, key_name = url
-            try:
-                section = data[section_name]
-            except KeyError:
+        elif loc.section:
+            section = self._find_matching_section(data, loc.section)
+            if not section:
                 raise IniFileNodeWarning(
                     self.config,
-                    f"Cannot delete key: Section [{section_name}] not found",
-                ) from None
-            else:
-                try:
-                    del section[key_name]
-                except KeyError:
-                    raise IniFileNodeWarning(
-                        self.config,
-                        f"Cannot delete key: Key '{key_name}' not found in section [{section_name}]",
-                    ) from None
+                    f"Cannot delete section: Section [{loc.section}] not found",
+                )
+            del data[section]
 
         self.writer.write(data, self.path)
 

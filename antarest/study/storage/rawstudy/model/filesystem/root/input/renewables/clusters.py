@@ -13,13 +13,15 @@
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.ini_reader import LOWER_CASE_PARSER, IniReader, OptionKey
+from antarest.study.storage.rawstudy.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import LOWER_CASE_MATCHER, IniFileNode
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import NAME_TO_ID_MATCHER, IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 
 _VALUE_PARSERS = {OptionKey(None, "group"): LOWER_CASE_PARSER}
+_VALUE_SERIALIZERS = {OptionKey(None, "group"): LOWER_CASE_SERIALIZER}
 
 
 class ClusteredRenewableClusterConfig(IniFileNode):
@@ -39,7 +41,12 @@ class ClusteredRenewableClusterConfig(IniFileNode):
         }
         types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}
         super().__init__(
-            context, config, types, reader=IniReader(value_parsers=_VALUE_PARSERS), section_matcher=LOWER_CASE_MATCHER
+            context,
+            config,
+            types,
+            reader=IniReader(value_parsers=_VALUE_PARSERS),
+            writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
+            section_matcher=NAME_TO_ID_MATCHER,
         )
 
 

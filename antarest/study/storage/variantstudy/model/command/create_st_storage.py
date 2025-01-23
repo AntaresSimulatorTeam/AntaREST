@@ -252,7 +252,7 @@ class CreateSTStorage(ICommand):
         # Fill-in the "list.ini" file with the parameters.
         # On creation, it's better to write all the parameters in the file.
         config = study_data.tree.get(["input", "st-storage", "clusters", self.area_id, "list"])
-        config[storage_id] = self.parameters.model_dump(mode="json", by_alias=True)
+        config[self.storage_name] = self.parameters.model_dump(mode="json", by_alias=True)
 
         new_data: JSON = {
             "input": {

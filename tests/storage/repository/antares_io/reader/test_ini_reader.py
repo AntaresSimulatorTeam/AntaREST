@@ -346,18 +346,16 @@ class TestIniReader:
             )
         )
 
-        reader = IniReader()
-
         def to_lower(input: str) -> str:
             return input.lower()
 
         value_parsers = {OptionKey("part2", "bar"): to_lower}
-        actual = reader.read(path, ini_reader_options(value_parsers=value_parsers))
+        actual = IniReader(value_parsers=value_parsers).read(path)
         expected = {"part1": {"bar": "Hello"}, "part2": {"bar": "hello"}}
         assert actual == expected
 
         value_parsers = {OptionKey(None, "bar"): to_lower}
-        actual = reader.read(path, ini_reader_options(value_parsers=value_parsers))
+        actual = IniReader(value_parsers=value_parsers).read(path)
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "hello"}}
         assert actual == expected
 

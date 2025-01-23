@@ -70,7 +70,7 @@ class IniConfigParser(configparser.RawConfigParser):
             self, section_name, key, value
         )
         if self._value_serializers:
-            if serializer := self._get_serializer(key):
+            if serializer := self._get_serializer(section_name, key):
                 value = serializer(value)
         if value is not None or not self._allow_no_value:  # type:ignore
             value = delimiter + str(value).replace("\n", "\n\t")
@@ -117,7 +117,7 @@ class IniWriter:
             data: JSON content.
             path: path to `.ini` file.
         """
-        config_parser = IniConfigParser(special_keys=self.special_keys)
+        config_parser = IniConfigParser(special_keys=self.special_keys, value_serializers=self._value_serializers)
         config_parser.read_dict(data)
         with path.open("w") as fp:
             config_parser.write(fp)
