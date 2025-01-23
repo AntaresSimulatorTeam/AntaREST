@@ -170,4 +170,5 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          build: npm run build
           working-directory: webapp
