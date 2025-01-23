@@ -983,7 +983,7 @@ class StudyService:
                 try:
                     if study_path not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[folder.workspace].path
-                        dir_name = folder.path.relative_to(base_path).as_posix()
+                        dir_name = folder.path.relative_to(base_path)
                         study = RawStudy(
                             id=str(uuid4()),
                             name=folder.path.name,

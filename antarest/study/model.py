@@ -16,7 +16,7 @@ import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
@@ -230,7 +230,7 @@ class Study(Base):  # type: ignore
     created_at = Column(DateTime, index=True)
     updated_at = Column(DateTime, index=True)
     last_access = Column(DateTime)
-    path = Column(String())
+    _path = Column(String())
     folder = Column(String, nullable=True, index=True)
     parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
@@ -287,6 +287,17 @@ class Study(Base):  # type: ignore
 
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, path: str):
+        windows_path = PureWindowsPath(path)
+        posix_path = windows_path.as_posix()
+        path_str = str(posix_path)
+        self._path = path_str
 
 
 class RawStudy(Study):
