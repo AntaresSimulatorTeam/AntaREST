@@ -11,6 +11,7 @@
  *
  * This file is part of the Antares project.
  */
+
 import { defineConfig } from "cypress";
 
 export default defineConfig({
