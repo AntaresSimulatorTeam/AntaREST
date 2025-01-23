@@ -162,6 +162,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   cypress-run:
+    needs: npm-build
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -169,5 +170,4 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          build: npm run build
           working-directory: webapp
