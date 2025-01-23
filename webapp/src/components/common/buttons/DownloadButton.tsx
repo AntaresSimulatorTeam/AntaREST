@@ -62,7 +62,10 @@ function DownloadButton<OptionValue extends string>(props: DownloadButtonProps<O
 
     try {
       if (formatOptions) {
-        await onClick?.(format!);
+        if (!format) {
+          throw new Error("No format selected");
+        }
+        await onClick?.(format);
       } else {
         await onClick?.();
       }
