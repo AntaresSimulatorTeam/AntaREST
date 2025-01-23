@@ -124,6 +124,14 @@ export default [
       "react/hook-use-state": "error",
       "react/prop-types": "off",
       "react/self-closing-comp": "error",
+      "react-hooks/exhaustive-deps": [
+        "warn",
+        {
+          // Includes hooks from 'react-use'
+          additionalHooks:
+            "(useSafeMemo|useUpdateEffectOnce|useDeepCompareEffect|useShallowCompareEffect|useCustomCompareEffect)",
+        },
+      ],
       "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low
     },
   },
