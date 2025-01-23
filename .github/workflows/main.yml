@@ -170,4 +170,4 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          working-directory: webapp
+          working-directory: ./webapp
