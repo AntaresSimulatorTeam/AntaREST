@@ -24,7 +24,7 @@ import { Link } from "react-router-dom";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
-  countAllChildrens,
+  countDescendants,
   displayVersionName,
 } from "../../../../services/utils";
 import type { StudyMetadata, VariantTree } from "../../../../common/types";
@@ -105,7 +105,7 @@ function Details({ study, parent, childrenTree }: Props) {
       {childrenTree && (
         <BoxContainer>
           <AccountTreeOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
-          <TinyText>{countAllChildrens(childrenTree)}</TinyText>
+          <TinyText>{countDescendants(childrenTree)}</TinyText>
         </BoxContainer>
       )}
       <StyledDivider />
