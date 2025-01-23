@@ -26,6 +26,11 @@ export default memo(function StudyTreeNode({
   const isLoadingFolder = studyTreeNode.hasChildren && studyTreeNode.children.length === 0;
   const id = parentId ? `${parentId}/${studyTreeNode.name}` : studyTreeNode.name;
 
+  const sortedChildren = useMemo(
+    () => R.sortBy(R.prop("name"), studyTreeNode.children),
+    [studyTreeNode.children],
+  );
+
   if (isLoadingFolder) {
     return (
       <TreeItemEnhanced
@@ -37,11 +42,6 @@ export default memo(function StudyTreeNode({
       </TreeItemEnhanced>
     );
   }
-
-  const sortedChildren = useMemo(
-    () => R.sortBy(R.prop("name"), studyTreeNode.children),
-    [studyTreeNode.children],
-  );
 
   return (
     <TreeItemEnhanced
