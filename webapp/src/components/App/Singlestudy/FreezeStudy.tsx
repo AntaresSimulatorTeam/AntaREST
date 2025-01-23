@@ -28,7 +28,7 @@ import { Backdrop, Button, List, ListItem, ListItemText, Paper, Typography } fro
 import { useEffect, useState } from "react";
 import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
 import { useTranslation } from "react-i18next";
-import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
 
 interface BlockingTask {
   id: TaskDTO["id"];
@@ -60,7 +60,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
   const [blockingTasks, setBlockingTasks] = useState<BlockingTask[]>([]);
   const { t } = useTranslation();
   const hasLoadingTask = !!blockingTasks.find(isLoadingTask);
-  const blockingTasksRef = useAutoUpdateRef(blockingTasks);
+  const blockingTasksRef = useUpdatedRef(blockingTasks);
 
   // Fetch blocking tasks and subscribe to their WebSocket channels
   useEffect(() => {

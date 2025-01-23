@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
+import * as R from "ramda";
 import type { StudyTreeNodeProps } from "./types";
 import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 import { t } from "i18next";
@@ -24,6 +25,11 @@ export default memo(function StudyTreeNode({
 }: StudyTreeNodeProps) {
   const isLoadingFolder = studyTreeNode.hasChildren && studyTreeNode.children.length === 0;
   const id = parentId ? `${parentId}/${studyTreeNode.name}` : studyTreeNode.name;
+
+  const sortedChildren = useMemo(
+    () => R.sortBy(R.prop("name"), studyTreeNode.children),
+    [studyTreeNode.children],
+  );
 
   if (isLoadingFolder) {
     return (
@@ -43,7 +49,7 @@ export default memo(function StudyTreeNode({
       label={studyTreeNode.name}
       onClick={() => onNodeClick(id, studyTreeNode)}
     >
-      {studyTreeNode.children.map((child) => (
+      {sortedChildren.map((child) => (
         <StudyTreeNode
           key={`${id}/${child.name}`}
           studyTreeNode={child}

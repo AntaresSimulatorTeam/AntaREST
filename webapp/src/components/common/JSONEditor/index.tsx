@@ -19,7 +19,7 @@ import { useDeepCompareEffect, useMount } from "react-use";
 import "jsoneditor/dist/jsoneditor.min.css";
 import "./dark-theme.css";
 import type { PromiseAny } from "../../../utils/tsUtils";
-import useAutoUpdateRef from "../../../hooks/useAutoUpdateRef";
+import useUpdatedRef from "../../../hooks/useUpdatedRef";
 import { createSaveButton } from "./utils";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
@@ -37,8 +37,8 @@ function JSONEditor(props: JSONEditorProps) {
   const { json, onSave, onSaveSuccessful, ...options } = props;
   const ref = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<JSONEditorClass>();
-  const onSaveRef = useAutoUpdateRef(onSave);
-  const callbackOptionsRef = useAutoUpdateRef<Partial<JSONEditorOptions>>(
+  const onSaveRef = useUpdatedRef(onSave);
+  const callbackOptionsRef = useUpdatedRef<Partial<JSONEditorOptions>>(
     R.pickBy(RA.isFunction, options),
   );
   const saveBtn = useMemo(() => createSaveButton(handleSaveClick), []);

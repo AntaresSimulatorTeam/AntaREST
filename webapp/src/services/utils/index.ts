@@ -201,12 +201,10 @@ export const buildModificationDate = (
   return duration.locale(language.substring(0, 2) === "fr" ? "fr" : "en").humanize();
 };
 
-export const countAllChildrens = (tree: VariantTree): number => {
-  if (tree.children.length > 0) {
-    return tree.children.map((elm) => 1 + countAllChildrens(elm)).reduce((acc, curr) => acc + curr);
-  }
-  return 0;
-};
+export const countDescendants = (tree: VariantTree): number =>
+  tree.children.length
+    ? tree.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0)
+    : 0;
 
 export const findNodeInTree = (studyId: string, tree: VariantTree): VariantTree | undefined => {
   if (studyId === tree.node.id) {
