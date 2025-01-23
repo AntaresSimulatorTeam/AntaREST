@@ -225,15 +225,17 @@ STStorageTimeSeries = Literal[
 # ============================
 
 
-_STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
+_AREA_STORAGES_PATH = "input/st-storage/clusters/{area_id}/list"
+_STORAGE_PATH = _AREA_STORAGES_PATH + "/{storage_id}"
 _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
 _ALL_STORAGE_PATH = "input/st-storage/clusters"
 
 
-def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.Mapping[str, t.Any]]:
-    path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
+def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Dict[str, t.Dict[str, t.Any]]:
+    path = _AREA_STORAGES_PATH.format(area_id=area_id)
     try:
-        return CaseInsensitiveDict(file_study.tree.get(path.split("/"), depth=3))
+        values = file_study.tree.get(path.split("/"), depth=3)
+        return {transform_name_to_id(name): cluster for name, cluster in values.items()}
     except ChildNotFoundError:
         raise AreaNotFound(area_id) from None
     except KeyError:
@@ -328,7 +330,7 @@ class STStorageManager:
         """
 
         file_study = self._get_file_study(study)
-        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
+        path = _STORAGE_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
         except ChildNotFoundError:
@@ -404,7 +406,7 @@ class STStorageManager:
                     study_version,
                     **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
                 )
-                path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+                path = _STORAGE_PATH.format(area_id=area_id, storage_id=storage_id)
                 cmd = UpdateConfig(
                     target=path,
                     data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
@@ -437,7 +439,7 @@ class STStorageManager:
         """
 
         file_study = self._get_file_study(study)
-        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+        path = _STORAGE_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
@@ -472,7 +474,7 @@ class STStorageManager:
 
         values = values_by_ids.get(storage_id)
         if values is None:
-            path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+            path = _STORAGE_PATH.format(area_id=area_id, storage_id=storage_id)
             raise STStorageNotFound(path, storage_id)
         old_config = create_st_storage_config(study_version, **values)
 
@@ -490,7 +492,7 @@ class STStorageManager:
 
         # create the update config commands with the modified data
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+        path = _STORAGE_PATH.format(area_id=area_id, storage_id=storage_id)
         commands = [
             UpdateConfig(
                 target=f"{path}/{key}", data=value, command_context=command_context, study_version=study_version
@@ -521,7 +523,7 @@ class STStorageManager:
 
         for storage_id in storage_ids:
             if storage_id not in values_by_ids:
-                path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+                path = _STORAGE_PATH.format(area_id=area_id, storage_id=storage_id)
                 raise STStorageNotFound(path, storage_id)
 
         command_context = self.storage_service.variant_study_service.command_factory.command_context
