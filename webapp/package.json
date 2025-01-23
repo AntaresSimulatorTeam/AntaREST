@@ -108,7 +108,6 @@
     "@vitest/ui": "2.1.1",
     "eslint": "9.18.0",
     "eslint-config-prettier": "10.0.1",
-    "eslint-plugin-cypress": "4.1.0",
     "eslint-plugin-jsdoc": "50.6.1",
     "eslint-plugin-license-header": "0.6.1",
     "eslint-plugin-prettier": "5.2.1",
