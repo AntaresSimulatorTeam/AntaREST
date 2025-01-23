@@ -5,10 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "types": [
-      "vitest/globals",
-      "vitest/jsdom",
-    ]
+    "types": ["vitest/globals", "vitest/jsdom"]
   },
   "include": ["vite.config.ts"]
 }

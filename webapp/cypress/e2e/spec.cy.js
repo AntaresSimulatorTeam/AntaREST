@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { describe, it } from "vitest";
+import { cy } from "cypress";
+
 describe("template spec", () => {
   it("passes", () => {
     cy.visit("https://example.cypress.io");
