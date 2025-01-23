@@ -12,8 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { memo } from "react";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import * as R from "ramda";
 import type { StudyTreeNodeProps } from "./types";
 import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
