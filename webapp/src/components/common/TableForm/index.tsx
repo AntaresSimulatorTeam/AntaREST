@@ -24,7 +24,7 @@ import Form, { type FormProps } from "../Form";
 import Table, { type TableProps } from "./Table";
 import { getCellType } from "./utils";
 import { mergeSxProp } from "../../../utils/muiUtils";
-import useMemoLocked from "../../../hooks/useMemoLocked";
+import useSafeMemo from "../../../hooks/useSafeMemo";
 
 type TableFieldValuesByRow = Record<IdType, Record<string, string | boolean | number>>;
 
@@ -61,11 +61,13 @@ function TableForm<TFieldValues extends TableFieldValuesByRow>(
   const { columns, type, colHeaders, ...restTableProps } = tableProps;
 
   // useForm's defaultValues are cached on the first render within the custom hook.
-  const defaultData = useMemoLocked(() =>
-    R.keys(defaultValues).map((id) => ({
-      ...defaultValues[id],
-      id: id as IdType,
-    })),
+  const defaultData = useSafeMemo(
+    () =>
+      R.keys(defaultValues).map((id) => ({
+        ...defaultValues[id],
+        id: id as IdType,
+      })),
+    [],
   );
 
   const formattedColumns = useMemo(() => {

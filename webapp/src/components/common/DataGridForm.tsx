@@ -86,7 +86,7 @@ function DataGridForm<TData extends Data>({
   const [savedData, setSavedData] = useState(defaultData);
   const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] = useUndo(defaultData);
 
-  // Shallow comparison to check if the data has changed.
+  // Reference comparison to check if the data has changed.
   // So even if the content are the same, we consider it as dirty.
   // Deep comparison fix the issue but with big data it can be slow.
   const isDirty = savedData !== data;
