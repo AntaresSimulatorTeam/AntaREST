@@ -61,6 +61,7 @@ export default [
     },
     rules: {
       ...reactHookPlugin.configs.recommended.rules,
+      ...cypressPlugin.configs.recommended.rules,
       "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
       "@typescript-eslint/no-restricted-imports": [
         "error",
