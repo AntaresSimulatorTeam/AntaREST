@@ -29,6 +29,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.link_model import LinkBaseDTO
 from antarest.study.model import STUDY_VERSION_8_2, RawStudy
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
@@ -218,10 +219,9 @@ class TableModeManager:
             thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterInput]]
             thermals_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
-                area_id, cluster_id = key.split(" / ")
-                # Thermal clusters ids were not lowered at the time.
-                # So to ensure this endpoint still works with old scripts we have to lower the id at first.
-                thermals_by_areas[area_id][cluster_id.lower()] = ThermalClusterInput(**values)
+                area_id, cluster_name = key.split(" / ")
+                cluster_id = transform_name_to_id(cluster_name)
+                thermals_by_areas[area_id][cluster_id] = ThermalClusterInput(**values)
             thermals_map = self._thermal_manager.update_thermals_props(study, thermals_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
@@ -233,9 +233,9 @@ class TableModeManager:
             renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterInput]]
             renewables_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
-                area_id, cluster_id = key.split(" / ")
-                # Same reason as for thermal clusters
-                renewables_by_areas[area_id][cluster_id.lower()] = RenewableClusterInput(**values)
+                area_id, cluster_name = key.split(" / ")
+                cluster_id = transform_name_to_id(cluster_name)
+                renewables_by_areas[area_id][cluster_id] = RenewableClusterInput(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
@@ -247,7 +247,8 @@ class TableModeManager:
             storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageInput]]
             storages_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
-                area_id, cluster_id = key.split(" / ")
+                area_id, cluster_name = key.split(" / ")
+                cluster_id = transform_name_to_id(cluster_name)
                 storages_by_areas[area_id][cluster_id] = STStorageInput(**values)
             storages_map = self._st_storage_manager.update_storages_props(study, storages_by_areas)
             data = {

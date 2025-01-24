@@ -187,7 +187,8 @@ class RenewableManager:
         renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterOutput]]
         renewables_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
-            for cluster_id, cluster in cluster_obj.items():
+            for cluster_name, cluster in cluster_obj.items():
+                cluster_id = transform_name_to_id(cluster_name)
                 renewables_by_areas[area_id][cluster_id] = create_renewable_output(study.version, cluster_id, cluster)
 
         return renewables_by_areas
