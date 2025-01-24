@@ -239,6 +239,11 @@ export const FIXTURES_BUILD_STUDY_TREE = {
       path: "",
       children: [
         {
+          name: "default",
+          path: "/default",
+          children: [],
+        },
+        {
           name: "workspace",
           path: "/workspace",
           children: [
@@ -270,6 +275,11 @@ export const FIXTURES_BUILD_STUDY_TREE = {
       name: "root",
       path: "",
       children: [
+        {
+          name: "default",
+          path: "/default",
+          children: [],
+        },
         {
           name: "workspace",
           path: "/workspace",

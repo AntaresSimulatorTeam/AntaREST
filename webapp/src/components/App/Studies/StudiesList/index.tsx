@@ -285,7 +285,7 @@ function StudiesList(props: StudiesListProps) {
             >
               {`${t("studies.scanFolder")} ${folder}?`}
               <CheckBoxFE
-                label={t("studies.requestDeepScan")}
+                label={t("studies.recursiveScan")}
                 value={isRecursiveScan}
                 onChange={handleRecursiveScan}
               />
