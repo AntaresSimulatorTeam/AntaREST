@@ -21,6 +21,7 @@ import jsdocPlugin from "eslint-plugin-jsdoc";
 import prettierPluginRecommended from "eslint-plugin-prettier/recommended";
 import licenseHeaderPlugin from "eslint-plugin-license-header";
 import reactRefreshPlugin from "eslint-plugin-react-refresh";
+import cypressPlugin from "eslint-plugin-cypress";
 
 export default [
   // Must be defined here to be applied to all configurations.
@@ -49,12 +50,14 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.es2022,
+        ...globals["cypress/globals"]
       },
     },
     plugins: {
       "license-header": licenseHeaderPlugin,
       "react-hooks": reactHookPlugin,
       "react-refresh": reactRefreshPlugin,
+      "cypress": cypressPlugin
     },
     rules: {
       ...reactHookPlugin.configs.recommended.rules,

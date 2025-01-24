@@ -13,7 +13,6 @@
  */
 
 import { describe, it } from "mocha";
-import { cy } from "cypress";
 
 describe("template spec", () => {
   it("passes", () => {
