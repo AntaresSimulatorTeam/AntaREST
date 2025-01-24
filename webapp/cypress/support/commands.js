@@ -11,4 +11,4 @@
  *
  * This file is part of the Antares project.
  */
-// Commands here
+alert("setup commands here")
