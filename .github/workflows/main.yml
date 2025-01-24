@@ -167,7 +167,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Verify Node.js version
+        run: node --version
+      - name: Install Node.js dependencies
+        run: npm install
+        working-directory: webapp
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          working-directory: ./webapp
+          working-directory: webapp
