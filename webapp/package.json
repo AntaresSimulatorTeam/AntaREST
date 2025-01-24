@@ -12,11 +12,10 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "cy:open": "cypress open --e2e",
-    "cy:run": "cypress run --e2e",
-    "test:e2e": "start-server-and-test dev http://localhost:3000 cy:run",
-    "test:component": "cypress open --component",
-    "test:ci": "cypress run --component --e2e"
+    "cy:open": "cypress open",
+    "cy:e2e": "cypress run --e2e",
+    "cy:component": "cypress run --component",
+    "cy:ci": "npm run cy:e2e & npm run cy:component"
   },
   "dependencies": {
     "@emotion/react": "11.13.3",

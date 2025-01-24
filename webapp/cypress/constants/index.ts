@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { mount } from "cypress/react";
-import "@testing-library/cypress/add-commands";
-
-Cypress.Commands.add("mount", mount);
+export const AppPages = {
+  studies: "/studies",
+  settings: "/settings",
+} as const;

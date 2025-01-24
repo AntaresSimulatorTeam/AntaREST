@@ -66,11 +66,6 @@ export default defineConfig(({ mode }) => {
       environment: "jsdom",
       css: true,
       setupFiles: "./src/tests/setup.ts",
-      server: {
-        deps: {
-          inline: ["cypress"], // Allow Cypress to inline dependencies
-        },
-      },
     },
   };
 });

@@ -13,25 +13,25 @@
  */
 
 import { defineConfig } from "cypress";
-import path from "path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 
 export default defineConfig({
   e2e: {
     supportFile: "cypress/support/e2e.ts",
+    specPattern: "cypress/e2e/**/*.cy.{ts,tsx}",
     baseUrl: "http://localhost:3000",
     viewportWidth: 1280,
     viewportHeight: 720,
   },
   component: {
     supportFile: "cypress/support/component.ts",
+    specPattern: "cypress/component/**/*.cy.{ts,tsx}",
     devServer: {
       framework: "react",
       bundler: "vite",
       viteConfig: {
-        configFile: path.resolve(__dirname, "vite.config.ts"),
+        configFile: resolve(dirname(fileURLToPath(import.meta.url)), "vite.config.ts"),
       },
     },
   },

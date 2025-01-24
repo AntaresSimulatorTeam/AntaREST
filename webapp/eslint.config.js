@@ -21,7 +21,7 @@ import jsdocPlugin from "eslint-plugin-jsdoc";
 import prettierPluginRecommended from "eslint-plugin-prettier/recommended";
 import licenseHeaderPlugin from "eslint-plugin-license-header";
 import reactRefreshPlugin from "eslint-plugin-react-refresh";
-import pluginCypress from "eslint-plugin-cypress/flat";
+import cypressPlugin from "eslint-plugin-cypress/flat";
 
 export default [
   // Must be defined here to be applied to all configurations.
@@ -42,7 +42,7 @@ export default [
   },
   reactPlugin.configs.flat["jsx-runtime"],
   jsdocPlugin.configs["flat/recommended-typescript"],
-  pluginCypress.configs.recommended,
+  cypressPlugin.configs.recommended,
   prettierPluginRecommended, // Must be the last one
   {
     languageOptions: {
@@ -58,18 +58,10 @@ export default [
       "license-header": licenseHeaderPlugin,
       "react-hooks": reactHookPlugin,
       "react-refresh": reactRefreshPlugin,
-      cypress: pluginCypress,
+      cypress: cypressPlugin,
     },
     rules: {
       ...reactHookPlugin.configs.recommended.rules,
-      // Disable namespace rule for Cypress files
-      "@typescript-eslint/no-namespace": [
-        "error",
-        {
-          allowDeclarations: true,
-          allowDefinitionFiles: true,
-        },
-      ],
       "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/no-restricted-imports": [

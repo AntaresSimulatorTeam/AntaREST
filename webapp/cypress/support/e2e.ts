@@ -12,16 +12,45 @@
  * This file is part of the Antares project.
  */
 
+import { AppPages } from "constants";
 import "@testing-library/cypress/add-commands";
 
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      login(username: string, password: string): Chainable<void>;
-    }
-  }
-}
+Cypress.Commands.add(
+  "login",
+  (username = Cypress.env("USERNAME"), password = Cypress.env("PASSWORD")) => {
+    cy.session([username, password], () => {
+      cy.request({
+        method: "POST",
+        url: "/v1/login",
+        body: { username, password },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }).then(({ body }) => {
+        // Store tokens in env vars
+        Cypress.env("ACCESS_TOKEN", body.access_token);
+        Cypress.env("REFRESH_TOKEN", body.refresh_token);
+      });
+    });
 
-Cypress.Commands.add("login", (username, password) => {
-  // TODO: add login command logic
+    // Verify successful login
+    cy.visit("/");
+    cy.findByRole("heading", { name: /antares web/i }).should("exist");
+    cy.url().should("include", "/studies");
+  },
+);
+
+Cypress.Commands.add("navigateTo", (page) => {
+  const path = AppPages[page];
+
+  cy.location("pathname").then((currentPath) => {
+    if (currentPath !== path) {
+      cy.visit(path);
+    }
+  });
+});
+
+// Global intercepts for common API calls
+beforeEach(() => {
+  cy.intercept("GET", "/v1/health", { statusCode: 200 }).as("healthCheck");
 });

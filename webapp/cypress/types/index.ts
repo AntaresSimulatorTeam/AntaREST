@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { mount } from "cypress/react";
-import "@testing-library/cypress/add-commands";
+import type { AppPages } from "constants";
 
-Cypress.Commands.add("mount", mount);
+export type TAppPages = keyof typeof AppPages;
