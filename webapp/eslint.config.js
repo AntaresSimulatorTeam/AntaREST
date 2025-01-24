@@ -50,14 +50,14 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.es2022,
-        ...globals["cypress/globals"]
+        ...globals["cypress/globals"],
       },
     },
     plugins: {
       "license-header": licenseHeaderPlugin,
       "react-hooks": reactHookPlugin,
       "react-refresh": reactRefreshPlugin,
-      "cypress": cypressPlugin
+      "cypress": cypressPlugin,
     },
     rules: {
       ...reactHookPlugin.configs.recommended.rules,
