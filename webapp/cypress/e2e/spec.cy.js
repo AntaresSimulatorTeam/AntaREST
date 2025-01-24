@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { describe, it, cy } from "cypress";
+import { describe, it } from "mocha";
+import { cy } from "cypress";
 
 describe("template spec", () => {
   it("passes", () => {
