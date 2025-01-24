@@ -230,8 +230,8 @@ class Study(Base):  # type: ignore
     created_at = Column(DateTime, index=True)
     updated_at = Column(DateTime, index=True)
     last_access = Column(DateTime)
-    _path = Column(String())
-    folder = Column(String, nullable=True, index=True)
+    _path = Column("path", String)
+    _folder = Column("folder", String, nullable=True, index=True)
     parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
@@ -294,10 +294,22 @@ class Study(Base):  # type: ignore
 
     @path.setter
     def path(self, path: str):
-        windows_path = PureWindowsPath(path)
-        posix_path = windows_path.as_posix()
-        path_str = str(posix_path)
-        self._path = path_str
+        self._path = normalize_path(path)
+
+    @property
+    def folder(self):
+        return self._folder
+
+    @folder.setter
+    def folder(self, folder: str):
+        self._folder = normalize_path(folder)
+
+
+def normalize_path(path: str) -> str:
+    if not path:
+        return path
+    windows_path = PureWindowsPath(path)
+    return windows_path.as_posix()
 
 
 class RawStudy(Study):
