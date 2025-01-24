@@ -50,7 +50,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.es2022,
-        ...globals["cypress/globals"],
+        "cy": true,
       },
     },
     plugins: {
@@ -61,7 +61,6 @@ export default [
     },
     rules: {
       ...reactHookPlugin.configs.recommended.rules,
-      ...cypressPlugin.configs.recommended.rules,
       "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
       "@typescript-eslint/no-restricted-imports": [
         "error",

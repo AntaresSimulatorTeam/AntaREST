@@ -128,9 +128,6 @@
   "engines": {
     "node": "22.13.0"
   },
-  "extends": [
-    "plugin:cypress/recommended"
-  ],
   "overrides": {
     "react-d3-graph": {
       "react": "18.3.1"
