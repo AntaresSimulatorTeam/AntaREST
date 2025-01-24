@@ -30,6 +30,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
 
@@ -288,7 +289,7 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
 
-    @property
+    @hybrid_property
     def path(self):
         return self._path
 
@@ -296,7 +297,7 @@ class Study(Base):  # type: ignore
     def path(self, path: str):
         self._path = normalize_path(path)
 
-    @property
+    @hybrid_property
     def folder(self):
         return self._folder
 
