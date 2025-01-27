@@ -35,7 +35,7 @@ function Debug() {
   // Allow to keep expanded items when the tree is reloaded with `reloadTreeData`
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
-  const pathInUrl = searchParams.get("path");
+  const path = searchParams.get("path");
 
   const res = usePromiseWithSnackbarError(
     async () => {
@@ -60,17 +60,18 @@ function Debug() {
     const firstChildName = Object.keys(res.data ?? {})[0];
     const firstChildTreeData = R.path<TreeData>([firstChildName], res.data);
 
-    const pathInUrlParts = pathInUrl?.split("/");
-    const urlPathTreeData = pathInUrlParts ? R.path<TreeData>(pathInUrlParts, res.data) : null;
+    const pathSegments = path?.split("/");
+    const filename = pathSegments ? R.last(pathSegments) : null;
+    const treeData = pathSegments ? R.path<TreeData>(pathSegments, res.data) : null;
 
     let fileInfo: FileInfo | null = null;
 
-    if (urlPathTreeData) {
+    if (path && filename && treeData) {
       fileInfo = {
-        fileType: getFileType(urlPathTreeData),
-        treeData: urlPathTreeData,
-        filename: R.last(pathInUrlParts!)!,
-        filePath: pathInUrl!,
+        fileType: getFileType(treeData),
+        treeData,
+        filename,
+        filePath: path,
       };
     } else if (firstChildTreeData) {
       fileInfo = {
@@ -81,15 +82,11 @@ function Debug() {
       };
     }
 
-    if (fileInfo) {
-      setSelectedFile(fileInfo);
-    } else {
-      setSelectedFile(null);
-    }
-  }, [res.data, pathInUrl]);
+    setSelectedFile(fileInfo);
+  }, [res.data, path]);
 
   useUpdateEffect(() => {
-    if (selectedFile?.filePath !== pathInUrl) {
+    if (selectedFile?.filePath !== path) {
       setSearchParams({ path: selectedFile?.filePath || "" });
     }
   }, [selectedFile?.filePath]);
