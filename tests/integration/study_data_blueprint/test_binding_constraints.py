@@ -987,10 +987,15 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
 
         # Asserts that the deletion worked
-        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        binding_constraints_list = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/bindingconstraints/bindingconstraints"},  # type: ignore
+        ).json()
         assert len(binding_constraints_list) == 2
-        actual_ids = [constraint["id"] for constraint in binding_constraints_list]
+        actual_ids = [constraint["id"] for constraint in binding_constraints_list.values()]
         assert actual_ids == ["binding_constraint_1", "binding_constraint_3"]
+        keys = sorted(int(k) for k in binding_constraints_list.keys())
+        assert keys == list(range(len(keys)))
 
         # =============================
         # CONSTRAINT DUPLICATION
