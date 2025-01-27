@@ -30,8 +30,8 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.orm import validates
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -231,8 +231,8 @@ class Study(Base):  # type: ignore
     created_at = Column(DateTime, index=True)
     updated_at = Column(DateTime, index=True)
     last_access = Column(DateTime)
-    _path = Column("path", String)
-    _folder = Column("folder", String, nullable=True, index=True)
+    path = Column(String)
+    folder = Column(String, nullable=True, index=True)
     parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
@@ -289,22 +289,13 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
 
-    # must use hybrid property instead of property to be able to use it in query
-    @hybrid_property
-    def path(self):
-        return self._path
+    @validates("path")
+    def validate_email(self, key, path):
+        return normalize_path(path)
 
-    @path.setter  # type:ignore
-    def path(self, path: str):
-        self._path = normalize_path(path)
-
-    @hybrid_property
-    def folder(self):
-        return self._folder
-
-    @folder.setter  # type:ignore
-    def folder(self, folder: str):
-        self._folder = normalize_path(folder)
+    @validates("folder")
+    def validate_folder(self, key, folder):
+        return normalize_path(folder)
 
 
 def normalize_path(path: str) -> str:
