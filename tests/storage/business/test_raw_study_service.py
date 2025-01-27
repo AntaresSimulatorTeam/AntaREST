@@ -233,7 +233,7 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
     )
     md = study_service.create(metadata)
 
-    tmp_path_posix = tmp_path.as_posix()
+    tmp_path_posix = Path(tmp_path.as_posix())
     assert md.path == str(tmp_path_posix / "study1")
     path_study = tmp_path / md.id
     assert path_study.exists()
