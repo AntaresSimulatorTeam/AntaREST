@@ -414,7 +414,7 @@ class AreaManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return AreaOutput.schema()
+        return AreaOutput.model_json_schema()
 
     def get_all_areas(self, study: RawStudy, area_type: t.Optional[AreaType] = None) -> t.List[AreaInfoDTO]:
         """

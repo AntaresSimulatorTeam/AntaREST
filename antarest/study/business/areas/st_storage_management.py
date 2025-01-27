@@ -718,4 +718,4 @@ class STStorageManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return STStorageOutput.schema()
+        return STStorageOutput.model_json_schema()

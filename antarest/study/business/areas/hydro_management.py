@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands

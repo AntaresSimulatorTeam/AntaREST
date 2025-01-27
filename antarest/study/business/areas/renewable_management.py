@@ -427,4 +427,4 @@ class RenewableManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return RenewableClusterOutput.schema()
+        return RenewableClusterOutput.model_json_schema()

@@ -1150,7 +1150,7 @@ class BindingConstraintManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return ConstraintOutput870.schema()
+        return ConstraintOutput870.model_json_schema()
 
 
 def _replace_matrices_according_to_frequency_and_version(
