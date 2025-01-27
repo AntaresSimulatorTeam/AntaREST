@@ -658,6 +658,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             additional_data=additional_data,
         )
         self.repository.save(variant_study)
+        self._copy_parent_ts_generation_info(study.id, new_id)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1200,6 +1201,21 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             custom_event_messages=None,
             request_params=params,
         )
+
+    @staticmethod
+    def _copy_parent_ts_generation_info(parent_study_id: str, variant_study_id: str) -> None:
+        with db():
+            parent_parameters: t.List[LinksParametersTsGeneration] = (
+                db.session.query(LinksParametersTsGeneration).filter_by(study_id=parent_study_id).all()
+            )
+            if not parent_parameters:
+                return
+            child_parameters = []
+            for parameter in parent_parameters:
+                parameter.study_id = variant_study_id
+                child_parameters.append(parameter)
+            db.session.add_all(child_parameters)
+            db.session.commit()
 
 
 class SnapshotCleanerTask:
