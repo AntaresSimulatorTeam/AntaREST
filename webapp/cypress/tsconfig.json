@@ -4,10 +4,14 @@
     "types": ["cypress", "@testing-library/cypress"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@app/*": ["../src/*"],  // React app imports
+      "@cypress/*": ["./*"]    // Cypress-specific imports
+    },
+    "skipLibCheck": false, // check d.ts files for Cypress
   },
   "include": [
-      "**/*.ts",
+    "**/*.ts",
+    "../src/**/*.ts",
+    "../src/**/*.tsx"
     ]
 }

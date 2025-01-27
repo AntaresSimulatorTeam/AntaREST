@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { AppPages } from "constants";
+import { AppPages } from "@cypress/constants";
 import "@testing-library/cypress/add-commands";
 
 Cypress.Commands.add(

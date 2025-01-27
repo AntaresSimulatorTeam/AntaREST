@@ -3,15 +3,15 @@
     "target": "es2022",
     "useDefineForClassFields": true,
     "lib": [
-      "ES2022", 
-      "DOM", 
+      "ES2022",
+      "DOM",
       "DOM.Iterable",
     ],
     "module": "ESNext",
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
     },
 
     /* Bundler mode */

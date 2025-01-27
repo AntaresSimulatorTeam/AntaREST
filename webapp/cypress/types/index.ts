@@ -12,6 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type { AppPages } from "constants";
+import type { AppPages } from "@cypress/constants";
 
 export type TAppPages = keyof typeof AppPages;

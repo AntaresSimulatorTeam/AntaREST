@@ -13,8 +13,7 @@
  */
 
 import { defineConfig } from "cypress";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { resolve } from "path";
 
 export default defineConfig({
   e2e: {
@@ -31,7 +30,7 @@ export default defineConfig({
       framework: "react",
       bundler: "vite",
       viteConfig: {
-        configFile: resolve(dirname(fileURLToPath(import.meta.url)), "vite.config.ts"),
+        configFile: resolve(import.meta.dirname, "vite.config.ts"),
       },
     },
   },

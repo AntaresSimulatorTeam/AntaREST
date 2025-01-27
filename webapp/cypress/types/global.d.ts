@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { TAppPages } from "./index";
 import { mount } from "cypress/react";
+import type { TAppPages } from ".";
 
 declare global {
   namespace Cypress {
