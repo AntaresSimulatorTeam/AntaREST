@@ -30,7 +30,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
 
@@ -289,11 +289,12 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
 
+    # must use hybrid property instead of property to be able to use it in query
     @hybrid_property
     def path(self):
         return self._path
 
-    @path.setter
+    @path.setter  # type:ignore
     def path(self, path: str):
         self._path = normalize_path(path)
 
@@ -301,12 +302,15 @@ class Study(Base):  # type: ignore
     def folder(self):
         return self._folder
 
-    @folder.setter
+    @folder.setter  # type:ignore
     def folder(self, folder: str):
         self._folder = normalize_path(folder)
 
 
 def normalize_path(path: str) -> str:
+    """
+    We want to store the path in posix format in the database, even on windows.
+    """
     if not path:
         return path
     windows_path = PureWindowsPath(path)

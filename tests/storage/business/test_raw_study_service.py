@@ -66,9 +66,6 @@ def test_get(tmp_path: str, project_path) -> None:
     data = {"titi": 43}
     sub_route = "settings"
 
-    path = path_study / "settings"
-    key = "titi"
-
     study = Mock()
     study.get.return_value = data
     study_factory = Mock()
@@ -100,7 +97,6 @@ def test_get_cache(tmp_path: str) -> None:
     path_study.mkdir()
     (path_study / "settings").mkdir()
     (path_study / "study.antares").touch()
-    path = path_study / "settings"
 
     data = {"titi": 43}
     study = Mock()
@@ -457,7 +453,7 @@ def test_copy_study(
     )
     md = study_service.copy(src_md, "dst_name", groups)
     md_id = md.id
-    assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
+    assert str(md.path) == f"{tmp_path}/{md_id}"
     assert md.public_mode == PublicMode.NONE
     assert md.groups == groups
     study.get.assert_called_once_with(["study"])

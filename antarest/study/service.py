@@ -1125,7 +1125,7 @@ class StudyService:
             new_folder = folder_dest.rstrip("/") + f"/{study.id}"
         else:
             new_folder = None
-        study.folder = new_folder
+        study.folder = new_folder  # type:ignore
         self.repository.save(study, update_modification_date=False)
         self.event_bus.push(
             Event(

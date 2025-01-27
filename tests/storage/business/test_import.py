@@ -68,7 +68,7 @@ def test_import_study(tmp_path: Path) -> None:
     )
     with path_zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)
-        assert md.path == f"{tmp_path}{os.sep}other-study-zip"
+        assert md.path == f"{tmp_path}/other-study-zip"
     # assert that importing file into a created study does not alter its group
     assert md.groups == ["fake_group_1", "fake_group_2"]
 
@@ -95,7 +95,7 @@ def test_import_study(tmp_path: Path) -> None:
     )
     with filepath_7zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)
-        assert md.path == f"{tmp_path}{os.sep}other-study-7zip"
+        assert md.path == f"{tmp_path}/other-study-7zip"
     # assert that importing file into a created study does not alter its group
     assert md.groups == ["fake_group_1", "fake_group_2"]
 
