@@ -12,7 +12,7 @@
 
 import datetime
 import uuid
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Callable, Dict, List, Optional, Union
 from unittest.mock import Mock
 
@@ -343,3 +343,8 @@ class FileDownloadRepositoryMock(FileDownloadRepository):
 class SimpleFileTransferManager(FileTransferManager):
     def __init__(self, config: Config):
         super().__init__(FileDownloadRepositoryMock(), Mock(), config)
+
+
+@pytest.fixture
+def tmp_path_posix(tmp_path: Path) -> Path:
+    return Path(PureWindowsPath(tmp_path).as_posix())

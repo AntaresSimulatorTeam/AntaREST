@@ -206,14 +206,14 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_create(tmp_path: Path, project_path: Path) -> None:
+def test_create(tmp_path_posix: Path, project_path: Path) -> None:
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
 
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
-    config = build_config(tmp_path)
+    config = build_config(tmp_path_posix)
     study_service = RawStudyService(
         config=config,
         cache=Mock(),
@@ -233,9 +233,8 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
     )
     md = study_service.create(metadata)
 
-    tmp_path_posix = Path(tmp_path.as_posix())
     assert md.path == str(tmp_path_posix / "study1")
-    path_study = tmp_path / md.id
+    path_study = tmp_path_posix / md.id
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"

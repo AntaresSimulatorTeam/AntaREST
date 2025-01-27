@@ -27,9 +27,9 @@ from antarest.study.storage.utils import fix_study_root
 
 
 @pytest.mark.unit_test
-def test_import_study(tmp_path: Path) -> None:
+def test_import_study(tmp_path_posix: Path) -> None:
     name = "my-study"
-    study_path = tmp_path / name
+    study_path = tmp_path_posix / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
@@ -51,7 +51,6 @@ def test_import_study(tmp_path: Path) -> None:
     study_service.get_study_path = Mock()
     study_service.get.return_value = data
 
-    tmp_path_posix = Path(tmp_path.as_posix())
     # first test importing a study for an archived study with `.zip` format
     study_service.get_study_path.return_value = tmp_path_posix / "other-study-zip"
 
@@ -63,7 +62,7 @@ def test_import_study(tmp_path: Path) -> None:
     md = RawStudy(
         id="other-study-zip",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=tmp_path / "other-study-zip",
+        path=tmp_path_posix / "other-study-zip",
         additional_data=StudyAdditionalData(),
         groups=["fake_group_1", "fake_group_2"],
     )
@@ -76,7 +75,7 @@ def test_import_study(tmp_path: Path) -> None:
     shutil.rmtree(tmp_path_posix / "other-study-zip")
 
     # second test for an archived study with a `.7z` format
-    study_service.get_study_path.return_value = tmp_path / "other-study-7zip"
+    study_service.get_study_path.return_value = tmp_path_posix / "other-study-7zip"
 
     study_path.mkdir()
     (study_path / "study.antares").touch()
@@ -90,7 +89,7 @@ def test_import_study(tmp_path: Path) -> None:
     md = RawStudy(
         id="other-study-7zip",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=tmp_path / "other-study-7zip",
+        path=tmp_path_posix / "other-study-7zip",
         additional_data=StudyAdditionalData(),
         groups=["fake_group_1", "fake_group_2"],
     )
@@ -100,7 +99,7 @@ def test_import_study(tmp_path: Path) -> None:
     # assert that importing file into a created study does not alter its group
     assert md.groups == ["fake_group_1", "fake_group_2"]
 
-    shutil.rmtree(tmp_path / "other-study-7zip")
+    shutil.rmtree(tmp_path_posix / "other-study-7zip")
 
     # test for an unsupported archive format
     with pytest.raises(BadArchiveContent, match="Unsupported archive format"):
