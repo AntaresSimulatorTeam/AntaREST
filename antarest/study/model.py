@@ -290,11 +290,11 @@ class Study(Base):  # type: ignore
         return {"id": self.id, "name": self.name}
 
     @validates("path")
-    def validate_email(self, key, path):
+    def validate_email(self, key, path) -> str:
         return normalize_path(path)
 
     @validates("folder")
-    def validate_folder(self, key, folder):
+    def validate_folder(self, key, folder) -> str:
         return normalize_path(folder)
 
 

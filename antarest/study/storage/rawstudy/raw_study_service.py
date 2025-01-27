@@ -217,7 +217,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study = self.study_factory.create_from_fs(path_study, metadata.id)
         update_antares_info(metadata, study.tree, update_author=True)
 
-        metadata.path = str(path_study)  # type:ignore
+        metadata.path = str(path_study)
 
         return metadata
 
@@ -343,7 +343,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             shutil.rmtree(study_path)
             raise
 
-        metadata.path = str(study_path)  # type:ignore
+        metadata.path = str(study_path)
         return metadata
 
     @override
