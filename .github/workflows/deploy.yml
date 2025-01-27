@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "fix/2617-default-workspace-build-for-desktop"
 
 jobs:
   binary:
