@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
+from dataclasses import field
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
@@ -154,8 +155,8 @@ class LinkBaseDTO(AntaresBaseModel):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
-    filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+    filter_synthesis: t.Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: t.Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
 
 
 class Area(AntaresBaseModel):
@@ -203,8 +204,8 @@ class LinkInternal(AntaresBaseModel):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
-    filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+    filter_synthesis: t.Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: t.Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
 
     def to_dto(self) -> LinkDTO:
         data = self.model_dump()

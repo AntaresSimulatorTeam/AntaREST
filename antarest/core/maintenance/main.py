@@ -12,8 +12,6 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, FastAPI
-
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache

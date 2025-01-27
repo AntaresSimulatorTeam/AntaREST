@@ -39,7 +39,7 @@ from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI, GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_extractor import VariantCommandsExtractor
 from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 

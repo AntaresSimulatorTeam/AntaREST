@@ -282,7 +282,7 @@ class ThermalManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return ThermalClusterOutput.schema()
+        return ThermalClusterOutput.model_json_schema()
 
     def create_cluster(self, study: Study, area_id: str, cluster_data: ThermalClusterCreation) -> ThermalClusterOutput:
         """
