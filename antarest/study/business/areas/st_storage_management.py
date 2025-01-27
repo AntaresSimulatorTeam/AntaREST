@@ -375,7 +375,8 @@ class STStorageManager:
         storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageOutput]]
         storages_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in storages.items():
-            for cluster_id, cluster in cluster_obj.items():
+            for cluster_name, cluster in cluster_obj.items():
+                cluster_id = transform_name_to_id(cluster_name)
                 storages_by_areas[area_id][cluster_id] = create_storage_output(study_version, cluster_id, cluster)
 
         return storages_by_areas

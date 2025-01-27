@@ -272,7 +272,7 @@ class TestRenewableCluster:
             "es": {"list": {}},
             "fr": {
                 "list": {
-                    cluster_fr1_id: {
+                    cluster_fr1: {
                         "group": "wind offshore",
                         "name": cluster_fr1,
                         "nominalcapacity": 2500,
@@ -284,7 +284,7 @@ class TestRenewableCluster:
             },
             "it": {
                 "list": {
-                    cluster_it1_id: {
+                    cluster_it1: {
                         "group": "wind offshore",
                         "name": cluster_it1,
                         "nominalcapacity": 1000,
