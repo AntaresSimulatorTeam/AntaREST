@@ -51,8 +51,9 @@ def test_import_study(tmp_path: Path) -> None:
     study_service.get_study_path = Mock()
     study_service.get.return_value = data
 
+    tmp_path_posix = Path(tmp_path.as_posix())
     # first test importing a study for an archived study with `.zip` format
-    study_service.get_study_path.return_value = tmp_path / "other-study-zip"
+    study_service.get_study_path.return_value = tmp_path_posix / "other-study-zip"
 
     filepath_zip = shutil.make_archive(str(study_path.absolute()), "zip", study_path)
     shutil.rmtree(study_path)
@@ -68,11 +69,11 @@ def test_import_study(tmp_path: Path) -> None:
     )
     with path_zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)
-        assert md.path == f"{tmp_path}/other-study-zip"
+        assert md.path == f"{tmp_path_posix}/other-study-zip"
     # assert that importing file into a created study does not alter its group
     assert md.groups == ["fake_group_1", "fake_group_2"]
 
-    shutil.rmtree(tmp_path / "other-study-zip")
+    shutil.rmtree(tmp_path_posix / "other-study-zip")
 
     # second test for an archived study with a `.7z` format
     study_service.get_study_path.return_value = tmp_path / "other-study-7zip"
@@ -95,7 +96,7 @@ def test_import_study(tmp_path: Path) -> None:
     )
     with filepath_7zip.open("rb") as input_file:
         md = study_service.import_study(md, input_file)
-        assert md.path == f"{tmp_path}/other-study-7zip"
+        assert md.path == f"{tmp_path_posix}/other-study-7zip"
     # assert that importing file into a created study does not alter its group
     assert md.groups == ["fake_group_1", "fake_group_2"]
 

@@ -233,7 +233,8 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
     )
     md = study_service.create(metadata)
 
-    assert md.path == str(tmp_path / "study1")
+    tmp_path_posix = tmp_path.as_posix()
+    assert md.path == str(tmp_path_posix / "study1")
     path_study = tmp_path / md.id
     assert path_study.exists()
 
@@ -453,7 +454,8 @@ def test_copy_study(
     )
     md = study_service.copy(src_md, "dst_name", groups)
     md_id = md.id
-    assert str(md.path) == f"{tmp_path}/{md_id}"
+    tmp_path_as_posix = tmp_path.as_posix()
+    assert str(md.path) == f"{tmp_path_as_posix}/{md_id}"
     assert md.public_mode == PublicMode.NONE
     assert md.groups == groups
     study.get.assert_called_once_with(["study"])
