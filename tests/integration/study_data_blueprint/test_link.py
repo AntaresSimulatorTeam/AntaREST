@@ -241,3 +241,23 @@ class TestLink:
         # Asserts we still have the parent value
         res = client.get(f"/v1/studies/{variant_id}/links")
         assert res.json()[0]["unitCount"] == 24
+        # Modifies the unitCount value. The command is only appended not applied so the data isn't saved in DB
+        res = client.post(
+            f"/v1/studies/{study_id}/commands",
+            json=[
+                {
+                    "action": "update_link",
+                    "args": {
+                        "area1": area1_id,
+                        "area2": area2_id,
+                        "parameters": {"unit-count": 12},
+                    },
+                }
+            ],
+        )
+        assert res.status_code == 200, res.json()
+        # Creates a variant of level 2
+        level_2_variant_id = preparer.create_variant(variant_id, name="Variant 2")
+        # Asserts we see the right value
+        res = client.get(f"/v1/studies/{level_2_variant_id}/links")
+        assert res.json()[0]["unitCount"] == 12
