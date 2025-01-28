@@ -347,5 +347,8 @@ class SimpleFileTransferManager(FileTransferManager):
 
 @pytest.fixture
 def tmp_path_posix(tmp_path: Path) -> Path:
+    print("in fixture tmp path", tmp_path)
     tmp_path_windows = PureWindowsPath(tmp_path)
+    print("in fixture tmp tmp_path_windows", tmp_path_windows)
+    print("in fixture tmp tmp path posix", PurePosixPath(tmp_path_windows))
     return PurePosixPath(tmp_path_windows)
