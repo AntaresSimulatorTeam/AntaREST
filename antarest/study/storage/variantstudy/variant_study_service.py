@@ -439,8 +439,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         invalidate_self_snapshot: bool = False,
     ) -> None:
         remove_from_cache(self.cache, variant_study.id)
-        if isinstance(variant_study, VariantStudy) and variant_study.snapshot and invalidate_self_snapshot:
-            variant_study.snapshot.last_executed_command = None
+        if isinstance(variant_study, VariantStudy):
+            # Removes TS-generation related information from the database
+            with db():
+                db.session.query(NbYearsTsGeneration).filter_by(id=variant_study.id).delete()
+                db.session.query(LinksParametersTsGeneration).filter_by(study_id=variant_study.id).delete()
+                db.session.commit()
+
+            if variant_study.snapshot and invalidate_self_snapshot:
+                variant_study.snapshot.last_executed_command = None
+
         self.repository.save(
             metadata=variant_study,
             update_modification_date=True,
@@ -452,12 +460,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         logger.info(f"Clearing snapshot for study {variant_study.id}")
         self.invalidate_cache(variant_study, invalidate_self_snapshot=True)
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
-
-        # Removes TS-generation related information from the database
-        with db():
-            db.session.query(NbYearsTsGeneration).filter_by(id=variant_study.id).delete()
-            db.session.query(LinksParametersTsGeneration).filter_by(study_id=variant_study.id).delete()
-            db.session.commit()
 
     def has_children(self, study: VariantStudy) -> bool:
         return self.repository.has_children(study.id)
