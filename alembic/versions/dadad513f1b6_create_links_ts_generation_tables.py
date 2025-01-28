@@ -26,6 +26,7 @@ def upgrade():
             ondelete="CASCADE"
         ),
         sa.PrimaryKeyConstraint("id"),
+        sa.Index('ix_nb_years_ts_generation_study_id', 'study_id')
     )
 
     default_boolean = sa.text('1') if op.get_context().dialect.name == 'sqlite' else 't'
