@@ -95,14 +95,6 @@ const theme = createTheme({
         },
       },
     },
-    MuiAlert: {
-      styleOverrides: {
-        root: {
-          backgroundColor: "#222333",
-          color: "#FFFFFF",
-        },
-      },
-    },
     MuiPopover: {
       styleOverrides: {
         paper: {

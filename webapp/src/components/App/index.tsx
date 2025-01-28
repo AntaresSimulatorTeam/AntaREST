@@ -13,8 +13,14 @@
  */
 
 import { BrowserRouter as Router, Navigate, Route, Routes, Outlet } from "react-router-dom";
-import { CssBaseline, IconButton, ThemeProvider } from "@mui/material";
-import { SnackbarProvider, useSnackbar, type SnackbarKey } from "notistack";
+import { Alert, CssBaseline, IconButton, ThemeProvider } from "@mui/material";
+import {
+  closeSnackbar,
+  SnackbarProvider,
+  useSnackbar,
+  type CustomContentProps,
+  type SharedProps,
+} from "notistack";
 import maintheme from "../../theme";
 import MenuWrapper from "../wrappers/MenuWrapper";
 import Studies from "./Studies";
@@ -62,18 +68,21 @@ import ThermalForm from "./Singlestudy/explore/Modelization/Areas/Thermal/Form";
 import Renewables from "./Singlestudy/explore/Modelization/Areas/Renewables";
 import RenewableForm from "./Singlestudy/explore/Modelization/Areas/Renewables/Form";
 import SplitHydroMatrix from "./Singlestudy/explore/Modelization/Areas/Hydro/SplitHydroMatrix";
-import CloseIcon from "@mui/icons-material/Close";
+import { forwardRef } from "react";
 
-// TODO: replace 'notistack' by 'sonner' (https://sonner.emilkowal.ski/)
-function SnackbarCloseButton({ snackbarKey }: { snackbarKey: SnackbarKey }) {
-  const { closeSnackbar } = useSnackbar();
+const Notification = forwardRef<HTMLDivElement, CustomContentProps>(
+  ({ id, message, variant }, ref) => {
+    const severity = variant === "default" ? undefined : variant;
 
-  return (
-    <IconButton onClick={() => closeSnackbar(snackbarKey)}>
-      <CloseIcon />
-    </IconButton>
-  );
-}
+    return (
+      <Alert ref={ref} severity={severity} variant="filled" onClose={() => closeSnackbar(id)}>
+        {message}
+      </Alert>
+    );
+  },
+);
+
+Notification.displayName = "Notification";
 
 function App() {
   return (
@@ -82,7 +91,14 @@ function App() {
         <SnackbarProvider
           maxSnack={5}
           autoHideDuration={3000}
-          action={(key) => <SnackbarCloseButton snackbarKey={key} />}
+          Components={{
+            default: Notification,
+            error: Notification,
+            info: Notification,
+            success: Notification,
+            warning: Notification,
+          }}
+          //preventDuplicate
         >
           <CssBaseline />
           <MaintenanceWrapper>

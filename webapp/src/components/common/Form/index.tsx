@@ -28,11 +28,13 @@ import {
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
 import {
+  Alert,
   Box,
   CircularProgress,
   Divider,
   IconButton,
   setRef,
+  Snackbar,
   Tooltip,
   type SxProps,
   type Theme,
@@ -55,6 +57,7 @@ import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
 import { mergeSxProp } from "../../../utils/muiUtils";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import { enqueueSnackbar } from "notistack";
 
 export interface AutoSubmitConfig {
   enable: boolean;
@@ -147,7 +150,17 @@ function Form<TFieldValues extends FieldValues, TContext>(
       ? () => {
           const fn = config?.defaultValues as () => Promise<TFieldValues>;
           return fn().catch((err) => {
+            enqueueSnackbar(t("form.asyncDefaultValues.error"), {
+              // variant: "error",
+              persist: true,
+              anchorOrigin: {
+                vertical: "bottom",
+                horizontal: "right",
+              },
+            });
+
             enqueueErrorSnackbar(t("form.asyncDefaultValues.error"), err);
+
             throw err;
           });
         }
