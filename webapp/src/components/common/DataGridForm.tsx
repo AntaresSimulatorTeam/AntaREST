@@ -21,7 +21,7 @@ import {
 } from "@glideapps/glide-data-grid";
 import type { DeepPartial } from "react-hook-form";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import DataGrid, { type DataGridProps } from "./DataGrid";
+import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
 import { Box, Divider, IconButton, setRef, Tooltip, type SxProps, type Theme } from "@mui/material";
 import useUndo, { type Actions } from "use-undo";
 import UndoIcon from "@mui/icons-material/Undo";
@@ -36,6 +36,8 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 import { useUpdateEffect } from "react-use";
 import { toError } from "@/utils/fnUtils";
+import { measureTextWidth } from "@/utils/domUtils";
+import useSafeMemo from "@/hooks/useSafeMemo";
 
 type Data = Record<string, Record<string, string | boolean | number>>;
 
@@ -72,7 +74,7 @@ function DataGridForm<TData extends Data>({
   columns,
   allowedFillDirections = "vertical",
   enableColumnResize,
-  rowMarkers,
+  rowMarkers: rowMarkersFromProps,
   onSubmit,
   onSubmitSuccessful,
   onStateChange,
@@ -91,8 +93,6 @@ function DataGridForm<TData extends Data>({
   // Deep comparison fix the issue but with big data it can be slow.
   const isDirty = savedData !== data;
 
-  const rowNames = Object.keys(data);
-
   const formState = useMemo<DataGridFormState>(
     () => ({
       isDirty,
@@ -107,16 +107,49 @@ function DataGridForm<TData extends Data>({
 
   useEffect(() => setRef(apiRef, { data, setData, formState }), [apiRef, data, setData, formState]);
 
+  // Rows cannot be added or removed, so no dependencies are needed
+  const rowNames = useSafeMemo(() => Object.keys(defaultData), []);
+
+  const columnsWithAdjustedSize = useMemo(
+    () =>
+      columns.map((column) => ({
+        ...column,
+        width:
+          "width" in column
+            ? column.width
+            : Math.max(
+                measureTextWidth(column.title),
+                ...rowNames.map((rowName) =>
+                  measureTextWidth(defaultData[rowName][column.id].toString()),
+                ),
+              ),
+      })),
+    [columns, defaultData, rowNames],
+  );
+
+  const columnIds = useMemo(() => columns.map((column) => column.id), [columns]);
+
+  const rowMarkers = useMemo<RowMarkers>(
+    () =>
+      rowMarkersFromProps || {
+        kind: "clickable-string",
+        getTitle: (index) => rowNames[index],
+        width: Math.max(...rowNames.map((name) => measureTextWidth(name))),
+      },
+    [rowMarkersFromProps, rowNames],
+  );
+
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const getRowAndColumnNames = (location: Item) => {
-    const [colIndex, rowIndex] = location;
-    const columnIds = columns.map((column) => column.id);
-
-    return [rowNames[rowIndex], columnIds[colIndex]];
-  };
+  const getRowAndColumnNames = useCallback(
+    (location: Item) => {
+      const [colIndex, rowIndex] = location;
+      return [rowNames[rowIndex], columnIds[colIndex]];
+    },
+    [rowNames, columnIds],
+  );
 
   const getDirtyValues = () => {
     return rowNames.reduce((acc, rowName) => {
@@ -190,7 +223,7 @@ function DataGridForm<TData extends Data>({
         readonly: true,
       };
     },
-    [data, columns],
+    [data, getRowAndColumnNames],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -261,15 +294,10 @@ function DataGridForm<TData extends Data>({
     >
       <DataGrid
         getCellContent={getCellContent}
-        columns={columns}
+        columns={columnsWithAdjustedSize}
         rows={rowNames.length}
         onCellsEdited={handleCellsEdited}
-        rowMarkers={
-          rowMarkers || {
-            kind: "clickable-string",
-            getTitle: (index) => rowNames[index],
-          }
-        }
+        rowMarkers={rowMarkers}
         fillHandle
         allowedFillDirections={allowedFillDirections}
         enableColumnResize={enableColumnResize}
