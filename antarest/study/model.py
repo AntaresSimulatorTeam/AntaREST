@@ -289,10 +289,6 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
 
-    @validates("path")
-    def validate_email(self, key, path) -> str:
-        return normalize_path(path)
-
     @validates("folder")
     def validate_folder(self, key, folder) -> str:
         return normalize_path(folder)
