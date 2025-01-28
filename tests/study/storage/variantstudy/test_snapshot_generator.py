@@ -882,8 +882,10 @@ class TestSnapshotGenerator:
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
         # - 1 query to update the variant study additional_data,
         # - 1 query to insert the variant study snapshot.
+        # - 1 query to fetch the TS generation info of the parent study
+        # - 1 query to insert them for the newly created variant study
         # - 1 query to check the DB state inside the create_link command
-        assert len(db_recorder.sql_statements) == 6, str(db_recorder)
+        assert len(db_recorder.sql_statements) == 8, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
