@@ -403,7 +403,7 @@ class StudyService:
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
-        self.areas = AreaManager(self.storage_service, self.repository)
+        self.area_manager = AreaManager(self.storage_service, self.repository)
         self.district_manager = DistrictManager(self.storage_service)
         self.links_manager = LinkManager(self.storage_service)
         self.config_manager = ConfigManager(self.storage_service)
@@ -426,7 +426,7 @@ class StudyService:
         self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
         self.correlation_manager = CorrelationManager(self.storage_service)
         self.table_mode_manager = TableModeManager(
-            self.areas,
+            self.area_manager,
             self.links_manager,
             self.thermal_manager,
             self.renewable_manager,
@@ -1899,7 +1899,9 @@ class StudyService:
     ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.areas.get_all_areas_ui_info(study) if ui else self.areas.get_all_areas(study, area_type)
+        return (
+            self.area_manager.get_all_areas_ui_info(study) if ui else self.area_manager.get_all_areas(study, area_type)
+        )
 
     def get_all_links(
         self,
@@ -1919,7 +1921,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_area = self.areas.create_area(study, area_creation_dto)
+        new_area = self.area_manager.create_area(study, area_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -1979,7 +1981,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_area = self.areas.update_area_metadata(study, area_id, area_patch_dto)
+        updated_area = self.area_manager.update_area_metadata(study, area_id, area_patch_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2000,7 +2002,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.update_area_ui(study, area_id, area_ui, layer)
+        return self.area_manager.update_area_ui(study, area_id, area_ui, layer)
 
     def update_thermal_cluster_metadata(
         self,
@@ -2012,7 +2014,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.areas.update_thermal_cluster_metadata(study, area_id, clusters_metadata)
+        return self.area_manager.update_thermal_cluster_metadata(study, area_id, clusters_metadata)
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
         """
@@ -2036,7 +2038,7 @@ class StudyService:
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
-        self.areas.delete_area(study, area_id)
+        self.area_manager.delete_area(study, area_id)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
