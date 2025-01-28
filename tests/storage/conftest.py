@@ -12,7 +12,7 @@
 
 import datetime
 import uuid
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Callable, Dict, List, Optional, Union
 from unittest.mock import Mock
 
@@ -350,6 +350,10 @@ def tmp_path_posix(tmp_path: Path) -> Path:
     print("in fixture tmp path", tmp_path)
     tmp_path_windows = PureWindowsPath(tmp_path)
     print("in fixture tmp tmp_path_windows", tmp_path_windows)
-    tmp_path_posix = Path(tmp_path_windows.as_posix())
+    tmp_path_posix = PurePosixPath(tmp_path_windows.as_posix())
     print("in fixture tmp tmp path posix", tmp_path_posix)
-    return tmp_path_posix
+
+    tmp_path_normal = Path(tmp_path_posix)
+    print("in fixture tmp tmp path posix", tmp_path_normal)
+
+    return tmp_path_normal
