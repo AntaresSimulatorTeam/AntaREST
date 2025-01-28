@@ -207,6 +207,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 @pytest.mark.unit_test
 def test_create(tmp_path_posix: Path, project_path: Path) -> None:
+    print("tmp_path_posix", tmp_path_posix)
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
