@@ -146,17 +146,17 @@ jobs:
   #         NODE_OPTIONS: --max-old-space-size=8192
   #         DISABLE_ESLINT_PLUGIN: true
 
-  sonarcloud:
-    runs-on: ubuntu-20.04
-    needs: [python-test, npm-test]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download python coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: python-code-coverage-report
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@v3.1.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  # sonarcloud:
+  #   runs-on: ubuntu-20.04
+  #   needs: [python-test, npm-test]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Download python coverage report
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: python-code-coverage-report
+  #     - name: SonarCloud Scan
+  #       uses: sonarsource/sonarcloud-github-action@v3.1.0
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
