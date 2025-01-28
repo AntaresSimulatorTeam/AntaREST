@@ -12,7 +12,7 @@
 
 import datetime
 import uuid
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional, Union
 from unittest.mock import Mock
 
@@ -347,4 +347,4 @@ class SimpleFileTransferManager(FileTransferManager):
 
 @pytest.fixture
 def tmp_path_posix(tmp_path: Path) -> Path:
-    return Path(PureWindowsPath(tmp_path).as_posix())
+    return PurePosixPath(tmp_path)
