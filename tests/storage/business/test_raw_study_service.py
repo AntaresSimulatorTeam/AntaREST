@@ -207,7 +207,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 @pytest.mark.unit_test
 def test_create(tmp_path_posix: Path, project_path: Path) -> None:
-    print("tmp_path_posix", tmp_path_posix)
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
@@ -234,7 +233,6 @@ def test_create(tmp_path_posix: Path, project_path: Path) -> None:
     )
     md = study_service.create(metadata)
 
-    print("tmp_path_posix", tmp_path_posix)
     assert md.path == str(tmp_path_posix / "study1")
     path_study = tmp_path_posix / md.id
     path_stud_os_specifix = Path(path_study)

@@ -29,7 +29,8 @@ from antarest.study.storage.utils import fix_study_root
 @pytest.mark.unit_test
 def test_import_study(tmp_path_posix: Path) -> None:
     name = "my-study"
-    study_path = tmp_path_posix / name
+    study_path_posix = tmp_path_posix / name
+    study_path = Path(study_path_posix)
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
