@@ -235,10 +235,9 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
 
     assert md.path == str(tmp_path / "study1")
     path_study = tmp_path / md.id
-    path_stud_os_specifix = Path(path_study)
-    assert path_stud_os_specifix.exists()
+    assert path_study.exists()
 
-    path_study_antares_infos = path_stud_os_specifix / "study.antares"
+    path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
 
 
