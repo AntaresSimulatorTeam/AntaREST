@@ -455,7 +455,7 @@ def test_copy_study(
     md = study_service.copy(src_md, "dst_name", groups)
     md_id = md.id
     tmp_path_as_posix = tmp_path.as_posix()
-    assert str(md.path) == f"{tmp_path_as_posix}/{md_id}"
+    assert str(md.path) == f"{tmp_path_as_posix}{os.sep}{md_id}"
     assert md.public_mode == PublicMode.NONE
     assert md.groups == groups
     study.get.assert_called_once_with(["study"])

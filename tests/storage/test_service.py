@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import contextlib
+import os
 import textwrap
 import typing as t
 import uuid
@@ -318,7 +319,7 @@ def test_partial_sync_studies_from_disk() -> None:
     mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
-        path="directory/c",
+        path=f"directory{os.sep}c",
         name="c",
         content_status=StudyContentStatus.WARNING,
         workspace=DEFAULT_WORKSPACE_NAME,
@@ -326,12 +327,12 @@ def test_partial_sync_studies_from_disk() -> None:
     )
     md = RawStudy(
         id="d",
-        path="directory/d",
+        path=f"directory{os.sep}d",
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
     me = RawStudy(
         id="e",
-        path="directory/e",
+        path=f"directory{os.sep}e",
         created_at=now,
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
@@ -350,7 +351,7 @@ def test_partial_sync_studies_from_disk() -> None:
     repository.save.assert_called_with(
         RawStudy(
             id=ANY,
-            path="directory/f",
+            path=f"directory{os.sep}f",
             name="f",
             folder="directory/f",
             created_at=ANY,
