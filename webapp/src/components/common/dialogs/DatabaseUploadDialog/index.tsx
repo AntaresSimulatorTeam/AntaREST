@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { Box, Button } from "@mui/material";
-import { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/common/types";
 import { CommandEnum } from "@/components/App/Singlestudy/Commands/Edition/commandTypes";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import DataPropsView from "@/components/App/Data/DataPropsView";
@@ -37,12 +37,7 @@ interface DatabaseUploadDialogProps {
   onClose: () => void;
 }
 
-function DatabaseUploadDialog({
-  studyId,
-  path,
-  open,
-  onClose,
-}: DatabaseUploadDialogProps) {
+function DatabaseUploadDialog({ studyId, path, open, onClose }: DatabaseUploadDialogProps) {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -141,10 +136,7 @@ function DatabaseUploadDialog({
           <Box sx={{ width: 1, height: 1, px: 2 }}>
             {selectedItem &&
               (matrix ? (
-                <MatrixContent
-                  matrix={matrix}
-                  onBack={() => setMatrixId(undefined)}
-                />
+                <MatrixContent matrix={matrix} onBack={() => setMatrixId(undefined)} />
               ) : (
                 <FileTable
                   title=""

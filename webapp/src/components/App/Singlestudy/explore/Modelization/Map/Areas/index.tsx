@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,20 +14,17 @@
 
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { StudyMetadata, UpdateAreaUi } from "../../../../../../../common/types";
+import type { StudyMetadata, UpdateAreaUi } from "../../../../../../../common/types";
 import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
 import { AreasContainer } from "./style";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import {
-  getCurrentLink,
-  getCurrentStudyMapNode,
-} from "../../../../../../../redux/selectors";
+import { getCurrentLink, getCurrentStudyMapNode } from "../../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import AreaConfig from "./AreaConfig";
 import { isSearchMatching } from "../../../../../../../utils/stringUtils";
 import { setCurrentArea } from "../../../../../../../redux/ducks/studySyntheses";
-import { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
+import type { StudyMapNode } from "../../../../../../../redux/ducks/studyMaps";
 
 interface Props {
   onAdd: () => void;
@@ -42,14 +39,10 @@ function Areas({ onAdd, updateUI, nodes }: Props) {
   const [searchValue, setSearchValue] = useState("");
   const [showAreaConfig, setShowAreaConfig] = useState(false);
   const currentArea = useAppSelector(getCurrentStudyMapNode);
-  const currentLink = useAppSelector((state) =>
-    getCurrentLink(state, study.id),
-  );
+  const currentLink = useAppSelector((state) => getCurrentLink(state, study.id));
 
   useEffect(() => {
-    setFilteredNodes(
-      nodes.filter(({ id }) => isSearchMatching(searchValue, id)),
-    );
+    setFilteredNodes(nodes.filter(({ id }) => isSearchMatching(searchValue, id)));
   }, [nodes, searchValue]);
 
   useEffect(() => {
@@ -65,11 +58,7 @@ function Areas({ onAdd, updateUI, nodes }: Props) {
       mainContent={
         showAreaConfig && (
           <AreasContainer>
-            <AreaConfig
-              currentArea={currentArea}
-              updateUI={updateUI}
-              currentLink={currentLink}
-            />
+            <AreaConfig currentArea={currentArea} updateUI={updateUI} currentLink={currentLink} />
           </AreasContainer>
         )
       }

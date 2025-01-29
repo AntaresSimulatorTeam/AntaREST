@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -29,11 +29,7 @@ function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
     const { target } = event;
 
     // The item is not selected if the click is on the expand/collapse icon
-    if (
-      canExpand &&
-      target instanceof Element &&
-      target.closest(".MuiTreeItem-iconContainer")
-    ) {
+    if (canExpand && target instanceof Element && target.closest(".MuiTreeItem-iconContainer")) {
       return;
     }
 

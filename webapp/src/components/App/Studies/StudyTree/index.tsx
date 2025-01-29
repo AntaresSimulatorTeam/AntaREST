@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyTreeNode } from "./types";
+import type { StudyTreeNode } from "./types";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
@@ -60,11 +60,7 @@ function StudyTree() {
    * @param rootNode - The root node of the tree
    * @param selectedNode - The node of the item clicked
    */
-  async function updateTree(
-    itemId: string,
-    rootNode: StudyTreeNode,
-    selectedNode: StudyTreeNode,
-  ) {
+  async function updateTree(itemId: string, rootNode: StudyTreeNode, selectedNode: StudyTreeNode) {
     if (selectedNode.path.startsWith("/default")) {
       // we don't update the tree if the user clicks on the default workspace
       // api doesn't allow to fetch the subfolders of the default workspace
@@ -86,10 +82,7 @@ function StudyTree() {
       try {
         treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
       } catch (error) {
-        enqueueErrorSnackbar(
-          t("studies.tree.error.failToFetchWorkspace"),
-          toError(error),
-        );
+        enqueueErrorSnackbar(t("studies.tree.error.failToFetchWorkspace"), toError(error));
       }
       pathsToFetch = treeAfterWorkspacesUpdate.children
         .filter((t) => t.name !== "default") // We don't fetch the default workspace subfolders, api don't allow it
@@ -99,8 +92,10 @@ function StudyTree() {
       pathsToFetch = [`root${selectedNode.path}`];
     }
 
-    const [treeAfterSubfoldersUpdate, failedPath] =
-      await fetchAndInsertSubfolders(pathsToFetch, treeAfterWorkspacesUpdate);
+    const [treeAfterSubfoldersUpdate, failedPath] = await fetchAndInsertSubfolders(
+      pathsToFetch,
+      treeAfterWorkspacesUpdate,
+    );
     if (failedPath.length > 0) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {
@@ -117,10 +112,7 @@ function StudyTree() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleTreeItemClick = async (
-    itemId: string,
-    studyTreeNode: StudyTreeNode,
-  ) => {
+  const handleTreeItemClick = async (itemId: string, studyTreeNode: StudyTreeNode) => {
     dispatch(updateStudyFilters({ folder: itemId }));
     updateTree(itemId, studiesTree, studyTreeNode);
   };

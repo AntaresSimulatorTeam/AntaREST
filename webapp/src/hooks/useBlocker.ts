@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { History, Transition } from "history";
+import type { History, Transition } from "history";
 import { useContext, useEffect } from "react";
 import { UNSAFE_NavigationContext as NavigationContext } from "react-router-dom";
-import useAutoUpdateRef from "./useAutoUpdateRef";
+import useUpdatedRef from "./useUpdatedRef";
 
 // * Workaround until it will be supported by react-router v6.
 // * Based on https://ui.dev/react-router-preventing-transitions
@@ -24,7 +24,7 @@ type Blocker = (tx: Transition) => void;
 
 function useBlocker(blocker: Blocker, when = true): void {
   const { navigator } = useContext(NavigationContext);
-  const blockerRef = useAutoUpdateRef(blocker);
+  const blockerRef = useUpdatedRef(blocker);
 
   useEffect(
     () => {

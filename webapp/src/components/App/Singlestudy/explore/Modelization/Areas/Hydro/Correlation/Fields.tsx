@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,17 +14,14 @@
 
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import {
-  getAreasById,
-  getCurrentArea,
-} from "../../../../../../../../redux/selectors";
+import { getAreasById, getCurrentArea } from "../../../../../../../../redux/selectors";
 import DynamicList from "../../../../../../../common/DynamicList";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { useAreasOptions } from "../hooks/useAreasOptions";
 import CorrelationField from "./CorrelationField";
-import { CorrelationFormFields } from "./utils";
+import type { CorrelationFormFields } from "./utils";
 
 function Fields() {
   const {

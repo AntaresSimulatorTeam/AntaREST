@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,17 +19,13 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
-import { StepIconProps, Tooltip, Typography } from "@mui/material";
+import { Tooltip, Typography, type StepIconProps } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { AxiosError } from "axios";
-import {
-  JobStatus,
-  LaunchJob,
-  LaunchJobsProgress,
-} from "../../../../../../common/types";
+import type { AxiosError } from "axios";
+import type { JobStatus, LaunchJob, LaunchJobsProgress } from "../../../../../../common/types";
 import { convertUTCToLocalTime } from "../../../../../../services/utils";
 import { killStudy } from "../../../../../../services/api/study";
 import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
@@ -63,10 +59,7 @@ const iconStyle = {
   },
 };
 
-function QontoStepIcon(props: {
-  className: string | undefined;
-  status: JobStatus;
-}) {
+function QontoStepIcon(props: { className: string | undefined; status: JobStatus }) {
   const { className, status } = props;
   return (
     <QontoStepIconRoot className={className}>
@@ -170,18 +163,15 @@ export default function VerticalLinearStepper(props: Props) {
                       "ddd, MMM D YYYY, HH:mm:ss",
                     )}
                     {job.completionDate &&
-                      ` => ${moment(
-                        convertUTCToLocalTime(job.completionDate),
-                      ).format("ddd, MMM D YYYY, HH:mm:ss")}`}
+                      ` => ${moment(convertUTCToLocalTime(job.completionDate)).format(
+                        "ddd, MMM D YYYY, HH:mm:ss",
+                      )}`}
                   </Typography>
                 </StepLabelRow>
                 <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>
                 <StepLabelRow py={1}>
                   <Tooltip title={t("study.copyJobId") as string}>
-                    <ContentCopyIcon
-                      onClick={() => copyId(job.id)}
-                      sx={iconStyle}
-                    />
+                    <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
                   {job.status === "success" && (
@@ -201,9 +191,7 @@ export default function VerticalLinearStepper(props: Props) {
                       />
                       <Tooltip title={t("study.killStudy") as string}>
                         <BlockIcon
-                          onClick={() =>
-                            setDialogState({ type: "killJob", job })
-                          }
+                          onClick={() => setDialogState({ type: "killJob", job })}
                           sx={{
                             ...iconStyle,
                             color: "error.light",

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -37,10 +37,7 @@ export default function MultipleLinkElement(props: {
   const [link, setLink] = useState<FilterLink>({ area1: "", area2: "" });
 
   const onAddLink = (): void => {
-    if (
-      values.findIndex((elm) => elm === currentLink) < 0 &&
-      currentLink !== ""
-    ) {
+    if (values.findIndex((elm) => elm === currentLink) < 0 && currentLink !== "") {
       onChange(values.concat(currentLink));
     }
   };
@@ -66,9 +63,7 @@ export default function MultipleLinkElement(props: {
             name={t("study.area1")}
             list={areas.map((elm) => ({ id: elm, name: elm }))}
             data={link.area1}
-            setValue={(elm: string[] | string) =>
-              onSelectChange(0, elm as string)
-            }
+            setValue={(elm: string[] | string) => onSelectChange(0, elm as string)}
             sx={{ flexGrow: 1, px: 0.5 }}
             required
           />
@@ -76,9 +71,7 @@ export default function MultipleLinkElement(props: {
             name={t("study.area2")}
             list={areas.map((elm) => ({ id: elm, name: elm }))}
             data={link.area2}
-            setValue={(elm: string[] | string) =>
-              onSelectChange(1, elm as string)
-            }
+            setValue={(elm: string[] | string) => onSelectChange(1, elm as string)}
             sx={{ flexGrow: 1, px: 0.1 }}
             required
           />

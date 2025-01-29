@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -18,17 +18,12 @@ import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import Tree from "./Tree";
 import Data from "./Data";
-import { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../common/types";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import { getStudyData } from "../../../../../services/api/study";
 import DebugContext from "./DebugContext";
-import {
-  getFileType,
-  type TreeData,
-  type FileInfo,
-  type TreeFolder,
-} from "./utils";
+import { getFileType, type TreeData, type FileInfo, type TreeFolder } from "./utils";
 import * as R from "ramda";
 import SplitView from "../../../../common/SplitView";
 import { useUpdateEffect } from "react-use";
@@ -40,7 +35,7 @@ function Debug() {
   // Allow to keep expanded items when the tree is reloaded with `reloadTreeData`
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
-  const pathInUrl = searchParams.get("path");
+  const path = searchParams.get("path");
 
   const res = usePromiseWithSnackbarError(
     async () => {
@@ -65,19 +60,18 @@ function Debug() {
     const firstChildName = Object.keys(res.data ?? {})[0];
     const firstChildTreeData = R.path<TreeData>([firstChildName], res.data);
 
-    const pathInUrlParts = pathInUrl?.split("/");
-    const urlPathTreeData = pathInUrlParts
-      ? R.path<TreeData>(pathInUrlParts, res.data)
-      : null;
+    const pathSegments = path?.split("/");
+    const filename = pathSegments ? R.last(pathSegments) : null;
+    const treeData = pathSegments ? R.path<TreeData>(pathSegments, res.data) : null;
 
     let fileInfo: FileInfo | null = null;
 
-    if (urlPathTreeData) {
+    if (path && filename && treeData) {
       fileInfo = {
-        fileType: getFileType(urlPathTreeData),
-        treeData: urlPathTreeData,
-        filename: R.last(pathInUrlParts!)!,
-        filePath: pathInUrl!,
+        fileType: getFileType(treeData),
+        treeData,
+        filename,
+        filePath: path,
       };
     } else if (firstChildTreeData) {
       fileInfo = {
@@ -88,15 +82,11 @@ function Debug() {
       };
     }
 
-    if (fileInfo) {
-      setSelectedFile(fileInfo);
-    } else {
-      setSelectedFile(null);
-    }
-  }, [res.data, pathInUrl]);
+    setSelectedFile(fileInfo);
+  }, [res.data, path]);
 
   useUpdateEffect(() => {
-    if (selectedFile?.filePath !== pathInUrl) {
+    if (selectedFile?.filePath !== path) {
       setSearchParams({ path: selectedFile?.filePath || "" });
     }
   }, [selectedFile?.filePath]);

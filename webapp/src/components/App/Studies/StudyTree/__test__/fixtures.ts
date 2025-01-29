@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata, StudyType } from "@/common/types";
+import { StudyType, type StudyMetadata } from "@/common/types";
 
 function createStudyMetadata(folder: string, workspace: string): StudyMetadata {
   return {
@@ -139,9 +139,7 @@ export const FIXTURES = {
             {
               name: "suba",
               path: "/a/suba",
-              children: [
-                { name: "folder1", path: "/a/suba/folder1", children: [] },
-              ],
+              children: [{ name: "folder1", path: "/a/suba/folder1", children: [] }],
             },
           ],
         },
@@ -241,6 +239,11 @@ export const FIXTURES_BUILD_STUDY_TREE = {
       path: "",
       children: [
         {
+          name: "default",
+          path: "/default",
+          children: [],
+        },
+        {
           name: "workspace",
           path: "/workspace",
           children: [
@@ -272,6 +275,11 @@ export const FIXTURES_BUILD_STUDY_TREE = {
       name: "root",
       path: "",
       children: [
+        {
+          name: "default",
+          path: "/default",
+          children: [],
+        },
         {
           name: "workspace",
           path: "/workspace",

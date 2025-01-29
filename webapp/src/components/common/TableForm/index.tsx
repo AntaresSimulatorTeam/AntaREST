@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,24 +13,20 @@
  */
 
 import * as RA from "ramda-adjunct";
-import HT from "handsontable";
-import { startCase } from "lodash";
+import type HT from "handsontable";
+import startCase from "lodash/startCase";
 import * as R from "ramda";
-import { Box, type SxProps } from "@mui/material";
-import type { Theme } from "@mui/material";
+import { Box, type SxProps, type Theme } from "@mui/material";
 import { useMemo } from "react";
-import { DefaultValues } from "react-hook-form";
+import type { DefaultValues } from "react-hook-form";
 import type { IdType } from "../../../common/types";
-import Form, { FormProps } from "../Form";
-import Table, { TableProps } from "./Table";
+import Form, { type FormProps } from "../Form";
+import Table, { type TableProps } from "./Table";
 import { getCellType } from "./utils";
 import { mergeSxProp } from "../../../utils/muiUtils";
-import useMemoLocked from "../../../hooks/useMemoLocked";
+import useSafeMemo from "../../../hooks/useSafeMemo";
 
-type TableFieldValuesByRow = Record<
-  IdType,
-  Record<string, string | boolean | number>
->;
+type TableFieldValuesByRow = Record<IdType, Record<string, string | boolean | number>>;
 
 export interface TableFormProps<
   TFieldValues extends TableFieldValuesByRow = TableFieldValuesByRow,
@@ -43,9 +39,7 @@ export interface TableFormProps<
   formApiRef?: FormProps<TFieldValues>["apiRef"];
   sx?: SxProps<Theme>;
   tableProps?: Omit<TableProps, "data" | "columns" | "colHeaders"> & {
-    columns?:
-      | Array<string | HT.ColumnSettings>
-      | ((index: number) => HT.ColumnSettings);
+    columns?: Array<string | HT.ColumnSettings> | ((index: number) => HT.ColumnSettings);
     colHeaders?: (index: number, colName: string) => string;
   };
 }
@@ -67,11 +61,13 @@ function TableForm<TFieldValues extends TableFieldValuesByRow>(
   const { columns, type, colHeaders, ...restTableProps } = tableProps;
 
   // useForm's defaultValues are cached on the first render within the custom hook.
-  const defaultData = useMemoLocked(() =>
-    R.keys(defaultValues).map((id) => ({
-      ...defaultValues[id],
-      id: id as IdType,
-    })),
+  const defaultData = useSafeMemo(
+    () =>
+      R.keys(defaultValues).map((id) => ({
+        ...defaultValues[id],
+        id: id as IdType,
+      })),
+    [],
   );
 
   const formattedColumns = useMemo(() => {
@@ -121,11 +117,7 @@ function TableForm<TFieldValues extends TableFieldValuesByRow>(
           overflow: "auto",
         }}
       >
-        <Table
-          data={defaultData}
-          columns={formattedColumns}
-          {...restTableProps}
-        />
+        <Table data={defaultData} columns={formattedColumns} {...restTableProps} />
       </Box>
     </Form>
   );

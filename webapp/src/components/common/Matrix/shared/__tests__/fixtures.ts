@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { Aggregate, TimeFrequency } from "../constants";
-import { FormatTestCase } from "./types";
+import type { FormatTestCase } from "./types";
 
 export const BASE_DATA = {
   dateConfig: {
@@ -32,11 +32,7 @@ export const DATE_TIME_TEST_CASES = [
   {
     name: "annual format",
     config: { ...BASE_DATA.dateConfig, level: TimeFrequency.Annual },
-    expected: [
-      "global.time.annual",
-      "global.time.annual",
-      "global.time.annual",
-    ],
+    expected: ["global.time.annual", "global.time.annual", "global.time.annual"],
   },
   {
     name: "monthly format",

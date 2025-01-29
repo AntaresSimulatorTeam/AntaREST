@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,19 +17,19 @@ import { useTranslation } from "react-i18next";
 import { createMRTColumnHelper } from "material-react-table";
 import { Box, Tooltip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
 import {
-  Storage,
   getStorages,
   deleteStorages,
   createStorage,
   STORAGE_GROUPS,
-  StorageGroup,
   duplicateStorage,
   getStoragesTotals,
+  type Storage,
+  type StorageGroup,
 } from "./utils";
 import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { TRow } from "../../../../../../common/GroupedDataTable/types";
@@ -57,8 +57,7 @@ function Storages() {
   const [totals, setTotals] = useState(getStoragesTotals(storages));
 
   const columns = useMemo(() => {
-    const { totalInjectionNominalCapacity, totalWithdrawalNominalCapacity } =
-      totals;
+    const { totalInjectionNominalCapacity, totalWithdrawalNominalCapacity } = totals;
 
     return [
       studyVersion >= 880 &&
@@ -70,9 +69,7 @@ function Storages() {
         header: t("study.modelization.storages.injectionNominalCapacity"),
         Header: ({ column }) => (
           <Tooltip
-            title={t(
-              "study.modelization.storages.injectionNominalCapacity.info",
-            )}
+            title={t("study.modelization.storages.injectionNominalCapacity.info")}
             placement="top"
             arrow
           >
@@ -82,24 +79,16 @@ function Storages() {
         size: 100,
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
-          <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {Math.round(cell.getValue())}
-          </Box>
+          <Box sx={{ color: "info.main", fontWeight: "bold" }}>{Math.round(cell.getValue())}</Box>
         ),
         Cell: ({ cell }) => Math.round(cell.getValue()),
-        Footer: () => (
-          <Box color="warning.main">
-            {Math.round(totalInjectionNominalCapacity)}
-          </Box>
-        ),
+        Footer: () => <Box color="warning.main">{Math.round(totalInjectionNominalCapacity)}</Box>,
       }),
       columnHelper.accessor("withdrawalNominalCapacity", {
         header: t("study.modelization.storages.withdrawalNominalCapacity"),
         Header: ({ column }) => (
           <Tooltip
-            title={t(
-              "study.modelization.storages.withdrawalNominalCapacity.info",
-            )}
+            title={t("study.modelization.storages.withdrawalNominalCapacity.info")}
             placement="top"
             arrow
           >
@@ -109,16 +98,10 @@ function Storages() {
         size: 100,
         aggregationFn: "sum",
         AggregatedCell: ({ cell }) => (
-          <Box sx={{ color: "info.main", fontWeight: "bold" }}>
-            {Math.round(cell.getValue())}
-          </Box>
+          <Box sx={{ color: "info.main", fontWeight: "bold" }}>{Math.round(cell.getValue())}</Box>
         ),
         Cell: ({ cell }) => Math.round(cell.getValue()),
-        Footer: () => (
-          <Box color="warning.main">
-            {Math.round(totalWithdrawalNominalCapacity)}
-          </Box>
-        ),
+        Footer: () => <Box color="warning.main">{Math.round(totalWithdrawalNominalCapacity)}</Box>,
       }),
       columnHelper.accessor("reservoirCapacity", {
         header: t("study.modelization.storages.reservoirCapacity"),

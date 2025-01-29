@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,10 +14,10 @@
 
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
-import { UserInfo } from "../../common/types";
-import { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
-import { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
-import { UIState } from "../../redux/ducks/ui";
+import type { UserInfo } from "../../common/types";
+import type { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
+import type { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
+import type { UIState } from "../../redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
 
 export const StorageKey = {
@@ -76,7 +76,7 @@ function getItem<T extends Key>(key: T): TypeFromKey[T] | null {
     }
 
     return res;
-  } catch (err) {
+  } catch {
     return null;
   }
 }

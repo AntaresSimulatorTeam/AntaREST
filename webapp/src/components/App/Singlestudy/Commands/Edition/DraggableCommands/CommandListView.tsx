@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,14 +13,14 @@
  */
 
 import { memo, useEffect, useRef } from "react";
-import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
+import { FixedSizeList, areEqual, type ListChildComponentProps } from "react-window";
 import {
   DragDropContext,
   Droppable,
   Draggable,
-  OnDragEndResponder,
+  type OnDragEndResponder,
 } from "react-beautiful-dnd";
-import { CommandItem } from "../commandTypes";
+import type { CommandItem } from "../commandTypes";
 import CommandListItem from "./CommandListItem";
 
 const Row = memo((props: ListChildComponentProps) => {

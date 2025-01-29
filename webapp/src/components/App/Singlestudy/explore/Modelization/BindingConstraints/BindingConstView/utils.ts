@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -21,13 +21,7 @@ export const ACTIVE_WINDOWS_DOC_PATH =
 
 export const OPERATORS = ["less", "equal", "greater", "both"] as const;
 export const TIME_STEPS = ["hourly", "daily", "weekly"] as const;
-export const OUTPUT_FILTERS = [
-  "hourly",
-  "daily",
-  "weekly",
-  "monthly",
-  "annual",
-] as const;
+export const OUTPUT_FILTERS = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -126,10 +120,8 @@ export function generateTermId(
  * @param termId - The unique identifier of the term, either a LinkTermId or a ClusterTermId.
  * @returns True if a term with the specified ID exists; otherwise, false.
  */
-export const isTermExist = (
-  terms: ConstraintTerm[],
-  termId: LinkTermId | ClusterTermId,
-): boolean => terms.some(({ id }) => id === termId);
+export const isTermExist = (terms: ConstraintTerm[], termId: LinkTermId | ClusterTermId): boolean =>
+  terms.some(({ id }) => id === termId);
 
 /**
  * !WARNING: Temporary Workaround (Model adapter)
@@ -202,9 +194,7 @@ function adaptOutputFilterFormat(
     }
   }
 
-  throw new Error(
-    "Invalid input: Expected a string or an array of OutputFilter values",
-  );
+  throw new Error("Invalid input: Expected a string or an array of OutputFilter values");
 }
 
 /**
@@ -214,9 +204,7 @@ function adaptOutputFilterFormat(
  * @param data - The BindingConstraint object to transform.
  * @returns The transformed BindingConstraint object.
  */
-export function bindingConstraintModelAdapter(
-  data: BindingConstraint,
-): BindingConstraint {
+export function bindingConstraintModelAdapter(data: BindingConstraint): BindingConstraint {
   const filterSynthesis = adaptOutputFilterFormat(data.filterSynthesis);
   const filterYearByYear = adaptOutputFilterFormat(data.filterYearByYear);
 

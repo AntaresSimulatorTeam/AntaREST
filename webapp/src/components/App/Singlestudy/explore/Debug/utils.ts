@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,10 +17,10 @@ import TextSnippetIcon from "@mui/icons-material/TextSnippet";
 import BlockIcon from "@mui/icons-material/Block";
 import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
-import { SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import * as RA from "ramda-adjunct";
 import type { StudyMetadata } from "../../../../../common/types";
-import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -65,14 +65,7 @@ const URL_SCHEMES = {
   FILE: "file://",
 } as const;
 
-const SUPPORTED_EXTENSIONS = [
-  ".txt",
-  ".log",
-  ".csv",
-  ".tsv",
-  ".ini",
-  ".yml",
-] as const;
+const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini", ".yml"] as const;
 
 // Maps file types to their corresponding icon components.
 const iconByFileType: Record<FileType, SvgIconComponent> = {
@@ -126,9 +119,7 @@ export function getFileType(treeData: TreeData): FileType {
     // We filter to only allow extensions that can be properly displayed (.txt, .log, .csv, .tsv, .ini)
     // Other extensions (like .RDS or .xlsx) are marked as unsupported since they can't be shown in the UI
     return treeData.startsWith(URL_SCHEMES.FILE) &&
-      SUPPORTED_EXTENSIONS.some((ext) =>
-        treeData.toLowerCase().endsWith(ext.toLowerCase()),
-      )
+      SUPPORTED_EXTENSIONS.some((ext) => treeData.toLowerCase().endsWith(ext.toLowerCase()))
       ? "text"
       : "unsupported";
   }
@@ -170,9 +161,7 @@ export function isInOutputFolder(path: string): boolean {
  */
 export function isEmptyContent(text: string | string[]): boolean {
   if (Array.isArray(text)) {
-    return (
-      !text || text.every((line) => typeof line === "string" && !line.trim())
-    );
+    return !text || text.every((line) => typeof line === "string" && !line.trim());
   }
 
   return typeof text === "string" && !text.trim();
@@ -209,10 +198,7 @@ export function isEmptyContent(text: string | string[]): boolean {
  * @param originalType - Original file type as determined by the system
  * @returns Modified file type (forces 'text' for matrices in output folders)
  */
-export function getEffectiveFileType(
-  filePath: string,
-  originalType: FileType,
-): FileType {
+export function getEffectiveFileType(filePath: string, originalType: FileType): FileType {
   if (isInOutputFolder(filePath) && originalType === "matrix") {
     return "text";
   }
@@ -227,9 +213,7 @@ export function getEffectiveFileType(
  * @returns String representation of the matrix
  */
 function formatMatrixToString(matrix: number[][]): string {
-  return matrix
-    .map((row) => row.map((val) => val.toString()).join("\t"))
-    .join("\n");
+  return matrix.map((row) => row.map((val) => val.toString()).join("\t")).join("\n");
 }
 
 /**
@@ -248,13 +232,11 @@ function parseResponse(res: string | MatrixDataDTO): string {
   try {
     // Handle case where API returns unparsed JSON string
     // Replace special numeric values with their string representations
-    const sanitizedJson = res
-      .replace(/NaN/g, '"NaN"')
-      .replace(/Infinity/g, '"Infinity"');
+    const sanitizedJson = res.replace(/NaN/g, '"NaN"').replace(/Infinity/g, '"Infinity"');
 
     const parsed = JSON.parse(sanitizedJson);
     return formatMatrixToString(parsed.data);
-  } catch (e) {
+  } catch {
     // If JSON parsing fails, assume it's plain text
     return res;
   }
@@ -267,10 +249,7 @@ function parseResponse(res: string | MatrixDataDTO): string {
  * @param options - Configuration options including file path and type
  * @returns Processed content ready for display
  */
-export function parseContent(
-  content: string,
-  options: ContentParsingOptions,
-): string {
+export function parseContent(content: string, options: ContentParsingOptions): string {
   const { filePath, fileType } = options;
 
   if (isInOutputFolder(filePath) && fileType === "matrix") {

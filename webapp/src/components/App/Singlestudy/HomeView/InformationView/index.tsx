@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,16 +16,13 @@ import { useState } from "react";
 import { Paper, Button, Box, Divider } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
-import { StudyMetadata, VariantTree } from "../../../../../common/types";
+import type { AxiosError } from "axios";
+import type { StudyMetadata, VariantTree } from "../../../../../common/types";
 import CreateVariantDialog from "./CreateVariantDialog";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 import LauncherDialog from "../../../Studies/LauncherDialog";
-import {
-  copyStudy,
-  unarchiveStudy as callUnarchiveStudy,
-} from "../../../../../services/api/study";
+import { copyStudy, unarchiveStudy as callUnarchiveStudy } from "../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 
 interface Props {
@@ -43,11 +40,7 @@ function InformationView(props: Props) {
 
   const importStudy = async (study: StudyMetadata) => {
     try {
-      await copyStudy(
-        study.id,
-        `${study.name} (${t("studies.copySuffix")})`,
-        false,
-      );
+      await copyStudy(study.id, `${study.name} (${t("studies.copySuffix")})`, false);
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
     }
@@ -100,12 +93,7 @@ function InformationView(props: Props) {
         alignItems="flex-start"
         py={1.5}
       >
-        <Box
-          display="flex"
-          flexDirection="row"
-          justifyContent="flex-start"
-          alignItems="center"
-        >
+        <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
           <Button
             variant="contained"
             color="primary"
@@ -121,14 +109,10 @@ function InformationView(props: Props) {
             <Button
               variant="text"
               color="primary"
-              onClick={() =>
-                study.managed ? setOpenVariantModal(true) : importStudy(study)
-              }
+              onClick={() => (study.managed ? setOpenVariantModal(true) : importStudy(study))}
               sx={{ mx: 2 }}
             >
-              {study.managed
-                ? t("variants.createNewVariant")
-                : t("studies.importcopy")}
+              {study.managed ? t("variants.createNewVariant") : t("studies.importcopy")}
             </Button>
           )}
         </Box>

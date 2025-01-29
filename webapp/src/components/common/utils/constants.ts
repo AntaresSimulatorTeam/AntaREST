@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { GenericInfo } from "../../../common/types";
+import type { GenericInfo } from "../../../common/types";
 
 export const PUBLIC_MODE_LIST: GenericInfo[] = [
   { id: "NONE", name: "study.nonePublicMode" },
