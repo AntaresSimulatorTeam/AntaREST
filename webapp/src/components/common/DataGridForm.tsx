@@ -36,8 +36,8 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 import { useUpdateEffect } from "react-use";
 import { toError } from "@/utils/fnUtils";
-import { measureTextWidth } from "@/utils/domUtils";
 import useSafeMemo from "@/hooks/useSafeMemo";
+import { getColumnWidth } from "@/utils/dataGridUtils";
 
 type Data = Record<string, Record<string, string | boolean | number>>;
 
@@ -114,15 +114,9 @@ function DataGridForm<TData extends Data>({
     () =>
       columns.map((column) => ({
         ...column,
-        width:
-          "width" in column
-            ? column.width
-            : Math.max(
-                measureTextWidth(column.title),
-                ...rowNames.map((rowName) =>
-                  measureTextWidth(defaultData[rowName][column.id].toString()),
-                ),
-              ),
+        width: getColumnWidth(column, () =>
+          rowNames.map((rowName) => defaultData[rowName][column.id].toString()),
+        ),
       })),
     [columns, defaultData, rowNames],
   );
@@ -134,7 +128,7 @@ function DataGridForm<TData extends Data>({
       rowMarkersFromProps || {
         kind: "clickable-string",
         getTitle: (index) => rowNames[index],
-        width: Math.max(...rowNames.map((name) => measureTextWidth(name))),
+        width: getColumnWidth({ title: "", id: "" }, () => rowNames),
       },
     [rowMarkersFromProps, rowNames],
   );
