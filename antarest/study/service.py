@@ -993,7 +993,7 @@ class StudyService:
         study_paths = [study.path for study in all_studies if study.missing is None]
         missing_studies = {study.path: study for study in all_studies if study.missing is not None}
         for folder in folders:
-            study_path = str(folder.path.as_posix())
+            study_path = str(folder.path)
             if study_path not in study_paths:
                 try:
                     if study_path not in missing_studies.keys():
