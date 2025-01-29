@@ -387,7 +387,7 @@ def test_windows_path_scan() -> None:
     repository.save.assert_called_with(
         RawStudy(
             id=ANY,
-            path="directory/b",
+            path=f"directory{os.sep}b",
             name="b",
             folder="directory/b",
             created_at=ANY,

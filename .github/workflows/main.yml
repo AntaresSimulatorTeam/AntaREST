@@ -38,7 +38,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-20.04]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -61,102 +61,102 @@ jobs:
           name: python-code-coverage-report
           path: coverage.xml
 
-  # npm-setup:
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Cache node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-webapp-node-modules-
-  #           ${{ runner.os }}-
-  #         save-always: true
-  #     - name: Install dependencies
-  #       run: npm install
-  #       working-directory: webapp
+  npm-setup:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-webapp-node-modules-
+            ${{ runner.os }}-
+          save-always: true
+      - name: Install dependencies
+        run: npm install
+        working-directory: webapp
 
-  # npm-lint:
-  #   needs: npm-setup
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Restore node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         save-always: true
-  #     - name: Lint
-  #       run: npm run lint
-  #       working-directory: webapp
+  npm-lint:
+    needs: npm-setup
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          save-always: true
+      - name: Lint
+        run: npm run lint
+        working-directory: webapp
 
-  # npm-test:
-  #   needs: npm-setup
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Restore node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         save-always: true
-  #     - name: Test
-  #       run: npm run test
-  #       working-directory: webapp
+  npm-test:
+    needs: npm-setup
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          save-always: true
+      - name: Test
+        run: npm run test
+        working-directory: webapp
 
-  # npm-build:
-  #   needs: npm-setup
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Restore node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         save-always: true
-  #     - name: Build
-  #       run: npm run build
-  #       working-directory: webapp
-  #       env:
-  #         NODE_OPTIONS: --max-old-space-size=8192
-  #         DISABLE_ESLINT_PLUGIN: true
+  npm-build:
+    needs: npm-setup
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          save-always: true
+      - name: Build
+        run: npm run build
+        working-directory: webapp
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+          DISABLE_ESLINT_PLUGIN: true
 
-  # sonarcloud:
-  #   runs-on: ubuntu-20.04
-  #   needs: [python-test, npm-test]
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Download python coverage report
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: python-code-coverage-report
-  #     - name: SonarCloud Scan
-  #       uses: sonarsource/sonarcloud-github-action@v3.1.0
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  sonarcloud:
+    runs-on: ubuntu-20.04
+    needs: [python-test, npm-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download python coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: python-code-coverage-report
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@v3.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

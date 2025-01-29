@@ -231,7 +231,7 @@ class Study(Base):  # type: ignore
     created_at = Column(DateTime, index=True)
     updated_at = Column(DateTime, index=True)
     last_access = Column(DateTime)
-    path = Column(String)
+    path = Column(String())
     folder = Column(String, nullable=True, index=True)
     parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
@@ -291,12 +291,15 @@ class Study(Base):  # type: ignore
 
     @validates("folder")
     def validate_folder(self, key, folder) -> str:
+        """
+        We want to store the path in posix format in the database, even on windows.
+        """
         return normalize_path(folder)
 
 
 def normalize_path(path: str) -> str:
     """
-    We want to store the path in posix format in the database, even on windows.
+    Turns any path including a windows path (with \ separator) to a posix path (with / separator).
     """
     if not path:
         return path
