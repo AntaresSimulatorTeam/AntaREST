@@ -33,6 +33,7 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
     GenerateThermalClusterTimeSeries,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.move_area import MoveArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
@@ -71,6 +72,10 @@ class CommandReverter:
     @staticmethod
     def _revert_remove_area(base_command: RemoveArea, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
         raise NotImplementedError("The revert function for RemoveArea is not available")
+
+    @staticmethod
+    def _revert_move_area(base_command: MoveArea, history: t.List["ICommand"], base: FileStudy) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for MoveArea is not available")
 
     @staticmethod
     def _revert_create_district(

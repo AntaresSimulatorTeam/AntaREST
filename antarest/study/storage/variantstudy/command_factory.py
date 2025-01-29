@@ -32,6 +32,7 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
     GenerateThermalClusterTimeSeries,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.move_area import MoveArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
@@ -57,6 +58,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 COMMAND_MAPPING = {
     CommandName.CREATE_AREA.value: CreateArea,
+    CommandName.MOVE_AREA.value: MoveArea,
     CommandName.REMOVE_AREA.value: RemoveArea,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,

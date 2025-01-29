@@ -37,6 +37,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.move_area import MoveArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
@@ -680,73 +681,17 @@ class AreaManager:
         )
 
     def update_area_ui(self, study: Study, area_id: str, area_ui: UpdateAreaUi, layer: str = "0") -> None:
-        obj = {
-            "x": area_ui.x,
-            "y": area_ui.y,
-            "color_r": area_ui.color_rgb[0],
-            "color_g": area_ui.color_rgb[1],
-            "color_b": area_ui.color_rgb[2],
-        }
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        commands = (
-            [
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/ui/x",
-                    data=obj["x"],
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/ui/y",
-                    data=obj["y"],
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/ui/color_r",
-                    data=obj["color_r"],
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/ui/color_g",
-                    data=obj["color_g"],
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/ui/color_b",
-                    data=obj["color_b"],
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-            ]
-            if layer == "0"
-            else []
+
+        command = MoveArea(
+            area_name=area_id,
+            new_area_parameters=area_ui.model_dump(),
+            layer=layer,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
-        commands.extend(
-            [
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/layerX/{layer}",
-                    data=obj["x"],
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/layerY/{layer}",
-                    data=obj["y"],
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-                UpdateConfig(
-                    target=f"input/areas/{area_id}/ui/layerColor/{layer}",
-                    data=f"{obj['color_r']},{obj['color_g']},{obj['color_b']}",
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                ),
-            ]
-        )
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def update_thermal_cluster_metadata(
         self,
