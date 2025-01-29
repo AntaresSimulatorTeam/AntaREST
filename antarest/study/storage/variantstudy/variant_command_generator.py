@@ -26,7 +26,6 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO, NewDetailsDTO
-from antarest.study.storage.variantstudy.variant_study_service import CommandNotifier
 
 logger = logging.getLogger(__name__)
 
