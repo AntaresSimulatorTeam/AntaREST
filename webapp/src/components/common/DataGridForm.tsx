@@ -305,7 +305,6 @@ function DataGridForm<TData extends Data>({
           mt: 1.5,
         }}
       >
-        <Divider flexItem />
         <Box sx={{ display: "flex" }}>
           <LoadingButton
             type="submit"
