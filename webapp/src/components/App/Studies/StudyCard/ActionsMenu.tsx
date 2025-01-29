@@ -25,7 +25,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/types/types";
 import type { DialogsType } from "./types";
 import type { SvgIconComponent } from "@mui/icons-material";
 

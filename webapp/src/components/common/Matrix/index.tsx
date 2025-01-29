@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Divider, Skeleton } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
 import MatrixGrid from "./components/MatrixGrid";
 import { useMatrix } from "./hooks/useMatrix";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../types/types";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 import MatrixActions from "./components/MatrixActions";
 import EmptyView from "../page/EmptyView";
@@ -130,23 +130,24 @@ function Matrix({
           canImport={canImport}
         />
       </MatrixHeader>
-      <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
-      {!data[0]?.length ? (
-        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
-      ) : (
-        <MatrixGrid
-          data={data}
-          aggregates={aggregates}
-          columns={columns}
-          rows={rowCount ?? data.length}
-          rowHeaders={customRowHeaders}
-          dateTime={dateTime}
-          onCellEdit={handleCellEdit}
-          onMultipleCellsEdit={handleMultipleCellsEdit}
-          readOnly={isSubmitting || readOnly}
-          showPercent={showPercent}
-        />
-      )}
+      <Box sx={{ flex: 1 }}>
+        {!data[0]?.length ? (
+          <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
+        ) : (
+          <MatrixGrid
+            data={data}
+            aggregates={aggregates}
+            columns={columns}
+            rows={rowCount ?? data.length}
+            rowHeaders={customRowHeaders}
+            dateTime={dateTime}
+            onCellEdit={handleCellEdit}
+            onMultipleCellsEdit={handleMultipleCellsEdit}
+            readOnly={isSubmitting || readOnly}
+            showPercent={showPercent}
+          />
+        )}
+      </Box>
       {uploadType === "file" && (
         <MatrixUpload
           studyId={study.id}

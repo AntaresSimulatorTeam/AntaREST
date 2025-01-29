@@ -16,7 +16,7 @@ import { useEffect, useMemo } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../types/types";
 import TabWrapper from "../TabWrapper";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getAreas, getCurrentAreaId, getLinks } from "../../../../../redux/selectors";

@@ -46,7 +46,7 @@ import {
   getStudyTask,
   exportCommandsMatrices,
 } from "../../../../../services/api/variant";
-import type { CommandResultDTO } from "../../../../../common/types";
+import type { CommandResultDTO } from "../../../../../types/types";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";

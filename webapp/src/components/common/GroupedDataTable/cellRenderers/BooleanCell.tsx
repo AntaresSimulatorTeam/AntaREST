@@ -27,7 +27,6 @@ function BooleanCell<T extends MRT_RowData>({ cell }: Props<T>) {
     <Chip
       label={cell.getValue() ? t("button.yes") : t("button.no")}
       color={cell.getValue() ? "success" : "error"}
-      size="small"
       sx={{ minWidth: 40 }}
     />
   );

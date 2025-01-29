@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import type { MatrixInfoDTO } from "../../../common/types";
+import type { MatrixInfoDTO } from "../../../types/types";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import MatrixContent from "@/components/common/dialogs/DatabaseUploadDialog/components/MatrixContent";
 import { Button } from "@mui/material";

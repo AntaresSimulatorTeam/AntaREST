@@ -25,8 +25,7 @@ import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata, VariantTree } from "../../../../common/types";
-import { STUDIES_HEIGHT_HEADER } from "../../../../theme";
+import type { StudyMetadata, VariantTree } from "../../../../types/types";
 import { archiveStudy, unarchiveStudy } from "../../../../services/api/study";
 import { deleteStudy } from "../../../../redux/ducks/studies";
 import LauncherDialog from "../../Studies/LauncherDialog";
@@ -208,12 +207,11 @@ function NavHeader({
       sx={{
         display: "flex",
         flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
         width: 1,
-        height: STUDIES_HEIGHT_HEADER,
-        p: 2,
+        py: 1,
+        px: 2,
         overflow: "hidden",
+        gap: 1,
       }}
     >
       <Box

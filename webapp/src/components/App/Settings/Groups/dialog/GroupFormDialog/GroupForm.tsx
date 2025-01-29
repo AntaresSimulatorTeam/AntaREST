@@ -38,7 +38,7 @@ import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
 import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import { RoleType, type UserDTO } from "../../../../../../common/types";
+import { RoleType, type UserDTO } from "../../../../../../types/types";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups, getUsers } from "../../../../../../services/api/user";
@@ -145,7 +145,7 @@ function GroupForm(props: UseFormReturnPlus) {
         {filteredAndSortedUsers.length > 0 && (
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-              <FormControl sx={{ mr: 2, flex: 1 }} size="small">
+              <FormControl sx={{ mr: 2, flex: 1 }}>
                 <InputLabel id={userLabelId}>{t("global.user")}</InputLabel>
                 <Select
                   labelId={userLabelId}
@@ -162,7 +162,6 @@ function GroupForm(props: UseFormReturnPlus) {
               </FormControl>
               <Button
                 variant="contained"
-                size="small"
                 disabled={!allowToAddPermission}
                 onClick={() => {
                   append({ user: selectedUser, type: RoleType.READER });

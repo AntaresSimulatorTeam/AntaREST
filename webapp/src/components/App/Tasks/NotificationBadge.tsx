@@ -14,12 +14,11 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import debug from "debug";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, colors } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import CircleIcon from "@mui/icons-material/Circle";
 import { useSnackbar, type VariantType } from "notistack";
-import { red } from "@mui/material/colors";
 import { getTask } from "../../../services/api/tasks";
 import { addWsEventListener } from "../../../services/webSocket/ws";
 import { incrementTaskNotifications, resetTaskNotifications } from "../../../redux/ducks/ui";
@@ -120,7 +119,7 @@ function NotificationBadge(props: Props) {
           >
             {notificationCount}
           </Typography>
-          <CircleIcon sx={{ fontSize: "20px", color: red[800] }} />
+          <CircleIcon sx={{ fontSize: "20px", color: colors.red[800] }} />
         </Box>
       )}
     </Box>

@@ -13,12 +13,9 @@
  */
 
 import { useEffect, useState } from "react";
-import { styled, type SxProps, type Theme } from "@mui/material";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
+import { styled, Tabs, Tab, Box, type SxProps, type Theme } from "@mui/material";
 import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
-import type { StudyMetadata } from "../../../../common/types";
+import type { StudyMetadata } from "../../../../types/types";
 import { mergeSxProp } from "../../../../utils/muiUtils";
 
 export const StyledTabs = styled(Tabs, {

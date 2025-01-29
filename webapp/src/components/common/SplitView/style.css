@@ -1,6 +1,5 @@
-.gutter {
-  background-repeat: no-repeat;
-  background-position: 50%;
+div.gutter {
+  background-color: var(--mui-palette-divider);
 }
 
 /* This fix addresses the issue of the gutter cursor display in vertical layout */

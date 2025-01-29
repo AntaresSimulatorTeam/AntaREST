@@ -15,10 +15,11 @@
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
 import { mergeSxProp } from "../../utils/muiUtils";
 import * as R from "ramda";
+import { Tooltip } from "@mui/material";
 
 export type TreeItemEnhancedProps = TreeItemProps;
 
-function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
+function TreeItemEnhanced({ onClick, sx, label, ...rest }: TreeItemEnhancedProps) {
   const canExpand = rest.children && R.isNotEmpty(rest.children);
 
   ////////////////////////////////////////////////////////////////
@@ -44,6 +45,15 @@ function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
     <TreeItem
       {...rest}
       onClick={handleClick}
+      label={
+        typeof label === "string" ? (
+          <Tooltip title={label}>
+            <span>{label}</span>
+          </Tooltip>
+        ) : (
+          label
+        )
+      }
       sx={mergeSxProp(
         {
           "& > .MuiTreeItem-content": {
@@ -60,6 +70,9 @@ function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
             },
             "& > .MuiTreeItem-label": {
               py: 0.5,
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              overflow: "hidden",
             },
           },
         },

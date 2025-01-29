@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/types/types";
 import client from "../../client";
 import type { CreateLinkParams, DeleteLinkParams, LinkDTO } from "./types";
 

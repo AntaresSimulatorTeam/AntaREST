@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import type { Operator } from "./utils";
 import SplitView from "../../../../../../common/SplitView";
 import { Box, Button } from "@mui/material";
@@ -34,7 +34,7 @@ function ConstraintMatrix({ study, operator, constraintId, open, onClose }: Prop
     open,
     onClose,
     actions: (
-      <Button onClick={onClose} color="primary" variant="outlined" size="small">
+      <Button onClick={onClose} color="primary" variant="outlined">
         {t("global.close")}
       </Button>
     ),

@@ -15,28 +15,30 @@
 import { Box, styled, Typography } from "@mui/material";
 import type { Theme } from "@glideapps/glide-data-grid";
 
-export const MatrixContainer = styled(Box)(() => ({
+export const MatrixContainer = styled(Box)(({ theme }) => ({
   width: "100%",
   height: "100%",
   display: "flex",
   flexDirection: "column",
-  alignItems: "center",
+  gap: theme.spacing(1),
   overflow: "hidden",
 }));
 
-export const MatrixHeader = styled(Box)(() => ({
+export const MatrixHeader = styled(Box)({
   width: "100%",
   display: "flex",
-  flexFlow: "row wrap",
-  justifyContent: "space-between",
-  alignItems: "flex-end",
-}));
+  flexWrap: "nowrap",
+  alignItems: "center",
+});
 
-export const MatrixTitle = styled(Typography)(() => ({
+export const MatrixTitle = styled(Typography)({
   fontSize: 20,
   fontWeight: 400,
-  lineHeight: 1,
-}));
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  flex: 1,
+});
 
 export const darkTheme: Theme = {
   accentColor: "rgba(255, 184, 0, 0.9)",

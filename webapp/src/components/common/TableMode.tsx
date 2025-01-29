@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useState } from "react";
-import type { StudyMetadata } from "../../common/types";
+import type { StudyMetadata } from "../../types/types";
 import usePromise from "../../hooks/usePromise";
 import { getTableMode, setTableMode } from "../../services/api/studies/tableMode";
 import type {
@@ -53,7 +53,7 @@ function TableMode<T extends TableModeType>({
   );
 
   // Filter columns based on the data received, because the API may return
-  // fewer columns than requested depending on the study version
+  // fewer columns than requested depending on the study root
   useEffect(() => {
     const data = res.data || {};
     const rowNames = Object.keys(data);

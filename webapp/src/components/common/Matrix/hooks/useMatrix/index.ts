@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import type { MatrixIndex } from "../../../../../common/types";
+import type { MatrixIndex } from "../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { getStudyMatrixIndex, updateMatrix } from "../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../services/api/study";

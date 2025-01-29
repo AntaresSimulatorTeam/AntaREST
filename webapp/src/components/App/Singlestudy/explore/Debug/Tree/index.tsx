@@ -46,6 +46,7 @@ function Tree(props: Props) {
 
   return (
     <SimpleTreeView
+      multiSelect={false}
       selectedItems={currentPath}
       expandedItems={
         currentPath

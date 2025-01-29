@@ -15,7 +15,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Divider, Typography } from "@mui/material";
-import type { MatrixInfoDTO, MatrixDTO } from "@/common/types";
+import type { MatrixInfoDTO, MatrixDTO } from "@/types/types";
 import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
 import ButtonBack from "@/components/common/ButtonBack";
 import { getMatrix } from "@/services/api/matrix";

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/types/types";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
 import type { TaskDTO, TaskTypeValue } from "@/services/api/tasks/types";
@@ -187,7 +187,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
   }, [blockingTasksRef, studyId]);
 
   return (
-    <Backdrop open={blockingTasks.length > 0} sx={{ position: "absolute" }}>
+    <Backdrop open={blockingTasks.length > 0} sx={{ position: "absolute", zIndex: 1 }}>
       <Paper
         sx={{
           width: 500,

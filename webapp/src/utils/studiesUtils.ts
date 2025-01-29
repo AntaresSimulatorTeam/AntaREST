@@ -15,7 +15,7 @@
 import moment from "moment";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { StudyType, type StudyMetadata } from "../common/types";
+import { StudyType, type StudyMetadata } from "../types/types";
 import type { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
 import { isSearchMatching } from "./stringUtils";
 

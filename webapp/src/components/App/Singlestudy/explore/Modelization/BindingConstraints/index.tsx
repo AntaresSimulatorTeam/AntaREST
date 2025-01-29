@@ -13,7 +13,7 @@
  */
 
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import EmptyView from "../../../../../common/page/EmptyView";
 import BindingConstPropsView from "./BindingConstPropsView";
 import { getBindingConst, getCurrentBindingConstId } from "../../../../../../redux/selectors";

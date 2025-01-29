@@ -15,7 +15,7 @@
 import debug from "debug";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { LaunchJobDTO, UserInfo } from "../../common/types";
+import type { LaunchJobDTO, UserInfo } from "../../types/types";
 import { getConfig } from "../config";
 import { isStringEmpty, isUserExpired } from "../utils";
 import type { AppDispatch } from "../../redux/store";

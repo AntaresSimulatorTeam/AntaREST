@@ -14,7 +14,7 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import TabWrapper from "../../../TabWrapper";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";

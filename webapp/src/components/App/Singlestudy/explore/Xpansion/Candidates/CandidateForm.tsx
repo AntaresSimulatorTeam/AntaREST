@@ -117,7 +117,6 @@ function CandidateForm(props: PropType) {
         <Fields>
           <TextField
             label={t("global.name")}
-            variant="filled"
             value={currentCandidate?.name || ""}
             onChange={(e) => handleChange("name", e.target.value)}
           />
@@ -142,21 +141,19 @@ function CandidateForm(props: PropType) {
           <TextField
             type="number"
             label={t("xpansion.annualCost")}
-            variant="filled"
             value={currentCandidate?.["annual-cost-per-mw"] || ""}
             onChange={(e) => handleChange("annual-cost-per-mw", parseFloat(e.target.value))}
           />
           <TextField
             type="number"
             label={t("xpansion.alreadyICapacity")}
-            variant="filled"
             value={currentCandidate?.["already-installed-capacity"] || ""}
             onChange={(e) => handleChange("already-installed-capacity", parseFloat(e.target.value))}
           />
         </Fields>
         <Fields>
           <Box width="100% !important" display="flex" justifyContent="flex-start">
-            <ButtonGroup sx={{ mb: 2 }} size="small">
+            <ButtonGroup sx={{ mb: 2 }}>
               {toggleView ? (
                 <ActiveButton variant="outlined" disabled>
                   {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
@@ -183,14 +180,12 @@ function CandidateForm(props: PropType) {
                 sx={{ mr: 2 }}
                 type="number"
                 label={t("xpansion.unitSize")}
-                variant="filled"
                 value={currentCandidate?.["unit-size"] || ""}
                 onChange={(e) => handleChange("unit-size", parseFloat(e.target.value))}
               />
               <TextField
                 type="number"
                 label={t("xpansion.maxUnits")}
-                variant="filled"
                 value={currentCandidate?.["max-units"] || ""}
                 onChange={(e) => handleChange("max-units", parseFloat(e.target.value))}
               />
@@ -200,7 +195,6 @@ function CandidateForm(props: PropType) {
             <TextField
               type="number"
               label={t("xpansion.maxInvestments")}
-              variant="filled"
               value={currentCandidate?.["max-investment"] || ""}
               onChange={(e) => handleChange("max-investment", parseFloat(e.target.value))}
             />
