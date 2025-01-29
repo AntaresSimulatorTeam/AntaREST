@@ -61,6 +61,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, 
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
+from antarest.study.storage.variantstudy import CommandNotifier
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -790,7 +791,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         variant_study: VariantStudy,
         notifier: ITaskNotifier,
         from_index: int = 0,
-    ) -> Tuple[List[List[ICommand]], Callable[[int, bool, str], None]]:
+    ) -> Tuple[List[List[ICommand]], CommandNotifier]:
         # Generate
         commands: List[List[ICommand]] = self._to_commands(variant_study, from_index)
 

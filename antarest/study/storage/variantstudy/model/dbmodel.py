@@ -121,7 +121,7 @@ class VariantStudy(Study):
         uselist=False,
         cascade="all, delete, delete-orphan",
     )
-    commands = relationship(
+    commands: t.List[CommandBlock] = relationship(
         CommandBlock,
         uselist=True,
         order_by="CommandBlock.index",

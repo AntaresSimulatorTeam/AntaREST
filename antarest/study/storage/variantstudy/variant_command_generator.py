@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import itertools
 import logging
 import shutil
 import uuid
@@ -20,11 +20,13 @@ from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.utils import update_antares_info
+from antarest.study.storage.variantstudy import CommandNotifier
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO, NewDetailsDTO
+from antarest.study.storage.variantstudy.variant_study_service import CommandNotifier
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,7 @@ class VariantCommandGenerator:
         data: Union[FileStudy, FileStudyTreeConfig],
         applier: APPLY_CALLBACK,
         metadata: Optional[VariantStudy] = None,
-        notifier: Optional[Callable[[int, bool, str], None]] = None,
+        notifier: Optional[CommandNotifier] = None,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
@@ -62,11 +64,19 @@ class VariantCommandGenerator:
         study_id = "-" if metadata is None else metadata.id
 
         # flatten the list of commands
-        all_commands = [command for command_batch in commands for command in command_batch]
-
+        # the result here is a list of all commands
+        # note that has a list of arguments is added as a command too to the final command list
+        # so len(all_commands) >= len(commands)
+        all_commands = list(itertools.chain.from_iterable(commands))
         # Prepare the stopwatch
         cmd_notifier = CmdNotifier(study_id, len(all_commands))
         stopwatch.reset_current()
+
+        # since we need the commands without their sub commands ONLY for the notifier, we'll use
+        # some variables to store commands metadata.
+        # In that case, we suppose that `all_commands` has sequences of commands based on their `command_id` field
+        command_block_index = 1
+        previous_command_id = None
 
         # Store all the outputs
         for index, cmd in enumerate(all_commands, 1):
@@ -90,7 +100,10 @@ class VariantCommandGenerator:
             results.details.append(detail)
 
             if notifier:
-                notifier(index - 1, output.status, output.message)
+                notifier(command_block_index - 1, output.status, output.message)
+                if previous_command_id != cmd.command_id:  # update temporary variables
+                    previous_command_id = cmd.command_id
+                    command_block_index += 1
 
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)
@@ -117,7 +130,7 @@ class VariantCommandGenerator:
         dest_path: Path,
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
-        notifier: Optional[Callable[[int, bool, str], None]] = None,
+        notifier: Optional[CommandNotifier] = None,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # Build file study
@@ -143,7 +156,7 @@ class VariantCommandGenerator:
         commands: List[List[ICommand]],
         config: FileStudyTreeConfig,
         metadata: Optional[VariantStudy] = None,
-        notifier: Optional[Callable[[int, bool, str], None]] = None,
+        notifier: Optional[CommandNotifier] = None,
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         logger.info("Building config (light generation)")
         results = VariantCommandGenerator._generate(
