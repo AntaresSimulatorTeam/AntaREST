@@ -183,41 +183,19 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         [
             CommandDTO(
                 id=None,
-                action=CommandName.UPDATE_CONFIG.value,
-                args=[
-                    {
-                        "target": "input/areas/test/ui/ui/x",
-                        "data": 100,
+                action=CommandName.MOVE_AREA.value,
+                args={
+                    "area_name": "test",
+                    "new_area_parameters": {
+                        "x": 100,
+                        "y": 200,
+                        "color_rgb": (255, 0, 100),
+                        "layer_x": {},
+                        "layer_y": {},
+                        "layer_color": {},
                     },
-                    {
-                        "target": "input/areas/test/ui/ui/y",
-                        "data": 200,
-                    },
-                    {
-                        "target": "input/areas/test/ui/ui/color_r",
-                        "data": 255,
-                    },
-                    {
-                        "target": "input/areas/test/ui/ui/color_g",
-                        "data": 0,
-                    },
-                    {
-                        "target": "input/areas/test/ui/ui/color_b",
-                        "data": 100,
-                    },
-                    {
-                        "target": "input/areas/test/ui/layerX/0",
-                        "data": 100,
-                    },
-                    {
-                        "target": "input/areas/test/ui/layerY/0",
-                        "data": 200,
-                    },
-                    {
-                        "target": "input/areas/test/ui/layerColor/0",
-                        "data": "255,0,100",
-                    },
-                ],
+                    "layer": "0",
+                },
                 study_version=study_version,
             ),
         ],
