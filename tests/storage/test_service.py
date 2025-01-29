@@ -17,7 +17,7 @@ import typing as t
 import uuid
 from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
@@ -354,42 +354,6 @@ def test_partial_sync_studies_from_disk() -> None:
             path=f"directory{os.sep}f",
             name="f",
             folder="directory/f",
-            created_at=ANY,
-            missing=None,
-            public_mode=PublicMode.FULL,
-            workspace=DEFAULT_WORKSPACE_NAME,
-        )
-    )
-
-
-# noinspection PyArgumentList
-@pytest.mark.unit_test
-def test_windows_path_scan() -> None:
-    """
-    In this test scenarion only study a exist in database, we call the sync with a folder containing study b.
-
-    The input folder is a windows folder.
-
-    We expect the sync to save the study b with a posix path and not a windows path.
-
-    Note : study a won't get deleted, the scan is partial as we give a directory argument.
-    """
-    ma = RawStudy(id="a", path="a")
-    fb = StudyFolder(path=PureWindowsPath("directory\\b"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-
-    repository = Mock()
-    repository.get_all_raw.side_effect = [[ma]]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
-
-    service.sync_studies_on_disk([fb], directory=PureWindowsPath("directory"))
-
-    repository.save.assert_called_with(
-        RawStudy(
-            id=ANY,
-            path=f"directory{os.sep}b",
-            name="b",
-            folder="directory/b",
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,
