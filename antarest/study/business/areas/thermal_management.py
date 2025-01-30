@@ -464,7 +464,7 @@ class ThermalManager:
             new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
 
         # Prepare and execute commands
-        commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]
+        commands: t.List[CreateCluster | ReplaceMatrix] = [create_cluster_cmd]
         storage_service = self.storage_service.get_storage(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):

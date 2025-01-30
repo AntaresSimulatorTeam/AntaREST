@@ -22,7 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Bindin
 def parse_bindings_coeffs_and_save_into_config(
     bd_id: str,
     study_data_config: FileStudyTreeConfig,
-    coeffs: t.Mapping[str, t.Union[t.Literal["hourly", "daily", "weekly"], t.Sequence[float]]],
+    coeffs: t.Mapping[str, t.Literal["hourly", "daily", "weekly"] | t.Sequence[float]],
     operator: BindingConstraintOperator,
     time_step: BindingConstraintFrequency,
     group: str,

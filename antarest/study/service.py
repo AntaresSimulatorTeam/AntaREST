@@ -181,7 +181,7 @@ logger = logging.getLogger(__name__)
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 
 
-def get_disk_usage(path: t.Union[str, Path]) -> int:
+def get_disk_usage(path: str | Path) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)
     if is_archive_format(path.suffix.lower()):
@@ -213,7 +213,7 @@ def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
 
 
 def _get_path_inside_user_folder(
-    path: str, exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]]
+    path: str, exception_class: t.Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed]
 ) -> str:
     """
     Retrieves the path inside the `user` folder for a given user path
@@ -498,7 +498,7 @@ class StudyService:
         self,
         uuid: str,
         output_id: str,
-        query_file: t.Union[MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile],
+        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
         frequency: MatrixFrequency,
         columns_names: t.Sequence[str],
         ids_to_consider: t.Sequence[str],
@@ -594,7 +594,7 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
-    def get_comments(self, study_id: str, params: RequestParameters) -> t.Union[str, JSON]:
+    def get_comments(self, study_id: str, params: RequestParameters) -> str | JSON:
         """
         Get the comments of a study.
 
@@ -1360,7 +1360,7 @@ class StudyService:
         filetype: ExportFormat,
         params: RequestParameters,
         tmp_export_file: t.Optional[Path] = None,
-    ) -> t.Union[Response, FileDownloadTaskDTO, FileResponse]:
+    ) -> Response | FileDownloadTaskDTO | FileResponse:
         """
         Download outputs
         Args:
@@ -1551,7 +1551,7 @@ class StudyService:
     def import_output(
         self,
         uuid: str,
-        output: t.Union[t.BinaryIO, Path],
+        output: t.BinaryIO | Path,
         params: RequestParameters,
         output_name_suffix: t.Optional[str] = None,
         auto_unzip: bool = True,
@@ -1896,7 +1896,7 @@ class StudyService:
         area_type: t.Optional[AreaType],
         ui: bool,
         params: RequestParameters,
-    ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
+    ) -> t.List[AreaInfoDTO] | t.Dict[str, t.Any]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.areas.get_all_areas_ui_info(study) if ui else self.areas.get_all_areas(study, area_type)
@@ -2817,9 +2817,9 @@ class StudyService:
     def _alter_user_folder(
         self,
         study_id: str,
-        command_data: t.Union[CreateUserResourceData, RemoveUserResourceData],
-        command_class: t.Type[t.Union[CreateUserResource, RemoveUserResource]],
-        exception_class: t.Type[t.Union[FolderCreationNotAllowed, ResourceDeletionNotAllowed]],
+        command_data: CreateUserResourceData | RemoveUserResourceData,
+        command_class: t.Type[CreateUserResource | RemoveUserResource],
+        exception_class: t.Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed],
         current_user: JWTUser,
     ) -> None:
         study = self.get_study(study_id)

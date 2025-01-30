@@ -44,10 +44,10 @@ class ReplaceMatrix(ICommand):
     # ==================
 
     target: str
-    matrix: t.Union[t.List[t.List[MatrixData]], str] = Field(validate_default=True)
+    matrix: t.List[t.List[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: t.Union[t.List[t.List[MatrixData]], str], values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: t.List[t.List[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override

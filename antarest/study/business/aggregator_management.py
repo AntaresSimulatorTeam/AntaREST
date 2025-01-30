@@ -146,7 +146,7 @@ class AggregatorManager:
         self,
         study_path: Path,
         output_id: str,
-        query_file: t.Union[MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile],
+        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
         frequency: MatrixFrequency,
         ids_to_consider: t.Sequence[str],
         columns_names: t.Sequence[str],

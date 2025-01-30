@@ -69,7 +69,7 @@ class ITaskService(ABC):
         self,
         task_type: TaskType,
         task_queue: str,
-        task_args: t.Dict[str, t.Union[int, float, bool, str]],
+        task_args: t.Dict[str, int | float | bool | str],
         name: t.Optional[str],
         ref_id: t.Optional[str],
         request_params: RequestParameters,
@@ -178,7 +178,7 @@ class TaskJobService(ITaskService):
         self,
         task_id: str,
         task_type: str,
-        task_args: t.Dict[str, t.Union[int, float, bool, str]],
+        task_args: t.Dict[str, int | float | bool | str],
     ) -> Task:
         task_result_wrapper: t.List[TaskResult] = []
 
@@ -227,7 +227,7 @@ class TaskJobService(ITaskService):
         self,
         task_type: TaskType,
         task_queue: str,
-        task_args: t.Dict[str, t.Union[int, float, bool, str]],
+        task_args: t.Dict[str, int | float | bool | str],
         name: t.Optional[str],
         ref_id: t.Optional[str],
         request_params: RequestParameters,

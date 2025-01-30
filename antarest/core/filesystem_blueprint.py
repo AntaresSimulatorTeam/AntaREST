@@ -203,7 +203,7 @@ class FileInfoDTO(
         return obj
 
 
-async def _calc_details(full_path: t.Union[str, Path]) -> t.Tuple[int, int]:
+async def _calc_details(full_path: str | Path) -> t.Tuple[int, int]:
     """Calculate the number of files and the total size of a directory recursively."""
 
     full_path = Path(full_path)

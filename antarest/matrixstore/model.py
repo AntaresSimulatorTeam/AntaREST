@@ -237,8 +237,8 @@ class MatrixContent(AntaresBaseModel):
     """
 
     data: t.List[t.List[MatrixData]]
-    index: t.List[t.Union[int, str]]
-    columns: t.List[t.Union[int, str]]
+    index: t.List[int | str]
+    columns: t.List[int | str]
 
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):

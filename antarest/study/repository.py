@@ -59,7 +59,7 @@ class AccessPermissions(AntaresBaseModel, frozen=True, extra="forbid"):
     user_groups: t.Sequence[str] = ()
 
     @classmethod
-    def from_params(cls, params: t.Union[RequestParameters, JWTUser]) -> "AccessPermissions":
+    def from_params(cls, params: RequestParameters | JWTUser) -> "AccessPermissions":
         """
         This function makes it easier to pass on user ids and groups into the repository filtering function by
         extracting the associated `AccessPermissions` object.

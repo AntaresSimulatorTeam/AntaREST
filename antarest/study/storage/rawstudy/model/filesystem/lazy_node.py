@@ -76,7 +76,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         expanded: bool = False,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> t.Union[t.Union[str, G], INode[G, S, V]]:
+    ) -> str | G | INode[G, S, V]:
         self._assert_url_end(url)
 
         if get_node:
@@ -101,7 +101,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> t.Union[str, G]:
+    ) -> str | G:
         output = self._get(url, depth, expanded, formatted, get_node=False)
         assert not isinstance(output, INode)
         return output
@@ -128,7 +128,7 @@ class LazyNode(INode, ABC, t.Generic[G, S, V]):  # type: ignore
         return path
 
     @override
-    def save(self, data: t.Union[str, bytes, S], url: t.Optional[t.List[str]] = None) -> None:
+    def save(self, data: str | bytes | S, url: t.Optional[t.List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 

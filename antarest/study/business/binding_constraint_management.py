@@ -145,7 +145,7 @@ class ConstraintTerm(AntaresBaseModel):
     id: t.Optional[str] = None
     weight: t.Optional[float] = None
     offset: t.Optional[int] = None
-    data: t.Optional[t.Union[LinkTerm, ClusterTerm]] = None
+    data: t.Optional[LinkTerm | ClusterTerm] = None
 
     @field_validator("id")
     def id_to_lower(cls, v: t.Optional[str]) -> t.Optional[str]:
@@ -348,7 +348,7 @@ class ConstraintOutput870(ConstraintOutput830):
 
 # WARNING: Do not change the order of the following line, it is used to determine
 # the type of the output constraint in the FastAPI endpoint.
-ConstraintOutput = t.Union[ConstraintOutputBase, ConstraintOutput830, ConstraintOutput870]
+ConstraintOutput = ConstraintOutputBase | ConstraintOutput830 | ConstraintOutput870
 
 OPERATOR_MATRIX_FILE_MAP = {
     BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
@@ -1177,7 +1177,7 @@ def _replace_matrices_according_to_frequency_and_version(
 
 
 def check_attributes_coherence(
-    data: t.Union[ConstraintCreation, ConstraintInput],
+    data: ConstraintCreation | ConstraintInput,
     study_version: StudyVersion,
     operator: BindingConstraintOperator,
 ) -> None:

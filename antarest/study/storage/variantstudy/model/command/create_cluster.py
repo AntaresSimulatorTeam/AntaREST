@@ -50,8 +50,8 @@ class CreateCluster(ICommand):
     area_id: str
     cluster_name: str
     parameters: t.Dict[str, t.Any]
-    prepro: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
-    modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
+    prepro: t.Optional[t.List[t.List[MatrixData]] | str] = Field(None, validate_default=True)
+    modulation: t.Optional[t.List[t.List[MatrixData]] | str] = Field(None, validate_default=True)
 
     @field_validator("cluster_name", mode="before")
     def validate_cluster_name(cls, val: str) -> str:
@@ -63,9 +63,9 @@ class CreateCluster(ICommand):
     @field_validator("prepro", mode="before")
     def validate_prepro(
         cls,
-        v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]],
-        values: t.Union[t.Dict[str, t.Any], ValidationInfo],
-    ) -> t.Optional[t.Union[t.List[t.List[MatrixData]], str]]:
+        v: t.Optional[t.List[t.List[MatrixData]] | str],
+        values: t.Dict[str, t.Any] | ValidationInfo,
+    ) -> t.Optional[t.List[t.List[MatrixData]] | str]:
         new_values = values if isinstance(values, dict) else values.data
         if v is None:
             v = new_values["command_context"].generator_matrix_constants.get_thermal_prepro_data()
@@ -76,9 +76,9 @@ class CreateCluster(ICommand):
     @field_validator("modulation", mode="before")
     def validate_modulation(
         cls,
-        v: t.Optional[t.Union[t.List[t.List[MatrixData]], str]],
-        values: t.Union[t.Dict[str, t.Any], ValidationInfo],
-    ) -> t.Optional[t.Union[t.List[t.List[MatrixData]], str]]:
+        v: t.Optional[t.List[t.List[MatrixData]] | str],
+        values: t.Dict[str, t.Any] | ValidationInfo,
+    ) -> t.Optional[t.List[t.List[MatrixData]] | str]:
         new_values = values if isinstance(values, dict) else values.data
         if v is None:
             v = new_values["command_context"].generator_matrix_constants.get_thermal_prepro_modulation()

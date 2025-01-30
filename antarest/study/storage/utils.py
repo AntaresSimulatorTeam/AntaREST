@@ -214,7 +214,7 @@ def study_matcher(
 
 def assert_permission_on_studies(
     user: t.Optional[JWTUser],
-    studies: t.Sequence[t.Union[Study, StudyMetadataDTO]],
+    studies: t.Sequence[Study | StudyMetadataDTO],
     permission_type: StudyPermissionType,
     *,
     raising: bool = True,
@@ -254,7 +254,7 @@ def assert_permission_on_studies(
 
 def assert_permission(
     user: t.Optional[JWTUser],
-    study: t.Optional[t.Union[Study, StudyMetadataDTO]],
+    study: t.Optional[Study | StudyMetadataDTO],
     permission_type: StudyPermissionType,
     raising: bool = True,
 ) -> bool:

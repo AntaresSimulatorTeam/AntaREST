@@ -61,7 +61,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         depth: int = -1,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
+    ) -> JSON | INode[JSON, SUB_JSON, JSON]:
         children = self.build()
         names, sub_url = self.extract_child(children, url)
 
@@ -91,7 +91,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def _expand_get(
         self, depth: int = -1, formatted: bool = True, get_node: bool = False
-    ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
+    ) -> JSON | INode[JSON, SUB_JSON, JSON]:
         if get_node:
             return self
 
@@ -110,7 +110,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         depth: int = -1,
         formatted: bool = True,
         get_node: bool = False,
-    ) -> t.Union[JSON, INode[JSON, SUB_JSON, JSON]]:
+    ) -> JSON | INode[JSON, SUB_JSON, JSON]:
         if url and url != [""]:
             return self._forward_get(url, depth, formatted, get_node)
         else:

@@ -703,7 +703,7 @@ class XpansionManager:
         study: Study,
         resource_type: XpansionResourceFileType,
         filename: str,
-    ) -> t.Union[JSON, bytes]:
+    ) -> JSON | bytes:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         return file_study.tree.get(self._raw_file_dir(resource_type) + [filename])

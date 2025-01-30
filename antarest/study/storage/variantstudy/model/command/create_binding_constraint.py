@@ -122,11 +122,9 @@ class BindingConstraintProperties870(BindingConstraintProperties830):
     group: str = DEFAULT_GROUP
 
 
-BindingConstraintProperties = t.Union[
-    BindingConstraintPropertiesBase,
-    BindingConstraintProperties830,
-    BindingConstraintProperties870,
-]
+BindingConstraintProperties = (
+    BindingConstraintPropertiesBase | BindingConstraintProperties830 | BindingConstraintProperties870
+)
 
 
 def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[BindingConstraintProperties]:
@@ -173,27 +171,27 @@ class BindingConstraintMatrices(AntaresBaseModel, extra="forbid", populate_by_na
     Class used to store the matrices of a binding constraint.
     """
 
-    values: t.Optional[t.Union[MatrixType, str]] = Field(
+    values: t.Optional[MatrixType | str] = Field(
         default=None,
         description="2nd member matrix for studies before v8.7",
     )
-    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    less_term_matrix: t.Optional[MatrixType | str] = Field(
         default=None,
         description="less term matrix for v8.7+ studies",
     )
-    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    greater_term_matrix: t.Optional[MatrixType | str] = Field(
         default=None,
         description="greater term matrix for v8.7+ studies",
     )
-    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    equal_term_matrix: t.Optional[MatrixType | str] = Field(
         default=None,
         description="equal term matrix for v8.7+ studies",
     )
 
     @model_validator(mode="before")
     def check_matrices(
-        cls, values: t.Dict[str, t.Optional[t.Union[MatrixType, str]]]
-    ) -> t.Dict[str, t.Optional[t.Union[MatrixType, str]]]:
+        cls, values: t.Dict[str, t.Optional[MatrixType | str]]
+    ) -> t.Dict[str, t.Optional[MatrixType | str]]:
         values_matrix = values.get("values") or None
         less_term_matrix = values.get("less_term_matrix") or None
         greater_term_matrix = values.get("greater_term_matrix") or None
@@ -263,7 +261,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
     def get_corresponding_matrices(
         self,
-        v: t.Optional[t.Union[MatrixType, str]],
+        v: t.Optional[MatrixType | str],
         time_step: BindingConstraintFrequency,
         version: StudyVersion,
         create: bool,

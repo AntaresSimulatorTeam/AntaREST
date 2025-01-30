@@ -431,7 +431,7 @@ class StudyMetadataDTO(AntaresBaseModel):
     tags: t.List[str] = []
 
     @field_validator("horizon", mode="before")
-    def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
+    def transform_horizon_to_str(cls, val: str | int | None) -> t.Optional[str]:
         # horizon can be an int.
         return str(val) if val else val  # type: ignore
 

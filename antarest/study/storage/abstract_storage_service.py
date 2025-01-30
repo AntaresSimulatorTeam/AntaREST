@@ -254,7 +254,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def import_output(
         self,
         metadata: T,
-        output: t.Union[t.BinaryIO, Path],
+        output: t.BinaryIO | Path,
         output_name: t.Optional[str] = None,
     ) -> t.Optional[str]:
         """

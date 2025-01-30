@@ -71,7 +71,7 @@ class TableExportFormat(EnumIgnoreCase):
     def export_table(
         self,
         df: pd.DataFrame,
-        export_path: t.Union[str, Path],
+        export_path: str | Path,
         *,
         with_index: bool = True,
         with_header: bool = True,

@@ -39,7 +39,7 @@ class LauncherParametersDTO(AntaresBaseModel):
     nb_cpu: t.Optional[int] = None
     post_processing: bool = False
     time_limit: int = 240 * 3600  # Default value set to 240 hours (in seconds)
-    xpansion: t.Union[XpansionParametersDTO, bool, None] = None
+    xpansion: XpansionParametersDTO | bool | None = None
     xpansion_r_version: bool = False
     archive_output: bool = True
     auto_unzip: bool = True

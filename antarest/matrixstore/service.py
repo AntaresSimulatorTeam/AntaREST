@@ -72,7 +72,7 @@ class ISimpleMatrixService(ABC):
         self.matrix_content_repository = matrix_content_repository
 
     @abstractmethod
-    def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def create(self, data: t.List[t.List[MatrixData]] | npt.NDArray[np.float64]) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -87,7 +87,7 @@ class ISimpleMatrixService(ABC):
     def delete(self, matrix_id: str) -> None:
         raise NotImplementedError()
 
-    def get_matrix_id(self, matrix: t.Union[t.List[t.List[float]], str]) -> str:
+    def get_matrix_id(self, matrix: t.List[t.List[float]] | str) -> str:
         """
         Get the matrix ID from a matrix or a matrix link.
 
@@ -114,7 +114,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         super().__init__(matrix_content_repository=matrix_content_repository)
 
     @override
-    def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def create(self, data: t.List[t.List[MatrixData]] | npt.NDArray[np.float64]) -> str:
         return self.matrix_content_repository.save(data)
 
     @override
@@ -171,7 +171,7 @@ class MatrixService(ISimpleMatrixService):
         return matrix, content
 
     @override
-    def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def create(self, data: t.List[t.List[MatrixData]] | npt.NDArray[np.float64]) -> str:
         """
         Creates a new matrix object with the specified data.
 

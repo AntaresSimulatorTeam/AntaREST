@@ -116,7 +116,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
     def import_output(
         self,
         study: T,
-        output: t.Union[t.BinaryIO, Path],
+        output: t.BinaryIO | Path,
         output_name: t.Optional[str] = None,
     ) -> t.Optional[str]:
         """

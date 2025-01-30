@@ -53,7 +53,7 @@ class UpdateScenarioBuilder(ICommand):
     # Command parameters
     # ==================
 
-    data: t.Union[t.Dict[str, t.Any], t.Mapping[str, t.Any], t.MutableMapping[str, t.Any]]
+    data: t.Dict[str, t.Any] | t.Mapping[str, t.Any] | t.MutableMapping[str, t.Any]
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:

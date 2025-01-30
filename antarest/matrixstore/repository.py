@@ -181,7 +181,7 @@ class MatrixContentRepository:
         matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
         return matrix_file.exists()
 
-    def save(self, content: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def save(self, content: t.List[t.List[MatrixData]] | npt.NDArray[np.float64]) -> str:
         """
         Saves the content of a matrix as a TSV file in the bucket directory
         and returns its SHA256 hash.

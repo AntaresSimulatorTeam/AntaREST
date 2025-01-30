@@ -20,7 +20,7 @@ from antarest.core.roles import RoleType
 logger = logging.getLogger(__name__)
 
 
-permission_matrix: t.Dict[str, t.Dict[str, t.Sequence[t.Union[RoleType, PublicMode]]]] = {
+permission_matrix: t.Dict[str, t.Dict[str, t.Sequence[RoleType | PublicMode]]] = {
     StudyPermissionType.READ.value: {
         "roles": [
             RoleType.ADMIN,

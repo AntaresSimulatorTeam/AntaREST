@@ -151,7 +151,7 @@ class SnapshotGenerator:
         root_study = self.repository.one(descendant_ids[0])
         return root_study, descendants
 
-    def _export_ref_study(self, snapshot_dir: Path, ref_study: t.Union[RawStudy, VariantStudy]) -> None:
+    def _export_ref_study(self, snapshot_dir: Path, ref_study: RawStudy | VariantStudy) -> None:
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
             export_study_flat(
@@ -224,13 +224,13 @@ class RefStudySearchResult(t.NamedTuple):
     Result of the search for the reference study.
     """
 
-    ref_study: t.Union[RawStudy, VariantStudy]
+    ref_study: RawStudy | VariantStudy
     cmd_blocks: t.Sequence[CommandBlock]
     force_regenerate: bool = False
 
 
 def search_ref_study(
-    root_study: t.Union[RawStudy, VariantStudy],
+    root_study: RawStudy | VariantStudy,
     descendants: t.Sequence[VariantStudy],
     *,
     from_scratch: bool = False,
@@ -251,7 +251,7 @@ def search_ref_study(
         return RefStudySearchResult(ref_study=root_study, cmd_blocks=[], force_regenerate=True)
 
     # The reference study is the root study or a variant study with a valid snapshot
-    ref_study: t.Union[RawStudy, VariantStudy]
+    ref_study: RawStudy | VariantStudy
 
     # The commands to apply on the reference study to generate the current variant
     cmd_blocks: t.List[CommandBlock]

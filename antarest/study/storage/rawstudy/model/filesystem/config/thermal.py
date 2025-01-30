@@ -408,7 +408,7 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
 
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
-ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
+ThermalConfigType = Thermal870Config | Thermal860Config | ThermalConfig
 
 
 def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:

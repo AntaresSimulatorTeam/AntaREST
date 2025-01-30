@@ -31,15 +31,15 @@ SCENARIO_TYPES = {
     "hgp": "hydro-generation-power",
 }
 
-_Value: te.TypeAlias = t.Union[int, float]
+_Value: te.TypeAlias = int | float
 _SimpleScenario: te.TypeAlias = pd.DataFrame
 _ClusterScenario: te.TypeAlias = t.MutableMapping[str, pd.DataFrame]
-_Scenario: te.TypeAlias = t.Union[_SimpleScenario, _ClusterScenario]
+_Scenario: te.TypeAlias = _SimpleScenario | _ClusterScenario
 _ScenarioMapping: te.TypeAlias = t.MutableMapping[str, _Scenario]
 
-SimpleTableForm: te.TypeAlias = t.Dict[str, t.Dict[str, t.Union[int, float, str, None]]]
+SimpleTableForm: te.TypeAlias = t.Dict[str, t.Dict[str, int | float | str | None]]
 ClusterTableForm: te.TypeAlias = t.Dict[str, SimpleTableForm]
-TableForm: te.TypeAlias = t.Union[SimpleTableForm, ClusterTableForm]
+TableForm: te.TypeAlias = SimpleTableForm | ClusterTableForm
 
 _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "hgp"
 _BINDING_CONSTRAINTS_RELATED_SYMBOLS = ("bc",)
@@ -315,7 +315,7 @@ class RulesetMatrices:
             raise NotImplementedError(f"Unknown symbol {symbol}")
         return scenario_rules
 
-    def get_table_form(self, scenario_type: str, *, nan_value: t.Union[str, None] = "") -> TableForm:
+    def get_table_form(self, scenario_type: str, *, nan_value: str | None = "") -> TableForm:
         """
         Get the scenario matrices in table form for the frontend.
 
@@ -366,7 +366,7 @@ class RulesetMatrices:
         table_form: TableForm,
         scenario_type: str,
         *,
-        nan_value: t.Union[str, None] = "",
+        nan_value: str | None = "",
     ) -> None:
         """
         Set the scenario matrix from table form data, for a specific scenario type.

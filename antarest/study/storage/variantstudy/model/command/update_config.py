@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 _ENR_MODELLING_KEY = "settings/generaldata/other preferences/renewable-generation-modelling"
 
-_Data: te.TypeAlias = t.Union[str, int, float, bool, JSON, None]
+_Data: te.TypeAlias = str | int | float | bool | JSON | None
 
 
 def _iter_dict(data: _Data, root_key: str = "") -> t.Generator[t.Tuple[str, t.Any], None, None]:

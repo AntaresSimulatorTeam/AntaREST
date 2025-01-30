@@ -29,7 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 _TSNumber: te.TypeAlias = int
 _HydroLevel: te.TypeAlias = float
-_Rules = t.MutableMapping[str, t.Union[t.Type[_TSNumber], t.Type[_HydroLevel]]]
+_Rules = t.MutableMapping[str, t.Type[_TSNumber] | t.Type[_HydroLevel]]
 
 
 class ScenarioBuilder(IniFileNode):

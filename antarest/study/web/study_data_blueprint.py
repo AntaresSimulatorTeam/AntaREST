@@ -91,7 +91,7 @@ class BCKeyValueType(te.TypedDict):
     """Deprecated type for binding constraint key-value pair (used for update)"""
 
     key: str
-    value: t.Union[str, int, float, bool]
+    value: str | int | float | bool
 
 
 class ClusterType(enum.StrEnum):
@@ -127,14 +127,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Get all areas basic info",
-        response_model=t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]],
+        response_model=t.List[AreaInfoDTO] | t.Dict[str, t.Any],
     )
     def get_areas(
         uuid: str,
         type: AreaType = Query(None),
         ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Union[t.List[AreaInfoDTO], t.Dict[str, t.Any]]:
+    ) -> t.List[AreaInfoDTO] | t.Dict[str, t.Any]:
         logger.info(
             f"Fetching area list (type={type}) for study {uuid}",
             extra={"user": current_user.id},
@@ -246,7 +246,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_area_info(
         uuid: str,
         area_id: str,
-        area_patch_dto: t.Union[PatchArea, t.Dict[str, PatchCluster]],
+        area_patch_dto: PatchArea | t.Dict[str, PatchCluster],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         logger.info(
@@ -2599,7 +2599,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         source_cluster_id: str,
         new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
+    ) -> STStorageOutput | ThermalClusterOutput | RenewableClusterOutput:
         logger.info(
             f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}",
             extra={"user": current_user.id},
@@ -2607,7 +2607,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 
-        manager: t.Union[STStorageManager, RenewableManager, ThermalManager]
+        manager: STStorageManager | RenewableManager | ThermalManager
         if cluster_type == ClusterType.ST_STORAGES:
             manager = STStorageManager(study_service.storage_service)
         elif cluster_type == ClusterType.RENEWABLES:

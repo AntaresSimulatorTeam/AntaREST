@@ -32,7 +32,7 @@ class JsonReader(IReader):
 
     @override
     def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
-        content: t.Union[str, bytes]
+        content: str | bytes
 
         if isinstance(path, (Path, str)):
             try:

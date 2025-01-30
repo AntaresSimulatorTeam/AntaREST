@@ -31,7 +31,7 @@ _CLUSTER_RELATED_SYMBOLS = "t", "r"
 
 _HYDRO_LEVEL_PERCENT = 100
 
-_Section: te.TypeAlias = t.MutableMapping[str, t.Union[int, float]]
+_Section: te.TypeAlias = t.MutableMapping[str, int | float]
 _Sections: te.TypeAlias = t.MutableMapping[str, _Section]
 
 Ruleset: te.TypeAlias = t.MutableMapping[str, t.Any]
@@ -92,11 +92,11 @@ def _get_ruleset_config(
     file_study: FileStudy,
     ruleset_name: str,
     symbol: str = "",
-) -> t.Dict[str, t.Union[int, float]]:
+) -> t.Dict[str, int | float]:
     try:
         suffix = f"/{symbol}" if symbol else ""
         url = f"settings/scenariobuilder/{ruleset_name}{suffix}".split("/")
-        ruleset_cfg = t.cast(t.Dict[str, t.Union[int, float]], file_study.tree.get(url))
+        ruleset_cfg = t.cast(t.Dict[str, int | float], file_study.tree.get(url))
     except KeyError:
         ruleset_cfg = {}
     return ruleset_cfg

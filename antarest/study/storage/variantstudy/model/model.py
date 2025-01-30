@@ -42,7 +42,7 @@ class NewDetailsDTO(te.TypedDict):
     msg: str
 
 
-DetailsDTO = t.Union[LegacyDetailsDTO, NewDetailsDTO]
+DetailsDTO = LegacyDetailsDTO | NewDetailsDTO
 
 
 class GenerationResultInfoDTO(AntaresBaseModel):
@@ -71,7 +71,7 @@ class CommandDTOAPI(AntaresBaseModel):
 
     id: t.Optional[str] = None
     action: str
-    args: t.Union[t.MutableSequence[JSON], JSON]
+    args: t.MutableSequence[JSON] | JSON
     version: int = 1
     user_name: t.Optional[str] = None
     updated_at: t.Optional[datetime.datetime] = None
@@ -93,7 +93,7 @@ class CommandDTO(AntaresBaseModel):
 
     id: t.Optional[str] = None
     action: str
-    args: t.Union[t.MutableSequence[JSON], JSON]
+    args: t.MutableSequence[JSON] | JSON
     version: int = 1
     study_version: StudyVersionStr
     user_id: t.Optional[int] = None

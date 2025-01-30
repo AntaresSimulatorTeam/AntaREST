@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def validate_matrix(matrix: t.Union[t.List[t.List[MatrixData]], str], values: t.Dict[str, t.Any]) -> str:
+def validate_matrix(matrix: t.List[t.List[MatrixData]] | str, values: t.Dict[str, t.Any]) -> str:
     """
     Validates the matrix, stores the matrix array in the matrices repository,
     and returns a reference to the stored array.
@@ -75,7 +75,7 @@ def remove_none_args(command_dto: CommandDTO) -> CommandDTO:
     return command_dto
 
 
-def strip_matrix_protocol(matrix_uri: t.Union[t.List[t.List[float]], str, None]) -> str:
+def strip_matrix_protocol(matrix_uri: t.List[t.List[float]] | str | None) -> str:
     assert isinstance(matrix_uri, str)
     if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
         return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]

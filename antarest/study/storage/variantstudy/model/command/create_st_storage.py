@@ -61,23 +61,23 @@ class CreateSTStorage(ICommand):
 
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
     parameters: STStorageConfigType
-    pmax_injection: t.Optional[t.Union[MatrixType, str]] = Field(
+    pmax_injection: t.Optional[MatrixType | str] = Field(
         default=None,
         description="Charge capacity (modulation)",
     )
-    pmax_withdrawal: t.Optional[t.Union[MatrixType, str]] = Field(
+    pmax_withdrawal: t.Optional[MatrixType | str] = Field(
         default=None,
         description="Discharge capacity (modulation)",
     )
-    lower_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
+    lower_rule_curve: t.Optional[MatrixType | str] = Field(
         default=None,
         description="Lower rule curve (coefficient)",
     )
-    upper_rule_curve: t.Optional[t.Union[MatrixType, str]] = Field(
+    upper_rule_curve: t.Optional[MatrixType | str] = Field(
         default=None,
         description="Upper rule curve (coefficient)",
     )
-    inflows: t.Optional[t.Union[MatrixType, str]] = Field(
+    inflows: t.Optional[MatrixType | str] = Field(
         default=None,
         description="Inflows (MW)",
     )
@@ -94,8 +94,8 @@ class CreateSTStorage(ICommand):
 
     @staticmethod
     def validate_field(
-        v: t.Optional[t.Union[MatrixType, str]], values: t.Dict[str, t.Any], field: str
-    ) -> t.Optional[t.Union[MatrixType, str]]:
+        v: t.Optional[MatrixType | str], values: t.Dict[str, t.Any], field: str
+    ) -> t.Optional[MatrixType | str]:
         """
         Validates a matrix array or link, and store the matrix array in the matrix repository.
 
@@ -155,7 +155,7 @@ class CreateSTStorage(ICommand):
         raise TypeError(repr(v))
 
     @model_validator(mode="before")
-    def validate_matrices(cls, values: t.Union[t.Dict[str, t.Any], ValidationInfo]) -> t.Dict[str, t.Any]:
+    def validate_matrices(cls, values: t.Dict[str, t.Any] | ValidationInfo) -> t.Dict[str, t.Any]:
         new_values = values if isinstance(values, dict) else values.data
         for field in _MATRIX_NAMES:
             new_values[field] = cls.validate_field(new_values.get(field, None), new_values, field)

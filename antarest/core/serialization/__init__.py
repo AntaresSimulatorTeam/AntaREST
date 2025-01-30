@@ -22,7 +22,7 @@ ADAPTER: pydantic.TypeAdapter[t.Any] = pydantic.TypeAdapter(
 # Since pydantic v2 is written in RUST it's way faster.
 
 
-def from_json(data: t.Union[str, bytes, bytearray]) -> t.Dict[str, t.Any]:
+def from_json(data: str | bytes | bytearray) -> t.Dict[str, t.Any]:
     return ADAPTER.validate_json(data)  # type: ignore
 
 

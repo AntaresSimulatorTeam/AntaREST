@@ -271,9 +271,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.READ,
             RequestParameters(user=current_user),
         )
-        output: t.Union[JSON, bytes, str] = study_service.xpansion_manager.get_resource_content(
-            study, resource_type, filename
-        )
+        output: JSON | bytes | str = study_service.xpansion_manager.get_resource_content(study, resource_type, filename)
 
         if isinstance(output, bytes):
             try:

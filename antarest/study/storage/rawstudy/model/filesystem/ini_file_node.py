@@ -95,7 +95,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         depth: int = -1,
         expanded: bool = False,
         get_node: bool = False,
-    ) -> t.Union[SUB_JSON, INode[SUB_JSON, SUB_JSON, JSON]]:
+    ) -> SUB_JSON | INode[SUB_JSON, SUB_JSON, JSON]:
         if get_node:
             return self
 
