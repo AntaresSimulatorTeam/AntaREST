@@ -29,5 +29,5 @@ export async function generateTimeSeries(params: { studyId: StudyMetadata["id"] 
 }
 
 export async function setTimeSeriesConfig<T>({ studyId, values }: SetTimeSeriesConfigParams<T>) {
-  await client.put(`v1/studies/${studyId}/timeseries/config`, values);
+  await client.put(`/v1/studies/${studyId}/timeseries/config`, values);
 }

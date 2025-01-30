@@ -22,12 +22,12 @@ import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
 import { setTimeSeriesConfig, generateTimeSeries } from "@/services/api/studies/timeseries";
-import { DEFAULT_VALUES, toConfigDTO, type TSConfigValues } from "./utils";
+import { defaultValues, toConfigDTO, type TSConfigValues } from "./utils";
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
-  const [launchTaskInProgress, setLaunchTaskInProgress] = useState(false);
+  const [isLaunchTaskInProgress, setIsLaunchTaskInProgress] = useState(false);
   const apiRef = useRef<UseFormReturnPlus<TSConfigValues>>(null);
 
   const handleGenerateTs = usePromiseHandler({
@@ -45,14 +45,14 @@ function TimeSeriesManagement() {
   };
 
   const handleSubmitSuccessful = async () => {
-    setLaunchTaskInProgress(true);
+    setIsLaunchTaskInProgress(true);
 
     // The WebSocket will trigger an event after the fulfillment of the promise (see `FreezeStudy`)
     await handleGenerateTs({ studyId: study.id });
 
-    setLaunchTaskInProgress(false);
+    setIsLaunchTaskInProgress(false);
 
-    apiRef.current?.reset(DEFAULT_VALUES);
+    apiRef.current?.reset(defaultValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -63,8 +63,8 @@ function TimeSeriesManagement() {
     <Form
       key={study.id}
       config={{
-        defaultValues: DEFAULT_VALUES,
-        disabled: launchTaskInProgress,
+        defaultValues,
+        disabled: isLaunchTaskInProgress,
       }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}

@@ -13,20 +13,17 @@
  */
 
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
-import capitalize from "lodash/capitalize";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import { useFormContextPlus } from "../../../../../common/Form";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import { useTranslation } from "react-i18next";
-import { validateNumber } from "@/utils/validation/number";
-import type { TSConfigValues } from "./utils";
 import { TSType } from "@/services/api/studies/timeseries/constants";
+import type { TSConfigValues } from "../utils";
+import { useFormContextPlus } from "@/components/common/Form";
+import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
+import TypeConfigFields from "./TypeConfigFields";
 
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
 function Fields() {
-  const { control, watch } = useFormContextPlus<TSConfigValues>();
-  const formValues = watch();
+  const { control } = useFormContextPlus<TSConfigValues>();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -62,10 +59,12 @@ function Fields() {
         >
           {Object.values(TSType).map((type) => (
             <TableRow key={type}>
-              <TableCell sx={{ fontWeight: "bold" }}>{capitalize(type)}</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>
+                {t(`timeSeries.type.${type}`, type)}
+              </TableCell>
               <TableCell align="center">
                 <BooleanFE
-                  name={`${type}.stochasticTsStatus` as const}
+                  name={`${type}.enable` as const}
                   control={control}
                   trueText={t("study.configuration.tsManagement.status.toBeGenerated")}
                   falseText={t("study.configuration.tsManagement.status.readyMade")}
@@ -73,16 +72,7 @@ function Fields() {
                   size="small"
                 />
               </TableCell>
-              <TableCell align="center">
-                <NumberFE
-                  name={`${type}.number` as const}
-                  control={control}
-                  size="small"
-                  disabled={formValues[type].stochasticTsStatus === false}
-                  rules={{ validate: validateNumber({ min: 1 }) }}
-                  sx={{ width: 110 }}
-                />
-              </TableCell>
+              <TypeConfigFields type={type} />
             </TableRow>
           ))}
         </TableBody>

@@ -15,15 +15,15 @@
 import { TSType } from "@/services/api/studies/timeseries/constants";
 import type { TSTypeConfig, TSConfigDTO, TTSType } from "@/services/api/studies/timeseries/types";
 
-export type TSConfigValues = Record<TTSType, TSTypeConfig & { stochasticTsStatus: boolean }>;
+export type TSConfigValues = Record<TTSType, TSTypeConfig & { enable: boolean }>;
 
-export const DEFAULT_VALUES = Object.values(TSType).reduce((acc, type) => {
-  acc[type] = { number: 1, stochasticTsStatus: false };
+export const defaultValues = Object.values(TSType).reduce((acc, type) => {
+  acc[type] = { number: 1, enable: false };
   return acc;
 }, {} as TSConfigValues);
 
 export function toConfigDTO(data: TSConfigValues) {
-  return Object.entries(data).reduce((acc, [key, { stochasticTsStatus, ...config }]) => {
+  return Object.entries(data).reduce((acc, [key, { enable, ...config }]) => {
     acc[key as TTSType] = config;
     return acc;
   }, {} as TSConfigDTO);
