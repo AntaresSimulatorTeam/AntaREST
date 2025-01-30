@@ -31,4 +31,5 @@ export interface StudyTreeNodeProps {
   studyTreeNode: StudyTreeNode;
   parentId: string;
   itemsLoading: string[];
+  onNodeClick: (id: string) => void;
 }

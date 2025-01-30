@@ -116,16 +116,24 @@ function StudyTree() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
+  // we need to handle both the expand event and the onClick event
+  // because the onClick isn't triggered when user click on arrow
+  // Also the expanse event isn't triggered when the item doesn't have any subfolder
+  // but we stil want to apply the filter on the clicked folder
   const handleItemExpansionToggle = async (
     event: React.SyntheticEvent<Element, Event>,
     itemId: string,
     isExpanded: boolean,
   ) => {
     if (isExpanded) {
-      dispatch(updateStudyFilters({ folder: itemId }));
       updateTree(itemId, studiesTree);
     }
   };
+
+  const handleTreeItemClick = (itemId: string) => {
+    dispatch(updateStudyFilters({ folder: itemId }));
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -144,7 +152,12 @@ function StudyTree() {
       }}
       onItemExpansionToggle={handleItemExpansionToggle}
     >
-      <StudyTreeNodeComponent studyTreeNode={studiesTree} parentId="" itemsLoading={itemsLoading} />
+      <StudyTreeNodeComponent
+        studyTreeNode={studiesTree}
+        parentId=""
+        itemsLoading={itemsLoading}
+        onNodeClick={handleTreeItemClick}
+      />
     </SimpleTreeView>
   );
 }

@@ -22,6 +22,7 @@ export default memo(function StudyTreeNode({
   studyTreeNode,
   parentId,
   itemsLoading,
+  onNodeClick,
 }: StudyTreeNodeProps) {
   const id = parentId ? `${parentId}/${studyTreeNode.name}` : studyTreeNode.name;
   const isLoadingFolder = itemsLoading.includes(id);
@@ -40,13 +41,14 @@ export default memo(function StudyTreeNode({
   }
 
   return (
-    <TreeItemEnhanced itemId={id} label={studyTreeNode.name}>
+    <TreeItemEnhanced itemId={id} label={studyTreeNode.name} onClick={() => onNodeClick(id)}>
       {sortedChildren.map((child) => (
         <StudyTreeNode
           key={`${id}/${child.name}`}
           studyTreeNode={child}
           parentId={id}
           itemsLoading={itemsLoading}
+          onNodeClick={onNodeClick}
         />
       ))}
     </TreeItemEnhanced>
