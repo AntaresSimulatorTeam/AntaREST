@@ -290,14 +290,14 @@ class Study(Base):  # type: ignore
         return {"id": self.id, "name": self.name}
 
     @validates("folder")  # type: ignore
-    def validate_folder(self, key: str, folder: str) -> str:
+    def validate_folder(self, key: str, folder: t.Optional[str]) -> t.Optional[str]:
         """
         We want to store the path in posix format in the database, even on windows.
         """
         return normalize_path(folder)
 
 
-def normalize_path(path: str) -> str:
+def normalize_path(path: t.Optional[str]) -> str:
     """
     Turns any path including a windows path (with \ separator) to a posix path (with / separator).
     """
