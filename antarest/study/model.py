@@ -16,7 +16,7 @@ import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePath
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
@@ -303,8 +303,8 @@ def normalize_path(path: t.Optional[str]) -> t.Optional[str]:
     """
     if not path:
         return path
-    windows_path = PureWindowsPath(path)
-    return windows_path.as_posix()
+    pure_path = PurePath(path)
+    return pure_path.as_posix()
 
 
 class RawStudy(Study):
