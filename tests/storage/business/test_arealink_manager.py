@@ -186,14 +186,9 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                 action=CommandName.MOVE_AREA.value,
                 args={
                     "area_id": "test",
-                    "new_area_parameters": {
-                        "x": 100,
-                        "y": 200,
-                        "color_rgb": (255, 0, 100),
-                        "layer_x": {},
-                        "layer_y": {},
-                        "layer_color": {},
-                    },
+                    "area_ui": UpdateAreaUi(
+                        x=100, y=200, color_rgb=(255, 0, 100), layer_x={}, layer_y={}, layer_color={}
+                    ),
                     "layer": "0",
                 },
                 study_version=study_version,

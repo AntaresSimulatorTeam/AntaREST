@@ -79,7 +79,7 @@ from antarest.study.business.aggregator_management import (
     MCIndLinksQueryFile,
 )
 from antarest.study.business.allocation_management import AllocationManager
-from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaManager, AreaType, UpdateAreaUi
+from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.properties_management import PropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
@@ -92,6 +92,7 @@ from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
+from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager

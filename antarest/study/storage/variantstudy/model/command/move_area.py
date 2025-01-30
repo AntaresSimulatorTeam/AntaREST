@@ -14,6 +14,7 @@ import typing as t
 
 from typing_extensions import override
 
+from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -37,7 +38,7 @@ class MoveArea(ICommand):
     # ==================
 
     area_id: str
-    new_area_parameters: t.Dict[str, t.Any]
+    area_ui: UpdateAreaUi
     layer: str
 
     @override
@@ -50,12 +51,12 @@ class MoveArea(ICommand):
 
         if self.layer == "0":
             ui = current_area["ui"]
-            ui["x"] = self.new_area_parameters["x"]
-            ui["y"] = self.new_area_parameters["y"]
-            ui["color_r"], ui["color_g"], ui["color_b"] = self.new_area_parameters["color_rgb"]
-        current_area["layerX"][self.layer] = self.new_area_parameters["x"]
-        current_area["layerY"][self.layer] = self.new_area_parameters["y"]
-        current_area["layerColor"][self.layer] = ",".join(map(str, self.new_area_parameters["color_rgb"]))
+            ui["x"] = self.area_ui.x
+            ui["y"] = self.area_ui.y
+            ui["color_r"], ui["color_g"], ui["color_b"] = self.area_ui.color_rgb
+        current_area["layerX"][self.layer] = self.area_ui.x
+        current_area["layerY"][self.layer] = self.area_ui.y
+        current_area["layerColor"][self.layer] = ",".join(map(str, self.area_ui.color_rgb))
 
         study_data.tree.save(current_area, ["input", "areas", self.area_id, "ui"])
 
@@ -67,7 +68,7 @@ class MoveArea(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.MOVE_AREA.value,
-            args={"area_id": self.area_id, "new_area_parameters": self.new_area_parameters, "layer": self.layer},
+            args={"area_id": self.area_id, "area_ui": self.area_ui, "layer": self.layer},
             study_version=self.study_version,
         )
 
