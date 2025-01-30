@@ -48,8 +48,8 @@ import ResultFilters from "./ResultFilters.tsx";
 import { toError } from "../../../../../../utils/fnUtils.ts";
 import EmptyView from "../../../../../common/page/EmptyView.tsx";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
-import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
 import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types.ts";
+import DataGridViewer from "@/components/common/DataGridViewer.tsx";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
@@ -273,7 +273,7 @@ function ResultDetails() {
             ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
             ifFulfilled={(matrix) =>
               matrix && (
-                <MatrixGridSynthesis
+                <DataGridViewer
                   data={matrix.data}
                   columns={generateCustomColumns({
                     titles: matrix.columns,

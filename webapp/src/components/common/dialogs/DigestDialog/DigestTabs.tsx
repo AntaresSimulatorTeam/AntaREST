@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,7 +14,7 @@
 
 import { Box } from "@mui/material";
 import TabsView from "@/components/common/TabsView";
-import { DigestData } from "./types";
+import type { DigestData } from "./types";
 import DigestMatrix from "./DigestMatrix";
 
 interface DigestTabsProps {
@@ -29,21 +29,15 @@ export function DigestTabs({ matrices }: DigestTabsProps) {
     },
     {
       label: "Districts",
-      content: matrices.districts && (
-        <DigestMatrix matrix={matrices.districts} />
-      ),
+      content: matrices.districts && <DigestMatrix matrix={matrices.districts} />,
     },
     {
       label: "Flow Linear",
-      content: matrices.flowLinear && (
-        <DigestMatrix matrix={matrices.flowLinear} />
-      ),
+      content: matrices.flowLinear && <DigestMatrix matrix={matrices.flowLinear} />,
     },
     {
       label: "Flow Quadratic",
-      content: matrices.flowQuadratic && (
-        <DigestMatrix matrix={matrices.flowQuadratic} />
-      ),
+      content: matrices.flowQuadratic && <DigestMatrix matrix={matrices.flowQuadratic} />,
     },
   ];
 
@@ -52,7 +46,7 @@ export function DigestTabs({ matrices }: DigestTabsProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>
       <TabsView items={tabItems} divider />
     </Box>
   );

@@ -23,6 +23,7 @@ import type {
   AggregateConfig,
   DateTimeMetadataDTO,
   FormatGridNumberOptions,
+  ResultColumnsOptions,
 } from "./types";
 import { parseISO, type Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -375,10 +376,7 @@ export function groupResultColumns(
  * @see groupResultColumns - Use this function to apply grouping to the generated columns
  */
 
-export function generateResultColumns({
-  titles,
-  width,
-}: ResultColumnsOptions): ResultColumn[] {
+export function generateResultColumns({ titles, width }: ResultColumnsOptions): ResultColumn[] {
   return titles.map((title, index) => ({
     id: `custom${index + 1}`,
     title,

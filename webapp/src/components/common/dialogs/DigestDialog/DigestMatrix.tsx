@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,21 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
 import {
   generateDataColumns,
   generateResultColumns,
   groupResultColumns,
 } from "@/components/common/Matrix/shared/utils";
 import { Box } from "@mui/material";
-import type { DigestMatrix } from "./types";
-import EmptyView from "../../page/SimpleContent";
+import type { DigestMatrixType } from "./types";
 import { GridOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
+import EmptyView from "../../page/EmptyView";
+import DataGridViewer from "../../DataGridViewer";
 
-const isGroupedColumns = (
-  columns: string[] | string[][],
-): columns is string[][] => {
+const isGroupedColumns = (columns: string[] | string[][]): columns is string[][] => {
   return Array.isArray(columns[0]);
 };
 
@@ -35,7 +33,7 @@ const isColumns = (columns: string[] | string[][]): columns is string[] => {
 };
 
 interface DigestMatrixProps {
-  matrix: DigestMatrix;
+  matrix: DigestMatrixType;
 }
 
 function DigestMatrix({ matrix }: DigestMatrixProps) {
@@ -64,7 +62,7 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
         {!matrix.data[0]?.length ? (
           <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOff} />
         ) : (
-          <MatrixGridSynthesis data={matrix.data} columns={columns} />
+          <DataGridViewer data={matrix.data} columns={columns} />
         )}
       </Box>
     </Box>

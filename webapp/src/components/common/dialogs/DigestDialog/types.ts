@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-export interface DigestMatrix {
+export interface DigestMatrixType {
   columns: string[] | string[][];
   data: string[][];
   groupedColumns: boolean;
 }
 
 export interface DigestData {
-  area: DigestMatrix;
-  districts: DigestMatrix;
-  flowLinear: DigestMatrix;
-  flowQuadratic: DigestMatrix;
+  area: DigestMatrixType;
+  districts: DigestMatrixType;
+  flowLinear: DigestMatrixType;
+  flowQuadratic: DigestMatrixType;
 }

@@ -22,8 +22,8 @@ import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import EmptyView from "../page/EmptyView";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
-import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
-import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
+import { generateDataColumns } from "../Matrix/shared/utils";
+import DataGridViewer from "../DataGridViewer";
 
 export interface DigestDialogProps extends Pick<OkDialogProps, "open" | "onOk" | "onClose"> {
   studyId: LaunchJob["studyId"];
@@ -59,7 +59,7 @@ function DigestDialog({ studyId, outputId, ...dialogProps }: DigestDialogProps) 
         }}
         ifFulfilled={(matrix) =>
           matrix && (
-            <MatrixGridSynthesis
+            <DataGridViewer
               data={matrix.data}
               columns={generateDataColumns({
                 timeSeriesColumns: false,
