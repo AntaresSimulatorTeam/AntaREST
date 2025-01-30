@@ -73,7 +73,6 @@ function TableMode<T extends TableModeType>({
           return {
             title,
             id: col,
-            width: title.length * 10,
           } satisfies GridColumn;
         }),
     );

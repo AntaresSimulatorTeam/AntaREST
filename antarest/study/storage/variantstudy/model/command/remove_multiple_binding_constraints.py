@@ -61,8 +61,11 @@ class RemoveMultipleBindingConstraints(ICommand):
             if binding_constraints[key].get("id") in self.ids:
                 deleted_binding_constraints.append(binding_constraints.pop(key))
 
+        # BC dict should start at index 0
+        new_binding_constraints = {str(i): value for i, value in enumerate(binding_constraints.values())}
+
         study_data.tree.save(
-            binding_constraints,
+            new_binding_constraints,
             ["input", "bindingconstraints", "bindingconstraints"],
         )
 
