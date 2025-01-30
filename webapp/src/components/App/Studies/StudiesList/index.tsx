@@ -87,6 +87,7 @@ function StudiesList(props: StudiesListProps) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
+  const scanDisabled: boolean = !!folder && folder.startsWith("root/default");
 
   useEffect(() => {
     setFolderList(folder.split("/"));
@@ -267,7 +268,7 @@ function StudiesList(props: StudiesListProps) {
 
           {folder !== "root" && (
             <Tooltip title={t("studies.scanFolder") as string}>
-              <IconButton onClick={() => setConfirmFolderScan(true)}>
+              <IconButton onClick={() => setConfirmFolderScan(true)} disabled={scanDisabled}>
                 <RadarIcon />
               </IconButton>
             </Tooltip>
