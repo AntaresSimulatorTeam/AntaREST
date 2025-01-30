@@ -289,8 +289,8 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
 
-    @validates("folder")
-    def validate_folder(self, key, folder) -> str:
+    @validates("folder")  # type: ignore
+    def validate_folder(self, key: str, folder: str) -> str:
         """
         We want to store the path in posix format in the database, even on windows.
         """
