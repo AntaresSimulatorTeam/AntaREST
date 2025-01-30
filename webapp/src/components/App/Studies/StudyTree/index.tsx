@@ -20,7 +20,8 @@ import { updateStudyFilters } from "../../../../redux/ducks/studies";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import * as R from "ramda";
-import { useState, type SyntheticEvent } from "react";
+import { useState } from "react";
+import React from "react";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 import { fetchAndInsertSubfolders, fetchAndInsertWorkspaces } from "./utils";
@@ -116,7 +117,7 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   const handleItemExpansionToggle = async (
-    event: SyntheticEvent<Element, Event>,
+    event: React.SyntheticEvent<Element, Event>,
     itemId: string,
     isExpanded: boolean,
   ) => {
