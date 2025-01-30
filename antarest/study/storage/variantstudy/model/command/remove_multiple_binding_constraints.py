@@ -42,7 +42,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         missing_bc_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
         if missing_bc_ids:
             return CommandOutput(status=False, message=f"Binding constraint not found: '{missing_bc_ids}'"), {}
-        return CommandOutput(status=True), {}
+        return CommandOutput(status=True, message=f"Binding constraint removed"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
