@@ -24,7 +24,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class MoveArea(ICommand):
     """
-    Command used to move an area in the study.
+    Command used to move an area inside the map and to update its UI.
     """
 
     # Overloaded metadata
@@ -42,13 +42,7 @@ class MoveArea(ICommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"area '{self.area_id}' updated",
-            ),
-            {},
-        )
+        return CommandOutput(status=True, message=f"area '{self.area_id}' UI updated"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
