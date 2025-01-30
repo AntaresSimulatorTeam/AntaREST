@@ -36,7 +36,7 @@ class MoveArea(ICommand):
     # Command parameters
     # ==================
 
-    area_name: str
+    area_id: str
     new_area_parameters: t.Dict[str, t.Any]
     layer: str
 
@@ -45,14 +45,14 @@ class MoveArea(ICommand):
         return (
             CommandOutput(
                 status=True,
-                message=f"area '{self.area_name}' updated",
+                message=f"area '{self.area_id}' updated",
             ),
             {},
         )
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        current_area = study_data.tree.get(["input", "areas", self.area_name, "ui"])
+        current_area = study_data.tree.get(["input", "areas", self.area_id, "ui"])
 
         if self.layer == "0":
             ui = current_area["ui"]
@@ -63,7 +63,7 @@ class MoveArea(ICommand):
         current_area["layerY"][self.layer] = self.new_area_parameters["y"]
         current_area["layerColor"][self.layer] = ",".join(map(str, self.new_area_parameters["color_rgb"]))
 
-        study_data.tree.save(current_area, ["input", "areas", self.area_name, "ui"])
+        study_data.tree.save(current_area, ["input", "areas", self.area_id, "ui"])
 
         output, _ = self._apply_config(study_data.config)
 
@@ -73,19 +73,19 @@ class MoveArea(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.MOVE_AREA.value,
-            args={"area_name": self.area_name, "new_area_parameters": self.new_area_parameters, "layer": self.layer},
+            args={"area_id": self.area_id, "new_area_parameters": self.new_area_parameters, "layer": self.layer},
             study_version=self.study_version,
         )
 
     @override
     def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area_name)
+        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area_id)
 
     @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         if not isinstance(other, MoveArea):
             return False
-        return self.area_name == other.area_name
+        return self.area_id == other.area_id
 
     @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:

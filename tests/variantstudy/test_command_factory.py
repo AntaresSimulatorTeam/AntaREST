@@ -41,7 +41,7 @@ COMMANDS: List[CommandDTO] = [
     CommandDTO(action=CommandName.REMOVE_AREA.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
     CommandDTO(
         action=CommandName.MOVE_AREA.value,
-        args={"area_name": "id", "new_area_parameters": {}, "layer": "0"},
+        args={"area_id": "id", "new_area_parameters": {}, "layer": "0"},
         study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(

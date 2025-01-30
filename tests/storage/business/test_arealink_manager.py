@@ -185,7 +185,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                 id=None,
                 action=CommandName.MOVE_AREA.value,
                 args={
-                    "area_name": "test",
+                    "area_id": "test",
                     "new_area_parameters": {
                         "x": 100,
                         "y": 200,

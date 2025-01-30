@@ -684,7 +684,7 @@ class AreaManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         command = MoveArea(
-            area_name=area_id,
+            area_id=area_id,
             new_area_parameters=area_ui.model_dump(),
             layer=layer,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
