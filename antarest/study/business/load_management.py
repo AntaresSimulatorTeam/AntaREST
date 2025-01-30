@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -36,9 +36,8 @@ class LoadManager:
         if not isinstance(node, InputSeriesMatrix):
             raise TypeError(f"Expected node of type 'InputSeriesMatrix', but got '{type(node).__name__}'")
 
-        matrix_data = InputSeriesMatrix.parse(node, return_dataframe=True)
+        matrix_df = InputSeriesMatrix.parse_as_dataframe(node)
 
-        matrix_df = t.cast(pd.DataFrame, matrix_data)
         matrix_df.columns = matrix_df.columns.map(str)
 
         matrix_df.columns = pd.Index(matrix_columns)
