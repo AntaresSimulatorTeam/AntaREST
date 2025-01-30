@@ -186,7 +186,7 @@ function SingleStudy(props: Props) {
         ) : (
           <HomeView study={study} tree={tree} />
         )}
-        <FreezeStudy studyId={studyId!} />
+        {studyId && <FreezeStudy studyId={studyId} />}
       </Box>
       {openCommands && studyId && (
         <CommandDrawer

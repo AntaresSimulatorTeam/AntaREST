@@ -75,7 +75,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
         setBlockingTasks(
           tasks.map((task) => ({
             id: task.id,
-            type: task.type!,
+            type: task.type,
           })),
         );
 
@@ -143,10 +143,15 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
 
     function forceUpdate(taskId: BlockingTask["id"]) {
       getTask({ id: taskId }).then((task) => {
+        // Normally all blocking tasks have a type
+        if (!task.type) {
+          return;
+        }
+
         const payload = {
           id: task.id,
           message: task.result?.message || "",
-          type: task.type!,
+          type: task.type,
         };
         if (task.status === TaskStatus.Running) {
           if (typeof task.progress === "number") {
@@ -179,7 +184,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
       unsubscribeWsChannels();
       window.clearInterval(intervalId);
     };
-  }, [studyId]);
+  }, [blockingTasksRef, studyId]);
 
   return (
     <Backdrop open={blockingTasks.length > 0} sx={{ position: "absolute" }}>
