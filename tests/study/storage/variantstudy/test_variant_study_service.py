@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,8 +12,9 @@
 
 import datetime
 import re
+import typing
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
@@ -25,11 +26,12 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -138,6 +140,9 @@ class TestVariantStudyService:
         db.session.add(user)
         db.session.commit()
 
+        # define user token
+        jwt_user = Mock(spec=JWTUser, id=user.id, impersonator=user.id, is_site_admin=Mock(return_value=True))
+
         # noinspection PyArgumentList
         group = Group(id="my-group", name="group")
         db.session.add(group)
@@ -172,7 +177,7 @@ class TestVariantStudyService:
             "My Variant Study",
             params=Mock(
                 spec=RequestParameters,
-                user=Mock(impersonator=user.id, is_site_admin=Mock(return_value=True)),
+                user=jwt_user,
             ),
         )
 
@@ -196,26 +201,28 @@ class TestVariantStudyService:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="fr",
-            parameters={
-                "name": "Storage1",
-                "group": STStorageGroup.BATTERY,
-                "injection_nominal_capacity": 1500,
-                "withdrawal_nominal_capacity": 1500,
-                "reservoir_capacity": 20000,
-                "efficiency": 0.94,
-                "initial_level_optim": True,
-            },
+            parameters=STStorageConfig(
+                id="",  # will be calculated ;-)
+                name="Storage1",
+                group=STStorageGroup.BATTERY,
+                injection_nominal_capacity=1500,
+                withdrawal_nominal_capacity=1500,
+                reservoir_capacity=20000,
+                efficiency=0.94,
+                initial_level_optim=True,
+            ),
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
             study_version=study_version,
         )
 
-        execute_or_add_commands(
-            variant_study,
-            file_study,
-            commands=[create_area_fr, create_st_storage],
-            storage_service=study_storage_service,
-        )
+        with current_user_context(jwt_user):
+            execute_or_add_commands(
+                variant_study,
+                file_study,
+                commands=[create_area_fr, create_st_storage],
+                storage_service=study_storage_service,
+            )
 
         ## Run the "generate" task
         actual_uui = variant_study_service.generate_task(

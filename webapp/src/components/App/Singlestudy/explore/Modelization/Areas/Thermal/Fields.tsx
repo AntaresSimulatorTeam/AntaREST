@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,7 +14,7 @@
 
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import Box from "@mui/material/Box";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
@@ -26,9 +26,9 @@ import {
   COST_GENERATION_OPTIONS,
   THERMAL_GROUPS,
   THERMAL_POLLUTANTS,
-  ThermalCluster,
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
+  type ThermalCluster,
 } from "./utils";
 import { validateNumber } from "@/utils/validation/number";
 
@@ -37,8 +37,7 @@ function Fields() {
   const { control, watch } = useFormContextPlus<ThermalCluster>();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
-  const isCostGenerationEnabled =
-    watch("costGeneration") === "useCostTimeseries";
+  const isCostGenerationEnabled = watch("costGeneration") === "useCostTimeseries";
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -47,19 +46,13 @@ function Fields() {
   return (
     <Box>
       <Fieldset legend={t("global.general")}>
-        <StringFE
-          label={t("global.name")}
-          name="name"
-          control={control}
-          disabled
-        />
+        <StringFE label={t("global.name")} name="name" control={control} disabled />
         <SelectFE
           label={t("global.group")}
           variant="outlined"
           name="group"
           control={control}
           options={THERMAL_GROUPS}
-          startCaseLabel={false}
           sx={{
             alignSelf: "center",
           }}

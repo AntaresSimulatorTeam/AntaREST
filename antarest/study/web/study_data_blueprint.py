@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,7 +21,7 @@ from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
-from antarest.core.model import JSON, LowerCaseStr, StudyPermissionType
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -81,7 +81,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
 logger = logging.getLogger(__name__)
@@ -1340,6 +1340,27 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.binding_constraint_manager.create_binding_constraint(study, data)
 
+    @bp.post(
+        "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
+        tags=[APITag.study_data],
+        summary="Duplicates a given binding constraint",
+    )
+    def duplicate_binding_constraint(
+        uuid: str,
+        binding_constraint_id: str,
+        new_constraint_name: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> ConstraintOutput:
+        logger.info(
+            f"Duplicates constraint {binding_constraint_id} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.binding_constraint_manager.duplicate_binding_constraint(
+            study, binding_constraint_id, new_constraint_name
+        )
+
     @bp.delete(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
@@ -1356,6 +1377,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.binding_constraint_manager.remove_binding_constraint(study, binding_constraint_id)
+
+    @bp.delete(
+        "/studies/{uuid}/bindingconstraints",
+        tags=[APITag.study_data],
+        summary="Delete multiple binding constraints",
+        response_model=None,
+    )
+    def delete_multiple_binding_constraints(
+        uuid: str, binding_constraints_ids: t.List[str], current_user: JWTUser = Depends(auth.get_current_user)
+    ) -> None:
+        logger.info(
+            f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        return study_service.binding_constraint_manager.remove_multiple_binding_constraints(
+            study, binding_constraints_ids
+        )
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
@@ -1955,7 +1995,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_renewable_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: LowerCaseStr,
+        cluster_id: str,
         cluster_data: RenewableClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
@@ -2129,7 +2169,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_thermal_cluster(
         uuid: str,
         area_id: str,
-        cluster_id: LowerCaseStr,
+        cluster_id: str,
         cluster_data: ThermalClusterInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
@@ -2556,8 +2596,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_type: ClusterType,
-        source_cluster_id: LowerCaseStr,
-        new_cluster_name: LowerCaseStr = Query(..., alias="newName", title="New Cluster Name"),
+        source_cluster_id: str,
+        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Union[STStorageOutput, ThermalClusterOutput, RenewableClusterOutput]:
         logger.info(

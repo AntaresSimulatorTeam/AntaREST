@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,11 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Area,
-  Cluster,
-  StudyMetadata,
-} from "../../../../../../../common/types";
+import type { Area, Cluster, StudyMetadata } from "../../../../../../../common/types";
 import client from "../../../../../../../services/api/client";
 import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 import type { ClusterWithCapacity } from "../common/clustersUtils";
@@ -26,21 +22,18 @@ import type { ClusterWithCapacity } from "../common/clustersUtils";
 ////////////////////////////////////////////////////////////////
 
 export const RENEWABLE_GROUPS = [
-  "wind onshore",
-  "wind offshore",
-  "solar thermal",
-  "solar pv",
-  "solar rooftop",
-  "other res 1",
-  "other res 2",
-  "other res 3",
-  "other res 4",
+  "Wind Onshore",
+  "Wind Offshore",
+  "Solar Thermal",
+  "Solar PV",
+  "Solar Rooftop",
+  "Other RES 1",
+  "Other RES 2",
+  "Other RES 3",
+  "Other RES 4",
 ] as const;
 
-export const TS_INTERPRETATION_OPTIONS = [
-  "power-generation",
-  "production-factor",
-] as const;
+export const TS_INTERPRETATION_OPTIONS = ["power-generation", "production-factor"] as const;
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -69,17 +62,14 @@ export interface RenewableCluster {
   nominalCapacity: number;
 }
 
-export type RenewableClusterWithCapacity =
-  ClusterWithCapacity<RenewableCluster>;
+export type RenewableClusterWithCapacity = ClusterWithCapacity<RenewableCluster>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
 
-const getClustersUrl = (
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-): string => `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`;
+const getClustersUrl = (studyId: StudyMetadata["id"], areaId: Area["name"]): string =>
+  `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`;
 
 const getClusterUrl = (
   studyId: StudyMetadata["id"],
@@ -91,13 +81,8 @@ const getClusterUrl = (
 // API
 ////////////////////////////////////////////////////////////////
 
-export async function getRenewableClusters(
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-) {
-  const res = await client.get<RenewableCluster[]>(
-    getClustersUrl(studyId, areaId),
-  );
+export async function getRenewableClusters(studyId: StudyMetadata["id"], areaId: Area["name"]) {
+  const res = await client.get<RenewableCluster[]>(getClustersUrl(studyId, areaId));
   return res.data;
 }
 
@@ -106,9 +91,7 @@ export async function getRenewableCluster(
   areaId: Area["name"],
   clusterId: Cluster["id"],
 ) {
-  const res = await client.get<RenewableCluster>(
-    getClusterUrl(studyId, areaId, clusterId),
-  );
+  const res = await client.get<RenewableCluster>(getClusterUrl(studyId, areaId, clusterId));
   return res.data;
 }
 
@@ -118,10 +101,7 @@ export async function updateRenewableCluster(
   clusterId: Cluster["id"],
   data: Partial<RenewableCluster>,
 ) {
-  const res = await client.patch<RenewableCluster>(
-    getClusterUrl(studyId, areaId, clusterId),
-    data,
-  );
+  const res = await client.patch<RenewableCluster>(getClusterUrl(studyId, areaId, clusterId), data);
   return res.data;
 }
 
@@ -130,10 +110,7 @@ export async function createRenewableCluster(
   areaId: Area["name"],
   data: PartialExceptFor<RenewableCluster, "name">,
 ) {
-  const res = await client.post<RenewableCluster>(
-    getClustersUrl(studyId, areaId),
-    data,
-  );
+  const res = await client.post<RenewableCluster>(getClustersUrl(studyId, areaId), data);
   return res.data;
 }
 

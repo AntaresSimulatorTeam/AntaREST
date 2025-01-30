@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,21 +17,14 @@ import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
-import {
-  BindingConstraintOperator,
-  TimeStep,
-} from "../../../Commands/Edition/commandTypes";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import {
-  BindingConstraint,
-  OPERATORS,
-  TIME_STEPS,
-} from "./BindingConstView/utils";
+import { BindingConstraintOperator, TimeStep } from "../../../Commands/Edition/commandTypes";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import { OPERATORS, TIME_STEPS, type BindingConstraint } from "./BindingConstView/utils";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { useOutletContext } from "react-router";
@@ -45,12 +38,7 @@ interface Props {
 }
 
 // TODO rename AddConstraintDialog
-function AddDialog({
-  open,
-  onClose,
-  existingConstraints,
-  reloadConstraintsList,
-}: Props) {
+function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }: Props) {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
@@ -88,9 +76,7 @@ function AddDialog({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    values,
-  }: SubmitHandlerPlus<typeof defaultValues>) => {
+  const handleSubmit = ({ values }: SubmitHandlerPlus<typeof defaultValues>) => {
     return createBindingConstraint(study.id, values);
   };
 

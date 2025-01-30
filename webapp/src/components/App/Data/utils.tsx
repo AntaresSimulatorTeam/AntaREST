@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
+import type {
   GroupDTO,
   MatrixDataSetDTO,
   MatrixDataSetUpdateDTO,
@@ -80,29 +80,13 @@ export const saveMatrix = async (
 
   if (data === undefined) {
     if (file) {
-      const matrixInfos = await createMatrixByImportation(
-        file,
-        !!json,
-        onProgress,
-      );
-      await createMatrix(
-        name,
-        publicStatus,
-        selectedGroupList,
-        matrixInfos,
-        onNewDataUpdate,
-      );
+      const matrixInfos = await createMatrixByImportation(file, !!json, onProgress);
+      await createMatrix(name, publicStatus, selectedGroupList, matrixInfos, onNewDataUpdate);
     } else {
       throw Error("data.error.fileNotUploaded");
     }
   } else {
-    await updateMatrix(
-      data,
-      name,
-      publicStatus,
-      selectedGroupList,
-      onNewDataUpdate,
-    );
+    await updateMatrix(data, name, publicStatus, selectedGroupList, onNewDataUpdate);
   }
 
   return data ? "data.success.matrixUpdate" : "data.success.matrixCreation";

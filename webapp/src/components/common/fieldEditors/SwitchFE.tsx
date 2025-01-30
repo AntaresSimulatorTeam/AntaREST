@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,10 +15,10 @@
 import {
   FormControl,
   FormControlLabel,
-  FormControlLabelProps,
   FormHelperText,
   Switch,
-  SwitchProps,
+  type FormControlLabelProps,
+  type SwitchProps,
 } from "@mui/material";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
@@ -45,18 +45,12 @@ function SwitchFE(props: SwitchFEProps) {
     ...switchProps
   } = props;
 
-  const fieldEditor = (
-    <Switch {...switchProps} checked={value} defaultChecked={defaultValue} />
-  );
+  const fieldEditor = <Switch {...switchProps} checked={value} defaultChecked={defaultValue} />;
 
   return (
     <FormControl className={className} sx={sx} error={error}>
       {label ? (
-        <FormControlLabel
-          control={fieldEditor}
-          label={label}
-          labelPlacement={labelPlacement}
-        />
+        <FormControlLabel control={fieldEditor} label={label} labelPlacement={labelPlacement} />
       ) : (
         fieldEditor
       )}

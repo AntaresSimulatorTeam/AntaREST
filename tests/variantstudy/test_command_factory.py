@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,7 +19,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import MatrixService
-from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -157,39 +157,53 @@ COMMANDS: List[CommandDTO] = [
     ),
     CommandDTO(action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
     CommandDTO(
+        action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args={"ids": ["id"]},
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args=[{"ids": ["id"]}],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.CREATE_THERMAL_CLUSTER.value,
+        args={
+            "area_id": "area_name",
+            "cluster_name": "cluster_name",
+            "parameters": {
+                "group": "group",
+                "unitcount": "unitcount",
+                "nominalcapacity": "nominalcapacity",
+                "marginal-cost": "marginal-cost",
+                "market-bid-cost": "market-bid-cost",
+            },
+            "prepro": "prepro",
+            "modulation": "modulation",
+        },
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
         args=[
             {
                 "area_id": "area_name",
                 "cluster_name": "cluster_name",
                 "parameters": {
-                    "co2": 0.0,
-                    "enabled": True,
-                    "fixed-cost": 0.0,
-                    "gen-ts": "use global",
-                    "group": "other 1",
-                    "law.forced": "uniform",
-                    "law.planned": "uniform",
-                    "marginal-cost": 2.0,
-                    "market-bid-cost": 2.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
-                    "must-run": False,
-                    "name": "cluster_name",
-                    "nominalcapacity": 2.0,
-                    "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "startup-cost": 0.0,
-                    "unitcount": 2,
-                    "volatility.forced": 0.0,
-                    "volatility.planned": 0.0,
+                    "group": "group",
+                    "unitcount": "unitcount",
+                    "nominalcapacity": "nominalcapacity",
+                    "marginal-cost": "marginal-cost",
+                    "market-bid-cost": "market-bid-cost",
                 },
                 "prepro": "prepro",
                 "modulation": "modulation",
             }
         ],
-        study_version=STUDY_VERSION_8_2,
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_THERMAL_CLUSTER.value,
@@ -207,14 +221,24 @@ COMMANDS: List[CommandDTO] = [
             "area_id": "area_name",
             "cluster_name": "cluster_name",
             "parameters": {
-                "enabled": True,
-                "group": "other res 1",
                 "name": "name",
-                "nominalcapacity": 0.0,
                 "ts-interpretation": "power-generation",
-                "unitcount": 1,
             },
         },
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
+        args=[
+            {
+                "area_id": "area_name",
+                "cluster_name": "cluster_name",
+                "parameters": {
+                    "name": "name",
+                    "ts-interpretation": "power-generation",
+                },
+            }
+        ],
         study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
@@ -300,8 +324,8 @@ COMMANDS: List[CommandDTO] = [
         args={
             "area_id": "area 1",
             "parameters": {
-                "name": "storage 1",
-                "group": "battery",
+                "name": "Storage 1",
+                "group": "Battery",
                 "injectionnominalcapacity": 0,
                 "withdrawalnominalcapacity": 0,
                 "reservoircapacity": 0,
@@ -315,7 +339,7 @@ COMMANDS: List[CommandDTO] = [
             "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
             "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
         },
-        study_version=STUDY_VERSION_8_6,
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_ST_STORAGE.value,
@@ -324,11 +348,11 @@ COMMANDS: List[CommandDTO] = [
                 "area_id": "area 1",
                 "parameters": {
                     "efficiency": 1,
-                    "group": "battery",
+                    "group": "Battery",
                     "initiallevel": 0,
                     "initialleveloptim": False,
                     "injectionnominalcapacity": 0,
-                    "name": "storage 1",
+                    "name": "Storage 1",
                     "reservoircapacity": 0,
                     "withdrawalnominalcapacity": 0,
                 },
@@ -342,11 +366,11 @@ COMMANDS: List[CommandDTO] = [
                 "area_id": "area 1",
                 "parameters": {
                     "efficiency": 0.94,
-                    "group": "battery",
+                    "group": "Battery",
                     "initiallevel": 0,
                     "initialleveloptim": False,
                     "injectionnominalcapacity": 0,
-                    "name": "storage 2",
+                    "name": "Storage 2",
                     "reservoircapacity": 0,
                     "withdrawalnominalcapacity": 0,
                 },
@@ -357,7 +381,7 @@ COMMANDS: List[CommandDTO] = [
                 "inflows": "matrix://e8923768-9bdd-40c2-a6ea-2da2523be727",
             },
         ],
-        study_version=STUDY_VERSION_8_6,
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_ST_STORAGE.value,

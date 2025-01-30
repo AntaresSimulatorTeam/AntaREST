@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,13 +20,7 @@ import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
 import { convertDraftJSToXML, convertXMLToDraftJS } from "../utils";
 import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
-import {
-  EditorButton,
-  EditorContainer,
-  EditorIcon,
-  Header,
-  Root,
-} from "./style";
+import { EditorButton, EditorContainer, EditorIcon, Header, Root } from "./style";
 
 interface Props {
   open: boolean;
@@ -39,9 +33,7 @@ function NoteEditorModal(props: Props) {
   const [t] = useTranslation();
   const { open, onClose, content, onSave } = props;
 
-  const [editorState, setEditorState] = useState(() =>
-    EditorState.createEmpty(),
-  );
+  const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
   const [initContent, setInitContent] = useState<string>("");
 
   const onContentSave = () => {
@@ -74,9 +66,7 @@ function NoteEditorModal(props: Props) {
 
   useEffect(() => {
     if (content !== undefined) {
-      setEditorState(
-        EditorState.createWithContent(convertXMLToDraftJS(content)),
-      );
+      setEditorState(EditorState.createWithContent(convertXMLToDraftJS(content)));
       setInitContent(content);
     }
   }, [content]);
@@ -101,12 +91,7 @@ function NoteEditorModal(props: Props) {
           <Button variant="text" color="primary" onClick={onClose}>
             {t("global.cancel")}
           </Button>
-          <Button
-            sx={{ mx: 2 }}
-            color="primary"
-            variant="contained"
-            onClick={onContentSave}
-          >
+          <Button sx={{ mx: 2 }} color="primary" variant="contained" onClick={onContentSave}>
             {t("global.save")}
           </Button>
         </>
@@ -114,16 +99,10 @@ function NoteEditorModal(props: Props) {
     >
       <Root>
         <Header>
-          <EditorButton
-            sx={{ fontWeight: "bold" }}
-            onClick={() => onStyleClick("BOLD")}
-          >
+          <EditorButton sx={{ fontWeight: "bold" }} onClick={() => onStyleClick("BOLD")}>
             B
           </EditorButton>
-          <EditorButton
-            sx={{ fontStyle: "italic" }}
-            onClick={() => onStyleClick("ITALIC")}
-          >
+          <EditorButton sx={{ fontStyle: "italic" }} onClick={() => onStyleClick("ITALIC")}>
             I
           </EditorButton>
           <EditorButton

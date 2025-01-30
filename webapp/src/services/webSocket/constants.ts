@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -24,8 +24,7 @@ export const WsEventType = {
   StudyJobStatusUpdate: "STUDY_JOB_STATUS_UPDATE",
   StudyJobCancelRequest: "STUDY_JOB_CANCEL_REQUEST",
   StudyJobCancelled: "STUDY_JOB_CANCELLED",
-  StudyVariantGenerationCommandResult:
-    "STUDY_VARIANT_GENERATION_COMMAND_RESULT",
+  StudyVariantGenerationCommandResult: "STUDY_VARIANT_GENERATION_COMMAND_RESULT",
   TaskAdded: "TASK_ADDED",
   TaskRunning: "TASK_RUNNING",
   TaskProgress: "TASK_PROGRESS",

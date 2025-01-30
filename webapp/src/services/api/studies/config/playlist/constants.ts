@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,16 +12,4 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useRef } from "react";
-
-function useAutoUpdateRef<T>(value: T): React.MutableRefObject<T> {
-  const ref = useRef(value);
-
-  useEffect(() => {
-    ref.current = value;
-  });
-
-  return ref;
-}
-
-export default useAutoUpdateRef;
+export const DEFAULT_WEIGHT = 1;

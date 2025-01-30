@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Fieldset from "../Fieldset";
 import FormDialog from "../dialogs/FormDialog";
-import { SubmitHandlerPlus } from "../Form/types";
+import type { SubmitHandlerPlus } from "../Form/types";
 import StringFE from "../fieldEditors/StringFE";
 import { validateString } from "@/utils/validation/string";
 
@@ -37,9 +37,7 @@ function DuplicateDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({
-    values: { name },
-  }: SubmitHandlerPlus<typeof defaultValues>) => {
+  const handleSubmit = async ({ values: { name } }: SubmitHandlerPlus<typeof defaultValues>) => {
     await onSubmit(name);
     onClose();
   };
@@ -66,8 +64,7 @@ function DuplicateDialog(props: Props) {
             control={control}
             fullWidth
             rules={{
-              validate: (v) =>
-                validateString(v, { existingValues: existingNames }),
+              validate: (v) => validateString(v, { existingValues: existingNames }),
             }}
             sx={{ m: 0 }}
           />

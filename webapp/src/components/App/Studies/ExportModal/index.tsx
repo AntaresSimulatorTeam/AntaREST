@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,26 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import * as R from "ramda";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import debug from "debug";
-import _ from "lodash";
+import debounce from "lodash/debounce";
 import {
-  FileStudyTreeConfigDTO,
-  GenericInfo,
-  StudyMetadata,
-  StudyOutput,
-  StudyOutputDownloadDTO,
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
+  type FileStudyTreeConfigDTO,
+  type GenericInfo,
+  type StudyMetadata,
+  type StudyOutput,
+  type StudyOutputDownloadDTO,
 } from "../../../../common/types";
-import BasicDialog, {
-  BasicDialogProps,
-} from "../../../common/dialogs/BasicDialog";
+import BasicDialog, { type BasicDialogProps } from "../../../common/dialogs/BasicDialog";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import SelectSingle from "../../../common/SelectSingle";
 import {
@@ -76,8 +74,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const [optionSelection, setOptionSelection] = useState<string>("exportWith");
   const [outputList, setOutputList] = useState<GenericInfo[]>();
   const [currentOutput, setCurrentOutput] = useState<string>();
-  const [studySynthesis, setStudySynthesis] =
-    useState<FileStudyTreeConfigDTO>();
+  const [studySynthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
     type: StudyOutputDownloadType.AREAS,
     level: StudyOutputDownloadLevelDTO.WEEKLY,
@@ -85,7 +82,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
     includeClusters: false,
   });
 
-  const exportOutput = _.debounce(
+  const exportOutput = debounce(
     async (output: string) => {
       if (study) {
         try {
@@ -139,9 +136,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
       try {
         const res = await getStudyOutputs(study.id);
         const tmpSynth = await getStudySynthesis(study.id);
-        setOutputList(
-          res.map((o: StudyOutput) => ({ id: o.name, name: o.name })),
-        );
+        setOutputList(res.map((o: StudyOutput) => ({ id: o.name, name: o.name })));
         setCurrentOutput(res.length > 0 ? res[0].name : undefined);
         setStudySynthesis(tmpSynth);
       } catch (e) {
@@ -169,9 +164,8 @@ export default function ExportModal(props: BasicDialogProps & Props) {
             color="success"
             variant="contained"
             disabled={
-              ["exportOutputFilter", "exportOutput"].indexOf(
-                optionSelection,
-              ) !== -1 && currentOutput === undefined
+              ["exportOutputFilter", "exportOutput"].indexOf(optionSelection) !== -1 &&
+              currentOutput === undefined
             }
             onClick={onExportClick}
           >
@@ -196,8 +190,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         {R.cond([
           [
             () =>
-              (optionSelection === "exportOutput" ||
-                optionSelection === "exportOutputFilter") &&
+              (optionSelection === "exportOutput" || optionSelection === "exportOutputFilter") &&
               outputList !== undefined,
             () =>
               (
@@ -209,14 +202,12 @@ export default function ExportModal(props: BasicDialogProps & Props) {
                   sx={{ width: "300px", my: 3 }}
                   required
                 />
-              ) as ReactNode,
+              ) as React.ReactNode,
           ],
         ])()}
         {R.cond([
           [
-            () =>
-              optionSelection === "exportOutputFilter" &&
-              currentOutput !== undefined,
+            () => optionSelection === "exportOutputFilter" && currentOutput !== undefined,
             () =>
               (
                 <ExportFilter
@@ -225,7 +216,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
                   filter={filter}
                   setFilter={setFilter}
                 />
-              ) as ReactNode,
+              ) as React.ReactNode,
           ],
         ])()}
       </Box>

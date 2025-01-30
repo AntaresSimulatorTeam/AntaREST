@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -158,7 +158,7 @@ class TestSTStorageManager:
                     "id": "storage1",
                     "enabled": None,
                     "group": STStorageGroup.BATTERY,
-                    "name": "storage1",
+                    "name": "Storage1",
                     "injectionNominalCapacity": 1500.0,
                     "withdrawalNominalCapacity": 1500.0,
                     "reservoirCapacity": 20000.0,
@@ -170,7 +170,7 @@ class TestSTStorageManager:
                     "id": "storage2",
                     "enabled": None,
                     "group": STStorageGroup.PSP_CLOSED,
-                    "name": "storage2",
+                    "name": "Storage2",
                     "injectionNominalCapacity": 2000.0,
                     "withdrawalNominalCapacity": 1500.0,
                     "reservoirCapacity": 20000.0,
@@ -182,7 +182,7 @@ class TestSTStorageManager:
                     "id": "storage3",
                     "enabled": None,
                     "group": STStorageGroup.PSP_CLOSED,
-                    "name": "storage3",
+                    "name": "Storage3",
                     "injectionNominalCapacity": 1500.0,
                     "withdrawalNominalCapacity": 1500.0,
                     "reservoirCapacity": 21000.0,
@@ -264,7 +264,7 @@ class TestSTStorageManager:
                 "initialLevel": 0.5,
                 "initialLevelOptim": True,
                 "injectionNominalCapacity": 1500.0,
-                "name": "storage1",
+                "name": "Storage1",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
                 "enabled": None,
@@ -276,7 +276,7 @@ class TestSTStorageManager:
                 "initialLevel": 0.5,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 2000.0,
-                "name": "storage2",
+                "name": "Storage2",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
                 "enabled": None,
@@ -288,7 +288,7 @@ class TestSTStorageManager:
                 "initialLevel": 1,
                 "initialLevelOptim": False,
                 "injectionNominalCapacity": 1500.0,
-                "name": "storage3",
+                "name": "Storage3",
                 "reservoirCapacity": 21000.0,
                 "withdrawalNominalCapacity": 1500.0,
                 "enabled": None,
@@ -375,7 +375,7 @@ class TestSTStorageManager:
             "initialLevel": 0.5,
             "initialLevelOptim": True,
             "injectionNominalCapacity": 1500.0,
-            "name": "storage1",
+            "name": "Storage1",
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
             "enabled": None,

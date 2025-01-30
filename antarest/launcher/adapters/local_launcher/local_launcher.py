@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,17 +10,15 @@
 #
 # This file is part of the Antares project.
 
-import io
 import logging
+import os
 import shutil
 import signal
 import subprocess
-import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Dict, Optional, Tuple, cast
-from uuid import UUID
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from antares.study.version import SolverVersion
 from typing_extensions import override
@@ -28,9 +26,8 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.requests import RequestParameters
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
-from antarest.launcher.adapters.log_manager import follow
+from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 
 logger = logging.getLogger(__name__)
@@ -51,7 +48,11 @@ class LocalLauncher(AbstractLauncher):
         super().__init__(config, callbacks, event_bus, cache)
         if self.config.launcher.local is None:
             raise LauncherInitException("Missing parameter 'launcher.local'")
-        self.tmpdir = config.storage.tmp_dir
+        self.local_workspace = self.config.launcher.local.local_workspace
+        logs_path = self.local_workspace / "LOGS"
+        logs_path.mkdir(parents=True, exist_ok=True)
+        self.log_directory = logs_path
+        self.log_tail_manager = LogTailManager(self.local_workspace)
         self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
@@ -76,12 +77,7 @@ class LocalLauncher(AbstractLauncher):
 
     @override
     def run_study(
-        self,
-        study_uuid: str,
-        job_id: str,
-        version: SolverVersion,
-        launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
+        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         antares_solver_path = self._select_best_binary(f"{version:ddd}")
 
@@ -98,68 +94,37 @@ class LocalLauncher(AbstractLauncher):
         )
         job.start()
 
-    def _get_job_final_output_path(self, job_id: str) -> Path:
-        return self.config.storage.tmp_dir / f"antares_solver-{job_id}.log"
-
     def _compute(
         self,
         antares_solver_path: Path,
         study_uuid: str,
-        uuid: UUID,
+        job_id: str,
         launcher_parameters: LauncherParametersDTO,
     ) -> None:
-        end = False
-
-        def stop_reading_output() -> bool:
-            if end and str(uuid) in self.logs:
-                with open(
-                    self._get_job_final_output_path(str(uuid)),
-                    "w",
-                ) as log_file:
-                    log_file.write(self.logs[str(uuid)])
-                del self.logs[str(uuid)]
-            return end
-
-        tmp_path = tempfile.mkdtemp(prefix="local_launch_", dir=str(self.tmpdir))
-        export_path = Path(tmp_path) / "export"
+        export_path = self.local_workspace / job_id
+        logs_path = self.log_directory / job_id
+        logs_path.mkdir()
         try:
-            self.callbacks.export_study(str(uuid), study_uuid, export_path, launcher_parameters)
+            self.callbacks.export_study(job_id, study_uuid, export_path, launcher_parameters)
 
-            args = [
-                str(antares_solver_path),
-                f"--force-parallel={launcher_parameters.nb_cpu}",
-                str(export_path),
-            ]
-            process = subprocess.Popen(
-                args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                encoding="utf-8",
-            )
-            self.job_id_to_study_id[str(uuid)] = (
-                study_uuid,
-                export_path,
-                process,
-            )
-            self.callbacks.update_status(
-                str(uuid),
-                JobStatus.RUNNING,
-                None,
-                None,
-            )
+            simulator_args, environment_variables = self._parse_launcher_options(launcher_parameters)
+            new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
 
-            thread = threading.Thread(
-                target=lambda: follow(
-                    cast(io.StringIO, process.stdout),
-                    self.create_update_log(str(uuid)),
-                    stop_reading_output,
-                    None,
-                ),
-                name=f"{self.__class__.__name__}-LogsWatcher",
-                daemon=True,
-            )
-            thread.start()
+            std_err_file = logs_path / f"{job_id}-err.log"
+            std_out_file = logs_path / f"{job_id}-out.log"
+            with open(std_err_file, "w") as err_file, open(std_out_file, "w") as out_file:
+                process = subprocess.Popen(
+                    new_args,
+                    env=environment_variables,
+                    stdout=out_file,
+                    stderr=err_file,
+                    universal_newlines=True,
+                    encoding="utf-8",
+                )
+            self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
+            self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)
+
+            self.log_tail_manager.track(std_out_file, self.create_update_log(job_id))
 
             while process.poll() is None:
                 time.sleep(1)
@@ -170,32 +135,59 @@ class LocalLauncher(AbstractLauncher):
                 subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
 
             output_id: Optional[str] = None
-            try:
-                output_id = self.callbacks.import_output(str(uuid), export_path / "output", {})
-            except Exception as e:
-                logger.error(
-                    f"Failed to import output for study {study_uuid} located at {export_path}",
-                    exc_info=e,
-                )
-            del self.job_id_to_study_id[str(uuid)]
+            if process.returncode == 0:
+                # The job succeed we need to import the output
+                try:
+                    launcher_logs = self._import_launcher_logs(job_id)
+                    output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
+                except Exception as e:
+                    logger.error(
+                        f"Failed to import output for study {study_uuid} located at {export_path}",
+                        exc_info=e,
+                    )
+            del self.job_id_to_study_id[job_id]
             self.callbacks.update_status(
-                str(uuid),
+                job_id,
                 JobStatus.FAILED if process.returncode != 0 or not output_id else JobStatus.SUCCESS,
                 None,
                 output_id,
             )
         except Exception as e:
-            logger.error(f"Unexpected error happened during launch {uuid}", exc_info=e)
+            logger.error(f"Unexpected error happened during launch {job_id}", exc_info=e)
             self.callbacks.update_status(
-                str(uuid),
+                job_id,
                 JobStatus.FAILED,
                 str(e),
                 None,
             )
         finally:
-            logger.info(f"Removing launch {uuid} export path at {tmp_path}")
-            end = True
-            shutil.rmtree(tmp_path)
+            logger.info(f"Removing launch {job_id} export path at {export_path}")
+            shutil.rmtree(export_path, ignore_errors=True)
+
+    def _import_launcher_logs(self, job_id: str) -> Dict[str, List[Path]]:
+        logs_path = self.log_directory / job_id
+        return {
+            "antares-out.log": [logs_path / f"{job_id}-out.log"],
+            "antares-err.log": [logs_path / f"{job_id}-err.log"],
+        }
+
+    def _parse_launcher_options(self, launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
+        simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
+        environment_variables = os.environ.copy()
+        if launcher_parameters.other_options:
+            solver = []
+            if "xpress" in launcher_parameters.other_options:
+                solver = ["--use-ortools", "--ortools-solver=xpress"]
+                if xpress_dir_path := self.config.launcher.local.xpress_dir:  # type: ignore
+                    environment_variables["XPRESSDIR"] = xpress_dir_path
+                    environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
+            elif "coin" in launcher_parameters.other_options:
+                solver = ["--use-ortools", "--ortools-solver=coin"]
+            if solver:
+                simulator_args += solver
+            if "presolve" in launcher_parameters.other_options:
+                simulator_args += ["--solver-parameters", "PRESOLVE 1"]
+        return simulator_args, environment_variables
 
     @override
     def create_update_log(self, job_id: str) -> Callable[[str], None]:
@@ -210,10 +202,11 @@ class LocalLauncher(AbstractLauncher):
 
     @override
     def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        if job_id in self.job_id_to_study_id and job_id in self.logs:
+        if job_id in self.job_id_to_study_id and job_id in self.logs and log_type == LogType.STDOUT:
             return self.logs[job_id]
-        elif self._get_job_final_output_path(job_id).exists():
-            return self._get_job_final_output_path(job_id).read_text()
+        job_path = self.log_directory / job_id / f"{job_id}-{log_type.to_suffix()}"
+        if job_path.exists():
+            return job_path.read_text()
         return None
 
     @override

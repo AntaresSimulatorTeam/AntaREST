@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,7 +14,7 @@
 
 import * as RA from "ramda-adjunct";
 import client from "./client";
-import {
+import type {
   UserDTO,
   GroupDTO,
   RoleCreationDTO,
@@ -54,10 +54,7 @@ export const getUser = async <T extends GetUserParams>(
   return res.data;
 };
 
-export const createUser = async (
-  name: string,
-  password: string,
-): Promise<UserDTO> => {
+export const createUser = async (name: string, password: string): Promise<UserDTO> => {
   const data = { name, password };
   const res = await client.post("/v1/users", data);
   return res.data;
@@ -103,10 +100,7 @@ export const createGroup = async (name: string): Promise<GroupDTO> => {
   return res.data;
 };
 
-export const updateGroup = async (
-  id: string,
-  name: string,
-): Promise<GroupDTO> => {
+export const updateGroup = async (id: string, name: string): Promise<GroupDTO> => {
   const data = { id, name };
   const res = await client.post("/v1/groups", data);
   return res.data;
@@ -121,18 +115,13 @@ export const deleteGroup = async (id: string): Promise<string> => {
 // Roles
 ////////////////////////////////////////////////////////////////
 
-export const createRole = async (
-  role: RoleCreationDTO,
-): Promise<RoleDetailsDTO> => {
+export const createRole = async (role: RoleCreationDTO): Promise<RoleDetailsDTO> => {
   const data = role;
   const res = await client.post("/v1/roles", data);
   return res.data;
 };
 
-export const deleteUserRole = async <
-  T extends UserDTO["id"],
-  U extends GroupDTO["id"],
->(
+export const deleteUserRole = async <T extends UserDTO["id"], U extends GroupDTO["id"]>(
   userId: T,
   groupId: U,
 ): Promise<[T, U]> => {
@@ -140,16 +129,12 @@ export const deleteUserRole = async <
   return res.data;
 };
 
-export const deleteUserRoles = async <T extends UserDTO["id"]>(
-  userId: T,
-): Promise<T> => {
+export const deleteUserRoles = async <T extends UserDTO["id"]>(userId: T): Promise<T> => {
   const res = await client.delete(`/v1/users/roles/${userId}`);
   return res.data;
 };
 
-export const getRolesForGroup = async (
-  groupId: string,
-): Promise<RoleDetailsDTO[]> => {
+export const getRolesForGroup = async (groupId: string): Promise<RoleDetailsDTO[]> => {
   const res = await client.get(`/v1/roles/group/${groupId}`);
   return res.data;
 };

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -46,10 +46,7 @@ function toParams(value: DepsOrParams = {}): UsePromiseParams {
   return isDependencyList(value) ? { deps: value } : value;
 }
 
-function usePromise<T>(
-  fn: () => Promise<T>,
-  params?: DepsOrParams,
-): UsePromiseResponse<T> {
+function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams): UsePromiseResponse<T> {
   const { deps = [], resetDataOnReload, resetErrorOnReload } = toParams(params);
   const [data, setData] = useState<T>();
   const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
@@ -82,8 +79,7 @@ function usePromise<T>(
   return {
     data,
     status,
-    isLoading:
-      status === PromiseStatus.Idle || status === PromiseStatus.Pending,
+    isLoading: status === PromiseStatus.Idle || status === PromiseStatus.Pending,
     isFulfilled: status === PromiseStatus.Fulfilled,
     isRejected: status === PromiseStatus.Rejected,
     error,

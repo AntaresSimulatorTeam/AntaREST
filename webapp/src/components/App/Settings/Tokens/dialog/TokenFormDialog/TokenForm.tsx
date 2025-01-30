@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -27,26 +27,23 @@ import {
   MenuItem,
   Paper,
   Select,
-  SelectChangeEvent,
   TextField,
   Typography,
+  type SelectChangeEvent,
 } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, UseFormReturn } from "react-hook-form";
+import { Controller, useFieldArray, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
-import { TokenFormDialogProps } from ".";
-import { GroupDTO, RoleType } from "../../../../../../common/types";
+import type { TokenFormDialogProps } from ".";
+import { RoleType, type GroupDTO } from "../../../../../../common/types";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../../services/api/user";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import { RESERVED_GROUP_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import {
-  getAuthUser,
-  isAuthUserAdmin,
-} from "../../../../../../redux/selectors";
+import { getAuthUser, isAuthUserAdmin } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 
 interface Props extends UseFormReturn {
@@ -84,9 +81,7 @@ function TokenForm(props: Props) {
     if (!groups) {
       return [];
     }
-    return sortByName(
-      groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)),
-    );
+    return sortByName(groups.filter((group) => !RESERVED_GROUP_NAMES.includes(group.name)));
   }, [groups]);
 
   ////////////////////////////////////////////////////////////////
@@ -109,9 +104,7 @@ function TokenForm(props: Props) {
     }
 
     const group = authUser?.groups?.find((gp) => gp.name === groupName);
-    return group
-      ? ROLE_TYPE_KEYS.filter((key) => RoleType[key] <= group.role)
-      : [];
+    return group ? ROLE_TYPE_KEYS.filter((key) => RoleType[key] <= group.role) : [];
   };
 
   ////////////////////////////////////////////////////////////////
@@ -140,8 +133,7 @@ function TokenForm(props: Props) {
         sx={{
           p: 2,
           mt: 2,
-          backgroundImage:
-            "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
         <Typography>{t("global.permissions")}</Typography>
@@ -225,11 +217,7 @@ function TokenForm(props: Props) {
                   disablePadding
                   dense
                 >
-                  <ListItemButton
-                    sx={{ cursor: "default" }}
-                    disableRipple
-                    disableGutters
-                  >
+                  <ListItemButton sx={{ cursor: "default" }} disableRipple disableGutters>
                     <ListItemIcon sx={{ minWidth: 0, p: "0 15px 0 5px" }}>
                       <GroupIcon />
                     </ListItemIcon>

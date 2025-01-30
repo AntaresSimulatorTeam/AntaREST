@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,8 +13,8 @@
  */
 
 import * as R from "ramda";
-import { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
-import { O } from "ts-toolbelt";
+import type { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
+import type { O } from "ts-toolbelt";
 
 export const THEMATIC_TRIMMING_GROUPS = [
   "general",

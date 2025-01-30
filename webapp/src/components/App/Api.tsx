@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -30,9 +30,7 @@ function Api() {
       sx={{ backgroundColor: "#eee" }}
     >
       <Box sx={{ zIndex: 999 }}>
-        <SwaggerUI
-          url={`${getConfig().baseUrl}${getConfig().restEndpoint}/openapi.json`}
-        />
+        <SwaggerUI url={`${getConfig().baseUrl}${getConfig().restEndpoint}/openapi.json`} />
       </Box>
     </Box>
   );

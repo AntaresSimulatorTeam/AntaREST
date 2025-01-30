@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,31 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import "@glideapps/glide-data-grid/dist/index.css";
-import DataEditor, {
+import {
   CompactSelection,
-  EditableGridCell,
-  EditListItem,
   GridCellKind,
-  GridColumn,
-  GridSelection,
-  Item,
+  type GridSelection,
+  type EditableGridCell,
+  type EditListItem,
+  type Item,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useMemo, useState } from "react";
-import {
-  type EnhancedGridColumn,
-  type GridUpdate,
-  type MatrixAggregates,
-} from "../../shared/types";
+import DataGrid from "@/components/common/DataGrid";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
-import { useMatrixPortal } from "../../hooks/useMatrixPortal";
+import type { EnhancedGridColumn, MatrixAggregates, GridUpdate } from "../../shared/types";
 import { darkTheme, readOnlyDarkTheme } from "../../styles";
+import MatrixStats from "../MatrixStats";
+import { useSelectionStats } from "../../hooks/useSelectionStats";
 
 export interface MatrixGridProps {
   data: number[][];
   rows: number;
-  columns: EnhancedGridColumn[];
+  columns: readonly EnhancedGridColumn[];
   dateTime?: string[];
   aggregates?: Partial<MatrixAggregates>;
   rowHeaders?: string[];
@@ -46,12 +42,13 @@ export interface MatrixGridProps {
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
   readOnly?: boolean;
   showPercent?: boolean;
+  showStats?: boolean;
 }
 
 function MatrixGrid({
   data,
   rows,
-  columns: initialColumns,
+  columns,
   dateTime,
   aggregates,
   rowHeaders,
@@ -61,23 +58,20 @@ function MatrixGrid({
   onMultipleCellsEdit,
   readOnly,
   showPercent,
+  showStats = true,
 }: MatrixGridProps) {
-  const [columns, setColumns] = useState<EnhancedGridColumn[]>(initialColumns);
-  const [selection, setSelection] = useState<GridSelection>({
-    columns: CompactSelection.empty(),
+  const [gridSelection, setGridSelection] = useState<GridSelection>({
     rows: CompactSelection.empty(),
+    columns: CompactSelection.empty(),
   });
 
   const { gridToData } = useColumnMapping(columns);
 
-  // Due to a current limitation of Glide Data Grid, only one id="portal" is active on the DOM
-  // This is an issue on splited matrices, the second matrix does not have an id="portal"
-  // Causing the overlay editor to not behave correctly on click
-  // This hook manage portal creation and cleanup for matrices in split views
-  // TODO: add a prop to detect matrices in split views and enable this conditionnaly
-  // !Workaround: a proper solution should be replacing this in the future
-  const { containerRef, handleMouseEnter, handleMouseLeave } =
-    useMatrixPortal();
+  const selectionStats = useSelectionStats({
+    data,
+    selection: gridSelection,
+    gridToData,
+  });
 
   const theme = useMemo(() => {
     if (readOnly) {
@@ -104,19 +98,6 @@ function MatrixGrid({
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
-
-  const handleColumnResize = (
-    column: GridColumn,
-    newSize: number,
-    colIndex: number,
-    newSizeWithGrow: number,
-  ) => {
-    const newColumns = columns.map((col, index) =>
-      index === colIndex ? { ...col, width: newSize } : col,
-    );
-
-    setColumns(newColumns);
-  };
 
   const handleCellEdited = (coordinates: Item, value: EditableGridCell) => {
     if (value.kind !== GridCellKind.Number) {
@@ -173,39 +154,25 @@ function MatrixGrid({
 
   return (
     <>
-      <div
-        ref={containerRef}
-        className="matrix-container"
-        style={{ width, height }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <DataEditor
-          theme={theme}
-          width={width}
-          height={height}
-          rows={rows}
-          columns={columns}
-          getCellContent={getCellContent}
-          onCellEdited={handleCellEdited}
-          onCellsEdited={handleCellsEdited}
-          gridSelection={selection}
-          onGridSelectionChange={setSelection}
-          keybindings={{ paste: false, copy: false }}
-          getCellsForSelection // TODO handle large copy/paste using this
-          fillHandle
-          allowedFillDirections="any"
-          rowMarkers="both"
-          freezeColumns={1} // Make the first column sticky
-          onColumnResize={handleColumnResize}
-          smoothScrollX
-          smoothScrollY
-          rowHeight={30}
-          overscrollX={100}
-          overscrollY={100}
-          cellActivationBehavior="second-click"
-        />
-      </div>
+      <DataGrid
+        theme={theme}
+        width={width}
+        height={height}
+        rows={rows}
+        columns={columns}
+        getCellContent={getCellContent}
+        onCellEdited={handleCellEdited}
+        onCellsEdited={handleCellsEdited}
+        keybindings={{ paste: false, copy: false }}
+        getCellsForSelection // TODO handle large copy/paste using this
+        fillHandle
+        allowedFillDirections="any"
+        rowMarkers="both"
+        freezeColumns={1} // Make the first column sticky
+        cellActivationBehavior="second-click"
+        onGridSelectionChange={setGridSelection}
+      />
+      {showStats && <MatrixStats stats={selectionStats} />}
     </>
   );
 }

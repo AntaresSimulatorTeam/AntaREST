@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -48,6 +48,12 @@ def _check_endpoint_response(
         assert task["status"] == TaskStatus.FAILED.value
         assert not task["result"]["success"]
         assert expected_msg in task["result"]["message"]
+        # Check the message users will see inside the front-end (GET /comments endpoint will fail)
+        res = client.get(f"/v1/studies/{study_id}/comments")
+        assert res.status_code == 417
+        response = res.json()
+        assert response["exception"] == "VariantGenerationError"
+        assert response["description"] == f"Error while generating variant {study_id} : {expected_msg}"
         # We have to delete the command to make the variant "clean" again.
         res = client.get(f"/v1/studies/{study_id}/commands")
         cmd_id = res.json()[-1]["id"]
@@ -212,18 +218,21 @@ class TestFetchRawData:
                 b"\xef\xbb\xbf1;1;1;1;1\r\n1;1;1;1;1",
                 b"1;1;1;1;1\r1;1;1;1;1",
                 b"0,000000;0,000000;0,000000;0,000000\n0,000000;0,000000;0,000000;0,000000",
+                b"1;2;3;;;\n4;5;6;;;\n",
+                b"1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n1;1;1;1\r\n",
             ],
-            ["\t", "\t", ",", "\t", ";", ";", ";"],
+            ["\t", "\t", ",", "\t", ";", ";", ";", ";", ";"],
         ):
             res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(content)})
             assert res.status_code == 204, res.json()
             res = client.get(raw_url, params={"path": matrix_path})
             written_data = res.json()["data"]
             if not content.decode("utf-8"):
-                # For some reason the `GET` returns the default matrix when it's empty
+                # The `GET` returns the default matrix when it's empty
                 expected = 8760 * [[0]] if study_type == "raw" else [[]]
             else:
                 df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+                df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
                 expected = df.to_numpy(dtype=np.float64).tolist()
             assert written_data == expected
 
@@ -273,13 +282,6 @@ class TestFetchRawData:
         assert res.status_code == 200, res.json()
         assert res.json() == {"index": [], "columns": [], "data": []}
 
-        # Some files can be corrupted
-        user_folder_dir = study_dir.joinpath("user/bad")
-        for file_path in user_folder_dir.glob("*.*"):
-            rel_path = file_path.relative_to(study_dir)
-            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
-            assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
-
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:
         res = client.get(raw_url, params={"path": "/input/areas/list", "depth": 1})
@@ -296,6 +298,23 @@ class TestFetchRawData:
         for path, depth in itertools.product([None, "", "/"], [0, 1, 2]):
             res = client.get(raw_url, params={"path": path, "depth": depth})
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
+
+        # =============================
+        #  ERRORS
+        # =============================
+
+        # Some files can be corrupted
+        user_folder_dir = study_dir.joinpath("user/bad")
+        for file_path in user_folder_dir.glob("*.*"):
+            rel_path = file_path.relative_to(study_dir)
+            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
+            assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
+
+        # Imports a wrongly formatted matrix
+        res = client.put(raw_url, params={"path": matrix_path}, files={"file": io.BytesIO(b"BLABLABLA")})
+        assert res.status_code == 422
+        assert res.json()["exception"] == "MatrixImportFailed"
+        assert res.json()["description"] == "Could not parse the given matrix"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_delete_raw(
@@ -363,7 +382,7 @@ class TestFetchRawData:
 
         # try to delete expansion folder
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
-        expected_msg = "you are not allowed to delete this resource"
+        expected_msg = "you are not allowed to delete this resource : expansion"
         _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
 
         # try to delete a file which isn't inside the 'User' folder
@@ -445,13 +464,13 @@ class TestFetchRawData:
 
         # try to create a folder inside the 'expansion` folder
         expansion_folder = "user/expansion/wrong_folder"
-        expected_msg = "you are not allowed to create a resource here"
+        expected_msg = "you are not allowed to create a resource here: expansion/wrong_folder"
         res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
         _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 
         # try to create an already existing folder
         existing_folder = "user/folder_1"
-        expected_msg = "the given resource already exists"
+        expected_msg = "the given resource already exists: folder_1"
         res = client.put(raw_url, params={"path": existing_folder, **additional_params})
         _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
 

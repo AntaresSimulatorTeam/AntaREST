@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -373,7 +373,7 @@ class TestThermalManager:
                 "fixedCost": 0.0,
                 "genTs": LocalTSGenerationBehavior.USE_GLOBAL,
                 "group": ThermalClusterGroup.NUCLEAR,
-                "id": "new cluster",
+                "id": "New Cluster",
                 "lawForced": LawOption.UNIFORM,
                 "lawPlanned": LawOption.UNIFORM,
                 "marginalCost": 0.0,
@@ -382,7 +382,7 @@ class TestThermalManager:
                 "minStablePower": 0.0,
                 "minUpTime": 15,
                 "mustRun": False,
-                "name": "new cluster",
+                "name": "New Cluster",
                 "nh3": None,
                 "nmvoc": None,
                 "nominalCapacity": 1000.0,
@@ -430,7 +430,7 @@ class TestThermalManager:
             expected = {
                 "id": "2 avail and must 1",
                 "group": ThermalClusterGroup.GAS,
-                "name": "new name",
+                "name": "New name",
                 "enabled": False,
                 "unitCount": 100,
                 "nominalCapacity": 2000.0,

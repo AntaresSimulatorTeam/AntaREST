@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -25,7 +25,7 @@ from pandas.errors import EmptyDataError
 
 from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 from antarest.study.storage.study_upgrader import (
     InvalidUpgrade,

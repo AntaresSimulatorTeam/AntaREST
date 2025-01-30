@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,14 +16,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { GenericInfo, VariantTree } from "../../../../../common/types";
+import type { GenericInfo, VariantTree } from "../../../../../common/types";
 import { createVariant } from "../../../../../services/api/variant";
 import { createListFromTree } from "../../../../../services/utils";
 import FormDialog from "../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
 import SelectFE from "../../../../common/fieldEditors/SelectFE";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 import { validateString } from "@/utils/validation/string";
 
 interface Props {
@@ -40,10 +40,7 @@ function CreateVariantDialog(props: Props) {
   const [sourceList, setSourceList] = useState<GenericInfo[]>([]);
   const defaultValues = { name: "", sourceId: parentId };
 
-  const existingVariants = useMemo(
-    () => sourceList.map((variant) => variant.name),
-    [sourceList],
-  );
+  const existingVariants = useMemo(() => sourceList.map((variant) => variant.name), [sourceList]);
 
   useEffect(() => {
     setSourceList(createListFromTree(tree));
@@ -88,8 +85,7 @@ function CreateVariantDialog(props: Props) {
             name="name"
             control={control}
             rules={{
-              validate: (v) =>
-                validateString(v, { existingValues: existingVariants }),
+              validate: (v) => validateString(v, { existingValues: existingVariants }),
             }}
           />
           <SelectFE

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,9 +16,11 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 from pydantic import field_validator
 from typing_extensions import override
 
-from antarest.core.model import LowerCaseStr
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    DistrictSet,
+    FileStudyTreeConfig,
+    transform_name_to_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
@@ -50,6 +52,13 @@ class CreateDistrict(ICommand):
     filter_items: Optional[List[str]] = None
     output: bool = True
     comments: str = ""
+
+    @field_validator("name")
+    def validate_district_name(cls, val: str) -> str:
+        valid_name = transform_name_to_id(val, lower=False)
+        if valid_name != val:
+            raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
+        return val
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:

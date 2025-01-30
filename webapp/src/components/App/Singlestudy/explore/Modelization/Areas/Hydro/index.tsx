@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,7 +14,7 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import TabWrapper from "../../../TabWrapper";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
@@ -25,9 +25,7 @@ function Hydro() {
   const studyVersion = parseInt(study.version, 10);
 
   const tabList = useMemo(() => {
-    const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(
-      areaId,
-    )}/hydro`;
+    const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;
 
     return [
       { label: "Management options", path: `${basePath}/management` },
@@ -50,9 +48,7 @@ function Hydro() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <TabWrapper study={study} tabList={tabList} tabStyle="withoutBorder" />
-  );
+  return <TabWrapper study={study} tabList={tabList} tabStyle="withoutBorder" />;
 }
 
 export default Hydro;

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,7 +15,7 @@ import typing as t
 from pathlib import Path
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -38,6 +38,9 @@ from antarest.study.storage.variantstudy.model.command.remove_binding_constraint
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
@@ -164,6 +167,14 @@ class CommandReverter:
         raise NotImplementedError("The revert function for RemoveBindingConstraint is not available")
 
     @staticmethod
+    def _revert_remove_multiple_binding_constraints(
+        base_command: RemoveMultipleBindingConstraints,
+        history: t.List["ICommand"],
+        base: FileStudy,
+    ) -> t.List[ICommand]:
+        raise NotImplementedError("The revert function for RemoveMultipleBindingConstraints is not available")
+
+    @staticmethod
     def _revert_update_scenario_builder(
         base_command: UpdateScenarioBuilder,
         history: t.List["ICommand"],
@@ -222,7 +233,7 @@ class CommandReverter:
         history: t.List["ICommand"],
         base: FileStudy,
     ) -> t.List[ICommand]:
-        storage_id = base_command.storage_id
+        storage_id = base_command.parameters.id
         return [
             RemoveSTStorage(
                 area_id=base_command.area_id,

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -30,7 +30,7 @@ from antarest.core.exceptions import (
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
-from antarest.core.model import JSON, LowerCaseStr
+from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
@@ -44,7 +44,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -70,6 +70,9 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
@@ -340,7 +343,7 @@ class ConstraintOutput830(ConstraintOutputBase):
 
 
 class ConstraintOutput870(ConstraintOutput830):
-    group: LowerCaseStr = DEFAULT_GROUP
+    group: str = DEFAULT_GROUP
 
 
 # WARNING: Do not change the order of the following line, it is used to determine
@@ -589,6 +592,18 @@ class BindingConstraintManager:
                     coeffs[term.id].append(term.offset)
         return coeffs
 
+    def check_binding_constraints_exists(self, study: Study, bc_ids: t.List[str]) -> None:
+        storage_service = self.storage_service.get_storage(study)
+        file_study = storage_service.get_raw(study)
+        existing_constraints = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+
+        existing_ids = {constraint["id"] for constraint in existing_constraints.values()}
+
+        missing_bc_ids = [bc_id for bc_id in bc_ids if bc_id not in existing_ids]
+
+        if missing_bc_ids:
+            raise BindingConstraintNotFound(f"Binding constraint(s) '{missing_bc_ids}' not found")
+
     def get_binding_constraint(self, study: Study, bc_id: str) -> ConstraintOutput:
         """
         Retrieves a binding constraint by its ID within a given study.
@@ -795,6 +810,75 @@ class BindingConstraintManager:
         new_constraint["id"] = bc_id
         return self.constraint_model_adapter(new_constraint, version)
 
+    def duplicate_binding_constraint(self, study: Study, source_id: str, new_constraint_name: str) -> ConstraintOutput:
+        """
+        Creates a duplicate constraint with a new name.
+
+        Args:
+            study: The study in which the cluster will be duplicated.
+            source_id: The identifier of the constraint to be duplicated.
+            new_constraint_name: The new name for the duplicated constraint.
+
+        Returns:
+            The duplicated constraint configuration.
+
+        Raises:
+            DuplicateConstraintName: If a constraint with the new name already exists in the study.
+        """
+
+        # Checks if the new constraint already exists
+        new_constraint_id = transform_name_to_id(new_constraint_name)
+        existing_constraints = self.get_binding_constraints(study)
+        if new_constraint_id in {bc.id for bc in existing_constraints}:
+            raise DuplicateConstraintName(
+                f"A binding constraint with the same name already exists: {new_constraint_name}."
+            )
+
+        # Retrieval of the source constraint properties
+        source_constraint = next(iter(bc for bc in existing_constraints if bc.id == source_id), None)
+        if not source_constraint:
+            raise BindingConstraintNotFound(f"Binding constraint '{source_id}' not found")
+
+        new_constraint = {
+            "name": new_constraint_name,
+            **source_constraint.model_dump(mode="json", exclude={"terms", "name", "id"}),
+        }
+        args = {
+            **new_constraint,
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "study_version": StudyVersion.parse(study.version),
+        }
+        if source_constraint.terms:
+            args["coeffs"] = self.terms_to_coeffs(source_constraint.terms)
+
+        # Retrieval of the source constraint matrices
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        if file_study.config.version < STUDY_VERSION_8_7:
+            matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
+            args["values"] = matrix["data"]
+        else:
+            correspondence_map = {
+                "lt": TermMatrices.LESS.value,
+                "gt": TermMatrices.GREATER.value,
+                "eq": TermMatrices.EQUAL.value,
+            }
+            source_matrices = OPERATOR_MATRIX_FILE_MAP[source_constraint.operator]
+            for matrix_name in source_matrices:
+                matrix = file_study.tree.get(["input", "bindingconstraints", matrix_name.format(bc_id=source_id)])[
+                    "data"
+                ]
+                command_attribute = correspondence_map[matrix_name.removeprefix("{bc_id}_")]
+                args[command_attribute] = matrix
+
+        # Creates and applies constraint
+        command = CreateBindingConstraint(**args)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        # Returns the new constraint
+        source_constraint.name = new_constraint_name
+        source_constraint.id = new_constraint_id
+        return source_constraint
+
     def update_binding_constraint(
         self,
         study: Study,
@@ -947,6 +1031,31 @@ class BindingConstraintManager:
         command = RemoveBindingConstraint(
             id=bc.id, command_context=command_context, study_version=file_study.config.version
         )
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+    def remove_multiple_binding_constraints(self, study: Study, binding_constraints_ids: t.List[str]) -> None:
+        """
+        Removes multiple binding constraints from a study.
+
+        Args:
+            study: The study from which to remove the constraint.
+            binding_constraints_ids: The IDs of the binding constraints to remove.
+
+        Raises:
+            BindingConstraintNotFound: If at least one binding constraint within the specified list is not found.
+        """
+
+        self.check_binding_constraints_exists(study, binding_constraints_ids)
+
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        command = RemoveMultipleBindingConstraints(
+            ids=binding_constraints_ids,
+            command_context=command_context,
+            study_version=file_study.config.version,
+        )
+
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def _update_constraint_with_terms(

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import re
+
 import typing as t
 
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
@@ -87,28 +87,3 @@ def validate_color_rgb(v: t.Any) -> str:
         raise TypeError(f"Invalid type for 'color_rgb': {type(v)}")
 
     return f"#{r:02X}{g:02X}{b:02X}"
-
-
-# Invalid chars was taken from Antares Simulator (C++).
-_sub_invalid_chars = re.compile(r"[^a-zA-Z0-9_(),& -]+").sub
-
-
-def transform_name_to_id(name: str) -> str:
-    """
-    Transform a name into an identifier by replacing consecutive
-    invalid characters by a single white space, then whitespaces
-    are striped from both ends and the id is lowered.
-
-    Valid characters are `[a-zA-Z0-9_(),& -]` (including space).
-
-    Args:
-        name: The name to convert.
-    """
-    return _sub_invalid_chars(" ", name).strip().lower()
-
-
-def validate_id_against_name(name: str) -> str:
-    to_return = transform_name_to_id(name)
-    if not to_return:
-        raise ValueError("Cluster name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-    return to_return

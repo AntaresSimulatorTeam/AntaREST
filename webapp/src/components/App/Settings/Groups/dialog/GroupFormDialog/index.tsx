@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,14 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog, {
-  FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
-import { RoleType, UserDTO } from "../../../../../../common/types";
+import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
+import type { RoleType, UserDTO } from "../../../../../../common/types";
 import GroupForm from "./GroupForm";
 
-export interface GroupFormDialogProps
-  extends Omit<FormDialogProps, "children"> {
+export interface GroupFormDialogProps extends Omit<FormDialogProps, "children"> {
   defaultValues?: {
     name?: string;
     permissions?: Array<{ user: UserDTO; type: RoleType }>;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,24 +14,21 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoistNonReactStatics from "hoist-non-react-statics";
-import React, { useContext, useMemo } from "react";
+import { useContext, useMemo } from "react";
 import {
   Controller,
-  ControllerRenderProps,
-  FieldPath,
-  FieldPathValue,
-  FieldValues,
-  Validate,
+  type ControllerRenderProps,
+  type FieldPath,
+  type FieldPathValue,
+  type FieldValues,
+  type Validate,
 } from "react-hook-form";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { Skeleton } from "@mui/material";
 import { getComponentDisplayName } from "../utils/reactUtils";
-import { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
-import {
-  ControlPlus,
-  RegisterOptionsPlus,
-} from "../components/common/Form/types";
+import type { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
+import type { ControlPlus, RegisterOptionsPlus } from "../components/common/Form/types";
 import FormContext from "../components/common/Form/FormContext";
 
 interface ReactHookFormSupport<TValue> {
@@ -90,9 +87,7 @@ export type ReactHookFormSupportProps<
  * @param options.setValueAs - A function that transforms the value before setting it into the form.
  * @returns A function that takes a field editor component and returns a new component wrapped with React Hook Form functionality.
  */
-function reactHookFormSupport<TValue>(
-  options: ReactHookFormSupport<TValue> = {},
-) {
+function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}) {
   const { preValidate, setValueAs = R.identity } = options;
 
   /**
@@ -102,9 +97,9 @@ function reactHookFormSupport<TValue>(
    * @param FieldEditor - The field editor component to wrap.
    * @returns The wrapped component with added React Hook Form support.
    */
-  function wrapWithReactHookFormSupport<
-    TProps extends FieldEditorProps<TValue>,
-  >(FieldEditor: React.ComponentType<TProps>) {
+  function wrapWithReactHookFormSupport<TProps extends FieldEditorProps<TValue>>(
+    FieldEditor: React.ComponentType<TProps>,
+  ) {
     /**
      * The wrapper component that integrates React Hook Form capabilities with the original field editor.
      * It manages form control registration, handles value changes and blurring with custom logic, and displays validation errors.
@@ -116,17 +111,10 @@ function reactHookFormSupport<TValue>(
       TFieldValues extends FieldValues = FieldValues,
       TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
       TContext = any,
-    >(
-      props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
-        TProps,
-    ) {
+    >(props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> & TProps) {
       const { control, rules = {}, shouldUnregister, ...feProps } = props;
 
-      const {
-        validate,
-        setValueAs: setValueAsFromRules = R.identity,
-        ...restRules
-      } = rules;
+      const { validate, setValueAs: setValueAsFromRules = R.identity, ...restRules } = rules;
 
       const { isAutoSubmitEnabled } = useContext(FormContext);
 
@@ -149,17 +137,14 @@ function reactHookFormSupport<TValue>(
           internalOnChange(
             setValueAsFromRules(
               setValueAs(
-                event.target.type === "checkbox"
-                  ? event.target.checked
-                  : event.target.value,
+                event.target.type === "checkbox" ? event.target.checked : event.target.value,
               ),
             ),
           );
         };
 
       const handleBlur =
-        (internalOnBlur: ControllerRenderProps["onBlur"]) =>
-        (event: FakeBlurEventHandler) => {
+        (internalOnBlur: ControllerRenderProps["onBlur"]) => (event: FakeBlurEventHandler) => {
           if (feProps.disabled) {
             return;
           }
@@ -181,9 +166,7 @@ function reactHookFormSupport<TValue>(
         if (preValidate) {
           if (RA.isFunction(validate)) {
             return (value, formValues) => {
-              return (
-                preValidate?.(value, formValues) && validate(value, formValues)
-              );
+              return preValidate?.(value, formValues) && validate(value, formValues);
             };
           }
 
@@ -191,10 +174,7 @@ function reactHookFormSupport<TValue>(
             return Object.keys(validate).reduce(
               (acc, key) => {
                 acc[key] = (value, formValues) => {
-                  return (
-                    preValidate?.(value, formValues) &&
-                    validate[key](value, formValues)
-                  );
+                  return preValidate?.(value, formValues) && validate[key](value, formValues);
                 };
                 return acc;
               },
@@ -212,9 +192,7 @@ function reactHookFormSupport<TValue>(
 
       const getDefaultValueFromOptions = () => {
         const { defaultValue } = options;
-        return RA.isFunction(defaultValue)
-          ? defaultValue(feProps)
-          : defaultValue;
+        return RA.isFunction(defaultValue) ? defaultValue(feProps) : defaultValue;
       };
 
       ////////////////////////////////////////////////////////////////
@@ -227,9 +205,7 @@ function reactHookFormSupport<TValue>(
             control={control}
             name={feProps.name as TFieldName}
             // useForm's defaultValues take precedence
-            defaultValue={
-              (feProps.defaultValue ?? getDefaultValueFromOptions()) as any
-            }
+            defaultValue={(feProps.defaultValue ?? getDefaultValueFromOptions()) as any}
             rules={{ ...restRules, validate: validateWrapper }}
             shouldUnregister={shouldUnregister}
             render={({

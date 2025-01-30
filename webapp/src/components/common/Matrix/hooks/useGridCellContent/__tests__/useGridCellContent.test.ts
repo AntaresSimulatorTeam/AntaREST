@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,12 +13,7 @@
  */
 
 import { Column } from "../../../shared/constants";
-import {
-  createColumn,
-  AGGREGATE_DATA,
-  MIXED_DATA,
-  FORMAT_TEST_CASES,
-} from "./fixtures";
+import { createColumn, AGGREGATE_DATA, MIXED_DATA, FORMAT_TEST_CASES } from "./fixtures";
 import { createCoordinate, renderGridCellContent } from "./utils";
 import { assertNumberCell, assertTextCell } from "./assertions";
 
@@ -31,11 +26,7 @@ describe("useGridCellContent", () => {
     ])("returns correct aggregate for row %i", (row, expected) => {
       const getCellContent = renderGridCellContent(AGGREGATE_DATA);
       const cell = getCellContent(createCoordinate(0, row));
-      assertNumberCell(
-        cell,
-        expected,
-        `Expected aggregate value ${expected} at row ${row}`,
-      );
+      assertNumberCell(cell, expected, `Expected aggregate value ${expected} at row ${row}`);
     });
   });
 
@@ -43,11 +34,7 @@ describe("useGridCellContent", () => {
     test("handles all column types correctly", () => {
       const getCellContent = renderGridCellContent(MIXED_DATA);
 
-      assertTextCell(
-        getCellContent(createCoordinate(0, 0)),
-        "Row 1",
-        "Expected row header text",
-      );
+      assertTextCell(getCellContent(createCoordinate(0, 0)), "Row 1", "Expected row header text");
 
       assertNumberCell(
         getCellContent(createCoordinate(2, 0)),
@@ -61,11 +48,7 @@ describe("useGridCellContent", () => {
         "Expected second data column value",
       );
 
-      assertNumberCell(
-        getCellContent(createCoordinate(4, 0)),
-        250,
-        "Expected aggregate value",
-      );
+      assertNumberCell(getCellContent(createCoordinate(4, 0)), 250, "Expected aggregate value");
     });
   });
 
@@ -95,11 +78,7 @@ describe("useGridCellContent", () => {
 
       // Row out of bounds
       const rowCell = getCellContent(createCoordinate(0, 1));
-      assertNumberCell(
-        rowCell,
-        undefined,
-        "Expected undefined for row out of bounds",
-      );
+      assertNumberCell(rowCell, undefined, "Expected undefined for row out of bounds");
     });
   });
 

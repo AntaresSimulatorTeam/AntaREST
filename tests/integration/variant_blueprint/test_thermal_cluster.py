@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,7 +20,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
 
 def _create_thermal_params(cluster_name: str) -> t.Mapping[str, t.Any]:
@@ -97,7 +97,7 @@ class TestThermalCluster:
                 "action": "create_cluster",
                 "args": {
                     "area_id": area_id,
-                    "cluster_name": transform_name_to_id(cluster_name),
+                    "cluster_name": transform_name_to_id(cluster_name, lower=False),
                     "parameters": _create_thermal_params(cluster_name),
                     "prepro": np.random.rand(8760, 6).tolist(),
                     "modulation": np.random.rand(8760, 4).tolist(),

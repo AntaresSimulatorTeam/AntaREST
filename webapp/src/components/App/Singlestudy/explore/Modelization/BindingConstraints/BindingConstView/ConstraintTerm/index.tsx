@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { ChangeEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Box, Button, TextField, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import { useTranslation } from "react-i18next";
-import { ConstraintTerm, isLinkTerm } from "../utils";
-import { AllClustersAndLinks } from "../../../../../../../../common/types";
+import { isLinkTerm, type ConstraintTerm } from "../utils";
+import type { AllClustersAndLinks } from "../../../../../../../../common/types";
 import OptionsList from "./OptionsList";
 import ConstraintElement from "../constraintviews/ConstraintElement";
 import OffsetInput from "../constraintviews/OffsetInput";
@@ -63,13 +63,7 @@ interface Props {
  *
  * @returns Constraint Term component of type link or cluster
  */
-function ConstraintTermItem({
-  options,
-  term,
-  constraintTerms,
-  saveValue,
-  deleteTerm,
-}: Props) {
+function ConstraintTermItem({ options, term, constraintTerms, saveValue, deleteTerm }: Props) {
   const [t] = useTranslation();
   const [weight, setWeight] = useState(term.weight);
   const [offset, setOffset] = useState(term.offset);
@@ -108,24 +102,19 @@ function ConstraintTermItem({
    */
   const [selectedArea, setSelectedArea] = useState(area);
 
-  const [selectedClusterOrArea, setSelectedClusterOrArea] =
-    useState(areaOrCluster);
+  const [selectedClusterOrArea, setSelectedClusterOrArea] = useState(areaOrCluster);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleWeightChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleWeightChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const newWeight = parseFloat(event.target.value) || 0;
     setWeight(newWeight);
     saveValue({ ...term, weight: newWeight });
   };
 
-  const handleOffsetChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleOffsetChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.value;
     const newOffset = value === "" ? undefined : parseInt(value, 10);
     setOffset(newOffset);

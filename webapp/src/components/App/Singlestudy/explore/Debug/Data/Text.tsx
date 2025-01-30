@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,10 +17,7 @@ import { Box, useTheme } from "@mui/material";
 import { getStudyData } from "../../../../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import {
-  Light as SyntaxHighlighter,
-  type SyntaxHighlighterProps,
-} from "react-syntax-highlighter";
+import { Light as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
@@ -31,7 +28,7 @@ import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
-import EmptyView from "@/components/common/page/SimpleContent";
+import EmptyView from "@/components/common/page/EmptyView";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { getRawFile } from "@/services/api/studies/raw";
 
@@ -66,13 +63,7 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({
-  studyId,
-  filePath,
-  filename,
-  fileType,
-  canEdit,
-}: DataCompProps) {
+function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 

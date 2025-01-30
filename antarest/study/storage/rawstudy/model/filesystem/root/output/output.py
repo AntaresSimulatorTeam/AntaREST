@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -29,5 +29,6 @@ class Output(FolderNode):
             for i, s in self.config.outputs.items()
         }
 
-        children["logs"] = BucketNode(self.context, self.config.next_file("logs"))
+        if (self.config.path / "logs").exists():
+            children["logs"] = BucketNode(self.context, self.config.next_file("logs"))
         return children

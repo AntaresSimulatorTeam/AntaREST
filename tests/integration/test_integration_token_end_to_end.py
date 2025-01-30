@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import io
 import typing as t
 from unittest.mock import ANY
@@ -97,7 +96,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
                 "cluster_name": "mycluster",
                 "parameters": {
                     "group": "Gas",
-                    "unitcount": 1,
+                    "unitCount": 1,
                     "marginal_cost": 50,
                 },
             },
@@ -117,15 +116,15 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
                 "parameters": {
                     "group": "Gas",
                     "marginal-cost": 98,
-                    "unitcount": 1,
-                    "nominalcapacity": 250,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 2,
-                    "min-down-time": 2,
+                    "unitCount": 1,
+                    "nominalCapacity": 250,
+                    "minStablePower": 0.0,
+                    "minUpTime": 2,
+                    "minDownTime": 2,
                     "spinning": 5,
-                    "spread-cost": 0.0,
-                    "startup-cost": 2500,
-                    "market-bid-cost": 85,
+                    "spreadCost": 0.0,
+                    "startupCost": 2500,
+                    "marketBidCost": 85,
                     "co2": 0.3,
                 },
             },
@@ -178,15 +177,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     commands_res = client.get(f"/v1/studies/{variant_id}/commands", headers=bot_headers)
 
     for command in commands_res.json():
-        # FIXME: Some commands, such as those that modify study configurations, are run by admin user
-        # Thus the `user_name` for such type of command will be the admin's name
-        # Here we detect those commands by their `action` and their `target` values
-        if command["action"] == "update_playlist" or (
-            command["action"] == "update_config" and "settings/generaldata" in command["args"]["target"]
-        ):
-            assert command["user_name"] == "admin"
-        else:
-            assert command["user_name"] == "admin_bot"
+        assert command["user_name"] == "admin_bot"
         assert command["updated_at"]
 
     # generate variant before running a simulation

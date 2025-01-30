@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,14 +20,9 @@ import { Button, Drawer, List, ListItem, Typography } from "@mui/material";
 import { useEffect, useRef } from "react";
 import { STUDIES_FILTER_WIDTH } from "../../../theme";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import {
-  getGroups,
-  getStudyFilters,
-  getStudyVersions,
-  getUsers,
-} from "../../../redux/selectors";
+import { getGroups, getStudyFilters, getStudyVersions, getUsers } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { StudyFilters, updateStudyFilters } from "../../../redux/ducks/studies";
+import { updateStudyFilters, type StudyFilters } from "../../../redux/ducks/studies";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 import { displayVersionName } from "../../../services/utils";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
@@ -154,13 +149,9 @@ function FilterDrawer(props: Props) {
             label={t("global.users")}
             options={users}
             getOptionLabel={(option) => option.name}
-            defaultValue={users.filter((user) =>
-              filters.users.includes(user.id),
-            )}
+            defaultValue={users.filter((user) => filters.users.includes(user.id))}
             onChange={(event) => {
-              filterNewValuesRef.current.users = event.target.value.map(
-                (val) => val.id,
-              );
+              filterNewValuesRef.current.users = event.target.value.map((val) => val.id);
             }}
             fullWidth
           />
@@ -170,13 +161,9 @@ function FilterDrawer(props: Props) {
             label={t("global.groups")}
             options={groups}
             getOptionLabel={(option) => option.name}
-            defaultValue={groups.filter((group) =>
-              filters.groups.includes(group.id),
-            )}
+            defaultValue={groups.filter((group) => filters.groups.includes(group.id))}
             onChange={(event) => {
-              filterNewValuesRef.current.groups = event.target.value.map(
-                (val) => val.id,
-              );
+              filterNewValuesRef.current.groups = event.target.value.map((val) => val.id);
             }}
             fullWidth
           />

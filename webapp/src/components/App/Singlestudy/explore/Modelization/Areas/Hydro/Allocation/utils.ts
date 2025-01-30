@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata, Area } from "../../../../../../../../common/types";
+import type { StudyMetadata, Area } from "../../../../../../../../common/types";
 import client from "../../../../../../../../services/api/client";
-import { MatrixDataDTO } from "../../../../../../../common/Matrix/shared/types";
-import { AreaCoefficientItem } from "../utils";
+import type { MatrixDataDTO } from "../../../../../../../common/Matrix/shared/types";
+import type { AreaCoefficientItem } from "../utils";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -29,10 +29,7 @@ export interface AllocationFormFields {
 // Utils
 ////////////////////////////////////////////////////////////////
 
-function makeRequestURL(
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-): string {
+function makeRequestURL(studyId: StudyMetadata["id"], areaId: Area["name"]): string {
   return `v1/studies/${studyId}/areas/${areaId}/hydro/allocation/form`;
 }
 
@@ -53,11 +50,7 @@ export async function setAllocationFormFields(
   return res.data;
 }
 
-export const getAllocationMatrix = async (
-  studyId: StudyMetadata["id"],
-): Promise<MatrixDataDTO> => {
-  const res = await client.get(
-    `v1/studies/${studyId}/areas/hydro/allocation/matrix`,
-  );
+export const getAllocationMatrix = async (studyId: StudyMetadata["id"]): Promise<MatrixDataDTO> => {
+  const res = await client.get(`v1/studies/${studyId}/areas/hydro/allocation/matrix`);
   return res.data;
 };

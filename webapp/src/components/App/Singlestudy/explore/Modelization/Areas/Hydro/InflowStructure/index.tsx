@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 import Form from "../../../../../../../common/Form";
@@ -23,7 +23,7 @@ import {
   updateInflowStructureFields,
 } from "./utils";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import { useTranslation } from "react-i18next";
 
 function InflowStructure() {

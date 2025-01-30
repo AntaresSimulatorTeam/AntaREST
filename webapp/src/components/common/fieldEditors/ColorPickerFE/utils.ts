@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,15 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { ColorResult } from "react-color";
+import type { ColorResult } from "react-color";
 
 export function stringToRGB(color: string): ColorResult["rgb"] | undefined {
   let sColor;
   try {
-    sColor = color
-      .split(",")
-      .map((elm) => parseInt(elm.replace(/\s+/g, ""), 10));
-  } catch (e) {
+    sColor = color.split(",").map((elm) => parseInt(elm.replace(/\s+/g, ""), 10));
+  } catch {
     sColor = undefined;
   }
 

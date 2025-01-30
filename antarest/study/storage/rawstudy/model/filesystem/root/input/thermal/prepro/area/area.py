@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -32,8 +32,11 @@ class InputThermalPreproArea(FolderNode):
 
     @override
     def build(self) -> TREE:
+        # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
+        # For instance, if your cluster ID is "Base", then the series ID will be "base".
+        series_ids = map(str.lower, self.config.get_thermal_ids(self.area))
         children: TREE = {
             series_id: InputThermalPreproAreaThermal(self.context, self.config.next_file(series_id))
-            for series_id in self.config.get_thermal_ids(self.area)
+            for series_id in series_ids
         }
         return children
