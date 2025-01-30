@@ -73,9 +73,8 @@ class VariantCommandGenerator:
 
         # since we need the commands without their sub commands ONLY for the notifier, we'll use
         # some variables to store commands metadata.
-        # In that case, we suppose that `all_commands` has sequences of commands based on their `command_id` field
-        command_block_index = 1
-        previous_command_id = None
+        command_block_index = 0
+        command_block_dict = {}
 
         # Store all the outputs
         for index, cmd in enumerate(all_commands, 1):
@@ -89,6 +88,10 @@ class VariantCommandGenerator:
                 )
                 logger.error(output.message, exc_info=e)
 
+            if not command_block_dict.get(cmd.command_id):
+                command_block_dict[cmd.command_id] = command_block_index
+                command_block_index += 1
+
             # noinspection PyTypeChecker
             detail: NewDetailsDTO = {
                 "id": uuid.UUID(int=0) if cmd.command_id is None else cmd.command_id,
@@ -99,10 +102,7 @@ class VariantCommandGenerator:
             results.details.append(detail)
 
             if notifier:
-                notifier(command_block_index - 1, output.status, output.message)
-                if previous_command_id != cmd.command_id:  # update temporary variables
-                    previous_command_id = cmd.command_id
-                    command_block_index += 1
+                notifier(command_block_dict[cmd.command_id], output.status, output.message)
 
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)
