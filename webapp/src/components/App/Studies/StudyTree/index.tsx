@@ -27,6 +27,7 @@ import { fetchAndInsertSubfolders, fetchAndInsertWorkspaces } from "./utils";
 import { useTranslation } from "react-i18next";
 import { toError } from "@/utils/fnUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
+import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
@@ -42,7 +43,7 @@ function StudyTree() {
   useUpdateEffectOnce(() => {
     // be carefull to pass initialStudiesTree and not studiesTree at rootNode parameter
     // otherwise we'll lose the default workspace
-    updateTree("root", initialStudiesTree);
+    updateTree(ROOT_FOLDER_NAME, initialStudiesTree);
   }, [initialStudiesTree]);
 
   /**
@@ -62,7 +63,7 @@ function StudyTree() {
    * @param selectedNode - The node of the item clicked
    */
   async function updateTree(itemId: string, rootNode: StudyTreeNode) {
-    if (itemId.startsWith("root/default")) {
+    if (itemId.startsWith(DEFAULT_WORKSPACE_PREFIX)) {
       // we don't update the tree if the user clicks on the default workspace
       // api doesn't allow to fetch the subfolders of the default workspace
       return;
@@ -80,7 +81,7 @@ function StudyTree() {
     let pathsToFetch: string[] = [];
     // If the user clicks on the root folder, we fetch the workspaces and insert them.
     // Then we fetch the direct subfolders of the workspaces.
-    if (itemId === "root") {
+    if (itemId === ROOT_FOLDER_NAME) {
       try {
         treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
       } catch (error) {

@@ -63,6 +63,7 @@ import { scanFolder } from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import { DEFAULT_WORKSPACE_PREFIX } from "@/components/common/utils/constants";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -87,7 +88,7 @@ function StudiesList(props: StudiesListProps) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
-  const scanDisabled: boolean = !!folder && folder.startsWith("root/default");
+  const scanDisabled: boolean = !!folder && folder.startsWith(DEFAULT_WORKSPACE_PREFIX);
 
   useEffect(() => {
     setFolderList(folder.split("/"));
