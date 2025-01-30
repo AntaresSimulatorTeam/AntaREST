@@ -237,7 +237,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 study_version=str(command.study_version),
                 # params.user cannot be None, since previous checks were successful
                 user_id=params.user.id,  # type: ignore
-                updated_at=datetime.now(timezone.utc),
+                updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -279,7 +279,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 version=command.version,
                 study_version=str(command.study_version),
                 user_id=params.user.id,  # type: ignore
-                updated_at=datetime.now(timezone.utc),
+                updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
         ]
@@ -634,8 +634,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             parent_id=uuid,
             path=study_path,
             public_mode=study.public_mode,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=study.version,
             folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
@@ -935,8 +935,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             parent_id=src_meta.parent_id,
             path=study_path,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
             version=src_meta.version,
             groups=groups,
             snapshot=None,

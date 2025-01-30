@@ -99,18 +99,19 @@ class FilterOption(EnumIgnoreCase):
 
 def validate_filters(filter_value: t.List[FilterOption] | str, enum_cls: t.Type[FilterOption]) -> t.List[FilterOption]:
     if isinstance(filter_value, str):
-        if not filter_value.strip():
+        filter_value = filter_value.strip()
+        if not filter_value:
             return []
 
-        filter_accepted_values = [e for e in enum_cls]
+        valid_values = {str(e.value) for e in enum_cls}
 
         options = filter_value.replace(" ", "").split(",")
 
-        invalid_options = [opt for opt in options if opt not in filter_accepted_values]
+        invalid_options = [opt for opt in options if opt not in valid_values]
         if invalid_options:
             raise LinkValidationError(
                 f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
-                f"Allowed values are: {', '.join(filter_accepted_values)}."
+                f"Allowed values are: {', '.join(valid_values)}."
             )
         options_enum: t.List[FilterOption] = list(dict.fromkeys(enum_cls(opt) for opt in options))
         return options_enum
