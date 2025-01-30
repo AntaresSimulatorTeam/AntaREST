@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -31,11 +31,7 @@ import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
-import {
-  LaunchOptions,
-  StudyMetadata,
-  StudyOutput,
-} from "../../../common/types";
+import type { LaunchOptions, StudyMetadata, StudyOutput } from "../../../common/types";
 import {
   getLauncherCores,
   getLauncherTimeLimit,
@@ -126,9 +122,7 @@ function LauncherDialog(props: Props) {
   const handleLaunchClick = () => {
     if (studyIds.length > 0) {
       setIsLaunching(true);
-      Promise.all(
-        studyIds.map((sid) => launchStudy(sid, options, solverVersion)),
-      )
+      Promise.all(studyIds.map((sid) => launchStudy(sid, options, solverVersion)))
         .then(() => {
           enqueueSnackbar(
             t("studies.studylaunched", {
@@ -151,20 +145,14 @@ function LauncherDialog(props: Props) {
     }
   };
 
-  const handleChange = <T extends keyof LaunchOptions>(
-    field: T,
-    value: LaunchOptions[T],
-  ) => {
+  const handleChange = <T extends keyof LaunchOptions>(field: T, value: LaunchOptions[T]) => {
     setOptions((prevOptions) => ({
       ...prevOptions,
       [field]: value,
     }));
   };
 
-  const handleObjectChange = <T extends keyof LaunchOptions>(
-    field: T,
-    value: object,
-  ) => {
+  const handleObjectChange = <T extends keyof LaunchOptions>(field: T, value: object) => {
     setOptions((prevOptions: LaunchOptions) => {
       return {
         ...prevOptions,
@@ -173,9 +161,7 @@ function LauncherDialog(props: Props) {
     });
   };
 
-  const handleOtherOptionsChange = (
-    optionChanges: Array<{ option: string; active: boolean }>,
-  ) => {
+  const handleOtherOptionsChange = (optionChanges: Array<{ option: string; active: boolean }>) => {
     setOptions((prevOptions) => {
       const { other_options: prevOtherOptions = "" } = prevOptions;
       const { toAdd, toRemove } = optionChanges.reduce(
@@ -215,11 +201,7 @@ function LauncherDialog(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={
-              isLaunching ||
-              !launcherCores.isFulfilled ||
-              !launcherTimeLimit.isFulfilled
-            }
+            disabled={isLaunching || !launcherCores.isFulfilled || !launcherTimeLimit.isFulfilled}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -270,9 +252,7 @@ function LauncherDialog(props: Props) {
             type="text"
             variant="outlined"
             value={options.output_suffix}
-            onChange={(e) =>
-              handleChange("output_suffix", e.target.value.trim())
-            }
+            onChange={(e) => handleChange("output_suffix", e.target.value.trim())}
             InputLabelProps={{
               shrink: true,
             }}
@@ -290,17 +270,12 @@ function LauncherDialog(props: Props) {
                 type="number"
                 variant="outlined"
                 required
-                value={
-                  options.time_limit
-                    ? options.time_limit / 3600
-                    : timeLimit.defaultValue
-                }
+                value={options.time_limit ? options.time_limit / 3600 : timeLimit.defaultValue}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
                   handleChange(
                     "time_limit",
-                    Math.min(Math.max(newValue, timeLimit.min), timeLimit.max) *
-                      3600,
+                    Math.min(Math.max(newValue, timeLimit.min), timeLimit.max) * 3600,
                   );
                 }}
                 InputLabelProps={{
@@ -332,10 +307,7 @@ function LauncherDialog(props: Props) {
                 value={options.nb_cpu ? options.nb_cpu : cores.defaultValue}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
-                  handleChange(
-                    "nb_cpu",
-                    Math.min(Math.max(newValue, cores.min), cores.max),
-                  );
+                  handleChange("nb_cpu", Math.min(Math.max(newValue, cores.min), cores.max));
                 }}
                 inputProps={{
                   min: cores.min,
@@ -423,13 +395,8 @@ function LauncherDialog(props: Props) {
             label="Adequacy patch R"
             value={!!options.adequacy_patch}
             onChange={(e, checked) => {
-              handleChange(
-                "adequacy_patch",
-                checked ? { legacy: true } : undefined,
-              );
-              handleOtherOptionsChange([
-                { option: "adq_patch_rc", active: checked },
-              ]);
+              handleChange("adequacy_patch", checked ? { legacy: true } : undefined);
+              handleOtherOptionsChange([{ option: "adq_patch_rc", active: checked }]);
             }}
           />
           <CheckBoxFE
@@ -463,10 +430,7 @@ function LauncherDialog(props: Props) {
             <SwitchFE
               value={!!options.xpansion}
               onChange={(e, checked) => {
-                handleChange(
-                  "xpansion",
-                  checked ? { enabled: true } : undefined,
-                );
+                handleChange("xpansion", checked ? { enabled: true } : undefined);
               }}
             />
           </Box>

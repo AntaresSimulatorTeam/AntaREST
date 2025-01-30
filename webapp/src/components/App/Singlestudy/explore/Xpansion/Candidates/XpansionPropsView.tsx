@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,7 +17,7 @@ import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PropertiesView from "../../../../../common/PropertiesView";
-import { XpansionCandidate } from "../types";
+import type { XpansionCandidate } from "../types";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
 import ListElement from "../../common/ListElement";
 
@@ -31,26 +31,16 @@ interface PropsType {
 
 function XpansionPropsView(props: PropsType) {
   const [t] = useTranslation();
-  const {
-    candidateList,
-    selectedItem,
-    setSelectedItem,
-    onAdd,
-    deleteXpansion,
-  } = props;
-  const [filteredCandidates, setFilteredCandidates] =
-    useState<XpansionCandidate[]>(candidateList);
+  const { candidateList, selectedItem, setSelectedItem, onAdd, deleteXpansion } = props;
+  const [filteredCandidates, setFilteredCandidates] = useState<XpansionCandidate[]>(candidateList);
   const [searchFilter, setSearchFilter] = useState<string>("");
-  const [openConfirmationModal, setOpenConfirmationModal] =
-    useState<boolean>(false);
+  const [openConfirmationModal, setOpenConfirmationModal] = useState<boolean>(false);
 
   const filter = useCallback(
     (currentName: string): XpansionCandidate[] => {
       if (candidateList) {
         return candidateList.filter(
-          (item) =>
-            !currentName ||
-            item.name.search(new RegExp(currentName, "i")) !== -1,
+          (item) => !currentName || item.name.search(new RegExp(currentName, "i")) !== -1,
         );
       }
       return [];

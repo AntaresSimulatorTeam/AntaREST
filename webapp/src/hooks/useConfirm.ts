@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import useAutoUpdateRef from "./useAutoUpdateRef";
+import useUpdatedRef from "./useUpdatedRef";
 
 function errorFunction() {
   throw new Error("Promise is not pending.");
@@ -61,7 +61,7 @@ function errorFunction() {
  */
 function useConfirm() {
   const [isPending, setIsPending] = useState(false);
-  const isPendingRef = useAutoUpdateRef(isPending);
+  const isPendingRef = useUpdatedRef(isPending);
   const yesRef = useRef<VoidFunction>(errorFunction);
   const noRef = useRef<VoidFunction>(errorFunction);
   const cancelRef = useRef<VoidFunction>(errorFunction);

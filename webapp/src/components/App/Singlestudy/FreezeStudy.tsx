@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/common/types";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
 import type { TaskDTO, TTaskType } from "@/services/api/tasks/types";
@@ -24,19 +24,11 @@ import {
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
-import {
-  Backdrop,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Backdrop, Button, List, ListItem, ListItemText, Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
 import { useTranslation } from "react-i18next";
-import useAutoUpdateRef from "@/hooks/useAutoUpdateRef";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
 
 interface BlockingTask {
   id: TaskDTO["id"];
@@ -68,7 +60,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
   const [blockingTasks, setBlockingTasks] = useState<BlockingTask[]>([]);
   const { t } = useTranslation();
   const hasLoadingTask = !!blockingTasks.find(isLoadingTask);
-  const blockingTasksRef = useAutoUpdateRef(blockingTasks);
+  const blockingTasksRef = useUpdatedRef(blockingTasks);
 
   // Fetch blocking tasks and subscribe to their WebSocket channels
   useEffect(() => {
@@ -83,7 +75,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
         setBlockingTasks(
           tasks.map((task) => ({
             id: task.id,
-            type: task.type!,
+            type: task.type,
           })),
         );
 
@@ -128,9 +120,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
         case WsEventType.TaskFailed: {
           const { id, message } = event.payload;
           setBlockingTasks((tasks) =>
-            tasks.map((task) =>
-              task.id === id ? { ...task, error: message } : task,
-            ),
+            tasks.map((task) => (task.id === id ? { ...task, error: message } : task)),
           );
           unsubscribeWsChannels(getChannel(id));
           break;
@@ -138,9 +128,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
         case WsEventType.TaskCompleted: {
           const { id } = event.payload;
           setBlockingTasks((tasks) =>
-            tasks.map((task) =>
-              task.id === id ? { ...task, progress: PROGRESS_COMPLETE } : task,
-            ),
+            tasks.map((task) => (task.id === id ? { ...task, progress: PROGRESS_COMPLETE } : task)),
           );
           unsubscribeWsChannels(getChannel(id));
           break;
@@ -155,10 +143,15 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
 
     function forceUpdate(taskId: BlockingTask["id"]) {
       getTask({ id: taskId }).then((task) => {
+        // Normally all blocking tasks have a type
+        if (!task.type) {
+          return;
+        }
+
         const payload = {
           id: task.id,
           message: task.result?.message || "",
-          type: task.type!,
+          type: task.type,
         };
         if (task.status === TaskStatus.Running) {
           if (typeof task.progress === "number") {
@@ -191,7 +184,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
       unsubscribeWsChannels();
       window.clearInterval(intervalId);
     };
-  }, [studyId]);
+  }, [blockingTasksRef, studyId]);
 
   return (
     <Backdrop open={blockingTasks.length > 0} sx={{ position: "absolute" }}>
@@ -207,16 +200,10 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
           {blockingTasks.map(({ id, type, progress, error }) => (
             <ListItem key={id}>
               <ListItemText
-                primary={
-                  <LinearProgressWithLabel value={progress} error={!!error} />
-                }
+                primary={<LinearProgressWithLabel value={progress} error={!!error} />}
                 secondary={
                   <>
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      color="textPrimary"
-                    >
+                    <Typography component="span" variant="body2" color="textPrimary">
                       {t(`tasks.type.${type}`)}
                     </Typography>
                     {error && (

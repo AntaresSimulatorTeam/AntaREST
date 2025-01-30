@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,7 +20,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { useUpdateEffect } from "react-use";
 import * as RA from "ramda-adjunct";
-import StringFE, { StringFEProps } from "./StringFE";
+import StringFE, { type StringFEProps } from "./StringFE";
 
 export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
   InputProps?: Omit<StringFEProps["InputProps"], "startAdornment">;
@@ -30,15 +30,8 @@ export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
 }
 
 function SearchFE(props: SearchFE) {
-  const {
-    onSearchValueChange,
-    onChange,
-    onClear,
-    InputProps,
-    useLabel,
-    className,
-    ...rest
-  } = props;
+  const { onSearchValueChange, onChange, onClear, InputProps, useLabel, className, ...rest } =
+    props;
   const { t } = useTranslation();
   const placeholderOrLabel = {
     [useLabel ? "label" : "placeholder"]: t("global.search"),

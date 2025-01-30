@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,7 +15,7 @@
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { editStudy, getStudyData } from "../../../../../../services/api/study";
-import JSONEditor, { JSONEditorProps } from "../../../../../common/JSONEditor";
+import JSONEditor, { type JSONEditorProps } from "../../../../../common/JSONEditor";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import type { DataCompProps } from "../utils";
@@ -29,13 +29,10 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
 
-  const jsonRes = usePromiseWithSnackbarError(
-    () => getStudyData(studyId, filePath, -1),
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
-    },
-  );
+  const jsonRes = usePromiseWithSnackbarError(() => getStudyData(studyId, filePath, -1), {
+    errorMessage: t("studies.error.retrieveData"),
+    deps: [studyId, filePath],
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

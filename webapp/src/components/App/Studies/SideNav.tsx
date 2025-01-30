@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -37,9 +37,7 @@ function SideNav() {
       p={2}
       sx={{ overflowX: "hidden", overflowY: "auto" }}
     >
-      <Typography sx={{ color: "grey.400" }}>
-        {t("studies.favorites")}
-      </Typography>
+      <Typography sx={{ color: "grey.400" }}>{t("studies.favorites")}</Typography>
       <List sx={{ width: "100%" }}>
         {favorites.map((fav) => (
           <ListItem

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,12 +13,8 @@
  */
 
 import { useCallback, useMemo } from "react";
-import { GridCell, GridCellKind, Item } from "@glideapps/glide-data-grid";
-import {
-  type EnhancedGridColumn,
-  type ColumnType,
-  MatrixAggregates,
-} from "../../shared/types";
+import { GridCellKind, type GridCell, type Item } from "@glideapps/glide-data-grid";
+import type { EnhancedGridColumn, ColumnType, MatrixAggregates } from "../../shared/types";
 import { formatGridNumber } from "../../shared/utils";
 import { Column } from "../../shared/constants";
 import { type CellContentGenerator } from "./types";
@@ -28,15 +24,7 @@ import { type CellContentGenerator } from "./types";
  * Each generator function creates the appropriate GridCell based on the column type and data.
  */
 const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
-  [Column.Text]: (
-    row,
-    col,
-    column,
-    data,
-    dateTime,
-    aggregates,
-    rowHeaders,
-  ) => ({
+  [Column.Text]: (row, col, column, data, dateTime, aggregates, rowHeaders) => ({
     kind: GridCellKind.Text,
     data: "", // Custom row headers are not editable
     displayData: rowHeaders?.[row] ?? "",
@@ -162,15 +150,7 @@ export function useGridCellContent(
         }
       }
 
-      const gridCell = generator(
-        row,
-        adjustedCol,
-        column,
-        data,
-        dateTime,
-        aggregates,
-        rowHeaders,
-      );
+      const gridCell = generator(row, adjustedCol, column, data, dateTime, aggregates, rowHeaders);
 
       // Display number values as percentages if enabled
       if (showPercent && gridCell.kind === GridCellKind.Number) {
@@ -192,16 +172,7 @@ export function useGridCellContent(
 
       return gridCell;
     },
-    [
-      columnMap,
-      gridToData,
-      data,
-      dateTime,
-      aggregates,
-      rowHeaders,
-      readOnly,
-      showPercent,
-    ],
+    [columnMap, gridToData, data, dateTime, aggregates, rowHeaders, readOnly, showPercent],
   );
 
   return getCellContent;

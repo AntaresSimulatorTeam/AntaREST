@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,15 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import {
-  createAsyncThunk,
-  createEntityAdapter,
-  createReducer,
-} from "@reduxjs/toolkit";
-import { GroupDetailsDTO } from "../../common/types";
-import { AsyncEntityState, FetchStatus, makeActionName } from "../utils";
+import { createAsyncThunk, createEntityAdapter, createReducer } from "@reduxjs/toolkit";
+import type { GroupDetailsDTO } from "../../common/types";
+import { FetchStatus, makeActionName, type AsyncEntityState } from "../utils";
 import * as api from "../../services/api/user";
-import { AppAsyncThunkConfig } from "../store";
+import type { AppAsyncThunkConfig } from "../store";
 
 const groupsAdapter = createEntityAdapter<GroupDetailsDTO>();
 
@@ -37,13 +33,12 @@ const n = makeActionName("groups");
 // Thunks
 ////////////////////////////////////////////////////////////////
 
-export const fetchGroups = createAsyncThunk<
-  GroupDetailsDTO[],
-  undefined,
-  AppAsyncThunkConfig
->(n("FETCH_GROUPS"), (_, { rejectWithValue }) => {
-  return api.getGroups({ details: true }).catch(rejectWithValue);
-});
+export const fetchGroups = createAsyncThunk<GroupDetailsDTO[], undefined, AppAsyncThunkConfig>(
+  n("FETCH_GROUPS"),
+  (_, { rejectWithValue }) => {
+    return api.getGroups({ details: true }).catch(rejectWithValue);
+  },
+);
 
 ////////////////////////////////////////////////////////////////
 // Reducer

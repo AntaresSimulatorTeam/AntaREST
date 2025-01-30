@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,17 +15,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { DropResult } from "react-beautiful-dnd";
-import _ from "lodash";
+import type { DropResult } from "react-beautiful-dnd";
+import debounce from "lodash/debounce";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import BoltIcon from "@mui/icons-material/Bolt";
 import debug from "debug";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
 import { Box, Button, Skeleton, Tooltip, Typography } from "@mui/material";
 import { useMountedState } from "react-use";
-import { CommandItem, JsonCommandItem } from "./commandTypes";
+import type { CommandItem, JsonCommandItem } from "./commandTypes";
 import CommandListView from "./DraggableCommands/CommandListView";
 import {
   reorder,
@@ -46,24 +46,17 @@ import {
   getStudyTask,
   exportCommandsMatrices,
 } from "../../../../../services/api/variant";
-import { CommandResultDTO } from "../../../../../common/types";
+import type { CommandResultDTO } from "../../../../../common/types";
 import CommandImportButton from "./DraggableCommands/CommandImportButton";
 import { getTask } from "../../../../../services/api/tasks";
 import { Body, EditHeader, Header, headerIconStyle, Root } from "./style";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  addWsEventListener,
-  subscribeWsChannels,
-} from "../../../../../services/webSocket/ws";
+import { addWsEventListener, subscribeWsChannels } from "../../../../../services/webSocket/ws";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
 import EmptyView from "../../../../common/page/EmptyView";
 import { TaskStatus } from "../../../../../services/api/tasks/constants";
-import type {
-  TaskEventPayload,
-  TWsEventType,
-  WsEvent,
-} from "@/services/webSocket/types";
+import type { TaskEventPayload, TWsEventType, WsEvent } from "@/services/webSocket/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 const logError = debug("antares:variantedition:error");
@@ -80,13 +73,11 @@ function EditionView(props: Props) {
   const { studyId } = props;
   const [openClearCommandsDialog, setOpenClearCommandsDialog] = useState(false);
   const [openDeleteCommandDialog, setOpenDeleteCommandDialog] = useState(-1);
-  const [openExportCommandsDialog, setOpenExportCommandsDialog] =
-    useState(false);
+  const [openExportCommandsDialog, setOpenExportCommandsDialog] = useState(false);
   const [exportMatrices, setExportMatrices] = useState(false);
   const [generationStatus, setGenerationStatus] = useState(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
-  const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] =
-    useState<number>(-1);
+  const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
   const [expandedIndex, setExpandedIndex] = useState<number>(-1);
   const [commands, setCommands] = useState<CommandItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -163,10 +154,7 @@ function EditionView(props: Props) {
   const onCommandExport = async (index: number) => {
     try {
       const elm = await getCommand(studyId, commands[index].id as string);
-      exportJson(
-        { action: elm.action, args: elm.args },
-        `${elm.id}_command.json`,
-      );
+      exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
     }
@@ -178,10 +166,7 @@ function EditionView(props: Props) {
       if (exportMatrices) {
         await exportCommandsMatrices(studyId);
       }
-      exportJson(
-        fromCommandDTOToJsonCommand(items),
-        `${studyId}_commands.json`,
-      );
+      exportJson(fromCommandDTOToJsonCommand(items), `${studyId}_commands.json`);
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
     } finally {
@@ -224,10 +209,7 @@ function EditionView(props: Props) {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("variants.error.launchGeneration"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t("variants.error.launchGeneration"), e as AxiosError);
     }
   };
 
@@ -306,7 +288,7 @@ function EditionView(props: Props) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedFailureNotification = useCallback(
-    _.debounce(
+    debounce(
       () => {
         enqueueSnackbar(t("variants.error.taskFailed"), {
           variant: "error",

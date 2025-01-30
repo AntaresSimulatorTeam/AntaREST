@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,9 +13,9 @@
  */
 
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
-import { UserInfo } from "../../common/types";
+import type { UserInfo } from "../../common/types";
 import storage, { StorageKey } from "../../services/utils/localStorage";
-import { AppState } from "../ducks";
+import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
   setFavoriteStudies,

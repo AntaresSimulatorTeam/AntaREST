@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Button } from "@mui/material";
@@ -21,15 +21,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { useFieldArray } from "react-hook-form";
 import { useSnackbar } from "notistack";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  type ConstraintTerm,
-  generateTermId,
-  BindingConstraint,
-} from "./utils";
-import {
-  AllClustersAndLinks,
-  StudyMetadata,
-} from "../../../../../../../common/types";
+import { generateTermId, type ConstraintTerm, type BindingConstraint } from "./utils";
+import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../common/types";
 import ConstraintTermItem from "./ConstraintTerm";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
@@ -54,8 +47,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [termToDelete, setTermToDelete] = useState<number>();
-  const [openConstraintTermDialog, setOpenConstraintTermDialog] =
-    useState(false);
+  const [openConstraintTermDialog, setOpenConstraintTermDialog] = useState(false);
 
   const { control } = useFormContextPlus<BindingConstraint>();
 
@@ -74,11 +66,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleUpdateTerm = useDebounce(
-    async (
-      index: number,
-      prevTerm: ConstraintTerm,
-      newTerm: ConstraintTerm,
-    ) => {
+    async (index: number, prevTerm: ConstraintTerm, newTerm: ConstraintTerm) => {
       try {
         const updatedTerm = {
           ...prevTerm,
@@ -95,10 +83,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           variant: "success",
         });
       } catch (error) {
-        enqueueErrorSnackbar(
-          t("study.error.updateConstraintTerm"),
-          error as AxiosError,
-        );
+        enqueueErrorSnackbar(t("study.error.updateConstraintTerm"), error as AxiosError);
       }
     },
     500,
@@ -110,10 +95,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
       await deleteConstraintTerm(study.id, constraintId, termId);
       remove(termToDelete);
     } catch (error) {
-      enqueueErrorSnackbar(
-        t("study.error.deleteConstraintTerm"),
-        error as AxiosError,
-      );
+      enqueueErrorSnackbar(t("study.error.deleteConstraintTerm"), error as AxiosError);
     } finally {
       setTermToDelete(undefined);
     }
@@ -125,10 +107,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
 
   return (
     <>
-      <Fieldset
-        legend={t("study.modelization.bindingConst.constraintTerm")}
-        sx={{ py: 2 }}
-      >
+      <Fieldset legend={t("study.modelization.bindingConst.constraintTerm")} sx={{ py: 2 }}>
         <Box sx={{ display: "flex", width: 1, flexDirection: "column" }}>
           <Box
             sx={{
@@ -147,9 +126,7 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           </Box>
           {constraintTerms.map((term: ConstraintTerm, index: number) => (
             <Box key={term.id}>
-              {index > 0 && (
-                <TextSeparator text="+" textStyle={{ fontSize: "16px" }} />
-              )}
+              {index > 0 && <TextSeparator text="+" textStyle={{ fontSize: "16px" }} />}
               <ConstraintTermItem
                 options={options}
                 saveValue={(newTerm) => handleUpdateTerm(index, term, newTerm)}

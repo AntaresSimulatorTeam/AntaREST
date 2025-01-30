@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FormDialog from "../dialogs/FormDialog";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
-import { SubmitHandlerPlus } from "../Form/types";
+import type { SubmitHandlerPlus } from "../Form/types";
 import SelectFE from "../fieldEditors/SelectFE";
 import type { TRow } from "./types";
 import { useTranslation } from "react-i18next";
@@ -30,22 +30,14 @@ interface Props {
   existingNames: Array<TRow["name"]>;
 }
 
-function CreateDialog({
-  open,
-  onClose,
-  onSubmit,
-  groups,
-  existingNames,
-}: Props) {
+function CreateDialog({ open, onClose, onSubmit, groups, existingNames }: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    values: { name, group },
-  }: SubmitHandlerPlus<TRow>) => {
+  const handleSubmit = ({ values: { name, group } }: SubmitHandlerPlus<TRow>) => {
     return onSubmit({ name: name.trim(), group });
   };
 
@@ -69,8 +61,7 @@ function CreateDialog({
             control={control}
             fullWidth
             rules={{
-              validate: (v) =>
-                validateString(v, { existingValues: existingNames }),
+              validate: (v) => validateString(v, { existingValues: existingNames }),
             }}
             sx={{ m: 0 }}
           />

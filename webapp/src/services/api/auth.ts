@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,8 +14,8 @@
 
 import axios from "axios";
 import client from "./client";
-import { RefreshDTO as UserTokensDTO } from "../../common/types";
-import { Config } from "../config";
+import type { RefreshDTO as UserTokensDTO } from "../../common/types";
+import type { Config } from "../config";
 
 // instance sans crédentials et hooks pour l'authent
 const rawAxiosInstance = axios.create();
@@ -51,10 +51,7 @@ export const refresh = async (refreshToken: string): Promise<UserTokensDTO> => {
   return res.data;
 };
 
-export const login = async (
-  username: string,
-  password: string,
-): Promise<UserTokensDTO> => {
+export const login = async (username: string, password: string): Promise<UserTokensDTO> => {
   const res = await rawAxiosInstance.post("/v1/login", { username, password });
   return res.data;
 };

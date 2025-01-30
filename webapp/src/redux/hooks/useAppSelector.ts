@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { TypedUseSelectorHook, useSelector } from "react-redux";
-import { AppState } from "../ducks";
+import { useSelector, type TypedUseSelectorHook } from "react-redux";
+import type { AppState } from "../ducks";
 
 const useAppSelector: TypedUseSelectorHook<AppState> = useSelector;
 

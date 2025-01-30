@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,93 +19,97 @@ import {
   type EditListItem,
   type GridSelection,
   type DataEditorProps,
+  type GridCell,
 } from "@glideapps/glide-data-grid";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { voidFn } from "@/utils/fnUtils";
 import { darkTheme } from "./Matrix/styles";
+import { useUpdateEffect } from "react-use";
 
 interface StringRowMarkerOptions {
   kind: "string" | "clickable-string";
   getTitle?: (rowIndex: number) => string;
+  width?: number;
 }
 
-type RowMarkers =
+export type RowMarkers =
   | NonNullable<DataEditorProps["rowMarkers"]>
   | StringRowMarkerOptions["kind"]
   | StringRowMarkerOptions;
 
 type RowMarkersOptions = Exclude<RowMarkers, string>;
 
-export interface DataGridProps
-  extends Omit<
-    DataEditorProps,
-    "rowMarkers" | "onGridSelectionChange" | "gridSelection"
-  > {
+export interface DataGridProps extends Omit<DataEditorProps, "rowMarkers" | "gridSelection"> {
   rowMarkers?: RowMarkers;
   enableColumnResize?: boolean;
 }
 
+const ROW_HEIGHT = 30;
+const OVERSCROLL = 2;
+
 function isStringRowMarkerOptions(
   rowMarkerOptions: RowMarkersOptions,
 ): rowMarkerOptions is StringRowMarkerOptions {
-  return (
-    rowMarkerOptions.kind === "string" ||
-    rowMarkerOptions.kind === "clickable-string"
-  );
+  return rowMarkerOptions.kind === "string" || rowMarkerOptions.kind === "clickable-string";
 }
 
-function DataGrid(props: DataGridProps) {
-  const {
-    rowMarkers = { kind: "none" },
-    getCellContent,
-    columns: columnsFromProps,
-    onCellEdited,
-    onCellsEdited,
-    onColumnResize,
-    onColumnResizeStart,
-    onColumnResizeEnd,
-    enableColumnResize = true,
-    freezeColumns,
-    ...rest
-  } = props;
-
+function DataGrid({
+  rowMarkers = { kind: "none" },
+  getCellContent,
+  columns: columnsFromProps,
+  onCellEdited,
+  onCellsEdited,
+  onColumnResize,
+  onColumnResizeStart,
+  onColumnResizeEnd,
+  onGridSelectionChange,
+  enableColumnResize = true,
+  freezeColumns,
+  rows,
+  ...rest
+}: DataGridProps) {
   const rowMarkersOptions: RowMarkersOptions =
     typeof rowMarkers === "string" ? { kind: rowMarkers } : rowMarkers;
-  const isStringRowMarkers = isStringRowMarkerOptions(rowMarkersOptions);
-  const adjustedFreezeColumns = isStringRowMarkers
-    ? (freezeColumns || 0) + 1
-    : freezeColumns;
 
-  const [columns, setColumns] = useState(columnsFromProps);
-  const [selection, setSelection] = useState<GridSelection>({
-    columns: CompactSelection.empty(),
+  const isStringRowMarkers = isStringRowMarkerOptions(rowMarkersOptions);
+  const adjustedFreezeColumns = isStringRowMarkers ? (freezeColumns || 0) + 1 : freezeColumns;
+
+  // Manually calculate the height allows to remove the blank space at the bottom of the grid
+  // when there is no scrollbar. Header is included in the height calculation.
+  //! Group header is not included, fix it when needed.
+  const height = ROW_HEIGHT * (rows + 1) + OVERSCROLL;
+
+  const [columns, setColumns] = useState(initColumns);
+  const [gridSelection, setGridSelection] = useState<GridSelection>({
     rows: CompactSelection.empty(),
+    columns: CompactSelection.empty(),
   });
 
-  // Add a column for the "string" row markers if needed
-  useEffect(() => {
-    setColumns(
-      isStringRowMarkers
-        ? [{ id: "", title: "" }, ...columnsFromProps]
-        : columnsFromProps,
-    );
+  useUpdateEffect(() => {
+    setColumns(initColumns());
   }, [columnsFromProps, isStringRowMarkers]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
+  function initColumns() {
+    return isStringRowMarkers
+      ? [{ id: "", title: "", width: rowMarkersOptions.width }, ...columnsFromProps]
+      : columnsFromProps;
+  }
+
   const ifElseStringRowMarkers = <R1, R2>(
     colIndex: number,
-    onTrue: () => R1,
+    onTrue: (options: StringRowMarkerOptions) => R1,
     onFalse: (colIndex: number) => R2,
   ) => {
     let adjustedColIndex = colIndex;
 
     if (isStringRowMarkers) {
       if (colIndex === 0) {
-        return onTrue();
+        return onTrue(rowMarkersOptions);
       }
 
       adjustedColIndex = colIndex - 1;
@@ -114,10 +118,7 @@ function DataGrid(props: DataGridProps) {
     return onFalse(adjustedColIndex);
   };
 
-  const ifNotStringRowMarkers = (
-    colIndex: number,
-    fn: (colIndex: number) => void,
-  ) => {
+  const ifNotStringRowMarkers = (colIndex: number, fn: (colIndex: number) => void) => {
     return ifElseStringRowMarkers(colIndex, voidFn, fn);
   };
 
@@ -131,11 +132,8 @@ function DataGrid(props: DataGridProps) {
 
       return ifElseStringRowMarkers(
         colIndex,
-        () => {
-          const title =
-            isStringRowMarkers && rowMarkersOptions.getTitle
-              ? rowMarkersOptions.getTitle(rowIndex)
-              : `Row ${rowIndex + 1}`;
+        ({ getTitle }) => {
+          const title = getTitle ? getTitle(rowIndex) : `Row ${rowIndex + 1}`;
 
           return {
             kind: GridCellKind.Text,
@@ -146,7 +144,7 @@ function DataGrid(props: DataGridProps) {
             themeOverride: {
               bgCell: darkTheme.bgHeader,
             },
-          };
+          } satisfies GridCell;
         },
         (adjustedColIndex) => {
           return getCellContent([adjustedColIndex, rowIndex]);
@@ -160,10 +158,7 @@ function DataGrid(props: DataGridProps) {
   // Edition
   ////////////////////////////////////////////////////////////////
 
-  const handleCellEdited: DataEditorProps["onCellEdited"] = (
-    location,
-    value,
-  ) => {
+  const handleCellEdited: DataEditorProps["onCellEdited"] = (location, value) => {
     const [colIndex, rowIndex] = location;
 
     ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
@@ -201,52 +196,33 @@ function DataGrid(props: DataGridProps) {
       ? (column, newSize, colIndex, newSizeWithGrow) => {
           if (enableColumnResize) {
             setColumns(
-              columns.map((col, index) =>
-                index === colIndex ? { ...col, width: newSize } : col,
-              ),
+              columns.map((col, index) => (index === colIndex ? { ...col, width: newSize } : col)),
             );
           }
 
           if (onColumnResize) {
             ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
-              onColumnResize(
-                column,
-                newSize,
-                adjustedColIndex,
-                newSizeWithGrow,
-              );
+              onColumnResize(column, newSize, adjustedColIndex, newSizeWithGrow);
             });
           }
         }
       : undefined;
 
-  const handleColumnResizeStart: DataEditorProps["onColumnResizeStart"] =
-    onColumnResizeStart
-      ? (column, newSize, colIndex, newSizeWithGrow) => {
-          ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
-            onColumnResizeStart(
-              column,
-              newSize,
-              adjustedColIndex,
-              newSizeWithGrow,
-            );
-          });
-        }
-      : undefined;
+  const handleColumnResizeStart: DataEditorProps["onColumnResizeStart"] = onColumnResizeStart
+    ? (column, newSize, colIndex, newSizeWithGrow) => {
+        ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
+          onColumnResizeStart(column, newSize, adjustedColIndex, newSizeWithGrow);
+        });
+      }
+    : undefined;
 
-  const handleColumnResizeEnd: DataEditorProps["onColumnResizeEnd"] =
-    onColumnResizeEnd
-      ? (column, newSize, colIndex, newSizeWithGrow) => {
-          ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
-            onColumnResizeEnd(
-              column,
-              newSize,
-              adjustedColIndex,
-              newSizeWithGrow,
-            );
-          });
-        }
-      : undefined;
+  const handleColumnResizeEnd: DataEditorProps["onColumnResizeEnd"] = onColumnResizeEnd
+    ? (column, newSize, colIndex, newSizeWithGrow) => {
+        ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
+          onColumnResizeEnd(column, newSize, adjustedColIndex, newSizeWithGrow);
+        });
+      }
+    : undefined;
 
   ////////////////////////////////////////////////////////////////
   // Selection
@@ -257,16 +233,11 @@ function DataGrid(props: DataGridProps) {
       if (isStringRowMarkers) {
         if (newSelection.current) {
           // Select the whole row when clicking on a row marker cell
-          if (
-            rowMarkersOptions.kind === "clickable-string" &&
-            newSelection.current.cell[0] === 0
-          ) {
-            setSelection({
+          if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
+            setGridSelection({
               ...newSelection,
               current: undefined,
-              rows: CompactSelection.fromSingleSelection(
-                newSelection.current.cell[1],
-              ),
+              rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
             });
 
             return;
@@ -278,28 +249,24 @@ function DataGrid(props: DataGridProps) {
           }
         }
 
-        // Prevent selecting the row marker column
+        // Select/Deselect all the rows like others row markers when selecting the column
         if (newSelection.columns.hasIndex(0)) {
-          // TODO find a way to have the rows length to select all the rows like other row markers
-          // setSelection({
-          //   ...newSelection,
-          //   columns: CompactSelection.empty(),
-          //   rows: CompactSelection.fromSingleSelection([
-          //     0,
-          //     // rowsLength
-          //   ]),
-          // });
+          const isSelectedAll = gridSelection.rows.length === rows;
 
-          setSelection({
+          setGridSelection({
             ...newSelection,
-            columns: newSelection.columns.remove(0),
+            columns: CompactSelection.empty(),
+            rows: isSelectedAll
+              ? CompactSelection.empty()
+              : CompactSelection.fromSingleSelection([0, rows]),
           });
 
           return;
         }
       }
 
-      setSelection(newSelection);
+      setGridSelection(newSelection);
+      onGridSelectionChange?.(newSelection);
     }
   };
 
@@ -309,16 +276,18 @@ function DataGrid(props: DataGridProps) {
 
   return (
     <DataEditor
-      groupHeaderHeight={30}
-      headerHeight={30}
-      rowHeight={30}
+      groupHeaderHeight={ROW_HEIGHT}
+      headerHeight={ROW_HEIGHT}
+      rowHeight={ROW_HEIGHT}
       smoothScrollX
       smoothScrollY
-      overscrollX={2}
-      overscrollY={2}
+      overscrollX={OVERSCROLL}
+      overscrollY={OVERSCROLL}
       width="100%"
+      height={height}
       theme={darkTheme}
       {...rest}
+      rows={rows}
       columns={columns}
       rowMarkers={isStringRowMarkers ? "none" : rowMarkersOptions}
       getCellContent={getCellContentWrapper}
@@ -327,7 +296,7 @@ function DataGrid(props: DataGridProps) {
       onColumnResize={handleColumnResize}
       onColumnResizeStart={handleColumnResizeStart}
       onColumnResizeEnd={handleColumnResizeEnd}
-      gridSelection={selection}
+      gridSelection={gridSelection}
       onGridSelectionChange={handleGridSelectionChange}
       freezeColumns={adjustedFreezeColumns}
     />

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,16 +13,16 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../common/types";
 import { updateStudySynthesis } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import Form from "../../../../../common/Form";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
 import {
-  AdvancedParamsFormFields,
   getAdvancedParamsFormFields,
   setAdvancedParamsFormFields,
+  type AdvancedParamsFormFields,
 } from "./utils";
 
 function AdvancedParameters() {
@@ -33,9 +33,7 @@ function AdvancedParameters() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    dirtyValues,
-  }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<AdvancedParamsFormFields>) => {
     return setAdvancedParamsFormFields(study.id, dirtyValues);
   };
 

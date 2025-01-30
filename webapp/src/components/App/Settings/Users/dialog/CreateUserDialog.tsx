@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import {
+import type {
   GroupDTO,
   RoleDetailsDTO,
   RoleType,
@@ -25,8 +25,8 @@ import {
 } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createRole, createUser } from "../../../../../services/api/user";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
-import UserFormDialog, { UserFormDialogProps } from "./UserFormDialog";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import UserFormDialog, { type UserFormDialogProps } from "./UserFormDialog";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
@@ -57,10 +57,7 @@ function CreateUserDialog(props: Props) {
         variant: "success",
       });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("settings.error.userSave", { 0: username }),
-        e as Error,
-      );
+      enqueueErrorSnackbar(t("settings.error.userSave", { 0: username }), e as Error);
       throw e;
     }
 
@@ -68,13 +65,12 @@ function CreateUserDialog(props: Props) {
       let roles: UserDetailsDTO["roles"] = [];
 
       if (permissions.length > 0) {
-        const promises = permissions.map(
-          (perm: { group: GroupDTO; type: RoleType }) =>
-            createRole({
-              group_id: perm.group.id,
-              type: perm.type,
-              identity_id: newUser.id,
-            }),
+        const promises = permissions.map((perm: { group: GroupDTO; type: RoleType }) =>
+          createRole({
+            group_id: perm.group.id,
+            type: perm.type,
+            identity_id: newUser.id,
+          }),
         );
 
         const res: RoleDetailsDTO[] = await mounted(Promise.all(promises));
@@ -92,10 +88,7 @@ function CreateUserDialog(props: Props) {
       // Because we cannot recover roles eventually created
       reloadFetchUsers();
 
-      enqueueErrorSnackbar(
-        t("settings.error.userRolesSave", { 0: newUser.name }),
-        e as Error,
-      );
+      enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: newUser.name }), e as Error);
     }
 
     closeDialog();
