@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
 import typing as t
 
 from typing_extensions import override
 
+from antarest.core.exceptions import NoConstraintError
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import DEFAULT_GROUP
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -40,16 +42,18 @@ class RemoveMultipleBindingConstraints(ICommand):
         # If at least one bc is missing in the database, we raise an error
         already_existing_ids = {binding.id for binding in study_data.bindings}
         missing_bc_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
+
         if missing_bc_ids:
-            return CommandOutput(status=False, message=f"Binding constraint not found: '{missing_bc_ids}'"), {}
-        return CommandOutput(status=True, message=f"Binding constraint removed"), {}
+            return CommandOutput(status=False, message=f"Binding constraints missing: {missing_bc_ids}"), {}
+
+        return CommandOutput(status=True), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        command_output, _ = self._apply_config(study_data.config)
-
-        if not command_output.status:
-            return command_output
+        try:
+            self._apply_config(study_data.config)
+        except NoConstraintError as e:
+            return CommandOutput(status=False, message=str(e))
 
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
@@ -83,7 +87,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         removed_groups = old_groups - new_groups
         remove_bc_from_scenario_builder(study_data, removed_groups)
 
-        return command_output
+        return CommandOutput(status=True, message="Binding constraints deleted successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:

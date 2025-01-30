@@ -97,9 +97,7 @@ class FilterOption(EnumIgnoreCase):
     ANNUAL = "annual"
 
 
-def validate_filters(
-    filter_value: t.Union[t.List[FilterOption], str], enum_cls: t.Type[FilterOption]
-) -> t.List[FilterOption]:
+def validate_filters(filter_value: t.List[FilterOption] | str, enum_cls: t.Type[FilterOption]) -> t.List[FilterOption]:
     if isinstance(filter_value, str):
         if not filter_value.strip():
             return []
