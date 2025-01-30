@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import re
 import typing as t
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
@@ -23,14 +24,16 @@ from antarest.study.business.model.area_model import (
     ClusterInfoDTO,
     LayerInfoDTO,
     UpdateAreaUi,
-    _get_area_layers,
-    _get_ui_info_map,
 )
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaFolder, ThermalAreasProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AreaFolder,
+    ThermalAreasProperties,
+    UIProperties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -45,6 +48,47 @@ logger = logging.getLogger(__name__)
 
 _ALL_AREAS_PATH = "input/areas"
 _THERMAL_AREAS_PATH = "input/thermal/areas"
+
+
+def _get_ui_info_map(file_study: FileStudy, area_ids: t.Sequence[str]) -> t.Dict[str, t.Any]:
+    """
+    Get the UI information (a JSON object) for each selected Area.
+
+    Args:
+        file_study: A file study from which the configuration can be read.
+        area_ids: List of selected area IDs.
+
+    Returns:
+        Dictionary where keys are IDs, and values are UI objects.
+
+    Raises:
+        ChildNotFoundError: if one of the Area IDs is not found in the configuration.
+    """
+    # If there is no ID, it is better to return an empty dictionary
+    # instead of raising an obscure exception.
+    if not area_ids:
+        return {}
+
+    ui_info_map = file_study.tree.get(["input", "areas", ",".join(area_ids), "ui"])
+
+    # If there is only one ID in the `area_ids`, the result returned from
+    # the `file_study.tree.get` call will be a single UI object.
+    # On the other hand, if there are multiple values in `area_ids`,
+    # the result will be a dictionary where the keys are the IDs,
+    # and the values are the corresponding UI objects.
+    if len(area_ids) == 1:
+        ui_info_map = {area_ids[0]: ui_info_map}
+
+    # Convert to UIProperties to ensure that the UI object is valid.
+    ui_info_map = {area_id: UIProperties(**ui_info).to_config() for area_id, ui_info in ui_info_map.items()}
+
+    return ui_info_map
+
+
+def _get_area_layers(area_uis: t.Dict[str, t.Any], area: str) -> t.List[str]:
+    if area in area_uis and "ui" in area_uis[area] and "layers" in area_uis[area]["ui"]:
+        return re.split(r"\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
+    return []
 
 
 class AreaManager:
@@ -195,7 +239,7 @@ class AreaManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return AreaOutput.schema()
+        return AreaOutput.model_json_schema()
 
     def get_all_areas(self, study: RawStudy, area_type: t.Optional[AreaType] = None) -> t.List[AreaInfoDTO]:
         """

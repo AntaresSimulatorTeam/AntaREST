@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+True
 import enum
 import re
 import typing as t
@@ -69,91 +69,12 @@ class LayerInfoDTO(AntaresBaseModel):
 
 
 class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    """
-    DTO for updating area UI
-
-    Usage:
-
-    >>> from antarest.study.business.model.area_model import UpdateAreaUi
-    >>> from pprint import pprint
-
-    >>> obj = {
-    ...     "x": -673.75,
-    ...     "y": 301.5,
-    ...     "color_rgb": [230, 108, 44],
-    ...     "layerX": {"0": -230, "4": -230, "6": -95, "7": -230, "8": -230},
-    ...     "layerY": {"0": 136, "4": 136, "6": 39, "7": 136, "8": 136},
-    ...     "layerColor": {
-    ...         "0": "230, 108, 44",
-    ...         "4": "230, 108, 44",
-    ...         "6": "230, 108, 44",
-    ...         "7": "230, 108, 44",
-    ...         "8": "230, 108, 44",
-    ...     },
-    ... }
-
-    >>> model = UpdateAreaUi(**obj)
-    >>> pprint(model.model_dump(by_alias=True), width=80)
-    {'colorRgb': [230, 108, 44],
-     'layerColor': {0: '230, 108, 44',
-                    4: '230, 108, 44',
-                    6: '230, 108, 44',
-                    7: '230, 108, 44',
-                    8: '230, 108, 44'},
-     'layerX': {0: -230, 4: -230, 6: -95, 7: -230, 8: -230},
-     'layerY': {0: 136, 4: 136, 6: 39, 7: 136, 8: 136},
-     'x': -673,
-     'y': 301}
-
-    """
-
     x: int = Field(title="X position")
     y: int = Field(title="Y position")
     color_rgb: t.Sequence[int] = Field(title="RGB color", alias="colorRgb")
     layer_x: t.Mapping[int, int] = Field(default_factory=dict, title="X position of each layer", alias="layerX")
     layer_y: t.Mapping[int, int] = Field(default_factory=dict, title="Y position of each layer", alias="layerY")
     layer_color: t.Mapping[int, str] = Field(default_factory=dict, title="Color of each layer", alias="layerColor")
-
-
-def _get_ui_info_map(file_study: FileStudy, area_ids: t.Sequence[str]) -> t.Dict[str, t.Any]:
-    """
-    Get the UI information (a JSON object) for each selected Area.
-
-    Args:
-        file_study: A file study from which the configuration can be read.
-        area_ids: List of selected area IDs.
-
-    Returns:
-        Dictionary where keys are IDs, and values are UI objects.
-
-    Raises:
-        ChildNotFoundError: if one of the Area IDs is not found in the configuration.
-    """
-    # If there is no ID, it is better to return an empty dictionary
-    # instead of raising an obscure exception.
-    if not area_ids:
-        return {}
-
-    ui_info_map = file_study.tree.get(["input", "areas", ",".join(area_ids), "ui"])
-
-    # If there is only one ID in the `area_ids`, the result returned from
-    # the `file_study.tree.get` call will be a single UI object.
-    # On the other hand, if there are multiple values in `area_ids`,
-    # the result will be a dictionary where the keys are the IDs,
-    # and the values are the corresponding UI objects.
-    if len(area_ids) == 1:
-        ui_info_map = {area_ids[0]: ui_info_map}
-
-    # Convert to UIProperties to ensure that the UI object is valid.
-    ui_info_map = {area_id: UIProperties(**ui_info).to_config() for area_id, ui_info in ui_info_map.items()}
-
-    return ui_info_map
-
-
-def _get_area_layers(area_uis: t.Dict[str, t.Any], area: str) -> t.List[str]:
-    if area in area_uis and "ui" in area_uis[area] and "layers" in area_uis[area]["ui"]:
-        return re.split(r"\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
-    return []
 
 
 # noinspection SpellCheckingInspection
