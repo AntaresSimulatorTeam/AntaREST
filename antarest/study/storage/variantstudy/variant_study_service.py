@@ -15,7 +15,7 @@ import logging
 import re
 import shutil
 import typing as t
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from functools import reduce
 from pathlib import Path
 from uuid import uuid4
