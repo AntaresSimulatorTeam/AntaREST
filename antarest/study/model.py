@@ -297,7 +297,7 @@ class Study(Base):  # type: ignore
         return normalize_path(folder)
 
 
-def normalize_path(path: t.Optional[str]) -> str:
+def normalize_path(path: t.Optional[str]) -> t.Optional[str]:
     """
     Turns any path including a windows path (with \ separator) to a posix path (with / separator).
     """
