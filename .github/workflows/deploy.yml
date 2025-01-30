@@ -4,7 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
-      - feature/2547-normalize-study-path-build-for-desktop
+      - "feature/2547-normalize-study-path-build-for-desktop"
 
 jobs:
   binary:
