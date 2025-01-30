@@ -20,7 +20,7 @@ import { updateStudyFilters } from "../../../../redux/ducks/studies";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import * as R from "ramda";
-import { useState } from "react";
+import { useState, type SyntheticEvent } from "react";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 import { fetchAndInsertSubfolders, fetchAndInsertWorkspaces } from "./utils";
@@ -31,6 +31,7 @@ import StudyTreeNodeComponent from "./StudyTreeNode";
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
+  const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
@@ -41,7 +42,7 @@ function StudyTree() {
   useUpdateEffectOnce(() => {
     // be carefull to pass initialStudiesTree and not studiesTree at rootNode parameter
     // otherwise we'll lose the default workspace
-    updateTree("root", initialStudiesTree, initialStudiesTree);
+    updateTree("root", initialStudiesTree);
   }, [initialStudiesTree]);
 
   /**
@@ -60,12 +61,13 @@ function StudyTree() {
    * @param rootNode - The root node of the tree
    * @param selectedNode - The node of the item clicked
    */
-  async function updateTree(itemId: string, rootNode: StudyTreeNode, selectedNode: StudyTreeNode) {
-    if (selectedNode.path.startsWith("/default")) {
+  async function updateTree(itemId: string, rootNode: StudyTreeNode) {
+    if (itemId.startsWith("root/default")) {
       // we don't update the tree if the user clicks on the default workspace
       // api doesn't allow to fetch the subfolders of the default workspace
       return;
     }
+    setItemsLoading([...itemsLoading, itemId]);
     // Bug fix : this function used to take only the itemId and the selectedNode, and we used to initialize treeAfterWorkspacesUpdate
     // with the studiesTree closure, referencing directly the state, like this : treeAfterWorkspacesUpdate = studiesTree;
     // The thing is at the first render studiesTree was empty.
@@ -89,7 +91,7 @@ function StudyTree() {
         .map((child) => `root${child.path}`);
     } else {
       // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
-      pathsToFetch = [`root${selectedNode.path}`];
+      pathsToFetch = [itemId];
     }
 
     const [treeAfterSubfoldersUpdate, failedPath] = await fetchAndInsertSubfolders(
@@ -106,17 +108,23 @@ function StudyTree() {
       );
     }
     setStudiesTree(treeAfterSubfoldersUpdate);
+    setItemsLoading(itemsLoading.filter((e) => e !== itemId));
   }
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleTreeItemClick = async (itemId: string, studyTreeNode: StudyTreeNode) => {
-    dispatch(updateStudyFilters({ folder: itemId }));
-    updateTree(itemId, studiesTree, studyTreeNode);
+  const handleItemExpansionToggle = async (
+    event: SyntheticEvent<Element, Event>,
+    itemId: string,
+    isExpanded: boolean,
+  ) => {
+    if (isExpanded) {
+      dispatch(updateStudyFilters({ folder: itemId }));
+      updateTree(itemId, studiesTree);
+    }
   };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -133,12 +141,9 @@ function StudyTree() {
         overflowY: "auto",
         overflowX: "hidden",
       }}
+      onItemExpansionToggle={handleItemExpansionToggle}
     >
-      <StudyTreeNodeComponent
-        studyTreeNode={studiesTree}
-        parentId=""
-        onNodeClick={handleTreeItemClick}
-      />
+      <StudyTreeNodeComponent studyTreeNode={studiesTree} parentId="" itemsLoading={itemsLoading} />
     </SimpleTreeView>
   );
 }

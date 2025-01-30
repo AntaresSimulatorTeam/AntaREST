@@ -21,10 +21,10 @@ import { t } from "i18next";
 export default memo(function StudyTreeNode({
   studyTreeNode,
   parentId,
-  onNodeClick,
+  itemsLoading,
 }: StudyTreeNodeProps) {
-  const isLoadingFolder = studyTreeNode.hasChildren && studyTreeNode.children.length === 0;
   const id = parentId ? `${parentId}/${studyTreeNode.name}` : studyTreeNode.name;
+  const isLoadingFolder = itemsLoading.includes(id);
 
   const sortedChildren = useMemo(
     () => R.sortBy(R.prop("name"), studyTreeNode.children),
@@ -33,28 +33,20 @@ export default memo(function StudyTreeNode({
 
   if (isLoadingFolder) {
     return (
-      <TreeItemEnhanced
-        itemId={id}
-        label={studyTreeNode.name}
-        onClick={() => onNodeClick(id, studyTreeNode)}
-      >
+      <TreeItemEnhanced itemId={id} label={studyTreeNode.name}>
         <TreeItemEnhanced itemId={id + "loading"} label={t("studies.tree.fetchFolderLoading")} />
       </TreeItemEnhanced>
     );
   }
 
   return (
-    <TreeItemEnhanced
-      itemId={id}
-      label={studyTreeNode.name}
-      onClick={() => onNodeClick(id, studyTreeNode)}
-    >
+    <TreeItemEnhanced itemId={id} label={studyTreeNode.name}>
       {sortedChildren.map((child) => (
         <StudyTreeNode
           key={`${id}/${child.name}`}
           studyTreeNode={child}
           parentId={id}
-          onNodeClick={onNodeClick}
+          itemsLoading={itemsLoading}
         />
       ))}
     </TreeItemEnhanced>
