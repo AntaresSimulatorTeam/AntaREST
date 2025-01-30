@@ -9,9 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-True
+
 import enum
-import re
 import typing as t
 
 from pydantic import Field
@@ -23,9 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPathProperties,
     AreaFolder,
     OptimizationProperties,
-    UIProperties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 class AreaType(enum.Enum):
