@@ -19,6 +19,7 @@ from antares.study.version import StudyVersion
 from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
+from antarest.core.model import LowerCaseStr
 from antarest.core.serialization import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
@@ -119,7 +120,7 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
 
 
 class BindingConstraintProperties870(BindingConstraintProperties830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
 BindingConstraintProperties = t.Union[

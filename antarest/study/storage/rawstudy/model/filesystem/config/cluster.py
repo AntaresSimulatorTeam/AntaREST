@@ -21,6 +21,7 @@ import typing as t
 
 from pydantic import Field
 
+from antarest.core.model import LowerCaseStr
 from antarest.core.serialization import AntaresBaseModel
 
 
@@ -47,7 +48,7 @@ class ItemProperties(
     [('group-A', 'cluster-01'), ('GROUP-A', 'cluster-02'), ('Group-B', 'CLUSTER-01')]
     """
 
-    group: str = Field(default="", description="Cluster group")
+    group: LowerCaseStr = Field(default="", description="Cluster group")
 
     name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
 
@@ -58,7 +59,7 @@ class ItemProperties(
         This method may be used to sort and group clusters by `group` and `name`.
         """
         if isinstance(other, ItemProperties):
-            return (self.group.upper(), self.name.upper()).__lt__((other.group.upper(), other.name.upper()))
+            return (self.group, self.name.lower()).__lt__((other.group, other.name.lower()))
         return NotImplemented
 
 

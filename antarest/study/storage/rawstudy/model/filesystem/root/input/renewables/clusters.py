@@ -30,7 +30,7 @@ class ClusteredRenewableClusterConfig(IniFileNode):
             "group": str,
             "enabled": bool,
             "unitcount": int,
-            "nomialcapacity": 0,
+            "nominalcapacity": float,
             "ts-interpretation": str,
         }
         types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}

@@ -16,11 +16,19 @@ import numpy as np
 from pydantic import Field, ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.core.model import JSON
+from antarest.core.model import JSON, LowerCaseStr
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfigType
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    FileStudyTreeConfig,
+    transform_name_to_id,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStoragePropertiesType,
+    create_st_storage_config,
+    create_st_storage_properties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -59,8 +67,9 @@ class CreateSTStorage(ICommand):
     # Command parameters
     # ==================
 
-    area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
-    parameters: STStorageConfigType
+    # TODO SL: why lower case here and not in cluster / renewables ?
+    area_id: LowerCaseStr = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
+    parameters: STStoragePropertiesType
     pmax_injection: t.Optional[t.Union[MatrixType, str]] = Field(
         default=None,
         description="Charge capacity (modulation)",
@@ -85,12 +94,17 @@ class CreateSTStorage(ICommand):
     @property
     def storage_id(self) -> str:
         """The normalized version of the storage's name used as the ID."""
-        return self.parameters.id
+        return transform_name_to_id(self.storage_name)
 
     @property
     def storage_name(self) -> str:
         """The label representing the name of the storage for the user."""
         return self.parameters.name
+
+    @model_validator(mode="before")
+    def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        values["parameters"] = create_st_storage_properties(values["study_version"], **values["parameters"])
+        return values
 
     @staticmethod
     def validate_field(
@@ -175,6 +189,7 @@ class CreateSTStorage(ICommand):
         """
 
         # Check if the study version is above the minimum required version.
+        storage_id = self.storage_id
         version = study_data.version
         if version < REQUIRED_VERSION:
             return (
@@ -197,7 +212,7 @@ class CreateSTStorage(ICommand):
         area: Area = study_data.areas[self.area_id]
 
         # Check if the short-term storage already exists in the area
-        if any(s.id == self.storage_id for s in area.st_storages):
+        if any(s.id == storage_id for s in area.st_storages):
             return (
                 CommandOutput(
                     status=False,
@@ -207,14 +222,17 @@ class CreateSTStorage(ICommand):
             )
 
         # Create a new short-term storage and add it to the area
-        area.st_storages.append(self.parameters)
+        storage_config = create_st_storage_config(
+            self.study_version, **self.parameters.model_dump(mode="json", by_alias=True)
+        )
+        area.st_storages.append(storage_config)
 
         return (
             CommandOutput(
                 status=True,
                 message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
             ),
-            {"storage_id": self.storage_id},
+            {"storage_id": storage_id},
         )
 
     @override
@@ -230,6 +248,7 @@ class CreateSTStorage(ICommand):
         Returns:
             The output of the command execution.
         """
+        storage_id = self.storage_id
         output, _ = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -237,13 +256,13 @@ class CreateSTStorage(ICommand):
         # Fill-in the "list.ini" file with the parameters.
         # On creation, it's better to write all the parameters in the file.
         config = study_data.tree.get(["input", "st-storage", "clusters", self.area_id, "list"])
-        config[self.storage_id] = self.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
+        config[storage_id] = self.parameters.model_dump(mode="json", by_alias=True)
 
         new_data: JSON = {
             "input": {
                 "st-storage": {
                     "clusters": {self.area_id: {"list": config}},
-                    "series": {self.area_id: {self.storage_id: {attr: getattr(self, attr) for attr in _MATRIX_NAMES}}},
+                    "series": {self.area_id: {storage_id: {attr: getattr(self, attr) for attr in _MATRIX_NAMES}}},
                 }
             }
         }
@@ -260,12 +279,11 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        parameters = self.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
         return CommandDTO(
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
-                "parameters": parameters,
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
                 **{attr: strip_matrix_protocol(getattr(self, attr)) for attr in _MATRIX_NAMES},
             },
             study_version=self.study_version,
@@ -319,9 +337,10 @@ class CreateSTStorage(ICommand):
         from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
         other = t.cast(CreateSTStorage, other)
+        storage_id = self.storage_id
         commands: t.List[ICommand] = [
             ReplaceMatrix(
-                target=f"input/st-storage/series/{self.area_id}/{self.storage_id}/{attr}",
+                target=f"input/st-storage/series/{self.area_id}/{storage_id}/{attr}",
                 matrix=strip_matrix_protocol(getattr(other, attr)),
                 command_context=self.command_context,
                 study_version=self.study_version,
@@ -329,12 +348,13 @@ class CreateSTStorage(ICommand):
             for attr in _MATRIX_NAMES
             if getattr(self, attr) != getattr(other, attr)
         ]
-        if self.parameters != other.parameters:
-            data: t.Dict[str, t.Any] = other.parameters.model_dump(mode="json", by_alias=True, exclude={"id"})
+        self_params = self.parameters.model_dump(mode="json", by_alias=True)
+        other_params = other.parameters.model_dump(mode="json", by_alias=True)
+        if self_params != other_params:
             commands.append(
                 UpdateConfig(
-                    target=f"input/st-storage/clusters/{self.area_id}/list/{self.storage_id}",
-                    data=data,
+                    target=f"input/st-storage/clusters/{self.area_id}/list/{storage_id}",
+                    data=other_params,
                     command_context=self.command_context,
                     study_version=self.study_version,
                 )

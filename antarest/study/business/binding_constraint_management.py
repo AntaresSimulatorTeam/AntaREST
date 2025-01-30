@@ -30,7 +30,7 @@ from antarest.core.exceptions import (
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
-from antarest.core.model import JSON
+from antarest.core.model import JSON, LowerCaseStr
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
@@ -343,7 +343,7 @@ class ConstraintOutput830(ConstraintOutputBase):
 
 
 class ConstraintOutput870(ConstraintOutput830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
 # WARNING: Do not change the order of the following line, it is used to determine
