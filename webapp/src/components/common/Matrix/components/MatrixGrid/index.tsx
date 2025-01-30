@@ -13,21 +13,21 @@
  */
 
 import {
+  CompactSelection,
   GridCellKind,
+  type GridSelection,
   type EditableGridCell,
   type EditListItem,
   type Item,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
-import { useMemo } from "react";
-import {
-  type EnhancedGridColumn,
-  type GridUpdate,
-  type MatrixAggregates,
-} from "../../shared/types";
-import { useColumnMapping } from "../../hooks/useColumnMapping";
-import { darkTheme, readOnlyDarkTheme } from "../../styles";
+import { useMemo, useState } from "react";
 import DataGrid from "@/components/common/DataGrid";
+import { useColumnMapping } from "../../hooks/useColumnMapping";
+import type { EnhancedGridColumn, MatrixAggregates, GridUpdate } from "../../shared/types";
+import { darkTheme, readOnlyDarkTheme } from "../../styles";
+import MatrixStats from "../MatrixStats";
+import { useSelectionStats } from "../../hooks/useSelectionStats";
 
 export interface MatrixGridProps {
   data: number[][];
@@ -42,6 +42,7 @@ export interface MatrixGridProps {
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
   readOnly?: boolean;
   showPercent?: boolean;
+  showStats?: boolean;
 }
 
 function MatrixGrid({
@@ -57,8 +58,20 @@ function MatrixGrid({
   onMultipleCellsEdit,
   readOnly,
   showPercent,
+  showStats = true,
 }: MatrixGridProps) {
+  const [gridSelection, setGridSelection] = useState<GridSelection>({
+    rows: CompactSelection.empty(),
+    columns: CompactSelection.empty(),
+  });
+
   const { gridToData } = useColumnMapping(columns);
+
+  const selectionStats = useSelectionStats({
+    data,
+    selection: gridSelection,
+    gridToData,
+  });
 
   const theme = useMemo(() => {
     if (readOnly) {
@@ -140,23 +153,27 @@ function MatrixGrid({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DataGrid
-      theme={theme}
-      width={width}
-      height={height}
-      rows={rows}
-      columns={columns}
-      getCellContent={getCellContent}
-      onCellEdited={handleCellEdited}
-      onCellsEdited={handleCellsEdited}
-      keybindings={{ paste: false, copy: false }}
-      getCellsForSelection // TODO handle large copy/paste using this
-      fillHandle
-      allowedFillDirections="any"
-      rowMarkers="both"
-      freezeColumns={1} // Make the first column sticky
-      cellActivationBehavior="second-click"
-    />
+    <>
+      <DataGrid
+        theme={theme}
+        width={width}
+        height={height}
+        rows={rows}
+        columns={columns}
+        getCellContent={getCellContent}
+        onCellEdited={handleCellEdited}
+        onCellsEdited={handleCellsEdited}
+        keybindings={{ paste: false, copy: false }}
+        getCellsForSelection // TODO handle large copy/paste using this
+        fillHandle
+        allowedFillDirections="any"
+        rowMarkers="both"
+        freezeColumns={1} // Make the first column sticky
+        cellActivationBehavior="second-click"
+        onGridSelectionChange={setGridSelection}
+      />
+      {showStats && <MatrixStats stats={selectionStats} />}
+    </>
   );
 }
 
