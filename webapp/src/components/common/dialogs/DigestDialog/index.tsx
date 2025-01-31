@@ -53,7 +53,7 @@ function DigestDialog({ studyId, outputId, ...dialogProps }: DigestDialogProps) 
       <UsePromiseCond
         response={digestRes}
         ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-        ifFulfilled={(matrices) => matrices.data && <DigestTabs matrices={matrices.data} />}
+        ifFulfilled={(matrices) => <DigestTabs matrices={matrices.data} />}
       />
     </OkDialog>
   );

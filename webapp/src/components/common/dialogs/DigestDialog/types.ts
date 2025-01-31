@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-export interface DigestMatrixType {
+export interface DigestMatrixData {
   columns: string[] | string[][];
   data: string[][];
   groupedColumns: boolean;
 }
 
 export interface DigestData {
-  area: DigestMatrixType;
-  districts: DigestMatrixType;
-  flowLinear: DigestMatrixType;
-  flowQuadratic: DigestMatrixType;
+  area: DigestMatrixData;
+  districts: DigestMatrixData;
+  flowLinear: DigestMatrixData;
+  flowQuadratic: DigestMatrixData;
 }

@@ -18,7 +18,7 @@ import {
   groupResultColumns,
 } from "@/components/common/Matrix/shared/utils";
 import { Box } from "@mui/material";
-import type { DigestMatrixType } from "./types";
+import type { DigestMatrixData } from "./types";
 import { GridOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import EmptyView from "../../page/EmptyView";
@@ -28,12 +28,8 @@ const isGroupedColumns = (columns: string[] | string[][]): columns is string[][]
   return Array.isArray(columns[0]);
 };
 
-const isColumns = (columns: string[] | string[][]): columns is string[] => {
-  return !isGroupedColumns(columns);
-};
-
 interface DigestMatrixProps {
-  matrix: DigestMatrixType;
+  matrix: DigestMatrixData;
 }
 
 function DigestMatrix({ matrix }: DigestMatrixProps) {
@@ -49,7 +45,7 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
     : generateDataColumns({
         timeSeriesColumns: false,
         count: matrix.columns.length,
-        customColumns: isColumns(matrix.columns) ? matrix.columns : undefined,
+        customColumns: !isGroupedColumns(matrix.columns) ? matrix.columns : undefined,
       });
 
   ////////////////////////////////////////////////////////////////
