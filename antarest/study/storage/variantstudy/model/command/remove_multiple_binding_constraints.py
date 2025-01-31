@@ -50,10 +50,10 @@ class RemoveMultipleBindingConstraints(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        try:
-            self._apply_config(study_data.config)
-        except NoConstraintError as e:
-            return CommandOutput(status=False, message=str(e))
+        command_output, _ = self._apply_config(study_data.config)
+
+        if not command_output.status:
+            return command_output
 
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
@@ -87,7 +87,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         removed_groups = old_groups - new_groups
         remove_bc_from_scenario_builder(study_data, removed_groups)
 
-        return CommandOutput(status=True, message="Binding constraints deleted successfully.")
+        return command_output
 
     @override
     def to_dto(self) -> CommandDTO:
