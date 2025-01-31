@@ -14,7 +14,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -66,7 +66,7 @@ class VariantCommandGenerator:
         # the result here is a list of all commands
         # note that has a list of arguments is added as a command too to the final command list
         # so len(all_commands) >= len(commands)
-        all_commands = list(itertools.chain.from_iterable(commands))
+        all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
         # Prepare the stopwatch
         cmd_notifier = CmdNotifier(study_id, len(all_commands))
         stopwatch.reset_current()
@@ -74,7 +74,7 @@ class VariantCommandGenerator:
         # since we need the commands without their sub commands ONLY for the notifier, we'll use
         # some variables to store commands metadata.
         command_block_index = 0
-        command_block_dict = {}
+        command_block_dict: Dict[Optional[uuid.UUID], int] = {}
 
         # Store all the outputs
         for index, cmd in enumerate(all_commands, 1):
@@ -88,7 +88,7 @@ class VariantCommandGenerator:
                 )
                 logger.error(output.message, exc_info=e)
 
-            if not command_block_dict.get(cmd.command_id):
+            if command_block_dict.get(cmd.command_id):
                 command_block_dict[cmd.command_id] = command_block_index
                 command_block_index += 1
 
