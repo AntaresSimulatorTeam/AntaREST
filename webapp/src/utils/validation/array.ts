@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ValidationReturn } from "@/common/types";
+import type { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
 import * as R from "ramda";
 
@@ -29,7 +29,6 @@ interface ArrayValidationOptions {
  * validateArray([1, 2, 3], { allowDuplicate: false }); // true
  * validateArray([1, 1, 2, 3], { allowDuplicate: false }); // Error message
  *
- *
  * @example <caption>With currying.</caption>
  * const fn = validateArray({ allowDuplicate: false });
  * fn([1, 2, 3]); // true
@@ -41,10 +40,7 @@ interface ArrayValidationOptions {
  * @param [options.allowDuplicate=false] - Sets whether duplicate values are allowed or not.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
-export function validateArray<T>(
-  value: T[],
-  options?: ArrayValidationOptions,
-): ValidationReturn;
+export function validateArray<T>(value: T[], options?: ArrayValidationOptions): ValidationReturn;
 
 export function validateArray<T>(
   options?: ArrayValidationOptions,

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,14 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import io
 import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, List, Optional, Union, cast
+from typing import List, Optional, Union, cast
 
+import numpy as np
 import pandas as pd
+from numpy import typing as npt
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -41,12 +44,12 @@ class MatrixFrequency(StrEnum):
     HOURLY = "hourly"
 
 
-def dump_dataframe(df: pd.DataFrame, path: Path, float_format: Optional[str] = "%.6f") -> None:
-    if df.empty:
-        path.write_bytes(b"")
+def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO, float_format: Optional[str] = "%.6f") -> None:
+    if df.empty and isinstance(path_or_buf, Path):
+        path_or_buf.write_bytes(b"")
     else:
         df.to_csv(
-            path,
+            path_or_buf,
             sep="\t",
             header=False,
             index=False,
@@ -64,6 +67,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         LazyNode.__init__(self, context, config)
         self.freq = freq
 
+    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,
@@ -72,6 +76,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     ) -> str:
         return f"matrixfile://{self.config.path.name}"
 
+    @override
     def normalize(self) -> None:
         # noinspection SpellCheckingInspection
         """
@@ -87,7 +92,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if self.get_link_path().exists() or self.config.archive_path:
             return
 
-        matrix = self.parse()
+        matrix = self.parse_as_json()
 
         if "data" in matrix:
             data = cast(List[List[float]], matrix["data"])
@@ -95,6 +100,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
             self.config.path.unlink()
 
+    @override
     def denormalize(self) -> None:
         """
         Read the matrix ID from the matrix link, retrieve the original matrix
@@ -114,6 +120,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         self.dump(matrix)
         self.get_link_path().unlink()
 
+    @override
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -122,29 +129,43 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
         file_path, tmp_dir = self._get_real_file_path()
-        if not formatted:
-            if file_path.exists():
-                return file_path.read_bytes()
 
+        if formatted:
+            return self.parse_as_json(file_path)
+
+        if not file_path.exists():
             logger.warning(f"Missing file {self.config.path}")
             if tmp_dir:
                 tmp_dir.cleanup()
             return b""
 
-        return cast(JSON, self.parse(file_path, tmp_dir))
+        file_content = file_path.read_bytes()
+        if file_content != b"":
+            return file_content
+
+        # If the content is empty, we should return the default matrix to do the same as `parse_as_json()`
+        default_matrix = self.get_default_empty_matrix()
+        if default_matrix is None:
+            return b""
+        buffer = io.BytesIO()
+        np.savetxt(buffer, default_matrix, delimiter="\t")
+        return buffer.getvalue()
 
     @abstractmethod
-    def parse(
-        self,
-        file_path: Optional[Path] = None,
-        tmp_dir: Any = None,
-        return_dataframe: bool = False,
-    ) -> Union[JSON, pd.DataFrame]:
+    def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
         """
-        Parse the matrix content
+        Parse the matrix content and return it as a JSON object
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_default_empty_matrix(self) -> Optional[npt.NDArray[np.float64]]:
+        """
+        Returns the default matrix to return when the existing one is empty
+        """
+        raise NotImplementedError()
+
+    @override
     def dump(
         self,
         data: Union[bytes, JSON],

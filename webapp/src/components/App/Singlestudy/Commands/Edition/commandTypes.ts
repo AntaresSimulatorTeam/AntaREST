@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,14 +12,34 @@
  * This file is part of the Antares project.
  */
 
-import { CommandResultDTO } from "../../../../../common/types";
+import type { CommandResultDTO } from "../../../../../common/types";
+
+interface AntaresConfig {
+  version: string;
+  caption: string;
+  created: number;
+  lastsave: number;
+  author: string;
+}
+
+interface CommandArgsData {
+  antares: AntaresConfig;
+}
+
+export interface CommandArgsDTO {
+  data: CommandArgsData;
+  target: string;
+}
 
 export interface CommandItem {
   id?: string;
   action: string;
   updated: boolean;
-  args: object;
+  args: CommandArgsDTO | object;
   results?: CommandResultDTO;
+  version?: number;
+  user?: string;
+  updatedAt?: string;
 }
 
 export interface JsonCommandItem {

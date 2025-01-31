@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,10 +15,10 @@
 import {
   FormControl,
   FormControlLabel,
-  FormControlLabelProps,
   FormHelperText,
   Radio,
-  RadioProps,
+  type FormControlLabelProps,
+  type RadioProps,
 } from "@mui/material";
 
 export interface RadioFEProps extends RadioProps {
@@ -29,16 +29,7 @@ export interface RadioFEProps extends RadioProps {
 }
 
 function RadioFE(props: RadioFEProps) {
-  const {
-    value,
-    label,
-    labelPlacement,
-    helperText,
-    error,
-    className,
-    sx,
-    ...radioProps
-  } = props;
+  const { value, label, labelPlacement, helperText, error, className, sx, ...radioProps } = props;
 
   const fieldEditor = <Radio value={value} {...radioProps} />;
 

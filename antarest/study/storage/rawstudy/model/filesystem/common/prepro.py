@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -44,6 +45,7 @@ class PreproAreaSettings(IniFileNode):
 
 
 class PreproArea(FolderNode):
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "conversion": InputSeriesMatrix(self.context, self.config.next_file("conversion.txt")),
@@ -56,6 +58,7 @@ class PreproArea(FolderNode):
 
 
 class InputPrepro(FolderNode):
+    @override
     def build(self) -> TREE:
         children: TREE = {a: PreproArea(self.context, self.config.next_file(a)) for a in self.config.area_names()}
         children["correlation"] = PreproCorrelation(self.context, self.config.next_file("correlation.ini"))

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,12 +15,12 @@
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
 import { useFormContextPlus } from "../../../../../../../common/Form";
-import { AllocationFormFields } from "./utils";
+import type { AllocationFormFields } from "./utils";
 import AllocationField from "./AllocationField";
 import DynamicList from "../../../../../../../common/DynamicList";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreasById } from "../../../../../../../../redux/selectors";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import { useAreasOptions } from "../hooks/useAreasOptions";
 
 function Fields() {

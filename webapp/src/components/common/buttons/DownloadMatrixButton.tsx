@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,12 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { downloadMatrix } from "../../../services/api/studies/raw";
+import { getMatrixFile, getRawFile } from "../../../services/api/studies/raw";
 import { downloadFile } from "../../../utils/fileUtils";
-import { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../common/types";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
 import type { TTableExportFormat } from "@/services/api/studies/raw/types";
+
+type ExportFormat = TTableExportFormat | "raw";
 
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
@@ -30,7 +32,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   const { t } = useTranslation();
   const { studyId, path, disabled, label = t("global.export") } = props;
 
-  const options: Array<{ label: string; value: TTableExportFormat }> = [
+  const options: Array<{ label: string; value: ExportFormat }> = [
     { label: "CSV", value: "csv" },
     {
       label: `CSV (${t("global.semicolon").toLowerCase()})`,
@@ -38,20 +40,26 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
     },
     { label: "TSV", value: "tsv" },
     { label: "XLSX", value: "xlsx" },
+    { label: `${t("global.rawFile")}`, value: "raw" },
   ];
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async (format: TTableExportFormat) => {
+  const handleDownload = async (format: ExportFormat) => {
     if (!path) {
       return;
     }
 
+    if (format === "raw") {
+      const file = await getRawFile({ studyId, path });
+      return downloadFile(file, file.name);
+    }
+
     const isXlsx = format === "xlsx";
 
-    const res = await downloadMatrix({
+    const matrixFile = await getMatrixFile({
       studyId,
       path,
       format,
@@ -61,10 +69,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
 
     const extension = format === "csv (semicolon)" ? "csv" : format;
 
-    return downloadFile(
-      res,
-      `matrix_${studyId}_${path.replace("/", "_")}.${extension}`,
-    );
+    return downloadFile(matrixFile, `matrix_${studyId}_${path.replace("/", "_")}.${extension}`);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -72,11 +77,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DownloadButton
-      formatOptions={options}
-      onClick={handleDownload}
-      disabled={!path || disabled}
-    >
+    <DownloadButton formatOptions={options} onClick={handleDownload} disabled={!path || disabled}>
       {label}
     </DownloadButton>
   );

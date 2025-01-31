@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { AxiosRequestConfig } from "axios";
+import type { AxiosRequestConfig } from "axios";
 import client from "./client";
-import {
+import type {
   MatrixDTO,
   MatrixDataSetDTO,
   MatrixInfoDTO,
@@ -22,14 +22,11 @@ import {
   MatrixIndex,
   MatrixEditDTO,
 } from "../../common/types";
-import { FileDownloadTask } from "./downloads";
+import type { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
-import { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
+import type { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
 
-export const getMatrixList = async (
-  name = "",
-  filterOwn = false,
-): Promise<MatrixDataSetDTO[]> => {
+export const getMatrixList = async (name = "", filterOwn = false): Promise<MatrixDataSetDTO[]> => {
   const res = await client.get(
     `/v1/matrixdataset/_search?name=${encodeURI(name)}&filter_own=${filterOwn}`,
   );
@@ -43,13 +40,10 @@ export const getMatrix = async (id: string): Promise<MatrixDTO> => {
 
 export const getExportMatrixUrl = (matrixId: string): string =>
   `${
-    getConfig().downloadHostUrl ||
-    getConfig().baseUrl + getConfig().restEndpoint
+    getConfig().downloadHostUrl || getConfig().baseUrl + getConfig().restEndpoint
   }/v1/matrix/${matrixId}/download`;
 
-export const exportMatrixDataset = async (
-  datasetId: string,
-): Promise<FileDownloadTask> => {
+export const exportMatrixDataset = async (datasetId: string): Promise<FileDownloadTask> => {
   const res = await client.get(`/v1/matrixdataset/${datasetId}/download`);
   return res.data;
 };
@@ -76,11 +70,7 @@ export const createMatrixByImportation = async (
       "content-type": "multipart/form-data",
     },
   };
-  const res = await client.post(
-    `/v1/matrix/_import?json=${json}`,
-    formData,
-    restconfig,
-  );
+  const res = await client.post(`/v1/matrix/_import?json=${json}`, formData, restconfig);
   return res.data;
 };
 
@@ -139,10 +129,7 @@ export const updateMatrix = async (
   );
 };
 
-export const getStudyMatrixIndex = async (
-  sid: string,
-  path?: string,
-): Promise<MatrixIndex> => {
+export const getStudyMatrixIndex = async (sid: string, path?: string): Promise<MatrixIndex> => {
   const query = path ? `?path=${encodeURIComponent(path)}` : "";
   const res = await client.get(`/v1/studies/${sid}/matrixindex${query}`);
   return res.data;

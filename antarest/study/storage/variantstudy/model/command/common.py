@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -40,6 +40,7 @@ class CommandName(Enum):
     UPDATE_BINDING_CONSTRAINT = "update_binding_constraint"
     REMOVE_BINDING_CONSTRAINT = "remove_binding_constraint"
     UPDATE_BINDING_CONSTRAINTS = "update_binding_constraints"
+    REMOVE_MULTIPLE_BINDING_CONSTRAINTS = "remove_multiple_binding_constraints"
     CREATE_THERMAL_CLUSTER = "create_cluster"
     REMOVE_THERMAL_CLUSTER = "remove_cluster"
     CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster"

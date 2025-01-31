@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 from typing import Any, Dict
+
+from typing_extensions import override
 
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -25,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 
 
 class InputHydroSeriesArea(FolderNode):
+    @override
     def build(self) -> TREE:
         study_version = self.config.version
         freq = MatrixFrequency.DAILY if study_version >= STUDY_VERSION_6_5 else MatrixFrequency.MONTHLY

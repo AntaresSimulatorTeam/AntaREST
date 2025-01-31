@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,6 @@
 import base64
 import collections
 import contextlib
-import csv
 import http
 import io
 import logging
@@ -25,11 +24,13 @@ from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from antares.study.version import StudyVersion
 from fastapi import HTTPException, UploadFile
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -38,6 +39,7 @@ from antarest.core.exceptions import (
     CommandApplicationError,
     FolderCreationNotAllowed,
     IncorrectPathError,
+    MatrixImportFailed,
     NotAManagedStudyException,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
@@ -134,7 +136,7 @@ from antarest.study.repository import (
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
@@ -185,13 +187,29 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
     if is_archive_format(path.suffix.lower()):
         return os.path.getsize(path)
     total_size = 0
-    with os.scandir(path) as it:
-        for entry in it:
-            if entry.is_file():
-                total_size += entry.stat().st_size
-            elif entry.is_dir():
-                total_size += get_disk_usage(path=str(entry.path))
+    with contextlib.suppress(FileNotFoundError, PermissionError):
+        with os.scandir(path) as it:
+            for entry in it:
+                with contextlib.suppress(FileNotFoundError, PermissionError):
+                    if entry.is_file():
+                        total_size += entry.stat().st_size
+                    elif entry.is_dir():
+                        total_size += get_disk_usage(path=str(entry.path))
     return total_size
+
+
+def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
+    """Tries to convert bytes to a numpy array when importing a matrix"""
+    str_data = data.decode("utf-8")
+    if not str_data:
+        return np.zeros(shape=(0, 0))
+    for delimiter in [",", ";", "\t"]:
+        with contextlib.suppress(Exception):
+            df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+            df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
+            matrix = df.to_numpy(dtype=np.float64)
+            return matrix
+    raise MatrixImportFailed("Could not parse the given matrix")
 
 
 def _get_path_inside_user_folder(
@@ -212,6 +230,7 @@ class TaskProgressRecorder(ICommandListener):
     def __init__(self, notifier: ITaskNotifier) -> None:
         self.notifier = notifier
 
+    @override
     def notify_progress(self, progress: int) -> None:
         return self.notifier.notify_progress(progress)
 
@@ -450,6 +469,30 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+
+    def get_file(
+        self,
+        uuid: str,
+        url: str,
+        params: RequestParameters,
+    ) -> OriginalFile:
+        """
+        retrieve a file from a study folder
+
+        Args:
+            uuid: study uuid
+            url: route to follow inside study structure
+            params: request parameters
+
+        Returns: data study formatted in json
+
+        """
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+
+        output = self.storage_service.get_storage(study).get_file(study, url)
+
+        return output
 
     def aggregate_output_data(
         self,
@@ -1073,11 +1116,15 @@ class StudyService:
 
         return task_or_study_id
 
-    def move_study(self, study_id: str, new_folder: str, params: RequestParameters) -> None:
+    def move_study(self, study_id: str, folder_dest: str, params: RequestParameters) -> None:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+        if folder_dest:
+            new_folder = folder_dest.rstrip("/") + f"/{study.id}"
+        else:
+            new_folder = None
         study.folder = new_folder
         self.repository.save(study, update_modification_date=False)
         self.event_bus.push(
@@ -1559,18 +1606,7 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                str_data = data.decode("utf-8")
-                if not str_data:
-                    matrix = np.zeros(shape=(0, 0))
-                else:
-                    size_to_check = min(len(str_data), 64)  # sniff a chunk only to speed up the code
-                    try:
-                        delimiter = csv.Sniffer().sniff(str_data[:size_to_check], delimiters=r"[,;\t]").delimiter
-                    except csv.Error:
-                        # Can happen with data with only one column. In this case, we don't care about the delimiter.
-                        delimiter = "\t"
-                    df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
-                    matrix = df.to_numpy(dtype=np.float64)
+                matrix = _imports_matrix_from_bytes(data)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version

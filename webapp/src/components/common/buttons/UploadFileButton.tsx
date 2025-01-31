@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -18,10 +18,10 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
-import { Accept, useDropzone } from "react-dropzone";
-import { StudyMetadata } from "../../../common/types";
+import { useDropzone, type Accept } from "react-dropzone";
+import type { StudyMetadata } from "../../../common/types";
 import { useSnackbar } from "notistack";
-import { importFile } from "../../../services/api/studies/raw";
+import { uploadFile } from "../../../services/api/studies/raw";
 
 type ValidateResult = boolean | null | undefined;
 type Validate = (file: File) => ValidateResult | Promise<ValidateResult>;
@@ -89,7 +89,7 @@ function UploadFileButton(props: UploadFileButtonProps) {
 
       const filePath = typeof path === "function" ? path(fileToUpload) : path;
 
-      await importFile({
+      await uploadFile({
         studyId,
         path: filePath,
         file: fileToUpload,

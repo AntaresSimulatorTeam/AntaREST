@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,22 +13,17 @@
  */
 
 import { TableCell, Checkbox, Chip, TableRow } from "@mui/material";
-import { ChangeEvent, memo, useCallback } from "react";
-import { Item, Column } from "./utils";
+import { memo, useCallback } from "react";
+import type { Item, Column } from "./utils";
 
 interface Props {
   item: Item;
   columns: Column[];
   selected: string[];
-  onClick: (e: ChangeEvent<HTMLInputElement>, name: string) => void;
+  onClick: (e: React.ChangeEvent<HTMLInputElement>, name: string) => void;
 }
 
-const TableRowItem = memo(function TableRowItem({
-  item,
-  columns,
-  selected,
-  onClick,
-}: Props) {
+const TableRowItem = memo(function TableRowItem({ item, columns, selected, onClick }: Props) {
   const isSelected = selected.includes(item.id);
 
   ////////////////////////////////////////////////////////////////
@@ -36,7 +31,7 @@ const TableRowItem = memo(function TableRowItem({
   ////////////////////////////////////////////////////////////////
 
   const handleChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       onClick(e, item.id);
     },
     [item.id, onClick],
@@ -47,16 +42,9 @@ const TableRowItem = memo(function TableRowItem({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TableRow
-      sx={{ "& > *": { borderBottom: "none !important" } }}
-      selected={isSelected}
-    >
+    <TableRow sx={{ "& > *": { borderBottom: "none !important" } }} selected={isSelected}>
       <TableCell padding="none">
-        <Checkbox
-          color="primary"
-          checked={isSelected}
-          onChange={handleChange}
-        />
+        <Checkbox color="primary" checked={isSelected} onChange={handleChange} />
       </TableCell>
       {columns.map((column) => {
         const cellValue = item.columns[column.name];
@@ -67,11 +55,7 @@ const TableRowItem = memo(function TableRowItem({
             align={typeof cellValue === "number" ? "center" : "left"}
           >
             {column.chipColorMap && typeof cellValue === "string" ? (
-              <Chip
-                label={cellValue}
-                size="small"
-                color={column.chipColorMap[cellValue]}
-              />
+              <Chip label={cellValue} size="small" color={column.chipColorMap[cellValue]} />
             ) : (
               cellValue
             )}

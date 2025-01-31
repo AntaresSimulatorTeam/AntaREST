@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -32,7 +32,7 @@ def launcher_config(tmp_path: Path) -> Config:
     Fixture to create a launcher config with a local launcher.
     """
     solver_path = tmp_path.joinpath(SOLVER_NAME)
-    data = {"binaries": {"700": solver_path}, "enable_nb_cores_detection": True}
+    data = {"binaries": {"700": solver_path}, "enable_nb_cores_detection": True, "local_workspace": tmp_path}
     return Config(launcher=LauncherConfig(local=LocalConfig.from_dict(data)))
 
 
@@ -79,8 +79,8 @@ def test_compute(tmp_path: Path, launcher_config: Config):
         )
         solver_path.chmod(0o775)
 
-    study_id = uuid.uuid4()
-    local_launcher.job_id_to_study_id = {str(study_id): ("study-id", tmp_path / "run", Mock())}
+    study_id = str(uuid.uuid4())
+    local_launcher.job_id_to_study_id = {study_id: ("study-id", tmp_path / "run", Mock())}
     local_launcher.callbacks.import_output.return_value = "some output"
     launcher_parameters = LauncherParametersDTO(
         adequacy_patch=None,
@@ -97,21 +97,65 @@ def test_compute(tmp_path: Path, launcher_config: Config):
     local_launcher._compute(
         antares_solver_path=solver_path,
         study_uuid="study-id",
-        uuid=study_id,
+        job_id=study_id,
         launcher_parameters=launcher_parameters,
     )
 
     # noinspection PyUnresolvedReferences
     local_launcher.callbacks.update_status.assert_has_calls(
         [
-            call(str(study_id), JobStatus.RUNNING, None, None),
-            call(str(study_id), JobStatus.SUCCESS, None, "some output"),
+            call(study_id, JobStatus.RUNNING, None, None),
+            call(study_id, JobStatus.SUCCESS, None, "some output"),
         ]
     )
 
 
 @pytest.mark.unit_test
-def test_select_best_binary(tmp_path: Path):
+def test_parse_launcher_arguments(launcher_config: Config):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    launcher_parameters = LauncherParametersDTO(nb_cpu=4)
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=4"]
+
+    launcher_parameters = LauncherParametersDTO(nb_cpu=8)
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=8"]
+
+    launcher_parameters.other_options = "coin"
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=8", "--use-ortools", "--ortools-solver=coin"]
+
+    launcher_parameters.other_options = "xpress"
+    sim_args, blabla = local_launcher._parse_launcher_options(launcher_parameters)
+    assert sim_args == ["--force-parallel=8", "--use-ortools", "--ortools-solver=xpress"]
+
+    launcher_parameters.other_options = "xpress presolve"
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
+    assert sim_args == [
+        "--force-parallel=8",
+        "--use-ortools",
+        "--ortools-solver=xpress",
+        "--solver-parameters",
+        "PRESOLVE 1",
+    ]
+
+    os.environ["XPRESS_DIR"] = "fake_path_for_test"
+    launcher_parameters.other_options = "xpress presolve"
+    _, env_variables = local_launcher._parse_launcher_options(launcher_parameters)
+    assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
+
+
+@pytest.mark.unit_test
+def test_parse_xpress_dir(tmp_path: Path):
+    data = {"xpress_dir": "fake_path_for_test"}
+    launcher_config = Config(launcher=LauncherConfig(local=LocalConfig.from_dict(data)))
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    _, env_variables = local_launcher._parse_launcher_options(LauncherParametersDTO())
+    assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
+
+
+@pytest.mark.unit_test
+def test_select_best_binary():
     binaries = {
         "700": Path("700"),
         "800": Path("800"),

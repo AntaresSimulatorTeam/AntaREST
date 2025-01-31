@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,6 +17,7 @@ from enum import Enum
 import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import Field, field_validator, model_validator
+from typing_extensions import override
 
 from antarest.core.serialization import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
@@ -37,6 +38,7 @@ from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     parse_bindings_coeffs_and_save_into_config,
 )
+from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -217,6 +219,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
     coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
 
+    @override
     def to_dto(self) -> CommandDTO:
         json_command = self.model_dump(mode="json", exclude={"command_context"})
         args = {}
@@ -244,6 +247,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             action=self.command_name.value, args=args, version=self.version, study_version=self.study_version
         )
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         matrix_service = self.command_context.matrix_service
         return [
@@ -412,6 +416,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
     name: str
 
+    @override
     def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         bd_id = transform_name_to_id(self.name)
         group = self.group or DEFAULT_GROUP
@@ -427,6 +432,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         )
         return CommandOutput(status=True), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = str(len(binding_constraints))
@@ -445,14 +451,17 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         )
         return super().apply_binding_constraint(study_data, binding_constraints, new_key, bd_id)
 
+    @override
     def to_dto(self) -> CommandDTO:
         dto = super().to_dto()
         dto.args["name"] = self.name  # type: ignore
         return dto
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 
@@ -488,30 +497,10 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
         return [UpdateBindingConstraint.model_validate(args)]
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         if not isinstance(other, self.__class__):
             return False
         if not equal:
             return self.name == other.name
         return super().match(other, equal)
-
-
-def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set[str]) -> None:
-    """
-    Update the scenario builder by removing the rows that correspond to the BC groups to remove.
-
-    NOTE: this update can be very long if the scenario builder configuration is large.
-    """
-    if not removed_groups:
-        return
-
-    rulesets = study_data.tree.get(["settings", "scenariobuilder"])
-
-    for ruleset in rulesets.values():
-        for key in list(ruleset):
-            # The key is in the form "symbol,group,year"
-            symbol, *parts = key.split(",")
-            if symbol == "bc" and parts[0] in removed_groups:
-                del ruleset[key]
-
-    study_data.tree.save(rulesets, ["settings", "scenariobuilder"])

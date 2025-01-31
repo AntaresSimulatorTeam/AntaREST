@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ import enum
 import typing as t
 
 import typing_extensions as te
+from typing_extensions import override
 
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -66,6 +67,7 @@ class ScenarioType(enum.StrEnum):
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
 
+    @override
     def __str__(self) -> str:
         """Return the string representation of the enum value."""
         return self.value

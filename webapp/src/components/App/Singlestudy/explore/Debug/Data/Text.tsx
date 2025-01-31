@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,20 +17,20 @@ import { Box, useTheme } from "@mui/material";
 import { getStudyData } from "../../../../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
-import {
-  Light as SyntaxHighlighter,
-  type SyntaxHighlighterProps,
-} from "react-syntax-highlighter";
+import { Light as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintext";
 import ini from "react-syntax-highlighter/dist/esm/languages/hljs/ini";
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import type { DataCompProps } from "../utils";
+import { isEmptyContent, parseContent, type DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
+import EmptyView from "@/components/common/page/EmptyView";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { getRawFile } from "@/services/api/studies/raw";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
 SyntaxHighlighter.registerLanguage("plaintext", plaintext);
@@ -63,15 +63,18 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
-function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
+function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
-  const res = usePromiseWithSnackbarError(
-    () => getStudyData<string>(studyId, filePath),
+  const textRes = usePromiseWithSnackbarError(
+    () =>
+      getStudyData<string>(studyId, filePath).then((text) =>
+        parseContent(text, { filePath, fileType }),
+      ),
     {
       errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
+      deps: [studyId, filePath, fileType],
     },
   );
 
@@ -79,17 +82,13 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = () => {
-    if (res.data) {
-      downloadFile(
-        res.data,
-        filename.endsWith(".txt") ? filename : `${filename}.txt`,
-      );
-    }
+  const handleDownload = async () => {
+    const file = await getRawFile({ studyId, path: filePath });
+    downloadFile(file, file.name);
   };
 
   const handleUploadSuccessful = () => {
-    res.reload();
+    textRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -98,7 +97,7 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
 
   return (
     <UsePromiseCond
-      response={res}
+      response={textRes}
       ifFulfilled={(text) => (
         <Flex>
           <Menubar>
@@ -113,22 +112,34 @@ function Text({ studyId, filePath, filename, canEdit }: DataCompProps) {
             )}
             <DownloadButton onClick={handleDownload} />
           </Menubar>
-          <Box sx={{ overflow: "auto" }}>
-            <SyntaxHighlighter
-              style={atomOneDark}
-              lineNumberStyle={{
-                opacity: 0.5,
-                paddingRight: theme.spacing(3),
+          {isEmptyContent(text) ? ( // TODO remove when files become editable
+            <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
+          ) : (
+            <Box
+              sx={{
+                overflow: "auto",
+                height: 1,
+                display: "flex",
+                flexDirection: "column",
               }}
-              customStyle={{
-                margin: 0,
-                padding: theme.spacing(2),
-                borderRadius: theme.shape.borderRadius,
-                fontSize: theme.typography.body2.fontSize,
-              }}
-              {...getSyntaxProps(text)}
-            />
-          </Box>
+            >
+              <SyntaxHighlighter
+                style={atomOneDark}
+                lineNumberStyle={{
+                  opacity: 0.5,
+                  paddingRight: theme.spacing(3),
+                }}
+                customStyle={{
+                  margin: 0,
+                  padding: theme.spacing(2),
+                  borderRadius: theme.shape.borderRadius,
+                  fontSize: theme.typography.body2.fontSize,
+                  flex: 1,
+                }}
+                {...getSyntaxProps(text)}
+              />
+            </Box>
+          )}
         </Flex>
       )}
     />

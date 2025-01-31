@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,6 +15,8 @@ import time
 from abc import abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Dict, List, Union
+
+from typing_extensions import override
 
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
@@ -99,6 +101,7 @@ class AbstractWorker(IService):
             thread_name_prefix="worker_task_",
         )
 
+    @override
     def _loop(self) -> None:
         for task_type in self.accept:
             self.event_bus.add_queue_consumer(self._listen_for_tasks, task_type)

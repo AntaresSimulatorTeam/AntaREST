@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -207,7 +207,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert len(res.json()) == 3
-    assert filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()["folder"] == "foo/bar"
+    moved_study = filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()
+    assert moved_study["folder"] == f"foo/bar/{moved_study['id']}"
 
     # Study delete
     client.delete(
@@ -603,6 +604,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "colorg": 112,
             "colorr": 112,
             "displayComments": True,
+            "comments": "",
             "filterSynthesis": "hourly, daily, weekly, monthly, annual",
             "filterYearByYear": "hourly, daily, weekly, monthly, annual",
             "hurdlesCost": False,

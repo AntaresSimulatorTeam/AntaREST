@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.exc import IntegrityError  # type: ignore
 from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
 from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
@@ -131,9 +132,11 @@ class Password:
     def check(self, pwd: str) -> bool:
         return bcrypt.checkpw(pwd.encode(), self._pwd)
 
+    @override
     def __str__(self) -> str:
         return "*****"
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -245,6 +248,7 @@ class Bot(Identity):
     owner = Column(Integer, ForeignKey("identities.id", name="bots_owner_fkey"))
     is_author = Column(Boolean(), default=True)
 
+    @override
     def get_impersonator(self) -> int:
         return int(self.id if self.is_author else self.owner)
 
@@ -253,6 +257,7 @@ class Bot(Identity):
         "inherit_condition": id == Identity.id,
     }
 
+    @override
     def to_dto(self) -> BotDTO:
         return BotDTO(
             id=self.id,
@@ -286,6 +291,7 @@ class Group(Base):  # type: ignore
     # Implementing a `__eq__` method is superfluous, since the default implementation
     # is to compare the identity of the objects using the primary key.
 
+    @override
     def __repr__(self) -> str:
         return f"Group(id={self.id}, name={self.name})"
 

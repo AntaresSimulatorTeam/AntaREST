@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -171,6 +171,16 @@ COMMANDS: List[CommandDTO] = [
     CommandDTO(action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
     CommandDTO(
         action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args={"ids": ["id"]},
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args=[{"ids": ["id"]}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,

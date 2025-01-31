@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,7 +18,7 @@ import typing as t
 from pathlib import Path, PurePosixPath
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException
-from fastapi.params import Param, Query
+from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
@@ -75,9 +75,14 @@ CONTENT_TYPES = {
     ".txt": ("text/plain", "utf-8"),
     # (JSON)
     ".json": ("application/json", "utf-8"),
+    # (INI FILE)
+    ".ini": ("text/plain", "utf-8"),
+    # (antares file)
+    ".antares": ("text/plain", "utf-8"),
 }
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+PATH_TYPE = t.Annotated[str, Query(openapi_examples=get_path_examples())]
 
 
 def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
@@ -110,9 +115,9 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
-    def get_study(
+    def get_study_data(
         uuid: str,
-        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        path: PATH_TYPE = "/",
         depth: int = 3,
         formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
@@ -186,6 +191,43 @@ def create_raw_study_routes(
         json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")
 
+    @bp.get(
+        "/studies/{uuid}/raw/original-file",
+        tags=[APITag.study_raw_data],
+        summary="Retrieve Raw file from a Study folder in its original format",
+    )
+    def get_study_file(
+        uuid: str,
+        path: PATH_TYPE = "/",
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> t.Any:
+        """
+        Fetches for a file in its original format from a study folder
+
+        Parameters:
+        - `uuid`: The UUID of the study.
+        - `path`: The path to the file to fetch.
+
+        Returns the fetched file in its original format.
+        """
+        logger.info(
+            f"📘 Fetching file at {path} from study {uuid}",
+            extra={"user": current_user.id},
+        )
+        parameters = RequestParameters(user=current_user)
+        original_file = study_service.get_file(uuid, path, params=parameters)
+        filename = original_file.filename
+        output = original_file.content
+        suffix = original_file.suffix
+        headers = {
+            "Content-Disposition": f"attachment; filename={filename}",
+        }
+
+        # Guess the suffix form the filename suffix
+        content_type, _ = CONTENT_TYPES.get(suffix, (None, None))
+        media_type = content_type or "application/octet-stream"
+        return Response(content=output, media_type=media_type, headers=headers)
+
     @bp.delete(
         "/studies/{uuid}/raw",
         tags=[APITag.study_raw_data],
@@ -194,7 +236,14 @@ def create_raw_study_routes(
     )
     def delete_file(
         uuid: str,
-        path: str = Param("/", examples=["user/wind_solar/synthesis_windSolar.xlsx"]),  # type: ignore
+        path: t.Annotated[
+            str,
+            Query(
+                openapi_examples={
+                    "user/wind_solar/synthesis_windSolar.xlsx": {"value": "user/wind_solar/synthesis_windSolar.xlsx"}
+                },
+            ),
+        ] = "/",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> t.Any:
         uuid = sanitize_uuid(uuid)
@@ -481,7 +530,7 @@ def create_raw_study_routes(
     )
     def edit_study(
         uuid: str,
-        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        path: PATH_TYPE = "/",
         data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
@@ -510,7 +559,7 @@ def create_raw_study_routes(
     )
     def replace_study_file(
         uuid: str,
-        path: str = Param("/", examples=get_path_examples()),  # type: ignore
+        path: PATH_TYPE = "/",
         file: bytes = File(default=None),
         create_missing: bool = Query(
             False,

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,8 @@
 import contextlib
 import logging
 import typing as t
+
+from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
@@ -64,6 +66,7 @@ class RemoveArea(ICommand):
                     set_.areas.remove(self.id)
                     study_data_config.sets[id_] = set_
 
+    @override
     def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         del study_data_config.areas[self.id]
 
@@ -223,6 +226,7 @@ class RemoveArea(ICommand):
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     # noinspection SpellCheckingInspection
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
@@ -281,6 +285,7 @@ class RemoveArea(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REMOVE_AREA.value,
@@ -290,14 +295,18 @@ class RemoveArea(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
 
+    @override
     def match(self, other: ICommand, equal: bool = False) -> bool:
         return isinstance(other, RemoveArea) and self.id == other.id
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return []
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

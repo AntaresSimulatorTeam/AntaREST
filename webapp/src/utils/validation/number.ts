@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ValidationReturn } from "@/common/types";
+import type { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
 
 interface NumberValidationOptions {
@@ -28,11 +28,10 @@ interface NumberValidationOptions {
  * validateNumber(5, { min: 0, max: 10 }); // true
  * validateNumber(9, { min: 10, max: 20 }); // Error message
  *
- *
  * @example <caption>With currying.</caption>
  * const fn = validateNumber({ min: 0, max: 10 });
  * fn(5); // true
- * fn(11); // Error message
+ * fn(9); // Error message
  *
  * @param value - The number to validate.
  * @param [options] - Configuration options for validation.
@@ -40,10 +39,7 @@ interface NumberValidationOptions {
  * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
-export function validateNumber(
-  value: number,
-  options?: NumberValidationOptions,
-): ValidationReturn;
+export function validateNumber(value: number, options?: NumberValidationOptions): ValidationReturn;
 
 export function validateNumber(
   options?: NumberValidationOptions,
@@ -63,11 +59,7 @@ export function validateNumber(
     return t("form.field.invalidNumber", { value });
   }
 
-  const {
-    min = Number.MIN_SAFE_INTEGER,
-    max = Number.MAX_SAFE_INTEGER,
-    integer = false,
-  } = options;
+  const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER, integer = false } = options;
 
   if (integer && !Number.isInteger(valueOrOpts)) {
     return t("form.field.mustBeInteger");

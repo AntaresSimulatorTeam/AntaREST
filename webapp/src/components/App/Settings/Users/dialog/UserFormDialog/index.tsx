@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,10 +13,8 @@
  */
 
 import { DialogContentText } from "@mui/material";
-import FormDialog, {
-  FormDialogProps,
-} from "../../../../../common/dialogs/FormDialog";
-import { GroupDTO, RoleType } from "../../../../../../common/types";
+import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
+import type { GroupDTO, RoleType } from "../../../../../../common/types";
 import UserForm from "./UserForm";
 
 export interface UserFormDialogProps extends Omit<FormDialogProps, "children"> {

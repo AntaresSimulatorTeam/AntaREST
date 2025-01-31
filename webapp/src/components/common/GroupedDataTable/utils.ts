@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import * as R from "ramda";
-import { TableCellProps } from "@mui/material";
+import type { TableCellProps } from "@mui/material";
 import type { TRow } from "./types";
 
 ////////////////////////////////////////////////////////////////
@@ -29,15 +29,9 @@ import type { TRow } from "./types";
  * @param existingValues - The list of existing values to check against for duplicates.
  * @returns A unique value derived from the base value by appending a number in parentheses, if necessary.
  */
-export const generateNextValue = (
-  baseValue: string,
-  existingValues: string[],
-): string => {
+export const generateNextValue = (baseValue: string, existingValues: string[]): string => {
   const pattern = new RegExp(`^${baseValue}( \\(\\d+\\))?`);
-  const matchingValues = R.filter(
-    (value) => pattern.test(value),
-    existingValues,
-  );
+  const matchingValues = R.filter((value) => pattern.test(value), existingValues);
 
   if (matchingValues.length === 0) {
     return baseValue;
@@ -67,10 +61,7 @@ export const generateNextValue = (
  * @param tableData - The existing table data to check against for ensuring uniqueness.
  * @returns A unique value for the specified property.
  */
-export const generateUniqueValue = (
-  originalValue: string,
-  tableData: TRow[],
-): string => {
+export const generateUniqueValue = (originalValue: string, tableData: TRow[]): string => {
   const existingValues = tableData.map((row) => row.name);
   return generateNextValue(`${originalValue} - copy`, existingValues);
 };

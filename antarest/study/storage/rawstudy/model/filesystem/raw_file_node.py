@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,6 +12,8 @@
 
 import logging
 from typing import List, Optional
+
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -28,6 +30,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         LazyNode.__init__(self, config=config, context=context)
 
+    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,
@@ -36,6 +39,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     ) -> str:
         return f"file://{self.config.path.name}"
 
+    @override
     def load(
         self,
         url: Optional[List[str]] = None,
@@ -56,10 +60,12 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
 
         return bytes
 
+    @override
     def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         self.config.path.write_bytes(data)
 
+    @override
     def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         if not self.config.path.exists():
             msg = f"{self.config.path} not exist"
@@ -68,8 +74,10 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
             return [msg]
         return []
 
+    @override
     def normalize(self) -> None:
         pass  # no external store in this node
 
+    @override
     def denormalize(self) -> None:
         pass  # no external store in this node

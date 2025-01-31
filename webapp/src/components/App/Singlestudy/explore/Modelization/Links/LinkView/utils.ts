@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { FieldValues } from "react-hook-form";
+import type { FieldValues } from "react-hook-form";
 import { getStudyData } from "../../../../../../../services/api/study";
-import { FilteringType } from "../../../common/types";
+import type { FilteringType } from "../../../common/types";
 
 type TransCapacitiesType = "infinite" | "ignore" | "enabled";
 type AssetType = "ac" | "dc" | "gaz" | "virt";

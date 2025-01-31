@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -34,15 +34,9 @@ describe("validateNumber", () => {
   });
 
   test("should return an error for non-finite numbers", () => {
-    expect(validateNumber(NaN)).toBe(
-      'form.field.invalidNumber: {"value":null}',
-    );
-    expect(validateNumber(Infinity)).toBe(
-      'form.field.invalidNumber: {"value":null}',
-    );
-    expect(validateNumber(-Infinity)).toBe(
-      'form.field.invalidNumber: {"value":null}',
-    );
+    expect(validateNumber(NaN)).toBe('form.field.invalidNumber: {"value":null}');
+    expect(validateNumber(Infinity)).toBe('form.field.invalidNumber: {"value":null}');
+    expect(validateNumber(-Infinity)).toBe('form.field.invalidNumber: {"value":null}');
   });
 
   test("should handle minimum value validation", () => {
@@ -52,26 +46,18 @@ describe("validateNumber", () => {
 
   test("should handle maximum value validation", () => {
     expect(validateNumber(5, { max: 10 })).toBe(true);
-    expect(validateNumber(11, { max: 10 })).toBe(
-      'form.field.maxValue: {"0":10}',
-    );
+    expect(validateNumber(11, { max: 10 })).toBe('form.field.maxValue: {"0":10}');
   });
 
   test("should handle both minimum and maximum value validation", () => {
     expect(validateNumber(5, { min: 0, max: 10 })).toBe(true);
-    expect(validateNumber(-1, { min: 0, max: 10 })).toBe(
-      'form.field.minValue: {"0":0}',
-    );
-    expect(validateNumber(11, { min: 0, max: 10 })).toBe(
-      'form.field.maxValue: {"0":10}',
-    );
+    expect(validateNumber(-1, { min: 0, max: 10 })).toBe('form.field.minValue: {"0":0}');
+    expect(validateNumber(11, { min: 0, max: 10 })).toBe('form.field.maxValue: {"0":10}');
   });
 
   test("should handle integer validation", () => {
     expect(validateNumber(5, { integer: true })).toBe(true);
-    expect(validateNumber(5.5, { integer: true })).toBe(
-      "form.field.mustBeInteger",
-    );
+    expect(validateNumber(5.5, { integer: true })).toBe("form.field.mustBeInteger");
   });
 
   test("should work with currying", () => {
@@ -88,19 +74,13 @@ describe("validateNumber", () => {
 
   test("should handle custom ranges", () => {
     expect(validateNumber(50, { min: -100, max: 100 })).toBe(true);
-    expect(validateNumber(-150, { min: -100, max: 100 })).toBe(
-      'form.field.minValue: {"0":-100}',
-    );
-    expect(validateNumber(150, { min: -100, max: 100 })).toBe(
-      'form.field.maxValue: {"0":100}',
-    );
+    expect(validateNumber(-150, { min: -100, max: 100 })).toBe('form.field.minValue: {"0":-100}');
+    expect(validateNumber(150, { min: -100, max: 100 })).toBe('form.field.maxValue: {"0":100}');
   });
 
   test("should handle decimal numbers", () => {
     expect(validateNumber(3.14)).toBe(true);
     expect(validateNumber(3.14, { min: 3, max: 4 })).toBe(true);
-    expect(validateNumber(2.99, { min: 3, max: 4 })).toBe(
-      'form.field.minValue: {"0":3}',
-    );
+    expect(validateNumber(2.99, { min: 3, max: 4 })).toBe('form.field.minValue: {"0":3}');
   });
 });

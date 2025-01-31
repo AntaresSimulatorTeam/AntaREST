@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 /* eslint-disable react-hooks/exhaustive-deps */
-import { ReactNode, useEffect } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import debug from "debug";
 import { Box, Button, keyframes, styled, Typography } from "@mui/material";
@@ -49,7 +49,7 @@ const StyledErrorIcon = styled(ErrorIcon)(({ theme }) => ({
 }));
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 function MaintenanceWrapper(props: Props) {

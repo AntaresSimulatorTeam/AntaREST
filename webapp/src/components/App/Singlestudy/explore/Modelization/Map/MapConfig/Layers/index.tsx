@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,15 +15,13 @@
 import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
-import { Add, Edit } from "@mui/icons-material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import {
-  getAreas,
-  getStudyMapLayersById,
-} from "../../../../../../../../redux/selectors";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import { getAreas, getStudyMapLayersById } from "../../../../../../../../redux/selectors";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import TableForm from "../../../../../../../common/TableForm";
 import CreateLayerDialog from "./CreateLayerDialog";
 import { updateStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
@@ -81,9 +79,7 @@ function Layers() {
         if (data.dirtyValues[areaId]?.[layerId]) {
           areasByLayer[layerId].push(areaId);
         } else {
-          areasByLayer[layerId] = areasByLayer[layerId].filter(
-            (id) => id !== areaId,
-          );
+          areasByLayer[layerId] = areasByLayer[layerId].filter((id) => id !== areaId);
         }
       });
     });
@@ -120,7 +116,7 @@ function Layers() {
           color="primary"
           variant="outlined"
           size="small"
-          startIcon={<Add />}
+          startIcon={<AddIcon />}
           onClick={() => setCreateLayerDialogOpen(true)}
           sx={{ mr: 1 }}
         >
@@ -130,7 +126,7 @@ function Layers() {
           color="primary"
           variant="outlined"
           size="small"
-          startIcon={<Edit />}
+          startIcon={<EditIcon />}
           onClick={() => setUpdateLayerDialogOpen(true)}
         >
           {t("study.modelization.map.layers.edit")}

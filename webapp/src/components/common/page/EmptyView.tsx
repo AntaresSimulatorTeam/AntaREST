@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,15 +15,15 @@
 import { useTranslation } from "react-i18next";
 import LiveHelpRoundedIcon from "@mui/icons-material/LiveHelpRounded";
 import { Box } from "@mui/material";
-import { SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 
 export interface EmptyViewProps {
   title?: string;
   icon?: SvgIconComponent;
+  extraActions?: React.ReactNode;
 }
 
-function EmptyView(props: EmptyViewProps) {
-  const { title, icon: Icon = LiveHelpRoundedIcon } = props;
+function EmptyView({ title, icon: Icon = LiveHelpRoundedIcon, extraActions }: EmptyViewProps) {
   const { t } = useTranslation();
 
   return (
@@ -35,8 +35,22 @@ function EmptyView(props: EmptyViewProps) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        position: "relative",
       }}
     >
+      {extraActions && (
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1,
+            position: "absolute",
+            top: 0,
+            right: 0,
+          }}
+        >
+          {extraActions}
+        </Box>
+      )}
       {Icon && <Icon sx={{ height: 100, width: 100 }} />}
       <div>{title || t("common.noContent")}</div>
     </Box>

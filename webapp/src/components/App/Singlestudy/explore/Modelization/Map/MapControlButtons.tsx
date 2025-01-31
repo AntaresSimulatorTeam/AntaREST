@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -27,12 +27,7 @@ interface Props {
   zoomLevel: number;
 }
 
-function MapControlButtons({
-  onZoomIn,
-  onZoomOut,
-  onOpenConfig,
-  zoomLevel,
-}: Props) {
+function MapControlButtons({ onZoomIn, onZoomOut, onOpenConfig, zoomLevel }: Props) {
   return (
     <Box
       sx={{

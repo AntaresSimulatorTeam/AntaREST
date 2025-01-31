@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,6 +17,7 @@ from pathlib import Path
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serialization import from_json
@@ -43,6 +44,7 @@ class VariantStudySnapshot(Base):  # type: ignore
         "polymorphic_identity": "variant_study_snapshot",
     }
 
+    @override
     def __str__(self) -> str:
         return f"[Snapshot] id={self.id}, created_at={self.created_at}"
 
@@ -66,6 +68,8 @@ class CommandBlock(Base):  # type: ignore
     version: int = Column(Integer)
     args: str = Column(String())
     study_version: str = Column(String(36))
+    user_id: int = Column(Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True)
+    updated_at: datetime.datetime = Column(DateTime, nullable=True)
 
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
@@ -76,8 +80,11 @@ class CommandBlock(Base):  # type: ignore
             args=from_json(self.args),
             version=version,
             study_version=self.study_version,
+            user_id=self.user_id,
+            updated_at=self.updated_at,
         )
 
+    @override
     def __str__(self) -> str:
         return (
             f"CommandBlock(id={self.id!r},"
@@ -87,6 +94,8 @@ class CommandBlock(Base):  # type: ignore
             f" version={self.version!r},"
             f" args={self.args!r})"
             f" study_version={self.study_version!r}"
+            f" user_id={self.user_id!r}"
+            f" updated_at={self.updated_at!r}"
         )
 
 
@@ -119,6 +128,7 @@ class VariantStudy(Study):
         cascade="all, delete, delete-orphan",
     )
 
+    @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
 

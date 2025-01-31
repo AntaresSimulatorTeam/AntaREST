@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,7 +17,7 @@ import PropertiesView from "../../../../../common/PropertiesView";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLinkId, getLinks } from "../../../../../../redux/selectors";
 import ListElement from "../../common/ListElement";
-import { LinkElement } from "../../../../../../common/types";
+import type { LinkElement } from "../../../../../../common/types";
 
 interface PropsType {
   studyId: string;
@@ -28,17 +28,13 @@ function LinkPropsView(props: PropsType) {
   const currentLinkId = useAppSelector(getCurrentLinkId);
   const links = useAppSelector((state) => getLinks(state, studyId));
   const [linkNameFilter, setLinkNameFilter] = useState<string>();
-  const [filteredLinks, setFilteredLinks] = useState<LinkElement[]>(
-    links || [],
-  );
+  const [filteredLinks, setFilteredLinks] = useState<LinkElement[]>(links || []);
 
   useEffect(() => {
     const filter = (): LinkElement[] => {
       if (links) {
         return links.filter(
-          (s) =>
-            !linkNameFilter ||
-            s.name.search(new RegExp(linkNameFilter, "i")) !== -1,
+          (s) => !linkNameFilter || s.name.search(new RegExp(linkNameFilter, "i")) !== -1,
         );
       }
       return [];

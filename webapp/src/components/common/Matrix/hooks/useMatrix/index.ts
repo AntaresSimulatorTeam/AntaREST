@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,17 +13,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import { MatrixIndex } from "../../../../../common/types";
+import type { MatrixIndex } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import {
-  getStudyMatrixIndex,
-  updateMatrix,
-} from "../../../../../services/api/matrix";
+import { getStudyMatrixIndex, updateMatrix } from "../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../services/api/study";
-import {
+import type {
   EnhancedGridColumn,
   MatrixDataDTO,
   GridUpdate,
@@ -39,11 +36,11 @@ import {
 } from "../../shared/utils";
 import useUndo from "use-undo";
 import { GridCellKind } from "@glideapps/glide-data-grid";
-import { importFile } from "../../../../../services/api/studies/raw";
-import { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import usePrompt from "../../../../../hooks/usePrompt";
+import { uploadFile } from "../../../../../services/api/studies/raw";
+import type { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { Aggregate, Column, Operation } from "../../shared/constants";
 import { aggregatesTheme } from "../../styles";
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -69,13 +66,12 @@ export function useMatrix(
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<Error | undefined>(undefined);
-  const [{ present: currentState }, { set: setState, undo, redo, canRedo }] =
-    useUndo<DataState>({
-      data: [],
-      aggregates: { min: [], max: [], avg: [], total: [] },
-      pendingUpdates: [],
-      updateCount: 0,
-    });
+  const [{ present: currentState }, { set: setState, undo, redo, canRedo }] = useUndo<DataState>({
+    data: [],
+    aggregates: { min: [], max: [], avg: [], total: [] },
+    pendingUpdates: [],
+    updateCount: 0,
+  });
 
   // Determine the aggregate types to display in the matrix
   const aggregateTypes = useMemo(
@@ -83,11 +79,10 @@ export function useMatrix(
     [aggregatesConfig],
   );
 
-  // Display warning prompts to prevent unintended navigation
-  // 1. When the matrix is currently being submitted
-  usePrompt(t("form.submit.inProgress"), isSubmitting);
-  // 2. When there are unsaved changes in the matrix
-  usePrompt(t("form.changeNotSaved"), currentState.pendingUpdates.length > 0);
+  useFormCloseProtection({
+    isSubmitting,
+    isDirty: currentState.pendingUpdates.length > 0,
+  });
 
   const fetchMatrix = async (loadingState = true) => {
     // !NOTE This is a temporary solution to ensure the matrix is up to date
@@ -169,18 +164,16 @@ export function useMatrix(
       width: colWidth,
     });
 
-    const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map(
-      (aggregateType) => ({
-        id: aggregateType,
-        title: aggregateType.charAt(0).toUpperCase() + aggregateType.slice(1), // Capitalize first letter
-        type: Column.Aggregate,
-        editable: false,
-        themeOverride:
-          aggregateType === Aggregate.Avg
-            ? aggregatesTheme
-            : { ...aggregatesTheme, bgCell: "#464770" },
-      }),
-    );
+    const aggregatesColumns: EnhancedGridColumn[] = aggregateTypes.map((aggregateType) => ({
+      id: aggregateType,
+      title: aggregateType.charAt(0).toUpperCase() + aggregateType.slice(1), // Capitalize first letter
+      type: Column.Aggregate,
+      editable: false,
+      themeOverride:
+        aggregateType === Aggregate.Avg
+          ? aggregatesTheme
+          : { ...aggregatesTheme, bgCell: "#464770" },
+    }));
 
     return [...baseColumns, ...dataColumns, ...aggregatesColumns];
   }, [
@@ -215,15 +208,10 @@ export function useMatrix(
 
           return null;
         })
-        .filter(
-          (update): update is NonNullable<typeof update> => update !== null,
-        );
+        .filter((update): update is NonNullable<typeof update> => update !== null);
 
       // Recalculate aggregates with the updated data
-      const newAggregates = calculateMatrixAggregates(
-        updatedData,
-        aggregateTypes,
-      );
+      const newAggregates = calculateMatrixAggregates(updatedData, aggregateTypes);
 
       setState({
         data: updatedData,
@@ -251,7 +239,8 @@ export function useMatrix(
 
   const handleUpload = async (file: File) => {
     try {
-      await importFile({ file, studyId, path: url });
+      await uploadFile({ file, studyId, path: url });
+      // TODO: update the API to return the uploaded file data and remove this
       await fetchMatrix();
     } catch (e) {
       enqueueErrorSnackbar(t("matrix.error.import"), e as Error);
@@ -320,5 +309,9 @@ export function useMatrix(
     canUndo: canUndoChanges,
     canRedo,
     reload: fetchMatrix,
+    // Use the matrix index 'steps' field to determine the number of rows
+    // This ensures consistent row display (8760 for hourly, 365 for daily/weekly)
+    // rather than using data.length which can vary for Binding Constraints (8784/366)
+    rowCount: index?.steps,
   };
 }

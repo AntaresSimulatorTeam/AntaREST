@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { MatrixInfoDTO } from "../../../common/types";
+import type { MatrixInfoDTO } from "../../../common/types";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import MatrixContent from "@/components/common/dialogs/DatabaseUploadDialog/components/MatrixContent";
 import { Button } from "@mui/material";

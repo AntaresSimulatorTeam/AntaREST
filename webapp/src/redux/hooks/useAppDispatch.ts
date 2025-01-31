@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "../store";
+import type { AppDispatch } from "../store";
 
 const useAppDispatch = () => useDispatch<AppDispatch>();
 

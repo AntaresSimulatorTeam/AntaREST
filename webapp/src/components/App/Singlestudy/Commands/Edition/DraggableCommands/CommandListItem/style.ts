@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -22,6 +22,8 @@ export const ItemContainer = styled(Box, {
   display: "flex",
   justifyContent: "center",
   zIndex: onTopVisible ? 10000 : 9999,
+  width: "100%",
+  boxSizing: "border-box",
 }));
 
 export const DraggableAccorderon = styled(Accordion, {
@@ -30,6 +32,9 @@ export const DraggableAccorderon = styled(Accordion, {
   flex: 1,
   boxSizing: "border-box",
   backgroundColor: PAPER_BACKGROUND_NO_TRANSPARENCY,
+  maxWidth: "800px",
+  width: "100%",
+  margin: "0 auto",
   ...(isDragging
     ? {
         borderColor: theme.palette.secondary.main,
@@ -43,9 +48,9 @@ export const DraggableAccorderon = styled(Accordion, {
 export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   flex: "0 0 24px",
   color: theme.palette.error.light,
-  marginLeft: theme.spacing(1),
-  marginRight: theme.spacing(1),
+  margin: theme.spacing(0, 2),
   cursor: "pointer",
+  alignSelf: "center",
   "&:hover": {
     color: theme.palette.error.main,
   },

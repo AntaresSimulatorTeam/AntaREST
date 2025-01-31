@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import { StudyMetadata } from "../../../../../../common/types";
-import { XpansionCandidate } from "../types";
+import type { StudyMetadata } from "../../../../../../common/types";
+import type { XpansionCandidate } from "../types";
 import {
   getAllCandidates,
   getAllCapacities,
@@ -31,28 +31,26 @@ import {
   getCapacity,
   xpansionConfigurationExist,
 } from "../../../../../../services/api/xpansion";
-import {
-  transformNameToId,
-  removeEmptyFields,
-} from "../../../../../../services/utils/index";
+import { transformNameToId, removeEmptyFields } from "../../../../../../services/utils/index";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import XpansionPropsView from "./XpansionPropsView";
 import CreateCandidateDialog from "./CreateCandidateDialog";
 import CandidateForm from "./CandidateForm";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/EmptyView";
 import SplitView from "../../../../../common/SplitView";
 import { getLinks } from "@/services/api/studies/links";
-import { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
 
 function Candidates() {
   const [t] = useTranslation();
   const { study } = useOutletContext<{ study?: StudyMetadata }>();
   const navigate = useNavigate();
   const mounted = usePromiseWrapper();
-  const [candidateCreationDialog, setCandidateCreationDialog] =
-    useState<boolean>(false);
+  const [candidateCreationDialog, setCandidateCreationDialog] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<string>();
   const [capacityViewDialog, setCapacityViewDialog] = useState<{
     filename: string;
@@ -63,7 +61,7 @@ function Candidates() {
 
   const {
     data: candidates,
-    isLoading,
+    isLoading: isCandidatesLoading,
     isRejected,
     reload,
   } = usePromiseWithSnackbarError(
@@ -76,13 +74,12 @@ function Candidates() {
         // Candidates
         const tempCandidates = await getAllCandidates(study.id);
         for (let i = 0; i < tempCandidates.length; i += 1) {
-          tempCandidates[i].link = tempCandidates.map(
-            (item: { link: string }) =>
-              item.link
-                .split(" - ")
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((index: any) => transformNameToId(index))
-                .join(" - "),
+          tempCandidates[i].link = tempCandidates.map((item: { link: string }) =>
+            item.link
+              .split(" - ")
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              .map((index: any) => transformNameToId(index))
+              .join(" - "),
           )[i];
         }
         return tempCandidates;
@@ -96,7 +93,7 @@ function Candidates() {
     },
   );
 
-  const { data: capaLinks } = usePromiseWithSnackbarError(
+  const { data: capaLinks, isLoading: isLinksLoading } = usePromiseWithSnackbarError(
     async () => {
       if (!study) {
         return {};
@@ -113,16 +110,20 @@ function Candidates() {
     { errorMessage: t("xpansion.error.loadConfiguration"), deps: [study] },
   );
 
+  // Handle automatic selection of the first element
+  useEffect(() => {
+    if (candidates && candidates.length > 0 && !selectedItem) {
+      setSelectedItem(candidates[0].name);
+    }
+  }, [candidates, selectedItem]);
+
   const deleteXpansion = async () => {
     try {
       if (study) {
         await mounted(deleteXpansionConfiguration(study.id));
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.deleteConfiguration"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t("xpansion.error.deleteConfiguration"), e as AxiosError);
     } finally {
       navigate("../../xpansion", { state: { exist: false } });
     }
@@ -135,10 +136,7 @@ function Candidates() {
         setCandidateCreationDialog(false);
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.createCandidate"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t("xpansion.error.createCandidate"), e as AxiosError);
     } finally {
       reload();
       setSelectedItem(candidate.name);
@@ -151,10 +149,7 @@ function Candidates() {
           await mounted(deleteCandidate(study.id, name));
         }
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("xpansion.error.deleteCandidate"),
-          e as AxiosError,
-        );
+        enqueueErrorSnackbar(t("xpansion.error.deleteCandidate"), e as AxiosError);
       } finally {
         reload();
         setSelectedItem(undefined);
@@ -186,10 +181,7 @@ function Candidates() {
         });
       }
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("xpansion.error.updateCandidate"),
-        e as AxiosError,
-      );
+      enqueueErrorSnackbar(t("xpansion.error.updateCandidate"), e as AxiosError);
     } finally {
       reload();
     }
@@ -224,13 +216,17 @@ function Candidates() {
     }
   };
 
+  if (isCandidatesLoading || isLinksLoading) {
+    return <SimpleLoader />;
+  }
+
   if (isRejected) {
     return <EmptyView title={t("xpansion.error.loadConfiguration")} />;
   }
 
   return (
     <>
-      <SplitView id="xpansion">
+      <SplitView id="xpansion" sizes={[10, 90]}>
         <Box>
           <XpansionPropsView
             candidateList={candidates || []}
@@ -241,11 +237,15 @@ function Candidates() {
           />
         </Box>
         <Box>
-          <Box width="100%" height="100%" boxSizing="border-box">
-            {renderView()}
-          </Box>
+          <ViewWrapper>
+            {!candidates?.length ? (
+              <EmptyView title={t("xpansion.candidates.empty")} />
+            ) : (
+              renderView()
+            )}
+          </ViewWrapper>
           <Backdrop
-            open={isLoading && !candidates}
+            open={isCandidatesLoading && !candidates}
             sx={{
               position: "absolute",
               zIndex: (theme) => theme.zIndex.drawer + 1,

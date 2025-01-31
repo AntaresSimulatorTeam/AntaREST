@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,8 @@
 import logging
 from typing import Dict, List, Optional
 
+from typing_extensions import override
+
 from antarest.core.interfaces.eventbus import Event
 from antarest.eventbus.business.interfaces import IEventBusBackend
 
@@ -24,20 +26,25 @@ class LocalEventBus(IEventBusBackend):
         self.events: List[Event] = []
         self.queues: Dict[str, List[Event]] = {}
 
+    @override
     def push_event(self, event: Event) -> None:
         self.events.append(event)
 
+    @override
     def get_events(self) -> List[Event]:
         return self.events
 
+    @override
     def clear_events(self) -> None:
         self.events.clear()
 
+    @override
     def queue_event(self, event: Event, queue: str) -> None:
         if queue not in self.queues:
             self.queues[queue] = []
         self.queues[queue].append(event)
 
+    @override
     def pull_queue(self, queue: str) -> Optional[Event]:
         if queue in self.queues and len(self.queues[queue]) > 0:
             return self.queues[queue].pop(0)

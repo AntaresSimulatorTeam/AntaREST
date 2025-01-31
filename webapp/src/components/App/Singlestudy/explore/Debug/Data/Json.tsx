@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,60 +15,46 @@
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { editStudy, getStudyData } from "../../../../../../services/api/study";
-import JSONEditor, { JSONEditorProps } from "../../../../../common/JSONEditor";
+import JSONEditor, { type JSONEditorProps } from "../../../../../common/JSONEditor";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
-import { useEffect, useState } from "react";
 import { Filename, Flex, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
+import { getRawFile } from "@/services/api/studies/raw";
 
 function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const [currentJson, setCurrentJson] = useState<JSONEditorProps["json"]>();
 
-  const res = usePromiseWithSnackbarError(
-    () => getStudyData(studyId, filePath, -1),
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, filePath],
-    },
-  );
-
-  useEffect(() => {
-    setCurrentJson(res.data);
-  }, [res.data]);
+  const jsonRes = usePromiseWithSnackbarError(() => getStudyData(studyId, filePath, -1), {
+    errorMessage: t("studies.error.retrieveData"),
+    deps: [studyId, filePath],
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
+  const handleDownload = async () => {
+    const file = await getRawFile({ studyId, path: filePath });
+    downloadFile(file, file.name);
+  };
+
   const handleSave: JSONEditorProps["onSave"] = (json) => {
     return editStudy(json, studyId, filePath);
   };
 
-  const handleSaveSuccessful: JSONEditorProps["onSaveSuccessful"] = (json) => {
-    setCurrentJson(json);
-
+  const handleSaveSuccessful: JSONEditorProps["onSaveSuccessful"] = () => {
     enqueueSnackbar(t("studies.success.saveData"), {
       variant: "success",
     });
   };
 
-  const handleDownload = () => {
-    if (currentJson !== undefined) {
-      downloadFile(
-        JSON.stringify(currentJson, null, 2),
-        filename.endsWith(".json") ? filename : `${filename}.json`,
-      );
-    }
-  };
-
   const handleUploadSuccessful = () => {
-    res.reload();
+    jsonRes.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -77,7 +63,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
 
   return (
     <UsePromiseCond
-      response={res}
+      response={jsonRes}
       ifFulfilled={(json) => (
         <Flex>
           <Menubar>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,14 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Toolbar,
-  alpha,
-  Typography,
-  Tooltip,
-  IconButton,
-  Fade,
-} from "@mui/material";
+import { Toolbar, alpha, Typography, Tooltip, IconButton, Fade } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslation } from "react-i18next";
 
@@ -41,10 +34,7 @@ function TableToolbar({ numSelected, handleDelete }: Props) {
         sx={{
           ...(numSelected > 0 && {
             bgcolor: (theme) =>
-              alpha(
-                theme.palette.primary.main,
-                theme.palette.action.activatedOpacity,
-              ),
+              alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
           }),
         }}
       >

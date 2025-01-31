@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -40,9 +40,7 @@ export interface FileDownloadTask {
   task: string;
 }
 
-export const convertFileDownloadDTO = (
-  fileDownload: FileDownloadDTO,
-): FileDownload => ({
+export const convertFileDownloadDTO = (fileDownload: FileDownloadDTO): FileDownload => ({
   id: fileDownload.id,
   name: fileDownload.name,
   filename: fileDownload.filename,
@@ -59,6 +57,5 @@ export const getDownloadsList = async (): Promise<FileDownload[]> => {
 
 export const getDownloadUrl = (did: string): string =>
   `${
-    getConfig().downloadHostUrl ||
-    getConfig().baseUrl + getConfig().restEndpoint
+    getConfig().downloadHostUrl || getConfig().baseUrl + getConfig().restEndpoint
   }/v1/downloads/${did}`;

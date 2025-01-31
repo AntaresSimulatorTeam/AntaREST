@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,6 +18,7 @@ from typing import Any, Generator, Tuple
 from fastapi import HTTPException
 from markupsafe import escape
 from ratelimit import Rule  # type: ignore
+from typing_extensions import override
 
 from antarest.core.jwt import JWTUser
 
@@ -38,24 +39,30 @@ class CaseInsensitiveDict(t.MutableMapping[str, t.Any]):  # copy of the requests
             data = {}
         self.update(data, **kwargs)
 
+    @override
     def __setitem__(self, key: str, value: t.Any) -> None:
         self._store[key.lower()] = (key, value)
 
+    @override
     def __getitem__(self, key: str) -> t.Any:
         return self._store[key.lower()][1]
 
+    @override
     def __delitem__(self, key: str) -> None:
         del self._store[key.lower()]
 
+    @override
     def __iter__(self) -> t.Any:
         return (casedkey for casedkey, mappedvalue in self._store.values())
 
+    @override
     def __len__(self) -> int:
         return len(self._store)
 
     def lower_items(self) -> Generator[Tuple[Any, Any], Any, None]:
         return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if isinstance(other, t.Mapping):
             other = CaseInsensitiveDict(other)
@@ -66,6 +73,7 @@ class CaseInsensitiveDict(t.MutableMapping[str, t.Any]):  # copy of the requests
     def copy(self) -> "CaseInsensitiveDict":
         return CaseInsensitiveDict(self._store.values())
 
+    @override
     def __repr__(self) -> str:
         return str(dict(self.items()))
 

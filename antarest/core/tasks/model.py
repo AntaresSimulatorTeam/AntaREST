@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,6 +18,7 @@ from enum import Enum, StrEnum
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
+from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serialization import AntaresBaseModel
@@ -122,11 +123,13 @@ class TaskJobLog(Base):  # type: ignore
     # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
     job: "TaskJob" = relationship("TaskJob", back_populates="logs", uselist=False)
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, TaskJobLog):
             return False
         return bool(other.id == self.id and other.message == self.message and other.task_id == self.task_id)
 
+    @override
     def __repr__(self) -> str:
         return f"id={self.id}, message={self.message}, task_id={self.task_id}"
 
@@ -198,6 +201,7 @@ class TaskJob(Base):  # type: ignore
             progress=self.progress,
         )
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, TaskJob):
             return False
@@ -213,6 +217,7 @@ class TaskJob(Base):  # type: ignore
             and other.logs == self.logs
         )
 
+    @override
     def __repr__(self) -> str:
         return (
             f"id={self.id},"

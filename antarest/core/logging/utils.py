@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ from typing import Any, Dict, Optional, Type
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
+from typing_extensions import override
 
 from antarest.core.config import Config
 
@@ -39,6 +40,7 @@ class CustomDefaultFormatter(logging.Formatter):
     fields to the log record with a value of `None`.
     """
 
+    @override
     def format(self, record: logging.LogRecord) -> str:
         """
         Formats the specified log record using the custom formatter,
@@ -169,6 +171,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
+    @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         with RequestContext(request):
             response = await call_next(request)
@@ -176,6 +179,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
 
 class ContextFilter(logging.Filter):
+    @override
     def filter(self, record: logging.LogRecord) -> bool:
         request: Optional[Request] = _request.get()
         request_id: Optional[str] = _request_id.get()

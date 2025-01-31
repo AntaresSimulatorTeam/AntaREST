@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,8 @@ import json
 import typing as t
 from pathlib import Path
 
+from typing_extensions import override
+
 from antarest.core.model import JSON
 from antarest.core.serialization import from_json, to_json
 from antarest.study.storage.rawstudy.ini_reader import IReader
@@ -28,6 +30,7 @@ class JsonReader(IReader):
     JSON file reader.
     """
 
+    @override
     def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
         content: t.Union[str, bytes]
 
@@ -59,6 +62,7 @@ class JsonWriter(IniWriter):
     JSON file writer.
     """
 
+    @override
     def write(self, data: JSON, path: Path) -> None:
         with open(path, "wb") as fh:
             fh.write(to_json(data))

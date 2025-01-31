@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,12 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { BindingConstraint } from "./utils";
-import { Box, Button, Paper, Skeleton } from "@mui/material";
+import type { BindingConstraint } from "./utils";
+import { Box, Button, Skeleton } from "@mui/material";
 import Form from "../../../../../../common/Form";
-import UsePromiseCond, {
-  mergeResponses,
-} from "../../../../../../common/utils/UsePromiseCond";
+import UsePromiseCond, { mergeResponses } from "../../../../../../common/utils/UsePromiseCond";
 import {
   getBindingConstraint,
   getBindingConstraintList,
@@ -25,14 +23,14 @@ import {
 } from "../../../../../../../services/api/studydata";
 import { useOutletContext } from "react-router";
 
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import BindingConstForm from "./BindingConstForm";
 import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import ConstraintFields from "./ConstraintFields";
 import Delete from "@mui/icons-material/Delete";
-import { StudyMetadata } from "../../../../../../../common/types";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import { appendCommands } from "../../../../../../../services/api/variant";
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
 import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
@@ -54,8 +52,7 @@ function BindingConstView({ constraintId }: Props) {
   const dispatch = useAppDispatch();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] =
-    useState(false);
+  const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
 
   const constraint = usePromise(
     () => getBindingConstraint(study.id, constraintId),
@@ -71,9 +68,7 @@ function BindingConstView({ constraintId }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmitConstraint = ({
-    values,
-  }: SubmitHandlerPlus<BindingConstraint>) => {
+  const handleSubmitConstraint = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
     const { id, name, ...updatedConstraint } = values;
 
     return updateBindingConstraint(study.id, constraintId, updatedConstraint);
@@ -120,20 +115,11 @@ function BindingConstView({ constraintId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Paper
-      sx={{
-        p: 2,
-        width: 1,
-        height: 1,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "auto",
-      }}
-    >
+    <>
       <UsePromiseCond
         response={mergeResponses(constraint, linksAndClusters)}
         ifFulfilled={([defaultValues, linksAndClusters]) => (
-          <>
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
             <Box sx={{ alignSelf: "flex-end" }}>
               <Button
                 variant="outlined"
@@ -166,7 +152,7 @@ function BindingConstView({ constraintId }: Props) {
                 />
               </Form>
             </Box>
-          </>
+          </Box>
         )}
         ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
       />
@@ -179,12 +165,10 @@ function BindingConstView({ constraintId }: Props) {
           alert="warning"
           open
         >
-          {t(
-            "study.modelization.bindingConst.question.deleteBindingConstraint",
-          )}
+          {t("study.modelization.bindingConst.question.deleteBindingConstraint")}
         </ConfirmationDialog>
       )}
-    </Paper>
+    </>
   );
 }
 

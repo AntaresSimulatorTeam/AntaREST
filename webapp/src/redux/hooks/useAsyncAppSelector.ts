@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { AsyncThunk } from "@reduxjs/toolkit";
+import type { AsyncThunk } from "@reduxjs/toolkit";
 import { useEffect } from "react";
-import { AppState } from "../ducks";
-import { AppAsyncThunkConfig } from "../store";
-import { AsyncEntityState, FetchStatus } from "../utils";
+import type { AppState } from "../ducks";
+import type { AppAsyncThunkConfig } from "../store";
+import { FetchStatus, type AsyncEntityState } from "../utils";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 

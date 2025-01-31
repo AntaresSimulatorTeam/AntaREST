@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,14 +16,10 @@ import { useEffect, useMemo } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../common/types";
 import TabWrapper from "../TabWrapper";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
-import {
-  getAreas,
-  getCurrentAreaId,
-  getLinks,
-} from "../../../../../redux/selectors";
+import { getAreas, getCurrentAreaId, getLinks } from "../../../../../redux/selectors";
 import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 import { setCurrentArea } from "../../../../../redux/ducks/studySyntheses";
 
@@ -76,7 +72,7 @@ function Modelization() {
         disabled: links.length === 0,
       },
       {
-        label: t("study.bindingconstraints"),
+        label: t("study.bindingConstraints"),
         path: `${basePath}/bindingcontraint`,
       },
     ];

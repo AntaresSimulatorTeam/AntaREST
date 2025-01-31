@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -21,9 +21,9 @@ import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import { clamp, equals } from "ramda";
-import { useState, useMemo, useEffect, ChangeEvent } from "react";
-import { FilterListOff } from "@mui/icons-material";
+import * as R from "ramda";
+import { useState, useMemo, useEffect } from "react";
+import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
 
 interface ColumnHeader {
@@ -62,7 +62,7 @@ interface Props {
   studyId: string;
   path: string;
   colHeaders: string[][];
-  onColHeadersChange: (colHeaders: string[][]) => void;
+  onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
 }
 
 function ResultFilters({
@@ -81,16 +81,15 @@ function ResultFilters({
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
 
-  const { localValue: localYear, handleChange: debouncedYearChange } =
-    useDebouncedField({
-      value: year,
-      onChange: setYear,
-      delay: 500,
-      transformValue: (value: number) => clamp(1, maxYear, value),
-    });
+  const { localValue: localYear, handleChange: debouncedYearChange } = useDebouncedField({
+    value: year,
+    onChange: setYear,
+    delay: 500,
+    transformValue: (value: number) => R.clamp(1, maxYear, value),
+  });
 
   const filtersApplied = useMemo(() => {
-    return !equals(filters, defaultFilters);
+    return !R.equals(filters, defaultFilters);
   }, [filters]);
 
   const parsedHeaders = useMemo(() => {
@@ -104,54 +103,64 @@ function ResultFilters({
     );
   }, [colHeaders]);
 
+  // Process headers while keeping track of their original positions
+  // This ensures we can properly filter the data matrix later
+  // Example: if we filter out column 1, we need to know that column 2
+  // becomes column 1 in the filtered view but maps to index 2 in the data
+  const filteredHeaders = useMemo(() => {
+    return parsedHeaders
+      .map((header, index) => ({ ...header, index }))
+      .filter((header) => {
+        // Apply search filter
+        if (filters.search) {
+          const matchesVariable = matchesSearchTerm(header.variable, filters.search);
+
+          const matchesUnit = matchesSearchTerm(header.unit, filters.search);
+
+          if (!matchesVariable && !matchesUnit) {
+            return false;
+          }
+        }
+
+        // Apply statistical filters
+        if (header.stat) {
+          const stat = header.stat.toLowerCase();
+
+          if (!filters.exp && stat.includes("exp")) {
+            return false;
+          }
+          if (!filters.min && stat.includes("min")) {
+            return false;
+          }
+          if (!filters.max && stat.includes("max")) {
+            return false;
+          }
+          if (!filters.std && stat.includes("std")) {
+            return false;
+          }
+          if (!filters.values && stat.includes("values")) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+  }, [filters, parsedHeaders]);
+
+  // Notify parent of both filtered headers and their original indices
+  // This allows the parent to correctly map the filtered view back to the original data
   useEffect(() => {
-    const filteredHeaders = parsedHeaders.filter((header) => {
-      // Apply search filters
-      if (filters.search) {
-        const matchesVariable = matchesSearchTerm(
-          header.variable,
-          filters.search,
-        );
-
-        const matchesUnit = matchesSearchTerm(header.unit, filters.search);
-
-        if (!matchesVariable && !matchesUnit) {
-          return false;
-        }
-      }
-
-      // Apply stat filters
-      if (header.stat) {
-        const stat = header.stat.toLowerCase();
-
-        if (!filters.exp && stat.includes("exp")) {
-          return false;
-        }
-        if (!filters.min && stat.includes("min")) {
-          return false;
-        }
-        if (!filters.max && stat.includes("max")) {
-          return false;
-        }
-        if (!filters.std && stat.includes("std")) {
-          return false;
-        }
-        if (!filters.values && stat.includes("values")) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    onColHeadersChange(filteredHeaders.map((h) => h.original));
-  }, [filters, parsedHeaders, onColHeadersChange]);
+    onColHeadersChange(
+      filteredHeaders.map((h) => h.original),
+      filteredHeaders.map((h) => h.index),
+    );
+  }, [filteredHeaders, onColHeadersChange]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleYearChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleYearChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
     debouncedYearChange(value);
   };
@@ -253,7 +262,7 @@ function ResultFilters({
           disabled={!filtersApplied}
           sx={{ ml: 1 }}
         >
-          <FilterListOff />
+          <FilterListOffIcon />
         </IconButton>
       ),
     },

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -27,15 +27,6 @@ class TaskJobRepository:
     Database connector to manage Tasks/Jobs entities.
     """
 
-    def __init__(self, session: t.Optional[Session] = None):
-        """
-        Initialize the repository.
-
-        Args:
-            session: Optional SQLAlchemy session to be used.
-        """
-        self._session = session
-
     @property
     def session(self) -> Session:
         """
@@ -44,11 +35,7 @@ class TaskJobRepository:
         Returns:
             SQLAlchemy session.
         """
-        if self._session is None:
-            # Get or create the session from a context variable (thread local variable)
-            return db.session
-        # Get the user-defined session
-        return self._session
+        return db.session
 
     def save(self, task: TaskJob) -> TaskJob:
         session = self.session

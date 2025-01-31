@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,18 +14,18 @@
 
 import { Box, styled } from "@mui/material";
 
-export const Root = styled(Box)(({ theme }) => ({
-  flex: 1,
+export const Root = styled(Box)(() => ({
+  width: "100%",
   height: "98%",
   display: "flex",
   flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  overflowY: "hidden",
+  overflowY: "auto",
 }));
 
-export const Header = styled(Box)(({ theme }) => ({
-  width: "90%",
+export const Header = styled(Box)(() => ({
+  width: "95%",
   height: "80px",
   display: "flex",
   flexFlow: "row nowrap",
@@ -33,7 +33,7 @@ export const Header = styled(Box)(({ theme }) => ({
   alignItems: "center",
 }));
 
-export const EditHeader = styled(Box)(({ theme }) => ({
+export const EditHeader = styled(Box)(() => ({
   flex: 1,
   display: "flex",
   flexFlow: "row nowrap",
@@ -43,10 +43,8 @@ export const EditHeader = styled(Box)(({ theme }) => ({
 
 export const Body = styled(Box)(({ theme }) => ({
   width: "100%",
-  maxHeight: "90%",
-  minHeight: "90%",
+  height: "100%",
   display: "flex",
-  flexFlow: "column nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
   overflow: "auto",

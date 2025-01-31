@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,6 +15,8 @@ import typing as t
 from pydantic import Field, model_validator
 
 __all__ = ("IgnoreCaseIdentifier", "LowerCaseIdentifier")
+
+from typing_extensions import override
 
 from antarest.core.serialization import AntaresBaseModel
 
@@ -84,6 +86,7 @@ class LowerCaseIdentifier(IgnoreCaseIdentifier):
     id: str = Field(description="ID (section name)", pattern=r"[a-z0-9_(),& -]+")
 
     @classmethod
+    @override
     def generate_id(cls, name: str) -> str:
         """
         Generate an ID from a name.

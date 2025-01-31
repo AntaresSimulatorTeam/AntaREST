@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ import typing as t
 
 import numpy as np
 from pydantic import Field, ValidationInfo, model_validator
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -160,6 +161,7 @@ class CreateSTStorage(ICommand):
             new_values[field] = cls.validate_field(new_values.get(field, None), new_values, field)
         return new_values
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: add the short-term storage in the storages list.
@@ -215,6 +217,7 @@ class CreateSTStorage(ICommand):
             {"storage_id": self.storage_id},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
@@ -248,6 +251,7 @@ class CreateSTStorage(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         """
         Converts the current object to a Data Transfer Object (DTO)
@@ -267,6 +271,7 @@ class CreateSTStorage(ICommand):
             study_version=self.study_version,
         )
 
+    @override
     def match_signature(self) -> str:
         """Returns the command signature."""
         return str(
@@ -277,6 +282,7 @@ class CreateSTStorage(ICommand):
             + self.storage_id
         )
 
+    @override
     def match(self, other: "ICommand", equal: bool = False) -> bool:
         """
         Checks if the current instance matches another `ICommand` object.
@@ -296,6 +302,7 @@ class CreateSTStorage(ICommand):
         else:
             return self.area_id == other.area_id and self.storage_id == other.storage_id
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         """
         Creates a list of commands representing the differences between
@@ -334,6 +341,7 @@ class CreateSTStorage(ICommand):
             )
         return commands
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         """
         Retrieves the list of matrix IDs.

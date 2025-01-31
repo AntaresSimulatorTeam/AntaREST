@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ import typing as t
 from pathlib import Path
 
 from fastapi import HTTPException
+from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 
@@ -33,18 +34,22 @@ class DTO:
     Implement basic method for DTO objects
     """
 
+    @override
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.__dict__.items())))
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         return isinstance(other, type(self)) and self.__dict__ == other.__dict__
 
+    @override
     def __str__(self) -> str:
         return "{}({})".format(
             type(self).__name__,
             ", ".join(["{}={}".format(k, str(self.__dict__[k])) for k in sorted(self.__dict__)]),
         )
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()
 
@@ -105,7 +110,7 @@ def retry(func: t.Callable[[], T], attempts: int = 10, interval: float = 0.5) ->
             attempt += 1
             return func()
         except Exception as e:
-            logger.info(f"💤 Sleeping {interval} second(s)...")
+            logger.info(f"💤 Sleeping {interval} second(s) before retry...", exc_info=e)
             time.sleep(interval)
             caught_exception = e
     raise caught_exception or ShouldNotHappenException()

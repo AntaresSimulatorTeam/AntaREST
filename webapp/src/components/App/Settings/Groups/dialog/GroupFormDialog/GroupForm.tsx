@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -31,24 +31,20 @@ import {
   ListItemIcon,
   ListItemText,
   CircularProgress,
-  SelectChangeEvent,
+  type SelectChangeEvent,
 } from "@mui/material";
 import { Controller, useFieldArray } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
-import {
-  RESERVED_GROUP_NAMES,
-  RESERVED_USER_NAMES,
-  ROLE_TYPE_KEYS,
-} from "../../../utils";
-import { RoleType, UserDTO } from "../../../../../../common/types";
+import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
+import { RoleType, type UserDTO } from "../../../../../../common/types";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups, getUsers } from "../../../../../../services/api/user";
 import { getAuthUser } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { UseFormReturnPlus } from "../../../../../common/Form/types";
+import type { UseFormReturnPlus } from "../../../../../common/Form/types";
 import { validateString } from "@/utils/validation/string";
 
 function GroupForm(props: UseFormReturnPlus) {
@@ -66,10 +62,7 @@ function GroupForm(props: UseFormReturnPlus) {
   const { data: users, isLoading: isUsersLoading } = usePromise(getUsers);
   const { data: groups } = usePromise(getGroups);
 
-  const existingGroups = useMemo(
-    () => groups?.map((group) => group.name),
-    [groups],
-  );
+  const existingGroups = useMemo(() => groups?.map((group) => group.name), [groups]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -78,9 +71,7 @@ function GroupForm(props: UseFormReturnPlus) {
 
   const allowToAddPermission =
     selectedUser &&
-    !getValues("permissions").some(
-      ({ user }: { user: UserDTO }) => user.id === selectedUser.id,
-    );
+    !getValues("permissions").some(({ user }: { user: UserDTO }) => user.id === selectedUser.id);
 
   const filteredAndSortedUsers = useMemo(() => {
     if (!users) {
@@ -88,10 +79,7 @@ function GroupForm(props: UseFormReturnPlus) {
     }
 
     return sortByName(
-      users.filter(
-        (user) =>
-          !RESERVED_USER_NAMES.includes(user.name) && user.id !== authUser?.id,
-      ),
+      users.filter((user) => !RESERVED_USER_NAMES.includes(user.name) && user.id !== authUser?.id),
     );
   }, [users, authUser]);
 
@@ -138,8 +126,7 @@ function GroupForm(props: UseFormReturnPlus) {
         sx={{
           p: 2,
           mt: 2,
-          backgroundImage:
-            "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
         <Typography>{t("global.permissions")}</Typography>
@@ -211,11 +198,7 @@ function GroupForm(props: UseFormReturnPlus) {
                   disablePadding
                   dense
                 >
-                  <ListItemButton
-                    sx={{ cursor: "default" }}
-                    disableRipple
-                    disableGutters
-                  >
+                  <ListItemButton sx={{ cursor: "default" }} disableRipple disableGutters>
                     <ListItemIcon sx={{ minWidth: 0, p: "0 15px 0 5px" }}>
                       <GroupIcon />
                     </ListItemIcon>

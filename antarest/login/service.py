@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -406,14 +406,14 @@ class LoginService:
 
     def get_bot_info(self, id: int, params: RequestParameters) -> Optional[BotIdentityDTO]:
         """
-        Get user informations
+        Get user information
         Permission: SADMIN, GADMIN (own group), USER (own user)
 
         Args:
             id: bot id
             params: request parameters
 
-        Returns: bot informations and roles
+        Returns: bot information and roles
 
         """
         bot = self.get_bot(id, params)

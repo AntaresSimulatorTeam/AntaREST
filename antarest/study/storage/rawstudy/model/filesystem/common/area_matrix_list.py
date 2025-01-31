@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 import typing as t
+
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -66,6 +68,7 @@ class AreaMatrixList(FolderNode):
         self.matrix_class = matrix_class
         self.additional_matrix_params = additional_matrix_params or {}
 
+    @override
     def build(self) -> TREE:
         """
         Builds the folder structure and creates child nodes representing each matrix file.
@@ -100,6 +103,7 @@ class HydroMatrixList(FolderNode):
         self.area = area
         self.matrix_class = matrix_class
 
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "ror": self.matrix_class(self.context, self.config.next_file("ror.txt")),
@@ -118,6 +122,7 @@ class BindingConstraintMatrixList(FolderNode):
         super().__init__(context, config)
         self.matrix_class = matrix_class
 
+    @override
     def build(self) -> TREE:
         """Builds the folder structure and creates child nodes representing each matrix file."""
         return {
@@ -138,6 +143,7 @@ class ThermalMatrixList(FolderNode):
         self.area = area
         self.matrix_class = matrix_class
 
+    @override
     def build(self) -> TREE:
         # Note that cluster IDs are case-insensitive, but series IDs are in lower case.
         # For instance, if your cluster ID is "Base", then the series ID will be "base".
@@ -185,6 +191,7 @@ class AreaMultipleMatrixList(FolderNode):
         self.klass = klass
         self.matrix_class = matrix_class
 
+    @override
     def build(self) -> TREE:
         folders = [d.name for d in self.config.path.iterdir() if d.is_dir()]
         children: TREE = {

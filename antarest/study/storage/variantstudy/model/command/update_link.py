@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 import typing as t
+
+from typing_extensions import override
 
 from antarest.study.business.model.link_model import LinkInternal
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -32,6 +34,7 @@ class UpdateLink(AbstractLinkCommand):
     command_name: CommandName = CommandName.UPDATE_LINK
     version: int = 1
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         return (
             CommandOutput(
@@ -41,6 +44,7 @@ class UpdateLink(AbstractLinkCommand):
             {},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
 
@@ -65,14 +69,18 @@ class UpdateLink(AbstractLinkCommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return super().to_dto()
 
+    @override
     def match_signature(self) -> str:
         return super().match_signature()
 
+    @override
     def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
         return super()._create_diff(other)
 
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return super().get_inner_matrices()

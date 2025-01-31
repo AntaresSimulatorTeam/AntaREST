@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 from typing import List, TypedDict
 
 from antares.study.version import StudyVersion
+from typing_extensions import override
 
 from antarest.study.model import STUDY_VERSION_6_5
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -59,6 +60,7 @@ MATRICES_INFO: List[MatrixInfo] = [
 
 
 class InputHydroCommonCapacity(FolderNode):
+    @override
     def build(self) -> TREE:
         children: TREE = {}
         for info in MATRICES_INFO:

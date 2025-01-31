@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,12 +14,11 @@
 
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import { Box, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { StudyMetadata } from "../../../../../../common/types";
-import { XpansionResourceType, XpansionSettings } from "../types";
+import type { StudyMetadata } from "../../../../../../common/types";
+import { XpansionResourceType, type XpansionSettings } from "../types";
 import {
   getXpansionSettings,
   getAllConstraints,
@@ -31,10 +30,11 @@ import {
 } from "../../../../../../services/api/xpansion";
 import SettingsForm from "./SettingsForm";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
 import { removeEmptyFields } from "../../../../../../services/utils/index";
 import DataViewerDialog from "../../../../../common/dialogs/DataViewerDialog";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 
 const resourceContentFetcher = (
   resourceType: string,
@@ -56,11 +56,7 @@ function Settings() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { enqueueSnackbar } = useSnackbar();
 
-  const {
-    data: settings,
-    isLoading: settingsLoading,
-    reload: reloadSettings,
-  } = usePromiseWithSnackbarError(
+  const settingsRes = usePromiseWithSnackbarError(
     async () => {
       if (study) {
         return getXpansionSettings(study.id);
@@ -129,7 +125,7 @@ function Settings() {
     } catch (e) {
       enqueueErrorSnackbar(t("xpansion.error.updateSettings"), e as AxiosError);
     } finally {
-      reloadSettings();
+      settingsRes.reload();
       enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",
       });
@@ -139,10 +135,7 @@ function Settings() {
   const getResourceContent = async (resourceType: string, filename: string) => {
     try {
       if (study) {
-        const content = await resourceContentFetcher(resourceType)(
-          study.id,
-          filename,
-        );
+        const content = await resourceContentFetcher(resourceType)(study.id, filename);
         setResourceViewDialog({
           filename,
           content,
@@ -160,23 +153,23 @@ function Settings() {
 
   return (
     <>
-      {!settingsLoading && settings ? (
-        <Box sx={{ width: "100%", flexGrow: 1, overflow: "hidden", p: 2 }}>
-          <Paper sx={{ width: "100%", height: "100%", overflow: "auto", p: 2 }}>
+      <ViewWrapper>
+        <UsePromiseCond
+          response={settingsRes}
+          ifFulfilled={(data) => (
             <SettingsForm
-              settings={settings}
+              settings={data}
               candidates={candidates || []}
               constraints={constraints || []}
               weights={weights || []}
               updateSettings={updateSettings}
               onRead={getResourceContent}
             />
-          </Paper>
-        </Box>
-      ) : (
-        <SimpleLoader />
-      )}
-      {!!resourceViewDialog && (
+          )}
+        />
+      </ViewWrapper>
+
+      {resourceViewDialog && (
         <DataViewerDialog
           filename={resourceViewDialog.filename}
           content={resourceViewDialog.content}
