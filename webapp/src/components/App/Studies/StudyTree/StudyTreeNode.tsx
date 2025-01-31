@@ -28,7 +28,7 @@ export default memo(function StudyTreeNode({
   const isLoadingFolder = itemsLoading.includes(id);
 
   const sortedChildren = useMemo(
-    () => R.sortBy(R.prop("name"), studyTreeNode.children),
+    () => R.sortBy(R.compose(R.toLower, R.prop("name")), studyTreeNode.children),
     [studyTreeNode.children],
   );
 
