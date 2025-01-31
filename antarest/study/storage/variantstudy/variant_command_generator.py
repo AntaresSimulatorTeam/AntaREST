@@ -88,7 +88,7 @@ class VariantCommandGenerator:
                 )
                 logger.error(output.message, exc_info=e)
 
-            if command_block_dict.get(cmd.command_id):
+            if not command_block_dict.get(cmd.command_id):
                 command_block_dict[cmd.command_id] = command_block_index
                 command_block_index += 1
 
@@ -102,7 +102,7 @@ class VariantCommandGenerator:
             results.details.append(detail)
 
             if notifier:
-                notifier(command_block_dict[cmd.command_id], output.status, output.message)
+                notifier(command_block_dict.get(cmd.command_id, ), output.status, output.message)
 
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)
