@@ -19,7 +19,7 @@ from antares.study.version import StudyVersion
 
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION
 from antarest.study.storage.study_upgrader import StudyUpgrader
-from antarest.tools.lib import create_http_client, extract_commands, generate_diff, generate_study
+from antarest.tools.lib import create_http_client, extract_commands, generate_study
 
 
 @click.group(context_settings={"max_content_width": 120})
@@ -130,43 +130,6 @@ def cli_apply_script(
 def cli_generate_script(input: str, output: str) -> None:
     """Generate variant script commands from a study"""
     extract_commands(Path(input), Path(output))
-
-
-@commands.command("generate-script-diff")
-@click.option(
-    "--base",
-    nargs=1,
-    required=True,
-    type=click.Path(exists=True),
-    help="Base study path",
-)
-@click.option(
-    "--variant",
-    nargs=1,
-    required=True,
-    type=click.Path(exists=True),
-    help="Variant study path",
-)
-@click.option(
-    "--output",
-    "-o",
-    nargs=1,
-    required=True,
-    type=click.Path(exists=False),
-    help="Script output path",
-)
-@click.option(
-    "--version",
-    "-v",
-    nargs=1,
-    required=False,
-    type=str,
-    help=f"Study version. Default:{NEW_DEFAULT_STUDY_VERSION}",
-    default=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
-)
-def cli_generate_script_diff(base: str, variant: str, output: str, version: str) -> None:
-    """Generate variant script commands from two variant script directories"""
-    generate_diff(Path(base), Path(variant), Path(output), StudyVersion.parse(version))
 
 
 @commands.command("upgrade-study")

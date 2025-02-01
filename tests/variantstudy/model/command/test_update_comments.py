@@ -41,19 +41,6 @@ def test_update_comments(empty_study: FileStudy, command_context: CommandContext
     assert comments == file_comments
 
 
-def test_match(command_context: CommandContext):
-    base = UpdateComments(comments="comments", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = UpdateComments(comments="comments", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_not_match = UpdateComments(
-        comments="other_comments", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match, equal=True)
-    assert not base.match(other_other)
-    assert base.match_signature() == "update_comments"
-
-
 def test_revert(
     command_context: CommandContext,
     empty_study: FileStudy,
@@ -91,9 +78,3 @@ def test_revert(
             study_version=study_version,
         )
     ]
-
-
-def test_create_diff(command_context: CommandContext):
-    base = UpdateComments(comments="comments", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = UpdateComments(comments="comments", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.create_diff(other_match) == [other_match]

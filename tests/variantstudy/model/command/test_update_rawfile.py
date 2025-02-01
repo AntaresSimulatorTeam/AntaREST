@@ -46,10 +46,7 @@ def test_update_rawfile(empty_study: FileStudy, command_context: CommandContext)
     reverted_commands = CommandReverter().revert(command, [alt_command], empty_study)
     assert cast(UpdateRawFile, reverted_commands[0]).b64Data == ""
 
-    assert command.match(alt_command)
-    assert not command.match(alt_command, True)
     assert len(command.get_inner_matrices()) == 0
-    assert [alt_command] == command.create_diff(alt_command)
 
     res = command.apply(empty_study)
     assert res.status

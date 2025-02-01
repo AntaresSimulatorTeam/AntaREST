@@ -126,58 +126,6 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         raise NotImplementedError()
 
     @abstractmethod
-    def match_signature(self) -> str:
-        """Returns the command signature."""
-        raise NotImplementedError()
-
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        """
-        Indicate if the other command is the same type and targets the same element.
-
-        Args:
-            other: other command to match against
-            equal: indicate if the match must check for param equality
-
-        Returns: True if the command match with the other else False
-        """
-        if not isinstance(other, self.__class__):
-            return False
-        excluded_fields = set(ICommand.model_fields)
-        this_values = self.model_dump(mode="json", exclude=excluded_fields)
-        that_values = other.model_dump(mode="json", exclude=excluded_fields)
-        return this_values == that_values
-
-    @abstractmethod
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        """
-        Creates a list of commands representing the differences between
-        the current instance and another `ICommand` object.
-
-        Args:
-            other: Another ICommand object to compare against.
-
-        Returns:
-            A list of commands representing the differences between
-            the two `ICommand` objects.
-        """
-        raise NotImplementedError()
-
-    def create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        """
-        Creates a list of commands representing the differences between
-        the current instance and another `ICommand` object.
-
-        Args:
-            other: Another ICommand object to compare against.
-
-        Returns:
-            A list of commands representing the differences between
-            the two `ICommand` objects.
-        """
-        assert_this(self.match(other))
-        return self._create_diff(other)
-
-    @abstractmethod
     def get_inner_matrices(self) -> t.List[str]:
         """
         Retrieves the list of matrix IDs.

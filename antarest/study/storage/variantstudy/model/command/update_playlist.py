@@ -71,26 +71,5 @@ class UpdatePlaylist(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        return CommandName.UPDATE_PLAYLIST.name
-
-    @override
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        if not isinstance(other, UpdatePlaylist):
-            return False
-        if equal:
-            return (
-                self.active == other.active
-                and self.reverse == other.reverse
-                and self.items == other.items
-                and self.weights == other.weights
-            )
-        return True
-
-    @override
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        return [other]
-
-    @override
     def get_inner_matrices(self) -> List[str]:
         return []

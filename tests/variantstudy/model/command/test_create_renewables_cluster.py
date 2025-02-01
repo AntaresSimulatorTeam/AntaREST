@@ -160,43 +160,6 @@ class TestCreateRenewablesCluster:
         }
 
 
-def test_match(command_context: CommandContext) -> None:
-    base = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_match = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_not_match = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="bar",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_other = RemoveRenewablesCluster(
-        area_id="id", cluster_id="id", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-
-    assert base.match(other_match, equal=True)
-    assert not base.match(other_not_match, equal=True)
-    assert not base.match(other_other, equal=True)
-
-    assert base.match_signature() == "create_renewables_cluster%foo%foo"
-    assert base.get_inner_matrices() == []
-
-
 def test_revert(command_context: CommandContext) -> None:
     base = CreateRenewablesCluster(
         area_id="area_foo",
@@ -212,29 +175,4 @@ def test_revert(command_context: CommandContext) -> None:
         RemoveRenewablesCluster(
             area_id="area_foo", cluster_id="cl1", command_context=command_context, study_version=STUDY_VERSION_8_8
         )
-    ]
-
-
-def test_create_diff(command_context: CommandContext) -> None:
-    base = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_match = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={"a": "b"},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    assert base.create_diff(other_match) == [
-        UpdateConfig(
-            target="input/renewables/clusters/foo/list/foo",
-            data={"a": "b"},
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        ),
     ]

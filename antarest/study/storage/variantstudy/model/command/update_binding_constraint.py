@@ -218,19 +218,3 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return CommandDTO(
             action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return [other]
-
-    @override
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        if not equal:
-            return self.id == other.id
-        return super().match(other, equal)

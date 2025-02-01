@@ -78,21 +78,6 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     assert layers == {"first_layer": {"1": False}}
 
 
-def test_match(command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = UpdateConfig(
-        target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_not_match = UpdateConfig(
-        target="hello", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "update_config%foo"
-
-
 @patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_update_config")
 def test_revert(mock_generate_update_config, command_context: CommandContext):
     base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
@@ -107,11 +92,3 @@ def test_revert(mock_generate_update_config, command_context: CommandContext):
         [UpdateConfig(target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8)],
         study,
     ) == [UpdateConfig(target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8)]
-
-
-def test_create_diff(command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = UpdateConfig(
-        target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.create_diff(other_match) == [other_match]

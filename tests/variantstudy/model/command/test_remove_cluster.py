@@ -123,31 +123,3 @@ class TestRemoveCluster:
             study_version=study_version,
         ).apply(empty_study)
         assert not output.status
-
-
-def test_match(command_context: CommandContext) -> None:
-    base = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_match = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_not_match = RemoveCluster(
-        area_id="foo", cluster_id="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "remove_cluster%bar%foo"
-    assert base.get_inner_matrices() == []
-
-
-def test_create_diff(command_context: CommandContext) -> None:
-    base = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_match = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.create_diff(other_match) == []

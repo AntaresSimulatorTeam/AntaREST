@@ -172,28 +172,9 @@ class TestCreateArea:
         assert not output.status
 
 
-def test_match(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_not_match = CreateArea(area_name="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "create_area%foo"
-    assert base.get_inner_matrices() == []
-
-
 def test_revert(command_context: CommandContext) -> None:
     base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
     file_study = Mock(spec=FileStudy)
     file_study.config.version = STUDY_VERSION_8_8
     actual = CommandReverter().revert(base, [], file_study)
     assert actual == [RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)]
-
-
-def test_create_diff(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.create_diff(other_match) == []

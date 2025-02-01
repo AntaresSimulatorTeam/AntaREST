@@ -68,24 +68,6 @@ class TestReplaceMatrix:
         assert not output.status
 
 
-def test_match(command_context: CommandContext):
-    base = ReplaceMatrix(target="foo", matrix=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = ReplaceMatrix(
-        target="foo", matrix=[[1]], command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_not_match = ReplaceMatrix(
-        target="bar", matrix=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "replace_matrix%foo"
-    # check the matrices links
-    matrix_id = command_context.matrix_service.create([[0]])
-    assert base.get_inner_matrices() == [matrix_id]
-
-
 @patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_replace_matrix")
 def test_revert(mock_generate_replace_matrix, command_context: CommandContext):
     matrix_a = np.random.rand(5, 2).tolist()
@@ -106,15 +88,3 @@ def test_revert(mock_generate_replace_matrix, command_context: CommandContext):
     ) == [
         ReplaceMatrix(target="foo", matrix=matrix_a, command_context=command_context, study_version=STUDY_VERSION_8_8)
     ]
-
-
-def test_create_diff(command_context: CommandContext):
-    matrix_a = np.random.rand(5, 2).tolist()
-    base = ReplaceMatrix(
-        target="foo", matrix=matrix_a, command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    matrix_b = np.random.rand(5, 2).tolist()
-    other_match = ReplaceMatrix(
-        target="foo", matrix=matrix_b, command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.create_diff(other_match) == [other_match]

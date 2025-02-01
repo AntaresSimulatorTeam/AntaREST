@@ -220,26 +220,6 @@ class TestCreateLink:
         assert not output.status
 
 
-def test_match(command_context: CommandContext):
-    base = CreateLink(
-        area1="foo", area2="bar", series=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_match = CreateLink(
-        area1="foo", area2="bar", series=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_not_match = CreateLink(
-        area1="foo", area2="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "create_link%foo%bar"
-    # check the matrices links
-    matrix_id = command_context.matrix_service.create([[0]])
-    assert base.get_inner_matrices() == [matrix_id]
-
-
 def test_revert(command_context: CommandContext):
     base = CreateLink(
         area1="foo", area2="bar", series=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
@@ -248,38 +228,4 @@ def test_revert(command_context: CommandContext):
     file_study.config.version = STUDY_VERSION_8_8
     assert CommandReverter().revert(base, [], file_study) == [
         RemoveLink(area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    ]
-
-
-def test_create_diff(command_context: CommandContext):
-    series_a = np.random.rand(8760, 8).tolist()
-    base = CreateLink(
-        area1="foo", area2="bar", series=series_a, command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-
-    series_b = np.random.rand(8760, 8).tolist()
-    other_match = CreateLink(
-        area1="foo",
-        area2="bar",
-        parameters={"hurdles_cost": "true"},
-        series=series_b,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-
-    assert base.create_diff(other_match) == [
-        UpdateConfig(
-            target="input/links/bar/properties/foo",
-            data=LinkInternal.model_validate({"area1": "bar", "area2": "foo", "hurdles_cost": "true"}).model_dump(
-                by_alias=True, exclude_none=True, exclude={"area1", "area2"}
-            ),
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        ),
-        ReplaceMatrix(
-            target="@links_series/bar/foo",
-            matrix=series_b,
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        ),
     ]

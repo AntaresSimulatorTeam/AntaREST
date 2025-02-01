@@ -31,8 +31,6 @@ from antarest.tools.lib import (
     MATRIX_STORE_DIR,
     RemoteVariantGenerator,
     extract_commands,
-    generate_diff,
-    generate_study,
     parse_commands,
     set_auth_token,
 )
@@ -201,44 +199,4 @@ def test_parse_commands(tmp_path: str, app: FastAPI) -> None:
         else:
             actual = (study_path / item_relpath).read_text()
             expected = (generated_study_path / item_relpath).read_text()
-            assert actual.strip() == expected.strip()
-
-
-def test_diff_local(tmp_path: Path) -> None:
-    export_path = tmp_path / "generation_result"
-    base_study = "base_study"
-    variant_study = "variant_study"
-    output_study_commands = export_path / "output_study_commands"
-    output_study_path = tmp_path / base_study
-    base_study_commands = export_path / base_study
-    variant_study_commands = export_path / variant_study
-    variant_study_path = tmp_path / variant_study
-
-    for study in [base_study, variant_study]:
-        with ZipFile(ASSETS_DIR / f"{study}.zip") as zip_output:
-            zip_output.extractall(path=tmp_path)
-        extract_commands(tmp_path / study, export_path / study)
-
-    generate_study(base_study_commands, None, str(export_path / "base_generated"))
-    generate_study(
-        variant_study_commands,
-        None,
-        str(export_path / "variant_generated"),
-    )
-    generate_diff(base_study_commands, variant_study_commands, output_study_commands)
-    res = generate_study(output_study_commands, None, output=str(output_study_path))
-    assert res.success
-
-    assert output_study_path.exists() and output_study_path.is_dir()
-    for file_path in variant_study_path.rglob("*"):
-        if file_path.is_dir() or file_path.name in ["comments.txt", "study.antares", "Desktop.ini", "study.ico"]:
-            continue
-        item_relpath = file_path.relative_to(variant_study_path).as_posix()
-        if file_path.suffix == ".ini":
-            actual = IniReader().read(variant_study_path / item_relpath)
-            expected = IniReader().read(output_study_path / item_relpath)
-            assert actual == expected, f"Invalid configuration: '{item_relpath}'"
-        else:
-            actual = (variant_study_path / item_relpath).read_text()
-            expected = (output_study_path / item_relpath).read_text()
             assert actual.strip() == expected.strip()

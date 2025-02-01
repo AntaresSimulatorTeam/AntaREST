@@ -207,55 +207,6 @@ class TestCreateCluster:
         }
 
 
-def test_match(command_context: CommandContext):
-    prepro = GEN.random((365, 6)).tolist()
-    modulation = GEN.random((8760, 4)).tolist()
-    base = CreateCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        prepro=prepro,
-        modulation=modulation,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_match = CreateCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        prepro=prepro,
-        modulation=modulation,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_not_match = CreateCluster(
-        area_id="foo",
-        cluster_name="bar",
-        parameters={},
-        prepro=prepro,
-        modulation=modulation,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_other = RemoveCluster(
-        area_id="id", cluster_id="id", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-
-    assert base.match(other_match, equal=True)
-    assert not base.match(other_not_match, equal=True)
-    assert not base.match(other_other, equal=True)
-
-    assert base.match_signature() == "create_cluster%foo%foo"
-
-    # check the matrices links
-    prepro_id = command_context.matrix_service.create(prepro)
-    modulation_id = command_context.matrix_service.create(modulation)
-    assert base.get_inner_matrices() == [prepro_id, modulation_id]
-
-
 def test_revert(command_context: CommandContext):
     base = CreateCluster(
         area_id="foo",
@@ -268,51 +219,4 @@ def test_revert(command_context: CommandContext):
     file_study.config.version = STUDY_VERSION_8_8
     assert CommandReverter().revert(base, [], file_study) == [
         RemoveCluster(area_id="foo", cluster_id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    ]
-
-
-def test_create_diff(command_context: CommandContext):
-    prepro_a = GEN.random((365, 6)).tolist()
-    modulation_a = GEN.random((8760, 4)).tolist()
-    base = CreateCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        prepro=prepro_a,
-        modulation=modulation_a,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-
-    prepro_b = GEN.random((365, 6)).tolist()
-    modulation_b = GEN.random((8760, 4)).tolist()
-    other_match = CreateCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={"nominalcapacity": "2400"},
-        prepro=prepro_b,
-        modulation=modulation_b,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-
-    assert base.create_diff(other_match) == [
-        ReplaceMatrix(
-            target="input/thermal/prepro/foo/foo/data",
-            matrix=prepro_b,
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        ),
-        ReplaceMatrix(
-            target="input/thermal/prepro/foo/foo/modulation",
-            matrix=modulation_b,
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        ),
-        UpdateConfig(
-            target="input/thermal/clusters/foo/list/foo",
-            data={"nominalcapacity": "2400"},
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        ),
     ]

@@ -12,11 +12,9 @@
 
 import json
 import logging
-import os
-import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Union
 from zipfile import ZipFile
 
 import numpy as np
@@ -35,11 +33,10 @@ from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import NEW_DEFAULT_STUDY_VERSION, STUDY_REFERENCE_TEMPLATES
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI, GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.model.model import CommandDTO, GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_extractor import VariantCommandsExtractor
 from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 
@@ -214,104 +211,6 @@ def extract_commands(study_path: Path, commands_output_dir: Path) -> None:
     (commands_output_dir / COMMAND_FILE).write_text(
         to_json_string([command.model_dump(exclude={"id"}) for command in command_list], indent=2)
     )
-
-
-def generate_diff(
-    base: Path,
-    variant: Path,
-    output_dir: Path,
-    study_version: StudyVersion = NEW_DEFAULT_STUDY_VERSION,
-) -> None:
-    """
-    Generate variant script commands from two variant script directories.
-
-    This function generates a set of commands that can be used to transform
-    the base study into the variant study, based on the differences between the two.
-    It does this by comparing the command files in each study directory
-    and extracting the differences between them.
-
-    Args:
-        base: The directory of the base study.
-        variant: The directory of the variant study.
-        output_dir: The output directory where the generated commands will be saved.
-        study_version: The version of the generated study.
-
-    Raises:
-        FileNotFoundError: If the base or variant study's command file is missing.
-
-    Returns:
-        None. The generated commands are written to a JSON file in the specified output directory.
-    """
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
-    matrices_dir = output_dir / MATRIX_STORE_DIR
-    matrices_dir.mkdir(exist_ok=True)
-
-    study_id = "empty_base"
-    path_study = output_dir / study_id
-
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrices_dir,
-    )
-    local_matrix_service = SimpleMatrixService(
-        matrix_content_repository=matrix_content_repository,
-    )
-    resolver = UriResolverService(matrix_service=local_matrix_service)
-
-    cache = LocalCache()
-    study_factory = StudyFactory(matrix=local_matrix_service, resolver=resolver, cache=cache)
-
-    create_new_empty_study(
-        version=study_version,
-        path_study=path_study,
-        path_resources=get_local_path() / "resources",
-    )
-
-    empty_study = study_factory.create_from_fs(path_study, study_id)
-
-    base_command_file = base / COMMAND_FILE
-    if not base_command_file.exists():
-        raise FileNotFoundError(f"Missing {COMMAND_FILE}")
-    variant_command_file = variant / COMMAND_FILE
-    if not variant_command_file.exists():
-        raise FileNotFoundError(f"Missing {COMMAND_FILE}")
-
-    stopwatch = StopWatch()
-    logger.info("Copying input matrices")
-    if (base / MATRIX_STORE_DIR).exists():
-        for matrix_file in os.listdir(base / MATRIX_STORE_DIR):
-            shutil.copyfile(
-                base / MATRIX_STORE_DIR / matrix_file,
-                matrices_dir / matrix_file,
-            )
-    stopwatch.log_elapsed(lambda x: logger.info(f"Base input matrix copied in {x}s"))
-    if (variant / MATRIX_STORE_DIR).exists():
-        for matrix_file in os.listdir(variant / MATRIX_STORE_DIR):
-            shutil.copyfile(
-                variant / MATRIX_STORE_DIR / matrix_file,
-                matrices_dir / matrix_file,
-            )
-    stopwatch.log_elapsed(lambda x: logger.info(f"Variant input matrix copied in {x}s"))
-
-    study_version = empty_study.config.version
-    extractor = VariantCommandsExtractor(local_matrix_service, patch_service=PatchService())
-    diff_commands = extractor.diff(
-        base=parse_commands(base_command_file, study_version),
-        variant=parse_commands(variant_command_file, study_version),
-        empty_study=empty_study,
-    )
-
-    (output_dir / COMMAND_FILE).write_text(
-        to_json_string([command.to_dto().model_dump(exclude={"id"}) for command in diff_commands], indent=2)
-    )
-
-    needed_matrices: Set[str] = set()
-    for command in diff_commands:
-        for matrix in command.get_inner_matrices():
-            needed_matrices.add(f"{matrix}.tsv")
-    for matrix_file in os.listdir(matrices_dir):
-        if matrix_file not in needed_matrices:
-            os.unlink(matrices_dir / matrix_file)
 
 
 def parse_commands(file: Path, study_version: StudyVersion) -> List[CommandDTO]:
