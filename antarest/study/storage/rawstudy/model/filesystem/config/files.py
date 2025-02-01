@@ -43,6 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     XpansionParsingError,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import extract_filtering
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     BindingConstraintDTO,
@@ -50,7 +51,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     Link,
     Simulation,
-    transform_name_to_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfigType,

@@ -1262,15 +1262,15 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/constraint-groups")
         assert res.status_code in {200, 201}, res.json()
         groups = res.json()
-        assert set(groups) == {"default", "random_grp", "Group 1", "Group 2"}
-        assert groups["Group 2"] == [
+        assert set(groups) == {"default", "random_grp", "group 1", "group 2"}
+        assert groups["group 2"] == [
             {
                 "comments": "New API",
                 "terms": [],
                 "enabled": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "",
-                "group": "Group 2",
+                "group": "group 2",
                 "id": "second bc",
                 "name": "Second BC",
                 "operator": "less",

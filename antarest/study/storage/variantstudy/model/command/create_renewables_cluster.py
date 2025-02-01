@@ -9,10 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import copy
 import typing as t
 
-from pydantic import model_validator
+from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.core.model import JSON
@@ -38,20 +38,28 @@ class CreateRenewablesCluster(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_RENEWABLES_CLUSTER
-    version: int = 1
+    version: int = 2
 
     # Command parameters
     # ==================
 
     area_id: str
-    cluster_name: str
     parameters: RenewableProperties
 
+    @property
+    def cluster_name(self) -> str:
+        return self.parameters.name
+
     @model_validator(mode="before")
-    def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    @classmethod
+    def validate_model(cls, values: t.Dict[str, t.Any], info: ValidationInfo) -> t.Dict[str, t.Any]:
         # Validate parameters
-        args = {"name": values["cluster_name"], **values["parameters"]}
-        values["parameters"] = create_renewable_properties(values["study_version"], **args)
+        if info.mode == "json":
+            args = copy.deepcopy(values["parameters"])
+            version = values.get("version", 1)
+            if version == 1:
+                args["name"] = values["cluster_name"]
+            values["parameters"] = create_renewable_properties(values["study_version"], **args)
         return values
 
     @override
@@ -134,9 +142,9 @@ class CreateRenewablesCluster(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
+            version=self.version,
             args={
                 "area_id": self.area_id,
-                "cluster_name": self.cluster_name,
                 "parameters": self.parameters.model_dump(mode="json", by_alias=True),
             },
             study_version=self.study_version,

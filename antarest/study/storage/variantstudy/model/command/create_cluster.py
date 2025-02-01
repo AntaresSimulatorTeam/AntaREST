@@ -9,21 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import copy
 import typing as t
+from typing import List
 
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    FileStudyTreeConfig,
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalPropertiesType,
     create_thermal_config,
@@ -36,6 +34,8 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+OptionalMatrixData = List[List[MatrixData]] | str | None
+
 
 class CreateCluster(ICommand):
     """
@@ -46,22 +46,33 @@ class CreateCluster(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_THERMAL_CLUSTER
-    version: int = 1
+
+    # version 2: remove cluster_name and type parameters as ThermalPropertiesType
+    version: int = 2
 
     # Command parameters
     # ==================
 
     area_id: str
-    cluster_name: str
     parameters: ThermalPropertiesType
-    prepro: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
-    modulation: t.Optional[t.Union[t.List[t.List[MatrixData]], str]] = Field(None, validate_default=True)
+    prepro: OptionalMatrixData = Field(None, validate_default=True)
+    modulation: OptionalMatrixData = Field(None, validate_default=True)
+
+    @property
+    def cluster_name(self) -> str:
+        return self.parameters.name
 
     @model_validator(mode="before")
+    @classmethod
     def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         # Validate parameters
-        args = {"name": values["cluster_name"], **values["parameters"]}
-        values["parameters"] = create_thermal_properties(values["study_version"], **args)
+        parameters = copy.deepcopy(values["parameters"])
+        if not isinstance(parameters, ThermalPropertiesType):
+            version = values.get("version", 1)
+            if version == 1:
+                parameters["name"] = values["cluster_name"]
+                values.pop("cluster_name")
+            values["parameters"] = create_thermal_properties(values["study_version"], parameters)
 
         # Validate prepro
         if "prepro" in values:
@@ -153,10 +164,10 @@ class CreateCluster(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
+            version=self.version,
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
-                "cluster_name": self.cluster_name,
                 "parameters": self.parameters.model_dump(mode="json", by_alias=True),
                 "prepro": strip_matrix_protocol(self.prepro),
                 "modulation": strip_matrix_protocol(self.modulation),

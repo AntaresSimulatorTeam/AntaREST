@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any, Dict
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -428,13 +429,13 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
         return ThermalConfig
 
 
-def create_thermal_properties(study_version: StudyVersion, **kwargs: t.Any) -> ThermalPropertiesType:
+def create_thermal_properties(study_version: StudyVersion, data: Dict[str, Any]) -> ThermalPropertiesType:
     """
     Factory method to create thermal properties.
 
     Args:
         study_version: The version of the study.
-        **kwargs: The properties to be used to initialize the model.
+        data: The properties to be used to initialize the model.
 
     Returns:
         The thermal properties.
@@ -443,11 +444,11 @@ def create_thermal_properties(study_version: StudyVersion, **kwargs: t.Any) -> T
         ValueError: If the study version is not supported.
     """
     if study_version >= 870:
-        return Thermal870Properties.model_validate(kwargs)
+        return Thermal870Properties.model_validate(data)
     elif study_version == 860:
-        return Thermal860Properties.model_validate(kwargs)
+        return Thermal860Properties.model_validate(data)
     else:
-        return ThermalProperties.model_validate(kwargs)
+        return ThermalProperties.model_validate(data)
 
 
 def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:

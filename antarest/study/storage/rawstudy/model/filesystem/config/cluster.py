@@ -23,6 +23,7 @@ from pydantic import Field
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serialization import AntaresBaseModel
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
 @functools.total_ordering
@@ -51,6 +52,16 @@ class ItemProperties(
     group: LowerCaseStr = Field(default="", description="Cluster group")
 
     name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
+
+    def get_id(self) -> str:
+        """
+        Note: explicitly a getter in order to avoid conflict
+              with `id` field of some subclasses that need are
+              meant to be serialized.
+              TODO Ideally, we should separate the 2 "properties" and "config"
+              hierarchies ...
+        """
+        return transform_name_to_id(self.name)
 
     def __lt__(self, other: t.Any) -> bool:
         """

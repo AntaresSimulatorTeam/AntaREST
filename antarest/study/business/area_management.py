@@ -32,7 +32,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     ThermalAreasProperties,
     UIProperties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea

@@ -19,11 +19,8 @@ from typing_extensions import override
 from antarest.core.model import JSON, LowerCaseStr
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    FileStudyTreeConfig,
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStoragePropertiesType,
     create_st_storage_config,
@@ -104,7 +101,7 @@ class CreateSTStorage(ICommand):
     @model_validator(mode="before")
     def validate_model(cls, values: t.Dict[str, t.Any], info: ValidationInfo) -> t.Dict[str, t.Any]:
         if info.mode == "json":
-            values["parameters"] = create_st_storage_properties(values["study_version"], **values["parameters"])
+            values["parameters"] = create_st_storage_properties(values["study_version"], values["parameters"])
         return values
 
     @staticmethod

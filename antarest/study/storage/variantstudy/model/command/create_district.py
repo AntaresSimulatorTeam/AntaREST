@@ -16,11 +16,8 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 from pydantic import field_validator
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    DistrictSet,
-    FileStudyTreeConfig,
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand

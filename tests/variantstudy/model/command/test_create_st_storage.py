@@ -17,7 +17,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader

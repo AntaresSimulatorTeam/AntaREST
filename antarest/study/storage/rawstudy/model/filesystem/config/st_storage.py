@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Dict
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -164,13 +165,13 @@ STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
 STStoragePropertiesType = t.Union[STStorageProperties, STStorage880Properties]
 
 
-def create_st_storage_properties(study_version: StudyVersion, **kwargs: t.Any) -> STStoragePropertiesType:
+def create_st_storage_properties(study_version: StudyVersion, data: Dict[str, t.Any]) -> STStoragePropertiesType:
     """
     Factory method to create st_storage properties.
 
     Args:
         study_version: The version of the study.
-        **kwargs: The properties to be used to initialize the model.
+        data: The dictionary of data to be used to initialize the model.
 
     Returns:
         The short term storage properties.
@@ -179,9 +180,9 @@ def create_st_storage_properties(study_version: StudyVersion, **kwargs: t.Any) -
         ValueError: If the study version is not supported.
     """
     if study_version >= STUDY_VERSION_8_8:
-        return STStorage880Properties.model_validate(kwargs)
+        return STStorage880Properties.model_validate(data)
     elif study_version >= STUDY_VERSION_8_6:
-        return STStorageProperties.model_validate(kwargs)
+        return STStorageProperties.model_validate(data)
     raise ValueError(f"Unsupported study version: {study_version}")
 
 

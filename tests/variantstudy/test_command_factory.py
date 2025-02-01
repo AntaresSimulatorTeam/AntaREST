@@ -21,9 +21,11 @@ import pytest
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -167,23 +169,6 @@ COMMANDS: List[CommandDTO] = [
     CommandDTO(
         action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
         args=[{"ids": ["id"]}],
-        study_version=STUDY_VERSION_8_8,
-    ),
-    CommandDTO(
-        action=CommandName.CREATE_THERMAL_CLUSTER.value,
-        args={
-            "area_id": "area_name",
-            "cluster_name": "cluster_name",
-            "parameters": {
-                "group": "group",
-                "unitcount": "unitcount",
-                "nominalcapacity": "nominalcapacity",
-                "marginal-cost": "marginal-cost",
-                "market-bid-cost": "market-bid-cost",
-            },
-            "prepro": "prepro",
-            "modulation": "modulation",
-        },
         study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
@@ -497,3 +482,41 @@ def test_unknown_command():
         command_factory.to_command(
             command_dto=CommandDTO(action="unknown_command", args={}, study_version=STUDY_VERSION_8_8)
         )
+
+
+@pytest.mark.unit_test
+def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.CREATE_THERMAL_CLUSTER.value,
+        args={
+            "area_id": "area_name",
+            "cluster_name": "cluster_name",
+            "parameters": {
+                "group": "group",
+                "unitcount": 4,
+                "nominalcapacity": 100,
+                "marginal-cost": 1.2,
+                "market-bid-cost": 3.6,
+            },
+            "prepro": "prepro",
+            "modulation": "modulation",
+        },
+        study_version=STUDY_VERSION_8_8,
+    )
+    command = command_factory.to_command(dto)
+    assert command == CreateCluster(
+        command_context=command_factory.command_context,
+        version=2,
+        study_version=STUDY_VERSION_8_8,
+        area_id="area_name",
+        parameters=Thermal870Properties(
+            name="cluster_name",
+            group="group",
+            unit_count=4,
+            nominal_capacity=100,
+            marginal_cost=1.2,
+            market_bid_cost=3.6,
+        ),
+        prepro="prepro",
+        modulation="modulation",
+    )
