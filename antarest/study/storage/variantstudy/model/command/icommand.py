@@ -27,9 +27,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-if t.TYPE_CHECKING:  # False at runtime, for mypy
-    from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
-
 MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
 
@@ -131,17 +128,3 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         Retrieves the list of matrix IDs.
         """
         raise NotImplementedError()
-
-    def get_command_extractor(self) -> "CommandExtractor":
-        """
-        Create a new `CommandExtractor` used to revert the command changes.
-
-        Returns:
-            An instance of `CommandExtractor`.
-        """
-        from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
-
-        return CommandExtractor(
-            self.command_context.matrix_service,
-            self.command_context.patch_service,
-        )
