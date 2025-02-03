@@ -985,11 +985,12 @@ class BindingConstraintManager:
 
             # convert table mode object to an object that's the output of this function
             # and we also update the cofig objet that will be serialized in the INI
-            bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
-            input_bc_props = create_binding_constraint_config(study_version, **bc_input_as_dict)
-            input_bc_props_as_dict = input_bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             bc_config = bcs_config[bcs_config_by_id[bc_id]]
             bc_config_copy = copy.deepcopy(bc_config)
+            bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
+            d = {**bc_config, **bc_input_as_dict}
+            input_bc_props = create_binding_constraint_config(study_version, **d)
+            input_bc_props_as_dict = input_bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             bc_config_copy.update(input_bc_props_as_dict)
             bc_output = self.constraint_model_adapter(bc_config_copy, study_version)
             updated_constraints[bc_id] = bc_output
