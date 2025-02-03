@@ -20,12 +20,10 @@ from pydantic import ValidationError
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -158,21 +156,3 @@ class TestCreateRenewablesCluster:
             "updated_at": None,
             "user_id": None,
         }
-
-
-def test_revert(command_context: CommandContext) -> None:
-    base = CreateRenewablesCluster(
-        area_id="area_foo",
-        cluster_name="cl1",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    file_study = mock.MagicMock(spec=FileStudy)
-    file_study.config.version = STUDY_VERSION_8_8
-    revert_cmd = CommandReverter().revert(base, [], file_study)
-    assert revert_cmd == [
-        RemoveRenewablesCluster(
-            area_id="area_foo", cluster_id="cl1", command_context=command_context, study_version=STUDY_VERSION_8_8
-        )
-    ]

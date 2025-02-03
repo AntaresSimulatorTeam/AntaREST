@@ -17,9 +17,7 @@ import numpy as np
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -66,25 +64,3 @@ class TestReplaceMatrix:
         )
         output = replace_matrix.apply(empty_study)
         assert not output.status
-
-
-@patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_replace_matrix")
-def test_revert(mock_generate_replace_matrix, command_context: CommandContext):
-    matrix_a = np.random.rand(5, 2).tolist()
-    base = ReplaceMatrix(
-        target="foo", matrix=matrix_a, command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    study = FileStudy(config=Mock(), tree=Mock())
-    CommandReverter().revert(base, [], study)
-    mock_generate_replace_matrix.assert_called_with(study.tree, ["foo"])
-    assert CommandReverter().revert(
-        base,
-        [
-            ReplaceMatrix(
-                target="foo", matrix=matrix_a, command_context=command_context, study_version=STUDY_VERSION_8_8
-            )
-        ],
-        study,
-    ) == [
-        ReplaceMatrix(target="foo", matrix=matrix_a, command_context=command_context, study_version=STUDY_VERSION_8_8)
-    ]

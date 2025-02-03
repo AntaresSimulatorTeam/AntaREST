@@ -12,7 +12,6 @@
 
 from unittest.mock import Mock
 
-import numpy as np
 import pytest
 
 from antarest.study.model import STUDY_VERSION_8_8
@@ -23,8 +22,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_870,
 )
@@ -36,9 +33,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
-from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
     update_matrices_names,
@@ -286,125 +281,6 @@ def test_scenario_builder(empty_study: FileStudy, command_context: CommandContex
     # Check the BC rule is removed from the scenario builder
     rulesets = empty_study.tree.get(["settings", "scenariobuilder"])
     assert rulesets == {"Default Ruleset": {}}
-
-
-def test_revert(command_context: CommandContext):
-    hourly_values = default_bc_hourly.tolist()
-    daily_values = default_bc_weekly_daily.tolist()
-    weekly_values = default_bc_weekly_daily.tolist()
-    file_study = Mock(spec=FileStudy)
-    file_study.config.version = STUDY_VERSION_8_8
-    base = CreateBindingConstraint(
-        name="foo",
-        enabled=False,
-        time_step=BindingConstraintFrequency.DAILY,
-        operator=BindingConstraintOperator.BOTH,
-        coeffs={"a": [0.3]},
-        values=daily_values,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    assert CommandReverter().revert(base, [], file_study) == [
-        RemoveBindingConstraint(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    ]
-
-    base = UpdateBindingConstraint(
-        id="foo",
-        enabled=False,
-        time_step=BindingConstraintFrequency.DAILY,
-        operator=BindingConstraintOperator.BOTH,
-        coeffs={"a": [0.3]},
-        values=daily_values,
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    mock_command_extractor = Mock(spec=CommandExtractor)
-    object.__setattr__(
-        base,
-        "get_command_extractor",
-        Mock(return_value=mock_command_extractor),
-    )
-    assert CommandReverter().revert(
-        base,
-        [
-            UpdateBindingConstraint(
-                id="foo",
-                enabled=True,
-                time_step=BindingConstraintFrequency.WEEKLY,
-                operator=BindingConstraintOperator.BOTH,
-                coeffs={"a": [0.3]},
-                values=weekly_values,
-                command_context=command_context,
-                study_version=STUDY_VERSION_8_8,
-            ),
-            UpdateBindingConstraint(
-                id="foo",
-                enabled=True,
-                time_step=BindingConstraintFrequency.HOURLY,
-                operator=BindingConstraintOperator.BOTH,
-                coeffs={"a": [0.3]},
-                values=hourly_values,
-                command_context=command_context,
-                study_version=STUDY_VERSION_8_8,
-            ),
-        ],
-        file_study,
-    ) == [
-        UpdateBindingConstraint(
-            id="foo",
-            enabled=True,
-            time_step=BindingConstraintFrequency.HOURLY,
-            operator=BindingConstraintOperator.BOTH,
-            coeffs={"a": [0.3]},
-            values=hourly_values,
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        )
-    ]
-    # check the matrices links
-    hourly_matrix_id = command_context.matrix_service.create(hourly_values)
-    assert CommandReverter().revert(
-        base,
-        [
-            UpdateBindingConstraint(
-                id="foo",
-                enabled=True,
-                time_step=BindingConstraintFrequency.WEEKLY,
-                operator=BindingConstraintOperator.BOTH,
-                coeffs={"a": [0.3]},
-                values=weekly_values,
-                command_context=command_context,
-                study_version=STUDY_VERSION_8_8,
-            ),
-            CreateBindingConstraint(
-                name="foo",
-                enabled=True,
-                time_step=BindingConstraintFrequency.HOURLY,
-                operator=BindingConstraintOperator.EQUAL,
-                coeffs={"a": [0.3]},
-                values=hourly_values,
-                command_context=command_context,
-                study_version=STUDY_VERSION_8_8,
-            ),
-        ],
-        file_study,
-    ) == [
-        UpdateBindingConstraint(
-            id="foo",
-            enabled=True,
-            time_step=BindingConstraintFrequency.HOURLY,
-            operator=BindingConstraintOperator.EQUAL,
-            filter_year_by_year="",
-            filter_synthesis="",
-            coeffs={"a": [0.3]},
-            values=hourly_matrix_id,
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        )
-    ]
-    study = FileStudy(config=Mock(), tree=Mock())
-    CommandReverter().revert(base, [], study)
-    mock_command_extractor.extract_binding_constraint.assert_called_with(study, "foo")
 
 
 @pytest.mark.parametrize(

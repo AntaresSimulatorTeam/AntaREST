@@ -16,13 +16,10 @@ from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -129,18 +126,3 @@ def test_manage_district(empty_study: FileStudy, command_context: CommandContext
     assert remove_output_d3.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     assert len(sets_config.keys()) == 3
-
-
-def test_revert(command_context: CommandContext):
-    base = CreateDistrict(
-        name="foo",
-        base_filter=DistrictBaseFilter.add_all,
-        filter_items=["a", "b"],
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    file_study = Mock(spec=FileStudy)
-    file_study.config.version = STUDY_VERSION_8_8
-    assert CommandReverter().revert(base, [], file_study) == [
-        RemoveDistrict(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    ]

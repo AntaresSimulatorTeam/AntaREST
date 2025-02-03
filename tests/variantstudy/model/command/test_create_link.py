@@ -10,27 +10,20 @@
 #
 # This file is part of the Antares project.
 
-import configparser
 from unittest.mock import Mock
 
-import numpy as np
 import pytest
 from pydantic import ValidationError
 
 from antarest.core.exceptions import LinkValidationError
-from antarest.study.business.link_management import LinkInternal
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -218,14 +211,3 @@ class TestCreateLink:
             study_version=study_version,
         ).apply(empty_study)
         assert not output.status
-
-
-def test_revert(command_context: CommandContext):
-    base = CreateLink(
-        area1="foo", area2="bar", series=[[0]], command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    file_study = Mock(spec=FileStudy)
-    file_study.config.version = STUDY_VERSION_8_8
-    assert CommandReverter().revert(base, [], file_study) == [
-        RemoveLink(area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    ]
