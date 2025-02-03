@@ -99,9 +99,11 @@ class CreateSTStorage(ICommand):
         return self.parameters.name
 
     @model_validator(mode="before")
-    def validate_model(cls, values: t.Dict[str, t.Any], info: ValidationInfo) -> t.Dict[str, t.Any]:
-        if info.mode == "json":
-            values["parameters"] = create_st_storage_properties(values["study_version"], values["parameters"])
+    @classmethod
+    def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        params = values["parameters"]
+        if isinstance(params, dict):
+            values["parameters"] = create_st_storage_properties(values["study_version"], params)
         return values
 
     @staticmethod

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import copy
 import re
 
 import numpy as np
@@ -18,7 +18,11 @@ from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorage880Properties,
+    STStorageConfig,
+    STStorageGroup,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
@@ -106,6 +110,18 @@ class TestCreateSTStorage:
         assert cmd.lower_rule_curve == constants.get_st_storage_lower_rule_curve()
         assert cmd.upper_rule_curve == constants.get_st_storage_upper_rule_curve()
         assert cmd.inflows != constants.get_st_storage_inflows()
+
+    @pytest.mark.parametrize("group", ["Battery", "battery"])
+    def test_init__lower_and_upper_case_groups_are_valid(self, command_context: CommandContext, group: str):
+        params = copy.deepcopy(PARAMETERS)
+        params["group"] = group
+        cmd = CreateSTStorage(
+            command_context=command_context,
+            area_id="area_fr",
+            parameters=STStorage880Properties(**PARAMETERS),
+            study_version=STUDY_VERSION_8_8,
+        )
+        assert cmd.parameters.group == STStorageGroup.BATTERY
 
     def test_init__invalid_storage_name(self, recent_study: FileStudy, command_context: CommandContext):
         # When we apply the config for a new ST Storage with a bad name

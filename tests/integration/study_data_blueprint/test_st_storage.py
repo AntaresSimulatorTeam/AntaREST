@@ -149,7 +149,7 @@ class TestSTStorage:
         # Unfilled properties will be set to their default values.
         siemens_properties = {
             "name": siemens_battery,
-            "group": "Battery",
+            "group": "battery",
             "injectionNominalCapacity": 1450,
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
@@ -341,7 +341,7 @@ class TestSTStorage:
         # In the following example, we will create two short-term storages:
         siemens_properties = {
             "name": siemens_battery,
-            "group": "Battery",
+            "group": "battery",
             "injectionNominalCapacity": 1450,
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
@@ -361,7 +361,7 @@ class TestSTStorage:
         grand_maison = "Grand'Maison"
         grand_maison_properties = {
             "name": grand_maison,
-            "group": "PSP_closed",
+            "group": "psp_closed",
             "injectionNominalCapacity": 1500,
             "withdrawalNominalCapacity": 1800,
             "reservoirCapacity": 20000,
@@ -623,7 +623,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
-        expected = {**default_config, "name": tesla_battery, "group": "Battery"}
+        expected = {**default_config, "name": tesla_battery, "group": "battery"}
         assert actual == expected
 
         # We want to make sure that the default properties are applied to a study variant.
@@ -653,7 +653,7 @@ class TestSTStorage:
             "action": "create_st_storage",
             "args": {
                 "area_id": "fr",
-                "parameters": {**default_config, "name": siemens_battery, "group": "Battery"},
+                "parameters": {**default_config, "name": siemens_battery, "group": "battery"},
                 "pmax_injection": ANY,
                 "pmax_withdrawal": ANY,
                 "lower_rule_curve": ANY,
@@ -735,7 +735,7 @@ class TestSTStorage:
         expected = {
             **default_config,
             "name": siemens_battery,
-            "group": "Battery",
+            "group": "battery",
             "injectionnominalcapacity": 1600,
             "initiallevel": 0.0,
         }
