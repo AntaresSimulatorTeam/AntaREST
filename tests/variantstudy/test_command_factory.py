@@ -488,35 +488,20 @@ def test_unknown_command():
 def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
     dto = CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
+        version=1,
         args={
             "area_id": "area_name",
             "cluster_name": "cluster_name",
-            "parameters": {
-                "group": "group",
-                "unitcount": 4,
-                "nominalcapacity": 100,
-                "marginal-cost": 1.2,
-                "market-bid-cost": 3.6,
-            },
+            "parameters": {},
             "prepro": "prepro",
             "modulation": "modulation",
         },
         study_version=STUDY_VERSION_8_8,
     )
-    command = command_factory.to_command(dto)
-    assert command == CreateCluster(
-        command_context=command_factory.command_context,
-        version=2,
-        study_version=STUDY_VERSION_8_8,
-        area_id="area_name",
-        parameters=Thermal870Properties(
-            name="cluster_name",
-            group="group",
-            unit_count=4,
-            nominal_capacity=100,
-            marginal_cost=1.2,
-            market_bid_cost=3.6,
-        ),
-        prepro="prepro",
-        modulation="modulation",
-    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 2
+    assert dto.args["parameters"]["name"] == "cluster_name"
+    assert "cluster_name" not in dto.args

@@ -164,7 +164,7 @@ class CreateCluster(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            version=self.version,
+            version=2,
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
