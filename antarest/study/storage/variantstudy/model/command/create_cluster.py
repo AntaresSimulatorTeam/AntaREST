@@ -66,8 +66,8 @@ class CreateCluster(ICommand):
     @classmethod
     def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         # Validate parameters
-        parameters = copy.deepcopy(values["parameters"])
-        if not isinstance(parameters, ThermalPropertiesType):
+        if isinstance(values["parameters"], dict):
+            parameters = copy.deepcopy(values["parameters"])
             version = values.get("version", 1)
             if version == 1:
                 parameters["name"] = values["cluster_name"]
