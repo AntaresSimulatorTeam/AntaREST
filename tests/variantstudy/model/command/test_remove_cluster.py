@@ -14,7 +14,6 @@ import numpy as np
 import pytest
 from checksumdir import dirhash
 
-from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -30,7 +29,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -130,31 +128,3 @@ class TestRemoveCluster:
             study_version=study_version,
         ).apply(empty_study)
         assert not output.status
-
-
-def test_match(command_context: CommandContext) -> None:
-    base = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_match = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_not_match = RemoveCluster(
-        area_id="foo", cluster_id="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "remove_cluster%bar%foo"
-    assert base.get_inner_matrices() == []
-
-
-def test_create_diff(command_context: CommandContext) -> None:
-    base = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_match = RemoveCluster(
-        area_id="foo", cluster_id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.create_diff(other_match) == []

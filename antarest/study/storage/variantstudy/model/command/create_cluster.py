@@ -13,14 +13,13 @@ import copy
 import typing as t
 from typing import List
 
-from pydantic import Field, ValidationInfo, model_validator
+from pydantic import Field, model_validator
 from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalPropertiesType,
@@ -30,7 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -174,72 +173,6 @@ class CreateCluster(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.cluster_name
-        )
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateCluster):
-            return False
-        simple_match = self.area_id == other.area_id and self.cluster_name == other.cluster_name
-        if not equal:
-            return simple_match
-        self_params = self.parameters.model_dump(mode="json", by_alias=True)
-        other_params = other.parameters.model_dump(mode="json", by_alias=True)
-        return (
-            simple_match
-            and self_params == other_params
-            and self.prepro == other.prepro
-            and self.modulation == other.modulation
-        )
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        other = t.cast(CreateCluster, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        # Series identifiers are in lower case.
-        series_id = transform_name_to_id(self.cluster_name)
-        commands: t.List[ICommand] = []
-        if self.prepro != other.prepro:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/data",
-                    matrix=strip_matrix_protocol(other.prepro),
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        if self.modulation != other.modulation:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/modulation",
-                    matrix=strip_matrix_protocol(other.modulation),
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        self_params = self.parameters.model_dump(mode="json", by_alias=True)
-        other_params = other.parameters.model_dump(mode="json", by_alias=True)
-        if self_params != other_params:
-            commands.append(
-                UpdateConfig(
-                    target=f"input/thermal/clusters/{self.area_id}/list/{self.cluster_name}",
-                    data=other_params,
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        return commands
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

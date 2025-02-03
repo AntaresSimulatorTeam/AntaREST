@@ -30,7 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -288,78 +288,6 @@ class CreateSTStorage(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        """Returns the command signature."""
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.storage_id
-        )
-
-    @override
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        """
-        Checks if the current instance matches another `ICommand` object.
-
-        Args:
-            other: Another `ICommand` object to compare against.
-            equal: Flag indicating whether to perform a deep comparison.
-
-        Returns:
-            bool: `True` if the current instance matches the other object, `False` otherwise.
-        """
-        if not isinstance(other, CreateSTStorage):
-            return False
-        if equal:
-            # Deep comparison
-            return self.__eq__(other)
-        else:
-            return self.area_id == other.area_id and self.storage_id == other.storage_id
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        """
-        Creates a list of commands representing the differences between
-        the current instance and another `ICommand` object.
-
-        Args:
-            other: Another ICommand object to compare against.
-
-        Returns:
-            A list of commands representing the differences between
-            the two `ICommand` objects.
-        """
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        other = t.cast(CreateSTStorage, other)
-        storage_id = self.storage_id
-        commands: t.List[ICommand] = [
-            ReplaceMatrix(
-                target=f"input/st-storage/series/{self.area_id}/{storage_id}/{attr}",
-                matrix=strip_matrix_protocol(getattr(other, attr)),
-                command_context=self.command_context,
-                study_version=self.study_version,
-            )
-            for attr in _MATRIX_NAMES
-            if getattr(self, attr) != getattr(other, attr)
-        ]
-        self_params = self.parameters.model_dump(mode="json", by_alias=True)
-        other_params = other.parameters.model_dump(mode="json", by_alias=True)
-        if self_params != other_params:
-            commands.append(
-                UpdateConfig(
-                    target=f"input/st-storage/clusters/{self.area_id}/list/{storage_id}",
-                    data=other_params,
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        return commands
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

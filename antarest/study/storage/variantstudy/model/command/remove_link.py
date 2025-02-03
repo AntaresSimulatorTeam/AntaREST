@@ -164,20 +164,5 @@ class RemoveLink(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        sep = MATCH_SIGNATURE_SEPARATOR
-        return f"{self.command_name.value}{sep}{self.area1}{sep}{self.area2}"
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveLink):
-            return False
-        return self.area1 == other.area1 and self.area2 == other.area2
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
-
-    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []
