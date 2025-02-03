@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import copy
+import logging
 import typing as t
 from abc import ABCMeta
 
@@ -42,7 +43,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
-from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     BindingConstraintProperties,
@@ -53,6 +53,8 @@ from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIG
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import update_matrices_names
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+logger = logging.getLogger(__name__)
 
 
 class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
@@ -155,25 +157,33 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
             bc.update(bc_props_as_dict)
             if bc_props.time_step and bc_props.time_step != BindingConstraintFrequency(bc_copy["type"]):
                 # The user changed the time step, we need to update the matrix accordingly
-                for [target, next_matrice] in self.generate_replacement_matrices(
+                for [target, next_matrix] in self.generate_replacement_matrices(
                     bc_id, study_version, bc_props, bc_props.operator
                 ):
                     try:
                         matrix_url = target.split("/")
-                        matrix_as_str = validate_matrix(next_matrice, {"command_context": self.command_context})
-                        file_study.tree.save(matrix_as_str, matrix_url)
-                    except (KeyError, ChildNotFoundError):
+                        # matrix_as_str = validate_matrix(next_matrix, {"command_context": self.command_context})
+                        replace_matrix_data: JSON = {}
+                        target_matrix = replace_matrix_data
+                        for element in matrix_url[:-1]:
+                            target_matrix[element] = {}
+                            target_matrix = target_matrix[element]
+                        target_matrix[matrix_url[-1]] = next_matrix
+                        file_study.tree.save(replace_matrix_data)
+                    except (KeyError, ChildNotFoundError) as e:
+                        logger.error(e)
                         return CommandOutput(
                             status=False,
                             message=f"Path '{target}' does not exist.",
                         )
-                    except AssertionError:
+                    except AssertionError as e:
+                        logger.error(e)
                         return CommandOutput(
                             status=False,
                             message=f"Path '{target}' does not target a matrix.",
                         )
                     except Exception as e:
-                        print(e)
+                        logger.error(e)
                         return CommandOutput(
                             status=False,
                             message=f"Couldn't save matrix {target}.",
