@@ -64,7 +64,7 @@ function Fields() {
               </TableCell>
               <TableCell align="center">
                 <BooleanFE
-                  name={`${type}.enable` as const}
+                  name={`${type}.enabled` as const}
                   control={control}
                   trueText={t("study.configuration.tsManagement.status.toBeGenerated")}
                   falseText={t("study.configuration.tsManagement.status.readyMade")}

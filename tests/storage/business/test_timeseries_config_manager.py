@@ -18,7 +18,11 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager, TimeSeriesConfigDTO, TimeSeriesTypeConfig
+from antarest.study.business.timeseries_config_management import (
+    TimeSeriesConfigDTO,
+    TimeSeriesConfigManager,
+    TimeSeriesTypeConfig,
+)
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

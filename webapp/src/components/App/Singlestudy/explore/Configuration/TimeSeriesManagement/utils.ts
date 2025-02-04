@@ -20,10 +20,10 @@ import type {
 
 export type TimeSeriesConfigValues = Record<
   TimeSeriesTypeValue,
-  TimeSeriesTypeConfig & { enable: boolean }
+  TimeSeriesTypeConfig & { enabled: boolean }
 >;
 
 export const defaultValues = Object.values(TimeSeriesType).reduce((acc, type) => {
-  acc[type] = { number: 1, enable: false };
+  acc[type] = { number: 1, enabled: false };
   return acc;
 }, {} as TimeSeriesConfigValues);

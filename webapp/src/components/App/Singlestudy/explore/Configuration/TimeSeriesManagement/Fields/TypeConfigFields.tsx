@@ -27,8 +27,8 @@ interface Props {
 function TypeConfigFields({ type }: Props) {
   const { control } = useFormContextPlus<TimeSeriesConfigValues>();
 
-  const isEnable = useWatch({
-    name: `${type}.enable`,
+  const isEnabled = useWatch({
+    name: `${type}.enabled`,
     control,
   });
 
@@ -38,7 +38,7 @@ function TypeConfigFields({ type }: Props) {
         name={`${type}.number` as const}
         control={control}
         size="small"
-        disabled={!isEnable}
+        disabled={!isEnabled}
         rules={{ validate: validateNumber({ min: 1 }) }}
         sx={{ width: 110 }}
       />
