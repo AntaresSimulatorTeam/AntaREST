@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "fix/remove-cli-build-desktop"
 
 jobs:
   binary:
