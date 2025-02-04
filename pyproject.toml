@@ -75,7 +75,7 @@ line-length = 120
 exclude = "(antares-?launcher/*|alembic/*)"
 
 [tool.coverage.run]
-omit = ["antarest/tools/cli.py", "antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]
+omit = ["antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]
 relative_files = true  # avoids absolute path issues in CI
 
 [tool.isort]
