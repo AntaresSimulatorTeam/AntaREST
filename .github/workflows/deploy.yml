@@ -4,7 +4,6 @@ on:
     branches:
       - "master"
       - "hotfix/**"
-      - "fix/remove-command-diffs"
 
 jobs:
   binary:
