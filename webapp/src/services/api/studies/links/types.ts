@@ -17,24 +17,24 @@ import type { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
 import type { StudyMetadata } from "@/common/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
 
-export type TTransmissionCapacity = O.UnionOf<typeof TransmissionCapacity>;
+export type TransmissionCapacityValue = O.UnionOf<typeof TransmissionCapacity>;
 
-export type TAssetType = O.UnionOf<typeof AssetType>;
+export type AssetTypeValue = O.UnionOf<typeof AssetType>;
 
-export type TLinkStyle = O.UnionOf<typeof LinkStyle>;
+export type LinkStyleValue = O.UnionOf<typeof LinkStyle>;
 
 export interface LinkDTO {
   hurdlesCost: boolean;
   loopFlow: boolean;
   usePhaseShifter: boolean;
-  transmissionCapacities: TTransmissionCapacity;
-  assetType: TAssetType;
+  transmissionCapacities: TransmissionCapacityValue;
+  assetType: AssetTypeValue;
   displayComments: boolean;
   colorr: number;
   colorb: number;
   colorg: number;
   linkWidth: number;
-  linkStyle: TLinkStyle;
+  linkStyle: LinkStyleValue;
   area1: string;
   area2: string;
   // Since v8.2
