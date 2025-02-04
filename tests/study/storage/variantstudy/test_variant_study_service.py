@@ -13,13 +13,13 @@
 import datetime
 import logging
 import re
-import typing
 import uuid
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
+from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 
 from antarest.core.config import Config
@@ -451,36 +451,38 @@ class TestVariantStudyService:
     @with_db_context
     def test_generate(
         self,
-        caplog,
+        caplog: LogCaptureFixture,
         tmp_path: Path,
         variant_study_service: VariantStudyService,
         variant_study_repository: VariantStudyRepository,
         task_service: TaskJobService,
         core_cache: ICache,
         event_bus: IEventBus,
-        raw_study_service,
-        generator_matrix_constants,
-        simple_matrix_service,
-        patch_service,
-    ):
+        raw_study_service: RawStudyService,
+    ) -> None:
         """
         Set Up:
-            Create a raw study, create a variant study, add some commands to it.
+            We need a variant study for this test. So we create a user, a group for the user and the future raw study,
+            a
         Test:
-            - Check if the generated commands does not return an error with the notifier.
+            Check if the generated commands does not return an error while calling the notifier.
         """
-        # variant_study_service.generator = VariantCommandGenerator(variant_study_service.study_factory)
+        # Set Up
+        # Create a user
         user = User(id=32, name="Tester")
         db.session.add(user)
         db.session.commit()
+
+        # Create a JWT to simulate the user permissions on the studies
         jwt_user = Mock(spec=JWTUser, id=user.id, impersonator=user.id, is_site_admin=Mock(return_value=True))
         params = Mock(spec=RequestParameters, user=jwt_user)
 
+        # Add a group that links the user and the studies
         group = Group(id="test", name="test")
         db.session.add(group)
         db.session.commit()
 
-        path = tmp_path / "testing-study"
+        # Add a blank raw study in database ...
         root_study = RawStudy(
             id=str(uuid.uuid4()),
             name="Test Raw Study",
@@ -491,16 +493,19 @@ class TestVariantStudyService:
             public_mode=PublicMode.FULL,
             owner=user,
             groups=[group],
-            path=str(path),
+            path=str(tmp_path / "testing-study"),
             additional_data=StudyAdditionalData(author=user.name),
         )
         db.session.add(root_study)
         db.session.commit()
 
+        # ... and in our context
         raw_study_service.create(root_study)
 
+        # create a variant study based on the previous raw study in our context
         variant_study = variant_study_service.create_variant_study(root_study.id, "Variant study", params)
 
+        # create a study service in order to launch specific tasks and commands
         study_service = StudyService(
             raw_study_service=raw_study_service,
             variant_study_service=variant_study_service,

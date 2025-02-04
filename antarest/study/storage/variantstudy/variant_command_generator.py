@@ -62,9 +62,10 @@ class VariantCommandGenerator:
         logger.info("Applying commands")
         study_id = "-" if metadata is None else metadata.id
 
-        # flatten the list of commands
-        # the result here is a list of all commands
-        # note that has a list of arguments is added as a command too to the final command list
+        # Flatten the list of commands
+        # The result here is a list of all commands
+        # Note that each command can have a list of arguments (sub commands) that are added as commands
+        # to the final command list
         # so len(all_commands) >= len(commands)
         all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
         # Prepare the stopwatch
@@ -88,7 +89,7 @@ class VariantCommandGenerator:
                 )
                 logger.error(output.message, exc_info=e)
 
-            if not command_block_dict.get(cmd.command_id):
+            if cmd.command_id not in command_block_dict:
                 command_block_dict[cmd.command_id] = command_block_index
                 command_block_index += 1
 
