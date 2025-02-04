@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -131,13 +132,13 @@ def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableCon
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 
 
-def create_renewable_properties(study_version: StudyVersion, **kwargs: t.Any) -> RenewablePropertiesType:
+def create_renewable_properties(study_version: StudyVersion, data: Any) -> RenewablePropertiesType:
     """
     Factory method to create renewable properties.
 
     Args:
         study_version: The version of the study.
-        **kwargs: The properties to be used to initialize the model.
+        data: The properties to be used to initialize the model.
 
     Returns:
         The renewable properties.
@@ -146,7 +147,7 @@ def create_renewable_properties(study_version: StudyVersion, **kwargs: t.Any) ->
         ValueError: If the study version is not supported.
     """
     if study_version >= STUDY_VERSION_8_1:
-        return RenewableProperties.model_validate(kwargs)
+        return RenewableProperties.model_validate(data)
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 
 

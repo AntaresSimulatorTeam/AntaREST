@@ -22,6 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Properties,
     STStorageConfig,
     STStorageGroup,
+    STStorageProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
@@ -85,7 +86,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
             study_version=STUDY_VERSION_8_8,
@@ -93,12 +94,12 @@ class TestCreateSTStorage:
 
         # Check the attribues
         assert cmd.command_name == CommandName.CREATE_ST_STORAGE
-        assert cmd.version == 1
+        assert cmd.version == 2
         assert cmd.study_version == STUDY_VERSION_8_8
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
-        assert cmd.parameters == STStorageConfig(**expected_parameters)
+        assert cmd.parameters == STStorageProperties(**expected_parameters)
 
         # check the matrices links
 
@@ -128,7 +129,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="dummy",
-                parameters=STStorageConfig(**parameters),
+                parameters=STStorageProperties(**parameters),
                 study_version=STUDY_VERSION_8_8,
             )
         # We get 2 errors because the `storage_name` is duplicated in the `parameters`:
@@ -153,7 +154,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
+                parameters=STStorageProperties(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -170,7 +171,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
+                parameters=STStorageProperties(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -187,7 +188,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
+                parameters=STStorageProperties(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -202,7 +203,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageConfig(**PARAMETERS),
+                parameters=STStorageProperties(**PARAMETERS),
                 pmax_injection=[1, 2, 3],
                 study_version=STUDY_VERSION_8_8,
             )
@@ -218,7 +219,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="foo",
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             study_version=empty_study.config.version,
         )
         command_output = create_st_storage.apply_config(empty_study.config)
@@ -237,7 +238,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -261,7 +262,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -272,7 +273,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**parameters),
+            parameters=STStorageProperties(**parameters),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -296,7 +297,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply_config(recent_study.config)
@@ -323,7 +324,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
             study_version=recent_study.config.version,
@@ -336,7 +337,7 @@ class TestCreateSTStorage:
         expected = {
             "storage1": {
                 "efficiency": 0.94,
-                "group": "Battery",
+                "group": "battery",
                 "initiallevel": 0.5,
                 "initialleveloptim": True,
                 "injectionnominalcapacity": 1500,
@@ -375,7 +376,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             study_version=empty_study.config.version,
         )
         command_output = cmd.apply(empty_study)
@@ -386,7 +387,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
 
@@ -395,10 +396,12 @@ class TestCreateSTStorage:
         expected_parameters = PARAMETERS.copy()
         # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
         expected_parameters["initiallevel"] = 0.5
+        expected_parameters["group"] = "battery"
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
             action=CommandName.CREATE_ST_STORAGE.value,
+            version=2,
             args={
                 "area_id": "area_fr",
                 "parameters": expected_parameters,
@@ -415,7 +418,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
+            parameters=STStorageProperties(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
         actual = cmd.get_inner_matrices()

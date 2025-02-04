@@ -28,6 +28,8 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+CURRENT_COMMAND_VERSION = 2
+
 
 class CreateRenewablesCluster(ICommand):
     """
@@ -38,7 +40,7 @@ class CreateRenewablesCluster(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_RENEWABLES_CLUSTER
-    version: int = 2
+    version: int = CURRENT_COMMAND_VERSION
 
     # Command parameters
     # ==================
@@ -54,12 +56,13 @@ class CreateRenewablesCluster(ICommand):
     @classmethod
     def validate_model(cls, values: t.Dict[str, t.Any], info: ValidationInfo) -> t.Dict[str, t.Any]:
         # Validate parameters
-        if info.mode == "json":
-            args = copy.deepcopy(values["parameters"])
+        if isinstance(values["parameters"], dict):
+            parameters = copy.deepcopy(values["parameters"])
             version = values.get("version", 1)
             if version == 1:
-                args["name"] = values["cluster_name"]
-            values["parameters"] = create_renewable_properties(values["study_version"], **args)
+                parameters["name"] = values["cluster_name"]
+                values.pop("cluster_name")
+            values["parameters"] = create_renewable_properties(values["study_version"], parameters)
         return values
 
     @override
@@ -142,7 +145,7 @@ class CreateRenewablesCluster(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            version=self.version,
+            version=CURRENT_COMMAND_VERSION,
             args={
                 "area_id": self.area_id,
                 "parameters": self.parameters.model_dump(mode="json", by_alias=True),

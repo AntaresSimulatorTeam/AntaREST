@@ -35,6 +35,8 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 OptionalMatrixData = List[List[MatrixData]] | str | None
 
+CURRENT_COMMAND_VERSION = 2
+
 
 class CreateCluster(ICommand):
     """
@@ -47,7 +49,7 @@ class CreateCluster(ICommand):
     command_name: CommandName = CommandName.CREATE_THERMAL_CLUSTER
 
     # version 2: remove cluster_name and type parameters as ThermalPropertiesType
-    version: int = 2
+    version: int = CURRENT_COMMAND_VERSION
 
     # Command parameters
     # ==================
@@ -163,7 +165,7 @@ class CreateCluster(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            version=2,
+            version=CURRENT_COMMAND_VERSION,
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,

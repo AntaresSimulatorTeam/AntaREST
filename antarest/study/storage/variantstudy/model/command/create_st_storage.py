@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import copy
 import typing as t
 
 import numpy as np
@@ -45,6 +45,7 @@ _MATRIX_NAMES = (
 
 # Minimum required version.
 REQUIRED_VERSION = STUDY_VERSION_8_6
+CURRENT_COMMAND_VERSION = 2
 
 MatrixType = t.List[t.List[MatrixData]]
 
@@ -59,7 +60,7 @@ class CreateSTStorage(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_ST_STORAGE
-    version: int = 1
+    version: int = CURRENT_COMMAND_VERSION
 
     # Command parameters
     # ==================
@@ -101,9 +102,13 @@ class CreateSTStorage(ICommand):
     @model_validator(mode="before")
     @classmethod
     def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
-        params = values["parameters"]
-        if isinstance(params, dict):
-            values["parameters"] = create_st_storage_properties(values["study_version"], params)
+        if isinstance(values["parameters"], dict):
+            parameters = copy.deepcopy(values["parameters"])
+            version = values.get("version", 1)
+            if version == 1:
+                parameters["name"] = values["cluster_name"]
+                values.pop("cluster_name")
+            values["parameters"] = create_st_storage_properties(values["study_version"], parameters)
         return values
 
     @staticmethod
@@ -281,6 +286,7 @@ class CreateSTStorage(ICommand):
         """
         return CommandDTO(
             action=self.command_name.value,
+            version=CURRENT_COMMAND_VERSION,
             args={
                 "area_id": self.area_id,
                 "parameters": self.parameters.model_dump(mode="json", by_alias=True),
