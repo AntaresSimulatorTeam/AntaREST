@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { TTaskType } from "../services/api/tasks/types";
+import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
 
@@ -20,8 +20,6 @@ export interface IdentityDTO<T extends IdType = string> {
   id: T;
   name: string;
 }
-
-export type StudyDataType = "json" | "file" | "matrixfile" | "matrix";
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
@@ -552,7 +550,7 @@ export interface TaskView {
   dateView: React.ReactNode;
   action: React.ReactNode;
   date: string;
-  type: TTaskType | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
+  type: TaskTypeValue | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
 }
 
