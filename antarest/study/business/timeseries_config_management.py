@@ -18,20 +18,20 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 
-class TSTypeConfig(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
+class TimeSeriesTypeConfig(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
     number: int
 
 
 @all_optional_model
-class TSConfigDTO(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
-    thermal: TSTypeConfig
+class TimeSeriesConfigDTO(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
+    thermal: TimeSeriesTypeConfig
 
 
 class TimeSeriesConfigManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_values(self, study: Study) -> TSConfigDTO:
+    def get_values(self, study: Study) -> TimeSeriesConfigDTO:
         """
         Get Time-Series generation values
         """
@@ -40,10 +40,10 @@ class TimeSeriesConfigManager:
         url.extend(["general", "nbtimeseriesthermal"])
         nb_ts_gen_thermal = file_study.tree.get(url)
 
-        args = {"thermal": TSTypeConfig(number=nb_ts_gen_thermal)}
-        return TSConfigDTO.model_validate(args)
+        args = {"thermal": TimeSeriesTypeConfig(number=nb_ts_gen_thermal)}
+        return TimeSeriesConfigDTO.model_validate(args)
 
-    def set_values(self, study: Study, field_values: TSConfigDTO) -> None:
+    def set_values(self, study: Study, field_values: TimeSeriesConfigDTO) -> None:
         """
         Set Time-Series generation values
         """

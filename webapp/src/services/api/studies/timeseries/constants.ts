@@ -12,6 +12,6 @@
  * This file is part of the Antares project.
  */
 
-export const TSType = {
+export const TimeSeriesType = {
   Thermal: "thermal",
 } as const;

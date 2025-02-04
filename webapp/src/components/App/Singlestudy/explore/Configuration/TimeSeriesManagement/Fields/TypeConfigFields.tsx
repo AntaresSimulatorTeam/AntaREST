@@ -15,17 +15,17 @@
 import { useFormContextPlus } from "@/components/common/Form";
 import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import { TableCell } from "@mui/material";
-import type { TSConfigValues } from "../utils";
+import type { TimeSeriesConfigValues } from "../utils";
 import { validateNumber } from "@/utils/validation/number";
-import type { TTSType } from "@/services/api/studies/timeseries/types";
+import type { TimeSeriesTypeValue } from "@/services/api/studies/timeseries/types";
 import { useWatch } from "react-hook-form";
 
 interface Props {
-  type: TTSType;
+  type: TimeSeriesTypeValue;
 }
 
 function TypeConfigFields({ type }: Props) {
-  const { control } = useFormContextPlus<TSConfigValues>();
+  const { control } = useFormContextPlus<TimeSeriesConfigValues>();
 
   const isEnable = useWatch({
     name: `${type}.enable`,

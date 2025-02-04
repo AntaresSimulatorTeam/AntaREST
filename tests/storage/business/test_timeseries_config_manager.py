@@ -18,7 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager, TSConfigDTO, TSTypeConfig
+from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager, TimeSeriesConfigDTO, TimeSeriesTypeConfig
 from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -53,9 +53,9 @@ def test_nominal_case(
     study = RawStudy(id="test", path=str(file_study_820.config.path))
 
     # Asserts the get method returns the right value
-    assert config_manager.get_values(study) == TSConfigDTO(thermal=TSTypeConfig(number=1))
+    assert config_manager.get_values(study) == TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=1))
 
     # Modifies the value and asserts the get takes the modification into account
-    new_value = TSConfigDTO(thermal=TSTypeConfig(number=2))
+    new_value = TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=2))
     config_manager.set_values(study, new_value)
     assert config_manager.get_values(study) == new_value

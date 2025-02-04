@@ -22,13 +22,13 @@ import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
 import { setTimeSeriesConfig, generateTimeSeries } from "@/services/api/studies/timeseries";
-import { defaultValues, toConfigDTO, type TSConfigValues } from "./utils";
+import { defaultValues, type TimeSeriesConfigValues } from "./utils";
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const [isLaunchTaskInProgress, setIsLaunchTaskInProgress] = useState(false);
-  const apiRef = useRef<UseFormReturnPlus<TSConfigValues>>(null);
+  const apiRef = useRef<UseFormReturnPlus<TimeSeriesConfigValues>>(null);
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,
@@ -40,8 +40,8 @@ function TimeSeriesManagement() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<TSConfigValues>) => {
-    return setTimeSeriesConfig({ studyId: study.id, values: toConfigDTO(data.values) });
+  const handleSubmit = ({ values }: SubmitHandlerPlus<TimeSeriesConfigValues>) => {
+    return setTimeSeriesConfig({ studyId: study.id, values });
   };
 
   const handleSubmitSuccessful = async () => {

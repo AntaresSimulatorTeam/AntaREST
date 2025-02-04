@@ -14,19 +14,18 @@
 
 import type { StudyMetadata } from "@/common/types.ts";
 import type { DeepPartial } from "react-hook-form";
-import type { F, O } from "ts-toolbelt";
-import type { TSType } from "./constants";
+import type { O } from "ts-toolbelt";
+import { type TimeSeriesType } from "./constants";
 
-export type TTSType = O.UnionOf<typeof TSType>;
+export type TimeSeriesTypeValue = O.UnionOf<typeof TimeSeriesType>;
 
-export interface TSTypeConfig {
+export interface TimeSeriesTypeConfig {
   number: number;
 }
 
-export type TSConfigDTO = Record<TTSType, TSTypeConfig>;
+export type TimeSeriesConfigDTO = Record<TimeSeriesTypeValue, TimeSeriesTypeConfig>;
 
-export interface SetTimeSeriesConfigParams<T> {
+export interface SetTimeSeriesConfigParams {
   studyId: StudyMetadata["id"];
-  // Extra fields not allowed by the API
-  values: DeepPartial<F.Exact<T, TSConfigDTO>>;
+  values: DeepPartial<TimeSeriesConfigDTO>;
 }

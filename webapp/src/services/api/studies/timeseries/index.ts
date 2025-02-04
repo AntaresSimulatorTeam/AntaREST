@@ -12,9 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "../../../../common/types.ts";
+import type { StudyMetadata } from "@/common/types.ts";
 import client from "../../client.ts";
-import type { SetTimeSeriesConfigParams } from "@/services/api/studies/timeseries/types.ts";
+import type {
+  SetTimeSeriesConfigParams,
+  TimeSeriesTypeConfig,
+} from "@/services/api/studies/timeseries/types.ts";
+import * as R from "ramda";
 
 /**
  * Launches time series generation task for the specified study.
@@ -28,6 +32,12 @@ export async function generateTimeSeries(params: { studyId: StudyMetadata["id"] 
   return data;
 }
 
-export async function setTimeSeriesConfig<T>({ studyId, values }: SetTimeSeriesConfigParams<T>) {
-  await client.put(`/v1/studies/${studyId}/timeseries/config`, values);
+export async function setTimeSeriesConfig({ studyId, values }: SetTimeSeriesConfigParams) {
+  // Extra fields not allowed by the API
+  const validDTO = R.map(
+    (config = {}) => R.pick(["number"] as Array<keyof TimeSeriesTypeConfig>, config),
+    values,
+  );
+
+  await client.put(`/v1/studies/${studyId}/timeseries/config`, validDTO);
 }

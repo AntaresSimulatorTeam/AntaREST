@@ -14,8 +14,8 @@
 
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { TSType } from "@/services/api/studies/timeseries/constants";
-import type { TSConfigValues } from "../utils";
+import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
+import type { TimeSeriesConfigValues } from "../utils";
 import { useFormContextPlus } from "@/components/common/Form";
 import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
 import TypeConfigFields from "./TypeConfigFields";
@@ -23,7 +23,7 @@ import TypeConfigFields from "./TypeConfigFields";
 const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
 function Fields() {
-  const { control } = useFormContextPlus<TSConfigValues>();
+  const { control } = useFormContextPlus<TimeSeriesConfigValues>();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ function Fields() {
             },
           }}
         >
-          {Object.values(TSType).map((type) => (
+          {Object.values(TimeSeriesType).map((type) => (
             <TableRow key={type}>
               <TableCell sx={{ fontWeight: "bold" }}>
                 {t(`timeSeries.type.${type}`, type)}

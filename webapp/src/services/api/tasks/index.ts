@@ -13,11 +13,18 @@
  */
 
 import client from "../client";
-import type { GetTaskParams, GetTasksParams, TaskDTO, TTaskStatus, TTaskType } from "./types";
+import type {
+  GetTaskParams,
+  GetTasksParams,
+  TaskDTO,
+  TaskStatusValue,
+  TaskTypeValue,
+} from "./types";
 
-export async function getTasks<TStatus extends TTaskStatus, TType extends TTaskType | undefined>(
-  params: GetTasksParams<TStatus, TType>,
-) {
+export async function getTasks<
+  TStatus extends TaskStatusValue,
+  TType extends TaskTypeValue | undefined,
+>(params: GetTasksParams<TStatus, TType>) {
   const { data } = await client.post<Array<TaskDTO<TStatus, TType>>>("/v1/tasks", {
     status: params.status,
     type: params.type,
