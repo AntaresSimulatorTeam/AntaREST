@@ -308,9 +308,9 @@ export function mergeDeepRightStudyTree(left: StudyTreeNode, right: StudyTreeNod
  * @returns list of tuples where the first element is from the left list and the second element is from the right list.
  */
 export function innerJoin(
-  left: StudyTreeNode[],
-  right: StudyTreeNode[],
-): [StudyTreeNode, StudyTreeNode][] {
+  left: Array<StudyTreeNode>,
+  right: Array<StudyTreeNode>,
+): Array<[StudyTreeNode, StudyTreeNode]> {
   return left.reduce<[StudyTreeNode, StudyTreeNode][]>((acc, leftNode) => {
     const matchedRightNode = right.find((rightNode) => rightNode.name === leftNode.name);
     if (matchedRightNode) {
