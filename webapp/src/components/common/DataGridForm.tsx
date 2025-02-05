@@ -296,6 +296,7 @@ function DataGridForm<TData extends Data>({
         allowedFillDirections={allowedFillDirections}
         enableColumnResize={enableColumnResize}
         getCellsForSelection
+        onPaste
       />
       <Box
         sx={{
