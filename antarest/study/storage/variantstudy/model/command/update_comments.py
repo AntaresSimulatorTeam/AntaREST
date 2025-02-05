@@ -69,19 +69,5 @@ class UpdateComments(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value)
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, UpdateComments):
-            return False
-        return not equal or (self.comments == other.comments and equal)
-
-    @override
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        return [other]
-
-    @override
     def get_inner_matrices(self) -> List[str]:
         return []
