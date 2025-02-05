@@ -15,7 +15,7 @@
 import type { StudyMetadata } from "@/common/types";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
-import type { TaskDTO, TTaskType } from "@/services/api/tasks/types";
+import type { TaskDTO, TaskTypeValue } from "@/services/api/tasks/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import {
@@ -32,7 +32,7 @@ import useUpdatedRef from "@/hooks/useUpdatedRef";
 
 interface BlockingTask {
   id: TaskDTO["id"];
-  type: TTaskType;
+  type: TaskTypeValue;
   progress?: number;
   error?: string;
 }
