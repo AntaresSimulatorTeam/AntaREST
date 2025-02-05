@@ -309,7 +309,7 @@ class ThermalManager:
             [command],
             self.storage_service,
         )
-        output = self.get_cluster(study, area_id, cluster.name)
+        output = self.get_cluster(study, area_id, cluster.get_id())
         return output
 
     def _make_create_cluster_cmd(

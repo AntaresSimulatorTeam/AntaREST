@@ -118,7 +118,7 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[{"action": "create_st_storage", "args": args}],
+            json=[{"action": "create_st_storage", "version": 2, "args": args}],
         )
         res.raise_for_status()
 
@@ -180,7 +180,7 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[{"action": "create_st_storage", "args": args}],
+            json=[{"action": "create_st_storage", "version": 2, "args": args}],
         )
         res.raise_for_status()
 
