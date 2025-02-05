@@ -12,6 +12,7 @@
 
 import copy
 import typing as t
+from dataclasses import dataclass
 from typing import Dict, Type
 
 from antares.study.version import StudyVersion
@@ -87,6 +88,11 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
 }
 
 
+@dataclass(frozen=True)
+class CommandValidationContext:
+    version: int
+
+
 class CommandFactory:
     """
     Service to convert CommendDTO to Command
@@ -114,12 +120,11 @@ class CommandFactory:
             data.update(
                 {
                     "command_context": self.command_context,
-                    "version": version,
                     "command_id": command_id,
                     "study_version": study_version,
                 }
             )
-            return command_class.model_validate(data)
+            return command_class.model_validate(data, context=CommandValidationContext(version=version))
         raise NotImplementedError(action)
 
     def to_command(self, command_dto: CommandDTO) -> t.List[ICommand]:

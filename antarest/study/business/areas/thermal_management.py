@@ -33,7 +33,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
     Thermal870Properties,
     ThermalConfigType,
+    ThermalPropertiesType,
     create_thermal_config,
+    create_thermal_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -83,6 +85,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 
     # noinspection Pydantic
     @field_validator("name", mode="before")
+    @classmethod
     def validate_name(cls, name: t.Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
@@ -91,9 +94,9 @@ class ThermalClusterCreation(ThermalClusterInput):
             raise ValueError("name must not be empty")
         return name
 
-    def to_config(self, study_version: StudyVersion) -> ThermalConfigType:
+    def to_properties(self, study_version: StudyVersion) -> ThermalPropertiesType:
         values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
-        return create_thermal_config(study_version=study_version, **values)
+        return create_thermal_properties(study_version=study_version, data=values)
 
 
 @all_optional_model
@@ -298,7 +301,7 @@ class ThermalManager:
         """
 
         file_study = self._get_file_study(study)
-        cluster = cluster_data.to_config(StudyVersion.parse(study.version))
+        cluster = cluster_data.to_properties(StudyVersion.parse(study.version))
         command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
         execute_or_add_commands(
             study,
@@ -306,23 +309,20 @@ class ThermalManager:
             [command],
             self.storage_service,
         )
-        output = self.get_cluster(study, area_id, cluster.id)
+        output = self.get_cluster(study, area_id, cluster.name)
         return output
 
     def _make_create_cluster_cmd(
-        self, area_id: str, cluster: ThermalConfigType, study_version: StudyVersion
+        self, area_id: str, cluster: ThermalPropertiesType, study_version: StudyVersion
     ) -> CreateCluster:
         # NOTE: currently, in the `CreateCluster` class, there is a confusion
         # between the cluster name and the cluster ID (which is a section name).
-        args = {
-            "area_id": area_id,
-            "cluster_name": cluster.id,
-            "parameters": cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
-            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
-            "study_version": study_version,
-        }
-        command = CreateCluster.model_validate(args)
-        return command
+        return CreateCluster(
+            area_id=area_id,
+            parameters=cluster,
+            study_version=study_version,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+        )
 
     def update_cluster(
         self,
@@ -441,7 +441,7 @@ class ThermalManager:
         source_cluster.name = new_cluster_name
         creation_form = ThermalClusterCreation(**source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"}))
         study_version = StudyVersion.parse(study.version)
-        new_config = creation_form.to_config(study_version)
+        new_config = creation_form.to_properties(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition

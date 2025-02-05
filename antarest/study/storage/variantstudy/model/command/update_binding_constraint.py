@@ -106,7 +106,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_BINDING_CONSTRAINT
-    version: int = 1
 
     # Command parameters
     # ==================

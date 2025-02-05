@@ -117,12 +117,17 @@ def transform_command_to_dto(
     cur_command_args_batch = [prev_command.to_dto().args]
     for command in commands[1:]:
         cur_dto_arg_count -= 1
-        if command.command_name == prev_command.command_name and (cur_dto_arg_count > 0 or force_aggregate):
+        if (
+            command.command_name == prev_command.command_name
+            and command.version == prev_command.version
+            and (cur_dto_arg_count > 0 or force_aggregate)
+        ):
             cur_command_args_batch.append(command.to_dto().args)
         else:
             commands_dto.append(
                 CommandDTO(
                     action=prev_command.command_name.value,
+                    version=prev_command.version,
                     args=cur_command_args_batch,
                     study_version=prev_command.study_version,
                 )
@@ -135,6 +140,7 @@ def transform_command_to_dto(
     commands_dto.append(
         CommandDTO(
             action=prev_command.command_name.value,
+            version=prev_command.version,
             args=cur_command_args_batch,
             study_version=prev_command.study_version,
         )

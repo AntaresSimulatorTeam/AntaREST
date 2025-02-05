@@ -14,6 +14,7 @@ import typing as t
 from typing import List
 
 from pydantic import Field, model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.core.model import JSON
@@ -35,8 +36,6 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 OptionalMatrixData = List[List[MatrixData]] | str | None
 
-CURRENT_COMMAND_VERSION = 2
-
 
 class CreateCluster(ICommand):
     """
@@ -48,9 +47,6 @@ class CreateCluster(ICommand):
 
     command_name: CommandName = CommandName.CREATE_THERMAL_CLUSTER
 
-    # version 2: remove cluster_name and type parameters as ThermalPropertiesType
-    version: int = CURRENT_COMMAND_VERSION
-
     # Command parameters
     # ==================
 
@@ -59,18 +55,23 @@ class CreateCluster(ICommand):
     prepro: OptionalMatrixData = Field(None, validate_default=True)
     modulation: OptionalMatrixData = Field(None, validate_default=True)
 
+    # version 2: remove cluster_name and type parameters as ThermalPropertiesType
+    @property
+    @override
+    def version(self) -> int:
+        return 2
+
     @property
     def cluster_name(self) -> str:
         return self.parameters.name
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def validate_model(cls, values: t.Dict[str, t.Any], info: ValidationInfo) -> t.Dict[str, t.Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
             parameters = copy.deepcopy(values["parameters"])
-            version = values.get("version", 1)
-            if version == 1:
+            if info.context and info.context.version == 1:
                 parameters["name"] = values["cluster_name"]
                 values.pop("cluster_name")
             values["parameters"] = create_thermal_properties(values["study_version"], parameters)
@@ -165,7 +166,7 @@ class CreateCluster(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            version=CURRENT_COMMAND_VERSION,
+            version=self.version,
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,

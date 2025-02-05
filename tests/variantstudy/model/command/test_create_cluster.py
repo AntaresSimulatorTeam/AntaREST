@@ -12,7 +12,6 @@
 
 import configparser
 import re
-from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -25,7 +24,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
-from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 GEN = np.random.default_rng(1000)
@@ -57,7 +55,9 @@ class TestCreateCluster:
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.parameters == Thermal870Properties(
+            name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
+        )
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
 
@@ -133,10 +133,10 @@ class TestCreateCluster:
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
         assert str(clusters[cluster_name]["name"]) == cluster_name
         assert str(clusters[cluster_name]["group"]) == parameters.group
-        assert int(clusters[cluster_name]["unitcount"]) == parameters.unitcount
-        assert float(clusters[cluster_name]["nominalcapacity"]) == parameters.nominalcapacity
-        assert float(clusters[cluster_name]["marginal-cost"]) == parameters.marginalcost
-        assert float(clusters[cluster_name]["market-bid-cost"]) == parameters.markedbidcost
+        assert int(clusters[cluster_name]["unitcount"]) == parameters.unit_count
+        assert float(clusters[cluster_name]["nominalcapacity"]) == parameters.nominal_capacity
+        assert float(clusters[cluster_name]["marginal-cost"]) == parameters.marginal_cost
+        assert float(clusters[cluster_name]["market-bid-cost"]) == parameters.market_bid_cost
 
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "data.txt.link").exists()
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "modulation.txt.link").exists()
@@ -184,21 +184,55 @@ class TestCreateCluster:
             modulation=modulation,
             study_version=STUDY_VERSION_8_8,
         )
-        prepro_id = command_context.matrix_service.create(prepro)
-        modulation_id = command_context.matrix_service.create(modulation)
         dto = command.to_dto()
         assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
-                "cluster_name": "Cluster1",
-                "parameters": {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2},
-                "prepro": prepro_id,
-                "modulation": modulation_id,
+                "modulation": "acc60faf9e0c47c77ec61c0d522382676102d8c1de1eb4aac1c5bb3a11682ff8",
+                "parameters": {
+                    "co2": 0.0,
+                    "costgeneration": "SetManually",
+                    "efficiency": 100.0,
+                    "enabled": True,
+                    "fixed-cost": 0.0,
+                    "gen-ts": "use global",
+                    "group": "nuclear",
+                    "law.forced": "uniform",
+                    "law.planned": "uniform",
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
+                    "must-run": False,
+                    "name": "Cluster1",
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalcapacity": 2400.0,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm2_5": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
+                    "startup-cost": 0.0,
+                    "unitcount": 2,
+                    "variableomcost": 0.0,
+                    "volatility.forced": 0.0,
+                    "volatility.planned": 0.0,
+                },
+                "prepro": "80e3b0b1fe182b4cf98d2a54ec4998ec58f5ee57451e2bf3f0a527497a1f66fd",
             },
             "id": None,
-            "version": 1,
-            "study_version": STUDY_VERSION_8_8,
-            "user_id": None,
+            "study_version": "8.8",
             "updated_at": None,
+            "user_id": None,
+            "version": 2,
         }

@@ -135,7 +135,7 @@ class TestCreateSTStorage:
         # We get 2 errors because the `storage_name` is duplicated in the `parameters`:
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
-        assert raised_error["type"] == "value_error"
+        assert raised_error["type"] == "string_pattern_mismatch"
         assert raised_error["msg"] == "Value error, Invalid name '?%$$'."
         assert raised_error["input"] == {
             "efficiency": 0.94,

@@ -13,7 +13,7 @@
 import logging
 import typing as t
 import uuid
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 import typing_extensions as te
 
@@ -41,15 +41,24 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
     Attributes:
         command_id: The ID of the command extracted from the database, if any.
         command_name: The name of the command.
-        version: The version of the command (currently always equal to 1).
         command_context: The context of the command.
     """
 
     command_id: t.Optional[uuid.UUID] = None
     command_name: CommandName
-    version: int
     command_context: CommandContext
     study_version: StudyVersionStr
+
+    @property
+    def version(self) -> int:
+        """
+        The version of the command for serialization.
+        Should be overriden by subclass when changing the serialization format,
+        in which the command is saved to database.
+        Command validation must ensure backwards compatibility with commands
+        saved in older versions of the serialization format.
+        """
+        return 1
 
     @abstractmethod
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
