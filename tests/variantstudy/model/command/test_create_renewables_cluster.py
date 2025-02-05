@@ -37,7 +37,7 @@ class TestCreateRenewablesCluster:
         cl = CreateRenewablesCluster(
             area_id="foo",
             parameters=RenewableProperties(
-                group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
+                name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
             ),
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
@@ -45,16 +45,18 @@ class TestCreateRenewablesCluster:
 
         # Check the command metadata
         assert cl.command_name == CommandName.CREATE_RENEWABLES_CLUSTER
-        assert cl.version == 1
+        assert cl.version == 2
         assert cl.command_context is command_context
 
         # Check the command data
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Solar Thermal", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.parameters == RenewableProperties(
+            name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
+        )
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
-        with pytest.raises(ValidationError, match="cluster_name"):
+        with pytest.raises(ValidationError, match="Invalid name"):
             CreateRenewablesCluster(
                 area_id="fr",
                 command_context=command_context,

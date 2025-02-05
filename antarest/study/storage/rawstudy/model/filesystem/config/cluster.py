@@ -23,6 +23,7 @@ from pydantic import Field
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serialization import AntaresBaseModel
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import ItemName
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
@@ -51,7 +52,7 @@ class ItemProperties(
 
     group: LowerCaseStr = Field(default="", description="Cluster group")
 
-    name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
+    name: ItemName
 
     def get_id(self) -> str:
         """

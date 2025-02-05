@@ -9,10 +9,29 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import re
 import typing as t
+from typing import Annotated
+
+from pydantic import BeforeValidator
+
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+
+_VALID_NAME_PATTERN = re.compile(r"[a-zA-Z0-9_(),& -]+")
+
+
+def _validate_item_name(name: str) -> str:
+    if not transform_name_to_id(name):
+        raise ValueError(f"Invalid name '{name}'.")
+    return name
+
+
+# Type to be used for item names, will raise an error if name
+# does not comply with antares-simulator limitations.
+ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
 
 
 def extract_filtering(v: t.Any) -> t.List[str]:
