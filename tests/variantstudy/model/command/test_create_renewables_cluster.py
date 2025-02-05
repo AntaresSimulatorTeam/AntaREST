@@ -20,12 +20,10 @@ from pydantic import ValidationError
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -158,83 +156,3 @@ class TestCreateRenewablesCluster:
             "updated_at": None,
             "user_id": None,
         }
-
-
-def test_match(command_context: CommandContext) -> None:
-    base = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_match = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_not_match = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="bar",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_other = RemoveRenewablesCluster(
-        area_id="id", cluster_id="id", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-
-    assert base.match(other_match, equal=True)
-    assert not base.match(other_not_match, equal=True)
-    assert not base.match(other_other, equal=True)
-
-    assert base.match_signature() == "create_renewables_cluster%foo%foo"
-    assert base.get_inner_matrices() == []
-
-
-def test_revert(command_context: CommandContext) -> None:
-    base = CreateRenewablesCluster(
-        area_id="area_foo",
-        cluster_name="cl1",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    file_study = mock.MagicMock(spec=FileStudy)
-    file_study.config.version = STUDY_VERSION_8_8
-    revert_cmd = CommandReverter().revert(base, [], file_study)
-    assert revert_cmd == [
-        RemoveRenewablesCluster(
-            area_id="area_foo", cluster_id="cl1", command_context=command_context, study_version=STUDY_VERSION_8_8
-        )
-    ]
-
-
-def test_create_diff(command_context: CommandContext) -> None:
-    base = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_match = CreateRenewablesCluster(
-        area_id="foo",
-        cluster_name="foo",
-        parameters={"a": "b"},
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    assert base.create_diff(other_match) == [
-        UpdateConfig(
-            target="input/renewables/clusters/foo/list/foo",
-            data={"a": "b"},
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        ),
-    ]

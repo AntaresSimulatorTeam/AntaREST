@@ -176,68 +176,6 @@ class CreateCluster(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.cluster_name
-        )
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateCluster):
-            return False
-        simple_match = self.area_id == other.area_id and self.cluster_name == other.cluster_name
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.parameters == other.parameters
-            and self.prepro == other.prepro
-            and self.modulation == other.modulation
-        )
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        other = t.cast(CreateCluster, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        # Series identifiers are in lower case.
-        series_id = transform_name_to_id(self.cluster_name, lower=True)
-        commands: t.List[ICommand] = []
-        if self.prepro != other.prepro:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/data",
-                    matrix=strip_matrix_protocol(other.prepro),
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        if self.modulation != other.modulation:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/modulation",
-                    matrix=strip_matrix_protocol(other.modulation),
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        if self.parameters != other.parameters:
-            commands.append(
-                UpdateConfig(
-                    target=f"input/thermal/clusters/{self.area_id}/list/{self.cluster_name}",
-                    data=other.parameters,
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        return commands
-
-    @override
     def get_inner_matrices(self) -> t.List[str]:
         matrices: t.List[str] = []
         if self.prepro:

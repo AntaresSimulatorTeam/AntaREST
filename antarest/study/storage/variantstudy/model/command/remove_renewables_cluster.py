@@ -144,25 +144,5 @@ class RemoveRenewablesCluster(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.cluster_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-        )
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveRenewablesCluster):
-            return False
-        return self.cluster_id == other.cluster_id and self.area_id == other.area_id
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
-
-    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

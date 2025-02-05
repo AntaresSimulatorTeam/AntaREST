@@ -93,22 +93,5 @@ class UpdateConfig(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target)
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, UpdateConfig):
-            return False
-        simple_match = self.target == other.target
-        if not equal:
-            return simple_match
-        return simple_match and self.data == other.data
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return [other]
-
-    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []
