@@ -64,5 +64,4 @@ class IniProperties(
         renamed_values = {aliases.get(k, k): v for k, v in values.items()}
         if _fields_set is not None:
             _fields_set = {aliases.get(f, f) for f in _fields_set}
-        # noinspection PyTypeChecker
-        return super().construct(_fields_set, **renamed_values)
+        return IniProperties.model_construct(_fields_set, **renamed_values)

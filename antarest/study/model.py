@@ -618,7 +618,7 @@ class MatrixAggregationResult(AntaresBaseModel):
         return MatrixAggregationResultDTO.construct(
             index=self.index,
             data=[
-                TimeSeriesData.construct(
+                TimeSeriesData.model_construct(
                     type=key_type,
                     name=key_name,
                     data=self.data[(key_type, key_name)],
