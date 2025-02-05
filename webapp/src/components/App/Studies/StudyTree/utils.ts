@@ -15,6 +15,7 @@
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../common/types";
 import type { StudyTreeNode, NonStudyFolderDTO } from "./types";
+import * as R from "ramda";
 
 /**
  * Builds a tree structure from a list of study metadata.
@@ -274,4 +275,44 @@ export function insertWorkspacesIfNotExist(
 export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promise<StudyTreeNode> {
   const workspaces = await api.getWorkspaces();
   return insertWorkspacesIfNotExist(studyTree, workspaces);
+}
+
+/**
+ * This function is used when we want to get updates of rTree withouth loosing data from lTree.
+ *
+ *
+ * @param lTree
+ * @param rTree
+ * @returns a new tree with the data from rTree merged into lTree.
+ */
+export function mergeDeepRightStudyTree(lTree: StudyTreeNode, rTree: StudyTreeNode): StudyTreeNode {
+  const onlyLeft = lTree.children.filter((e) => !rTree.children.some((ee) => ee.name === e.name));
+  const onlyRight = rTree.children.filter((e) => !lTree.children.some((ee) => ee.name === e.name));
+  const both = innerJoin(lTree.children, rTree.children);
+  const bothAfterMerge = both.map((e) => mergeDeepRightStudyTree(e[0], e[1]));
+  const childrenAfterMerge = [...onlyLeft, ...bothAfterMerge, ...onlyRight];
+  return {
+    ...rTree,
+    children: childrenAfterMerge,
+  };
+}
+
+/**
+ * This function joins based on the name property.
+ *
+ * @param left
+ * @param right
+ * @returns list of tuples where the first element is from the left list and the second element is from the right list.
+ */
+export function innerJoin(
+  left: StudyTreeNode[],
+  right: StudyTreeNode[],
+): [StudyTreeNode, StudyTreeNode][] {
+  return left.reduce<[StudyTreeNode, StudyTreeNode][]>((acc, leftNode) => {
+    const matchedRightNode = right.find((rightNode) => rightNode.name === leftNode.name);
+    if (matchedRightNode) {
+      acc.push([{ ...leftNode }, { ...matchedRightNode }]);
+    }
+    return acc;
+  }, []);
 }

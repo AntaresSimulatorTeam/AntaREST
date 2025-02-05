@@ -13,7 +13,13 @@
  */
 
 import { FIXTURES, FIXTURES_BUILD_STUDY_TREE } from "./fixtures";
-import { buildStudyTree, insertFoldersIfNotExist, insertWorkspacesIfNotExist } from "../utils";
+import {
+  buildStudyTree,
+  insertFoldersIfNotExist,
+  insertWorkspacesIfNotExist,
+  mergeDeepRightStudyTree,
+  innerJoin,
+} from "../utils";
 import type { NonStudyFolderDTO, StudyTreeNode } from "../types";
 
 describe("StudyTree Utils", () => {
@@ -111,5 +117,103 @@ describe("StudyTree Utils", () => {
       const result = buildStudyTree(studies);
       expect(result).toEqual(expected);
     });
+  });
+
+  test("merge two trees", () => {
+    const lTree: StudyTreeNode = {
+      name: "root",
+      path: "/",
+      children: [
+        { name: "A", path: "/A", children: [] },
+        { name: "B", path: "/B", children: [] },
+      ],
+    };
+    const rTree: StudyTreeNode = {
+      name: "root",
+      path: "/",
+      children: [
+        { name: "A", path: "/A1", children: [] },
+        { name: "C", path: "/C", children: [] },
+      ],
+    };
+
+    const mergedTree = mergeDeepRightStudyTree(lTree, rTree);
+    assert(mergedTree.children.length === 3, "Merged tree should have 3 children");
+    assert(
+      mergedTree.children.some((child) => child.name === "A"),
+      "Node A should be in merged tree",
+    );
+    assert(
+      mergedTree.children.some((child) => child.name === "B"),
+      "Node B should be in merged tree",
+    );
+    assert(
+      mergedTree.children.some((child) => child.name === "C"),
+      "Node C should be in merged tree",
+    );
+    assert(
+      mergedTree.children.some((child) => child.name === "A" && child.path === "/A1"),
+      "Node A path should be /A1",
+    );
+  });
+
+  test("merge two trees, empty tree case", () => {
+    const emptyTree: StudyTreeNode = { name: "root", path: "/", children: [] };
+    const singleNodeTree: StudyTreeNode = {
+      name: "root",
+      path: "/",
+      children: [{ name: "A", path: "/A", children: [] }],
+    };
+
+    assert(
+      mergeDeepRightStudyTree(emptyTree, emptyTree).children.length === 0,
+      "Merging two empty trees should return an empty tree",
+    );
+
+    assert(
+      mergeDeepRightStudyTree(singleNodeTree, emptyTree).children.length === 1,
+      "Merging a tree with an empty tree should keep original children",
+    );
+
+    assert(
+      mergeDeepRightStudyTree(emptyTree, singleNodeTree).children.length === 1,
+      "Merging an empty tree with a tree should adopt its children",
+    );
+  });
+
+  test("inner join", () => {
+    const tree1: StudyTreeNode[] = [
+      { name: "A", path: "/A", children: [] },
+      { name: "B", path: "/B", children: [] },
+    ];
+    const tree2: StudyTreeNode[] = [
+      { name: "A", path: "/A1", children: [] },
+      { name: "C", path: "/C", children: [] },
+    ];
+
+    const result = innerJoin(tree1, tree2);
+    assert(result.length === 1, "Should match one node");
+    assert(result[0][0].name === "A" && result[0][1].name === "A");
+
+    const result2 = innerJoin(tree1, tree1);
+    assert(result2.length === 2, "Should match both nodes");
+    assert(result2[0][0].name === "A" && result2[0][1].name === "A");
+    assert(result2[1][0].name === "B" && result2[1][1].name === "B");
+  });
+
+  test("inner join, empty tree case", () => {
+    const tree1: StudyTreeNode[] = [];
+    const tree2: StudyTreeNode[] = [];
+    assert(innerJoin(tree1, tree2).length === 0, "Empty trees should return no matches");
+
+    const tree3: StudyTreeNode[] = [{ name: "X", path: "/X", children: [] }];
+    assert(
+      innerJoin(tree3, tree2).length === 0,
+      "Tree with unmatched node should return no matches",
+    );
+    assert(
+      innerJoin(tree3, tree2).length === 0,
+      "Tree with unmatched node should return no matches",
+    );
   });
 });

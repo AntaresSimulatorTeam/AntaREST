@@ -23,11 +23,16 @@ import * as R from "ramda";
 import React, { useState } from "react";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
-import { fetchAndInsertSubfolders, fetchAndInsertWorkspaces } from "./utils";
+import {
+  mergeDeepRightStudyTree,
+  fetchAndInsertSubfolders,
+  fetchAndInsertWorkspaces,
+} from "./utils";
 import { useTranslation } from "react-i18next";
 import { toError } from "@/utils/fnUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
+import { useUpdateEffect } from "react-use";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
@@ -44,6 +49,10 @@ function StudyTree() {
     // be carefull to pass initialStudiesTree and not studiesTree at rootNode parameter
     // otherwise we'll lose the default workspace
     updateTree(ROOT_FOLDER_NAME, initialStudiesTree);
+  }, [initialStudiesTree]);
+
+  useUpdateEffect(() => {
+    setStudiesTree((currentState) => mergeDeepRightStudyTree(currentState, initialStudiesTree));
   }, [initialStudiesTree]);
 
   /**
