@@ -15,7 +15,6 @@
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../common/types";
 import type { StudyTreeNode, NonStudyFolderDTO } from "./types";
-import * as R from "ramda";
 
 /**
  * Builds a tree structure from a list of study metadata.
