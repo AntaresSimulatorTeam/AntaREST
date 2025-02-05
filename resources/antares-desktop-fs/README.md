@@ -41,20 +41,3 @@ http://127.0.0.1:8080
 ```
 
 This will connect you to the Antares Web server.
-
-## Using the Variant Manager Tool
-
-To use the variant manager tool, run the command:
-
-```
-./AntaresWeb/AntaresTool
-```
-
-The tool has the following subcommands:
-
-- `apply-script`:          Apply a variant script onto an AntaresWeb study variant
-- `generate-script`:       Generate variant script commands from a study
-- `generate-script-diff`:  Generate variant script commands from two variant script directories
-- `upgrade-study`:         Upgrades study version
-
-Further instructions can be found in the online help. Use the `--help` option.
