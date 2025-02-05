@@ -15,7 +15,6 @@ method of launching the main application :
 - gui.py : define the application run as a desktop application
 - archive_worker_service.py : define a worker that unzip study results on remote windows nodes (see the deployment diagram)
 - admin.py : define a cli app to run administrative tasks (used on production deployments)
-- cli.py : define a cli app with various utilities
 
 ## Main packages and services
 

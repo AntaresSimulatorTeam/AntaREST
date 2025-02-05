@@ -185,6 +185,7 @@
   "tasks.type.SCAN": "Scan",
   "tasks.type.UNKNOWN": "Inconnu",
   "tasks.type.THERMAL_CLUSTER_SERIES_GENERATION": "Génération des TS",
+  "timeSeries.type.thermal": "Thermique",
   "settings.createUser": "Créer un utilisateur",
   "settings.createToken": "Créer un token",
   "settings.createGroup": "Créer un groupe",

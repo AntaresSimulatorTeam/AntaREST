@@ -13,17 +13,17 @@
  */
 
 import type { O } from "ts-toolbelt";
-import type { IdentityDTO, StudyMetadata } from "../../../common/types";
+import type { IdentityDTO, StudyMetadata } from "@/common/types.ts";
 import type { TaskStatus, TaskType } from "./constants";
 
-export type TTaskStatus = O.UnionOf<typeof TaskStatus>;
+export type TaskStatusValue = O.UnionOf<typeof TaskStatus>;
 
-export type TTaskType = O.UnionOf<typeof TaskType>;
+export type TaskTypeValue = O.UnionOf<typeof TaskType>;
 
 interface BaseTaskDTO<
-  TStatus extends TTaskStatus = TTaskStatus,
-  TType extends TTaskType = TTaskType,
-> extends IdentityDTO<string> {
+  TStatus extends TaskStatusValue = TaskStatusValue,
+  TType extends TaskTypeValue = TaskTypeValue,
+> extends IdentityDTO {
   status: TStatus;
   type?: TType;
   owner?: number;
@@ -43,13 +43,16 @@ interface BaseTaskDTO<
 }
 
 export type TaskDTO<
-  TStatus extends TTaskStatus = TTaskStatus,
-  TType extends TTaskType | undefined = undefined,
-> = TType extends TTaskType
+  TStatus extends TaskStatusValue = TaskStatusValue,
+  TType extends TaskTypeValue | undefined = undefined,
+> = TType extends TaskTypeValue
   ? O.Required<BaseTaskDTO<TStatus, TType>, "type">
   : BaseTaskDTO<TStatus>;
 
-export interface GetTasksParams<TStatus extends TTaskStatus, TType extends TTaskType | undefined> {
+export interface GetTasksParams<
+  TStatus extends TaskStatusValue,
+  TType extends TaskTypeValue | undefined,
+> {
   status?: TStatus[];
   type?: TType[];
   name?: string;
