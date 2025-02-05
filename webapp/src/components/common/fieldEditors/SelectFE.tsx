@@ -85,7 +85,7 @@ function SelectFE(props: SelectFEProps) {
       fullWidth={fullWidth}
     >
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} label={label} labelId={labelId}>
+      <Select {...selectProps} label={label} labelId={labelId} value={selectProps.value ?? ""}>
         {emptyValue && (
           <MenuItem value="">
             {/* TODO i18n */}
