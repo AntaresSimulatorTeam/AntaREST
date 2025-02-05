@@ -68,13 +68,13 @@ class VariantCommandGenerator:
         # to the final command list
         # so len(all_commands) >= len(commands)
         all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
+
         # Prepare the stopwatch
         cmd_notifier = CmdNotifier(study_id, len(all_commands))
         stopwatch.reset_current()
 
         # since we need the commands without their sub commands ONLY for the notifier, we'll use
-        # some variables to store commands metadata.
-        command_block_index = 0
+        # a dictionary to associate main commands id with a boolean value
         command_block_dict: Dict[Optional[uuid.UUID], int] = {}
 
         # Store all the outputs
@@ -90,8 +90,7 @@ class VariantCommandGenerator:
                 logger.error(output.message, exc_info=e)
 
             if cmd.command_id not in command_block_dict:
-                command_block_dict[cmd.command_id] = command_block_index
-                command_block_index += 1
+                command_block_dict[cmd.command_id] = True
 
             # noinspection PyTypeChecker
             detail: NewDetailsDTO = {
@@ -102,8 +101,9 @@ class VariantCommandGenerator:
             }
             results.details.append(detail)
 
-            if notifier:
+            if notifier and command_block_dict[cmd.command_id]:
                 notifier(command_block_dict[cmd.command_id], output.status, output.message)
+                command_block_dict[cmd.command_id] = False
 
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)

@@ -15,7 +15,7 @@ import logging
 import re
 import uuid
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -36,11 +36,10 @@ from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType
-from antarest.study.business.general_management import BuildingMode, GeneralFormFields, Mode, Month, WeekDay
+from antarest.study.business.area_management import AreaCreationDTO, AreaType
+from antarest.study.business.general_management import GeneralFormFields, Mode
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import CommentsDto, RawStudy, StudyAdditionalData
-from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
@@ -444,7 +443,6 @@ class TestVariantStudyService:
         variant_study_service.task_service.await_task(task_id)
 
         # Check if all snapshots were cleared
-        nb_snapshot_dir = 0  # after the for iterations, must equal 0
         for variant_path in variant_study_path.iterdir():
             assert not variant_path.joinpath("snapshot").exists()
 
@@ -477,11 +475,6 @@ class TestVariantStudyService:
         jwt_user = Mock(spec=JWTUser, id=user.id, impersonator=user.id, is_site_admin=Mock(return_value=True))
         params = Mock(spec=RequestParameters, user=jwt_user)
 
-        # Add a group that links the user and the studies
-        group = Group(id="test", name="test")
-        db.session.add(group)
-        db.session.commit()
-
         # Add a blank raw study in database ...
         root_study = RawStudy(
             id=str(uuid.uuid4()),
@@ -492,7 +485,7 @@ class TestVariantStudyService:
             updated_at=datetime.datetime.utcnow(),
             public_mode=PublicMode.FULL,
             owner=user,
-            groups=[group],
+            groups=[],
             path=str(tmp_path / "testing-study"),
             additional_data=StudyAdditionalData(author=user.name),
         )
@@ -523,36 +516,20 @@ class TestVariantStudyService:
         comments_dto = CommentsDto(comments="add some comments")
         study_service.edit_comments(variant_study.id, comments_dto, params)
 
-        ## create an area
-        area_manager = AreaManager(Mock(spec=StudyStorageService), Mock(spec=StudyMetadataRepository))
-
         area_creation_dto = AreaCreationDTO(
             name="area_test",
             type=AreaType.AREA,
         )
 
         ## add a command with multiple sub commands
+        # we give only required fields and ignore mypy type check
         general_form_fields = GeneralFormFields(
             mode=Mode.ECONOMY,
-            first_day=3,
-            last_day=365,
-            horizon="2028-2029",
-            first_month=Month.JANUARY,
-            first_week_day=WeekDay.MONDAY,
-            first_january=WeekDay.WEDNESDAY,
-            leap_year=True,
-            nb_years=1,
-            building_mode=BuildingMode.AUTOMATIC,
-            selection_mode=True,
-            year_by_year=True,
-            simulation_synthesis=False,
-            mc_scenario=False,
-            filtering=False,
-            geographic_trimming=False,
-            thematic_trimming=False,
-        )
+            nb_years=3,
+        )  # type: ignore
+
         with current_user_context(token=jwt_user):
-            new_area = study_service.create_area(variant_study.id, area_creation_dto, params)
+            study_service.create_area(variant_study.id, area_creation_dto, params)
             study_service.general_manager.set_field_values(variant_study, general_form_fields)
 
         # at this point, the command must have a total of 3 command block and more regarding all commands
@@ -561,6 +538,6 @@ class TestVariantStudyService:
         # the call to generate_study_config must not add
         # an error log such as "fail to notify command ..."
         with caplog.at_level(logging.ERROR, logger=logger.name):
-            result = variant_study_service.generate_study_config(variant_study.id, params)
+            variant_study_service.generate_study_config(variant_study.id, params)
             log_records = caplog.records
             assert len(log_records) == 0
