@@ -280,18 +280,22 @@ export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promis
  * This function is used when we want to get updates of rTree withouth loosing data from lTree.
  *
  *
- * @param lTree
- * @param rTree
+ * @param left
+ * @param right
  * @returns a new tree with the data from rTree merged into lTree.
  */
-export function mergeDeepRightStudyTree(lTree: StudyTreeNode, rTree: StudyTreeNode): StudyTreeNode {
-  const onlyLeft = lTree.children.filter((e) => !rTree.children.some((ee) => ee.name === e.name));
-  const onlyRight = rTree.children.filter((e) => !lTree.children.some((ee) => ee.name === e.name));
-  const both = innerJoin(lTree.children, rTree.children);
+export function mergeDeepRightStudyTree(left: StudyTreeNode, right: StudyTreeNode): StudyTreeNode {
+  const onlyLeft = left.children.filter(
+    (eLeft) => !right.children.some((eRight) => eLeft.name === eRight.name),
+  );
+  const onlyRight = right.children.filter(
+    (eRight) => !left.children.some((eLeft) => eLeft.name === eRight.name),
+  );
+  const both = innerJoin(left.children, right.children);
   const bothAfterMerge = both.map((e) => mergeDeepRightStudyTree(e[0], e[1]));
   const childrenAfterMerge = [...onlyLeft, ...bothAfterMerge, ...onlyRight];
   return {
-    ...rTree,
+    ...right,
     children: childrenAfterMerge,
   };
 }
