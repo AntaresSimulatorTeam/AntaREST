@@ -380,6 +380,13 @@ class NonStudyFolderDTO(AntaresBaseModel):
         full_path = workspace_path.joinpath(self.path)
         return full_path.parent
 
+    @field_validator("path", mode="before")
+    def to_posix(cls, path: Path) -> PurePosixPath:
+        """
+        Always convert path to posix path.
+        """
+        return PurePosixPath(path)
+
 
 class WorkspaceMetadata(AntaresBaseModel):
     """
