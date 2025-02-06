@@ -88,7 +88,7 @@ class TestRemoveSTStorage:
                 "loc": ("storage_id",),
                 "msg": "String should match pattern '[a-z0-9_(),& -]+'",
                 "type": "string_pattern_mismatch",
-                "url": "https://errors.pydantic.dev/2.8/v/string_pattern_mismatch",
+                "url": "https://errors.pydantic.dev/2.10/v/string_pattern_mismatch",
             }
         ]
 
