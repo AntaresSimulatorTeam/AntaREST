@@ -15,13 +15,25 @@ import re
 import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Callable, Optional
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
 
+PrimitiveType = t.Union[str, int, float, bool]
+ValueParser = Callable[[str], PrimitiveType]
+SelectionPredicate = Callable[[str], bool]
 
-def convert_value(value: str) -> t.Union[str, int, float, bool]:
+
+def _lower_case(input: str) -> str:
+    return input.lower()
+
+
+LOWER_CASE_PARSER: ValueParser = _lower_case
+
+
+def _convert_value(value: str) -> PrimitiveType:
     """Convert value to the appropriate type for JSON."""
 
     try:
@@ -38,7 +50,44 @@ def convert_value(value: str) -> t.Union[str, int, float, bool]:
                 return value
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
+class OptionMatcher:
+    """
+    Defines a location in INI file data.
+    A None section means all sections.
+    """
+
+    section: Optional[str]
+    key: Optional[str]
+
+
+def any_section_option_matcher(key: str) -> OptionMatcher:
+    """
+    Return a matcher which will match the provided key in any section.
+    """
+    return OptionMatcher(section=None, key=key)
+
+
+class ValueParsers:
+    _parsers: t.Dict[OptionMatcher, ValueParser]
+
+    def __init__(self, parsers: t.Dict[OptionMatcher, ValueParser]):
+        self._parsers = parsers
+
+    def find_parser(self, section: str, key: str) -> ValueParser:
+        if not self._parsers:
+            return _convert_value
+        possible_keys = [
+            OptionMatcher(section=section, key=key),
+            OptionMatcher(section=None, key=key),
+        ]
+        for k in possible_keys:
+            if parser := self._parsers.get(k, None):
+                return parser
+        return _convert_value
+
+
+@dataclasses.dataclass(frozen=True)
 class IniFilter:
     """
     Filter sections and options in an INI file based on regular expressions.
@@ -115,8 +164,8 @@ class IReader(ABC):
         Parse `.ini` file to json object.
 
         Args:
-            path: Path to `.ini` file or file-like object.
-            kwargs: Additional options used for reading.
+            path:    Path to `.ini` file or file-like object.
+            options: Additional options used for reading.
 
         Returns:
             Dictionary of parsed `.ini` file which can be converted to JSON.
@@ -152,11 +201,17 @@ class IniReader(IReader):
     This class is not compatible with standard `.ini` readers.
     """
 
-    def __init__(self, special_keys: t.Sequence[str] = (), section_name: str = "settings") -> None:
+    def __init__(
+        self,
+        special_keys: t.Sequence[str] = (),
+        section_name: str = "settings",
+        value_parsers: t.Dict[OptionMatcher, ValueParser] | None = None,
+    ) -> None:
         super().__init__()
 
         # Default section name to use if `.ini` file has no section.
         self._special_keys = set(special_keys)
+        self._value_parsers = ValueParsers(value_parsers or {})
 
         # List of keys which should be parsed as list.
         self._section_name = section_name
@@ -313,10 +368,12 @@ class IniReader(IReader):
     def _append_option(self, section: str, key: str, value: str) -> None:
         self._curr_sections.setdefault(section, {})
         values = self._curr_sections[section]
+        parser = self._value_parsers.find_parser(section, key)
+        parsed = parser(value)
         if key in self._special_keys:
-            values.setdefault(key, []).append(convert_value(value))
+            values.setdefault(key, []).append(parsed)
         else:
-            values[key] = convert_value(value)
+            values[key] = parsed
         self._curr_option = key
 
 

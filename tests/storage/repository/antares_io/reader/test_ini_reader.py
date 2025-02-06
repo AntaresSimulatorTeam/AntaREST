@@ -14,7 +14,12 @@ import io
 import textwrap
 from pathlib import Path
 
-from antarest.study.storage.rawstudy.ini_reader import IniReader, SimpleKeyValueReader
+from antarest.study.storage.rawstudy.ini_reader import (
+    IniReader,
+    OptionMatcher,
+    SimpleKeyValueReader,
+    any_section_option_matcher,
+)
 
 
 class TestIniReader:
@@ -322,6 +327,33 @@ class TestIniReader:
         # regex match with section and option
         actual = reader.read(path, section_regex="part.*", option_regex=".*a.*")
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "salut"}}
+        assert actual == expected
+
+    def test_read__with_custom_parser(self, tmp_path):
+        path = Path(tmp_path) / "test.ini"
+        path.write_text(
+            textwrap.dedent(
+                """
+                [part1]
+                bar = Hello
+                
+                [part2]
+                bar = Hello
+                """
+            )
+        )
+
+        def to_lower(input: str) -> str:
+            return input.lower()
+
+        value_parsers = {OptionMatcher("part2", "bar"): to_lower}
+        actual = IniReader(value_parsers=value_parsers).read(path)
+        expected = {"part1": {"bar": "Hello"}, "part2": {"bar": "hello"}}
+        assert actual == expected
+
+        value_parsers = {any_section_option_matcher("bar"): to_lower}
+        actual = IniReader(value_parsers=value_parsers).read(path)
+        expected = {"part1": {"bar": "hello"}, "part2": {"bar": "hello"}}
         assert actual == expected
 
 
