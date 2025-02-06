@@ -69,6 +69,7 @@ function DynamicList<T extends { id: string }>({
           <SelectFE
             label={t("global.area.add")}
             options={options}
+            value=""
             onChange={(e) => onAdd(e.target.value as string)}
             size="small"
             variant="outlined"
