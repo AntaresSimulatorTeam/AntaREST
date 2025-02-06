@@ -13,14 +13,12 @@
 import ast
 import configparser
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.ini_reader import OptionMatcher
-
-PrimitiveType = Union[str, int, float, bool]
+from antarest.study.storage.rawstudy.ini_reader import OptionMatcher, PrimitiveType
 
 # Value serializers may be used to customize the way INI options are serialized
 ValueSerializer = Callable[[str], PrimitiveType]

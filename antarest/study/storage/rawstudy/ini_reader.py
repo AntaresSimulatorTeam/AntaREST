@@ -21,9 +21,8 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 
-PrimitiveType = t.Union[str, int, float, bool]
+PrimitiveType = str | int | float | bool
 ValueParser = Callable[[str], PrimitiveType]
-SelectionPredicate = Callable[[str], bool]
 
 
 def _lower_case(input: str) -> str:
@@ -39,7 +38,7 @@ def _convert_value(value: str) -> PrimitiveType:
     try:
         # Infinity values are not supported by JSON, so we use a string instead.
         mapping = {"true": True, "false": False, "+inf": "+Inf", "-inf": "-Inf", "inf": "+Inf"}
-        return t.cast(t.Union[str, int, float, bool], mapping[value.lower()])
+        return t.cast(PrimitiveType, mapping[value.lower()])
     except KeyError:
         try:
             return int(value)
