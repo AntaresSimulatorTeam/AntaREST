@@ -523,10 +523,7 @@ class TestVariantStudyService:
 
         ## add a command with multiple sub commands
         # we give only required fields and ignore mypy type check
-        general_form_fields = GeneralFormFields(
-            mode=Mode.ECONOMY,
-            nb_years=3,
-        )  # type: ignore
+        general_form_fields = GeneralFormFields(mode=Mode.ECONOMY, nb_years=3)
 
         with current_user_context(token=jwt_user):
             study_service.create_area(variant_study.id, area_creation_dto, params)
