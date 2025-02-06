@@ -23,7 +23,7 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class MoveArea(ICommand):
+class UpdateAreaUI(ICommand):
     """
     Command used to move an area inside the map and to update its UI.
     """
@@ -31,7 +31,7 @@ class MoveArea(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.MOVE_AREA
+    command_name: CommandName = CommandName.UPDATE_AREA_UI
     version: int = 1
 
     # Command parameters
@@ -67,7 +67,7 @@ class MoveArea(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.MOVE_AREA.value,
+            action=CommandName.UPDATE_AREA_UI.value,
             args={"area_id": self.area_id, "area_ui": self.area_ui, "layer": self.layer},
             study_version=self.study_version,
         )

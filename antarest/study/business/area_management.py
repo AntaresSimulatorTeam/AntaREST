@@ -39,8 +39,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.move_area import MoveArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
 logger = logging.getLogger(__name__)
@@ -507,7 +507,7 @@ class AreaManager:
     def update_area_ui(self, study: Study, area_id: str, area_ui: UpdateAreaUi, layer: str = "0") -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
-        command = MoveArea(
+        command = UpdateAreaUI(
             area_id=area_id,
             area_ui=area_ui,
             layer=layer,

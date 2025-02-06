@@ -183,7 +183,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         [
             CommandDTO(
                 id=None,
-                action=CommandName.MOVE_AREA.value,
+                action=CommandName.UPDATE_AREA_UI.value,
                 args={
                     "area_id": "test",
                     "area_ui": UpdateAreaUi(

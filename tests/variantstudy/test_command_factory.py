@@ -41,7 +41,7 @@ COMMANDS: List[CommandDTO] = [
     CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
     CommandDTO(action=CommandName.REMOVE_AREA.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
     CommandDTO(
-        action=CommandName.MOVE_AREA.value,
+        action=CommandName.UPDATE_AREA_UI.value,
         args={
             "area_id": "id",
             "area_ui": UpdateAreaUi(x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}),
