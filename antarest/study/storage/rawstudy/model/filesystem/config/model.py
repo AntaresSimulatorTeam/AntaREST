@@ -22,7 +22,6 @@ from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import StudyVersionInt
-
 from .binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
