@@ -19,7 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.ar
     InputHydroPreproAreaPrepro,
 )
 
-default_energy = np.zeros((5, 12), dtype=np.float64)
+default_energy = np.zeros((12, 5), dtype=np.float64)
 default_energy.flags.writeable = False
 
 
@@ -27,7 +27,9 @@ class InputHydroPreproArea(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "energy": InputSeriesMatrix(self.context, self.config.next_file("energy.txt"), default_energy),
+            "energy": InputSeriesMatrix(
+                self.context, self.config.next_file("energy.txt"), default_empty=default_energy
+            ),
             "prepro": InputHydroPreproAreaPrepro(self.context, self.config.next_file("prepro.ini")),
         }
         return children

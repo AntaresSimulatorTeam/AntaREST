@@ -61,11 +61,13 @@ class PreproArea(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "conversion": InputSeriesMatrix(self.context, self.config.next_file("conversion.txt"), default_conversion),
-            "data": InputSeriesMatrix(self.context, self.config.next_file("data.txt"), default_data),
-            "k": InputSeriesMatrix(self.context, self.config.next_file("k.txt"), default_k),
+            "conversion": InputSeriesMatrix(
+                self.context, self.config.next_file("conversion.txt"), default_empty=default_conversion
+            ),
+            "data": InputSeriesMatrix(self.context, self.config.next_file("data.txt"), default_empty=default_data),
+            "k": InputSeriesMatrix(self.context, self.config.next_file("k.txt"), default_empty=default_k),
             "translation": InputSeriesMatrix(
-                self.context, self.config.next_file("translation.txt"), default_scenario_hourly
+                self.context, self.config.next_file("translation.txt"), default_empty=default_scenario_hourly
             ),
             "settings": PreproAreaSettings(self.context, self.config.next_file("settings.ini")),
         }
