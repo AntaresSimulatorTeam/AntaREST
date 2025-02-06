@@ -74,7 +74,7 @@ from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
-from antarest.study.business.timeseries_config_management import TSFormFields
+from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -965,43 +965,40 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.adequacy_patch_manager.set_field_values(study, field_values)
 
     @bp.get(
-        path="/studies/{uuid}/config/timeseries/form",
+        path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
-        summary="Get Time Series config values for form",
-        response_model=TSFormFields,
+        summary="Gets the TS Generation config",
+        response_model=TimeSeriesConfigDTO,
         response_model_exclude_none=True,
     )
     def get_timeseries_form_values(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> TSFormFields:
+    ) -> TimeSeriesConfigDTO:
         logger.info(
-            msg=f"Getting Time Series config for study {uuid}",
+            msg=f"Getting Time-Series generation config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
 
-        return study_service.ts_config_manager.get_field_values(study)
+        return study_service.ts_config_manager.get_values(study)
 
     @bp.put(
-        path="/studies/{uuid}/config/timeseries/form",
+        path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
-        summary="Set Time Series config with values from form",
+        summary="Sets the TS Generation config",
     )
-    def set_timeseries_form_values(
-        uuid: str,
-        field_values: TSFormFields,
-        current_user: JWTUser = Depends(auth.get_current_user),
+    def set_ts_generation_config(
+        uuid: str, field_values: TimeSeriesConfigDTO, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> None:
         logger.info(
-            f"Updating Time Series config for study {uuid}",
+            f"Updating Time-Series generation config for study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.ts_config_manager.set_field_values(study, field_values)
+        study_service.ts_config_manager.set_values(study, field_values)
 
     @bp.get(
         path="/table-schema/{table_type}",
@@ -1871,10 +1868,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
 
-        return study_service.properties_manager.get_field_values(
-            study,
-            area_id,
-        )
+        return study_service.properties_manager.get_field_values(study, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/properties/form",

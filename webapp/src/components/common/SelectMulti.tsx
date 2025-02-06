@@ -34,13 +34,12 @@ interface Props {
   data: string[];
   setValue: (data: string[]) => void;
   sx?: SxProps<Theme> | undefined;
-  placeholder?: string;
   tagsMode?: boolean;
   required?: boolean;
 }
 
 function SelectMulti(props: Props) {
-  const { name, list, data, setValue, placeholder, tagsMode, sx, required } = props;
+  const { name, list, data, setValue, tagsMode, sx, required } = props;
 
   const handleChange = (event: SelectChangeEvent<string[]>) => {
     const {
@@ -82,7 +81,6 @@ function SelectMulti(props: Props) {
         multiple
         value={data}
         variant="filled"
-        placeholder={placeholder}
         onChange={handleChange}
         renderValue={tagsMode === true ? chipRender : checkboxRender}
       >
