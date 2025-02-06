@@ -27,7 +27,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.field_validators im
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
-@functools.total_ordering
 class ItemProperties(
     AntaresBaseModel,
     extra="forbid",
@@ -36,33 +35,9 @@ class ItemProperties(
 ):
     """
     Common properties related to thermal and renewable clusters, and short-term storage.
-
-    Usage:
-
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
-
-    >>> cl1 = ItemProperties(name="cluster-01", group="group-A")
-    >>> cl2 = ItemProperties(name="CLUSTER-01", group="Group-B")
-    >>> cl3 = ItemProperties(name="cluster-02", group="GROUP-A")
-    >>> l = [cl1, cl2, cl3]
-    >>> l.sort()
-    >>> [(c.group, c.name) for c in l]
-    [('group-A', 'cluster-01'), ('GROUP-A', 'cluster-02'), ('Group-B', 'CLUSTER-01')]
     """
 
-    group: LowerCaseStr = Field(default="", description="Cluster group")
-
     name: ItemName
-
-    def __lt__(self, other: t.Any) -> bool:
-        """
-        Compare two clusters by group and name.
-
-        This method may be used to sort and group clusters by `group` and `name`.
-        """
-        if isinstance(other, ItemProperties):
-            return (self.group, self.name.lower()).__lt__((other.group, other.name.lower()))
-        return NotImplemented
 
 
 class ClusterProperties(ItemProperties):
