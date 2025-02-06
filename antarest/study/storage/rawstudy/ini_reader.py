@@ -53,12 +53,12 @@ def _convert_value(value: str) -> PrimitiveType:
 @dataclasses.dataclass(frozen=True)
 class OptionMatcher:
     """
-    Defines a location in INI file data.
-    A None section means all sections.
+    Used to match a location in an INI file:
+    a None section means any section.
     """
 
     section: Optional[str]
-    key: Optional[str]
+    key: str
 
 
 def any_section_option_matcher(key: str) -> OptionMatcher:
