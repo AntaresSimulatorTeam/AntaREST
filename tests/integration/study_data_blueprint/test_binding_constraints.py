@@ -193,7 +193,7 @@ class TestBindingConstraints:
         assert len(clusters_list) == 1
         assert clusters_list[0]["id"] == cluster_id
         assert clusters_list[0]["name"] == "Cluster 1"
-        assert clusters_list[0]["group"] == "Nuclear"
+        assert clusters_list[0]["group"] == "nuclear"
 
         if study_type == "variant":
             study_id = preparer.create_variant(study_id, name="Variant 1")

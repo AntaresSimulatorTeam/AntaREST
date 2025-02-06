@@ -290,9 +290,10 @@ class STStorageManager:
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
         storage = _to_properties(StudyVersion.parse(study.version), form)
-        values = values_by_ids.get(storage.get_id())
+        storage_id = storage.get_id()
+        values = values_by_ids.get(storage_id)
         if values is not None:
-            raise DuplicateSTStorage(area_id, storage.get_id())
+            raise DuplicateSTStorage(area_id, storage_id)
 
         command = self._make_create_cluster_cmd(area_id, storage, file_study.config.version)
         execute_or_add_commands(
@@ -301,7 +302,7 @@ class STStorageManager:
             [command],
             self.storage_service,
         )
-        output = self.get_storage(study, area_id, storage_id=storage.get_id())
+        output = self.get_storage(study, area_id, storage_id=storage_id)
         return output
 
     def _make_create_cluster_cmd(

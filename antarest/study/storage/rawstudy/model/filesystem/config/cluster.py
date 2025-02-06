@@ -54,16 +54,6 @@ class ItemProperties(
 
     name: ItemName
 
-    def get_id(self) -> str:
-        """
-        Note: explicitly a getter in order to avoid conflict
-              with `id` field of some subclasses that need are
-              meant to be serialized.
-              TODO Ideally, we should separate the 2 "properties" and "config"
-              hierarchies ...
-        """
-        return transform_name_to_id(self.name)
-
     def __lt__(self, other: t.Any) -> bool:
         """
         Compare two clusters by group and name.

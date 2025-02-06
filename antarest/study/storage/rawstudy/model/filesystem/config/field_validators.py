@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import re
 import typing as t
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 from pydantic import BeforeValidator
 
@@ -23,10 +23,14 @@ _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
 _VALID_NAME_PATTERN = re.compile(r"[a-zA-Z0-9_(),& -]+")
 
 
-def _validate_item_name(name: str) -> str:
+def _validate_item_name(name: Any) -> str:
+    if isinstance(name, int):
+        name = str(name)
+    if not isinstance(name, str):
+        ValueError(f"Invalid name '{name}'.")
     if not transform_name_to_id(name):
         raise ValueError(f"Invalid name '{name}'.")
-    return name
+    return cast(str, name)
 
 
 # Type to be used for item names, will raise an error if name

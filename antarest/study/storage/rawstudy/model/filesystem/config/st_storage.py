@@ -19,7 +19,7 @@ from pydantic import Field
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier, transform_name_to_id
 
 
 class STStorageGroup(EnumIgnoreCase):
@@ -53,6 +53,9 @@ class STStorageProperties(ItemProperties):
 
     All aliases match the name of the corresponding field in the INI files.
     """
+
+    def get_id(self) -> str:
+        return transform_name_to_id(self.name)
 
     group: STStorageGroup = Field(
         STStorageGroup.OTHER1,

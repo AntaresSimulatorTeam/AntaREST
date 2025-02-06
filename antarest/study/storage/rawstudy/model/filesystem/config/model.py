@@ -107,9 +107,10 @@ class DistrictSet(AntaresBaseModel):
     filters_year: t.List[str] = ALL
 
     def get_areas(self, all_areas: t.List[str]) -> t.List[str]:
+        areas = self.areas or []
         if self.inverted_set:
-            return list(set(all_areas).difference(set(self.areas or [])))
-        return self.areas or []
+            areas = list(set(all_areas).difference(set(areas)))
+        return sorted(areas)
 
 
 class Simulation(AntaresBaseModel):

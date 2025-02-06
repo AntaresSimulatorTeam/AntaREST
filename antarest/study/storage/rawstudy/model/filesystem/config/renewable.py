@@ -20,7 +20,10 @@ from typing_extensions import override
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
+    IgnoreCaseIdentifier,
+    transform_name_to_id,
+)
 
 
 class TimeSeriesInterpretation(EnumIgnoreCase):
@@ -80,6 +83,11 @@ class RenewableProperties(ClusterProperties):
     """
     Properties of a renewable cluster read from the configuration files.
     """
+
+    # as a method, to avoid ambiguity with config subclass which has it
+    # as a property, which can differ from the name ... TODO: change this
+    def get_id(self) -> str:
+        return transform_name_to_id(self.name, lower=False)
 
     group: RenewableClusterGroup = Field(
         title="Renewable Cluster Group",

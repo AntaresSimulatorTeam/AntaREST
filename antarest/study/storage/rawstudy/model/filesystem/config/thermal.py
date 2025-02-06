@@ -19,7 +19,10 @@ from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
+    IgnoreCaseIdentifier,
+    transform_name_to_id,
+)
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
@@ -107,6 +110,9 @@ class ThermalProperties(ClusterProperties):
     Thermal cluster configuration model.
     This model describes the configuration parameters for a thermal cluster.
     """
+
+    def get_id(self) -> str:
+        return transform_name_to_id(self.name, lower=False)
 
     group: ThermalClusterGroup = Field(
         default=ThermalClusterGroup.OTHER1,

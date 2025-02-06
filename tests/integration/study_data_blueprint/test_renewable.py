@@ -117,7 +117,7 @@ class TestRenewable:
         fr_solar_pv_props = {
             **DEFAULT_PROPERTIES,
             "name": fr_solar_pv,
-            "group": "Solar PV",
+            "group": "solar pv",
             "nominalCapacity": 5001,
             "unitCount": 1,
             "tsInterpretation": "production-factor",
@@ -425,7 +425,7 @@ class TestRenewable:
         assert res.status_code == 200, res.json()
         obj = res.json()
         # If a group is not found, return the default group ("Other RES 1" by default).
-        assert obj["group"] == "Other RES 1"
+        assert obj["group"] == "other res 1"
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
@@ -587,7 +587,7 @@ class TestRenewable:
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/renewable/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "Wind Offshore"
+        assert cluster_cfg["group"] == "wind offshore"
         assert cluster_cfg["unitCount"] == 15
         assert cluster_cfg["nominalCapacity"] == 42500
 
