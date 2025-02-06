@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -161,21 +161,6 @@ class RemoveLink(ICommand):
             args={"area1": self.area1, "area2": self.area2},
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        sep = MATCH_SIGNATURE_SEPARATOR
-        return f"{self.command_name.value}{sep}{self.area1}{sep}{self.area2}"
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveLink):
-            return False
-        return self.area1 == other.area1 and self.area2 == other.area2
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

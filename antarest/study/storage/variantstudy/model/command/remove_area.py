@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -294,18 +294,6 @@ class RemoveArea(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        return isinstance(other, RemoveArea) and self.id == other.id
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

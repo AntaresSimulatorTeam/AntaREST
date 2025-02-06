@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -147,42 +147,6 @@ class CreateRenewablesCluster(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.cluster_name
-        )
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateRenewablesCluster):
-            return False
-        simple_match = self.area_id == other.area_id and self.cluster_name == other.cluster_name
-        if not equal:
-            return simple_match
-        return simple_match and self.parameters == other.parameters
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        other = t.cast(CreateRenewablesCluster, other)
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        commands: t.List[ICommand] = []
-        if self.parameters != other.parameters:
-            commands.append(
-                UpdateConfig(
-                    target=f"input/renewables/clusters/{self.area_id}/list/{self.cluster_name}",
-                    data=other.parameters,
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        return commands
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

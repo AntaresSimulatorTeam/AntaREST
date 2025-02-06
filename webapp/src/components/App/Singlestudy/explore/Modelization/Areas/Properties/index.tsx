@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,17 +14,17 @@
 
 import { Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import Form from "../../../../../../common/Form";
 import {
-  PropertiesFormFields,
   getPropertiesFormFields,
   setPropertiesFormFields,
+  type PropertiesFormFields,
 } from "./utils";
 import Fields from "./Fields";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 
 function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

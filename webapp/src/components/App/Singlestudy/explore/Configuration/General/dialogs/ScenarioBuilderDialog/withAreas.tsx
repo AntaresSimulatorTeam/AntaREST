@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,18 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { ComponentType, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
 import SplitView from "../../../../../../../common/SplitView";
 import PropertiesView from "../../../../../../../common/PropertiesView";
 import ListElement from "../../../../common/ListElement";
 import {
-  GenericScenarioConfig,
-  HandlerReturnTypes,
-  ScenarioType,
-  ClustersHandlerReturn,
   getConfigByScenario,
-  ScenarioConfig,
+  type GenericScenarioConfig,
+  type HandlerReturnTypes,
+  type ScenarioType,
+  type ClustersHandlerReturn,
+  type ScenarioConfig,
 } from "./utils";
 
 interface ScenarioTableProps {
@@ -45,27 +45,20 @@ function hasAreas(
 }
 
 function withAreas(
-  Component: ComponentType<
+  Component: React.ComponentType<
     ScenarioTableProps & {
       config: GenericScenarioConfig | ClustersHandlerReturn;
     }
   >,
 ) {
-  return function TableWithAreas({
-    type,
-    config,
-    ...props
-  }: ScenarioTableProps) {
+  return function TableWithAreas({ type, config, ...props }: ScenarioTableProps) {
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
-    const [configByArea, setConfigByArea] = useState<
-      GenericScenarioConfig | ClustersHandlerReturn
-    >({});
-
-    const scenarioConfig = useMemo(
-      () => getConfigByScenario(config, type),
-      [config, type],
+    const [configByArea, setConfigByArea] = useState<GenericScenarioConfig | ClustersHandlerReturn>(
+      {},
     );
+
+    const scenarioConfig = useMemo(() => getConfigByScenario(config, type), [config, type]);
 
     useEffect(() => {
       if (scenarioConfig && hasAreas(scenarioConfig)) {
@@ -91,14 +84,7 @@ function withAreas(
 
     // The regular case where no clusters nested data.
     if (!areas.length && scenarioConfig) {
-      return (
-        <Component
-          {...props}
-          config={scenarioConfig}
-          type={type}
-          areaId={selectedAreaId}
-        />
-      );
+      return <Component {...props} config={scenarioConfig} type={type} areaId={selectedAreaId} />;
     }
 
     return (
@@ -119,12 +105,7 @@ function withAreas(
           }
         />
         <Box sx={{ p: 1 }}>
-          <Component
-            {...props}
-            config={configByArea}
-            type={type}
-            areaId={selectedAreaId}
-          />
+          <Component {...props} config={configByArea} type={type} areaId={selectedAreaId} />
         </Box>
       </SplitView>
     );

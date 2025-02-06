@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,8 +16,8 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
 import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
-import { AllClustersAndLinks } from "../../../../../../../../../common/types";
-import { ConstraintTerm, isTermExist, generateTermId } from "../../utils";
+import type { AllClustersAndLinks } from "../../../../../../../../../common/types";
+import { isTermExist, generateTermId, type ConstraintTerm } from "../../utils";
 
 interface Props {
   list: AllClustersAndLinks;
@@ -28,8 +28,7 @@ interface Props {
 export default function OptionsList({ list, isLink, constraintTerms }: Props) {
   const [t] = useTranslation();
 
-  const { control, setValue, watch, getValues } =
-    useFormContext<ConstraintTerm>();
+  const { control, setValue, watch, getValues } = useFormContext<ConstraintTerm>();
 
   // Determines the correct set of options based on whether the term is a link or a cluster.
   const options = isLink ? list.links : list.clusters;
@@ -49,9 +48,7 @@ export default function OptionsList({ list, isLink, constraintTerms }: Props) {
   const getAreaOrClusterOptions = () => {
     const selectedArea = getValues(isLink ? "data.area1" : "data.area");
 
-    const foundOption = options.find(
-      (option) => option.element.id === selectedArea,
-    );
+    const foundOption = options.find((option) => option.element.id === selectedArea);
 
     if (!foundOption) {
       return [];
@@ -63,9 +60,7 @@ export default function OptionsList({ list, isLink, constraintTerms }: Props) {
           !isTermExist(
             constraintTerms,
             generateTermId(
-              isLink
-                ? { area1: selectedArea, area2: id }
-                : { area: selectedArea, cluster: id },
+              isLink ? { area1: selectedArea, area2: id } : { area: selectedArea, cluster: id },
             ),
           ),
       )

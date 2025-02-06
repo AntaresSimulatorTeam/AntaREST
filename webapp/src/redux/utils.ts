@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,16 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import {
-  createAction,
-  ActionCreatorWithPayload,
-  EntityState,
-} from "@reduxjs/toolkit";
+import { createAction, type ActionCreatorWithPayload, type EntityState } from "@reduxjs/toolkit";
 import * as R from "ramda";
-import { AppState } from "./ducks";
-import { AppDispatch, AppThunk } from "./store";
+import type { AppState } from "./ducks";
+import type { AppDispatch, AppThunk } from "./store";
 import packages from "../../package.json";
-import { LinkElement } from "../common/types";
+import type { LinkElement } from "../common/types";
 
 export enum FetchStatus {
   Idle = "idle",
@@ -36,8 +32,7 @@ export interface AsyncEntityState<T> extends EntityState<T> {
 }
 
 export const makeActionName = R.curry(
-  (reducerName: string, actionType: string) =>
-    `${packages.name}/${reducerName}/${actionType}`,
+  (reducerName: string, actionType: string) => `${packages.name}/${reducerName}/${actionType}`,
 );
 
 interface ThunkAPI {
@@ -45,8 +40,7 @@ interface ThunkAPI {
   getState: () => AppState;
 }
 
-interface ThunkActionCreatorWithPayload<P, T = void>
-  extends ActionCreatorWithPayload<P> {
+interface ThunkActionCreatorWithPayload<P, T = void> extends ActionCreatorWithPayload<P> {
   (thunkArg: T): AppThunk<P>;
 }
 
@@ -71,10 +65,7 @@ export function createThunk<P = void, T = void>(
 
 const LINK_ID_SEPARATOR = " / ";
 
-export function makeLinkId(
-  sourceId: LinkElement["area1"],
-  targetId: LinkElement["area2"],
-): string {
+export function makeLinkId(sourceId: LinkElement["area1"], targetId: LinkElement["area2"]): string {
   return sourceId + LINK_ID_SEPARATOR + targetId;
 }
 

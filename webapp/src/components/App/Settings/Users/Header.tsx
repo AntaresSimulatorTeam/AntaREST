@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,7 +17,7 @@ import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import CreateUserDialog from "./dialog/CreateUserDialog";
-import { UserDetailsDTO } from "../../../../common/types";
+import type { UserDetailsDTO } from "../../../../common/types";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
 
 interface Props {

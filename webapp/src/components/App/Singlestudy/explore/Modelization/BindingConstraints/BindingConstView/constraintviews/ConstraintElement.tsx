@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,25 +13,18 @@
  */
 
 import { FormControlLabel, Switch, Typography } from "@mui/material";
-import { ReactNode } from "react";
 import { ConstraintElementData, ConstraintElementRoot } from "./style";
 import { useTranslation } from "react-i18next";
 
 interface ElementProps {
-  left: ReactNode;
-  right: ReactNode;
+  left: React.ReactNode;
+  right: React.ReactNode;
   operator?: string;
   isLink?: boolean;
   onToggleType?: () => void;
 }
 
-function ConstraintElement({
-  isLink,
-  left,
-  right,
-  operator = "x",
-  onToggleType,
-}: ElementProps) {
+function ConstraintElement({ isLink, left, right, operator = "x", onToggleType }: ElementProps) {
   const { t } = useTranslation();
 
   return (

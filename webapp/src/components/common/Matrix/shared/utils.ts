@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import {
-  type EnhancedGridColumn,
-  type TimeSeriesColumnOptions,
-  type CustomColumnOptions,
-  type MatrixAggregates,
-  type AggregateType,
-  type AggregateConfig,
-  type DateTimeMetadataDTO,
-  type FormatGridNumberOptions,
+import type {
   DataColumnsConfig,
   ResultColumn,
+  EnhancedGridColumn,
+  TimeSeriesColumnOptions,
+  CustomColumnOptions,
+  MatrixAggregates,
+  AggregateType,
+  AggregateConfig,
+  DateTimeMetadataDTO,
+  FormatGridNumberOptions,
 } from "./types";
-import { parseISO, Locale } from "date-fns";
+import { parseISO, type Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { getCurrentLanguage } from "@/utils/i18nUtils";
 import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
@@ -49,10 +49,7 @@ import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
  * @param options.maxDecimals - Maximum number of decimal places to show.
  * @returns A formatted string representation of the number with proper separators.
  */
-export function formatGridNumber({
-  value,
-  maxDecimals = 0,
-}: FormatGridNumberOptions): string {
+export function formatGridNumber({ value, maxDecimals = 0 }: FormatGridNumberOptions): string {
   if (value === undefined) {
     return "";
   }
@@ -67,13 +64,9 @@ export function formatGridNumber({
   const dotIndex = stringValue.indexOf(".");
   const hasDecimals = dotIndex !== -1;
   const shouldFormatDecimals =
-    hasDecimals &&
-    maxDecimals > 0 &&
-    stringValue.length - dotIndex - 1 > maxDecimals;
+    hasDecimals && maxDecimals > 0 && stringValue.length - dotIndex - 1 > maxDecimals;
 
-  const formattedValue = shouldFormatDecimals
-    ? numValue.toFixed(maxDecimals)
-    : stringValue;
+  const formattedValue = shouldFormatDecimals ? numValue.toFixed(maxDecimals) : stringValue;
 
   const [integerPart, decimalPart] = formattedValue.split(".");
 
@@ -229,9 +222,7 @@ export function generateDataColumns({
  * @param aggregateConfig - The configuration for aggregates.
  * @returns An array of AggregateType.
  */
-export function getAggregateTypes(
-  aggregateConfig: AggregateConfig,
-): AggregateType[] {
+export function getAggregateTypes(aggregateConfig: AggregateConfig): AggregateType[] {
   if (aggregateConfig === "stats") {
     return [Aggregate.Avg, Aggregate.Min, Aggregate.Max];
   }
@@ -271,10 +262,7 @@ export function calculateMatrixAggregates(
       aggregates.max.push(Math.max(...row));
     }
 
-    if (
-      aggregateTypes.includes(Aggregate.Avg) ||
-      aggregateTypes.includes(Aggregate.Total)
-    ) {
+    if (aggregateTypes.includes(Aggregate.Avg) || aggregateTypes.includes(Aggregate.Total)) {
       const sum = row.reduce((acc, num) => acc + num, 0);
 
       if (aggregateTypes.includes(Aggregate.Avg)) {
@@ -336,9 +324,7 @@ export function groupResultColumns(
   columns: Array<EnhancedGridColumn | ResultColumn>,
 ): EnhancedGridColumn[] {
   return columns.map((column): EnhancedGridColumn => {
-    const titles = Array.isArray(column.title)
-      ? column.title
-      : [String(column.title)];
+    const titles = Array.isArray(column.title) ? column.title : [String(column.title)];
 
     // Extract and validate components
     // [0]: Variable name (e.g., "OV. COST")

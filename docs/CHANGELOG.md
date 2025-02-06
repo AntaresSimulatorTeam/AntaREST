@@ -1096,7 +1096,7 @@ v2.15.0 (2023-09-30)
 
 ### Chore
 
-* **github-actions:** update Node.js version to 18.16.1 [`b9988f6`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b9988f6dedc5a653de00bf5becc917487ce589e6)
+* **github-actions:** update Node.js version to 22.13.0 [`b9988f6`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/b9988f6dedc5a653de00bf5becc917487ce589e6)
 * correct handling of base class with no `__annotations__` in `AllOptionalMetaclass` [`d9ed61f`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/d9ed61fdaaa32974431b41e9cce44be09bb92e79)
 * correct indentation [`4af01b4`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/4af01b4023cb828093f8fd9b139f76429806c7b8)
 * increase line length limit to 120 characters for Black and iSort [`586fb43`](https://github.com/AntaresSimulatorTeam/AntaREST/commit/586fb438607824899c66db66f183451fbe4a88e4)

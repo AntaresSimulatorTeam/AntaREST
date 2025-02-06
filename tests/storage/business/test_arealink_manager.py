@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 import json
 import uuid
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from zipfile import ZipFile
 
 import pytest
@@ -22,6 +22,7 @@ from antarest.core.config import InternalMatrixFormat
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
@@ -85,6 +86,7 @@ def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
+@current_user_context(token=DEFAULT_ADMIN_USER)
 @with_db_context
 def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # Prepare the managers that are used in this UT

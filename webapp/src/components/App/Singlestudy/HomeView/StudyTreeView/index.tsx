@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,10 +13,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import * as React from "react";
 import { Box, styled } from "@mui/material";
-import { StudyMetadata, VariantTree } from "../../../../../common/types";
-import { StudyTree, getTreeNodes } from "./utils";
+import type { StudyMetadata, VariantTree } from "../../../../../common/types";
+import { getTreeNodes, type StudyTree } from "./utils";
 import {
   CIRCLE_RADIUS,
   colors,
@@ -89,11 +88,7 @@ export default function CustomizedTreeView(props: Props) {
     setHoverId("");
   };
 
-  const buildRecursiveTree = (
-    tree: StudyTree,
-    i = 0,
-    j = 0,
-  ): React.ReactNode[] => {
+  const buildRecursiveTree = (tree: StudyTree, i = 0, j = 0): React.ReactNode[] => {
     const { drawOptions, name, attributes, children } = tree;
     const { id } = attributes;
     const { nbAllChildrens } = drawOptions;
@@ -105,22 +100,14 @@ export default function CustomizedTreeView(props: Props) {
     let verticalLineEnd = 0;
 
     if (children.length > 0) {
-      verticalLineEnd =
-        nbAllChildrens -
-        children[children.length - 1].drawOptions.nbAllChildrens;
+      verticalLineEnd = nbAllChildrens - children[children.length - 1].drawOptions.nbAllChildrens;
       verticalLineEnd = (j + verticalLineEnd) * TILE_SIZE_Y + CIRCLE_RADIUS;
     }
 
     const cx = i * TILE_SIZE_X + DCX;
     const cy = j * TILE_SIZE_Y + DCY;
     let res: React.ReactNode[] = [
-      <SVGCircle
-        key={`circle-${i}-${j}`}
-        cx={cx}
-        cy={cy}
-        r={CIRCLE_RADIUS}
-        fill={color}
-      />,
+      <SVGCircle key={`circle-${i}-${j}`} cx={cx} cy={cy} r={CIRCLE_RADIUS} fill={color} />,
       <SVGRect
         key={`rect-${i}-${j}`}
         x="0"
@@ -182,9 +169,7 @@ export default function CustomizedTreeView(props: Props) {
             cx - TILE_SIZE_X
           },${cy} ${cx - TILE_SIZE_X},${cy} ${cx - TILE_SIZE_X},${
             cy - TILE_SIZE_Y + 2 * CIRCLE_RADIUS
-          } M ${cx - CIRCLE_RADIUS},${cy} L ${
-            cx - CIRCLE_RADIUS - CURVE_OFFSET
-          },${cy}`}
+          } M ${cx - CIRCLE_RADIUS},${cy} L ${cx - CIRCLE_RADIUS - CURVE_OFFSET},${cy}`}
           fill="transparent"
           stroke={color}
           strokeWidth={`${STROKE_WIDTH}`}
@@ -198,10 +183,7 @@ export default function CustomizedTreeView(props: Props) {
         if (index === 0) {
           recursiveHeight = j + 1;
         } else {
-          recursiveHeight =
-            recursiveHeight +
-            children[index - 1].drawOptions.nbAllChildrens +
-            1;
+          recursiveHeight = recursiveHeight + children[index - 1].drawOptions.nbAllChildrens + 1;
         }
         return buildRecursiveTree(elm, i + 1, recursiveHeight);
       }),

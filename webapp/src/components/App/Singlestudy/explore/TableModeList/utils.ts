@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { v4 as uuidv4 } from "uuid";
-import {
+import type {
   TableModeColumnsForType,
   TableModeType,
 } from "../../../../../services/api/studies/tableMode/types";

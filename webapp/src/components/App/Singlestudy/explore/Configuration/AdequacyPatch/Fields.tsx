@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,8 +20,8 @@ import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
-import { AdequacyPatchFormFields, PRICE_TAKING_ORDER_OPTIONS } from "./utils";
-import { StudyMetadata } from "../../../../../../common/types";
+import { PRICE_TAKING_ORDER_OPTIONS, type AdequacyPatchFormFields } from "./utils";
+import type { StudyMetadata } from "../../../../../../common/types";
 import { validateNumber } from "@/utils/validation/number";
 
 function Fields() {
@@ -33,9 +33,7 @@ function Fields() {
   return (
     <Box>
       <Fieldset
-        legend={t(
-          "study.configuration.adequacyPatch.legend.operatingParameters",
-        )}
+        legend={t("study.configuration.adequacyPatch.legend.operatingParameters")}
         fullFieldWidth
       >
         <SwitchFE
@@ -56,20 +54,14 @@ function Fields() {
           control={control}
         />
         <SwitchFE
-          label={t(
-            "study.configuration.adequacyPatch.ntcBetweenPhysicalAreasOutAdequacyPatch",
-          )}
+          label={t("study.configuration.adequacyPatch.ntcBetweenPhysicalAreasOutAdequacyPatch")}
           name="ntcBetweenPhysicalAreasOutAdequacyPatch"
           control={control}
         />
       </Fieldset>
       {studyVersion >= 850 && (
         <>
-          <Fieldset
-            legend={t(
-              "study.configuration.adequacyPatch.legend.curtailmentSharing",
-            )}
-          >
+          <Fieldset legend={t("study.configuration.adequacyPatch.legend.curtailmentSharing")}>
             <SelectFE
               label={t("study.configuration.adequacyPatch.priceTakingOrder")}
               options={PRICE_TAKING_ORDER_OPTIONS}
@@ -77,9 +69,7 @@ function Fields() {
               control={control}
             />
             <SwitchFE
-              label={t(
-                "study.configuration.adequacyPatch.includeHurdleCostCsr",
-              )}
+              label={t("study.configuration.adequacyPatch.includeHurdleCostCsr")}
               name="includeHurdleCostCsr"
               control={control}
             />
@@ -90,9 +80,7 @@ function Fields() {
             fieldWidth={390}
           >
             <NumberFE
-              label={t(
-                "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule",
-              )}
+              label={t("study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule")}
               name="thresholdInitiateCurtailmentSharingRule"
               control={control}
               rules={{
@@ -110,9 +98,7 @@ function Fields() {
               }}
             />
             <NumberFE
-              label={t(
-                "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation",
-              )}
+              label={t("study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation")}
               name="thresholdCsrVariableBoundsRelaxation"
               control={control}
               rules={{
@@ -124,9 +110,7 @@ function Fields() {
             />
             <Fieldset.Break />
             <SwitchFE
-              label={t(
-                "study.configuration.adequacyPatch.checkCsrCostFunction",
-              )}
+              label={t("study.configuration.adequacyPatch.checkCsrCostFunction")}
               name="checkCsrCostFunction"
               control={control}
             />

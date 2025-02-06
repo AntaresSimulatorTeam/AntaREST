@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -548,7 +548,7 @@ class STStorageManager:
             The duplicated cluster configuration.
 
         Raises:
-            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+            DuplicateSTStorage: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_cluster_name)
         lower_new_id = new_id.lower()

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,8 +13,8 @@
  */
 
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import type { StudyMetadata } from "../../../../../../common/types";
+import EmptyView from "../../../../../common/page/EmptyView";
 import LinkPropsView from "./LinkPropsView";
 import { getCurrentLink } from "../../../../../../redux/selectors";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
@@ -34,14 +34,9 @@ function Links() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [t] = useTranslation();
   const dispatch = useAppDispatch();
-  const currentLink = useAppSelector((state) =>
-    getCurrentLink(state, study.id),
-  );
+  const currentLink = useAppSelector((state) => getCurrentLink(state, study.id));
 
-  const linksRes = usePromise(
-    () => getLinks({ studyId: study.id }),
-    [study.id],
-  );
+  const linksRes = usePromise(() => getLinks({ studyId: study.id }), [study.id]);
 
   // Handle automatic selection of the first link
   useEffect(() => {

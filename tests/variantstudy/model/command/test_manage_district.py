@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,13 +16,10 @@ from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -129,87 +126,3 @@ def test_manage_district(empty_study: FileStudy, command_context: CommandContext
     assert remove_output_d3.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     assert len(sets_config.keys()) == 3
-
-
-def test_match(command_context: CommandContext):
-    base = CreateDistrict(
-        name="foo",
-        base_filter=DistrictBaseFilter.add_all,
-        filter_items=["a", "b"],
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_match = CreateDistrict(
-        name="foo",
-        base_filter=DistrictBaseFilter.add_all,
-        filter_items=["a", "b"],
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_not_match = CreateDistrict(name="foo2", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match, True)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "create_district%foo"
-    assert base.get_inner_matrices() == []
-
-    base = RemoveDistrict(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = RemoveDistrict(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_not_match = RemoveDistrict(id="id2", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match, True)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "remove_district%id"
-    assert base.get_inner_matrices() == []
-
-
-def test_revert(command_context: CommandContext):
-    base = CreateDistrict(
-        name="foo",
-        base_filter=DistrictBaseFilter.add_all,
-        filter_items=["a", "b"],
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    file_study = Mock(spec=FileStudy)
-    file_study.config.version = STUDY_VERSION_8_8
-    assert CommandReverter().revert(base, [], file_study) == [
-        RemoveDistrict(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    ]
-
-
-def test_create_diff(command_context: CommandContext):
-    base = CreateDistrict(
-        name="foo",
-        base_filter=DistrictBaseFilter.add_all,
-        filter_items=["a", "b"],
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    other_match = CreateDistrict(
-        name="foo",
-        base_filter=DistrictBaseFilter.remove_all,
-        filter_items=["c"],
-        command_context=command_context,
-        study_version=STUDY_VERSION_8_8,
-    )
-    assert base.create_diff(other_match) == [
-        UpdateConfig(
-            target="input/areas/sets/foo",
-            data={
-                "caption": "foo",
-                "apply-filter": DistrictBaseFilter.remove_all.value,
-                "+": ["c"],
-                "output": True,
-                "comments": "",
-            },
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_8,
-        )
-    ]
-
-    base = RemoveDistrict(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = RemoveDistrict(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.create_diff(other_match) == []

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,10 +16,10 @@ import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, PlainSerializer, field_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -31,6 +31,7 @@ from sqlalchemy import (  # type: ignore
     String,
 )
 from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.orm import validates
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -288,6 +289,23 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
 
+    @validates("folder")  # type: ignore
+    def validate_folder(self, key: str, folder: t.Optional[str]) -> t.Optional[str]:
+        """
+        We want to store the path in posix format in the database, even on windows.
+        """
+        return normalize_path(folder)
+
+
+def normalize_path(path: t.Optional[str]) -> t.Optional[str]:
+    """
+    Turns any path including a windows path (with \ separator) to a posix path (with / separator).
+    """
+    if not path:
+        return path
+    pure_path = PurePath(path)
+    return pure_path.as_posix()
+
 
 class RawStudy(Study):
     """
@@ -334,7 +352,7 @@ class StudyFolder:
     groups: t.List[Group]
 
 
-class NonStudyFolder(AntaresBaseModel):
+class NonStudyFolderDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
     so the user can navigate in the hierarchy
@@ -343,6 +361,24 @@ class NonStudyFolder(AntaresBaseModel):
     path: Path
     workspace: str
     name: str
+    has_children: bool = Field(
+        alias="hasChildren",
+    )  # true when has at least one non-study-folder children
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @computed_field(alias="parentPath")
+    def parent_path(self) -> Path:
+        """
+        This computed field is convenient for the front.
+
+        This field is also aliased as parentPath to match the front-end naming convention.
+
+        Returns: the parent path of the current directory. Starting with the workspace as a root directory (we want /workspafe/folder1/sub... and not workspace/folder1/fsub... ).
+        """
+        workspace_path = Path(f"/{self.workspace}")
+        full_path = workspace_path.joinpath(self.path)
+        return full_path.parent
 
 
 class WorkspaceMetadata(AntaresBaseModel):

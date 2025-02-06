@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -429,7 +429,7 @@ class ThermalManager:
             The duplicated cluster configuration.
 
         Raises:
-            ClusterAlreadyExists: If a cluster with the new name already exists in the area.
+            DuplicateThermalCluster: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_cluster_name, lower=False)
         lower_new_id = new_id.lower()

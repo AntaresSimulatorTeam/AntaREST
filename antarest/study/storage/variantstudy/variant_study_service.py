@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -141,7 +141,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
     def get_commands(self, study_id: str, params: RequestParameters) -> t.List[CommandDTOAPI]:
         """
-        Get command lists
+        Get commands list
         Args:
             study_id: study id
             params: request parameters

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { StudyMetadata, StudyType } from "../../../../common/types";
+import { StudyType, type StudyMetadata } from "../../../../common/types";
 import { toggleFavorite } from "../../../../redux/ducks/studies";
 import StarToggle from "../../../common/StarToggle";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
@@ -85,21 +85,13 @@ function Actions({
       }}
     >
       <Box>
-        <Button
-          variant="text"
-          color="secondary"
-          onClick={handleClickBack}
-          sx={{ pl: 0 }}
-        >
+        <Button variant="text" color="secondary" onClick={handleClickBack} sx={{ pl: 0 }}>
           <ArrowBackIcon
             color="secondary"
             onClick={handleClickBack}
             sx={{ cursor: "pointer", mr: 1 }}
           />
-          <Tooltip
-            title={isExplorer ? study?.name : t("global.studies")}
-            followCursor
-          >
+          <Tooltip title={isExplorer ? study?.name : t("global.studies")} followCursor>
             <Typography variant="button">
               {isExplorer ? t("button.back") : t("global.studies")}
             </Typography>
@@ -138,18 +130,11 @@ function Actions({
         />
       </Tooltip>
       {isManaged ? (
-        <Chip
-          label={t("study.managedStudy")}
-          variant="filled"
-          color="info"
-          size="small"
-        />
+        <Chip label={t("study.managedStudy")} variant="filled" color="info" size="small" />
       ) : (
         <Chip label={study.workspace} variant="filled" size="small" />
       )}
-      {study.tags?.map((tag) => (
-        <Chip key={tag} label={tag} variant="filled" size="small" />
-      ))}
+      {study.tags?.map((tag) => <Chip key={tag} label={tag} variant="filled" size="small" />)}
       {isExplorer && (
         <Button
           size="small"

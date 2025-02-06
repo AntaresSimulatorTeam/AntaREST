@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { DeepPartial } from "react-hook-form";
-import { StudyMetadata } from "../../../../../../common/types";
+import type { DeepPartial } from "react-hook-form";
+import type { StudyMetadata } from "../../../../../../common/types";
 import client from "../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////
@@ -82,17 +82,14 @@ enum RenewableGenerationModeling {
 
 export const SPATIAL_CORRELATIONS_OPTIONS = Object.values(SpatialCorrelation);
 export const INITIAL_RESERVOIR_OPTIONS = Object.values(InitialReservoirLevel);
-export const HYDRO_HEURISTIC_POLICY_OPTIONS =
-  Object.values(HydroHeuristicPolicy);
+export const HYDRO_HEURISTIC_POLICY_OPTIONS = Object.values(HydroHeuristicPolicy);
 export const HYDRO_PRICING_MODE_OPTIONS = Object.values(HydroPricingMode);
 export const POWER_FLUCTUATIONS_OPTIONS = Object.values(PowerFluctuation);
 export const SHEDDING_POLICY_OPTIONS = Object.values(SheddingPolicy);
 export const RESERVE_MANAGEMENT_OPTIONS = Object.values(ReserveManagement);
 export const UNIT_COMMITMENT_MODE_OPTIONS = Object.values(UnitCommitmentMode);
 export const SIMULATION_CORES_OPTIONS = Object.values(SimulationCore);
-export const RENEWABLE_GENERATION_OPTIONS = Object.values(
-  RenewableGenerationModeling,
-);
+export const RENEWABLE_GENERATION_OPTIONS = Object.values(RenewableGenerationModeling);
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -122,10 +119,7 @@ export interface AdvancedParamsFormFields {
   unitCommitmentMode: string;
 }
 
-type AdvancedParamsFormFields_RAW = Omit<
-  AdvancedParamsFormFields,
-  "accuracyOnCorrelation"
-> & {
+type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCorrelation"> & {
   accuracyOnCorrelation: string;
 };
 
@@ -137,12 +131,8 @@ function makeRequestURL(studyId: StudyMetadata["id"]): string {
   return `v1/studies/${studyId}/config/advancedparameters/form`;
 }
 
-export async function getAdvancedParamsFormFields(
-  studyId: StudyMetadata["id"],
-) {
-  const { data } = await client.get<AdvancedParamsFormFields_RAW>(
-    makeRequestURL(studyId),
-  );
+export async function getAdvancedParamsFormFields(studyId: StudyMetadata["id"]) {
+  const { data } = await client.get<AdvancedParamsFormFields_RAW>(makeRequestURL(studyId));
 
   return {
     ...data,

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,9 +20,7 @@ from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -76,42 +74,3 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     command.apply(empty_study)
     layers = IniReader().read(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"1": False}}
-
-
-def test_match(command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = UpdateConfig(
-        target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_not_match = UpdateConfig(
-        target="hello", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "update_config%foo"
-
-
-@patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_update_config")
-def test_revert(mock_generate_update_config, command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    study = FileStudy(config=Mock(), tree=Mock())
-    mock_generate_update_config.side_effect = ChildNotFoundError("")
-    res = CommandReverter().revert(base, [], study)
-    mock_generate_update_config.assert_called_with(study.tree, ["foo"])
-    assert res == []
-
-    assert CommandReverter().revert(
-        base,
-        [UpdateConfig(target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8)],
-        study,
-    ) == [UpdateConfig(target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8)]
-
-
-def test_create_diff(command_context: CommandContext):
-    base = UpdateConfig(target="foo", data="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = UpdateConfig(
-        target="foo", data="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
-    )
-    assert base.create_diff(other_match) == [other_match]

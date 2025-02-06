@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -55,14 +55,10 @@ describe("validateArray", () => {
   });
 
   test("should handle both options simultaneously", () => {
-    expect(validateArray([], { allowEmpty: true, allowDuplicate: false })).toBe(
-      true,
+    expect(validateArray([], { allowEmpty: true, allowDuplicate: false })).toBe(true);
+    expect(validateArray([1, 1], { allowEmpty: true, allowDuplicate: true })).toBe(true);
+    expect(validateArray([1, 1], { allowEmpty: true, allowDuplicate: false })).toBe(
+      "form.field.duplicateNotAllowed",
     );
-    expect(
-      validateArray([1, 1], { allowEmpty: true, allowDuplicate: true }),
-    ).toBe(true);
-    expect(
-      validateArray([1, 1], { allowEmpty: true, allowDuplicate: false }),
-    ).toBe("form.field.duplicateNotAllowed");
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,59 +13,70 @@
  */
 
 import { useEffect, useState } from "react";
-import { StudyMetadata } from "../../common/types";
+import type { StudyMetadata } from "../../common/types";
 import usePromise from "../../hooks/usePromise";
-import {
-  getTableMode,
-  setTableMode,
-} from "../../services/api/studies/tableMode";
-import {
+import { getTableMode, setTableMode } from "../../services/api/studies/tableMode";
+import type {
   TableData,
   TableModeColumnsForType,
   TableModeType,
 } from "../../services/api/studies/tableMode/types";
-import { SubmitHandlerPlus } from "./Form/types";
-import TableForm from "./TableForm";
+import type { SubmitHandlerPlus } from "./Form/types";
 import UsePromiseCond from "./utils/UsePromiseCond";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import EmptyView from "./page/SimpleContent";
+import EmptyView from "./page/EmptyView";
 import { useTranslation } from "react-i18next";
+import DataGridForm, { type DataGridFormProps } from "./DataGridForm";
+import startCase from "lodash/startCase";
+import type { GridColumn } from "@glideapps/glide-data-grid";
 
 export interface TableModeProps<T extends TableModeType = TableModeType> {
   studyId: StudyMetadata["id"];
   type: T;
   columns: TableModeColumnsForType<T>;
+  extraActions?: React.ReactNode;
 }
 
-function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
-  const { studyId, type, columns } = props;
-  const [filteredColumns, setFilteredColumns] = useState(columns);
+function TableMode<T extends TableModeType>({
+  studyId,
+  type,
+  columns,
+  extraActions,
+}: TableModeProps<T>) {
   const { t } = useTranslation();
+  const [gridColumns, setGridColumns] = useState<DataGridFormProps<TableData>["columns"]>([]);
+  const columnsDep = columns.join(",");
 
   const res = usePromise(
     () => getTableMode({ studyId, tableType: type, columns }),
-    [studyId, type, columns.join(",")],
+    [studyId, type, columnsDep],
   );
 
   // Filter columns based on the data received, because the API may return
   // fewer columns than requested depending on the study version
-  useEffect(
-    () => {
-      const dataKeys = Object.keys(res.data || {});
+  useEffect(() => {
+    const data = res.data || {};
+    const rowNames = Object.keys(data);
 
-      if (dataKeys.length === 0) {
-        setFilteredColumns([]);
-        return;
-      }
+    if (rowNames.length === 0) {
+      setGridColumns([]);
+      return;
+    }
 
-      const data = res.data!;
-      const dataRowKeys = Object.keys(data[dataKeys[0]]);
+    const columnNames = Object.keys(data[rowNames[0]]);
 
-      setFilteredColumns(columns.filter((col) => dataRowKeys.includes(col)));
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [res.data, columns.join(",")],
-  );
+    setGridColumns(
+      columns
+        .filter((col) => columnNames.includes(col))
+        .map((col) => {
+          const title = startCase(col);
+          return {
+            title,
+            id: col,
+          } satisfies GridColumn;
+        }),
+    );
+  }, [res.data, columnsDep]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -83,15 +94,19 @@ function TableMode<T extends TableModeType>(props: TableModeProps<T>) {
     <UsePromiseCond
       response={res}
       ifFulfilled={(data) =>
-        filteredColumns.length > 0 ? (
-          <TableForm
-            defaultValues={data}
+        gridColumns.length > 0 ? (
+          <DataGridForm
+            defaultData={data}
+            columns={gridColumns}
             onSubmit={handleSubmit}
-            tableProps={{ columns: filteredColumns }}
-            autoSubmit={false}
+            extraActions={extraActions}
           />
         ) : (
-          <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
+          <EmptyView
+            icon={GridOffIcon}
+            title={t("study.results.noData")}
+            extraActions={extraActions}
+          />
         )
       }
     />

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,10 +13,8 @@
  */
 
 import { render } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import Box from "@mui/material/Box";
-import MatrixGrid, { MatrixGridProps } from ".";
-import SplitView from "../../../SplitView";
+import MatrixGrid, { type MatrixGridProps } from ".";
 import type { EnhancedGridColumn } from "../../shared/types";
 import { mockGetBoundingClientRect } from "../../../../../tests/mocks/mockGetBoundingClientRect";
 import { mockHTMLCanvasElement } from "../../../../../tests/mocks/mockHTMLCanvasElement";
@@ -74,22 +72,12 @@ const renderMatrixGrid = ({
 }: RenderMatrixOptions = {}) => {
   return render(
     <Box style={{ width, height }}>
-      <MatrixGrid
-        data={data}
-        rows={rows}
-        columns={columns}
-        width="100%"
-        height="100%"
-      />
+      <MatrixGrid data={data} rows={rows} columns={columns} width="100%" height="100%" />
     </Box>,
   );
 };
 
-const assertDimensions = (
-  element: HTMLElement,
-  expectedWidth: number,
-  expectedHeight: number,
-) => {
+const assertDimensions = (element: HTMLElement, expectedWidth: number, expectedHeight: number) => {
   const rect = element.getBoundingClientRect();
   expect(rect.width).toBe(expectedWidth);
   expect(rect.height).toBe(expectedHeight);
@@ -132,100 +120,12 @@ describe("MatrixGrid", () => {
 
       rerender(
         <Box style={{ width: "300px", height: "400px" }}>
-          <MatrixGrid
-            data={DATA}
-            rows={2}
-            columns={COLUMNS}
-            width="100%"
-            height="100%"
-          />
+          <MatrixGrid data={DATA} rows={2} columns={COLUMNS} width="100%" height="100%" />
         </Box>,
       );
 
       matrix = getMatrixElement(container);
       assertDimensions(matrix, 300, 400);
-    });
-  });
-
-  describe("portal management", () => {
-    const renderSplitView = () => {
-      return render(
-        <Box style={{ width: "900px", height: "500px" }}>
-          <SplitView id="test-split-view" sizes={[50, 50]}>
-            {[0, 1].map((index) => (
-              <Box key={index} sx={{ px: 2 }}>
-                <MatrixGrid
-                  data={DATA}
-                  rows={2}
-                  columns={COLUMNS}
-                  width="100%"
-                  height="100%"
-                />
-              </Box>
-            ))}
-          </SplitView>
-        </Box>,
-      );
-    };
-
-    const getPortal = () => document.getElementById("portal");
-
-    test("should manage portal visibility on mount", () => {
-      renderMatrixGrid();
-      expect(getPortal()).toBeInTheDocument();
-      expect(getPortal()?.style.display).toBe("none");
-    });
-
-    test("should toggle portal visibility on mouse events", async () => {
-      const user = userEvent.setup();
-      const { container } = renderMatrixGrid();
-      const matrix = container.querySelector(".matrix-container");
-      expect(matrix).toBeInTheDocument();
-
-      await user.hover(matrix!);
-      expect(getPortal()?.style.display).toBe("block");
-
-      await user.unhover(matrix!);
-      expect(getPortal()?.style.display).toBe("none");
-    });
-
-    test("should handle portal in split view", async () => {
-      const user = userEvent.setup();
-      renderSplitView();
-      const matrices = document.querySelectorAll(".matrix-container");
-
-      // Test portal behavior with multiple matrices
-      await user.hover(matrices[0]);
-      expect(getPortal()?.style.display).toBe("block");
-
-      await user.hover(matrices[1]);
-      expect(getPortal()?.style.display).toBe("block");
-
-      await user.unhover(matrices[1]);
-      expect(getPortal()?.style.display).toBe("none");
-    });
-
-    test("should maintain portal state when switching between matrices", async () => {
-      const user = userEvent.setup();
-      renderSplitView();
-      const matrices = document.querySelectorAll(".matrix-container");
-
-      for (const matrix of [matrices[0], matrices[1], matrices[0]]) {
-        await user.hover(matrix);
-        expect(getPortal()?.style.display).toBe("block");
-      }
-
-      await user.unhover(matrices[0]);
-      expect(getPortal()?.style.display).toBe("none");
-    });
-
-    test("should handle unmounting correctly", () => {
-      const { unmount } = renderSplitView();
-      expect(getPortal()).toBeInTheDocument();
-
-      unmount();
-      expect(getPortal()).toBeInTheDocument();
-      expect(getPortal()?.style.display).toBe("none");
     });
   });
 });

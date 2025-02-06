@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -29,7 +29,6 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
-from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -242,21 +241,3 @@ class TestRemoveArea:
 
         actual_cfg = empty_study.tree.get(depth=999)
         assert actual_cfg == empty_study_cfg
-
-
-def test_match(command_context: CommandContext):
-    base = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_not_match = RemoveArea(id="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_other = RemoveLink(area1="id", area2="id2", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "remove_area%foo"
-    assert base.get_inner_matrices() == []
-
-
-def test_create_diff(command_context: CommandContext):
-    base = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.create_diff(other_match) == []

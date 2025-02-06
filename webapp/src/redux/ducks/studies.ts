@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,22 +19,12 @@ import {
   createReducer,
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
-import { O } from "ts-toolbelt";
-import {
-  GroupDTO,
-  StudyMetadata,
-  StudyPublicMode,
-  UserDTO,
-} from "../../common/types";
+import type { O } from "ts-toolbelt";
+import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../common/types";
 import * as api from "../../services/api/study";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
-import { AppAsyncThunkConfig, AppThunk } from "../store";
-import {
-  makeActionName,
-  FetchStatus,
-  AsyncEntityState,
-  createThunk,
-} from "../utils";
+import type { AppAsyncThunkConfig, AppThunk } from "../store";
+import { makeActionName, FetchStatus, createThunk, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
 import type { StudyEventPayload } from "@/services/webSocket/types";
 
@@ -123,21 +113,19 @@ export const setCurrentStudy = createThunk<
   return arg;
 });
 
-export const setStudyScrollPosition = createAction<
-  StudiesState["scrollPosition"]
->(n("SET_SCROLL_POSITION"));
-
-export const setFavoriteStudies = createAction<StudiesState["favorites"]>(
-  n("SET_FAVORITES"),
+export const setStudyScrollPosition = createAction<StudiesState["scrollPosition"]>(
+  n("SET_SCROLL_POSITION"),
 );
 
-export const updateStudyFilters = createAction<
-  Partial<StudiesState["filters"]>
->(n("UPDATE_FILTERS"));
+export const setFavoriteStudies = createAction<StudiesState["favorites"]>(n("SET_FAVORITES"));
 
-export const updateStudiesSortConf = createAction<
-  Partial<StudiesState["sort"]>
->(n("UPDATE_SORT_CONF"));
+export const updateStudyFilters = createAction<Partial<StudiesState["filters"]>>(
+  n("UPDATE_FILTERS"),
+);
+
+export const updateStudiesSortConf = createAction<Partial<StudiesState["sort"]>>(
+  n("UPDATE_SORT_CONF"),
+);
 
 export const updateStudiesFromLocalStorage = createAction<
   O.Nullable<{
@@ -155,48 +143,46 @@ export const updateStudy = createAction<{
 // Thunks
 ////////////////////////////////////////////////////////////////
 
-export const createStudy = createAsyncThunk<
-  StudyMetadata,
-  CreateStudyArg,
-  AppAsyncThunkConfig
->(n("CREATE_STUDY"), async (arg, { getState, rejectWithValue }) => {
-  // StudyMetadata
-  if ("id" in arg) {
-    return arg;
-  }
+export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAsyncThunkConfig>(
+  n("CREATE_STUDY"),
+  async (arg, { getState, rejectWithValue }) => {
+    // StudyMetadata
+    if ("id" in arg) {
+      return arg;
+    }
 
-  try {
-    // StudyUpload
-    if ("file" in arg) {
-      const { file, onUploadProgress } = arg;
-      const studyId = await api.importStudy(file, onUploadProgress);
+    try {
+      // StudyUpload
+      if ("file" in arg) {
+        const { file, onUploadProgress } = arg;
+        const studyId = await api.importStudy(file, onUploadProgress);
+        return api.getStudyMetadata(studyId);
+      }
+
+      // StudyCreator
+      const { name, version, groups, publicMode, tags } = arg;
+      const state = getState();
+      const versionList = getStudyVersions(state) || [];
+      const studyVersion = Number(version || R.last(versionList));
+      // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
+      const studyId = await api.createStudy(name, studyVersion, groups);
+      if (publicMode) {
+        await api.changePublicMode(studyId, publicMode);
+      }
+      if (tags && tags.length > 0) {
+        await api.updateStudyMetadata(studyId, { tags });
+      }
       return api.getStudyMetadata(studyId);
+    } catch (err) {
+      return rejectWithValue(err);
     }
+  },
+);
 
-    // StudyCreator
-    const { name, version, groups, publicMode, tags } = arg;
-    const state = getState();
-    const versionList = getStudyVersions(state) || [];
-    const studyVersion = Number(version || R.last(versionList));
-    // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-    const studyId = await api.createStudy(name, studyVersion, groups);
-    if (publicMode) {
-      await api.changePublicMode(studyId, publicMode);
-    }
-    if (tags && tags.length > 0) {
-      await api.updateStudyMetadata(studyId, { tags });
-    }
-    return api.getStudyMetadata(studyId);
-  } catch (err) {
-    return rejectWithValue(err);
-  }
-});
-
-export const setStudy = createAsyncThunk<
-  StudyMetadata,
-  StudyEventPayload,
-  AppAsyncThunkConfig
->(n("SET_STUDY"), ({ id }) => api.getStudyMetadata(id));
+export const setStudy = createAsyncThunk<StudyMetadata, StudyEventPayload, AppAsyncThunkConfig>(
+  n("SET_STUDY"),
+  ({ id }) => api.getStudyMetadata(id),
+);
 
 interface StudyDeleteInfo {
   id: StudyMetadata["id"];
@@ -237,20 +223,19 @@ export const fetchStudyVersions = createAsyncThunk(
   },
 );
 
-export const fetchStudies = createAsyncThunk<
-  StudyMetadata[],
-  undefined,
-  AppAsyncThunkConfig
->(n("FETCH_STUDIES"), async (_, { dispatch, getState, rejectWithValue }) => {
-  try {
-    const studies = await api.getStudies();
-    dispatch(fetchStudyVersions());
+export const fetchStudies = createAsyncThunk<StudyMetadata[], undefined, AppAsyncThunkConfig>(
+  n("FETCH_STUDIES"),
+  async (_, { dispatch, getState, rejectWithValue }) => {
+    try {
+      const studies = await api.getStudies();
+      dispatch(fetchStudyVersions());
 
-    return studies;
-  } catch (err) {
-    return rejectWithValue(err);
-  }
-});
+      return studies;
+    } catch (err) {
+      return rejectWithValue(err);
+    }
+  },
+);
 
 export const toggleFavorite =
   (studyId: StudyMetadata["id"]): AppThunk =>
@@ -261,9 +246,7 @@ export const toggleFavorite =
 
     dispatch(
       setFavoriteStudies(
-        isFav
-          ? currentFavorites.filter((fav) => fav !== studyId)
-          : [...currentFavorites, studyId],
+        isFav ? currentFavorites.filter((fav) => fav !== studyId) : [...currentFavorites, studyId],
       ),
     );
   };

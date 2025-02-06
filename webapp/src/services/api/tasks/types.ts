@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,17 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { O } from "ts-toolbelt";
-import type { IdentityDTO, StudyMetadata } from "../../../common/types";
-import { TaskStatus, TaskType } from "./constants";
+import type { O } from "ts-toolbelt";
+import type { IdentityDTO, StudyMetadata } from "@/common/types.ts";
+import type { TaskStatus, TaskType } from "./constants";
 
-export type TTaskStatus = O.UnionOf<typeof TaskStatus>;
+export type TaskStatusValue = O.UnionOf<typeof TaskStatus>;
 
-export type TTaskType = O.UnionOf<typeof TaskType>;
+export type TaskTypeValue = O.UnionOf<typeof TaskType>;
 
-export interface TaskDTO extends IdentityDTO<string> {
-  status: TTaskStatus;
-  type?: TTaskType;
+interface BaseTaskDTO<
+  TStatus extends TaskStatusValue = TaskStatusValue,
+  TType extends TaskTypeValue = TaskTypeValue,
+> extends IdentityDTO {
+  status: TStatus;
+  type?: TType;
   owner?: number;
   ref_id?: string;
   creation_date_utc: string;
@@ -39,9 +42,19 @@ export interface TaskDTO extends IdentityDTO<string> {
   }>;
 }
 
-export interface GetTasksParams {
-  status?: TTaskStatus[];
-  type?: TTaskType[];
+export type TaskDTO<
+  TStatus extends TaskStatusValue = TaskStatusValue,
+  TType extends TaskTypeValue | undefined = undefined,
+> = TType extends TaskTypeValue
+  ? O.Required<BaseTaskDTO<TStatus, TType>, "type">
+  : BaseTaskDTO<TStatus>;
+
+export interface GetTasksParams<
+  TStatus extends TaskStatusValue,
+  TType extends TaskTypeValue | undefined,
+> {
+  status?: TStatus[];
+  type?: TType[];
   name?: string;
   studyId?: StudyMetadata["id"];
   fromCreationDateUtc?: number;

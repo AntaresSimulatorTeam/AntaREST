@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { useState, MouseEvent } from "react";
+import { useState } from "react";
 import debug from "debug";
 import { useSnackbar } from "notistack";
 import { useNavigate } from "react-router-dom";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { Box, Typography } from "@mui/material";
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
@@ -25,7 +25,7 @@ import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata, VariantTree } from "../../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../../common/types";
 import { STUDIES_HEIGHT_HEADER } from "../../../../theme";
 import { archiveStudy, unarchiveStudy } from "../../../../services/api/study";
 import { deleteStudy } from "../../../../redux/ducks/studies";
@@ -41,7 +41,7 @@ import CheckBoxFE from "../../../common/fieldEditors/CheckBoxFE";
 import Details from "./Details";
 import Actions from "./Actions";
 import UpgradeDialog from "../UpgradeDialog";
-import ActionsMenu, { ActionsMenuItem } from "./ActionsMenu";
+import ActionsMenu, { type ActionsMenuItem } from "./ActionsMenu";
 
 const logError = debug("antares:singlestudy:navheader:error");
 
@@ -85,7 +85,7 @@ function NavHeader({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleOpenMenu = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
 

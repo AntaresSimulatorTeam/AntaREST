@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,17 +13,17 @@
  */
 
 import type { AxiosRequestConfig } from "axios";
-import type { StudyMetadata } from "../../../../common/types";
-import { O } from "ts-toolbelt";
-import { TableExportFormat } from "./constants";
+import type { StudyMetadata } from "@/common/types.ts";
+import type { O } from "ts-toolbelt";
+import type { TableExportFormat } from "./constants";
 
 // Available export formats for matrix tables
-export type TTableExportFormat = O.UnionOf<typeof TableExportFormat>;
+export type TableExportFormatValue = O.UnionOf<typeof TableExportFormat>;
 
 export interface GetMatrixFileParams {
   studyId: StudyMetadata["id"];
   path: string;
-  format?: TTableExportFormat;
+  format?: TableExportFormatValue;
   header?: boolean;
   index?: boolean;
 }

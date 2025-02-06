@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -72,14 +72,6 @@ class UpdateLink(AbstractLinkCommand):
     @override
     def to_dto(self) -> CommandDTO:
         return super().to_dto()
-
-    @override
-    def match_signature(self) -> str:
-        return super().match_signature()
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return super()._create_diff(other)
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

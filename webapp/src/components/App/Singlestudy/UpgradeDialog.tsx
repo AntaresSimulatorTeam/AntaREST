@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,8 +15,8 @@
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../common/types";
-import { SubmitHandlerPlus } from "../../common/Form/types";
+import type { StudyMetadata } from "../../../common/types";
+import type { SubmitHandlerPlus } from "../../common/Form/types";
 import Fieldset from "../../common/Fieldset";
 import SelectFE from "../../common/fieldEditors/SelectFE";
 import FormDialog from "../../common/dialogs/FormDialog";
@@ -51,9 +51,7 @@ function UpgradeDialog({ study, onClose, open }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (
-    data: SubmitHandlerPlus<typeof defaultValues>,
-  ) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
     return upgradeStudy(study.id, data.values.version).then(onClose);
   };
 

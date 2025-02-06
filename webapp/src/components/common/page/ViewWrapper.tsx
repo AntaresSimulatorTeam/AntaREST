@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -26,7 +26,7 @@ function ViewWrapper({ children }: ViewWrapperProps) {
         width: 1,
         height: 1,
         p: 2,
-        ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
+        ":has(.TabsView:first-of-type), :has(.TabWrapper:first-of-type)": {
           pt: 0,
         },
         overflow: "auto",

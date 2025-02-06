@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../common/types";
 import PropertiesView from "../../../../common/PropertiesView";
 import ListElement from "../common/ListElement";
 import AdequacyPatch from "./AdequacyPatch";
