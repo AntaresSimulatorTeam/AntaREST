@@ -14,7 +14,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -63,19 +63,23 @@ class VariantCommandGenerator:
         study_id = "-" if metadata is None else metadata.id
 
         # Flatten the list of commands
-        # The result here is a list of all commands
-        # Note that each command can have a list of arguments (sub commands) that are added as commands
-        # to the final command list
-        # so len(all_commands) >= len(commands)
         all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
+        # since we need the commands without their sub commands ONLY for the notifier
+        # we'll use a set to store command blocks that were already used
+        # and a dictionary to associate ICommand id to command block index
+        command_block_set: Set[Optional[uuid.UUID]] = set()
+        command_block_dict: Dict[Optional[uuid.UUID], int] = {}
+
+        command_index = 0
+
+        for command in all_commands:
+            if command.command_id not in command_block_dict:
+                command_block_dict[command.command_id] = command_index
+                command_index += 1
 
         # Prepare the stopwatch
         cmd_notifier = CmdNotifier(study_id, len(all_commands))
         stopwatch.reset_current()
-
-        # since we need the commands without their sub commands ONLY for the notifier, we'll use
-        # a dictionary to associate main commands id with a boolean value
-        command_block_dict: Dict[Optional[uuid.UUID], int] = {}
 
         # Store all the outputs
         for index, cmd in enumerate(all_commands, 1):
@@ -89,9 +93,6 @@ class VariantCommandGenerator:
                 )
                 logger.error(output.message, exc_info=e)
 
-            if cmd.command_id not in command_block_dict:
-                command_block_dict[cmd.command_id] = True
-
             # noinspection PyTypeChecker
             detail: NewDetailsDTO = {
                 "id": uuid.UUID(int=0) if cmd.command_id is None else cmd.command_id,
@@ -101,9 +102,9 @@ class VariantCommandGenerator:
             }
             results.details.append(detail)
 
-            if notifier and command_block_dict[cmd.command_id]:
+            if notifier and cmd.command_id not in command_block_set:
                 notifier(command_block_dict[cmd.command_id], output.status, output.message)
-                command_block_dict[cmd.command_id] = False
+                command_block_set.add(cmd.command_id)
 
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)

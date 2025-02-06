@@ -460,8 +460,7 @@ class TestVariantStudyService:
     ) -> None:
         """
         Set Up:
-            We need a variant study for this test. So we create a user, a group for the user and the future raw study,
-            a
+            We need a variant study for this test. So we create a user, a future raw study
         Test:
             Check if the generated commands does not return an error while calling the notifier.
         """
@@ -523,6 +522,7 @@ class TestVariantStudyService:
 
         ## add a command with multiple sub commands
         # we give only required fields and ignore mypy type check
+        # noinspection PyArgumentList
         general_form_fields = GeneralFormFields(mode=Mode.ECONOMY, nb_years=3)
 
         with current_user_context(token=jwt_user):
