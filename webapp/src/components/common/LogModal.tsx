@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,26 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-  UIEvent,
-  KeyboardEvent,
-  CSSProperties,
-} from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import DownloadIcon from "@mui/icons-material/Download";
 import { exportText } from "../../services/utils/index";
 import SimpleLoader from "./loaders/SimpleLoader";
 import BasicDialog from "./dialogs/BasicDialog";
-import {
-  addWsEventListener,
-  subscribeWsChannels,
-} from "../../services/webSocket/ws";
-import { WsEvent } from "@/services/webSocket/types";
+import { addWsEventListener, subscribeWsChannels } from "../../services/webSocket/ws";
+import type { WsEvent } from "@/services/webSocket/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 interface Props {
@@ -40,7 +29,7 @@ interface Props {
   followLogs?: boolean;
   content?: string;
   close: VoidFunction;
-  style?: CSSProperties;
+  style?: React.CSSProperties;
   loading?: boolean;
 }
 
@@ -64,9 +53,7 @@ function LogModal(props: Props) {
     [jobId, logDetail],
   );
 
-  const handleGlobalKeyDown = (
-    keyboardEvent: KeyboardEvent<HTMLDivElement>,
-  ) => {
+  const handleGlobalKeyDown = (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
     if (keyboardEvent.key === "a" && keyboardEvent.ctrlKey) {
       if (divRef.current) {
         const selection = window.getSelection();
@@ -91,7 +78,7 @@ function LogModal(props: Props) {
     }
   };
 
-  const onScroll = (ev: UIEvent<HTMLDivElement>) => {
+  const onScroll = (ev: React.UIEvent<HTMLDivElement>) => {
     const element = ev.target as HTMLDivElement;
     if (element.scrollHeight - element.scrollTop <= element.clientHeight + 20) {
       setAutoScroll(true);
@@ -115,9 +102,7 @@ function LogModal(props: Props) {
   useEffect(() => {
     if (followLogs) {
       if (jobId) {
-        const removeSubscription = subscribeWsChannels(
-          WsChannel.JobLogs + jobId,
-        );
+        const removeSubscription = subscribeWsChannels(WsChannel.JobLogs + jobId);
         const removeMessageListener = addWsEventListener(updateLog);
         return () => {
           removeSubscription();

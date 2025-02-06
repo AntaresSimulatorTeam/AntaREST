@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -22,9 +22,7 @@ import { format } from "../../../../../utils/stringUtils";
 
 const URL = "/v1/studies/{studyId}/config/thematictrimming/form";
 
-export async function getThematicTrimmingConfig({
-  studyId,
-}: GetThematicTrimmingConfigParams) {
+export async function getThematicTrimmingConfig({ studyId }: GetThematicTrimmingConfigParams) {
   const url = format(URL, { studyId });
   const { data } = await client.get<ThematicTrimmingConfig>(url);
   return data;

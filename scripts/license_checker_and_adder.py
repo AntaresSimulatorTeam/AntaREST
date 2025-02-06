@@ -8,7 +8,7 @@ import click
 # Use to skip subtrees that have their own licenses (forks)
 LICENSE_FILE_PATTERN = re.compile("LICENSE.*")
 
-BACKEND_LICENSE_HEADER = """# Copyright (c) 2024, RTE (https://www.rte-france.com)
+BACKEND_LICENSE_HEADER = """# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #

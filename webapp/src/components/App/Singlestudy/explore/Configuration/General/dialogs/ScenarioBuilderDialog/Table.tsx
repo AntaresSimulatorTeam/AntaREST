@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,17 +15,17 @@
 import { useTranslation } from "react-i18next";
 import TableForm from "../../../../../../../common/TableForm";
 import {
-  GenericScenarioConfig,
-  ScenarioType,
-  ClustersHandlerReturn,
   updateScenarioBuilderConfig,
+  type GenericScenarioConfig,
+  type ScenarioType,
+  type ClustersHandlerReturn,
 } from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import EmptyView from "../../../../../../../common/page/SimpleContent";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import EmptyView from "../../../../../../../common/page/EmptyView";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../../../../../../utils/fnUtils";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../common/types";
 
 interface Props {
   config: GenericScenarioConfig | ClustersHandlerReturn;
@@ -80,9 +80,7 @@ function Table({ config, type, areaId }: Props) {
         placeholder: "rand",
         allowEmpty: true,
         colHeaders: (index) =>
-          `${t("study.configuration.general.mcScenarioBuilder.year")} ${
-            index + 1
-          }`,
+          `${t("study.configuration.general.mcScenarioBuilder.year")} ${index + 1}`,
         className: "htCenter",
       }}
       onSubmit={handleSubmit}

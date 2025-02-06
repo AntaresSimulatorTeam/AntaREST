@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -23,9 +23,6 @@ export const COLUMNS = {
     createNumericColumn("num2"),
     createColumn("agg", Column.Aggregate),
   ],
-  nonData: [
-    createColumn("text", Column.Text),
-    createColumn("date", Column.DateTime),
-  ],
+  nonData: [createColumn("text", Column.Text), createColumn("date", Column.DateTime)],
   dataOnly: [createNumericColumn("num1"), createNumericColumn("num2")],
 };

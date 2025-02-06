@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -38,6 +38,7 @@ from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     parse_bindings_coeffs_and_save_into_config,
 )
+from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -455,72 +456,3 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         dto = super().to_dto()
         dto.args["name"] = self.name  # type: ignore
         return dto
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
-
-        other = t.cast(CreateBindingConstraint, other)
-        bd_id = transform_name_to_id(self.name)
-        args = {"id": bd_id, "command_context": other.command_context, "study_version": other.study_version}
-
-        excluded_fields = set(ICommand.model_fields)
-        self_command = self.model_dump(mode="json", exclude=excluded_fields)
-        other_command = other.model_dump(mode="json", exclude=excluded_fields)
-        properties = [
-            "enabled",
-            "coeffs",
-            "comments",
-            "filter_year_by_year",
-            "filter_synthesis",
-            "group",
-            "time_step",
-            "operator",
-        ]
-        for prop in properties:
-            if self_command[prop] != other_command[prop]:
-                args[prop] = other_command[prop]
-
-        matrix_service = self.command_context.matrix_service
-        for matrix_name in ["values"] + [m.value for m in TermMatrices]:
-            self_matrix = getattr(self, matrix_name)  # matrix, ID or `None`
-            other_matrix = getattr(other, matrix_name)  # matrix, ID or `None`
-            self_matrix_id = None if self_matrix is None else matrix_service.get_matrix_id(self_matrix)
-            other_matrix_id = None if other_matrix is None else matrix_service.get_matrix_id(other_matrix)
-            if self_matrix_id != other_matrix_id:
-                args[matrix_name] = other_matrix_id
-
-        return [UpdateBindingConstraint.model_validate(args)]
-
-    @override
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        if not equal:
-            return self.name == other.name
-        return super().match(other, equal)
-
-
-def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set[str]) -> None:
-    """
-    Update the scenario builder by removing the rows that correspond to the BC groups to remove.
-
-    NOTE: this update can be very long if the scenario builder configuration is large.
-    """
-    if not removed_groups:
-        return
-
-    rulesets = study_data.tree.get(["settings", "scenariobuilder"])
-
-    for ruleset in rulesets.values():
-        for key in list(ruleset):
-            # The key is in the form "symbol,group,year"
-            symbol, *parts = key.split(",")
-            if symbol == "bc" and parts[0] in removed_groups:
-                del ruleset[key]
-
-    study_data.tree.save(rulesets, ["settings", "scenariobuilder"])

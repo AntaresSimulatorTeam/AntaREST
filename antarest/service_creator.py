@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -127,9 +127,15 @@ def create_event_bus(app_ctxt: t.Optional[AppBuildContext], config: Config) -> t
     )
 
 
-def create_core_services(
-    app_ctxt: t.Optional[AppBuildContext], config: Config
-) -> t.Tuple[ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService,]:
+def create_core_services(app_ctxt: t.Optional[AppBuildContext], config: Config) -> t.Tuple[
+    ICache,
+    IEventBus,
+    ITaskService,
+    FileTransferManager,
+    LoginService,
+    MatrixService,
+    StudyService,
+]:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
     filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)

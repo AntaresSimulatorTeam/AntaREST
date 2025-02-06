@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -495,3 +495,15 @@ def should_ignore_folder_for_scan(path: Path, filter_in: t.List[str], filter_out
         and any(re.search(regex, path.name) for regex in filter_in)
         and not any(re.search(regex, path.name) for regex in filter_out)
     )
+
+
+def has_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
+    return any(is_non_study_folder(sub_path, filter_in, filter_out) for sub_path in path.iterdir())
+
+
+def is_non_study_folder(path: Path, filter_in: t.List[str], filter_out: t.List[str]) -> bool:
+    if is_study_folder(path):
+        return False
+    if should_ignore_folder_for_scan(path, filter_in, filter_out):
+        return False
+    return True

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,29 +12,29 @@
  * This file is part of the Antares project.
  */
 
-import { O } from "ts-toolbelt";
-import { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
-import { StudyMetadata } from "@/common/types";
-import { PartialExceptFor } from "@/utils/tsUtils";
+import type { O } from "ts-toolbelt";
+import type { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
+import type { StudyMetadata } from "@/common/types";
+import type { PartialExceptFor } from "@/utils/tsUtils";
 
-export type TTransmissionCapacity = O.UnionOf<typeof TransmissionCapacity>;
+export type TransmissionCapacityValue = O.UnionOf<typeof TransmissionCapacity>;
 
-export type TAssetType = O.UnionOf<typeof AssetType>;
+export type AssetTypeValue = O.UnionOf<typeof AssetType>;
 
-export type TLinkStyle = O.UnionOf<typeof LinkStyle>;
+export type LinkStyleValue = O.UnionOf<typeof LinkStyle>;
 
 export interface LinkDTO {
   hurdlesCost: boolean;
   loopFlow: boolean;
   usePhaseShifter: boolean;
-  transmissionCapacities: TTransmissionCapacity;
-  assetType: TAssetType;
+  transmissionCapacities: TransmissionCapacityValue;
+  assetType: AssetTypeValue;
   displayComments: boolean;
   colorr: number;
   colorb: number;
   colorg: number;
   linkWidth: number;
-  linkStyle: TLinkStyle;
+  linkStyle: LinkStyleValue;
   area1: string;
   area2: string;
   // Since v8.2
@@ -42,8 +42,7 @@ export interface LinkDTO {
   filterYearByYear?: string;
 }
 
-export interface CreateLinkParams
-  extends PartialExceptFor<LinkDTO, "area1" | "area2"> {
+export interface CreateLinkParams extends PartialExceptFor<LinkDTO, "area1" | "area2"> {
   studyId: StudyMetadata["id"];
 }
 

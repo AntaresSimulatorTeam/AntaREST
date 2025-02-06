@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { GridCell } from "@glideapps/glide-data-grid";
+import type { GridCell } from "@glideapps/glide-data-grid";
 
 export const assertNumberCell = (
   cell: GridCell,
@@ -26,11 +26,7 @@ export const assertNumberCell = (
   }
 };
 
-export const assertTextCell = (
-  cell: GridCell,
-  expectedValue: string,
-  message: string,
-) => {
+export const assertTextCell = (cell: GridCell, expectedValue: string, message: string) => {
   if (cell.kind === "text" && "displayData" in cell) {
     expect(cell.displayData).toBe(expectedValue);
   } else {
@@ -38,11 +34,7 @@ export const assertTextCell = (
   }
 };
 
-export const assertDateCell = (
-  cell: GridCell,
-  expectedValue: string,
-  message: string,
-) => {
+export const assertDateCell = (cell: GridCell, expectedValue: string, message: string) => {
   if (cell.kind === "text" && "displayData" in cell) {
     expect(cell.displayData).toBe(expectedValue);
   } else {

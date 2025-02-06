@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -79,9 +79,11 @@ class FileTransferManager:
                 Event(
                     type=EventType.DOWNLOAD_CREATED,
                     payload=download.to_dto(),
-                    permissions=PermissionInfo(owner=owner.impersonator)
-                    if owner
-                    else PermissionInfo(public_mode=PublicMode.READ),
+                    permissions=(
+                        PermissionInfo(owner=owner.impersonator)
+                        if owner
+                        else PermissionInfo(public_mode=PublicMode.READ)
+                    ),
                 )
             )
         return download
@@ -98,9 +100,11 @@ class FileTransferManager:
                 Event(
                     type=EventType.DOWNLOAD_READY,
                     payload=download.to_dto(),
-                    permissions=PermissionInfo(owner=download.owner)
-                    if download.owner
-                    else PermissionInfo(public_mode=PublicMode.READ),
+                    permissions=(
+                        PermissionInfo(owner=download.owner)
+                        if download.owner
+                        else PermissionInfo(public_mode=PublicMode.READ)
+                    ),
                 )
             )
 
@@ -116,9 +120,11 @@ class FileTransferManager:
             Event(
                 type=EventType.DOWNLOAD_FAILED,
                 payload=download.to_dto(),
-                permissions=PermissionInfo(owner=download.owner)
-                if download.owner
-                else PermissionInfo(public_mode=PublicMode.READ),
+                permissions=(
+                    PermissionInfo(owner=download.owner)
+                    if download.owner
+                    else PermissionInfo(public_mode=PublicMode.READ)
+                ),
             )
         )
 
@@ -185,9 +191,11 @@ class FileTransferManager:
                 Event(
                     type=EventType.DOWNLOAD_EXPIRED,
                     payload=download_id,
-                    permissions=PermissionInfo(owner=download_owner)
-                    if download_owner
-                    else PermissionInfo(public_mode=PublicMode.READ),
+                    permissions=(
+                        PermissionInfo(owner=download_owner)
+                        if download_owner
+                        else PermissionInfo(public_mode=PublicMode.READ)
+                    ),
                 )
             )
 

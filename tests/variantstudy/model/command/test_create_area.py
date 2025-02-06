@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,7 +20,6 @@ from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
@@ -170,30 +169,3 @@ class TestCreateArea:
         )
         output = create_area_command.apply(study_data=empty_study)
         assert not output.status
-
-
-def test_match(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_not_match = CreateArea(area_name="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "create_area%foo"
-    assert base.get_inner_matrices() == []
-
-
-def test_revert(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    file_study = Mock(spec=FileStudy)
-    file_study.config.version = STUDY_VERSION_8_8
-    actual = CommandReverter().revert(base, [], file_study)
-    assert actual == [RemoveArea(id="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)]
-
-
-def test_create_diff(command_context: CommandContext) -> None:
-    base = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    other_match = CreateArea(area_name="foo", command_context=command_context, study_version=STUDY_VERSION_8_8)
-    assert base.create_diff(other_match) == []

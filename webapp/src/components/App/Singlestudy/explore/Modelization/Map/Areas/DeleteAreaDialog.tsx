@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,22 +13,19 @@
  */
 
 import { Box, Button, Typography } from "@mui/material";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   deleteStudyMapLink,
   deleteStudyMapNode,
-  StudyMapLink,
-  StudyMapNode,
+  type StudyMapLink,
+  type StudyMapNode,
 } from "../../../../../../../redux/ducks/studyMaps";
-import {
-  setCurrentArea,
-  setCurrentLink,
-} from "../../../../../../../redux/ducks/studySyntheses";
+import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import { AreaDeleteIcon } from "./style";
@@ -56,29 +53,19 @@ function DeleteAreaDialog(props: Props) {
     // Delete node
     if (currentArea && !currentLink) {
       try {
-        await dispatch(
-          deleteStudyMapNode({ studyId: study.id, nodeId: currentArea.id }),
-        ).unwrap();
+        await dispatch(deleteStudyMapNode({ studyId: study.id, nodeId: currentArea.id })).unwrap();
         dispatch(setCurrentArea(""));
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("study.error.deleteAreaOrLink"),
-          e as AxiosError,
-        );
+        enqueueErrorSnackbar(t("study.error.deleteAreaOrLink"), e as AxiosError);
       }
     }
     // Delete link
     if (currentLink && !currentArea) {
       try {
-        await dispatch(
-          deleteStudyMapLink({ studyId: study.id, linkId: currentLink.id }),
-        ).unwrap();
+        await dispatch(deleteStudyMapLink({ studyId: study.id, linkId: currentLink.id })).unwrap();
         dispatch(setCurrentLink(""));
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("study.error.deleteAreaOrLink"),
-          e as AxiosError,
-        );
+        enqueueErrorSnackbar(t("study.error.deleteAreaOrLink"), e as AxiosError);
       }
     }
   };

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { DeepPartial } from "react-hook-form";
+import type { DeepPartial } from "react-hook-form";
 import type { StudyMetadata } from "../../../../common/types";
-import { TABLE_MODE_COLUMNS_BY_TYPE, TABLE_MODE_TYPES } from "./constants";
+import type { TABLE_MODE_COLUMNS_BY_TYPE, TABLE_MODE_TYPES } from "./constants";
 
 export type TableModeType = (typeof TABLE_MODE_TYPES)[number];
 
@@ -22,10 +22,7 @@ export type TableModeColumnsForType<T extends TableModeType> = Array<
   (typeof TABLE_MODE_COLUMNS_BY_TYPE)[T][number]
 >;
 
-export type TableData = Record<
-  string,
-  Record<string, string | boolean | number>
->;
+export type TableData = Record<string, Record<string, string | boolean | number>>;
 
 export interface GetTableModeParams<T extends TableModeType> {
   studyId: StudyMetadata["id"];

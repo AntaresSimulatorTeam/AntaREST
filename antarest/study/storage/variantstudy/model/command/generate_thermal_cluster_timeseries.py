@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -147,22 +147,6 @@ class GenerateThermalClusterTimeSeries(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value)
-
-    @override
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        # Only used inside the cli app that no one uses I believe.
-        if not isinstance(other, GenerateThermalClusterTimeSeries):
-            return False
-        return True
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        # Only used inside the cli app that no one uses I believe.
-        raise NotImplementedError()
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,13 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import {
-  DebouncedFunc,
-  DebouncedFuncLeading,
-  DebounceSettingsLeading,
-} from "lodash";
+import type { DebouncedFunc, DebouncedFuncLeading, DebounceSettingsLeading } from "lodash";
 import { useState } from "react";
-import useDebounce, { UseDebounceParams } from "./useDebounce";
+import useDebounce, { type UseDebounceParams } from "./useDebounce";
 
 type WaitOrParams = number | UseDebounceParams;
 

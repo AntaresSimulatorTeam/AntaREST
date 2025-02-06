@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,6 @@
 import base64
 import collections
 import contextlib
-import csv
 import http
 import io
 import logging
@@ -25,6 +24,7 @@ from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from antares.study.version import StudyVersion
 from fastapi import HTTPException, UploadFile
@@ -39,6 +39,7 @@ from antarest.core.exceptions import (
     CommandApplicationError,
     FolderCreationNotAllowed,
     IncorrectPathError,
+    MatrixImportFailed,
     NotAManagedStudyException,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
@@ -195,6 +196,20 @@ def get_disk_usage(path: t.Union[str, Path]) -> int:
                     elif entry.is_dir():
                         total_size += get_disk_usage(path=str(entry.path))
     return total_size
+
+
+def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
+    """Tries to convert bytes to a numpy array when importing a matrix"""
+    str_data = data.decode("utf-8")
+    if not str_data:
+        return np.zeros(shape=(0, 0))
+    for delimiter in [",", ";", "\t"]:
+        with contextlib.suppress(Exception):
+            df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+            df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
+            matrix = df.to_numpy(dtype=np.float64)
+            return matrix
+    raise MatrixImportFailed("Could not parse the given matrix")
 
 
 def _get_path_inside_user_folder(
@@ -1591,19 +1606,7 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                str_data = data.decode("utf-8")
-                if not str_data:
-                    matrix = np.zeros(shape=(0, 0))
-                else:
-                    size_to_check = min(len(str_data), 64)  # sniff a chunk only to speed up the code
-                    try:
-                        delimiter = csv.Sniffer().sniff(str_data[:size_to_check], delimiters=r"[,;\t]").delimiter
-                    except csv.Error:
-                        # Can happen with data with only one column. In this case, we don't care about the delimiter.
-                        delimiter = "\t"
-                    df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
-                    df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
-                    matrix = df.to_numpy(dtype=np.float64)
+                matrix = _imports_matrix_from_bytes(data)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version

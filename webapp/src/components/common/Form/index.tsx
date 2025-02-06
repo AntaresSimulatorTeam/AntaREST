@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,17 +13,17 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
-  DeepPartial,
-  FieldPath,
-  FieldValues,
   FormProvider,
-  FormState,
-  SubmitErrorHandler,
   useForm,
   useFormContext as useFormContextOriginal,
-  UseFormProps,
+  type DeepPartial,
+  type FieldPath,
+  type FieldValues,
+  type FormState,
+  type SubmitErrorHandler,
+  type UseFormProps,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as RA from "ramda-adjunct";
@@ -33,33 +33,28 @@ import {
   Divider,
   IconButton,
   setRef,
-  SxProps,
-  Theme,
   Tooltip,
+  type SxProps,
+  type Theme,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import clsx from "clsx";
-import { LoadingButton, LoadingButtonProps } from "@mui/lab";
+import { LoadingButton, type LoadingButtonProps } from "@mui/lab";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import axios from "axios";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
-import {
-  ROOT_ERROR_KEY,
-  getDirtyValues,
-  stringToPath,
-  toAutoSubmitConfig,
-} from "./utils";
+import { ROOT_ERROR_KEY, getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
-import usePrompt from "../../../hooks/usePrompt";
-import { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import FormContext from "./FormContext";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
 import { mergeSxProp } from "../../../utils/muiUtils";
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 
 export interface AutoSubmitConfig {
   enable: boolean;
@@ -70,10 +65,7 @@ export interface FormProps<
   TFieldValues extends FieldValues = FieldValues,
   TContext = any,
   SubmitReturnValue = any,
-> extends Omit<
-    React.HTMLAttributes<HTMLFormElement>,
-    "onSubmit" | "onInvalid" | "children"
-  > {
+> extends Omit<React.HTMLAttributes<HTMLFormElement>, "onSubmit" | "onInvalid" | "children"> {
   config?: UseFormProps<TFieldValues, TContext>;
   onSubmit?: (
     data: SubmitHandlerPlus<TFieldValues>,
@@ -97,7 +89,7 @@ export interface FormProps<
   allowSubmitOnPristine?: boolean;
   enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
-  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext> | undefined>;
+  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
@@ -132,18 +124,12 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const { t } = useTranslation();
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
 
-  const [isInProgress, setIsInProgress] = useState(false);
-  const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(
-    false,
-    750,
-  );
+  const [showAutoSubmitLoader, setShowAutoSubmitLoader] = useDebouncedState(false, 750);
 
   const fieldAutoSubmitListeners = useRef<
     Record<string, ((v: any) => any | Promise<any>) | undefined>
   >({});
-  const fieldsChangeDuringAutoSubmitting = useRef<
-    Array<FieldPath<TFieldValues>>
-  >([]);
+  const fieldsChangeDuringAutoSubmitting = useRef<Array<FieldPath<TFieldValues>>>([]);
   const lastSubmittedData = useRef<TFieldValues>();
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   const submitSuccessfulCb = useRef(() => {});
@@ -168,8 +154,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       : config?.defaultValues,
   });
 
-  const { getValues, setValue, setError, handleSubmit, formState, reset } =
-    formApi;
+  const { getValues, setValue, setError, handleSubmit, formState, reset } = formApi;
 
   // * /!\ `formState` is a proxy
   const {
@@ -183,8 +168,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
 
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
-  const isSubmitAllowed =
-    (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
+  const isSubmitAllowed = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
   const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
   const showFooter = showSubmitButton || enableUndoRedo || rootError;
@@ -225,9 +209,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
       if (isSubmitSuccessful && lastSubmittedData.current) {
         submitSuccessfulCb.current();
 
-        const valuesToSetAfterReset = getValues(
-          fieldsChangeDuringAutoSubmitting.current,
-        );
+        const valuesToSetAfterReset = getValues(fieldsChangeDuringAutoSubmitting.current);
 
         // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
         reset(lastSubmittedData.current);
@@ -246,31 +228,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
     [isSubmitSuccessful],
   );
 
-  // Prevent browser close if a submit is pending
-  useEffect(() => {
-    const listener = (event: BeforeUnloadEvent) => {
-      if (isInProgress) {
-        // eslint-disable-next-line no-param-reassign
-        event.returnValue = t("form.submit.inProgress");
-      } else if (isDirty) {
-        // eslint-disable-next-line no-param-reassign
-        event.returnValue = t("form.changeNotSaved");
-      }
-    };
-
-    window.addEventListener("beforeunload", listener);
-
-    return () => {
-      window.removeEventListener("beforeunload", listener);
-    };
-  }, [t, isInProgress, isDirty]);
+  useFormCloseProtection({ isSubmitting, isDirty });
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
   useEffect(() => setRef(apiRef, formApiPlus));
-
-  usePrompt(t("form.submit.inProgress"), isInProgress);
-  usePrompt(t("form.changeNotSaved"), isDirty && !isInProgress);
 
   ////////////////////////////////////////////////////////////////
   // Submit
@@ -280,9 +242,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
     const callback = handleSubmit(function onValid(data, event) {
       lastSubmittedData.current = data;
 
-      const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<
-        typeof data
-      >;
+      const dirtyValues = getDirtyValues(dirtyFields, data) as DeepPartial<typeof data>;
 
       const toResolve = [];
 
@@ -318,13 +278,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
           // They will be deleted automatically.
           // cf. https://www.react-hook-form.com/api/useform/seterror/
           setError(`root.${ROOT_ERROR_KEY}`, {
-            message: axios.isAxiosError(err)
-              ? err.response?.data.description
-              : err?.toString(),
+            message: axios.isAxiosError(err) ? err.response?.data.description : err?.toString(),
           });
-        })
-        .finally(() => {
-          setIsInProgress(false);
         });
     }, onInvalid);
 
@@ -334,8 +289,6 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const submitDebounced = useDebounce(submit, autoSubmitConfig.wait);
 
   const requestSubmit = () => {
-    setIsInProgress(true);
-
     if (autoSubmitConfig.enable) {
       submitDebounced();
     } else {
@@ -347,7 +300,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     requestSubmit();
   };
@@ -430,23 +383,21 @@ function Form<TFieldValues extends FieldValues, TContext>(
                         children: submitButtonText || t("global.save"),
                       })}
                 />
-                {enableUndoRedo && (
-                  <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
-                )}
+                {enableUndoRedo && <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />}
               </>
             )}
             {enableUndoRedo && (
               <>
                 <Tooltip title={t("global.undo")}>
                   <span>
-                    <IconButton size="small" onClick={undo} disabled={!canUndo}>
+                    <IconButton size="small" onClick={undo} disabled={!canUndo || isSubmitting}>
                       <UndoIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
                 <Tooltip title={t("global.redo")}>
                   <span>
-                    <IconButton size="small" onClick={redo} disabled={!canRedo}>
+                    <IconButton size="small" onClick={redo} disabled={!canRedo || isSubmitting}>
                       <RedoIcon />
                     </IconButton>
                   </span>

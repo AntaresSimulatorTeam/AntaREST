@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,10 +13,19 @@
  */
 
 import client from "../client";
-import type { GetTaskParams, GetTasksParams, TaskDTO } from "./types";
+import type {
+  GetTaskParams,
+  GetTasksParams,
+  TaskDTO,
+  TaskStatusValue,
+  TaskTypeValue,
+} from "./types";
 
-export async function getTasks(params: GetTasksParams) {
-  const { data } = await client.post<TaskDTO[]>("/v1/tasks", {
+export async function getTasks<
+  TStatus extends TaskStatusValue,
+  TType extends TaskTypeValue | undefined,
+>(params: GetTasksParams<TStatus, TType>) {
+  const { data } = await client.post<Array<TaskDTO<TStatus, TType>>>("/v1/tasks", {
     status: params.status,
     type: params.type,
     name: params.name,

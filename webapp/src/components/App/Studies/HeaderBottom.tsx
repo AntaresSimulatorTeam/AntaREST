@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,8 +19,8 @@ import { useUnmount } from "react-use";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getGroups, getStudyFilters, getUsers } from "../../../redux/selectors";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { StudyFilters, updateStudyFilters } from "../../../redux/ducks/studies";
-import { GroupDTO, UserDTO } from "../../../common/types";
+import { updateStudyFilters, type StudyFilters } from "../../../redux/ducks/studies";
+import type { GroupDTO, UserDTO } from "../../../common/types";
 import { displayVersionName } from "../../../services/utils";
 import SearchFE from "../../common/fieldEditors/SearchFE";
 
@@ -55,10 +55,7 @@ function HeaderBottom(props: PropTypes) {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const setFilterValue = <T extends keyof StudyFilters>(
-    string: T,
-    newValue: StudyFilters[T],
-  ) => {
+  const setFilterValue = <T extends keyof StudyFilters>(string: T, newValue: StudyFilters[T]) => {
     dispatch(updateStudyFilters({ [string]: newValue }));
   };
 

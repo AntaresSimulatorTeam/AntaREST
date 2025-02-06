@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,76 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { DeepPartial } from "react-hook-form";
-import { StudyMetadata } from "../../../../../../common/types";
-import client from "../../../../../../services/api/client";
+import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
+import type {
+  TimeSeriesTypeConfig,
+  TimeSeriesTypeValue,
+} from "@/services/api/studies/timeseries/types";
 
-////////////////////////////////////////////////////////////////
-// Enums
-////////////////////////////////////////////////////////////////
+export type TimeSeriesConfigValues = Record<
+  TimeSeriesTypeValue,
+  TimeSeriesTypeConfig & { enabled: boolean }
+>;
 
-export enum TSType {
-  Load = "load",
-  Hydro = "hydro",
-  Thermal = "thermal",
-  Wind = "wind",
-  Solar = "solar",
-  Renewables = "renewables",
-  NTC = "ntc",
-}
-
-enum SeasonCorrelation {
-  Monthly = "monthly",
-  Annual = "annual",
-}
-
-////////////////////////////////////////////////////////////////
-// Types
-////////////////////////////////////////////////////////////////
-
-interface TSFormFieldsForType {
-  stochasticTsStatus: boolean;
-  number: number;
-  refresh: boolean;
-  refreshInterval: number;
-  seasonCorrelation: SeasonCorrelation;
-  storeInInput: boolean;
-  storeInOutput: boolean;
-  intraModal: boolean;
-  interModal: boolean;
-}
-
-export interface TSFormFields
-  extends Record<
-    Exclude<TSType, TSType.Thermal | TSType.Renewables | TSType.NTC>,
-    TSFormFieldsForType
-  > {
-  [TSType.Thermal]: Omit<TSFormFieldsForType, "seasonCorrelation">;
-  [TSType.Renewables]: Pick<
-    TSFormFieldsForType,
-    "stochasticTsStatus" | "intraModal" | "interModal"
-  >;
-  [TSType.NTC]: Pick<TSFormFieldsForType, "stochasticTsStatus" | "intraModal">;
-}
-
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
-
-export const DEFAULT_VALUES: DeepPartial<TSFormFields> = {
-  thermal: {
-    stochasticTsStatus: false,
-    number: 1,
-  },
-};
-
-////////////////////////////////////////////////////////////////
-// Functions
-////////////////////////////////////////////////////////////////
-
-export function setTimeSeriesFormFields(
-  studyId: StudyMetadata["id"],
-  values: DeepPartial<TSFormFields>,
-): Promise<void> {
-  return client.put(`v1/studies/${studyId}/config/timeseries/form`, values);
-}
+export const defaultValues = Object.values(TimeSeriesType).reduce((acc, type) => {
+  acc[type] = { number: 1, enabled: false };
+  return acc;
+}, {} as TimeSeriesConfigValues);

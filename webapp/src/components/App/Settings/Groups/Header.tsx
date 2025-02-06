@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import { Box, Button } from "@mui/material";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { GroupDetailsDTO } from "../../../../common/types";
+import type { GroupDetailsDTO } from "../../../../common/types";
 import CreateGroupDialog from "./dialog/CreateGroupDialog";
 import { isAuthUserAdmin } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";

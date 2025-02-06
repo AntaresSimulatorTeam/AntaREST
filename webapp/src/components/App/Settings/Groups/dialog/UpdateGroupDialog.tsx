@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
-import { GroupDetailsDTO } from "../../../../../common/types";
+import type { GroupDetailsDTO } from "../../../../../common/types";
 import {
   createRole,
   deleteUserRole,
@@ -26,16 +26,11 @@ import {
   updateGroup,
 } from "../../../../../services/api/user";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
-import { GroupEdit } from "..";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
+import GroupFormDialog, { type GroupFormDialogProps } from "./GroupFormDialog";
+import type { GroupEdit } from "..";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 
-type InheritPropsToOmit =
-  | "title"
-  | "titleIcon"
-  | "defaultValues"
-  | "onSubmit"
-  | "onCancel";
+type InheritPropsToOmit = "title" | "titleIcon" | "defaultValues" | "onSubmit" | "onCancel";
 
 interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
   group: GroupDetailsDTO;
@@ -76,8 +71,7 @@ function UpdateGroupDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerPlus) => {
-    const { name, permissions }: GroupFormDialogProps["defaultValues"] =
-      data.dirtyValues;
+    const { name, permissions }: GroupFormDialogProps["defaultValues"] = data.dirtyValues;
     const groupName = name || group.name;
 
     const notifySuccess = R.once(() =>
@@ -92,10 +86,7 @@ function UpdateGroupDialog(props: Props) {
         editGroup({ id: group.id, name: groupName });
         notifySuccess();
       } catch (e) {
-        enqueueErrorSnackbar(
-          t("settings.error.groupSave", { 0: groupName }),
-          e as Error,
-        );
+        enqueueErrorSnackbar(t("settings.error.groupSave", { 0: groupName }), e as Error);
         throw e;
       }
     }
@@ -152,10 +143,7 @@ function UpdateGroupDialog(props: Props) {
         // Because we cannot recover roles eventually deleted/created
         reloadFetchUsers();
 
-        enqueueErrorSnackbar(
-          t("settings.error.groupRolesSave", { 0: groupName }),
-          e as Error,
-        );
+        enqueueErrorSnackbar(t("settings.error.groupRolesSave", { 0: groupName }), e as Error);
       }
     }
 

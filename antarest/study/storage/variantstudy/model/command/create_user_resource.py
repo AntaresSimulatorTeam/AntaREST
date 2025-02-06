@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -85,26 +85,6 @@ class CreateUserResource(ICommand):
             args={"data": self.data.model_dump(mode="json")},
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.data.path
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.data.resource_type.value
-        )
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateUserResource):
-            return False
-        return self.data.path == other.data.path and self.data.resource_type == other.data.resource_type
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return [other]
 
     @override
     def get_inner_matrices(self) -> t.List[str]:

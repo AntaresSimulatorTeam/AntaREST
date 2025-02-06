@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,7 +14,7 @@
 
 import { useEffect } from "react";
 import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
-import usePromise, { UsePromiseResponse, UsePromiseParams } from "./usePromise";
+import usePromise, { type UsePromiseResponse, type UsePromiseParams } from "./usePromise";
 
 export interface UsePromiseWithSnackbarErrorParams extends UsePromiseParams {
   errorMessage: string;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { ValidationReturn } from "@/common/types";
+import type { ValidationReturn } from "@/common/types";
 import { t } from "i18next";
 
 interface StringValidationOptions {
@@ -55,10 +55,7 @@ interface StringValidationOptions {
  * @param [options.maxLength=255] - Maximum allowed length for the string. Defaults to 255.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
-export function validateString(
-  value: string,
-  options?: StringValidationOptions,
-): ValidationReturn;
+export function validateString(value: string, options?: StringValidationOptions): ValidationReturn;
 
 export function validateString(
   options?: StringValidationOptions,
@@ -117,8 +114,7 @@ export function validateString(
   }
 
   // Normalize the value for comparison, based on case sensitivity option.
-  const normalize = (v: string) =>
-    isCaseSensitive ? v.trim() : v.toLowerCase().trim();
+  const normalize = (v: string) => (isCaseSensitive ? v.trim() : v.toLowerCase().trim());
 
   // Prepare the value for duplicate and exclusion checks.
   const comparisonValue = normalize(trimmedValue);
@@ -233,14 +229,9 @@ interface PathValidationOptions {
  * @param [options.allowEmpty=false] - Indicates if an empty path is allowed.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
-export function validatePath(
-  path: string,
-  options?: PathValidationOptions,
-): ValidationReturn;
+export function validatePath(path: string, options?: PathValidationOptions): ValidationReturn;
 
-export function validatePath(
-  options?: PathValidationOptions,
-): (value: string) => ValidationReturn;
+export function validatePath(options?: PathValidationOptions): (value: string) => ValidationReturn;
 
 export function validatePath(
   pathOrOpts?: string | PathValidationOptions,
@@ -252,11 +243,7 @@ export function validatePath(
 
   const path = pathOrOpts;
 
-  const {
-    allowToStartWithSlash = true,
-    allowToEndWithSlash = true,
-    allowEmpty = false,
-  } = options;
+  const { allowToStartWithSlash = true, allowToEndWithSlash = true, allowEmpty = false } = options;
 
   if (!path) {
     return allowEmpty ? true : t("form.field.required");

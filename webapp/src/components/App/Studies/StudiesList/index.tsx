@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -20,12 +20,12 @@ import {
   Select,
   MenuItem,
   ListItemText,
-  SelectChangeEvent,
   ListItemIcon,
   Tooltip,
   FormControl,
   InputLabel,
   IconButton,
+  type SelectChangeEvent,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
@@ -33,18 +33,19 @@ import AutoSizer from "react-virtualized-auto-sizer";
 import HomeIcon from "@mui/icons-material/Home";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import FolderOffIcon from "@mui/icons-material/FolderOff";
+import FolderIcon from "@mui/icons-material/Folder";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import RadarIcon from "@mui/icons-material/Radar";
-import { FixedSizeGrid, GridOnScrollProps } from "react-window";
+import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
 import { v4 as uuidv4 } from "uuid";
-import { AxiosError } from "axios";
-import { StudyMetadata } from "../../../../common/types";
+import type { AxiosError } from "axios";
+import type { StudyMetadata } from "../../../../common/types";
 import { STUDIES_LIST_HEADER_HEIGHT } from "../../../../theme";
 import {
   setStudyScrollPosition,
-  StudiesSortConf,
   updateStudiesSortConf,
   updateStudyFilters,
+  type StudiesSortConf,
 } from "../../../../redux/ducks/studies";
 import LauncherDialog from "../LauncherDialog";
 import useDebounce from "../../../../hooks/useDebounce";
@@ -61,6 +62,7 @@ import RefreshButton from "../RefreshButton";
 import { scanFolder } from "../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -73,21 +75,18 @@ function StudiesList(props: StudiesListProps) {
   const { studyIds } = props;
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [t] = useTranslation();
-  const [studyToLaunch, setStudyToLaunch] = useState<
-    StudyMetadata["id"] | null
-  >(null);
+  const [studyToLaunch, setStudyToLaunch] = useState<StudyMetadata["id"] | null>(null);
   const scrollPosition = useAppSelector(getStudiesScrollPosition);
   const sortConf = useAppSelector(getStudiesSortConf);
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
-  const strictFolderFilter = useAppSelector(
-    (state) => getStudyFilters(state).strictFolder,
-  );
+  const strictFolderFilter = useAppSelector((state) => getStudyFilters(state).strictFolder);
   const [folderList, setFolderList] = useState(folder.split("/"));
   const dispatch = useAppDispatch();
   const sortLabelId = useRef(uuidv4()).current;
   const [selectedStudies, setSelectedStudies] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
-  const [confirmFolderScan, setConfirmFolderScan] = useState<boolean>(false);
+  const [confirmFolderScan, setConfirmFolderScan] = useState(false);
+  const [isRecursiveScan, setIsRecursiveScan] = useState(false);
 
   useEffect(() => {
     setFolderList(folder.split("/"));
@@ -156,11 +155,16 @@ function StudiesList(props: StudiesListProps) {
     try {
       // Remove "/root" from the path
       const folder = folderList.slice(1).join("/");
-      await scanFolder(folder);
+      await scanFolder(folder, isRecursiveScan);
       setConfirmFolderScan(false);
+      setIsRecursiveScan(false);
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.scanFolder"), e as AxiosError);
     }
+  };
+
+  const handleRecursiveScan = () => {
+    setIsRecursiveScan(!isRecursiveScan);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -207,10 +211,7 @@ function StudiesList(props: StudiesListProps) {
           alignItems="center"
           boxSizing="border-box"
         >
-          <Breadcrumbs
-            separator={<NavigateNextIcon fontSize="small" />}
-            aria-label="breadcrumb"
-          >
+          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} aria-label="breadcrumb">
             {folderList.map((fol, index) => {
               const path = folderList.slice(0, index + 1).join("/");
               if (index === 0) {
@@ -249,13 +250,21 @@ function StudiesList(props: StudiesListProps) {
           <Typography mx={2} sx={{ color: "white" }}>
             ({`${studyIds.length} ${t("global.studies").toLowerCase()}`})
           </Typography>
-          <Tooltip title={t("studies.filters.strictfolder") as string}>
-            <IconButton onClick={toggleStrictFolder}>
-              <FolderOffIcon
-                color={strictFolderFilter ? "secondary" : "disabled"}
-              />
-            </IconButton>
-          </Tooltip>
+
+          {strictFolderFilter ? (
+            <Tooltip title={t("studies.filters.strictfolder")}>
+              <IconButton onClick={toggleStrictFolder}>
+                <FolderIcon color="secondary" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title={t("studies.filters.showChildrens")}>
+              <IconButton onClick={toggleStrictFolder}>
+                <AccountTreeIcon color="secondary" />
+              </IconButton>
+            </Tooltip>
+          )}
+
           {folder !== "root" && (
             <Tooltip title={t("studies.scanFolder") as string}>
               <IconButton onClick={() => setConfirmFolderScan(true)}>
@@ -266,12 +275,20 @@ function StudiesList(props: StudiesListProps) {
           {folder !== "root" && confirmFolderScan && (
             <ConfirmationDialog
               titleIcon={RadarIcon}
-              onCancel={() => setConfirmFolderScan(false)}
+              onCancel={() => {
+                setConfirmFolderScan(false);
+                setIsRecursiveScan(false);
+              }}
               onConfirm={handleFolderScan}
               alert="warning"
               open
             >
               {`${t("studies.scanFolder")} ${folder}?`}
+              <CheckBoxFE
+                label={t("studies.recursiveScan")}
+                value={isRecursiveScan}
+                onChange={handleRecursiveScan}
+              />
             </ConfirmationDialog>
           )}
         </Box>
@@ -339,11 +356,7 @@ function StudiesList(props: StudiesListProps) {
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: "30px" }}>
-                      {conf.order === "ascend" ? (
-                        <ArrowUpwardIcon />
-                      ) : (
-                        <ArrowDownwardIcon />
-                      )}
+                      {conf.order === "ascend" ? <ArrowUpwardIcon /> : <ArrowDownwardIcon />}
                     </ListItemIcon>
                     <ListItemText primary={name} />
                   </MenuItem>
@@ -358,8 +371,7 @@ function StudiesList(props: StudiesListProps) {
           {({ height, width }) => {
             const paddedWidth = width - 10;
             const columnWidth =
-              paddedWidth /
-              Math.max(Math.floor(paddedWidth / CARD_TARGET_WIDTH), 1);
+              paddedWidth / Math.max(Math.floor(paddedWidth / CARD_TARGET_WIDTH), 1);
             const columnCount = Math.floor(paddedWidth / columnWidth);
             const rowHeight = CARD_HEIGHT;
 
@@ -393,11 +405,7 @@ function StudiesList(props: StudiesListProps) {
         </AutoSizer>
       </Box>
       {studyToLaunch && (
-        <LauncherDialog
-          open
-          studyIds={[studyToLaunch]}
-          onClose={() => setStudyToLaunch(null)}
-        />
+        <LauncherDialog open studyIds={[studyToLaunch]} onClose={() => setStudyToLaunch(null)} />
       )}
     </Box>
   );

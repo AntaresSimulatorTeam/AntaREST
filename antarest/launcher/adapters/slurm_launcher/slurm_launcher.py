@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -34,7 +34,6 @@ from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitCo
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -592,12 +591,7 @@ class SlurmLauncher(AbstractLauncher):
 
     @override
     def run_study(
-        self,
-        study_uuid: str,
-        job_id: str,
-        version: SolverVersion,
-        launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
+        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         thread = threading.Thread(
             target=self._run_study,

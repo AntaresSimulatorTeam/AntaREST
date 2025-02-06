@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -307,9 +307,11 @@ class GeneralManager:
 
         return [
             UpdateConfig(
-                target=f"{GENERAL_PATH}/custom-scenario"
-                if study_version >= STUDY_VERSION_8
-                else f"{GENERAL_PATH}/custom-ts-numbers",
+                target=(
+                    f"{GENERAL_PATH}/custom-scenario"
+                    if study_version >= STUDY_VERSION_8
+                    else f"{GENERAL_PATH}/custom-ts-numbers"
+                ),
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,
                 study_version=study_version,

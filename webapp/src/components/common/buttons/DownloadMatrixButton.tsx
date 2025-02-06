@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { getMatrixFile, getRawFile } from "../../../services/api/studies/raw";
-import { downloadFile } from "../../../utils/fileUtils";
-import { StudyMetadata } from "../../../common/types";
+import { getMatrixFile, getRawFile } from "@/services/api/studies/raw";
+import { downloadFile } from "@/utils/fileUtils.ts";
+import type { StudyMetadata } from "@/common/types.ts";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
-import type { TTableExportFormat } from "@/services/api/studies/raw/types";
+import type { TableExportFormatValue } from "@/services/api/studies/raw/types";
 
-type ExportFormat = TTableExportFormat | "raw";
+type ExportFormat = TableExportFormatValue | "raw";
 
 export interface DownloadMatrixButtonProps {
   studyId: StudyMetadata["id"];
@@ -69,10 +69,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
 
     const extension = format === "csv (semicolon)" ? "csv" : format;
 
-    return downloadFile(
-      matrixFile,
-      `matrix_${studyId}_${path.replace("/", "_")}.${extension}`,
-    );
+    return downloadFile(matrixFile, `matrix_${studyId}_${path.replace("/", "_")}.${extension}`);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -80,11 +77,7 @@ function DownloadMatrixButton(props: DownloadMatrixButtonProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DownloadButton
-      formatOptions={options}
-      onClick={handleDownload}
-      disabled={!path || disabled}
-    >
+    <DownloadButton formatOptions={options} onClick={handleDownload} disabled={!path || disabled}>
       {label}
     </DownloadButton>
   );

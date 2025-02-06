@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,17 +14,11 @@
 
 import { Box, Chip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { LinkProperties } from "../../../../../../common/types";
-import {
-  StudyMapNode,
-  setCurrentLayer,
-} from "../../../../../../redux/ducks/studyMaps";
+import type { LinkProperties } from "../../../../../../common/types";
+import { setCurrentLayer, type StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import {
-  getCurrentLayer,
-  getStudyMapLayersById,
-} from "../../../../../../redux/selectors";
+import { getCurrentLayer, getStudyMapLayersById } from "../../../../../../redux/selectors";
 
 interface Props {
   links: LinkProperties[];
@@ -86,12 +80,8 @@ function MapHeader(props: Props) {
           display: "flex",
         }}
       >
-        <Typography sx={{ mx: 1 }}>{`${nodes.length} ${t(
-          "study.areas",
-        )}`}</Typography>
-        <Typography sx={{ mx: 1 }}>{`${links.length} ${t(
-          "study.links",
-        )}`}</Typography>
+        <Typography sx={{ mx: 1 }}>{`${nodes.length} ${t("study.areas")}`}</Typography>
+        <Typography sx={{ mx: 1 }}>{`${links.length} ${t("study.links")}`}</Typography>
       </Box>
     </Box>
   );

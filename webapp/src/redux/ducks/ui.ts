@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -39,29 +39,21 @@ const n = makeActionName("ui");
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
-export const setMenuCollapse = createAction<UIState["menuCollapsed"]>(
-  n("SET_MENU_COLLAPSE"),
-);
+export const setMenuCollapse = createAction<UIState["menuCollapsed"]>(n("SET_MENU_COLLAPSE"));
 
-export const setCurrentPage = createAction<UIState["currentPage"]>(
-  n("SET_CURRENT_PAGE"),
-);
+export const setCurrentPage = createAction<UIState["currentPage"]>(n("SET_CURRENT_PAGE"));
 
-export const setWebSocketConnected = createAction<
-  UIState["webSocketConnected"]
->(n("SET_WEBSOCKET_CONNECTED"));
+export const setWebSocketConnected = createAction<UIState["webSocketConnected"]>(
+  n("SET_WEBSOCKET_CONNECTED"),
+);
 
 export const incrementTaskNotifications = createAction<
   UIState["taskNotificationsCount"] | undefined
 >(n("INCREMENT_TASK_NOTIFICATIONS"));
 
-export const resetTaskNotifications = createAction(
-  n("RESET_TASK_NOTIFICATIONS"),
-);
+export const resetTaskNotifications = createAction(n("RESET_TASK_NOTIFICATIONS"));
 
-export const setMessageInfo = createAction<UIState["messageInfo"]>(
-  n("SET_MESSAGE_INFO"),
-);
+export const setMessageInfo = createAction<UIState["messageInfo"]>(n("SET_MESSAGE_INFO"));
 
 export const setMaintenanceMode = createAction<UIState["maintenanceMode"]>(
   n("SET_MAINTENANCE_MODE"),
