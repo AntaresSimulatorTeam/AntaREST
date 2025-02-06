@@ -109,13 +109,5 @@ class UpdateLink(AbstractLinkCommand):
         return super().to_dto()
 
     @override
-    def match_signature(self) -> str:
-        return super().match_signature()
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return super()._create_diff(other)
-
-    @override
     def get_inner_matrices(self) -> t.List[str]:
         return super().get_inner_matrices()

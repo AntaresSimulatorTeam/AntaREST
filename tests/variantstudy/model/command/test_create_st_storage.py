@@ -25,8 +25,6 @@ from antarest.study.storage.variantstudy.business.utils import strip_matrix_prot
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import REQUIRED_VERSION, CreateSTStorage
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -396,101 +394,6 @@ class TestCreateSTStorage:
             },
             study_version=STUDY_VERSION_8_8,
         )
-
-    def test_match_signature(self, command_context: CommandContext):
-        cmd = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-            study_version=STUDY_VERSION_8_8,
-        )
-        assert cmd.match_signature() == "create_st_storage%area_fr%storage1"
-
-    @pytest.mark.parametrize("area_id", ["area_fr", "area_en"])
-    @pytest.mark.parametrize("parameters", [PARAMETERS, OTHER_PARAMETERS])
-    def test_match(
-        self,
-        command_context: CommandContext,
-        area_id,
-        parameters,
-    ):
-        cmd1 = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-            study_version=STUDY_VERSION_8_8,
-        )
-        cmd2 = CreateSTStorage(
-            command_context=command_context,
-            area_id=area_id,
-            parameters=STStorageConfig(**parameters),
-            study_version=STUDY_VERSION_8_8,
-        )
-        light_equal = area_id == cmd1.area_id and parameters["name"] == cmd1.storage_name
-        assert cmd1.match(cmd2, equal=False) == light_equal
-        deep_equal = area_id == cmd1.area_id and parameters == PARAMETERS
-        assert cmd1.match(cmd2, equal=True) == deep_equal
-
-    def test_match__unknown_type(self, command_context: CommandContext):
-        cmd1 = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-            study_version=STUDY_VERSION_8_8,
-        )
-        # Always `False` when compared to another object type
-        assert cmd1.match(..., equal=False) is False
-        assert cmd1.match(..., equal=True) is False
-
-    def test_create_diff__not_equals(self, command_context: CommandContext):
-        cmd = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-            study_version=STUDY_VERSION_8_8,
-        )
-        upper_rule_curve = GEN.random((8760, 1))
-        inflows = GEN.uniform(0, 1000, size=(8760, 1))
-        other = CreateSTStorage(
-            command_context=command_context,
-            area_id=cmd.area_id,
-            parameters=STStorageConfig(**OTHER_PARAMETERS),
-            upper_rule_curve=upper_rule_curve.tolist(),  # type: ignore
-            inflows=inflows.tolist(),  # type: ignore
-            study_version=STUDY_VERSION_8_8,
-        )
-        actual = cmd.create_diff(other)
-        expected = [
-            ReplaceMatrix(
-                command_context=command_context,
-                target="input/st-storage/series/area_fr/storage1/upper_rule_curve",
-                matrix=strip_matrix_protocol(other.upper_rule_curve),
-                study_version=STUDY_VERSION_8_8,
-            ),
-            ReplaceMatrix(
-                command_context=command_context,
-                target="input/st-storage/series/area_fr/storage1/inflows",
-                matrix=strip_matrix_protocol(other.inflows),
-                study_version=STUDY_VERSION_8_8,
-            ),
-            UpdateConfig(
-                command_context=command_context,
-                target="input/st-storage/clusters/area_fr/list/storage1",
-                data=OTHER_PARAMETERS,
-                study_version=STUDY_VERSION_8_8,
-            ),
-        ]
-        assert actual == expected
-
-    def test_create_diff__equals(self, command_context: CommandContext):
-        cmd = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageConfig(**PARAMETERS),
-            study_version=STUDY_VERSION_8_8,
-        )
-        actual = cmd.create_diff(cmd)
-        assert not actual
 
     def test_get_inner_matrices(self, command_context: CommandContext):
         cmd = CreateSTStorage(

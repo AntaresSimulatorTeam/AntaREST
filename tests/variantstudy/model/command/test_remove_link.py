@@ -29,7 +29,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -168,25 +167,3 @@ class TestRemoveLink:
         assert not ts_gen_properties
 
         assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
-
-    def test_match(self, command_context: CommandContext) -> None:
-        base = RemoveLink(area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-        other_match = RemoveLink(
-            area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-        )
-        other_not_match = RemoveLink(
-            area1="foo", area2="baz", command_context=command_context, study_version=STUDY_VERSION_8_8
-        )
-        other_other = RemoveArea(id="id", command_context=command_context, study_version=STUDY_VERSION_8_8)
-        assert base.match(other_match)
-        assert not base.match(other_not_match)
-        assert not base.match(other_other)
-        assert base.match_signature() == "remove_link%bar%foo"  # alphabetical order
-        assert base.get_inner_matrices() == []
-
-    def test_create_diff(self, command_context: CommandContext) -> None:
-        base = RemoveLink(area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8)
-        other_match = RemoveLink(
-            area1="foo", area2="bar", command_context=command_context, study_version=STUDY_VERSION_8_8
-        )
-        assert base.create_diff(other_match) == []

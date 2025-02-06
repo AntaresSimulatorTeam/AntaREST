@@ -56,7 +56,7 @@ import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
 import EmptyView from "../../../../common/page/EmptyView";
 import { TaskStatus } from "../../../../../services/api/tasks/constants";
-import type { TaskEventPayload, TWsEventType, WsEvent } from "@/services/webSocket/types";
+import type { TaskEventPayload, WsEventTypeValue, WsEvent } from "@/services/webSocket/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 
 const logError = debug("antares:variantedition:error");
@@ -241,7 +241,7 @@ function EditionView(props: Props) {
         }
       };
 
-      const taskEnd = (taskPayload: TaskEventPayload, event: TWsEventType) => {
+      const taskEnd = (taskPayload: TaskEventPayload, event: WsEventTypeValue) => {
         if (taskPayload.message === studyId) {
           setCurrentCommandGenerationIndex(-1);
           if (event === WsEventType.TaskCompleted) {
