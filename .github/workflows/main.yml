@@ -26,7 +26,7 @@ jobs:
         uses: psf/black@stable
         with:
           # Version of Black should match the versions set in `requirements-dev.txt`
-          version: "~=23.7.0"
+          version: "~=25.1.0"
           options: --check --diff
       - name: Check Typing (mypy)
         #continue-on-error: true
