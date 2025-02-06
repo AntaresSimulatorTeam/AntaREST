@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from antarest.study.storage.rawstudy.ini_reader import LOWER_CASE_PARSER, IniReader, any_section_option_matcher
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+
+_VALUE_PARSERS = {any_section_option_matcher("group"): LOWER_CASE_PARSER}
 
 
 # noinspection SpellCheckingInspection
@@ -34,4 +36,4 @@ class BindingConstraintsIni(IniFileNode):
     """
 
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        super().__init__(context, config, types={})
+        super().__init__(context, config, types={}, reader=IniReader(value_parsers=_VALUE_PARSERS))

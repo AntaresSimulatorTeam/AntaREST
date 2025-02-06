@@ -9,10 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from antarest.study.storage.rawstudy.ini_reader import LOWER_CASE_PARSER, IniReader, any_section_option_matcher
+from antarest.study.storage.rawstudy.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+
+_VALUE_PARSERS = {any_section_option_matcher("group"): LOWER_CASE_PARSER}
+_VALUE_SERIALIZERS = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER}
 
 
 class InputThermalClustersAreaList(IniFileNode):
@@ -30,4 +34,10 @@ class InputThermalClustersAreaList(IniFileNode):
             "market-bid-cost": float,
         }
         types = {th: section for th in config.get_thermal_ids(area)}
-        super().__init__(context, config, types)
+        super().__init__(
+            context,
+            config,
+            types,
+            reader=IniReader(value_parsers=_VALUE_PARSERS),
+            writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
+        )
