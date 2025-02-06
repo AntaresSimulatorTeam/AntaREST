@@ -66,9 +66,6 @@ def test_get(tmp_path: str, project_path) -> None:
     data = {"titi": 43}
     sub_route = "settings"
 
-    path = path_study / "settings"
-    key = "titi"
-
     study = Mock()
     study.get.return_value = data
     study_factory = Mock()
@@ -100,7 +97,6 @@ def test_get_cache(tmp_path: str) -> None:
     path_study.mkdir()
     (path_study / "settings").mkdir()
     (path_study / "study.antares").touch()
-    path = path_study / "settings"
 
     data = {"titi": 43}
     study = Mock()

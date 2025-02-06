@@ -403,16 +403,3 @@ Coming soon
 ### Composite commands
 
 Coming soon
-
-## CLI Tool
-
-The CLI tool (`AntaresTool`) is bundled
-within [AntaresWeb releases](https://github.com/AntaresSimulatorTeam/AntaREST/releases).
-
-It provides 3 commands :
-
-- `apply-script` will modify a study using commands found in a directory that contain a file `commands.json` and an
-  optional folder named `matrices` which contains matrices used in the commands.
-- `generate-script` will transform a study into a commands file and matrices directory
-- `generate-script-diff` will take two commands file (and associated matrices directory) and will output a new one
-  consisting of the differences between the two variants

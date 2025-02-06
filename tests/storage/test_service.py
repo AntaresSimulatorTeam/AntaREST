@@ -353,7 +353,7 @@ def test_partial_sync_studies_from_disk() -> None:
             id=ANY,
             path=f"directory{os.sep}f",
             name="f",
-            folder=f"directory{os.sep}f",
+            folder="directory/f",
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,

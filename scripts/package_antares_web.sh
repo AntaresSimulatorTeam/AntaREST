@@ -86,9 +86,7 @@ if [[ "$OSTYPE" == "msys"* ]]; then
   cp "${RESOURCES_DIR}/AntaresWebServerShortcut.lnk" "${DIST_DIR}"
 else
   echo "INFO: Updating executable permissions..."
-  for excutable in "${DIST_DIR}/AntaresWeb/AntaresWebServer" "${DIST_DIR}/AntaresWeb/AntaresTool"; do
-    chmod +x "${excutable}"
-  done
+  chmod +x "${DIST_DIR}/AntaresWeb/AntaresWebServer"
 fi
 
 echo "INFO: Unzipping example study..."

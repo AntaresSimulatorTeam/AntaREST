@@ -148,26 +148,5 @@ class RemoveSTStorage(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        """Returns the command signature."""
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.storage_id
-        )
-
-    @override
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        # always perform a deep comparison, as there are no parameters
-        # or matrices, so that shallow and deep comparisons are identical.
-        return self.__eq__(other)
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
-
-    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

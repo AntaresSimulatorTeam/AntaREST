@@ -49,7 +49,7 @@ import {
 import * as studyDataApi from "../../services/api/studydata";
 import * as linksApi from "../../services/api/studies/links";
 import { createStudyLink, deleteStudyLink, setCurrentArea } from "./studySyntheses";
-import type { TLinkStyle } from "@/services/api/studies/links/types";
+import type { LinkStyleValue } from "@/services/api/studies/links/types";
 import tinycolor from "tinycolor2";
 
 export interface StudyMapNode {
@@ -164,9 +164,7 @@ export const setLayers = createAction<NonNullable<Record<StudyLayer["id"], Study
 // Thunks
 ////////////////////////////////////////////////////////////////
 
-type LinkStyle = [number[], string];
-
-const makeLinkStyle = R.cond<[TLinkStyle], LinkStyle>([
+const makeLinkStyle = R.cond<[LinkStyleValue], [number[], string]>([
   [(v) => v === "dot", () => [[1, 5], "round"]],
   [(v) => v === "dash", () => [[16, 8], "square"]],
   [(v) => v === "dotdash", () => [[10, 6, 1, 6], "square"]],
