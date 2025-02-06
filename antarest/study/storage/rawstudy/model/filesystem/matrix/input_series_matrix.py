@@ -55,6 +55,7 @@ class InputSeriesMatrix(MatrixNode):
             self.default_empty = np.copy(default_empty)
             self.default_empty.flags.writeable = True
 
+    @override
     def parse_as_dataframe(self, file_path: t.Optional[Path] = None) -> pd.DataFrame:
         file_path = file_path or self.config.path
         try:
@@ -82,6 +83,8 @@ class InputSeriesMatrix(MatrixNode):
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
             final_matrix = matrix.dropna(how="any", axis=1)
+            if final_matrix.empty:
+                raise EmptyDataError
             return final_matrix
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")

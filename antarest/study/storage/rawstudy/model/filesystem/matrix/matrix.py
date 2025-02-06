@@ -14,7 +14,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, Union, cast
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -92,13 +92,11 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if self.get_link_path().exists() or self.config.archive_path:
             return
 
-        matrix = self.parse_as_json()
-
-        if "data" in matrix:
-            data = cast(List[List[float]], matrix["data"])
-            uuid = self.context.matrix.create(data)
-            self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
-            self.config.path.unlink()
+        matrix = self.parse_as_dataframe()
+        data = matrix.to_numpy().tolist()
+        uuid = self.context.matrix.create(data)
+        self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
+        self.config.path.unlink()
 
     @override
     def denormalize(self) -> None:
@@ -128,33 +126,29 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> Union[bytes, JSON]:
-        file_path, tmp_dir = self._get_real_file_path()
+        file_path, _ = self._get_real_file_path()
 
         if formatted:
             return self.parse_as_json(file_path)
 
-        if not file_path.exists():
-            logger.warning(f"Missing file {self.config.path}")
-            if tmp_dir:
-                tmp_dir.cleanup()
-            return b""
-
-        file_content = file_path.read_bytes()
-        if file_content != b"":
-            return file_content
-
-        # If the content is empty, we should return the default matrix to do the same as `parse_as_json()`
-        default_matrix = self.get_default_empty_matrix()
-        if default_matrix is None:
+        df = self.parse_as_dataframe(file_path)
+        if df.empty:
             return b""
         buffer = io.BytesIO()
-        np.savetxt(buffer, default_matrix, delimiter="\t")
+        np.savetxt(buffer, df, delimiter="\t")
         return buffer.getvalue()
 
     @abstractmethod
     def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
         """
         Parse the matrix content and return it as a JSON object
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+        """
+        Parse the matrix content and return it as a DataFrame object
         """
         raise NotImplementedError()
 

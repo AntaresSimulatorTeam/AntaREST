@@ -232,7 +232,7 @@ class TestFetchRawData:
             written_data = res.json()["data"]
             if not content.decode("utf-8"):
                 # The `GET` returns the default matrix when it's empty
-                expected = 8760 * [[0]] if study_type == "raw" else [[]]
+                expected = 8760 * [[0]]
             else:
                 df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).replace(",", ".", regex=True)
                 df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import

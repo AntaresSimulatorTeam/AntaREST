@@ -43,6 +43,9 @@ class MockMatrixNode(MatrixNode):
     def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
         return MOCK_MATRIX_JSON
 
+    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+        return pd.DataFrame(MOCK_MATRIX_DTO)
+
     def get_default_empty_matrix(self) -> Optional[npt.NDArray[np.float64]]:
         pass
 
