@@ -44,7 +44,7 @@ class InputSeriesMatrix(MatrixNode):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: t.Optional[int] = None,
-        default_empty: t.Optional[npt.NDArray[np.float64]] = None,
+        default_empty: t.Optional[npt.NDArray[np.float64]] = None,  # optional only for the capacity matrix in Xpansion
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
