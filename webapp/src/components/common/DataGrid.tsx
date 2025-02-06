@@ -46,7 +46,6 @@ export interface DataGridProps extends Omit<DataEditorProps, "rowMarkers" | "gri
 }
 
 const ROW_HEIGHT = 30;
-const OVERSCROLL = 2;
 
 function isStringRowMarkerOptions(
   rowMarkerOptions: RowMarkersOptions,
@@ -74,11 +73,6 @@ function DataGrid({
 
   const isStringRowMarkers = isStringRowMarkerOptions(rowMarkersOptions);
   const adjustedFreezeColumns = isStringRowMarkers ? (freezeColumns || 0) + 1 : freezeColumns;
-
-  // Manually calculate the height allows to remove the blank space at the bottom of the grid
-  // when there is no scrollbar. Header is included in the height calculation.
-  //! Group header is not included, fix it when needed.
-  const height = ROW_HEIGHT * (rows + 1) + OVERSCROLL;
 
   const [columns, setColumns] = useState(initColumns);
   const [gridSelection, setGridSelection] = useState<GridSelection>({
@@ -281,12 +275,8 @@ function DataGrid({
       rowHeight={ROW_HEIGHT}
       smoothScrollX
       smoothScrollY
-      overscrollX={OVERSCROLL}
-      overscrollY={OVERSCROLL}
       width="100%"
-      height={height}
       theme={darkTheme}
-      {...rest}
       rows={rows}
       columns={columns}
       rowMarkers={isStringRowMarkers ? "none" : rowMarkersOptions}
@@ -299,6 +289,7 @@ function DataGrid({
       gridSelection={gridSelection}
       onGridSelectionChange={handleGridSelectionChange}
       freezeColumns={adjustedFreezeColumns}
+      {...rest}
     />
   );
 }

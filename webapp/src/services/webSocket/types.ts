@@ -22,7 +22,7 @@ import type {
 import type { WsEventType } from "./constants";
 import type { O } from "ts-toolbelt";
 import type { FileDownloadDTO } from "../api/downloads";
-import type { TaskDTO, TTaskType } from "../api/tasks/types";
+import type { TaskDTO, TaskTypeValue } from "../api/tasks/types";
 
 /**
  * Copyright (c) 2024, RTE (https://www.rte-france.com)
@@ -38,7 +38,7 @@ import type { TaskDTO, TTaskType } from "../api/tasks/types";
  * This file is part of the Antares project.
  */
 
-export type TWsEventType = O.UnionOf<typeof WsEventType>;
+export type WsEventTypeValue = O.UnionOf<typeof WsEventType>;
 
 ////////////////////////////////////////////////////////////////
 // Payloads
@@ -59,7 +59,7 @@ export interface StudyJobLogUpdateEventPayload {
 export interface TaskEventPayload {
   id: string;
   message: string;
-  type: TTaskType;
+  type: TaskTypeValue;
   study_id?: StudyMetadata["id"];
 }
 
