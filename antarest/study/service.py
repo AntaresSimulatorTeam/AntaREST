@@ -886,6 +886,7 @@ class StudyService:
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
+        # key should be workspace, path to sync correctly studies with same path in different workspace
         workspace_paths = [(f.workspace, str(f.path)) for f in folders]
 
         for study in all_studies:
