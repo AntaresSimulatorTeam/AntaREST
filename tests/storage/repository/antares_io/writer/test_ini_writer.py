@@ -15,7 +15,8 @@ from typing import Callable
 
 import pytest
 
-from antarest.study.storage.rawstudy.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.ini_reader import OptionMatcher, any_section_option_matcher
+from antarest.study.storage.rawstudy.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 
 
 @pytest.mark.unit_test
@@ -59,3 +60,31 @@ def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
     writer.write(json_data, path)
 
     assert ini_cleaner(ini_content) == ini_cleaner(path.read_text())
+
+
+@pytest.mark.unit_test
+def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable) -> None:
+    path = Path(tmp_path) / "test.ini"
+
+    serializers = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER}
+    writer = IniWriter(value_serializers=serializers)
+
+    expected = """
+        [part1]
+        group = gas
+
+        [part2]
+        group = gas
+
+        [part3]
+        other = Gas
+    """
+
+    json_data = {
+        "part1": {"group": "Gas"},
+        "part2": {"group": "Gas"},
+        "part3": {"other": "Gas"},
+    }
+    writer.write(json_data, path)
+
+    assert ini_cleaner(path.read_text()) == ini_cleaner(expected)
