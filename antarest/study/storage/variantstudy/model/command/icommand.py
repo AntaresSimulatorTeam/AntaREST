@@ -18,7 +18,6 @@ from abc import ABC, abstractmethod
 import typing_extensions as te
 
 from antarest.core.serialization import AntaresBaseModel
-from antarest.core.utils.utils import assert_this
 from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

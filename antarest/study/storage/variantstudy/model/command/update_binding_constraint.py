@@ -31,7 +31,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     TermMatrices,
     create_binding_constraint_config,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
