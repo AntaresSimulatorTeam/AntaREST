@@ -42,18 +42,14 @@ class InputSeriesMatrix(MatrixNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
+        default_empty: npt.NDArray[np.float64],
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: t.Optional[int] = None,
-        default_empty: t.Optional[npt.NDArray[np.float64]] = None,
     ):
         super().__init__(context=context, config=config, freq=freq)
         self.nb_columns = nb_columns
-        if default_empty is None:
-            self.default_empty = None
-        else:
-            # Clone the template value and make it writable
-            self.default_empty = np.copy(default_empty)
-            self.default_empty.flags.writeable = True
+        self.default_empty = np.copy(default_empty)
+        self.default_empty.flags.writeable = True
 
     def parse_as_dataframe(self, file_path: t.Optional[Path] = None) -> pd.DataFrame:
         file_path = file_path or self.config.path
@@ -85,10 +81,7 @@ class InputSeriesMatrix(MatrixNode):
             return final_matrix
         except EmptyDataError:
             logger.warning(f"Empty file found when parsing {file_path}")
-            final_matrix = pd.DataFrame()
-            if self.default_empty is not None:
-                final_matrix = pd.DataFrame(self.default_empty)
-            return final_matrix
+            return pd.DataFrame(self.default_empty)
 
     @override
     def parse_as_json(self, file_path: t.Optional[Path] = None) -> JSON:
@@ -152,5 +145,5 @@ class InputSeriesMatrix(MatrixNode):
         return OriginalFile(content=content, suffix=suffix, filename=filename)
 
     @override
-    def get_default_empty_matrix(self) -> t.Optional[npt.NDArray[np.float64]]:
+    def get_default_empty_matrix(self) -> npt.NDArray[np.float64]:
         return self.default_empty

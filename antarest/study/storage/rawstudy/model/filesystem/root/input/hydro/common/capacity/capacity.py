@@ -29,7 +29,7 @@ class MatrixInfo(TypedDict, total=False):
     name: str
     freq: MatrixFrequency
     start_version: StudyVersion
-    default_empty: npt.NDArray[np.float64] | None
+    default_empty: npt.NDArray[np.float64]
 
 
 default_maxpower = np.zeros((365, 4), dtype=np.float64)
@@ -44,6 +44,9 @@ default_reservoir.flags.writeable = False
 
 default_credit_modulation = np.ones((2, 100), dtype=np.float64)
 default_credit_modulation.flags.writeable = False
+
+default_water_values = np.zeros((365, 101), dtype=np.float64)
+default_water_values.flags.writeable = False
 
 INITIAL_VERSION = StudyVersion.parse(0)
 # noinspection SpellCheckingInspection
@@ -72,7 +75,12 @@ MATRICES_INFO: List[MatrixInfo] = [
         "start_version": STUDY_VERSION_6_5,
         "default_empty": default_credit_modulation,
     },
-    {"name": "waterValues", "freq": MatrixFrequency.DAILY, "start_version": STUDY_VERSION_6_5, "default_empty": None},
+    {
+        "name": "waterValues",
+        "freq": MatrixFrequency.DAILY,
+        "start_version": STUDY_VERSION_6_5,
+        "default_empty": default_water_values,
+    },
 ]
 
 
