@@ -37,7 +37,6 @@ class AreaCreationDTO(AntaresBaseModel):
     set: t.Optional[t.List[str]] = None
 
 
-# review: is this class necessary?
 class ClusterInfoDTO(PatchCluster):
     id: str
     name: str
