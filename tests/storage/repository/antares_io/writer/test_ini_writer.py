@@ -16,7 +16,7 @@ from typing import Callable
 import pytest
 
 from antarest.study.storage.rawstudy.ini_reader import OptionMatcher, any_section_option_matcher
-from antarest.study.storage.rawstudy.ini_writer import IniWriter
+from antarest.study.storage.rawstudy.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 
 
 @pytest.mark.unit_test
@@ -66,7 +66,7 @@ def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
 def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable) -> None:
     path = Path(tmp_path) / "test.ini"
 
-    serializers = {any_section_option_matcher("group"): lambda x: x.lower()}
+    serializers = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER}
     writer = IniWriter(value_serializers=serializers)
 
     expected = """

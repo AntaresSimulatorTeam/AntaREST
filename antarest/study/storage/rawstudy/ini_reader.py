@@ -69,8 +69,6 @@ def any_section_option_matcher(key: str) -> OptionMatcher:
 
 
 class ValueParsers:
-    _parsers: t.Dict[OptionMatcher, ValueParser]
-
     def __init__(self, parsers: t.Dict[OptionMatcher, ValueParser]):
         self._parsers = parsers
 

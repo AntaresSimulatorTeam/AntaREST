@@ -15,6 +15,7 @@ import textwrap
 from pathlib import Path
 
 from antarest.study.storage.rawstudy.ini_reader import (
+    LOWER_CASE_PARSER,
     IniReader,
     OptionMatcher,
     SimpleKeyValueReader,
@@ -343,15 +344,12 @@ class TestIniReader:
             )
         )
 
-        def to_lower(input: str) -> str:
-            return input.lower()
-
-        value_parsers = {OptionMatcher("part2", "bar"): to_lower}
+        value_parsers = {OptionMatcher("part2", "bar"): LOWER_CASE_PARSER}
         actual = IniReader(value_parsers=value_parsers).read(path)
         expected = {"part1": {"bar": "Hello"}, "part2": {"bar": "hello"}}
         assert actual == expected
 
-        value_parsers = {any_section_option_matcher("bar"): to_lower}
+        value_parsers = {any_section_option_matcher("bar"): LOWER_CASE_PARSER}
         actual = IniReader(value_parsers=value_parsers).read(path)
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "hello"}}
         assert actual == expected

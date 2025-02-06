@@ -21,6 +21,8 @@ from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.ini_reader import OptionMatcher
 
 PrimitiveType = Union[str, int, float, bool]
+
+# Value serializers may be used to customize the way INI options are serialized
 ValueSerializer = Callable[[str], PrimitiveType]
 
 
@@ -31,32 +33,37 @@ def _lower_case(input: str) -> str:
 LOWER_CASE_SERIALIZER: ValueSerializer = _lower_case
 
 
-class IniConfigParser(configparser.RawConfigParser):
-    def __init__(
-        self,
-        special_keys: Optional[List[str]] = None,
-        value_serializers: Optional[Dict[OptionMatcher, ValueSerializer]] = None,
-    ) -> None:
-        super().__init__()
-        self.special_keys = special_keys
-        self._value_serializers = value_serializers or {}
+class ValueSerializers:
+    def __init__(self, serializers: Dict[OptionMatcher, ValueSerializer]):
+        self._serializers = serializers
 
-    # noinspection SpellCheckingInspection
-    @override
-    def optionxform(self, optionstr: str) -> str:
-        return optionstr
-
-    def _get_serializer(self, section: str, key: str) -> Optional[ValueSerializer]:
-        if not self._value_serializers:
+    def find_serializer(self, section: str, key: str) -> Optional[ValueSerializer]:
+        if not self._serializers:
             return None
         possible_keys = [
             OptionMatcher(section=section, key=key),
             OptionMatcher(section=None, key=key),
         ]
         for k in possible_keys:
-            if parser := self._value_serializers.get(k, None):
+            if parser := self._serializers.get(k, None):
                 return parser
         return None
+
+
+class IniConfigParser(configparser.RawConfigParser):
+    def __init__(
+        self,
+        special_keys: Optional[List[str]] = None,
+        value_serializers: Optional[ValueSerializers] = None,
+    ) -> None:
+        super().__init__()
+        self.special_keys = special_keys
+        self._value_serializers = value_serializers or ValueSerializers({})
+
+    # noinspection SpellCheckingInspection
+    @override
+    def optionxform(self, optionstr: str) -> str:
+        return optionstr
 
     def _write_line(  # type:ignore
         self,
@@ -70,7 +77,7 @@ class IniConfigParser(configparser.RawConfigParser):
             self, section_name, key, value
         )
         if self._value_serializers:
-            if serializer := self._get_serializer(section_name, key):
+            if serializer := self._value_serializers.find_serializer(section_name, key):
                 value = serializer(value)
         if value is not None or not self._allow_no_value:  # type:ignore
             value = delimiter + str(value).replace("\n", "\n\t")
@@ -107,7 +114,7 @@ class IniWriter:
         value_serializers: Optional[Dict[OptionMatcher, ValueSerializer]] = None,
     ):
         self.special_keys = special_keys
-        self._value_serializers = value_serializers or {}
+        self._value_serializers = ValueSerializers(value_serializers or {})
 
     def write(self, data: JSON, path: Path) -> None:
         """
