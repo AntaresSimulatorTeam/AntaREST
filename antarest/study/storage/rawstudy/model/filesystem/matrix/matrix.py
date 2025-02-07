@@ -14,7 +14,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -22,6 +22,7 @@ from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.exceptions import DenormalizationException
@@ -128,22 +129,19 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     ) -> Union[bytes, JSON]:
         file_path, _ = self._get_real_file_path()
 
-        if formatted:
-            return self.parse_as_json(file_path)
-
         df = self.parse_as_dataframe(file_path)
+
+        if formatted:
+            stopwatch = StopWatch()
+            data = cast(JSON, df.to_dict(orient="split"))
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
+            return data
+
         if df.empty:
             return b""
         buffer = io.BytesIO()
         np.savetxt(buffer, df, delimiter="\t")
         return buffer.getvalue()
-
-    @abstractmethod
-    def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
-        """
-        Parse the matrix content and return it as a JSON object
-        """
-        raise NotImplementedError()
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:

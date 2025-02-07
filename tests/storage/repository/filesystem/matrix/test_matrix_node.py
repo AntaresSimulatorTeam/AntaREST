@@ -18,7 +18,6 @@ import numpy as np
 import pandas as pd  # type: ignore
 from numpy import typing as npt
 
-from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
@@ -39,9 +38,6 @@ class MockMatrixNode(MatrixNode):
             context=context,
             freq=MatrixFrequency.ANNUAL,
         )
-
-    def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
-        return MOCK_MATRIX_JSON
 
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
         return pd.DataFrame(MOCK_MATRIX_DTO)

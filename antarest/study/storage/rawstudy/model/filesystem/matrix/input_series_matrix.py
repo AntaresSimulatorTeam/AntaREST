@@ -94,14 +94,6 @@ class InputSeriesMatrix(MatrixNode):
             return final_matrix
 
     @override
-    def parse_as_json(self, file_path: t.Optional[Path] = None) -> JSON:
-        df = self.parse_as_dataframe(file_path)
-        stopwatch = StopWatch()
-        data = t.cast(JSON, df.to_dict(orient="split"))
-        stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
-        return data
-
-    @override
     def check_errors(
         self,
         data: JSON,
