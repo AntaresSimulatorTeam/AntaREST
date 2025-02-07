@@ -51,7 +51,9 @@ class TestInputSeriesMatrix:
         file.write_text(content)
 
         node = InputSeriesMatrix(context=Mock(), config=my_study_config, nb_columns=8)
-        actual = node.load()
+
+        # test formatted load
+        actual = node.load(formatted=True)
         expected = {
             "columns": [0, 1, 2, 3, 4, 5, 6, 7],
             "data": [

@@ -140,7 +140,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if df.empty:
             return b""
         buffer = io.BytesIO()
-        np.savetxt(buffer, df, delimiter="\t")
+        np.savetxt(buffer, df, delimiter="\t", fmt="%.6f")
         return buffer.getvalue()
 
     @abstractmethod
