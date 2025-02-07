@@ -18,7 +18,7 @@ from typing import Callable, Dict, List, Optional
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.ini_reader import OptionMatcher, PrimitiveType
+from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
 
 # Value serializers may be used to customize the way INI options are serialized
 ValueSerializer = Callable[[str], PrimitiveType]
@@ -36,15 +36,14 @@ class ValueSerializers:
         self._serializers = serializers
 
     def find_serializer(self, section: str, key: str) -> Optional[ValueSerializer]:
-        if not self._serializers:
-            return None
-        possible_keys = [
-            OptionMatcher(section=section, key=key),
-            OptionMatcher(section=None, key=key),
-        ]
-        for k in possible_keys:
-            if parser := self._serializers.get(k, None):
-                return parser
+        if self._serializers:
+            possible_keys = [
+                OptionMatcher(section=section, key=key),
+                any_section_option_matcher(key=key),
+            ]
+            for k in possible_keys:
+                if parser := self._serializers.get(k, None):
+                    return parser
         return None
 
 

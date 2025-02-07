@@ -25,7 +25,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
-from antarest.core.serialization import from_json, to_json
+from antarest.core.serde.json import from_json, to_json
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag

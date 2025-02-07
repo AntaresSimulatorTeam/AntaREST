@@ -15,7 +15,7 @@ from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 
 from antarest.core.exceptions import LinkValidationError
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case, to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_2

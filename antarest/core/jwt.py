@@ -13,7 +13,7 @@
 from typing import List, Union
 
 from antarest.core.roles import RoleType
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import ADMIN_ID, Group, Identity
 
 

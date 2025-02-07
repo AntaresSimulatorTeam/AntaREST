@@ -19,7 +19,7 @@ from antares.study.version import StudyVersion
 from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7

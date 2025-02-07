@@ -18,7 +18,7 @@ from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
 from typing_extensions import override
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import StudyVersionInt

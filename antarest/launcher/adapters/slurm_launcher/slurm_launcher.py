@@ -34,13 +34,13 @@ from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitCo
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
+from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
-from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.ini_writer import IniWriter
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")

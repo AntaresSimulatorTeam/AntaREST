@@ -17,9 +17,9 @@ from pathlib import Path
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.core.serialization import from_json, to_json
-from antarest.study.storage.rawstudy.ini_reader import IReader
-from antarest.study.storage.rawstudy.ini_writer import IniWriter
+from antarest.core.serde.ini_reader import IReader
+from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.serde.json import from_json, to_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode

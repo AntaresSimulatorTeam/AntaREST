@@ -15,8 +15,8 @@ from typing import Callable
 
 import pytest
 
-from antarest.study.storage.rawstudy.ini_reader import OptionMatcher, any_section_option_matcher
-from antarest.study.storage.rawstudy.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
+from antarest.core.serde.ini_common import any_section_option_matcher
+from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 
 
 @pytest.mark.unit_test

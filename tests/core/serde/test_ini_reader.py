@@ -14,13 +14,8 @@ import io
 import textwrap
 from pathlib import Path
 
-from antarest.study.storage.rawstudy.ini_reader import (
-    LOWER_CASE_PARSER,
-    IniReader,
-    OptionMatcher,
-    SimpleKeyValueReader,
-    any_section_option_matcher,
-)
+from antarest.core.serde.ini_common import OptionMatcher, any_section_option_matcher
+from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader, SimpleKeyValueReader
 
 
 class TestIniReader:

@@ -27,7 +27,7 @@ from pydantic import Field
 from starlette.responses import PlainTextResponse, StreamingResponse
 
 from antarest.core.config import Config
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 

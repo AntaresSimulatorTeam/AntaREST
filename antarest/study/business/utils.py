@@ -16,7 +16,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.requests import RequestParameters
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.login.utils import get_current_user
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.model import RawStudy, Study

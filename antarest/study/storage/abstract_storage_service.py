@@ -24,7 +24,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import JSON, PublicMode
-from antarest.core.serialization import from_json
+from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO

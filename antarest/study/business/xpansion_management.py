@@ -23,7 +23,7 @@ from pydantic import Field, ValidationError, field_validator, model_validator
 
 from antarest.core.exceptions import BadZipBinary, ChildNotFoundError, LinkNotFound
 from antarest.core.model import JSON
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study

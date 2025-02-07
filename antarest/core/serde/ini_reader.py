@@ -15,13 +15,13 @@ import re
 import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
 
-PrimitiveType = str | int | float | bool
 ValueParser = Callable[[str], PrimitiveType]
 
 
@@ -49,39 +49,22 @@ def _convert_value(value: str) -> PrimitiveType:
                 return value
 
 
-@dataclasses.dataclass(frozen=True)
-class OptionMatcher:
-    """
-    Used to match a location in an INI file:
-    a None section means any section.
-    """
-
-    section: Optional[str]
-    key: str
-
-
-def any_section_option_matcher(key: str) -> OptionMatcher:
-    """
-    Return a matcher which will match the provided key in any section.
-    """
-    return OptionMatcher(section=None, key=key)
-
-
 class ValueParsers:
-    def __init__(self, parsers: t.Dict[OptionMatcher, ValueParser]):
+    def __init__(self, default_parser: ValueParser, parsers: t.Dict[OptionMatcher, ValueParser]):
+        self._default_parser = default_parser
         self._parsers = parsers
 
     def find_parser(self, section: str, key: str) -> ValueParser:
-        if not self._parsers:
-            return _convert_value
-        possible_keys = [
-            OptionMatcher(section=section, key=key),
-            OptionMatcher(section=None, key=key),
-        ]
-        for k in possible_keys:
-            if parser := self._parsers.get(k, None):
-                return parser
-        return _convert_value
+        if self._parsers:
+            possible_keys = [
+                OptionMatcher(section=section, key=key),
+                any_section_option_matcher(key=key),
+            ]
+            for k in possible_keys:
+                if parser := self._parsers.get(k, None):
+                    return parser
+
+        return self._default_parser
 
 
 @dataclasses.dataclass(frozen=True)
@@ -208,7 +191,7 @@ class IniReader(IReader):
 
         # Default section name to use if `.ini` file has no section.
         self._special_keys = set(special_keys)
-        self._value_parsers = ValueParsers(value_parsers or {})
+        self._value_parsers = ValueParsers(default_parser=_convert_value, parsers=value_parsers or {})
 
         # List of keys which should be parsed as list.
         self._section_name = section_name
