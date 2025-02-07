@@ -107,13 +107,14 @@ class ThermalCostGeneration(EnumIgnoreCase):
 
 # Annotated types useful for thermal cluster models
 
-ClusterEnabled = Annotated[bool, Field(default=True, description="Activity status", title="Enabled")]
+ClusterEnabled = Annotated[bool, Field(description="Activity status", title="Enabled")]
+
+DEFAULT_ENABLED = True
 
 # noinspection SpellCheckingInspection
 ClusterUnitCount = Annotated[
     int,
     Field(
-        default=1,
         ge=1,
         description="Unit count",
         alias="unitcount",
@@ -121,11 +122,13 @@ ClusterUnitCount = Annotated[
     ),
 ]
 
+DEFAULT_UNIT_COUNT = 1
+
+
 # noinspection SpellCheckingInspection
 ClusterNominalCapacity = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Nominal capacity (MW per unit)",
         alias="nominalcapacity",
@@ -133,39 +136,44 @@ ClusterNominalCapacity = Annotated[
     ),
 ]
 
+DEFAULT_NOMINAL_CAPACITY = 0.0
+
 ThermalClusterGroupField = Annotated[
     ThermalClusterGroup,
     Field(
-        default=ThermalClusterGroup.OTHER1,
         description="Thermal Cluster Group",
         title="Thermal Cluster Group",
     ),
 ]
 
+DEFAULT_CLUSTER_GROUP = ThermalClusterGroup.OTHER1
+
 LocalTSGenerationBehaviorField = Annotated[
     LocalTSGenerationBehavior,
     Field(
-        default=LocalTSGenerationBehavior.USE_GLOBAL,
         description="Time Series Generation Option",
         alias="gen-ts",
         title="Time Series Generation",
     ),
 ]
 
+DEFAUT_TS_GENERATION_BEHAVIOR = LocalTSGenerationBehavior.USE_GLOBAL
+
 MinStablePower = Annotated[
     float,
     Field(
-        default=0.0,
         description="Min. Stable Power (MW)",
         alias="min-stable-power",
         title="Min. Stable Power",
     ),
 ]
 
+DEFAULT_MIN_STABLE_POWER = 0.0
+
+
 MinUpTime = Annotated[
     int,
     Field(
-        default=1,
         ge=1,
         le=168,
         description="Min. Up time (h)",
@@ -174,10 +182,12 @@ MinUpTime = Annotated[
     ),
 ]
 
+DEFAULT_MIN_UP_TIME = 1
+
+
 MinDownTime = Annotated[
     int,
     Field(
-        default=1,
         ge=1,
         le=168,
         description="Min. Down time (h)",
@@ -185,15 +195,20 @@ MinDownTime = Annotated[
         title="Min. Down Time",
     ),
 ]
+
+DEFAULT_MIN_DOWN_TIME = 1
+
 MustRun = Annotated[
     bool,
     Field(
-        default=False,
         description="Must run flag",
         alias="must-run",
         title="Must Run",
     ),
 ]
+
+DEFAULT_MUST_RUN = False
+
 Spinning = Annotated[
     float,
     Field(
@@ -204,10 +219,12 @@ Spinning = Annotated[
         title="Spinning",
     ),
 ]
+
+DEFAULT_SPINNING = 0.0
+
 VolatilityForced = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         le=1,
         description="Forced Volatility",
@@ -219,7 +236,6 @@ VolatilityForced = Annotated[
 VolatilityPlanned = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         le=1,
         description="Planned volatility",
@@ -228,10 +244,11 @@ VolatilityPlanned = Annotated[
     ),
 ]
 
+DEFAULT_VOLATILITY = 0.0
+
 LawForced = Annotated[
     LawOption,
     Field(
-        default=LawOption.UNIFORM,
         description="Forced Law (ts-generator)",
         alias="law.forced",
         title="Forced Law",
@@ -241,17 +258,17 @@ LawForced = Annotated[
 LawPlanned = Annotated[
     LawOption,
     Field(
-        default=LawOption.UNIFORM,
         description="Planned Law (ts-generator)",
         alias="law.planned",
         title="Planned Law",
     ),
 ]
 
+DEFAULT_LAW = LawOption.UNIFORM
+
 MarginalCost = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Marginal cost (euros/MWh)",
         alias="marginal-cost",
@@ -259,10 +276,11 @@ MarginalCost = Annotated[
     ),
 ]
 
+DEFAULT_MARGINAL_COST = 0.0
+
 SpreadCost = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Spread (euros/MWh)",
         alias="spread-cost",
@@ -270,10 +288,12 @@ SpreadCost = Annotated[
     ),
 ]
 
+DEFAULT_SPREAD_COST = 0.0
+
+
 FixedCost = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Fixed cost (euros/hour)",
         alias="fixed-cost",
@@ -281,10 +301,12 @@ FixedCost = Annotated[
     ),
 ]
 
+DEFAULT_FIXED_COST = 0.0
+
+
 StartupCost = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Startup cost (euros/startup)",
         alias="startup-cost",
@@ -292,10 +314,12 @@ StartupCost = Annotated[
     ),
 ]
 
+DEFAULT_STARTUP_COST = 0.0
+
+
 MarketBidCost = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Market bid cost (euros/MWh)",
         alias="market-bid-cost",
@@ -303,10 +327,14 @@ MarketBidCost = Annotated[
     ),
 ]
 
+DEFAULT_MARKET_BID_COST = 0.0
+
+
+DEFAULT_EMISSIONS = 0.0
+
 Co2 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of CO2 (t/MWh)",
         title="Emission rate of CO2",
@@ -316,7 +344,6 @@ Co2 = Annotated[
 Nh3 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of NH3 (t/MWh)",
         title="Emission rate of NH3",
@@ -326,7 +353,6 @@ Nh3 = Annotated[
 So2 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of SO2 (t/MWh)",
         title="Emission rate of SO2",
@@ -336,7 +362,6 @@ So2 = Annotated[
 Nox = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of NOX (t/MWh)",
         title="Emission rate of NOX",
@@ -346,7 +371,6 @@ Nox = Annotated[
 Pm2_5 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of PM 2.5 (t/MWh)",
         title="Emission rate of PM 2.5",
@@ -357,7 +381,6 @@ Pm2_5 = Annotated[
 Pm5 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of PM 5 (t/MWh)",
         title="Emission rate of PM 5",
@@ -367,7 +390,6 @@ Pm5 = Annotated[
 Pm10 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of PM 10 (t/MWh)",
         title="Emission rate of PM 10",
@@ -377,7 +399,6 @@ Pm10 = Annotated[
 Nmvoc = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of NMVOC (t/MWh)",
         title="Emission rate of NMVOC",
@@ -387,7 +408,6 @@ Nmvoc = Annotated[
 Op1 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of pollutant 1 (t/MWh)",
         title="Emission rate of pollutant 1",
@@ -397,7 +417,6 @@ Op1 = Annotated[
 Op2 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of pollutant 2 (t/MWh)",
         title="Emission rate of pollutant 2",
@@ -407,7 +426,6 @@ Op2 = Annotated[
 Op3 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of pollutant 3 (t/MWh)",
         title="Emission rate of pollutant 3",
@@ -417,7 +435,6 @@ Op3 = Annotated[
 Op4 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of pollutant 4 (t/MWh)",
         title="Emission rate of pollutant 4",
@@ -427,7 +444,6 @@ Op4 = Annotated[
 Op5 = Annotated[
     float,
     Field(
-        default=0.0,
         ge=0,
         description="Emission rate of pollutant 5 (t/MWh)",
         title="Emission rate of pollutant 5",
@@ -437,17 +453,17 @@ Op5 = Annotated[
 ThermalCostGenerationField = Annotated[
     ThermalCostGeneration,
     Field(
-        default=ThermalCostGeneration.SET_MANUALLY,
         alias="costgeneration",
         description="Cost generation option",
         title="Cost Generation",
     ),
 ]
 
+DEFAULT_COST_GENERATION = ThermalCostGeneration.SET_MANUALLY
+
 Efficiency = Annotated[
     float,
     Field(
-        default=100.0,
         ge=0,
         le=100,
         description="Efficiency (%)",
@@ -455,16 +471,20 @@ Efficiency = Annotated[
     ),
 ]
 
+DEFAULT_EFFICIENCY: float = 100.0
+
+
 # Even if `variableomcost` is a cost it could be negative.
 VariableOMCost = Annotated[
     float,
     Field(
-        default=0.0,
         description="Operating and Maintenance Cost (€/MWh)",
         alias="variableomcost",
         title="Variable O&M Cost",
     ),
 ]
+
+DEFAULT_VARIABLE_OM_COST = 0.0
 
 
 class ThermalProperties(AntaresBaseModel):
@@ -474,26 +494,26 @@ class ThermalProperties(AntaresBaseModel):
     """
 
     name: str
-    unit_count: ClusterUnitCount
-    nominal_capacity: ClusterNominalCapacity
-    enabled: ClusterEnabled
-    group: ThermalClusterGroupField
-    gen_ts: LocalTSGenerationBehaviorField
-    min_stable_power: MinStablePower
-    min_up_time: MinUpTime
-    min_down_time: MinDownTime
-    must_run: MustRun
-    spinning: Spinning
-    volatility_forced: VolatilityForced
-    volatility_planned: VolatilityPlanned
-    law_forced: LawForced
-    law_planned: LawPlanned
-    marginal_cost: MarginalCost
-    spread_cost: SpreadCost
-    fixed_cost: FixedCost
-    startup_cost: StartupCost
-    market_bid_cost: MarketBidCost
-    co2: Co2
+    unit_count: ClusterUnitCount = DEFAULT_UNIT_COUNT
+    nominal_capacity: ClusterNominalCapacity = DEFAULT_NOMINAL_CAPACITY
+    enabled: ClusterEnabled = DEFAULT_ENABLED
+    group: ThermalClusterGroupField = DEFAULT_CLUSTER_GROUP
+    gen_ts: LocalTSGenerationBehaviorField = DEFAUT_TS_GENERATION_BEHAVIOR
+    min_stable_power: MinStablePower = DEFAULT_MIN_STABLE_POWER
+    min_up_time: MinUpTime = DEFAULT_MIN_UP_TIME
+    min_down_time: MinDownTime = DEFAULT_MIN_DOWN_TIME
+    must_run: MustRun = DEFAULT_MUST_RUN
+    spinning: Spinning = DEFAULT_SPINNING
+    volatility_forced: VolatilityForced = DEFAULT_VOLATILITY
+    volatility_planned: VolatilityPlanned = DEFAULT_VOLATILITY
+    law_forced: LawForced = DEFAULT_LAW
+    law_planned: LawPlanned = DEFAULT_LAW
+    marginal_cost: MarginalCost = DEFAULT_MARGINAL_COST
+    spread_cost: SpreadCost = DEFAULT_SPREAD_COST
+    fixed_cost: FixedCost = DEFAULT_FIXED_COST
+    startup_cost: StartupCost = DEFAULT_STARTUP_COST
+    market_bid_cost: MarketBidCost = DEFAULT_MARKET_BID_COST
+    co2: Co2 = DEFAULT_EMISSIONS
 
 
 class Thermal860Properties(ThermalProperties):
@@ -501,18 +521,18 @@ class Thermal860Properties(ThermalProperties):
     Thermal cluster configuration model for 860 study.
     """
 
-    nh3: Nh3
-    so2: So2
-    nox: Nox
-    pm2_5: Pm2_5
-    pm5: Pm5
-    pm10: Pm10
-    nmvoc: Nmvoc
-    op1: Op1
-    op2: Op2
-    op3: Op3
-    op4: Op4
-    op5: Op5
+    nh3: Nh3 = DEFAULT_EMISSIONS
+    so2: So2 = DEFAULT_EMISSIONS
+    nox: Nox = DEFAULT_EMISSIONS
+    pm2_5: Pm2_5 = DEFAULT_EMISSIONS
+    pm5: Pm5 = DEFAULT_EMISSIONS
+    pm10: Pm10 = DEFAULT_EMISSIONS
+    nmvoc: Nmvoc = DEFAULT_EMISSIONS
+    op1: Op1 = DEFAULT_EMISSIONS
+    op2: Op2 = DEFAULT_EMISSIONS
+    op3: Op3 = DEFAULT_EMISSIONS
+    op4: Op4 = DEFAULT_EMISSIONS
+    op5: Op5 = DEFAULT_EMISSIONS
 
 
 class Thermal870Properties(Thermal860Properties):
@@ -520,9 +540,9 @@ class Thermal870Properties(Thermal860Properties):
     Thermal cluster configuration model for study in version 8.7 or above.
     """
 
-    cost_generation: ThermalCostGenerationField
-    efficiency: Efficiency
-    variable_o_m_cost: VariableOMCost
+    cost_generation: ThermalCostGenerationField = DEFAULT_COST_GENERATION
+    efficiency: Efficiency = DEFAULT_EFFICIENCY
+    variable_o_m_cost: VariableOMCost = DEFAULT_VARIABLE_OM_COST
 
 
 class ThermalConfig(AntaresBaseModel):
@@ -533,47 +553,47 @@ class ThermalConfig(AntaresBaseModel):
 
     id: str
     name: str
-    unit_count: ClusterUnitCount
-    nominal_capacity: ClusterNominalCapacity
-    enabled: ClusterEnabled
-    group: ThermalClusterGroupField
-    gen_ts: LocalTSGenerationBehaviorField
-    min_stable_power: MinStablePower
-    min_up_time: MinUpTime
-    min_down_time: MinDownTime
-    must_run: MustRun
-    spinning: Spinning
-    volatility_forced: VolatilityForced
-    volatility_planned: VolatilityPlanned
-    law_forced: LawForced
-    law_planned: LawPlanned
-    marginal_cost: MarginalCost
-    spread_cost: SpreadCost
-    fixed_cost: FixedCost
-    startup_cost: StartupCost
-    market_bid_cost: MarketBidCost
-    co2: Co2
+    unit_count: ClusterUnitCount = DEFAULT_UNIT_COUNT
+    nominal_capacity: ClusterNominalCapacity = DEFAULT_NOMINAL_CAPACITY
+    enabled: ClusterEnabled = DEFAULT_ENABLED
+    group: ThermalClusterGroupField = DEFAULT_CLUSTER_GROUP
+    gen_ts: LocalTSGenerationBehaviorField = DEFAUT_TS_GENERATION_BEHAVIOR
+    min_stable_power: MinStablePower = DEFAULT_MIN_STABLE_POWER
+    min_up_time: MinUpTime = DEFAULT_MIN_UP_TIME
+    min_down_time: MinDownTime = DEFAULT_MIN_DOWN_TIME
+    must_run: MustRun = DEFAULT_MUST_RUN
+    spinning: Spinning = DEFAULT_SPINNING
+    volatility_forced: VolatilityForced = DEFAULT_VOLATILITY
+    volatility_planned: VolatilityPlanned = DEFAULT_VOLATILITY
+    law_forced: LawForced = DEFAULT_LAW
+    law_planned: LawPlanned = DEFAULT_LAW
+    marginal_cost: MarginalCost = DEFAULT_MARGINAL_COST
+    spread_cost: SpreadCost = DEFAULT_SPREAD_COST
+    fixed_cost: FixedCost = DEFAULT_FIXED_COST
+    startup_cost: StartupCost = DEFAULT_STARTUP_COST
+    market_bid_cost: MarketBidCost = DEFAULT_MARKET_BID_COST
+    co2: Co2 = DEFAULT_EMISSIONS
 
 
 class Thermal860Config(ThermalConfig):
-    nh3: Nh3
-    so2: So2
-    nox: Nox
-    pm2_5: Pm2_5
-    pm5: Pm5
-    pm10: Pm10
-    nmvoc: Nmvoc
-    op1: Op1
-    op2: Op2
-    op3: Op3
-    op4: Op4
-    op5: Op5
+    nh3: Nh3 = DEFAULT_EMISSIONS
+    so2: So2 = DEFAULT_EMISSIONS
+    nox: Nox = DEFAULT_EMISSIONS
+    pm2_5: Pm2_5 = DEFAULT_EMISSIONS
+    pm5: Pm5 = DEFAULT_EMISSIONS
+    pm10: Pm10 = DEFAULT_EMISSIONS
+    nmvoc: Nmvoc = DEFAULT_EMISSIONS
+    op1: Op1 = DEFAULT_EMISSIONS
+    op2: Op2 = DEFAULT_EMISSIONS
+    op3: Op3 = DEFAULT_EMISSIONS
+    op4: Op4 = DEFAULT_EMISSIONS
+    op5: Op5 = DEFAULT_EMISSIONS
 
 
 class Thermal870Config(Thermal860Config):
-    cost_generation: ThermalCostGenerationField
-    efficiency: Efficiency
-    variable_o_m_cost: VariableOMCost
+    cost_generation: ThermalCostGenerationField = DEFAULT_COST_GENERATION
+    efficiency: Efficiency = DEFAULT_EFFICIENCY
+    variable_o_m_cost: VariableOMCost = DEFAULT_VARIABLE_OM_COST
 
 
 ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
