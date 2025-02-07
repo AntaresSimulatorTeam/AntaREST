@@ -19,8 +19,6 @@ from typing_extensions import override
 from antarest.core.serialization import AntaresBaseModel
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
