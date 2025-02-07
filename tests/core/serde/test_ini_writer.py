@@ -20,6 +20,11 @@ from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 
 
 @pytest.mark.unit_test
+def test_lower_case_serializer() -> None:
+    assert LOWER_CASE_SERIALIZER("Hello") == "hello"
+
+
+@pytest.mark.unit_test
 def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
     path = Path(tmp_path) / "test.ini"
 
@@ -66,15 +71,18 @@ def test_write(tmp_path: str, ini_cleaner: Callable) -> None:
 def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable) -> None:
     path = Path(tmp_path) / "test.ini"
 
-    serializers = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER}
+    def duplicate(value: str) -> str:
+        return value * 2
+
+    serializers = {any_section_option_matcher("group"): duplicate}
     writer = IniWriter(value_serializers=serializers)
 
     expected = """
         [part1]
-        group = gas
+        group = GasGas
 
         [part2]
-        group = gas
+        group = GasGas
 
         [part3]
         other = Gas
