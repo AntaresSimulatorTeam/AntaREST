@@ -25,12 +25,8 @@ from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
 from antarest.study.business.areas.thermal_management import ThermalClusterCreation, ThermalClusterInput, ThermalManager
+from antarest.study.business.model.thermal_model import LawOption, LocalTSGenerationBehavior, ThermalClusterGroup
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyContentStatus
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    LawOption,
-    LocalTSGenerationBehavior,
-    ThermalClusterGroup,
-)
 from antarest.study.storage.storage_service import StudyStorageService
 from tests.study.business.areas.assets import ASSETS_DIR
 

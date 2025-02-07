@@ -21,6 +21,7 @@ from typing_extensions import override
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.thermal_model import ThermalConfigType
 from antarest.study.model import StudyVersionInt
 
 from .binding_constraint import (
@@ -33,7 +34,6 @@ from .binding_constraint import (
 from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
-from .thermal import ThermalConfigType
 
 
 class EnrModelling(EnumIgnoreCase):

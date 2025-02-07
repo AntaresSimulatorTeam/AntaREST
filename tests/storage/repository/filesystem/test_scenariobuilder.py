@@ -13,8 +13,8 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antarest.study.business.model.thermal_model import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
 
 RULES = {

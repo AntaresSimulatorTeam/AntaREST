@@ -26,15 +26,16 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_7, Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+from antarest.study.business.model.thermal_model import (
     Thermal870Config,
     Thermal870Properties,
+    ThermalClusterInput,
     ThermalConfigType,
     create_thermal_config,
 )
+from antarest.study.business.utils import execute_or_add_commands
+from antarest.study.model import STUDY_VERSION_8_7, Study
+from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -52,27 +53,6 @@ __all__ = (
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
-
-
-@all_optional_model
-@camel_case_model
-class ThermalClusterInput(Thermal870Properties):
-    """
-    Model representing the data structure required to edit an existing thermal cluster within a study.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
-            schema["example"] = ThermalClusterInput(
-                group="Gas",
-                name="Gas Cluster XY",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                gen_ts="use global",
-                co2=7.0,
-            ).model_dump(mode="json")
 
 
 @camel_case_model
@@ -96,7 +76,6 @@ class ThermalClusterCreation(ThermalClusterInput):
         return create_thermal_config(study_version=study_version, **values)
 
 
-@all_optional_model
 @camel_case_model
 class ThermalClusterOutput(Thermal870Config):
     """

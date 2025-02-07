@@ -18,6 +18,12 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.model.thermal_model import (
+    Thermal860Config,
+    Thermal870Config,
+    ThermalConfig,
+    ThermalCostGeneration,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links_filtering,
@@ -38,12 +44,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal860Config,
-    Thermal870Config,
-    ThermalConfig,
-    ThermalCostGeneration,
-)
 from tests.storage.business.assets import ASSETS_DIR
 
 
