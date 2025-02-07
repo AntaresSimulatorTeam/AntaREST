@@ -150,13 +150,6 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def get_default_empty_matrix(self) -> Optional[npt.NDArray[np.float64]]:
-        """
-        Returns the default matrix to return when the existing one is empty
-        """
-        raise NotImplementedError()
-
     @override
     def dump(
         self,

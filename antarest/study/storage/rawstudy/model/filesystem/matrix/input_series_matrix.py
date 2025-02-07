@@ -145,7 +145,3 @@ class InputSeriesMatrix(MatrixNode):
         else:
             content = self.config.path.read_bytes()
         return OriginalFile(content=content, suffix=suffix, filename=filename)
-
-    @override
-    def get_default_empty_matrix(self) -> t.Optional[npt.NDArray[np.float64]]:
-        return self.default_empty
