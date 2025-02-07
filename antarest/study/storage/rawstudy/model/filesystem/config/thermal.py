@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Annotated
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -101,6 +102,16 @@ class ThermalCostGeneration(EnumIgnoreCase):
 
     SET_MANUALLY = "SetManually"
     USE_COST_TIME_SERIES = "useCostTimeseries"
+
+
+ThermalGroup = Annotated[
+    ThermalClusterGroup,
+    Field(
+        default=ThermalClusterGroup.OTHER1,
+        description="Thermal Cluster Group",
+        title="Thermal Cluster Group",
+    ),
+]
 
 
 class ThermalProperties(ClusterProperties):
