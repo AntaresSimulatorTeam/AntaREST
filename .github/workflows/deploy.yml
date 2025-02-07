@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - fix/2547-normalize-folder-path-build-desktop
 
 jobs:
   binary:
