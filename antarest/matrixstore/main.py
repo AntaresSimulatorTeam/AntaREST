@@ -46,7 +46,7 @@ def build_matrix_service(
     """
     if service is None:
         repo = MatrixRepository()
-        content = MatrixContentRepository(config.storage.matrixstore)
+        content = MatrixContentRepository(config.storage.matrixstore, config.storage.matrixstore_format)
         dataset_repo = MatrixDataSetRepository()
 
         service = MatrixService(
