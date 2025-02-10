@@ -14,7 +14,7 @@ import functools
 import re
 from typing import Callable, Iterable, Match, Optional, cast
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 _SearchFunc = Callable[[str], Optional[Match[str]]]
 

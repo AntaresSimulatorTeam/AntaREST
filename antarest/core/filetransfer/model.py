@@ -19,7 +19,7 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignor
 from typing_extensions import override
 
 from antarest.core.persistence import Base
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 class FileDownloadNotFound(HTTPException):

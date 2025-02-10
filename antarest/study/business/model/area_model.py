@@ -15,7 +15,7 @@ import typing as t
 
 from pydantic import Field
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (

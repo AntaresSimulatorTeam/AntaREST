@@ -21,7 +21,7 @@ from typing import Any
 
 from pydantic import Field
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 @functools.total_ordering

@@ -22,7 +22,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag

@@ -23,10 +23,10 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
-from antarest.core.serialization import from_json
+from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,

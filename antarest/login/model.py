@@ -24,7 +24,7 @@ from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 if TYPE_CHECKING:
     # avoid circular import

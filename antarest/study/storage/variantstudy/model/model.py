@@ -16,7 +16,7 @@ from typing import MutableSequence, Optional, Tuple
 import typing_extensions as te
 
 from antarest.core.model import JSON
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import StudyMetadataDTO, StudyVersionStr
 
 LegacyDetailsDTO = Tuple[str, bool, str]

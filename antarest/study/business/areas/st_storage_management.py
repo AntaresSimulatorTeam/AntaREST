@@ -29,7 +29,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_8, Study

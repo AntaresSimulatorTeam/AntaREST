@@ -13,7 +13,7 @@
 from pathlib import Path
 from typing import Optional
 
-from antarest.core.serialization import from_json
+from antarest.core.serde.json import from_json
 from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
