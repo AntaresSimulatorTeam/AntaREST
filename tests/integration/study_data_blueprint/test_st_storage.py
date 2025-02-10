@@ -361,7 +361,7 @@ class TestSTStorage:
         grand_maison = "Grand'Maison"
         grand_maison_properties = {
             "name": grand_maison,
-            "group": "psp_closed",
+            "group": "PSP_Closed",
             "injectionNominalCapacity": 1500,
             "withdrawalNominalCapacity": 1800,
             "reservoirCapacity": 20000,
@@ -385,6 +385,7 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_output = {**default_output, **siemens_properties, "id": siemens_battery_id}
         grand_maison_output = {**default_output, **grand_maison_properties, "id": grand_maison_id}
+        grand_maison_output["group"] = "psp_closed"
         assert res.json() == [duplicated_output, siemens_output, grand_maison_output]
 
         # We can delete the three short-term storages at once.
