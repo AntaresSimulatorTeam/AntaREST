@@ -185,11 +185,13 @@ class TestCreateCluster:
             study_version=STUDY_VERSION_8_8,
         )
         dto = command.to_dto()
+
+        prepro_id = command_context.matrix_service.create(prepro)
+        modulation_id = command_context.matrix_service.create(modulation)
         assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
-                "modulation": "acc60faf9e0c47c77ec61c0d522382676102d8c1de1eb4aac1c5bb3a11682ff8",
                 "parameters": {
                     "co2": 0.0,
                     "costgeneration": "SetManually",
@@ -228,7 +230,8 @@ class TestCreateCluster:
                     "volatility.forced": 0.0,
                     "volatility.planned": 0.0,
                 },
-                "prepro": "80e3b0b1fe182b4cf98d2a54ec4998ec58f5ee57451e2bf3f0a527497a1f66fd",
+                "prepro": prepro_id,
+                "modulation": modulation_id,
             },
             "id": None,
             "study_version": "8.8",
