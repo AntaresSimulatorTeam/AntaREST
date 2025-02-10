@@ -17,7 +17,7 @@ In the near future, this set of classes may be used for solar, wind and hydro cl
 """
 
 import functools
-import typing as t
+from typing import Any
 
 from pydantic import Field
 
@@ -51,7 +51,7 @@ class ItemProperties(
 
     name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
 
-    def __lt__(self, other: t.Any) -> bool:
+    def __lt__(self, other: Any) -> bool:
         """
         Compare two clusters by group and name.
 

@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from pathlib import Path
+from typing import Optional
 
 from antarest.core.serde.json import from_json
 from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalData
@@ -27,10 +27,10 @@ class PatchService:
     Handle patch file ("patch.json") for a RawStudy or VariantStudy
     """
 
-    def __init__(self, repository: t.Optional[StudyMetadataRepository] = None):
+    def __init__(self, repository: Optional[StudyMetadataRepository] = None):
         self.repository = repository
 
-    def get(self, study: t.Union[RawStudy, VariantStudy], get_from_file: bool = False) -> Patch:
+    def get(self, study: RawStudy | VariantStudy, get_from_file: bool = False) -> Patch:
         if not get_from_file and study.additional_data is not None:
             # the `study.additional_data.patch` field is optional
             if study.additional_data.patch:
@@ -52,7 +52,7 @@ class PatchService:
 
     def set_reference_output(
         self,
-        study: t.Union[RawStudy, VariantStudy],
+        study: RawStudy | VariantStudy,
         output_id: str,
         status: bool = True,
     ) -> None:
@@ -63,7 +63,7 @@ class PatchService:
             patch.outputs = PatchOutputs(reference=output_id)
         self.save(study, patch)
 
-    def save(self, study: t.Union[RawStudy, VariantStudy], patch: Patch) -> None:
+    def save(self, study: RawStudy | VariantStudy, patch: Patch) -> None:
         if self.repository:
             study.additional_data = study.additional_data or StudyAdditionalData()
             study.additional_data.patch = patch.model_dump_json()

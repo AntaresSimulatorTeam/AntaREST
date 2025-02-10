@@ -10,8 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from antares.study.version import StudyVersion
-
 from antarest.study.model import STUDY_VERSION_6_5
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer

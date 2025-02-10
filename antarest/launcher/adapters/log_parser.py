@@ -12,22 +12,22 @@
 
 import functools
 import re
-import typing as t
+from typing import Callable, Iterable, Match, Optional, cast
 
 from antarest.core.serde import AntaresBaseModel
 
-_SearchFunc = t.Callable[[str], t.Optional[t.Match[str]]]
+_SearchFunc = Callable[[str], Optional[Match[str]]]
 
 _compile = functools.partial(re.compile, flags=re.IGNORECASE | re.VERBOSE)
 
 # Search for the line indicating the loading of areas (first line of data loading).
-_loading_areas = t.cast(
+_loading_areas = cast(
     _SearchFunc,
     _compile(r"Loading \s+ the \s+ list \s+ of \s+ areas").search,
 )
 
 # Search for the total number of Monté-Carlo (MC) years.
-_total_mc_years = t.cast(
+_total_mc_years = cast(
     _SearchFunc,
     _compile(
         r"""
@@ -39,19 +39,19 @@ _total_mc_years = t.cast(
 )
 
 # Search for the line indicating the export of annual results of a Monté-Carlo year.
-_annual_results = t.cast(
+_annual_results = cast(
     _SearchFunc,
     _compile(r"Exporting \s+ the \s+ annual \s+ results").search,
 )
 
 # Search for the line indicating the export of survey results.
-_survey_results = t.cast(
+_survey_results = cast(
     _SearchFunc,
     _compile(r"Exporting \s+ the \s+ survey \s+ results").search,
 )
 
 # Search for the line indicating the solver is quitting gracefully or an error
-_quitting = t.cast(
+_quitting = cast(
     _SearchFunc,
     _compile(
         r"""
@@ -100,7 +100,7 @@ class LaunchProgressDTO(AntaresBaseModel):
             return True
         return False
 
-    def parse_log_lines(self, lines: t.Iterable[str]) -> bool:
+    def parse_log_lines(self, lines: Iterable[str]) -> bool:
         """
         Parses a sequence of log lines and updates the progress accordingly.
 

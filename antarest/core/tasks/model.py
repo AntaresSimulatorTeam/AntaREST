@@ -10,10 +10,10 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 import uuid
 from datetime import datetime
 from enum import Enum, StrEnum
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
@@ -23,7 +23,7 @@ from typing_extensions import override
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     # avoid circular import
     from antarest.login.model import Identity
     from antarest.study.model import Study
@@ -62,7 +62,7 @@ class TaskResult(AntaresBaseModel, extra="forbid"):
     success: bool
     message: str
     # Can be used to store json serialized result
-    return_value: t.Optional[str] = None
+    return_value: Optional[str] = None
 
 
 class TaskLogDTO(AntaresBaseModel, extra="forbid"):
@@ -80,32 +80,32 @@ class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
     type: TaskType
-    study_id: t.Optional[str] = None
+    study_id: Optional[str] = None
 
 
 class TaskDTO(AntaresBaseModel, extra="forbid"):
     id: str
     name: str
-    owner: t.Optional[int] = None
+    owner: Optional[int] = None
     status: TaskStatus
     creation_date_utc: str
-    completion_date_utc: t.Optional[str] = None
-    result: t.Optional[TaskResult] = None
-    logs: t.Optional[t.List[TaskLogDTO]] = None
-    type: t.Optional[str] = None
-    ref_id: t.Optional[str] = None
-    progress: t.Optional[int] = None
+    completion_date_utc: Optional[str] = None
+    result: Optional[TaskResult] = None
+    logs: Optional[List[TaskLogDTO]] = None
+    type: Optional[str] = None
+    ref_id: Optional[str] = None
+    progress: Optional[int] = None
 
 
 class TaskListFilter(AntaresBaseModel, extra="forbid"):
-    status: t.List[TaskStatus] = []
-    name: t.Optional[str] = None
-    type: t.List[TaskType] = []
-    ref_id: t.Optional[str] = None
-    from_creation_date_utc: t.Optional[float] = None
-    to_creation_date_utc: t.Optional[float] = None
-    from_completion_date_utc: t.Optional[float] = None
-    to_completion_date_utc: t.Optional[float] = None
+    status: List[TaskStatus] = []
+    name: Optional[str] = None
+    type: List[TaskType] = []
+    ref_id: Optional[str] = None
+    from_creation_date_utc: Optional[float] = None
+    to_creation_date_utc: Optional[float] = None
+    from_completion_date_utc: Optional[float] = None
+    to_completion_date_utc: Optional[float] = None
 
 
 class TaskJobLog(Base):  # type: ignore
@@ -124,7 +124,7 @@ class TaskJobLog(Base):  # type: ignore
     job: "TaskJob" = relationship("TaskJob", back_populates="logs", uselist=False)
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, TaskJobLog):
             return False
         return bool(other.id == self.id and other.message == self.message and other.task_id == self.task_id)
@@ -144,12 +144,12 @@ class TaskJob(Base):  # type: ignore
     name: str = Column(String(), nullable=False, index=True)
     status: int = Column(Integer(), default=lambda: TaskStatus.PENDING.value, index=True)
     creation_date: datetime = Column(DateTime, default=datetime.utcnow, index=True)
-    completion_date: t.Optional[datetime] = Column(DateTime, nullable=True, default=None)
-    result_msg: t.Optional[str] = Column(String(), nullable=True, default=None)
-    result: t.Optional[str] = Column(String(), nullable=True, default=None)
-    result_status: t.Optional[bool] = Column(Boolean(), nullable=True, default=None)
-    type: t.Optional[str] = Column(String(), nullable=True, default=None, index=True)
-    progress: t.Optional[int] = Column(Integer(), nullable=True, default=None)
+    completion_date: Optional[datetime] = Column(DateTime, nullable=True, default=None)
+    result_msg: Optional[str] = Column(String(), nullable=True, default=None)
+    result: Optional[str] = Column(String(), nullable=True, default=None)
+    result_status: Optional[bool] = Column(Boolean(), nullable=True, default=None)
+    type: Optional[str] = Column(String(), nullable=True, default=None, index=True)
+    progress: Optional[int] = Column(Integer(), nullable=True, default=None)
     owner_id: int = Column(
         Integer(),
         ForeignKey("identities.id", name="fk_taskjob_identity_id", ondelete="SET NULL"),
@@ -157,7 +157,7 @@ class TaskJob(Base):  # type: ignore
         default=None,
         index=True,
     )
-    ref_id: t.Optional[str] = Column(
+    ref_id: Optional[str] = Column(
         String(),
         ForeignKey("study.id", name="fk_taskjob_study_id", ondelete="CASCADE"),
         nullable=True,
@@ -167,7 +167,7 @@ class TaskJob(Base):  # type: ignore
 
     # Define a one-to-many relationship between `TaskJob` and `TaskJobLog`.
     # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
-    logs: t.List["TaskJobLog"] = relationship("TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan")
+    logs: List["TaskJobLog"] = relationship("TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan")
 
     # Define a many-to-one relationship between `TaskJob` and `Identity`.
     # If the Identity is deleted, all attached TaskJob must be preserved.
@@ -202,7 +202,7 @@ class TaskJob(Base):  # type: ignore
         )
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, TaskJob):
             return False
         return bool(
@@ -232,7 +232,7 @@ class TaskJob(Base):  # type: ignore
         )
 
 
-def cancel_orphan_tasks(engine: Engine, session_args: t.Mapping[str, bool]) -> None:
+def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
     """
     Cancel all tasks that are currently running or pending.
 

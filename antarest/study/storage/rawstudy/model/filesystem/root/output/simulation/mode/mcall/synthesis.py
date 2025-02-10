@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional, cast
 
 import pandas as pd
 from typing_extensions import override
@@ -29,7 +29,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     @override
     def get_lazy_content(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
@@ -38,7 +38,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     @override
     def load(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -48,14 +48,14 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
         df.fillna("", inplace=True)  # replace NaN values for the front-end
         output = df.to_dict(orient="split")
         del output["index"]
-        return t.cast(JSON, output)
+        return cast(JSON, output)
 
     @override
-    def dump(self, data: bytes, url: t.Optional[t.List[str]] = None) -> None:
+    def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
     @override
-    def check_errors(self, data: str, url: t.Optional[t.List[str]] = None, raising: bool = False) -> t.List[str]:
+    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         if not self.config.path.exists():
             msg = f"{self.config.path} not exist"
             if raising:

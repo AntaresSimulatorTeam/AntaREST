@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 import datetime
-import typing as t
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -38,7 +38,7 @@ class VariantStudySnapshot(Base):  # type: ignore
         primary_key=True,
     )
     created_at: datetime.date = Column(DateTime)
-    last_executed_command: t.Optional[str] = Column(String(), nullable=True)
+    last_executed_command: Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
@@ -111,7 +111,7 @@ class VariantStudy(Study):
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    generation_task: t.Optional[str] = Column(String(), nullable=True)
+    generation_task: Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
