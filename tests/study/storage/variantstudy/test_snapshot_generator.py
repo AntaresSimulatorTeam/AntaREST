@@ -28,11 +28,11 @@ from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, Study, StudyAdditionalData
-from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import CommandDTO

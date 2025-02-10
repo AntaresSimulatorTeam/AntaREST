@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.study.storage.rawstudy.ini_reader import IniReader
+from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstraints.bindingconstraints_ini import (
     BindingConstraintsIni,
