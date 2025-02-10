@@ -81,6 +81,7 @@ class STStorageCreation(STStorageInput):
 
     # noinspection Pydantic
     @field_validator("name", mode="before")
+    @classmethod
     def validate_name(cls, name: t.Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
@@ -89,11 +90,10 @@ class STStorageCreation(STStorageInput):
             raise ValueError("'name' must not be empty")
         return name
 
-
-def _to_properties(version: StudyVersion, creation: STStorageCreation) -> STStoragePropertiesType:
-    return create_st_storage_properties(
-        study_version=version, data=creation.model_dump(mode="json", by_alias=False, exclude_none=True)
-    )
+    def to_properties(self, version: StudyVersion) -> STStoragePropertiesType:
+        return create_st_storage_properties(
+            study_version=version, data=self.model_dump(mode="json", by_alias=False, exclude_none=True)
+        )
 
 
 @all_optional_model
@@ -289,7 +289,7 @@ class STStorageManager:
         file_study = self._get_file_study(study)
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        storage = _to_properties(StudyVersion.parse(study.version), form)
+        storage = form.to_properties(StudyVersion.parse(study.version))
         storage_id = storage.get_id()
         values = values_by_ids.get(storage_id)
         if values is not None:
@@ -572,7 +572,7 @@ class STStorageManager:
             current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
         )
 
-        new_config = _to_properties(study_version, creation_form)
+        new_config = creation_form.to_properties(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition
