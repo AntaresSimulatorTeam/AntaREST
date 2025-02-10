@@ -16,6 +16,7 @@ from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableProperties,
@@ -47,7 +48,7 @@ class CreateRenewablesCluster(ICommand):
     # Command parameters
     # ==================
 
-    area_id: str
+    area_id: AreaId
     parameters: RenewableProperties
 
     @property

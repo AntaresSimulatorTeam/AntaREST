@@ -21,6 +21,7 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalPropertiesType,
@@ -50,7 +51,7 @@ class CreateCluster(ICommand):
     # Command parameters
     # ==================
 
-    area_id: str
+    area_id: AreaId
     parameters: ThermalPropertiesType
     prepro: OptionalMatrixData = Field(None, validate_default=True)
     modulation: OptionalMatrixData = Field(None, validate_default=True)

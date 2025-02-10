@@ -9,10 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
-from pydantic import TypeAdapter, ValidationError
+from typing import Annotated
 
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import ItemName
+import pytest
+from mypy.exprtotype import ANNOTATED_TYPE_NAMES
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId, ItemName
 
 
 def test_item_name_object_is_invalid():
@@ -31,3 +34,14 @@ def test_item_name_numeric_is_valid():
 
 def test_item_str_is_valid():
     assert TypeAdapter(ItemName).validate_python("Gérard") == "Gérard"
+
+
+def test_area_id_invalid_characters():
+    with pytest.raises(ValidationError):
+        TypeAdapter(AreaId).validate_python("Gérard")
+    with pytest.raises(ValidationError):
+        TypeAdapter(AreaId).validate_python("Capitals")
+
+
+def test_valid_area_id():
+    assert TypeAdapter(AreaId).validate_python("area-id") == "area-id"

@@ -13,7 +13,7 @@ import re
 import typing as t
 from typing import Annotated, Any, cast
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, Field
 
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
@@ -36,6 +36,8 @@ def _validate_item_name(name: Any) -> str:
 # Type to be used for item names, will raise an error if name
 # does not comply with antares-simulator limitations.
 ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
+
+AreaId = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
 
 
 def extract_filtering(v: t.Any) -> t.List[str]:
