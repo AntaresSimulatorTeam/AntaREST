@@ -19,21 +19,7 @@ from antarest.core.exceptions import MustNotModifyOutputException
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestSynthesis
-
-
-class OutputSimulationModeMcAllGrid(FolderNode):
-    @override
-    def build(self) -> TREE:
-        files = [d.stem for d in self.config.path.iterdir()]
-        children: TREE = {}
-        for file in files:
-            synthesis_class = DigestSynthesis if file == "digest" else OutputSynthesis
-            children[file] = synthesis_class(self.context, self.config.next_file(f"{file}.txt"))
-        return children
 
 
 class OutputSynthesis(LazyNode[JSON, bytes, bytes]):

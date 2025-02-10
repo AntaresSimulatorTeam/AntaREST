@@ -23,6 +23,7 @@ import type {
   AggregateConfig,
   DateTimeMetadataDTO,
   FormatGridNumberOptions,
+  ResultColumnsOptions,
 } from "./types";
 import { parseISO, type Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
@@ -369,16 +370,18 @@ export function groupResultColumns(
  *   - [0]: Variable name (e.g., "OV. COST")
  *   - [1]: Unit (e.g., "Euro", "MW")
  *   - [2]: Statistic type (e.g., "MIN", "MAX", "STD")
- *
+ * @param width - The width of each column
  * @returns Array of ResultColumn objects ready for use in result matrices
  *
  * @see groupResultColumns - Use this function to apply grouping to the generated columns
  */
-export function generateResultColumns(titles: string[][]): ResultColumn[] {
+
+export function generateResultColumns({ titles, width }: ResultColumnsOptions): ResultColumn[] {
   return titles.map((title, index) => ({
     id: `custom${index + 1}`,
-    title: title,
+    title,
     type: Column.Number,
+    width,
     editable: false,
   }));
 }
