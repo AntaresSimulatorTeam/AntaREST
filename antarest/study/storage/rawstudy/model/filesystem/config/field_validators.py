@@ -27,10 +27,10 @@ def _validate_item_name(name: Any) -> str:
     if isinstance(name, int):
         name = str(name)
     if not isinstance(name, str):
-        ValueError(f"Invalid name '{name}'.")
+        raise ValueError(f"Invalid name '{name}'.")
     if not transform_name_to_id(name):
         raise ValueError(f"Invalid name '{name}'.")
-    return cast(str, name)
+    return name
 
 
 # Type to be used for item names, will raise an error if name
