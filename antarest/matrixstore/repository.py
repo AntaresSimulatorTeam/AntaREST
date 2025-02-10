@@ -162,7 +162,7 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
-        storage_format: t.Optional[InternalMatrixFormat] = None
+        storage_format: Optional[InternalMatrixFormat] = None
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_path.exists():
