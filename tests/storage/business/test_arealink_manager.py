@@ -128,7 +128,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     assert len(empty_study.config.areas.keys()) == 1
     assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
 
-    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
     assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
         "x": 100,
         "y": 200,
@@ -177,7 +177,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     assert (empty_study.config.study_path / "patch.json").exists()
     assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
 
-    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [

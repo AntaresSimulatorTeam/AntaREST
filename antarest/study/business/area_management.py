@@ -504,7 +504,7 @@ class AreaManager:
             set=area_or_set.get_areas(list(file_study.config.areas)) if isinstance(area_or_set, DistrictSet) else [],
         )
 
-    def update_area_ui(self, study: Study, area_id: str, area_ui: UpdateAreaUi, layer: str = "0") -> None:
+    def update_area_ui(self, study: Study, area_id: str, area_ui: UpdateAreaUi, layer: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
 
         command = UpdateAreaUI(
