@@ -12,7 +12,7 @@
 
 import contextlib
 import logging
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
@@ -67,7 +67,7 @@ class RemoveArea(ICommand):
                     study_data_config.sets[id_] = set_
 
     @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         del study_data_config.areas[self.id]
 
         self._remove_area_from_links_in_config(study_data_config)
@@ -227,7 +227,7 @@ class RemoveArea(ICommand):
 
     # noinspection SpellCheckingInspection
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])
@@ -296,5 +296,5 @@ class RemoveArea(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

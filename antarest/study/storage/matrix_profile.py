@@ -12,8 +12,8 @@
 
 import copy
 import fnmatch
-import typing as t
 from pathlib import Path
+from typing import Dict, NamedTuple, Sequence
 
 import pandas as pd
 
@@ -21,13 +21,13 @@ from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, STUDY_VER
 from antarest.study.storage.utils import MONTHS
 
 
-class _MatrixProfile(t.NamedTuple):
+class _MatrixProfile(NamedTuple):
     """
     Matrix profile for time series or specific matrices.
     """
 
-    cols: t.Sequence[str]
-    rows: t.Sequence[str]
+    cols: Sequence[str]
+    rows: Sequence[str]
 
     def process_dataframe(
         self,
@@ -61,7 +61,7 @@ class _MatrixProfile(t.NamedTuple):
         if with_index and self.rows:
             df.index = pd.Index(self.rows)
 
-    def _process_links_columns(self, matrix_path: str) -> t.Sequence[str]:
+    def _process_links_columns(self, matrix_path: str) -> Sequence[str]:
         """Process column names specific to the links matrices."""
         path_parts = Path(matrix_path).parts
         area1_id = path_parts[2]
@@ -75,7 +75,7 @@ class _MatrixProfile(t.NamedTuple):
         return result
 
 
-_SPECIFIC_MATRICES: t.Dict[str, _MatrixProfile]
+_SPECIFIC_MATRICES: Dict[str, _MatrixProfile]
 """
 The dictionary ``_SPECIFIC_MATRICES`` maps file patterns to ``_MatrixProfile`` objects,
 representing non-time series matrices.

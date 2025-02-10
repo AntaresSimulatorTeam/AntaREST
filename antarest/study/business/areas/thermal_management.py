@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import collections
-import typing as t
 from pathlib import Path
+from typing import Any, Dict, List, Mapping, MutableMapping, MutableSequence, Optional, Sequence
 
 from antares.study.version import StudyVersion
 from pydantic import field_validator
@@ -63,7 +63,7 @@ class ThermalClusterInput(Thermal870Properties):
 
     class Config:
         @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = ThermalClusterInput(
                 group="Gas",
                 name="Gas Cluster XY",
@@ -83,7 +83,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 
     # noinspection Pydantic
     @field_validator("name", mode="before")
-    def validate_name(cls, name: t.Optional[str]) -> str:
+    def validate_name(cls, name: Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
         """
@@ -105,7 +105,7 @@ class ThermalClusterOutput(Thermal870Config):
 
     class Config:
         @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = ThermalClusterOutput(
                 id="Gas cluster YZ",
                 group="Gas",
@@ -121,7 +121,7 @@ class ThermalClusterOutput(Thermal870Config):
 def create_thermal_output(
     study_version: StudyVersion,
     cluster_id: str,
-    config: t.Mapping[str, t.Any],
+    config: Mapping[str, Any],
 ) -> "ThermalClusterOutput":
     obj = create_thermal_config(study_version=study_version, **config, id=cluster_id)
     kwargs = obj.model_dump(mode="json", by_alias=False)
@@ -180,7 +180,7 @@ class ThermalManager:
         self,
         study: Study,
         area_id: str,
-    ) -> t.Sequence[ThermalClusterOutput]:
+    ) -> Sequence[ThermalClusterOutput]:
         """
         Retrieve all thermal clusters from a specified area within a study.
 
@@ -207,7 +207,7 @@ class ThermalManager:
     def get_all_thermals_props(
         self,
         study: Study,
-    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
+    ) -> Mapping[str, Mapping[str, ThermalClusterOutput]]:
         """
         Retrieve all thermal clusters from all areas within a study.
 
@@ -232,7 +232,7 @@ class ThermalManager:
             raise ThermalClusterConfigNotFound(path) from None
 
         study_version = StudyVersion.parse(study.version)
-        thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterOutput]]
+        thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalClusterOutput]]
         thermals_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
@@ -243,8 +243,8 @@ class ThermalManager:
     def update_thermals_props(
         self,
         study: Study,
-        update_thermals_by_areas: t.Mapping[str, t.Mapping[str, ThermalClusterInput]],
-    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
+        update_thermals_by_areas: Mapping[str, Mapping[str, ThermalClusterInput]],
+    ) -> Mapping[str, Mapping[str, ThermalClusterOutput]]:
         old_thermals_by_areas = self.get_all_thermals_props(study)
         new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}
 
@@ -365,7 +365,7 @@ class ThermalManager:
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
-        data: t.Dict[str, t.Any] = {}
+        data: Dict[str, Any] = {}
         for field_name, field in new_config.model_fields.items():
             if field_name in new_values:
                 name = field.alias if field.alias else field_name
@@ -384,7 +384,7 @@ class ThermalManager:
         values = {**new_config.model_dump(mode="json", by_alias=False), "id": cluster_id}
         return ThermalClusterOutput.model_validate(values)
 
-    def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
+    def delete_clusters(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
         Delete the clusters with the given IDs in the given area of the given study.
 
@@ -464,7 +464,7 @@ class ThermalManager:
             new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
 
         # Prepare and execute commands
-        commands: t.List[CreateCluster | ReplaceMatrix] = [create_cluster_cmd]
+        commands: List[CreateCluster | ReplaceMatrix] = [create_cluster_cmd]
         storage_service = self.storage_service.get_storage(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):
@@ -486,7 +486,7 @@ class ThermalManager:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 
-        ts_widths: t.MutableMapping[int, t.MutableSequence[str]] = {}
+        ts_widths: MutableMapping[int, MutableSequence[str]] = {}
         for ts_path in series_path:
             matrix = self.storage_service.get_storage(study).get(study, ts_path.as_posix())
             matrix_data = matrix["data"]

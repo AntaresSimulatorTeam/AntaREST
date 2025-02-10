@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field
 from typing_extensions import override
@@ -45,7 +45,7 @@ class RemoveSTStorage(ICommand):
     storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data: remove the storage from the storages list.
 
@@ -103,7 +103,7 @@ class RemoveSTStorage(ICommand):
         )
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes:
         remove the storage from the configuration and remove the attached time series.
@@ -148,5 +148,5 @@ class RemoveSTStorage(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

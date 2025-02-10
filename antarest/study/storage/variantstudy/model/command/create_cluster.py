@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -49,9 +49,9 @@ class CreateCluster(ICommand):
 
     area_id: str
     cluster_name: str
-    parameters: t.Dict[str, t.Any]
-    prepro: t.Optional[t.List[t.List[MatrixData]] | str] = Field(None, validate_default=True)
-    modulation: t.Optional[t.List[t.List[MatrixData]] | str] = Field(None, validate_default=True)
+    parameters: Dict[str, Any]
+    prepro: Optional[List[List[MatrixData]] | str] = Field(None, validate_default=True)
+    modulation: Optional[List[List[MatrixData]] | str] = Field(None, validate_default=True)
 
     @field_validator("cluster_name", mode="before")
     def validate_cluster_name(cls, val: str) -> str:
@@ -63,9 +63,9 @@ class CreateCluster(ICommand):
     @field_validator("prepro", mode="before")
     def validate_prepro(
         cls,
-        v: t.Optional[t.List[t.List[MatrixData]] | str],
-        values: t.Dict[str, t.Any] | ValidationInfo,
-    ) -> t.Optional[t.List[t.List[MatrixData]] | str]:
+        v: Optional[List[List[MatrixData]] | str],
+        values: Dict[str, Any] | ValidationInfo,
+    ) -> Optional[List[List[MatrixData]] | str]:
         new_values = values if isinstance(values, dict) else values.data
         if v is None:
             v = new_values["command_context"].generator_matrix_constants.get_thermal_prepro_data()
@@ -76,9 +76,9 @@ class CreateCluster(ICommand):
     @field_validator("modulation", mode="before")
     def validate_modulation(
         cls,
-        v: t.Optional[t.List[t.List[MatrixData]] | str],
-        values: t.Dict[str, t.Any] | ValidationInfo,
-    ) -> t.Optional[t.List[t.List[MatrixData]] | str]:
+        v: Optional[List[List[MatrixData]] | str],
+        values: Dict[str, Any] | ValidationInfo,
+    ) -> Optional[List[List[MatrixData]] | str]:
         new_values = values if isinstance(values, dict) else values.data
         if v is None:
             v = new_values["command_context"].generator_matrix_constants.get_thermal_prepro_modulation()
@@ -88,7 +88,7 @@ class CreateCluster(ICommand):
             return validate_matrix(v, new_values)
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             return (
@@ -123,7 +123,7 @@ class CreateCluster(ICommand):
         )
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -176,8 +176,8 @@ class CreateCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
-        matrices: t.List[str] = []
+    def get_inner_matrices(self) -> List[str]:
+        matrices: List[str] = []
         if self.prepro:
             assert_this(isinstance(self.prepro, str))
             matrices.append(strip_matrix_protocol(self.prepro))

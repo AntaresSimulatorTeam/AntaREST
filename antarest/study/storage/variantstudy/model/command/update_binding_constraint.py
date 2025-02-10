@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 from typing_extensions import override
 
@@ -115,7 +115,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     id: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
         existing_constraint = study_data.bindings[index]
         areas_set = existing_constraint.areas
@@ -143,7 +143,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         study_data.bindings[index] = new_constraint
         return CommandOutput(status=True), {}
 
-    def _find_binding_config(self, binding_constraints: t.Mapping[str, JSON]) -> t.Optional[t.Tuple[str, JSON]]:
+    def _find_binding_config(self, binding_constraints: Mapping[str, JSON]) -> Optional[Tuple[str, JSON]]:
         """
         Find the binding constraint with the given ID in the list of binding constraints,
         and returns its index and configuration, or `None` if it does not exist.
@@ -155,7 +155,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return None
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         # When all BC of a given group are removed, the group should be removed from the scenario builder

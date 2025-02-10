@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -34,7 +34,7 @@ class RemoveMultipleBindingConstraints(ICommand):
     version: int = 1
 
     # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINTS` command:
-    ids: t.List[str]
+    ids: List[str]
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -48,7 +48,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         return CommandOutput(status=True), {}
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         command_output, _ = self._apply_config(study_data.config)
 
         if not command_output.status:
@@ -99,5 +99,5 @@ class RemoveMultipleBindingConstraints(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

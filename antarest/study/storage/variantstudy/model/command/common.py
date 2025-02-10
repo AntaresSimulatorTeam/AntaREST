@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from dataclasses import dataclass
 from enum import Enum
+from typing import List
 
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
@@ -58,5 +58,5 @@ class CommandName(Enum):
     REMOVE_USER_RESOURCE = "remove_user_resource"
 
 
-def is_url_writeable(user_node: User, url: t.List[str]) -> bool:
+def is_url_writeable(user_node: User, url: List[str]) -> bool:
     return url[0] not in [file.filename for file in user_node.registered_files]

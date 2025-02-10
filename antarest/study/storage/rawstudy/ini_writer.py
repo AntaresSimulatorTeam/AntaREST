@@ -12,8 +12,8 @@
 
 import ast
 import configparser
-import typing as t
 from pathlib import Path
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -21,7 +21,7 @@ from antarest.core.model import JSON
 
 
 class IniConfigParser(configparser.RawConfigParser):
-    def __init__(self, special_keys: t.Optional[t.List[str]] = None) -> None:
+    def __init__(self, special_keys: Optional[List[str]] = None) -> None:
         super().__init__()
         self.special_keys = special_keys
 
@@ -70,7 +70,7 @@ class IniWriter:
     Standard INI writer.
     """
 
-    def __init__(self, special_keys: t.Optional[t.List[str]] = None):
+    def __init__(self, special_keys: Optional[List[str]] = None):
         self.special_keys = special_keys
 
     def write(self, data: JSON, path: Path) -> None:

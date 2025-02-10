@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -44,14 +44,14 @@ class ReplaceMatrix(ICommand):
     # ==================
 
     target: str
-    matrix: t.List[t.List[MatrixData]] | str = Field(validate_default=True)
+    matrix: List[List[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: t.List[t.List[MatrixData]] | str, values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: List[List[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return (
             CommandOutput(
                 status=True,
@@ -61,7 +61,7 @@ class ReplaceMatrix(ICommand):
         )
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if self.target[0] == "@":
             self.target = AliasDecoder.decode(self.target, study_data)
 
@@ -104,6 +104,6 @@ class ReplaceMatrix(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]

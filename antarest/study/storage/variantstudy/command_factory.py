@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import copy
-import typing as t
+from typing import List, Optional
 
 from antares.study.version import StudyVersion
 
@@ -104,7 +104,7 @@ class CommandFactory:
         )
 
     def _to_single_command(
-        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: t.Optional[str]
+        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: Optional[str]
     ) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
@@ -118,7 +118,7 @@ class CommandFactory:
             )
         raise NotImplementedError(action)
 
-    def to_command(self, command_dto: CommandDTO) -> t.List[ICommand]:
+    def to_command(self, command_dto: CommandDTO) -> List[ICommand]:
         """
         Convert a CommandDTO to a list of ICommand.
 
@@ -154,7 +154,7 @@ class CommandFactory:
             ]
         raise NotImplementedError()
 
-    def to_commands(self, cmd_dto_list: t.List[CommandDTO]) -> t.List[ICommand]:
+    def to_commands(self, cmd_dto_list: List[CommandDTO]) -> List[ICommand]:
         """
         Convert a list of CommandDTO to a list of ICommand.
 

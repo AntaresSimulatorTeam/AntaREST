@@ -13,9 +13,9 @@
 import logging
 import shutil
 import tempfile
-import typing as t
 from abc import ABC
 from pathlib import Path
+from typing import BinaryIO, List, Optional
 from uuid import uuid4
 
 from typing_extensions import override
@@ -102,7 +102,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         patch_metadata = patch.study or PatchStudy()
 
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: t.Optional[str] = None
+        folder: Optional[str] = None
         if hasattr(study, "folder"):
             folder = study.folder
 
@@ -160,7 +160,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         if url == "" and depth == -1:
             cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
-            from_cache: t.Optional[JSON] = None
+            from_cache: Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
             if from_cache is not None:
@@ -204,7 +204,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def get_study_sim_result(
         self,
         study: T,
-    ) -> t.List[StudySimResultDTO]:
+    ) -> List[StudySimResultDTO]:
         """
         Get global result information
         Args:
@@ -213,7 +213,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         """
         study_data = self.get_raw(study)
         patch_metadata = self.patch_service.get(study)
-        results: t.List[StudySimResultDTO] = []
+        results: List[StudySimResultDTO] = []
         if study_data.config.outputs is not None:
             reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
@@ -254,9 +254,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def import_output(
         self,
         metadata: T,
-        output: t.BinaryIO | Path,
-        output_name: t.Optional[str] = None,
-    ) -> t.Optional[str]:
+        output: BinaryIO | Path,
+        output_name: Optional[str] = None,
+    ) -> Optional[str]:
         """
         Import additional output in an existing study.
 
@@ -274,7 +274,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output = Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         study_id = metadata.id
         path_output.mkdir(parents=True)
-        output_full_name: t.Optional[str]
+        output_full_name: Optional[str]
         is_zipped = False
         stopwatch = StopWatch()
         try:

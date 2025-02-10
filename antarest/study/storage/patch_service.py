@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from pathlib import Path
+from typing import Optional
 
 from antarest.core.serialization import from_json
 from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalData
@@ -27,7 +27,7 @@ class PatchService:
     Handle patch file ("patch.json") for a RawStudy or VariantStudy
     """
 
-    def __init__(self, repository: t.Optional[StudyMetadataRepository] = None):
+    def __init__(self, repository: Optional[StudyMetadataRepository] = None):
         self.repository = repository
 
     def get(self, study: RawStudy | VariantStudy, get_from_file: bool = False) -> Patch:
