@@ -40,7 +40,7 @@ function MatrixContent({ matrix, onBack }: MatrixContentProps) {
     () =>
       matrixData
         ? generateDataColumns({
-            timeSeriesColumns: true,
+            isTimeSeries: true,
             count: matrixData.columns.length,
           })
         : [],

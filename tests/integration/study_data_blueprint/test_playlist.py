@@ -29,7 +29,7 @@ class TestConfigPlaylist:
         assert res.json() is None
 
         res = client.post(f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/nbyears", json=5)
-        assert res.status_code == 204
+        assert res.status_code == 200
 
         res = client.put(
             f"/v1/studies/{study_id}/config/playlist",

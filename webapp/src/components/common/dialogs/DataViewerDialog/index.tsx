@@ -85,7 +85,7 @@ function DataViewerDialog({ filename, content, onClose, isMatrix, loading }: Pro
               data={content.data}
               rows={content.data.length}
               columns={generateDataColumns({
-                timeSeriesColumns: true,
+                isTimeSeries: true,
                 count: content.columns.length,
               })}
               readOnly

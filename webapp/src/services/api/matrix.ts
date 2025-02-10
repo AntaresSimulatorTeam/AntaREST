@@ -20,11 +20,9 @@ import type {
   MatrixInfoDTO,
   MatrixDataSetUpdateDTO,
   MatrixIndex,
-  MatrixEditDTO,
-} from "../../types/types";
+} from "../../common/types";
 import type { FileDownloadTask } from "./downloads";
 import { getConfig } from "../config";
-import type { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
 
 export const getMatrixList = async (name = "", filterOwn = false): Promise<MatrixDataSetDTO[]> => {
   const res = await client.get(
@@ -94,37 +92,13 @@ export const deleteDataSet = async (id: string): Promise<void> => {
   return res.data;
 };
 
-/**
- * @deprecated Use `updateMatrix` instead.
- *
- * @param sid - The study ID.
- * @param path - The path of the matrix.
- * @param matrixEdit - The matrix edit data.
- */
-export const editMatrix = async (
-  sid: string,
-  path: string,
-  matrixEdit: MatrixEditDTO[],
-): Promise<void> => {
-  const sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
-
-  await client.put(
-    `/v1/studies/${sid}/matrix?path=${encodeURIComponent(sanitizedPath)}`,
-    matrixEdit,
-  );
-};
-
 export const updateMatrix = async (
   studyId: string,
   path: string,
-  updates: MatrixUpdateDTO[],
-): Promise<void> => {
-  const sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
-
-  await client.put(
-    `/v1/studies/${studyId}/matrix?path=${encodeURIComponent(sanitizedPath)}`,
-    updates,
-  );
+  data: number[][],
+): Promise<number[][]> => {
+  const res = await client.post(`/v1/studies/${studyId}/raw`, data, { params: { path } });
+  return res.data;
 };
 
 export const getStudyMatrixIndex = async (sid: string, path?: string): Promise<MatrixIndex> => {

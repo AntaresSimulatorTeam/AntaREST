@@ -29,7 +29,7 @@ import MatrixStats from "../MatrixStats";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 
 export interface MatrixGridProps {
-  data: number[][];
+  data: NonEmptyMatrix;
   rows: number;
   columns: readonly EnhancedGridColumn[];
   dateTime?: string[];

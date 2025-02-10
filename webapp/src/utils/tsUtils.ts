@@ -46,3 +46,24 @@ export function tuple<T extends unknown[]>(...items: T): T {
 export function includes<T, U extends any[]>(value: T, list: U): value is L.UnionOf<U> {
   return list.includes(value);
 }
+
+/**
+ * Represents an array that contains at least one element of type T.
+ * It enforces that the array can never be empty by requiring at least one element
+ * followed by zero or more elements of the same type.
+ *
+ * @template T - The type of elements in the array
+ *
+ * @example
+ * // Valid usage:
+ * const numbers: NonEmptyArray<number> = [1, 2, 3]; // OK
+ * const singleElement: NonEmptyArray<string> = ["hello"]; // OK
+ *
+ * // Invalid usage:
+ * const empty: NonEmptyArray<number> = []; // Type error
+ *
+ * Type definition: [T, ...T[]]
+ * - First element (T): Guarantees at least one element of type T
+ * - Rest elements (...T[]): Allows zero or more additional elements of type T
+ */
+export type NonEmptyArray<T> = [T, ...T[]];

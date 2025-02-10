@@ -518,7 +518,7 @@ def create_raw_study_routes(
 
     @bp.post(
         "/studies/{uuid}/raw",
-        status_code=http.HTTPStatus.NO_CONTENT,
+        status_code=http.HTTPStatus.OK,
         tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
@@ -527,7 +527,7 @@ def create_raw_study_routes(
         path: PATH_TYPE = "/",
         data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> Any:
         """
         Updates raw data for a study by posting formatted data.
 
@@ -543,7 +543,7 @@ def create_raw_study_routes(
         logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, data, params)
+        return study_service.edit_study(uuid, path, data, params)
 
     @bp.put(
         "/studies/{uuid}/raw",

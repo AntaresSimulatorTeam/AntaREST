@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Paper, Typography, Divider } from "@mui/material";
+import { Box, Typography, Divider } from "@mui/material";
 import { formatGridNumber } from "../../shared/utils";
 
 interface MatrixStatsProps {
@@ -26,31 +26,30 @@ interface MatrixStatsProps {
 }
 
 function MatrixStats({ stats }: MatrixStatsProps) {
-  if (!stats) {
-    return null;
-  }
-
   const statItems = [
-    { label: "Nb", value: stats.count },
-    { label: "Total", value: formatGridNumber({ value: stats.sum }) },
+    { label: "Nb", value: stats?.count ?? 0 },
+    { label: "Total", value: formatGridNumber({ value: stats?.sum ?? 0 }) },
     {
       label: "Avg",
-      value: formatGridNumber({ value: stats.average, maxDecimals: 2 }),
+      value: formatGridNumber({ value: stats?.average ?? 0, maxDecimals: 2 }),
     },
-    { label: "Min", value: formatGridNumber({ value: stats.min }) },
-    { label: "Max", value: formatGridNumber({ value: stats.max }) },
+    { label: "Min", value: formatGridNumber({ value: stats?.min ?? 0 }) },
+    { label: "Max", value: formatGridNumber({ value: stats?.max ?? 0 }) },
   ];
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <Paper
+    <Box
       sx={{
         display: "flex",
         flex: 1,
         alignItems: "center",
         justifyContent: "flex-end",
         width: 1,
-        p: 1,
-        maxHeight: 30,
+        px: 1,
       }}
     >
       {statItems.map((item, index) => (
@@ -90,7 +89,7 @@ function MatrixStats({ stats }: MatrixStatsProps) {
           )}
         </Box>
       ))}
-    </Paper>
+    </Box>
   );
 }
 
