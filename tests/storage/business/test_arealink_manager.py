@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -81,9 +82,7 @@ def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
     """
     matrix_path = tmp_path.joinpath("matrix-store")
     matrix_path.mkdir()
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrix_path,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
@@ -128,7 +127,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     assert len(empty_study.config.areas.keys()) == 1
     assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
 
-    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
     assert empty_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
         "x": 100,
         "y": 200,
@@ -177,47 +176,20 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     assert (empty_study.config.study_path / "patch.json").exists()
     assert json.loads((empty_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] == "FR"
 
-    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)))
+    area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
             CommandDTO(
                 id=None,
-                action=CommandName.UPDATE_CONFIG.value,
-                args=[
-                    {
-                        "target": "input/areas/test/ui/ui/x",
-                        "data": 100,
-                    },
-                    {
-                        "target": "input/areas/test/ui/ui/y",
-                        "data": 200,
-                    },
-                    {
-                        "target": "input/areas/test/ui/ui/color_r",
-                        "data": 255,
-                    },
-                    {
-                        "target": "input/areas/test/ui/ui/color_g",
-                        "data": 0,
-                    },
-                    {
-                        "target": "input/areas/test/ui/ui/color_b",
-                        "data": 100,
-                    },
-                    {
-                        "target": "input/areas/test/ui/layerX/0",
-                        "data": 100,
-                    },
-                    {
-                        "target": "input/areas/test/ui/layerY/0",
-                        "data": 200,
-                    },
-                    {
-                        "target": "input/areas/test/ui/layerColor/0",
-                        "data": "255,0,100",
-                    },
-                ],
+                action=CommandName.UPDATE_AREA_UI.value,
+                args={
+                    "area_id": "test",
+                    "area_ui": UpdateAreaUi(
+                        x=100, y=200, color_rgb=(255, 0, 100), layer_x={}, layer_y={}, layer_color={}
+                    ),
+                    "layer": "0",
+                },
                 study_version=study_version,
             ),
         ],
