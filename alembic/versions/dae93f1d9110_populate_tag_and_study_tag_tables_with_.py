@@ -5,6 +5,7 @@ Revision ID: dae93f1d9110
 Revises: 3c70366b10ea
 Create Date: 2024-02-08 10:30:20.590919
 """
+
 import collections
 import itertools
 import secrets
@@ -15,7 +16,7 @@ from alembic import op
 from sqlalchemy.engine import Connection  # type: ignore
 
 from antarest.study.css4_colors import COLOR_NAMES
-from antarest.core.serialization import from_json, to_json
+from antarest.core.serde.json import from_json, to_json
 
 # revision identifiers, used by Alembic.
 revision = "dae93f1d9110"

@@ -13,6 +13,8 @@
 from copy import deepcopy
 from typing import Any, Dict
 
+from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_writer import IniWriter
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_7_0,
@@ -25,8 +27,6 @@ from antarest.study.model import (
     STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
 )
-from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode

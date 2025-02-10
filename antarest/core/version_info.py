@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 class VersionInfoDTO(AntaresBaseModel):

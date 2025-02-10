@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 class MatrixSlice(AntaresBaseModel):

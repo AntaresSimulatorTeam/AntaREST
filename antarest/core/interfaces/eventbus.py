@@ -17,7 +17,7 @@ from typing import Any, Awaitable, Callable, List, Optional
 from typing_extensions import override
 
 from antarest.core.model import PermissionInfo
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 class EventType(StrEnum):

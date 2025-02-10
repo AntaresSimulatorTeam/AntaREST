@@ -18,7 +18,8 @@ from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import JSON
-from antarest.core.serialization import AntaresBaseModel, from_json
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.json import from_json
 
 logger = logging.getLogger(__name__)
 

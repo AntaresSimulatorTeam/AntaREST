@@ -32,7 +32,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp
 from typing_extensions import override
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 
 
