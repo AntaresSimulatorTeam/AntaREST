@@ -30,7 +30,6 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
-from antarest.study.business.area_management import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import (
@@ -68,6 +67,7 @@ from antarest.study.business.correlation_management import (
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
+from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
@@ -323,7 +323,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.areas.get_layers(study)
+        return study_service.area_manager.get_layers(study)
 
     @bp.post(
         "/studies/{uuid}/layers",
@@ -342,7 +342,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.areas.create_layer(study, name)
+        return study_service.area_manager.create_layer(study, name)
 
     @bp.put(
         "/studies/{uuid}/layers/{layer_id}",
@@ -363,9 +363,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         if name:
-            study_service.areas.update_layer_name(study, layer_id, name)
+            study_service.area_manager.update_layer_name(study, layer_id, name)
         if areas:
-            study_service.areas.update_layer_areas(study, layer_id, areas)
+            study_service.area_manager.update_layer_areas(study, layer_id, areas)
 
     @bp.delete(
         "/studies/{uuid}/layers/{layer_id}",
@@ -385,7 +385,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        study_service.areas.remove_layer(study, layer_id)
+        study_service.area_manager.remove_layer(study, layer_id)
 
     @bp.get(
         "/studies/{uuid}/districts",
