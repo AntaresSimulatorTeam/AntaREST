@@ -14,7 +14,7 @@
 List of fields of the Thematic Trimming panel
 """
 
-import typing as t
+from typing import Any, Mapping
 
 from antares.study.version import StudyVersion
 
@@ -136,7 +136,7 @@ _GENERAL = "General"
 _SHORT_TERM_STORAGES = "Short-Term Storages"
 _SHORT_TERM_STORAGES_GROUP = "Short-Term Storages - Group"
 
-FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
+FIELDS_INFO: Mapping[str, Mapping[str, Any]] = {
     # fmt: off
     "ov_cost": {"topic": _GENERAL, "path": "OV. COST", "default_value": True},
     "op_cost": {"topic": _GENERAL, "path": "OP. COST", "default_value": True},
@@ -241,7 +241,7 @@ FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
 }
 
 
-def get_fields_info(study_version: StudyVersion) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+def get_fields_info(study_version: StudyVersion) -> Mapping[str, Mapping[str, Any]]:
     return {
         key: info
         for key, info in FIELDS_INFO.items()

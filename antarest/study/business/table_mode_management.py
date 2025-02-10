@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import collections
-import typing as t
+from typing import Any, Mapping, MutableMapping, Optional, Sequence, cast
 
 import numpy as np
 import pandas as pd
@@ -33,8 +33,8 @@ from antarest.study.model import STUDY_VERSION_8_2, RawStudy
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
-_CellValue = t.Any  # cell value (str, int, float, bool, enum, etc.)
-TableDataDTO = t.Mapping[_TableIndex, t.Mapping[_TableColumn, _CellValue]]
+_CellValue = Any  # cell value (str, int, float, bool, enum, etc.)
+TableDataDTO = Mapping[_TableIndex, Mapping[_TableColumn, _CellValue]]
 
 
 class TableModeType(EnumIgnoreCase):
@@ -64,7 +64,7 @@ class TableModeType(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> t.Optional["EnumIgnoreCase"]:
+    def _missing_(cls, value: object) -> Optional["EnumIgnoreCase"]:
         if isinstance(value, str):
             # handle aliases of old table types
             value = value.upper()
@@ -144,7 +144,7 @@ class TableModeManager:
         self,
         study: RawStudy,
         table_type: TableModeType,
-        columns: t.Sequence[_TableColumn],
+        columns: Sequence[_TableColumn],
     ) -> TableDataDTO:
         """
         Get the table data of the specified type for the given study.
@@ -176,7 +176,7 @@ class TableModeManager:
         # Convert NaN to `None` because it is not JSON-serializable
         df.replace(np.nan, None, inplace=True)
 
-        return t.cast(TableDataDTO, df.to_dict(orient="index"))
+        return cast(TableDataDTO, df.to_dict(orient="index"))
 
     def update_table_data(
         self,
@@ -216,7 +216,7 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.THERMAL:
-            thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterInput]]
+            thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalClusterInput]]
             thermals_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
@@ -229,7 +229,7 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.RENEWABLE:
-            renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterInput]]
+            renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterInput]]
             renewables_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
@@ -242,7 +242,7 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.ST_STORAGE:
-            storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageInput]]
+            storages_by_areas: MutableMapping[str, MutableMapping[str, STStorageInput]]
             storages_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")

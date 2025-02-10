@@ -13,10 +13,10 @@
 import logging
 import shutil
 import time
-import typing as t
 from datetime import datetime
 from pathlib import Path
 from threading import Thread
+from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
@@ -76,7 +76,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self.cleanup_thread.start()
 
     def update_from_raw_meta(
-        self, metadata: RawStudy, fallback_on_default: t.Optional[bool] = False, study_path: t.Optional[Path] = None
+        self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
     ) -> None:
         """
         Update metadata from study raw metadata
@@ -165,7 +165,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         metadata: RawStudy,
         use_cache: bool = True,
-        output_dir: t.Optional[Path] = None,
+        output_dir: Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study object and its config
@@ -181,7 +181,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
 
     @override
-    def get_synthesis(self, metadata: RawStudy, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: RawStudy, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, metadata.id)
@@ -226,7 +226,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         src_meta: RawStudy,
         dest_name: str,
-        groups: t.Sequence[str],
+        groups: Sequence[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -317,7 +317,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             output_path.unlink(missing_ok=True)
         remove_from_cache(self.cache, metadata.id)
 
-    def import_study(self, metadata: RawStudy, stream: t.BinaryIO) -> Study:
+    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> Study:
         """
         Import study in the directory of the study.
 
@@ -352,7 +352,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         metadata: RawStudy,
         dst_path: Path,
         outputs: bool = True,
-        output_list_filter: t.Optional[t.List[str]] = None,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         try:
@@ -375,7 +375,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     def check_errors(
         self,
         metadata: RawStudy,
-    ) -> t.List[str]:
+    ) -> List[str]:
         """
         Check study antares data integrity
         Args:
