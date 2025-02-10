@@ -16,11 +16,13 @@ import typing as t
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from filelock import FileLock
 from numpy import typing as npt
 from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
 
@@ -138,16 +140,17 @@ class MatrixContentRepository:
 
     This class provides methods to get, check existence,
     save, and delete the content of matrices stored in a directory.
-    The matrices are stored as tab-separated values (TSV) files and
+    The matrices are stored in various format (described in InternalMatrixFormat) and
     are accessed and modified using their SHA256 hash as their unique identifier.
 
     Attributes:
         bucket_dir: The directory path where the matrices are stored.
     """
 
-    def __init__(self, bucket_dir: Path) -> None:
+    def __init__(self, bucket_dir: Path, format: InternalMatrixFormat) -> None:
         self.bucket_dir = bucket_dir
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
+        self.format = format
 
     def get(self, matrix_hash: str) -> MatrixContent:
         """
@@ -159,9 +162,15 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
-
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        matrix = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
+        storage_format: t.Optional[InternalMatrixFormat] = None
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_path.exists():
+                storage_format = internal_format
+                break
+        if not storage_format:
+            raise FileNotFoundError(str(matrix_path.with_suffix("")))
+        matrix = storage_format.load_matrix(matrix_path)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         data = matrix.tolist()
         index = list(range(matrix.shape[0]))
@@ -178,15 +187,15 @@ class MatrixContentRepository:
         Returns:
             `True` if the matrix exist else `None`.
         """
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        return matrix_file.exists()
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_path.exists():
+                return True
+        return False
 
     def save(self, content: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
-        Saves the content of a matrix as a TSV file in the bucket directory
-        and returns its SHA256 hash.
-
-        The matrix content will be saved in a TSV file format, where each row represents
+        The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
         in the bucket directory using a unique filename. The SHA256 hash of the NumPy array
         is returned as a string.
@@ -197,7 +206,7 @@ class MatrixContentRepository:
                 or a NumPy array of type np.float64.
 
         Returns:
-            The SHA256 hash of the saved TSV file.
+            The SHA256 hash of the saved matrix file.
 
         Raises:
             ValueError:
@@ -215,18 +224,31 @@ class MatrixContentRepository:
         # for a non-mutable NumPy Array.
         matrix = content if isinstance(content, np.ndarray) else np.array(content, dtype=np.float64)
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        # Avoid having to save the matrix again (that's the whole point of using a hash).
-        if not matrix_file.exists():
-            # Ensure exclusive access to the matrix file between multiple processes (or threads).
-            lock_file = matrix_file.with_suffix(".tsv.lock")
-            with FileLock(lock_file, timeout=15):
-                if matrix.size == 0:
-                    # If the array or dataframe is empty, create an empty file instead of
-                    # traditional saving to avoid unwanted line breaks.
-                    open(matrix_file, mode="wb").close()
-                else:
-                    np.savetxt(matrix_file, matrix, delimiter="\t", fmt="%.18f")
+        matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
+        if matrix_path.exists():
+            # Avoid having to save the matrix again (that's the whole point of using a hash).
+            return matrix_hash
+
+        lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
+        for internal_format in InternalMatrixFormat:
+            matrix_in_another_format_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_in_another_format_path.exists():
+                # We want to migrate the old matrix in the given repository format.
+                # Ensure exclusive access to the matrix file between multiple processes (or threads).
+                with FileLock(lock_file, timeout=15):
+                    data = internal_format.load_matrix(matrix_in_another_format_path)
+                    df = pd.DataFrame(data)
+                    self.format.save_matrix(df, matrix_path)
+                    matrix_in_another_format_path.unlink()
+                return matrix_hash
+
+        # Ensure exclusive access to the matrix file between multiple processes (or threads).
+        with FileLock(lock_file, timeout=15):
+            if matrix.size == 0:
+                matrix_path.touch()
+            else:
+                df = pd.DataFrame(matrix)
+                self.format.save_matrix(df, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
@@ -237,21 +259,26 @@ class MatrixContentRepository:
 
     def delete(self, matrix_hash: str) -> None:
         """
-        Deletes the TSV file containing the content of a matrix with the given SHA256 hash.
+        Deletes the matrix file containing the content of a matrix with the given SHA256 hash.
 
         Parameters:
             matrix_hash: The SHA256 hash of the matrix.
 
         Raises:
-            FileNotFoundError: If the TSV file does not exist.
+            FileNotFoundError: If the matrix file does not exist.
 
         Note:
             This method also deletes any abandoned lock file.
         """
-        matrix_file = self.bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        matrix_file.unlink()
+        possible_paths = [self.bucket_dir.joinpath(f"{matrix_hash}.{f}") for f in InternalMatrixFormat]
+        if not any(path.exists() for path in possible_paths):
+            raise FileNotFoundError(f"The matrix {matrix_hash} does not exist.")
+
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            matrix_path.unlink(missing_ok=True)
 
         # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
         # Abandoned lock files are deleted here to maintain consistent behavior.
-        lock_file = matrix_file.with_suffix(".tsv.lock")
+        lock_file = matrix_path.with_suffix(".tsv.lock")
         lock_file.unlink(missing_ok=True)
