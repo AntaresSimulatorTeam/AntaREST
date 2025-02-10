@@ -19,6 +19,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -39,6 +40,15 @@ COMMANDS: List[CommandDTO] = [
     ),
     CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
     CommandDTO(action=CommandName.REMOVE_AREA.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
+    CommandDTO(
+        action=CommandName.UPDATE_AREA_UI.value,
+        args={
+            "area_id": "id",
+            "area_ui": UpdateAreaUi(x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}),
+            "layer": "0",
+        },
+        study_version=STUDY_VERSION_8_8,
+    ),
     CommandDTO(
         action=CommandName.CREATE_DISTRICT.value,
         args={

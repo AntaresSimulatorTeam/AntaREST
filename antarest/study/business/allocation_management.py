@@ -19,7 +19,7 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import Annotated
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
-from antarest.study.business.area_management import AreaInfoDTO
+from antarest.study.business.model.area_model import AreaInfoDTO
 from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
