@@ -9,19 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import dataclasses
 import re
-import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Sequence, TextIO, cast
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
 
-PrimitiveType = str | int | float | bool
 ValueParser = Callable[[str], PrimitiveType]
 
 
@@ -38,7 +36,7 @@ def _convert_value(value: str) -> PrimitiveType:
     try:
         # Infinity values are not supported by JSON, so we use a string instead.
         mapping = {"true": True, "false": False, "+inf": "+Inf", "-inf": "-Inf", "inf": "+Inf"}
-        return t.cast(PrimitiveType, mapping[value.lower()])
+        return cast(PrimitiveType, mapping[value.lower()])
     except KeyError:
         try:
             return int(value)
@@ -49,39 +47,22 @@ def _convert_value(value: str) -> PrimitiveType:
                 return value
 
 
-@dataclasses.dataclass(frozen=True)
-class OptionMatcher:
-    """
-    Used to match a location in an INI file:
-    a None section means any section.
-    """
-
-    section: Optional[str]
-    key: str
-
-
-def any_section_option_matcher(key: str) -> OptionMatcher:
-    """
-    Return a matcher which will match the provided key in any section.
-    """
-    return OptionMatcher(section=None, key=key)
-
-
 class ValueParsers:
-    def __init__(self, parsers: t.Dict[OptionMatcher, ValueParser]):
+    def __init__(self, default_parser: ValueParser, parsers: Dict[OptionMatcher, ValueParser]):
+        self._default_parser = default_parser
         self._parsers = parsers
 
     def find_parser(self, section: str, key: str) -> ValueParser:
-        if not self._parsers:
-            return _convert_value
-        possible_keys = [
-            OptionMatcher(section=section, key=key),
-            OptionMatcher(section=None, key=key),
-        ]
-        for k in possible_keys:
-            if parser := self._parsers.get(k, None):
-                return parser
-        return _convert_value
+        if self._parsers:
+            possible_keys = [
+                OptionMatcher(section=section, key=key),
+                any_section_option_matcher(key=key),
+            ]
+            for k in possible_keys:
+                if parser := self._parsers.get(k, None):
+                    return parser
+
+        return self._default_parser
 
 
 @dataclasses.dataclass(frozen=True)
@@ -94,17 +75,17 @@ class IniFilter:
         option_regex: A compiled regex for matching option names.
     """
 
-    section_regex: t.Optional[t.Pattern[str]] = None
-    option_regex: t.Optional[t.Pattern[str]] = None
+    section_regex: Optional[Pattern[str]] = None
+    option_regex: Optional[Pattern[str]] = None
 
     @classmethod
     def from_kwargs(
         cls,
         section: str = "",
         option: str = "",
-        section_regex: t.Optional[t.Union[str, t.Pattern[str]]] = None,
-        option_regex: t.Optional[t.Union[str, t.Pattern[str]]] = None,
-        **_unused: t.Any,  # ignore unknown options
+        section_regex: Optional[str | Pattern[str]] = None,
+        option_regex: Optional[str | Pattern[str]] = None,
+        **_unused: Any,  # ignore unknown options
     ) -> "IniFilter":
         """
         Create an instance from given filtering parameters.
@@ -156,7 +137,7 @@ class IReader(ABC):
     """
 
     @abstractmethod
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
+    def read(self, path: Any, **kwargs: Any) -> JSON:
         """
         Parse `.ini` file to json object.
 
@@ -200,21 +181,21 @@ class IniReader(IReader):
 
     def __init__(
         self,
-        special_keys: t.Sequence[str] = (),
+        special_keys: Sequence[str] = (),
         section_name: str = "settings",
-        value_parsers: t.Dict[OptionMatcher, ValueParser] | None = None,
+        value_parsers: Dict[OptionMatcher, ValueParser] | None = None,
     ) -> None:
         super().__init__()
 
         # Default section name to use if `.ini` file has no section.
         self._special_keys = set(special_keys)
-        self._value_parsers = ValueParsers(value_parsers or {})
+        self._value_parsers = ValueParsers(default_parser=_convert_value, parsers=value_parsers or {})
 
         # List of keys which should be parsed as list.
         self._section_name = section_name
 
         # Dictionary of parsed sections and options
-        self._curr_sections: t.Dict[str, t.Dict[str, t.Any]] = {}
+        self._curr_sections: Dict[str, Dict[str, Any]] = {}
 
         # Current section name used during paring
         self._curr_section = ""
@@ -232,7 +213,7 @@ class IniReader(IReader):
         return f"{cls}(special_keys={special_keys!r}, section_name={section_name!r})"
 
     @override
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
+    def read(self, path: Any, **kwargs: Any) -> JSON:
         if isinstance(path, (Path, str)):
             try:
                 with open(path, mode="r", encoding="utf-8") as f:
@@ -253,9 +234,9 @@ class IniReader(IReader):
         else:  # pragma: no cover
             raise TypeError(repr(type(path)))
 
-        return t.cast(JSON, sections)
+        return cast(JSON, sections)
 
-    def _parse_ini_file(self, ini_file: t.TextIO, **kwargs: t.Any) -> JSON:
+    def _parse_ini_file(self, ini_file: TextIO, **kwargs: Any) -> JSON:
         """
         Parse `.ini` file to JSON object.
 
@@ -380,7 +361,7 @@ class SimpleKeyValueReader(IniReader):
     """
 
     @override
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
+    def read(self, path: Any, **kwargs: Any) -> JSON:
         """
         Parse `.ini` file which has no section to JSON object.
 
@@ -394,5 +375,5 @@ class SimpleKeyValueReader(IniReader):
             Dictionary of parsed key/value pairs.
         """
         sections = super().read(path)
-        obj = t.cast(t.Mapping[str, JSON], sections)
+        obj = cast(Mapping[str, JSON], sections)
         return obj[self._section_name]

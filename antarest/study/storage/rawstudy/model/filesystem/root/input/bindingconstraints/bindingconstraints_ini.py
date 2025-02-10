@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.study.storage.rawstudy.ini_reader import LOWER_CASE_PARSER, IniReader, any_section_option_matcher
+from antarest.core.serde.ini_common import any_section_option_matcher
+from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode

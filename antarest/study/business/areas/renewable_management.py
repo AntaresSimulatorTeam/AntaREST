@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import collections
-import typing as t
+from typing import Any, Dict, Mapping, MutableMapping, Optional, Sequence
 
 from antares.study.version import StudyVersion
 from pydantic import field_validator
@@ -59,7 +59,7 @@ class RenewableClusterInput(RenewableProperties):
         populate_by_name = True
 
         @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = RenewableClusterInput(
                 group="Gas",
                 name="Gas Cluster XY",
@@ -89,7 +89,7 @@ class RenewableClusterOutput(RenewableConfig):
 
     class Config:
         @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = RenewableClusterOutput(
                 id="Gas cluster YZ",
                 group="Gas",
@@ -104,7 +104,7 @@ class RenewableClusterOutput(RenewableConfig):
 def create_renewable_output(
     study_version: str,
     cluster_id: str,
-    config: t.Mapping[str, t.Any],
+    config: Mapping[str, Any],
 ) -> "RenewableClusterOutput":
     obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id)
     kwargs = obj.model_dump(by_alias=False)
@@ -128,7 +128,7 @@ class RenewableManager:
         """
         return self.storage_service.get_storage(study).get_raw(study)
 
-    def get_clusters(self, study: Study, area_id: str) -> t.Sequence[RenewableClusterOutput]:
+    def get_clusters(self, study: Study, area_id: str) -> Sequence[RenewableClusterOutput]:
         """
         Fetches all clusters related to a specific area in a study.
 
@@ -151,7 +151,7 @@ class RenewableManager:
     def get_all_renewables_props(
         self,
         study: Study,
-    ) -> t.Mapping[str, t.Mapping[str, RenewableClusterOutput]]:
+    ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         """
         Retrieve all renewable clusters from all areas within a study.
 
@@ -175,7 +175,7 @@ class RenewableManager:
         except KeyError:
             raise RenewableClusterConfigNotFound(path)
 
-        renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterOutput]]
+        renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterOutput]]
         renewables_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
@@ -283,7 +283,7 @@ class RenewableManager:
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
-        data: t.Dict[str, t.Any] = {}
+        data: Dict[str, Any] = {}
         for field_name, field in new_config.model_fields.items():
             if field_name in new_values:
                 name = field.alias if field.alias else field_name
@@ -302,7 +302,7 @@ class RenewableManager:
         values = new_config.model_dump(by_alias=False)
         return RenewableClusterOutput(**values, id=cluster_id)
 
-    def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
+    def delete_clusters(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
         Deletes multiple clusters from an area in the study.
 
@@ -382,8 +382,8 @@ class RenewableManager:
     def update_renewables_props(
         self,
         study: Study,
-        update_renewables_by_areas: t.Mapping[str, t.Mapping[str, RenewableClusterInput]],
-    ) -> t.Mapping[str, t.Mapping[str, RenewableClusterOutput]]:
+        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterInput]],
+    ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}
 
@@ -418,4 +418,4 @@ class RenewableManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return RenewableClusterOutput.schema()
+        return RenewableClusterOutput.model_json_schema()

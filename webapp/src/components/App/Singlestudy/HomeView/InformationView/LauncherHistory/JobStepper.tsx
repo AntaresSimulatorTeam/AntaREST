@@ -40,8 +40,8 @@ import {
 } from "./style";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
 import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
-import DigestDialog from "../../../../../common/dialogs/DigestDialog";
 import type { EmptyObject } from "../../../../../../utils/tsUtils";
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
 
 export const ColorStatus = {
   running: "warning.main",

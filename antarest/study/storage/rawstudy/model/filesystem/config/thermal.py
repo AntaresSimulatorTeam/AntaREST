@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Type, Union, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -82,7 +81,7 @@ class ThermalClusterGroup(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
+    def _missing_(cls, value: object) -> Optional["ThermalClusterGroup"]:
         """
         Retrieves the default group or the matched group when an unknown value is encountered.
         """
@@ -90,9 +89,9 @@ class ThermalClusterGroup(EnumIgnoreCase):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
             if any(value.lower() == group.value for group in cls):
-                return t.cast(ThermalClusterGroup, super()._missing_(value))
+                return cast(ThermalClusterGroup, super()._missing_(value))
             return cls.OTHER1
-        return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
+        return cast(Optional["ThermalClusterGroup"], super()._missing_(value))
 
 
 class ThermalCostGeneration(EnumIgnoreCase):
@@ -413,11 +412,11 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
 
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
-ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
-ThermalPropertiesType = t.Union[Thermal870Properties, Thermal860Properties, ThermalProperties]
+ThermalConfigType = Union[Thermal870Config, Thermal860Config, ThermalConfig]
+ThermalPropertiesType = Union[Thermal870Properties, Thermal860Properties, ThermalProperties]
 
 
-def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
+def get_thermal_config_cls(study_version: StudyVersion) -> Type[ThermalConfigType]:
     """
     Retrieves the thermal configuration class based on the study version.
 
@@ -457,7 +456,7 @@ def create_thermal_properties(study_version: StudyVersion, data: Dict[str, Any])
         return ThermalProperties.model_validate(data)
 
 
-def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:
+def create_thermal_config(study_version: StudyVersion, **kwargs: Any) -> ThermalConfigType:
     """
     Factory method to create a thermal configuration model.
 

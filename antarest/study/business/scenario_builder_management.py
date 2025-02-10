@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import enum
-import typing as t
+from typing import Any, Dict, Mapping, MutableMapping, cast
 
 import typing_extensions as te
 from typing_extensions import override
@@ -31,11 +31,11 @@ _CLUSTER_RELATED_SYMBOLS = "t", "r"
 
 _HYDRO_LEVEL_PERCENT = 100
 
-_Section: te.TypeAlias = t.MutableMapping[str, t.Union[int, float]]
-_Sections: te.TypeAlias = t.MutableMapping[str, _Section]
+_Section: te.TypeAlias = MutableMapping[str, int | float]
+_Sections: te.TypeAlias = MutableMapping[str, _Section]
 
-Ruleset: te.TypeAlias = t.MutableMapping[str, t.Any]
-Rulesets: te.TypeAlias = t.MutableMapping[str, Ruleset]
+Ruleset: te.TypeAlias = MutableMapping[str, Any]
+Rulesets: te.TypeAlias = MutableMapping[str, Ruleset]
 
 
 class ScenarioType(enum.StrEnum):
@@ -92,11 +92,11 @@ def _get_ruleset_config(
     file_study: FileStudy,
     ruleset_name: str,
     symbol: str = "",
-) -> t.Dict[str, t.Union[int, float]]:
+) -> Dict[str, int | float]:
     try:
         suffix = f"/{symbol}" if symbol else ""
         url = f"settings/scenariobuilder/{ruleset_name}{suffix}".split("/")
-        ruleset_cfg = t.cast(t.Dict[str, t.Union[int, float]], file_study.tree.get(url))
+        ruleset_cfg = cast(Dict[str, int | float], file_study.tree.get(url))
     except KeyError:
         ruleset_cfg = {}
     return ruleset_cfg
@@ -106,7 +106,7 @@ def _get_nb_years(file_study: FileStudy) -> int:
     try:
         # noinspection SpellCheckingInspection
         url = "settings/generaldata/general/nbyears".split("/")
-        nb_years = t.cast(int, file_study.tree.get(url))
+        nb_years = cast(int, file_study.tree.get(url))
     except KeyError:
         nb_years = 1
     return nb_years
@@ -129,7 +129,7 @@ def _get_active_ruleset_name(file_study: FileStudy, default_ruleset: str = "Defa
     """
     try:
         url = "settings/generaldata/general/active-rules-scenario".split("/")
-        active_ruleset = t.cast(str, file_study.tree.get(url))
+        active_ruleset = cast(str, file_study.tree.get(url))
     except KeyError:
         active_ruleset = default_ruleset
     else:
@@ -166,7 +166,7 @@ class ScenarioBuilderManager:
         self.storage_service = storage_service
 
     def get_config(self, study: Study) -> Rulesets:
-        sections = t.cast(_Sections, self.storage_service.get_storage(study).get(study, "/settings/scenariobuilder"))
+        sections = cast(_Sections, self.storage_service.get_storage(study).get(study, "/settings/scenariobuilder"))
 
         rulesets: Rulesets = {}
         for ruleset_name, data in sections.items():
@@ -248,13 +248,13 @@ class ScenarioBuilderManager:
         return table_form
 
 
-def _populate_common(section: _Section, symbol: str, data: t.Mapping[str, t.Mapping[str, t.Any]]) -> None:
+def _populate_common(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
             section[f"{symbol},{area},{year}"] = value
 
 
-def _populate_hydro_levels(section: _Section, symbol: str, data: t.Mapping[str, t.Mapping[str, t.Any]]) -> None:
+def _populate_hydro_levels(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
             if isinstance(value, (int, float)) and value != float("nan"):
@@ -262,14 +262,14 @@ def _populate_hydro_levels(section: _Section, symbol: str, data: t.Mapping[str, 
             section[f"{symbol},{area},{year}"] = value
 
 
-def _populate_links(section: _Section, symbol: str, data: t.Mapping[str, t.Mapping[str, t.Any]]) -> None:
+def _populate_links(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
     for link, scenario_link in data.items():
         for year, value in scenario_link.items():
             area1, area2 = link.split(" / ")
             section[f"{symbol},{area1},{area2},{year}"] = value
 
 
-def _populate_clusters(section: _Section, symbol: str, data: t.Mapping[str, t.Mapping[str, t.Any]]) -> None:
+def _populate_clusters(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
     for area, scenario_area in data.items():
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():

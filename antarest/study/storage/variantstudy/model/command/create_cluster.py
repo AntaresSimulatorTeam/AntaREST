@@ -9,9 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import copy
 import typing as t
-from typing import List
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field, model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -68,7 +67,7 @@ class CreateCluster(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: t.Dict[str, t.Any], info: ValidationInfo) -> t.Dict[str, t.Any]:
+    def validate_model(cls, values: Dict[str, t.Any], info: ValidationInfo) -> Dict[str, Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
             parameters = values["parameters"]
@@ -91,7 +90,7 @@ class CreateCluster(ICommand):
         return values
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             return (
@@ -126,7 +125,7 @@ class CreateCluster(ICommand):
         )
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -178,8 +177,8 @@ class CreateCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
-        matrices: t.List[str] = []
+    def get_inner_matrices(self) -> List[str]:
+        matrices: List[str] = []
         if self.prepro:
             assert_this(isinstance(self.prepro, str))
             matrices.append(strip_matrix_protocol(self.prepro))

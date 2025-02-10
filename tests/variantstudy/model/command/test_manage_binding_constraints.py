@@ -12,7 +12,7 @@
 
 import pytest
 
-from antarest.study.storage.rawstudy.ini_reader import IniReader
+from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,

@@ -11,16 +11,16 @@
 # This file is part of the Antares project.
 
 import copy
-import typing as t
+from typing import Optional, Type, TypeVar
 
 from pydantic import BaseModel, create_model
 
 from antarest.core.utils.string import to_camel_case
 
-ModelClass = t.TypeVar("ModelClass", bound=BaseModel)
+ModelClass = TypeVar("ModelClass", bound=BaseModel)
 
 
-def all_optional_model(model: t.Type[ModelClass]) -> t.Type[ModelClass]:
+def all_optional_model(model: Type[ModelClass]) -> Type[ModelClass]:
     """
     This decorator can be used to make all fields of a pydantic model optionals.
 
@@ -34,13 +34,13 @@ def all_optional_model(model: t.Type[ModelClass]) -> t.Type[ModelClass]:
     for field_name, field_info in model.model_fields.items():
         new = copy.deepcopy(field_info)
         new.default = None
-        new.annotation = t.Optional[field_info.annotation]  # type: ignore
+        new.annotation = Optional[field_info.annotation]  # type: ignore
         kwargs[field_name] = (new.annotation, new)
 
     return create_model(f"Partial{model.__name__}", __base__=model, __module__=model.__module__, **kwargs)  # type: ignore
 
 
-def camel_case_model(model: t.Type[BaseModel]) -> t.Type[BaseModel]:
+def camel_case_model(model: Type[BaseModel]) -> Type[BaseModel]:
     """
     This decorator can be used to modify a model to use camel case aliases.
 

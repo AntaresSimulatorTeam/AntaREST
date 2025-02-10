@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Sequence
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def validate_matrix(matrix: t.Union[t.List[t.List[MatrixData]], str], values: t.Dict[str, t.Any]) -> str:
+def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]) -> str:
     """
     Validates the matrix, stores the matrix array in the matrices repository,
     and returns a reference to the stored array.
@@ -75,7 +75,7 @@ def remove_none_args(command_dto: CommandDTO) -> CommandDTO:
     return command_dto
 
 
-def strip_matrix_protocol(matrix_uri: t.Union[t.List[t.List[float]], str, None]) -> str:
+def strip_matrix_protocol(matrix_uri: List[List[float]] | str | None) -> str:
     assert isinstance(matrix_uri, str)
     if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
         return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
@@ -102,13 +102,13 @@ class AliasDecoder:
 
 
 def transform_command_to_dto(
-    commands: t.Sequence[ICommand],
-    ref_commands: t.Optional[t.Sequence[CommandDTO]] = None,
+    commands: Sequence[ICommand],
+    ref_commands: Optional[Sequence[CommandDTO]] = None,
     force_aggregate: bool = False,
-) -> t.List[CommandDTO]:
+) -> List[CommandDTO]:
     if len(commands) <= 1:
         return [command.to_dto() for command in commands]
-    commands_dto: t.List[CommandDTO] = []
+    commands_dto: List[CommandDTO] = []
     ref_commands_dto = ref_commands if ref_commands is not None else [command.to_dto() for command in commands]
     prev_command = commands[0]
     cur_dto_index = 0

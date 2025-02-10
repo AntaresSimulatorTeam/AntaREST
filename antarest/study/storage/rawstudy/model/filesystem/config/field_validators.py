@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 import re
-import typing as t
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, List, Mapping, MutableMapping
 
 from pydantic import BeforeValidator, Field
 
@@ -40,7 +39,7 @@ ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
 AreaId = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
 
 
-def extract_filtering(v: t.Any) -> t.List[str]:
+def extract_filtering(v: Any) -> List[str]:
     """
     Extract filtering values from a comma-separated list of values.
     """
@@ -60,7 +59,7 @@ def extract_filtering(v: t.Any) -> t.List[str]:
         raise ValueError(f"Invalid value for filtering: {e!s}") from None
 
 
-def validate_filtering(v: t.Any) -> str:
+def validate_filtering(v: Any) -> str:
     """
     Validate the filtering field and convert it to a comma separated string.
     """
@@ -69,12 +68,12 @@ def validate_filtering(v: t.Any) -> str:
 
 
 # noinspection SpellCheckingInspection
-def validate_colors(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+def validate_colors(values: MutableMapping[str, Any]) -> Mapping[str, Any]:
     """
     Validate ``color_rgb``, ``color_r``, ``color_g``, ``color_b`` and convert them to ``color_rgb``.
     """
 
-    def _pop_any(dictionary: t.MutableMapping[str, t.Any], *keys: str) -> t.Any:
+    def _pop_any(dictionary: MutableMapping[str, Any], *keys: str) -> Any:
         """Save as `pop` but for multiple keys. Return the first found value."""
         return next((dictionary.pop(key, None) for key in keys if key in dictionary), None)
 
@@ -86,7 +85,7 @@ def validate_colors(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.An
     return values
 
 
-def validate_color_rgb(v: t.Any) -> str:
+def validate_color_rgb(v: Any) -> str:
     """
     Validate RGB color field and convert it to color code.
 

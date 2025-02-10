@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional, Sequence, cast
 
 from sqlalchemy.orm import Session, joinedload  # type: ignore
 from typing_extensions import override
@@ -27,7 +27,7 @@ class VariantStudyRepository(StudyMetadataRepository):
     Variant study repository
     """
 
-    def __init__(self, cache_service: ICache, session: t.Optional[Session] = None):
+    def __init__(self, cache_service: ICache, session: Optional[Session] = None):
         """
         Initialize the variant study repository.
 
@@ -53,7 +53,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         # Get the user-defined session
         return self._session
 
-    def get_children(self, parent_id: str) -> t.List[VariantStudy]:
+    def get_children(self, parent_id: str) -> List[VariantStudy]:
         """
         Get the children of a variant study in chronological order.
 
@@ -65,10 +65,10 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
         q = q.order_by(Study.created_at.desc())
-        studies = t.cast(t.List[VariantStudy], q.all())
+        studies = cast(List[VariantStudy], q.all())
         return studies
 
-    def get_ancestor_or_self_ids(self, variant_id: str) -> t.Sequence[str]:
+    def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
         """
         Retrieve the list of ancestor variant identifiers, including the `variant_id`,
         its parent, and all predecessors of the parent, up to and including the ID
@@ -92,17 +92,17 @@ class VariantStudyRepository(StudyMetadataRepository):
         q = self.session.query(recursive_q)
         return [r[0] for r in q]
 
-    def get_all_command_blocks(self) -> t.List[CommandBlock]:
+    def get_all_command_blocks(self) -> List[CommandBlock]:
         """
         Get all command blocks.
 
         Returns:
             List of `CommandBlock` objects.
         """
-        cmd_blocks: t.List[CommandBlock] = self.session.query(CommandBlock).all()
+        cmd_blocks: List[CommandBlock] = self.session.query(CommandBlock).all()
         return cmd_blocks
 
-    def find_variants(self, variant_ids: t.Sequence[str]) -> t.Sequence[VariantStudy]:
+    def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
         Find a list of variants by IDs
 

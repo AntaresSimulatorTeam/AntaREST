@@ -16,15 +16,10 @@ Common properties related to thermal and renewable clusters, and short-term stor
 In the near future, this set of classes may be used for solar, wind and hydro clusters.
 """
 
-import functools
-import typing as t
-
 from pydantic import Field
 
-from antarest.core.model import LowerCaseStr
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import ItemName
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
 class ItemProperties(
