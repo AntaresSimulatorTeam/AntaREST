@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ from threading import Thread
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import StudyDeletionNotAllowed
@@ -142,6 +143,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             )
             return False
 
+    @override
     def exists(self, study: RawStudy) -> bool:
         """
         Check if the study exists in the filesystem.
@@ -158,6 +160,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         path = self.get_study_path(study)
         return path.joinpath("study.antares").is_file()
 
+    @override
     def get_raw(
         self,
         metadata: RawStudy,
@@ -177,12 +180,14 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study_path = self.get_study_path(metadata)
         return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
 
+    @override
     def get_synthesis(self, metadata: RawStudy, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
+    @override
     def create(self, metadata: RawStudy) -> RawStudy:
         """
         Create a new empty study based on the given metadata.
@@ -216,6 +221,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         return metadata
 
+    @override
     def copy(
         self,
         src_meta: RawStudy,
@@ -273,6 +279,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         return dest_study
 
+    @override
     def delete(self, metadata: RawStudy) -> None:
         """
         Delete study
@@ -290,6 +297,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
+    @override
     def delete_output(self, metadata: RawStudy, output_name: str) -> None:
         """
         Delete output folder
@@ -338,6 +346,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         metadata.path = str(study_path)
         return metadata
 
+    @override
     def export_study_flat(
         self,
         metadata: RawStudy,
@@ -379,6 +388,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study = self.study_factory.create_from_fs(path, metadata.id)
         return study.tree.check_errors(study.tree.get())
 
+    @override
     def set_reference_output(self, study: RawStudy, output_id: str, status: bool) -> None:
         self.patch_service.set_reference_output(study, output_id, status)
         remove_from_cache(self.cache, study.id)
@@ -422,6 +432,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
                 return path
         raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
 
+    @override
     def get_study_path(self, metadata: Study) -> Path:
         """
         Get study path
@@ -435,6 +446,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             return self.find_archive_path(metadata)
         return Path(metadata.path)
 
+    @override
     def initialize_additional_data(self, raw_study: RawStudy) -> bool:
         try:
             study = self.study_factory.create_from_fs(

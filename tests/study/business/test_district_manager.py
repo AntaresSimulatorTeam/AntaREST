@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,7 +21,7 @@ from antarest.study.business.district_manager import (
     DistrictManager,
     DistrictUpdateDTO,
 )
-from antarest.study.model import Study
+from antarest.study.model import STUDY_VERSION_8_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -174,6 +174,7 @@ class TestDistrictManager:
             config=Mock(areas=areas, sets=sets),
             tree=Mock(spec=FileStudyTree),
         )
+        file_study.config.version = STUDY_VERSION_8_8
         raw_study_service = Mock(spec=RawStudyService)
         raw_study_service.get_raw.return_value = file_study
         study_storage_service.get_storage.return_value = raw_study_service
@@ -263,6 +264,7 @@ class TestDistrictManager:
             config=Mock(areas=areas, sets=sets),
             tree=Mock(spec=FileStudyTree),
         )
+        file_study.config.version = STUDY_VERSION_8_8
         raw_study_service = Mock(spec=RawStudyService)
         raw_study_service.get_raw.return_value = file_study
         study_storage_service.get_storage.return_value = raw_study_service
@@ -313,6 +315,7 @@ class TestDistrictManager:
             config=Mock(areas=areas, sets=sets),
             tree=Mock(spec=FileStudyTree),
         )
+        file_study.config.version = STUDY_VERSION_8_8
         raw_study_service = Mock(spec=RawStudyService)
         raw_study_service.get_raw.return_value = file_study
         study_storage_service.get_storage.return_value = raw_study_service

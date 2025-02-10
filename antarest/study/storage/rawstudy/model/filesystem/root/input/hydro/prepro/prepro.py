@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import PreproCorrelation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -17,6 +18,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.ar
 
 
 class InputHydroPrepro(FolderNode):
+    @override
     def build(self) -> TREE:
         children: TREE = {
             a: InputHydroPreproArea(self.context, self.config.next_file(a)) for a in self.config.area_names()

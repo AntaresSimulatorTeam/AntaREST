@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import {
+import type {
   GroupDetailsDTO,
   GroupDTO,
   RoleDetailsDTO,
@@ -24,8 +24,8 @@ import {
 } from "../../../../../common/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createGroup, createRole } from "../../../../../services/api/user";
-import { SubmitHandlerPlus } from "../../../../common/Form/types";
-import GroupFormDialog, { GroupFormDialogProps } from "./GroupFormDialog";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import GroupFormDialog, { type GroupFormDialogProps } from "./GroupFormDialog";
 
 type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
 
@@ -52,17 +52,11 @@ function CreateGroupDialog(props: Props) {
 
     try {
       newGroup = await mounted(createGroup(name));
-      enqueueSnackbar(
-        t("settings.success.groupCreation", { 0: newGroup.name }),
-        {
-          variant: "success",
-        },
-      );
+      enqueueSnackbar(t("settings.success.groupCreation", { 0: newGroup.name }), {
+        variant: "success",
+      });
     } catch (e) {
-      enqueueErrorSnackbar(
-        t("settings.error.groupSave", { 0: name }),
-        e as Error,
-      );
+      enqueueErrorSnackbar(t("settings.error.groupSave", { 0: name }), e as Error);
       throw e;
     }
 
@@ -70,13 +64,12 @@ function CreateGroupDialog(props: Props) {
       let users: GroupDetailsDTO["users"] = [];
 
       if (permissions.length > 0) {
-        const promises = permissions.map(
-          (perm: { user: UserDTO; type: number }) =>
-            createRole({
-              group_id: newGroup.id,
-              type: perm.type,
-              identity_id: perm.user.id,
-            }),
+        const promises = permissions.map((perm: { user: UserDTO; type: number }) =>
+          createRole({
+            group_id: newGroup.id,
+            type: perm.type,
+            identity_id: perm.user.id,
+          }),
         );
 
         const res: RoleDetailsDTO[] = await mounted(Promise.all(promises));
@@ -93,10 +86,7 @@ function CreateGroupDialog(props: Props) {
       // Because we cannot recover roles eventually created
       reloadFetchGroups();
 
-      enqueueErrorSnackbar(
-        t("settings.error.userRolesSave", { 0: newGroup.name }),
-        e as Error,
-      );
+      enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: newGroup.name }), e as Error);
     }
 
     closeDialog();

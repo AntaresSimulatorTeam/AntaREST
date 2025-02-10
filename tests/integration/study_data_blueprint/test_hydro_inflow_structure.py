@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from http import HTTPStatus
 from unittest.mock import ANY
 
@@ -137,6 +136,8 @@ class TestHydroInflowStructure:
                 "data": {"intermonthly-correlation": 0.9},
             },
             "version": 1,
+            "updated_at": ANY,
+            "user_name": ANY,
         }
         assert actual[1] == expected
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import datetime
 import typing as t
 import uuid
 
@@ -17,7 +17,7 @@ import typing_extensions as te
 
 from antarest.core.model import JSON
 from antarest.core.serialization import AntaresBaseModel
-from antarest.study.model import StudyMetadataDTO
+from antarest.study.model import StudyMetadataDTO, StudyVersionStr
 
 LegacyDetailsDTO = t.Tuple[str, bool, str]
 """
@@ -58,9 +58,9 @@ class GenerationResultInfoDTO(AntaresBaseModel):
     details: t.MutableSequence[DetailsDTO]
 
 
-class CommandDTO(AntaresBaseModel):
+class CommandDTOAPI(AntaresBaseModel):
     """
-    This class represents a command.
+    This class exposes a command inside the API.
 
     Attributes:
         id: The unique identifier of the command.
@@ -73,6 +73,36 @@ class CommandDTO(AntaresBaseModel):
     action: str
     args: t.Union[t.MutableSequence[JSON], JSON]
     version: int = 1
+    user_name: t.Optional[str] = None
+    updated_at: t.Optional[datetime.datetime] = None
+
+
+class CommandDTO(AntaresBaseModel):
+    """
+    This class represents a command internally.
+
+    Attributes:
+        id: The unique identifier of the command.
+        action: The action to be performed by the command.
+        args: The arguments for the command action.
+        version: The version of the command.
+        study_version: The version of the study associated to the command.
+        user_id: id of the author of the command.
+        updated_at: The time the command was last updated.
+    """
+
+    id: t.Optional[str] = None
+    action: str
+    args: t.Union[t.MutableSequence[JSON], JSON]
+    version: int = 1
+    study_version: StudyVersionStr
+    user_id: t.Optional[int] = None
+    updated_at: t.Optional[datetime.datetime] = None
+
+    def to_api(self, user_name: t.Optional[str] = None) -> CommandDTOAPI:
+        data = self.model_dump(mode="json", exclude={"study_version", "user_id"})
+        data["user_name"] = user_name
+        return CommandDTOAPI.model_validate(data)
 
 
 class CommandResultDTO(AntaresBaseModel):

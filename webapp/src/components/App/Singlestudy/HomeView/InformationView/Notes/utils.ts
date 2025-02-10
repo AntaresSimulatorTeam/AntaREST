@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,10 +14,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-param-reassign */
-import { ContentState, convertToRaw, EditorState } from "draft-js";
+import { convertToRaw, type ContentState, type EditorState } from "draft-js";
 import draftToHtml from "draftjs-to-html";
 import { convertFromHTML } from "draft-convert";
-import { Element as XMLElement, js2xml, xml2json } from "xml-js";
+import { js2xml, xml2json, type Element as XMLElement } from "xml-js";
 import theme from "../../../../../../theme";
 
 interface BlockMap {
@@ -143,17 +143,12 @@ const parseXMLToHTMLNode = (
           if (attributesUtils.list !== undefined) {
             if (prevListSeq === undefined) {
               attributesUtils.openBalise = `${
-                attributesUtils.list === "Numbered List"
-                  ? "<ol><li>"
-                  : "<ul><li>"
+                attributesUtils.list === "Numbered List" ? "<ol><li>" : "<ul><li>"
               }${attributesUtils.openBalise}`;
             } else if (prevListSeq !== attributesUtils.list) {
-              const closePrevBalise =
-                prevListSeq === "Numbered List" ? "</ol>" : "</ul>"; // Close previous list
+              const closePrevBalise = prevListSeq === "Numbered List" ? "</ol>" : "</ul>"; // Close previous list
               attributesUtils.openBalise = `${closePrevBalise}${
-                attributesUtils.list === "Numbered List"
-                  ? "<ol><li>"
-                  : "<ul><li>"
+                attributesUtils.list === "Numbered List" ? "<ol><li>" : "<ul><li>"
               }${attributesUtils.openBalise}`;
             } else {
               attributesUtils.openBalise = `<li>${attributesUtils.openBalise}`;
@@ -164,21 +159,16 @@ const parseXMLToHTMLNode = (
                 attributesUtils.list === "Numbered List" ? "</ol>" : "</ul>";
             }
           } else if (prevListSeq !== undefined) {
-            const closePrevBalise =
-              prevListSeq === "Numbered List" ? "</ol>" : "</ul>"; // Close previous list
+            const closePrevBalise = prevListSeq === "Numbered List" ? "</ol>" : "</ul>"; // Close previous list
             attributesUtils.openBalise = `${closePrevBalise}<${
               (XmlToHTML as any)[node.name]
             }>${attributesUtils.openBalise}`;
-            attributesUtils.closeBalise += `</${
-              (XmlToHTML as any)[node.name]
-            }>`;
+            attributesUtils.closeBalise += `</${(XmlToHTML as any)[node.name]}>`;
           } else {
             attributesUtils.openBalise = `<${(XmlToHTML as any)[node.name]}>${
               attributesUtils.openBalise
             }`;
-            attributesUtils.closeBalise += `</${
-              (XmlToHTML as any)[node.name]
-            }>`;
+            attributesUtils.closeBalise += `</${(XmlToHTML as any)[node.name]}>`;
           }
         }
 
@@ -194,10 +184,7 @@ const parseXMLToHTMLNode = (
             res.result += completeResult.result;
           }
           return {
-            result:
-              attributesUtils.openBalise +
-              res.result +
-              attributesUtils.closeBalise,
+            result: attributesUtils.openBalise + res.result + attributesUtils.closeBalise,
             listSeq: attributesUtils.list,
           };
         }
@@ -265,18 +252,12 @@ const parseHTMLToXMLNode = (
 ): ParseHTMLToXMLNodeActions => {
   let action: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
   const parseChild = (nodeElement: XMLElement): ParseHTMLToXMLNodeActions => {
-    let resultAction: ParseHTMLToXMLNodeActions =
-      ParseHTMLToXMLNodeActions.NONE;
+    let resultAction: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
     if (nodeElement.elements !== undefined) {
       const actionList: ParseHTMLToXMLActionList[] = [];
-      let childAction: ParseHTMLToXMLNodeActions =
-        ParseHTMLToXMLNodeActions.NONE;
+      let childAction: ParseHTMLToXMLNodeActions = ParseHTMLToXMLNodeActions.NONE;
       for (let i = 0; i < nodeElement.elements.length; i++) {
-        childAction = parseHTMLToXMLNode(
-          nodeElement.elements[i],
-          nodeElement,
-          i,
-        );
+        childAction = parseHTMLToXMLNode(nodeElement.elements[i], nodeElement, i);
         if (childAction !== ParseHTMLToXMLNodeActions.NONE) {
           actionList.push({
             action: childAction,
@@ -287,25 +268,14 @@ const parseHTMLToXMLNode = (
       actionList.forEach((elm: ParseHTMLToXMLActionList) => {
         if (nodeElement.elements !== undefined) {
           if (elm.action === ParseHTMLToXMLNodeActions.DELETE) {
-            nodeElement.elements = nodeElement.elements.filter(
-              (item) => item !== elm.node,
-            );
-          } else if (
-            elm.node.elements !== undefined &&
-            elm.node.elements.length > 0
-          ) {
+            nodeElement.elements = nodeElement.elements.filter((item) => item !== elm.node);
+          } else if (elm.node.elements !== undefined && elm.node.elements.length > 0) {
             let newElements: XMLElement[] = [];
-            const index = nodeElement.elements.findIndex(
-              (item) => item === elm.node,
-            );
+            const index = nodeElement.elements.findIndex((item) => item === elm.node);
             if (index !== undefined && index >= 0) {
-              newElements = newElements.concat(
-                nodeElement.elements.slice(0, index),
-              );
+              newElements = newElements.concat(nodeElement.elements.slice(0, index));
               newElements = newElements.concat(elm.node.elements);
-              newElements = newElements.concat(
-                nodeElement.elements.slice(index + 1),
-              );
+              newElements = newElements.concat(nodeElement.elements.slice(index + 1));
               node.elements = newElements;
 
               if (elm.action === ParseHTMLToXMLNodeActions.TEXTTOELEMENTS) {
@@ -331,8 +301,7 @@ const parseHTMLToXMLNode = (
               {
                 type: "text",
                 text:
-                  quoteList[j][0] === " " ||
-                  quoteList[j][quoteList[j].length - 1] === " "
+                  quoteList[j][0] === " " || quoteList[j][quoteList[j].length - 1] === " "
                     ? `"${quoteList[j]}"`
                     : quoteList[j],
               },
@@ -359,10 +328,7 @@ const parseHTMLToXMLNode = (
         elements: [
           {
             type: "text",
-            text:
-              data[0] === " " || data[data.length - 1] === " "
-                ? `"${data}"`
-                : data,
+            text: data[0] === " " || data[data.length - 1] === " " ? `"${data}"` : data,
           },
         ],
       });
@@ -438,8 +404,7 @@ const parseHTMLToXMLNode = (
                 leftsubindent: "60",
                 bulletstyle: parent.name === "ol" ? "4353" : "512",
                 bulletnumber: lastListSeq.toString(),
-                liststyle:
-                  parent.name === "ol" ? "Numbered List" : "Bullet List",
+                liststyle: parent.name === "ol" ? "Numbered List" : "Bullet List",
               };
               if (parent.name === "ul") {
                 node.attributes = {

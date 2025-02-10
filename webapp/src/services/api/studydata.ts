@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,35 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import type { UpdateAreaUi } from "../../common/types";
 import {
-  LinkCreationInfoDTO,
-  LinkInfoWithUI,
-  UpdateAreaUi,
-} from "../../common/types";
-import {
-  BindingConstraint,
-  ConstraintTerm,
   bindingConstraintModelAdapter,
+  type BindingConstraint,
+  type ConstraintTerm,
 } from "../../components/App/Singlestudy/explore/Modelization/BindingConstraints/BindingConstView/utils";
-import { StudyMapNode } from "../../redux/ducks/studyMaps";
+import type { StudyMapNode } from "../../redux/ducks/studyMaps";
 import client from "./client";
 
-export const createArea = async (
-  uuid: string,
-  name: string,
-): Promise<StudyMapNode> => {
+export const createArea = async (uuid: string, name: string): Promise<StudyMapNode> => {
   const res = await client.post(`/v1/studies/${uuid}/areas`, {
     name,
     type: "AREA",
   });
-  return res.data;
-};
-
-export const createLink = async (
-  uuid: string,
-  linkCreationInfo: LinkCreationInfoDTO,
-): Promise<string> => {
-  const res = await client.post(`/v1/studies/${uuid}/links`, linkCreationInfo);
   return res.data;
 };
 
@@ -50,29 +35,12 @@ export const updateAreaUI = async (
   layerId: string,
   areaUi: UpdateAreaUi,
 ): Promise<string> => {
-  const res = await client.put(
-    `/v1/studies/${uuid}/areas/${areaId}/ui?layer=${layerId}`,
-    areaUi,
-  );
+  const res = await client.put(`/v1/studies/${uuid}/areas/${areaId}/ui?layer=${layerId}`, areaUi);
   return res.data;
 };
 
-export const deleteArea = async (
-  uuid: string,
-  areaId: string,
-): Promise<string> => {
+export const deleteArea = async (uuid: string, areaId: string): Promise<string> => {
   const res = await client.delete(`/v1/studies/${uuid}/areas/${areaId}`);
-  return res.data;
-};
-
-export const deleteLink = async (
-  uuid: string,
-  areaIdFrom: string,
-  areaIdTo: string,
-): Promise<string> => {
-  const res = await client.delete(
-    `/v1/studies/${uuid}/links/${areaIdFrom}/${areaIdTo}`,
-  );
   return res.data;
 };
 
@@ -82,9 +50,7 @@ export const updateConstraintTerm = async (
   term: Partial<ConstraintTerm>,
 ): Promise<string> => {
   const res = await client.put(
-    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
-      constraintId,
-    )}/term`,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}/term`,
     term,
   );
   return res.data;
@@ -96,9 +62,7 @@ export const createConstraintTerm = async (
   term: ConstraintTerm,
 ): Promise<void> => {
   const res = await client.post(
-    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
-      constraintId,
-    )}/term`,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}/term`,
     term,
   );
   return res.data;
@@ -122,17 +86,13 @@ export const getBindingConstraint = async (
   constraintId: string,
 ): Promise<BindingConstraint> => {
   const res = await client.get(
-    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
-      constraintId,
-    )}`,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}`,
   );
 
   return bindingConstraintModelAdapter(res.data);
 };
 
-export const getBindingConstraintList = async (
-  studyId: string,
-): Promise<BindingConstraint[]> => {
+export const getBindingConstraintList = async (studyId: string): Promise<BindingConstraint[]> => {
   const res = await client.get(`/v1/studies/${studyId}/bindingconstraints`);
   return res.data;
 };
@@ -145,9 +105,7 @@ export const updateBindingConstraint = async (
   const adaptedData = bindingConstraintModelAdapter(data as BindingConstraint); // TODO fix type
 
   const res = await client.put(
-    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(
-      constraintId,
-    )}`,
+    `/v1/studies/${studyId}/bindingconstraints/${encodeURIComponent(constraintId)}`,
     adaptedData,
   );
   return res.data;
@@ -157,27 +115,6 @@ export const createBindingConstraint = async (
   studyId: string,
   data: Partial<BindingConstraint>,
 ): Promise<BindingConstraint> => {
-  const res = await client.post(
-    `/v1/studies/${studyId}/bindingconstraints`,
-    data,
-  );
-  return res.data;
-};
-
-interface GetAllLinksParams {
-  uuid: string;
-  withUi?: boolean;
-}
-
-type LinkTypeFromParams<T extends GetAllLinksParams> = T["withUi"] extends true
-  ? LinkInfoWithUI
-  : LinkCreationInfoDTO;
-
-export const getAllLinks = async <T extends GetAllLinksParams>(
-  params: T,
-): Promise<Array<LinkTypeFromParams<T>>> => {
-  const { uuid, withUi } = params;
-  const withUiStr = withUi ? "with_ui=true" : "";
-  const res = await client.get(`/v1/studies/${uuid}/links?${withUiStr}`);
+  const res = await client.post(`/v1/studies/${studyId}/bindingconstraints`, data);
   return res.data;
 };

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { SyntheticEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { useTranslation } from "react-i18next";
-import { MatrixItem, StudyMetadata } from "../../../../../../../common/types";
+import type { MatrixItem, StudyMetadata } from "../../../../../../../common/types";
 import SplitView from "../../../../../../common/SplitView";
 import Matrix from "../../../../../../common/Matrix";
 
@@ -31,7 +31,7 @@ function LinkMatrixView({ area1, area2 }: Props) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("parameters");
 
-  const handleTabChange = (event: SyntheticEvent, newValue: string) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setActiveTab(newValue);
   };
 
@@ -104,10 +104,10 @@ function LinkMatrixView({ area1, area2 }: Props) {
                       <Box key={titleKey} sx={{ px: 2 }}>
                         <Matrix
                           url={url}
-                          title={t(
-                            `study.modelization.links.matrix.columns.${titleKey}`,
-                            { area1, area2 },
-                          )}
+                          title={t(`study.modelization.links.matrix.columns.${titleKey}`, {
+                            area1,
+                            area2,
+                          })}
                         />
                       </Box>
                     ))}
@@ -116,9 +116,7 @@ function LinkMatrixView({ area1, area2 }: Props) {
                   <Matrix
                     key={content.matrix.titleKey}
                     url={content.matrix.url}
-                    title={t(
-                      `study.modelization.links.matrix.${content.matrix.titleKey}`,
-                    )}
+                    title={t(`study.modelization.links.matrix.${content.matrix.titleKey}`)}
                     customColumns={content.matrix.columnsNames}
                   />
                 )}

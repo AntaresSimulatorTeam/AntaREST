@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 import typing as t
 
 from pydantic import Field
+from typing_extensions import override
 
 from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
@@ -43,6 +44,7 @@ class RemoveSTStorage(ICommand):
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
     storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: remove the storage from the storages list.
@@ -100,6 +102,7 @@ class RemoveSTStorage(ICommand):
             {},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes:
@@ -129,6 +132,7 @@ class RemoveSTStorage(ICommand):
         # deleting the files and folders.
         return self._apply_config(study_data.config)[0]
 
+    @override
     def to_dto(self) -> CommandDTO:
         """
         Converts the current object to a Data Transfer Object (DTO)
@@ -140,25 +144,9 @@ class RemoveSTStorage(ICommand):
         return CommandDTO(
             action=self.command_name.value,
             args={"area_id": self.area_id, "storage_id": self.storage_id},
+            study_version=self.study_version,
         )
 
-    def match_signature(self) -> str:
-        """Returns the command signature."""
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.storage_id
-        )
-
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        # always perform a deep comparison, as there are no parameters
-        # or matrices, so that shallow and deep comparisons are identical.
-        return self.__eq__(other)
-
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
-
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,10 +14,11 @@ import datetime
 import re
 import typing
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
@@ -25,6 +26,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
@@ -134,9 +136,12 @@ class TestVariantStudyService:
     ) -> None:
         ## Prepare database objects
         # noinspection PyArgumentList
-        user = User(id=0, name="admin")
+        user = User(id=1, name="admin")
         db.session.add(user)
         db.session.commit()
+
+        # define user token
+        jwt_user = Mock(spec=JWTUser, id=user.id, impersonator=user.id, is_site_admin=Mock(return_value=True))
 
         # noinspection PyArgumentList
         group = Group(id="my-group", name="group")
@@ -165,13 +170,14 @@ class TestVariantStudyService:
 
         ## Prepare the RAW Study
         raw_study_service.create(raw_study)
+        study_version = StudyVersion.parse(raw_study.version)
 
         variant_study = variant_study_service.create_variant_study(
             raw_study.id,
             "My Variant Study",
             params=Mock(
                 spec=RequestParameters,
-                user=Mock(impersonator=user.id, is_site_admin=Mock(return_value=True)),
+                user=jwt_user,
             ),
         )
 
@@ -184,10 +190,7 @@ class TestVariantStudyService:
             patch_service=patch_service,
         )
 
-        create_area_fr = CreateArea(
-            command_context=command_context,
-            area_name="fr",
-        )
+        create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=study_version)
 
         ## Prepare the Variant Study Data
         # noinspection SpellCheckingInspection
@@ -210,14 +213,16 @@ class TestVariantStudyService:
             ),
             pmax_injection=pmax_injection.tolist(),
             inflows=inflows.tolist(),
+            study_version=study_version,
         )
 
-        execute_or_add_commands(
-            variant_study,
-            file_study,
-            commands=[create_area_fr, create_st_storage],
-            storage_service=study_storage_service,
-        )
+        with current_user_context(jwt_user):
+            execute_or_add_commands(
+                variant_study,
+                file_study,
+                commands=[create_area_fr, create_st_storage],
+                storage_service=study_storage_service,
+            )
 
         ## Run the "generate" task
         actual_uui = variant_study_service.generate_task(

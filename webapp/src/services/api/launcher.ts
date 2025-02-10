@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,8 +15,6 @@
 import client from "./client";
 
 export async function getJobProgress(param: { id: string }) {
-  const res = await client.get<number>(
-    `/v1/launcher/jobs/${param.id}/progress`,
-  );
+  const res = await client.get<number>(`/v1/launcher/jobs/${param.id}/progress`);
   return res.data;
 }

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,6 +19,7 @@ from time import sleep, time
 from typing import List, Optional
 
 from filelock import FileLock
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -70,6 +71,7 @@ class Watcher(IService):
         self.should_stop = False
         self.allowed_to_start = not config.storage.watcher_lock or Watcher._get_lock(config.storage.watcher_lock_delay)
 
+    @override
     def start(self, threaded: bool = True) -> None:
         self.should_stop = False
         if self.allowed_to_start:
@@ -97,6 +99,7 @@ class Watcher(IService):
                 logger.info("Watcher doesn't get lock")
                 return False
 
+    @override
     def _loop(self) -> None:
         try:
             logger.info(
@@ -126,7 +129,7 @@ class Watcher(IService):
         max_depth: Optional[int] = None,
     ) -> List[StudyFolder]:
         try:
-            if should_ignore_folder_for_scan(path):
+            if should_ignore_folder_for_scan(path, filter_in, filter_out):
                 return []
 
             if (path / "study.antares").exists():
@@ -144,14 +147,7 @@ class Watcher(IService):
                         if max_depth is not None:
                             max_depth = max_depth - 1
                         try:
-                            if (
-                                (child.is_dir())
-                                and any([re.search(regex, child.name) for regex in filter_in])
-                                and not any([re.search(regex, child.name) for regex in filter_out])
-                            ):
-                                folders = folders + self._rec_scan(
-                                    child, workspace, groups, filter_in, filter_out, max_depth
-                                )
+                            folders += self._rec_scan(child, workspace, groups, filter_in, filter_out, max_depth)
                         except Exception as e:
                             logger.error(f"Failed to scan dir {child}", exc_info=e)
                 return folders

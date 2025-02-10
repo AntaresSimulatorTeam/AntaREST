@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -24,6 +24,7 @@ import numpy as np
 import py7zr
 from fastapi import UploadFile
 from numpy import typing as npt
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -112,9 +113,11 @@ class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
         super().__init__(matrix_content_repository=matrix_content_repository)
 
+    @override
     def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         return self.matrix_content_repository.save(data)
 
+    @override
     def get(self, matrix_id: str) -> MatrixDTO:
         data = self.matrix_content_repository.get(matrix_id)
         return MatrixDTO.construct(
@@ -126,9 +129,11 @@ class SimpleMatrixService(ISimpleMatrixService):
             data=data.data,
         )
 
+    @override
     def exists(self, matrix_id: str) -> bool:
         return self.matrix_content_repository.exists(matrix_id)
 
+    @override
     def delete(self, matrix_id: str) -> None:
         self.matrix_content_repository.delete(matrix_id)
 
@@ -165,6 +170,7 @@ class MatrixService(ISimpleMatrixService):
 
         return matrix, content
 
+    @override
     def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
         """
         Creates a new matrix object with the specified data.
@@ -372,6 +378,7 @@ class MatrixService(ISimpleMatrixService):
         self.repo_dataset.delete(id)
         return id
 
+    @override
     def get(self, matrix_id: str) -> t.Optional[MatrixDTO]:
         """
         Get a matrix object from the database and the matrix content repository.
@@ -397,6 +404,7 @@ class MatrixService(ISimpleMatrixService):
             data=content.data,
         )
 
+    @override
     def exists(self, matrix_id: str) -> bool:
         """
         Check if a matrix object exists in both the matrix content repository and the database.
@@ -409,6 +417,7 @@ class MatrixService(ISimpleMatrixService):
         """
         return self.matrix_content_repository.exists(matrix_id) and self.repo.exists(matrix_id)
 
+    @override
     def delete(self, matrix_id: str) -> None:
         """
         Delete a matrix object from the matrix content repository and the database.

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,9 +16,9 @@ import { DialogContentText } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import InfoIcon from "@mui/icons-material/Info";
 import { useMemo } from "react";
-import { FieldValues } from "react-hook-form";
-import { BotDetailsDTO } from "../../../../../common/types";
-import OkDialog, { OkDialogProps } from "../../../../common/dialogs/OkDialog";
+import type { FieldValues } from "react-hook-form";
+import type { BotDetailsDTO } from "../../../../../common/types";
+import OkDialog, { type OkDialogProps } from "../../../../common/dialogs/OkDialog";
 import TokenForm from "./TokenFormDialog/TokenForm";
 import Form from "../../../../common/Form";
 
@@ -54,9 +54,7 @@ function TokenInfoDialog(props: Props) {
       title={t("global.permissions")}
       titleIcon={InfoIcon}
     >
-      <DialogContentText>
-        {t("settings.currentToken", { 0: token.name })}
-      </DialogContentText>
+      <DialogContentText>{t("settings.currentToken", { 0: token.name })}</DialogContentText>
       <Form config={{ defaultValues }} hideSubmitButton>
         {(formObj) => <TokenForm onlyPermissions readOnly {...formObj} />}
       </Form>

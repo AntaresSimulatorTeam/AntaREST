@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -145,6 +145,30 @@ def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.
     return path, tmp_dir
 
 
+def read_original_file_in_archive(archive_path: Path, posix_path: str) -> bytes:
+    """
+    Read a file from an archive.
+
+    Args:
+        archive_path: the path to the archive file.
+        posix_path: path to the file inside the archive.
+
+    Returns:
+        The content of the file as `bytes`.
+    """
+
+    if archive_path.suffix == ArchiveFormat.ZIP:
+        with zipfile.ZipFile(archive_path) as zip_obj:
+            with zip_obj.open(posix_path) as f:
+                return f.read()
+    elif archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
+        with py7zr.SevenZipFile(archive_path, mode="r") as szf:
+            output: bytes = szf.read([posix_path])[posix_path].read()
+            return output
+    else:
+        raise ValueError(f"Unsupported {archive_path.suffix} archive format for {archive_path}")
+
+
 def read_file_from_archive(archive_path: Path, posix_path: str) -> str:
     """
     Read a file from an archive.
@@ -157,16 +181,7 @@ def read_file_from_archive(archive_path: Path, posix_path: str) -> str:
         The content of the file as a string.
     """
 
-    if archive_path.suffix == ArchiveFormat.ZIP:
-        with zipfile.ZipFile(archive_path) as zip_obj:
-            with zip_obj.open(posix_path) as f:
-                return f.read().decode("utf-8")
-    elif archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
-        with py7zr.SevenZipFile(archive_path, mode="r") as szf:
-            file_text: str = szf.read([posix_path])[posix_path].read().decode("utf-8")
-            return file_text
-    else:
-        raise ValueError(f"Unsupported {archive_path.suffix} archive format for {archive_path}")
+    return read_original_file_in_archive(archive_path, posix_path).decode("utf-8")
 
 
 def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:

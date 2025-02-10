@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -15,23 +15,20 @@
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../common/types";
 import Form from "../../../../../common/Form";
-import type {
-  SubmitHandlerPlus,
-  UseFormReturnPlus,
-} from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
-import { DEFAULT_VALUES, setTimeSeriesFormFields, TSFormFields } from "./utils";
 import { useTranslation } from "react-i18next";
 import usePromiseHandler from "../../../../../../hooks/usePromiseHandler";
-import { generateTimeSeries } from "../../../../../../services/api/studies/timeseries";
 import BuildIcon from "@mui/icons-material/Build";
 import { useRef, useState } from "react";
+import { setTimeSeriesConfig, generateTimeSeries } from "@/services/api/studies/timeseries";
+import { defaultValues, type TimeSeriesConfigValues } from "./utils";
 
 function TimeSeriesManagement() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
-  const [launchTaskInProgress, setLaunchTaskInProgress] = useState(false);
-  const apiRef = useRef<UseFormReturnPlus<TSFormFields>>();
+  const [isLaunchTaskInProgress, setIsLaunchTaskInProgress] = useState(false);
+  const apiRef = useRef<UseFormReturnPlus<TimeSeriesConfigValues>>(null);
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,
@@ -43,19 +40,19 @@ function TimeSeriesManagement() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<TSFormFields>) => {
-    return setTimeSeriesFormFields(study.id, data.values);
+  const handleSubmit = ({ values }: SubmitHandlerPlus<TimeSeriesConfigValues>) => {
+    return setTimeSeriesConfig({ studyId: study.id, values });
   };
 
   const handleSubmitSuccessful = async () => {
-    setLaunchTaskInProgress(true);
+    setIsLaunchTaskInProgress(true);
 
     // The WebSocket will trigger an event after the fulfillment of the promise (see `FreezeStudy`)
     await handleGenerateTs({ studyId: study.id });
 
-    setLaunchTaskInProgress(false);
+    setIsLaunchTaskInProgress(false);
 
-    apiRef.current?.reset(DEFAULT_VALUES);
+    apiRef.current?.reset(defaultValues);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -66,8 +63,8 @@ function TimeSeriesManagement() {
     <Form
       key={study.id}
       config={{
-        defaultValues: DEFAULT_VALUES,
-        disabled: launchTaskInProgress,
+        defaultValues,
+        disabled: isLaunchTaskInProgress,
       }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}

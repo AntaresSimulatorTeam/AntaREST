@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,11 +14,10 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -29,14 +28,12 @@ class TestReplaceMatrix:
 
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
         study_path = empty_study.config.study_path
+        study_version = empty_study.config.version
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
 
         CreateArea.model_validate(
-            {
-                "area_name": area1,
-                "command_context": command_context,
-            }
+            {"area_name": area1, "command_context": command_context, "study_version": study_version}
         ).apply(empty_study)
 
         target_element = f"input/hydro/common/capacity/maxpower_{area1_id}"
@@ -45,6 +42,7 @@ class TestReplaceMatrix:
                 "target": target_element,
                 "matrix": [[0]],
                 "command_context": command_context,
+                "study_version": study_version,
             }
         )
         output = replace_matrix.apply(empty_study)
@@ -61,55 +59,8 @@ class TestReplaceMatrix:
                 "target": target_element,
                 "matrix": [[0]],
                 "command_context": command_context,
+                "study_version": study_version,
             }
         )
         output = replace_matrix.apply(empty_study)
         assert not output.status
-
-
-def test_match(command_context: CommandContext):
-    base = ReplaceMatrix(target="foo", matrix=[[0]], command_context=command_context)
-    other_match = ReplaceMatrix(target="foo", matrix=[[1]], command_context=command_context)
-    other_not_match = ReplaceMatrix(target="bar", matrix=[[0]], command_context=command_context)
-    other_other = RemoveArea(id="id", command_context=command_context)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "replace_matrix%foo"
-    # check the matrices links
-    matrix_id = command_context.matrix_service.create([[0]])
-    assert base.get_inner_matrices() == [matrix_id]
-
-
-@patch("antarest.study.storage.variantstudy.business.command_extractor.CommandExtractor.generate_replace_matrix")
-def test_revert(mock_generate_replace_matrix, command_context: CommandContext):
-    matrix_a = np.random.rand(5, 2).tolist()
-    base = ReplaceMatrix(target="foo", matrix=matrix_a, command_context=command_context)
-    study = FileStudy(config=Mock(), tree=Mock())
-    CommandReverter().revert(base, [], study)
-    mock_generate_replace_matrix.assert_called_with(study.tree, ["foo"])
-    assert CommandReverter().revert(
-        base,
-        [
-            ReplaceMatrix(
-                target="foo",
-                matrix=matrix_a,
-                command_context=command_context,
-            )
-        ],
-        study,
-    ) == [
-        ReplaceMatrix(
-            target="foo",
-            matrix=matrix_a,
-            command_context=command_context,
-        )
-    ]
-
-
-def test_create_diff(command_context: CommandContext):
-    matrix_a = np.random.rand(5, 2).tolist()
-    base = ReplaceMatrix(target="foo", matrix=matrix_a, command_context=command_context)
-    matrix_b = np.random.rand(5, 2).tolist()
-    other_match = ReplaceMatrix(target="foo", matrix=matrix_b, command_context=command_context)
-    assert base.create_diff(other_match) == [other_match]

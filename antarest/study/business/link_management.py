@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,78 +11,107 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any
 
-from antarest.core.exceptions import ConfigFileNotFound
+from antares.study.version import StudyVersion
+
+from antarest.core.exceptions import LinkNotFound
 from antarest.core.model import JSON
-from antarest.core.serialization import AntaresBaseModel
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import RawStudy
-from antarest.study.storage.rawstudy.model.filesystem.config.links import LinkProperties
+from antarest.study.model import RawStudy, Study
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-_ALL_LINKS_PATH = "input/links"
-
-
-class LinkUIDTO(AntaresBaseModel):
-    color: str
-    width: float
-    style: str
-
-
-class LinkInfoDTO(AntaresBaseModel):
-    area1: str
-    area2: str
-    ui: t.Optional[LinkUIDTO] = None
-
-
-@all_optional_model
-@camel_case_model
-class LinkOutput(LinkProperties):
-    """
-    DTO object use to get the link information.
-    """
+from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 
 
 class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(self, study: RawStudy, with_ui: bool = False) -> t.List[LinkInfoDTO]:
+    def get_all_links(self, study: Study) -> t.List[LinkDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        result = []
+        result: t.List[LinkDTO] = []
+
         for area_id, area in file_study.config.areas.items():
-            links_config: t.Optional[t.Dict[str, t.Any]] = None
-            if with_ui:
-                links_config = file_study.tree.get(["input", "links", area_id, "properties"])
+            links_config = file_study.tree.get(["input", "links", area_id, "properties"])
+
             for link in area.links:
-                ui_info: t.Optional[LinkUIDTO] = None
-                if with_ui and links_config and link in links_config:
-                    ui_info = LinkUIDTO(
-                        color=f"{links_config[link].get('colorr', '163')},{links_config[link].get('colorg', '163')},{links_config[link].get('colorb', '163')}",
-                        width=links_config[link].get("link-width", 1),
-                        style=links_config[link].get("link-style", "plain"),
-                    )
-                result.append(LinkInfoDTO(area1=area_id, area2=link, ui=ui_info))
+                link_tree_config: t.Dict[str, t.Any] = links_config[link]
+                link_tree_config.update({"area1": area_id, "area2": link})
+
+                link_internal = LinkInternal.model_validate(link_tree_config)
+
+                result.append(link_internal.to_dto())
 
         return result
 
-    def create_link(self, study: RawStudy, link_creation_info: LinkInfoDTO) -> LinkInfoDTO:
+    def get_link(self, study: RawStudy, link: LinkInternal) -> LinkInternal:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        link_properties = self._get_link_if_exists(file_study, link)
+
+        link_properties.update({"area1": link.area1, "area2": link.area2})
+
+        updated_link = LinkInternal.model_validate(link_properties)
+
+        return updated_link
+
+    def create_link(self, study: Study, link_creation_dto: LinkDTO) -> LinkDTO:
+        link = link_creation_dto.to_internal(StudyVersion.parse(study.version))
+
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
+
         command = CreateLink(
-            area1=link_creation_info.area1,
-            area2=link_creation_info.area2,
+            area1=link.area1,
+            area2=link.area2,
+            parameters=link.model_dump(exclude_none=True),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
+
         execute_or_add_commands(study, file_study, [command], self.storage_service)
-        return LinkInfoDTO(
-            area1=link_creation_info.area1,
-            area2=link_creation_info.area2,
+
+        return link_creation_dto
+
+    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
+        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
+
+        link = link_dto.to_internal(StudyVersion.parse(study.version))
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        self._get_link_if_exists(file_study, link)
+
+        command = UpdateLink(
+            area1=link.area1,
+            area2=link.area2,
+            parameters=link.model_dump(
+                include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
+            ),
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
+
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
+
+        updated_link = self.get_link(study, link)
+
+        return updated_link.to_dto()
+
+    def update_links(
+        self,
+        study: RawStudy,
+        update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkBaseDTO],
+    ) -> t.Mapping[t.Tuple[str, str], LinkBaseDTO]:
+        new_links_by_ids = {}
+        for (area1, area2), update_link_dto in update_links_by_ids.items():
+            updated_link = self.update_link(study, area1, area2, update_link_dto)
+            new_links_by_ids[(area1, area2)] = updated_link
+
+        return new_links_by_ids
 
     def delete_link(self, study: RawStudy, area1_id: str, area2_id: str) -> None:
         file_study = self.storage_service.get_storage(study).get_raw(study)
@@ -90,71 +119,16 @@ class LinkManager:
             area1=area1_id,
             area2=area2_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def get_all_links_props(self, study: RawStudy) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
-        """
-        Retrieves all links properties from the study.
-
-        Args:
-            study: The raw study object.
-        Returns:
-            A mapping of link IDS `(area1_id, area2_id)` to link properties.
-        Raises:
-            ConfigFileNotFound: if a configuration file is not found.
-        """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-
-        # Get the link information from the `input/links/{area1}/properties.ini` file.
-        path = _ALL_LINKS_PATH
+    def _get_link_if_exists(self, file_study: FileStudy, link: LinkInternal) -> dict[str, Any]:
         try:
-            links_cfg = file_study.tree.get(path.split("/"), depth=5)
+            return file_study.tree.get(["input", "links", link.area1, "properties", link.area2])
         except KeyError:
-            raise ConfigFileNotFound(path) from None
-
-        # areas_cfg contains a dictionary where the keys are the area IDs,
-        # and the values are objects that can be converted to `LinkFolder`.
-        links_by_ids = {}
-        for area1_id, entries in links_cfg.items():
-            property_map = entries.get("properties") or {}
-            for area2_id, properties_cfg in property_map.items():
-                area1_id, area2_id = sorted([area1_id, area2_id])
-                properties = LinkProperties(**properties_cfg)
-                links_by_ids[(area1_id, area2_id)] = LinkOutput(**properties.model_dump(mode="json", by_alias=False))
-
-        return links_by_ids
-
-    def update_links_props(
-        self,
-        study: RawStudy,
-        update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkOutput],
-    ) -> t.Mapping[t.Tuple[str, str], LinkOutput]:
-        old_links_by_ids = self.get_all_links_props(study)
-        new_links_by_ids = {}
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        commands = []
-        for (area1, area2), update_link_dto in update_links_by_ids.items():
-            # Update the link properties.
-            old_link_dto = old_links_by_ids[(area1, area2)]
-            new_link_dto = old_link_dto.copy(
-                update=update_link_dto.model_dump(mode="json", by_alias=False, exclude_none=True)
-            )
-            new_links_by_ids[(area1, area2)] = new_link_dto
-
-            # Convert the DTO to a configuration object and update the configuration file.
-            properties = LinkProperties(**new_link_dto.model_dump(by_alias=False))
-            path = f"{_ALL_LINKS_PATH}/{area1}/properties/{area2}"
-            cmd = UpdateConfig(
-                target=path,
-                data=properties.to_config(),
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            )
-            commands.append(cmd)
-
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
-        return new_links_by_ids
+            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return LinkOutput.schema()
+        return LinkBaseDTO.model_json_schema()

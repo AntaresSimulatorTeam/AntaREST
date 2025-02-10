@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -376,6 +376,7 @@ class AreaManager:
                         target=f"input/areas/{area_id}/optimization",
                         data=new_area_folder.optimization.to_config(),
                         command_context=command_context,
+                        study_version=study.version,
                     )
                 )
             if old_area_folder.adequacy_patch != new_area_folder.adequacy_patch and new_area_folder.adequacy_patch:
@@ -384,6 +385,7 @@ class AreaManager:
                         target=f"input/areas/{area_id}/adequacy_patch",
                         data=new_area_folder.adequacy_patch.to_config(),
                         command_context=command_context,
+                        study_version=study.version,
                     )
                 )
             if old_area.average_unsupplied_energy_cost != new_area.average_unsupplied_energy_cost:
@@ -392,6 +394,7 @@ class AreaManager:
                         target=f"input/thermal/areas/unserverdenergycost/{area_id}",
                         data=new_area.average_unsupplied_energy_cost,
                         command_context=command_context,
+                        study_version=study.version,
                     )
                 )
             if old_area.average_spilled_energy_cost != new_area.average_spilled_energy_cost:
@@ -400,6 +403,7 @@ class AreaManager:
                         target=f"input/thermal/areas/spilledenergycost/{area_id}",
                         data=new_area.average_spilled_energy_cost,
                         command_context=command_context,
+                        study_version=study.version,
                     )
                 )
 
@@ -523,16 +527,19 @@ class AreaManager:
                     target=f"input/areas/{area_id}/ui/layerX",
                     data=areas_ui[area_id]["layerX"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerY",
                     data=areas_ui[area_id]["layerY"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/layers",
                     data=areas_ui[area_id]["ui"]["layers"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
             ]
 
@@ -569,6 +576,7 @@ class AreaManager:
             target=f"layers/layers/layers/{layer_id}",
             data=layer_name,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -582,12 +590,14 @@ class AreaManager:
                 target="layers/layers/layers",
                 data={"0": "All", "1": layer_name},
                 command_context=command_context,
+                study_version=file_study.config.version,
             )
         else:
             command = UpdateConfig(
                 target=f"layers/layers/layers/{new_id}",
                 data=layer_name,
                 command_context=command_context,
+                study_version=file_study.config.version,
             )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
         return str(new_id)
@@ -615,6 +625,7 @@ class AreaManager:
             target="layers/layers/layers",
             data=layers,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -630,6 +641,7 @@ class AreaManager:
         command = CreateArea(
             area_name=area_creation_info.name,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -682,26 +694,31 @@ class AreaManager:
                     target=f"input/areas/{area_id}/ui/ui/x",
                     data=obj["x"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/y",
                     data=obj["y"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/color_r",
                     data=obj["color_r"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/color_g",
                     data=obj["color_g"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/color_b",
                     data=obj["color_b"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
             ]
             if layer == "0"
@@ -713,16 +730,19 @@ class AreaManager:
                     target=f"input/areas/{area_id}/ui/layerX/{layer}",
                     data=obj["x"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerY/{layer}",
                     data=obj["y"],
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerColor/{layer}",
                     data=f"{obj['color_r']},{obj['color_g']},{obj['color_b']}",
                     command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    study_version=file_study.config.version,
                 ),
             ]
         )
@@ -754,6 +774,7 @@ class AreaManager:
         command = RemoveArea(
             id=area_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 

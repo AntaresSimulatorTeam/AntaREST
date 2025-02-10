@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 import typing as t
+
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -40,6 +42,7 @@ class RemoveCluster(ICommand):
     area_id: str
     cluster_id: str
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         """
         Applies configuration changes to the study data: remove the thermal clusters from the storages list.
@@ -98,6 +101,7 @@ class RemoveCluster(ICommand):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update thermal cluster configurations and saves the changes:
@@ -139,29 +143,15 @@ class RemoveCluster(ICommand):
         # deleting the files and folders.
         return self._apply_config(study_data.config)[0]
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
             args={"area_id": self.area_id, "cluster_id": self.cluster_id},
+            study_version=self.study_version,
         )
 
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.cluster_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-        )
-
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveCluster):
-            return False
-        return self.cluster_id == other.cluster_id and self.area_id == other.area_id
-
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
-
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []
 

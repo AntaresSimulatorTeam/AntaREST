@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -121,7 +121,8 @@ def test_get_matrices_used_in_variant_studies(
     with db():
         study_id = "study_id"
 
-        variant_study_repository.save(VariantStudy(id=study_id))
+        study_version = "880"
+        variant_study_repository.save(VariantStudy(id=study_id, version=study_version))
 
         # TODO: add series to the command blocks
         command_block1 = CommandBlock(
@@ -130,6 +131,7 @@ def test_get_matrices_used_in_variant_studies(
             args='{"area1": "area1", "area2": "area2"}',
             index=0,
             version=7,
+            study_version=study_version,
         )
         command_block2 = CommandBlock(
             study_id=study_id,
@@ -137,6 +139,7 @@ def test_get_matrices_used_in_variant_studies(
             args='{"area1": "area2", "area2": "area3"}',
             index=0,
             version=7,
+            study_version=study_version,
         )
         db.session.add(command_block1)
         db.session.add(command_block2)
@@ -149,6 +152,7 @@ def test_get_matrices_used_in_variant_studies(
             args='{"area1": "area1", "area2": "area2","series": "[[1,2,3]]"}',
             index=0,
             version=7,
+            study_version=study_version,
         )
         command_block2 = CommandBlock(
             study_id=study_id,
@@ -156,6 +160,7 @@ def test_get_matrices_used_in_variant_studies(
             args='{"area1": "area2", "area2": "area3","series": "[[1,2,4]]"}',
             index=0,
             version=7,
+            study_version=study_version,
         )
         db.session.add(command_block1)
         db.session.add(command_block2)

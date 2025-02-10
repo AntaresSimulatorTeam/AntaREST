@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,58 +10,48 @@
 #
 # This file is part of the Antares project.
 
-import configparser
+from unittest.mock import Mock
 
-import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from antarest.core.exceptions import LinkValidationError
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.command_reverter import CommandReverter
-from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_link import CreateLink, LinkProperties
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class TestCreateLink:
     def test_validation(self, empty_study: FileStudy, command_context: CommandContext):
         area1 = "Area1"
-        area1_id = transform_name_to_id(area1)
-
         area2 = "Area2"
 
         CreateArea.model_validate(
-            {
-                "area_name": area1,
-                "command_context": command_context,
-            }
+            {"area_name": area1, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
         ).apply(empty_study)
 
         CreateArea.model_validate(
-            {
-                "area_name": area2,
-                "command_context": command_context,
-            }
+            {"area_name": area2, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
         ).apply(empty_study)
 
         with pytest.raises(ValidationError):
             CreateLink(
-                area1=area1_id,
-                area2=area1_id,
+                area1=area1,
+                area2=area1,
                 parameters={},
                 command_context=command_context,
                 series=[[0]],
+                study_version=STUDY_VERSION_8_8,
             )
 
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+        study_version = empty_study.config.version
         study_path = empty_study.config.study_path
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
@@ -73,24 +63,15 @@ class TestCreateLink:
         area3_id = transform_name_to_id(area3)
 
         CreateArea.model_validate(
-            {
-                "area_name": area1,
-                "command_context": command_context,
-            }
+            {"area_name": area1, "command_context": command_context, "study_version": study_version}
         ).apply(empty_study)
 
         CreateArea.model_validate(
-            {
-                "area_name": area2,
-                "command_context": command_context,
-            }
+            {"area_name": area2, "command_context": command_context, "study_version": study_version}
         ).apply(empty_study)
 
         CreateArea.model_validate(
-            {
-                "area_name": area3,
-                "command_context": command_context,
-            }
+            {"area_name": area3, "command_context": command_context, "study_version": study_version}
         ).apply(empty_study)
 
         create_link_command: ICommand = CreateLink(
@@ -99,6 +80,7 @@ class TestCreateLink:
             parameters={},
             command_context=command_context,
             series=[[0]],
+            study_version=study_version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
@@ -110,19 +92,17 @@ class TestCreateLink:
 
         link = IniReader()
         link_data = link.read(study_path / "input" / "links" / area1_id / "properties.ini")
-        assert link_data[area2_id]["hurdles-cost"] == LinkProperties.HURDLES_COST
-        assert link_data[area2_id]["loop-flow"] == LinkProperties.LOOP_FLOW
-        assert link_data[area2_id]["use-phase-shifter"] == LinkProperties.USE_PHASE_SHIFTER
-        assert str(link_data[area2_id]["transmission-capacities"]) == LinkProperties.TRANSMISSION_CAPACITIES
-        assert str(link_data[area2_id]["asset-type"]) == LinkProperties.ASSET_TYPE
-        assert str(link_data[area2_id]["link-style"]) == LinkProperties.LINK_STYLE
-        assert int(link_data[area2_id]["link-width"]) == LinkProperties.LINK_WIDTH
-        assert int(link_data[area2_id]["colorr"]) == LinkProperties.COLORR
-        assert int(link_data[area2_id]["colorg"]) == LinkProperties.COLORG
-        assert int(link_data[area2_id]["colorb"]) == LinkProperties.COLORB
-        assert link_data[area2_id]["display-comments"] == LinkProperties.DISPLAY_COMMENTS
-        assert str(link_data[area2_id]["filter-synthesis"]) == FilteringOptions.FILTER_SYNTHESIS
-        assert str(link_data[area2_id]["filter-year-by-year"]) == FilteringOptions.FILTER_YEAR_BY_YEAR
+        assert link_data[area2_id]["hurdles-cost"] is False
+        assert link_data[area2_id]["loop-flow"] is False
+        assert link_data[area2_id]["use-phase-shifter"] is False
+        assert link_data[area2_id]["transmission-capacities"] == "enabled"
+        assert link_data[area2_id]["asset-type"] == "ac"
+        assert link_data[area2_id]["link-style"] == "plain"
+        assert int(link_data[area2_id]["link-width"]) == 1
+        assert int(link_data[area2_id]["colorr"]) == 112
+        assert int(link_data[area2_id]["colorg"]) == 112
+        assert int(link_data[area2_id]["colorb"]) == 112
+        assert link_data[area2_id]["display-comments"] is True
 
         empty_study.config.version = 820
         create_link_command: ICommand = CreateLink(
@@ -131,6 +111,7 @@ class TestCreateLink:
             parameters={},
             command_context=command_context,
             series=[[0]],
+            study_version=study_version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
@@ -149,25 +130,26 @@ class TestCreateLink:
                 "area1": area1_id,
                 "area2": area2_id,
                 "parameters": {},
-                "series": [[0]],
                 "command_context": command_context,
+                "series": [[0]],
+                "study_version": study_version,
             }
         ).apply(study_data=empty_study)
 
         assert not output.status
 
         parameters = {
-            "hurdles-cost": "true",
-            "loop-flow": "true",
-            "use-phase-shifter": "true",
-            "transmission-capacities": "disabled",
+            "hurdles-cost": True,
+            "loop-flow": True,
+            "use-phase-shifter": True,
+            "transmission-capacities": "ignore",
             "asset-type": "dc",
             "link-style": "other",
             "link-width": 12,
             "colorr": 120,
             "colorg": 120,
             "colorb": 120,
-            "display-comments": "true",
+            "display-comments": True,
             "filter-synthesis": "hourly",
             "filter-year-by-year": "hourly",
         }
@@ -177,8 +159,9 @@ class TestCreateLink:
                 "area1": area3_id,
                 "area2": area1_id,
                 "parameters": parameters,
-                "series": [[0]],
                 "command_context": command_context,
+                "series": [[0]],
+                "study_version": study_version,
             }
         )
         output = create_link_command.apply(
@@ -186,24 +169,33 @@ class TestCreateLink:
         )
 
         assert output.status
+        with pytest.raises(LinkValidationError):
+            CreateLink.model_validate(
+                {
+                    "area1": area3_id,
+                    "area2": area1_id,
+                    "parameters": parameters,
+                    "direct": [[0]],
+                    "command_context": command_context,
+                    "study_version": study_version,
+                }
+            )
 
         assert (study_path / "input" / "links" / area1_id / f"{area3_id}.txt.link").exists()
 
-        link = configparser.ConfigParser()
-        link.read(study_path / "input" / "links" / area1_id / "properties.ini")
-        assert str(link[area3_id]["hurdles-cost"]) == parameters["hurdles-cost"]
-        assert str(link[area3_id]["loop-flow"]) == parameters["loop-flow"]
-        assert str(link[area3_id]["use-phase-shifter"]) == parameters["use-phase-shifter"]
-        assert str(link[area3_id]["transmission-capacities"]) == parameters["transmission-capacities"]
-        assert str(link[area3_id]["asset-type"]) == parameters["asset-type"]
-        assert str(link[area3_id]["link-style"]) == parameters["link-style"]
-        assert int(link[area3_id]["link-width"]) == parameters["link-width"]
-        assert int(link[area3_id]["colorr"]) == parameters["colorr"]
-        assert int(link[area3_id]["colorg"]) == parameters["colorg"]
-        assert int(link[area3_id]["colorb"]) == parameters["colorb"]
-        assert str(link[area3_id]["display-comments"]) == parameters["display-comments"]
-        assert str(link[area3_id]["filter-synthesis"]) == parameters["filter-synthesis"]
-        assert str(link[area3_id]["filter-year-by-year"]) == parameters["filter-year-by-year"]
+        link = IniReader()
+        link_data = link.read(study_path / "input" / "links" / area1_id / "properties.ini")
+        assert link_data[area3_id]["hurdles-cost"] == parameters["hurdles-cost"]
+        assert link_data[area3_id]["loop-flow"] == parameters["loop-flow"]
+        assert link_data[area3_id]["use-phase-shifter"] == parameters["use-phase-shifter"]
+        assert link_data[area3_id]["transmission-capacities"] == parameters["transmission-capacities"]
+        assert link_data[area3_id]["asset-type"] == parameters["asset-type"]
+        assert link_data[area3_id]["link-style"] == parameters["link-style"]
+        assert int(link_data[area3_id]["link-width"]) == parameters["link-width"]
+        assert int(link_data[area3_id]["colorr"]) == parameters["colorr"]
+        assert int(link_data[area3_id]["colorg"]) == parameters["colorg"]
+        assert int(link_data[area3_id]["colorb"]) == parameters["colorb"]
+        assert link_data[area3_id]["display-comments"] == parameters["display-comments"]
 
         output = create_link_command.apply(
             study_data=empty_study,
@@ -214,64 +206,8 @@ class TestCreateLink:
             area1="does_not_exist",
             area2=area2_id,
             parameters={},
-            series=[[0]],
             command_context=command_context,
+            series=[[0]],
+            study_version=study_version,
         ).apply(empty_study)
         assert not output.status
-
-
-def test_match(command_context: CommandContext):
-    base = CreateLink(area1="foo", area2="bar", series=[[0]], command_context=command_context)
-    other_match = CreateLink(area1="foo", area2="bar", series=[[0]], command_context=command_context)
-    other_not_match = CreateLink(area1="foo", area2="baz", command_context=command_context)
-    other_other = RemoveArea(id="id", command_context=command_context)
-    assert base.match(other_match)
-    assert not base.match(other_not_match)
-    assert not base.match(other_other)
-    assert base.match_signature() == "create_link%foo%bar"
-    # check the matrices links
-    matrix_id = command_context.matrix_service.create([[0]])
-    assert base.get_inner_matrices() == [matrix_id]
-
-
-def test_revert(command_context: CommandContext):
-    base = CreateLink(area1="foo", area2="bar", series=[[0]], command_context=command_context)
-    assert CommandReverter().revert(base, [], None) == [
-        RemoveLink(
-            area1="foo",
-            area2="bar",
-            command_context=command_context,
-        )
-    ]
-
-
-def test_create_diff(command_context: CommandContext):
-    series_a = np.random.rand(8760, 8).tolist()
-    base = CreateLink(
-        area1="foo",
-        area2="bar",
-        series=series_a,
-        command_context=command_context,
-    )
-
-    series_b = np.random.rand(8760, 8).tolist()
-    other_match = CreateLink(
-        area1="foo",
-        area2="bar",
-        parameters={"hurdles-cost": "true"},
-        series=series_b,
-        command_context=command_context,
-    )
-
-    assert base.create_diff(other_match) == [
-        UpdateConfig(
-            target="input/links/bar/properties/foo",
-            data=CreateLink.generate_link_properties({"hurdles-cost": "true"}),
-            command_context=command_context,
-        ),
-        ReplaceMatrix(
-            target="@links_series/bar/foo",
-            matrix=series_b,
-            command_context=command_context,
-        ),
-    ]

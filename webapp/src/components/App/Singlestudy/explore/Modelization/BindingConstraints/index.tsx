@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,16 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
 import { useOutletContext } from "react-router";
-import { StudyMetadata } from "../../../../../../common/types";
-import SimpleLoader from "../../../../../common/loaders/SimpleLoader";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import type { StudyMetadata } from "../../../../../../common/types";
+import EmptyView from "../../../../../common/page/EmptyView";
 import BindingConstPropsView from "./BindingConstPropsView";
-import {
-  getBindingConst,
-  getCurrentBindingConstId,
-} from "../../../../../../redux/selectors";
+import { getBindingConst, getCurrentBindingConstId } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
@@ -31,25 +26,25 @@ import { getBindingConstraintList } from "../../../../../../services/api/studyda
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import { useEffect } from "react";
 import SplitView from "../../../../../common/SplitView";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import { useTranslation } from "react-i18next";
 
 function BindingConstraints() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const [t] = useTranslation();
   const dispatch = useAppDispatch();
 
   const currentConstraintId = useAppSelector(getCurrentBindingConstId);
 
-  const bindingConstraints = useAppSelector((state) =>
-    getBindingConst(state, study.id),
-  );
+  const bindingConstraints = useAppSelector((state) => getBindingConst(state, study.id));
 
-  // TODO find better name
-  const constraints = usePromise(
+  const constraintsRes = usePromise(
     () => getBindingConstraintList(study.id),
     [study.id, bindingConstraints],
   );
 
   useEffect(() => {
-    const { data } = constraints;
+    const { data } = constraintsRes;
 
     if (!data || data.length === 0 || currentConstraintId) {
       return;
@@ -57,7 +52,8 @@ function BindingConstraints() {
 
     const firstConstraintId = data[0].id;
     dispatch(setCurrentBindingConst(firstConstraintId));
-  }, [constraints, currentConstraintId, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [constraintsRes.data, currentConstraintId, dispatch]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -73,8 +69,7 @@ function BindingConstraints() {
 
   return (
     <UsePromiseCond
-      response={constraints}
-      ifPending={() => <SimpleLoader />}
+      response={constraintsRes}
       ifFulfilled={(data) => (
         <SplitView id="binding-constraints" sizes={[10, 90]}>
           {/* Left */}
@@ -82,16 +77,16 @@ function BindingConstraints() {
             list={data}
             onClick={handleConstraintChange}
             currentConstraint={currentConstraintId}
-            reloadConstraintsList={constraints.reload}
+            reloadConstraintsList={constraintsRes.reload}
           />
           {/* Right */}
-          <Box>
+          <ViewWrapper>
             {data.length > 0 && currentConstraintId ? (
               <BindingConstView constraintId={currentConstraintId} />
             ) : (
-              <EmptyView title="No Binding Constraints" />
+              <EmptyView title={t("study.bindingConstraints.empty")} />
             )}
-          </Box>
+          </ViewWrapper>
         </SplitView>
       )}
       ifRejected={(error) => <EmptyView title={error?.toString()} />}

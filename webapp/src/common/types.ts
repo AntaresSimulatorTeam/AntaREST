@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { TTaskType } from "../services/api/tasks/types";
+import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
 
@@ -20,8 +20,6 @@ export interface IdentityDTO<T extends IdType = string> {
   id: T;
   name: string;
 }
-
-export type StudyDataType = "json" | "file" | "matrixfile" | "matrix";
 
 export type StudyPublicMode = "NONE" | "READ" | "EXECUTE" | "EDIT" | "FULL";
 
@@ -306,6 +304,9 @@ export interface CommandDTO {
   id?: string;
   action: string;
   args: object;
+  version?: number;
+  user_name?: string;
+  updated_at?: string;
 }
 
 export type Components = Record<string, () => React.ReactNode>;
@@ -531,21 +532,6 @@ export interface UpdateAreaUi {
   layerColor: AreaLayerColor;
 }
 
-export interface LinkUIInfoDTO {
-  color: string;
-  style: string;
-  width: number;
-}
-
-export interface LinkCreationInfoDTO {
-  area1: string;
-  area2: string;
-}
-
-export interface LinkInfoWithUI extends LinkCreationInfoDTO {
-  ui: LinkUIInfoDTO;
-}
-
 export interface AreaCreationDTO {
   name: string;
   type: object;
@@ -564,7 +550,7 @@ export interface TaskView {
   dateView: React.ReactNode;
   action: React.ReactNode;
   date: string;
-  type: TTaskType | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
+  type: TaskTypeValue | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
 }
 

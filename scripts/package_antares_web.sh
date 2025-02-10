@@ -9,7 +9,7 @@
 set -e
 
 ANTARES_SOLVER_VERSION="8.8"
-ANTARES_SOLVER_FULL_VERSION="8.8.5"
+ANTARES_SOLVER_FULL_VERSION="8.8.11"
 ANTARES_SOLVER_VERSION_INT="880"
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
@@ -86,9 +86,7 @@ if [[ "$OSTYPE" == "msys"* ]]; then
   cp "${RESOURCES_DIR}/AntaresWebServerShortcut.lnk" "${DIST_DIR}"
 else
   echo "INFO: Updating executable permissions..."
-  for excutable in "${DIST_DIR}/AntaresWeb/AntaresWebServer" "${DIST_DIR}/AntaresWeb/AntaresTool"; do
-    chmod +x "${excutable}"
-  done
+  chmod +x "${DIST_DIR}/AntaresWeb/AntaresWebServer"
 fi
 
 echo "INFO: Unzipping example study..."

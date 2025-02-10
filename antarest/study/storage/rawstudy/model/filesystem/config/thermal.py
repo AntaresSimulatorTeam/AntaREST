@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ import typing as t
 
 from antares.study.version import StudyVersion
 from pydantic import Field
+from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
@@ -35,6 +36,7 @@ class LocalTSGenerationBehavior(EnumIgnoreCase):
     FORCE_NO_GENERATION = "force no generation"
     FORCE_GENERATION = "force generation"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
@@ -48,6 +50,7 @@ class LawOption(EnumIgnoreCase):
     UNIFORM = "uniform"
     GEOMETRIC = "geometric"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
@@ -69,10 +72,12 @@ class ThermalClusterGroup(EnumIgnoreCase):
     OTHER3 = "Other 3"
     OTHER4 = "Other 4"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         return f"{self.__class__.__name__}.{self.name}"
 
     @classmethod
+    @override
     def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
         """
         Retrieves the default group or the matched group when an unknown value is encountered.

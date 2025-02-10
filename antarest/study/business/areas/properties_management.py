@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -173,9 +173,7 @@ class PropertiesManager:
 
                 commands.append(
                     UpdateConfig(
-                        target=target,
-                        data=data,
-                        command_context=context,
+                        target=target, data=data, command_context=context, study_version=file_study.config.version
                     )
                 )
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,19 +17,19 @@ import { Button, ButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import * as R from "ramda";
-import { LinkCreationInfoDTO } from "../../../../../../common/types";
-import { XpansionCandidate } from "../types";
+import type { XpansionCandidate } from "../types";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../../common/Fieldset";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import { validateString } from "@/utils/validation/string";
+import type { LinkDTO } from "@/services/api/studies/links/types";
 
 interface PropType {
   open: boolean;
-  links: LinkCreationInfoDTO[];
+  links: LinkDTO[];
   onClose: () => void;
   onSave: (candidate: XpansionCandidate) => void;
   candidates: XpansionCandidate[];
@@ -40,10 +40,7 @@ function CreateCandidateDialog(props: PropType) {
   const [t] = useTranslation();
   const [isToggled, setIsToggled] = useState(true);
 
-  const existingCandidates = useMemo(
-    () => candidates.map(({ name }) => name),
-    [candidates],
-  );
+  const existingCandidates = useMemo(() => candidates.map(({ name }) => name), [candidates]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -54,10 +51,7 @@ function CreateCandidateDialog(props: PropType) {
   };
 
   const handleSubmit = (data: SubmitHandlerPlus<XpansionCandidate>) => {
-    const values = R.omit(
-      isToggled ? ["max-investment"] : ["unit-size", "max-units"],
-      data.values,
-    );
+    const values = R.omit(isToggled ? ["max-investment"] : ["unit-size", "max-units"], data.values);
 
     onSave(values);
   };
@@ -131,22 +125,11 @@ function CreateCandidateDialog(props: PropType) {
                 : t("xpansion.maxInvestments")
             }
           >
-            <ButtonGroup
-              disableElevation
-              size="small"
-              color="info"
-              sx={{ py: 2 }}
-            >
-              <Button
-                onClick={handleToggle}
-                variant={!isToggled ? "outlined" : "contained"}
-              >
+            <ButtonGroup disableElevation size="small" color="info" sx={{ py: 2 }}>
+              <Button onClick={handleToggle} variant={!isToggled ? "outlined" : "contained"}>
                 {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
               </Button>
-              <Button
-                onClick={handleToggle}
-                variant={isToggled ? "outlined" : "contained"}
-              >
+              <Button onClick={handleToggle} variant={isToggled ? "outlined" : "contained"}>
                 {t("xpansion.maxInvestments")}
               </Button>
             </ButtonGroup>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Button, ButtonProps } from "@mui/material";
+import { Button, type ButtonProps } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import BasicDialog, { BasicDialogProps } from "./BasicDialog";
+import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 
 export interface OkDialogProps extends Omit<BasicDialogProps, "actions"> {
   okButtonText?: string;
@@ -23,17 +23,14 @@ export interface OkDialogProps extends Omit<BasicDialogProps, "actions"> {
 }
 
 function OkDialog(props: OkDialogProps) {
-  const { okButtonText, okButtonProps, onOk, onClose, ...basicDialogProps } =
-    props;
+  const { okButtonText, okButtonProps, onOk, onClose, ...basicDialogProps } = props;
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClose = (
-    ...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>
-  ) => {
+  const handleClose = (...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>) => {
     onOk();
     onClose?.(...args);
   };

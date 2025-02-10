@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,6 +15,7 @@ import re
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
@@ -60,14 +61,13 @@ class TestRemoveSTStorage:
     # noinspection SpellCheckingInspection
     def test_init(self, command_context: CommandContext):
         cmd = RemoveSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            storage_id="storage_1",
+            command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
         )
 
         # Check the attribues
         assert cmd.command_name == CommandName.REMOVE_ST_STORAGE
         assert cmd.version == 1
+        assert cmd.study_version == STUDY_VERSION_8_8
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
         assert cmd.storage_id == "storage_1"
@@ -79,6 +79,7 @@ class TestRemoveSTStorage:
                 command_context=command_context,
                 area_id="dummy",
                 storage_id="?%$$",  # bad name
+                study_version=STUDY_VERSION_8_8,
             )
         assert ctx.value.errors() == [
             {
@@ -87,24 +88,23 @@ class TestRemoveSTStorage:
                 "loc": ("storage_id",),
                 "msg": "String should match pattern '[a-z0-9_(),& -]+'",
                 "type": "string_pattern_mismatch",
-                "url": "https://errors.pydantic.dev/2.8/v/string_pattern_mismatch",
+                "url": "https://errors.pydantic.dev/2.10/v/string_pattern_mismatch",
             }
         ]
 
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
+        study_version = empty_study.config.version
         # When we apply the config to add a new ST Storage
         remove_st_storage = RemoveSTStorage(
-            command_context=command_context,
-            area_id="foo",
-            storage_id="bar",
+            command_context=command_context, area_id="foo", storage_id="bar", study_version=study_version
         )
         command_output = remove_st_storage.apply_config(empty_study.config)
 
         # Then, the output should be an error
         assert command_output.status is False
         assert re.search(
-            rf"Invalid.*version {empty_study.config.version}",
+            rf"Invalid.*version {study_version}",
             command_output.message,
             flags=re.IGNORECASE,
         )
@@ -116,6 +116,7 @@ class TestRemoveSTStorage:
             command_context=command_context,
             area_id="unknown area",  # bad ID
             storage_id="storage_1",
+            study_version=recent_study.config.version,
         )
         command_output = remove_st_storage.apply_config(recent_study.config)
 
@@ -130,8 +131,7 @@ class TestRemoveSTStorage:
     def test_apply_config__missing_storage(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
-            command_context=command_context,
-            area_name="Area FR",
+            command_context=command_context, area_name="Area FR", study_version=recent_study.config.version
         )
         create_area.apply(recent_study)
 
@@ -140,6 +140,7 @@ class TestRemoveSTStorage:
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
             storage_id="storage 1",
+            study_version=recent_study.config.version,
         )
         command_output = remove_st_storage.apply_config(recent_study.config)
 
@@ -152,11 +153,9 @@ class TestRemoveSTStorage:
         )
 
     def test_apply_config__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
+        study_version = recent_study.config.version
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR",
-            command_context=command_context,
-        )
+        create_area = CreateArea(area_name="Area FR", command_context=command_context, study_version=study_version)
         create_area.apply(recent_study)
 
         # Then, prepare a new Storage
@@ -164,6 +163,7 @@ class TestRemoveSTStorage:
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
             parameters=PARAMETERS,  # type: ignore
+            study_version=study_version,
         )
         create_st_storage.apply(recent_study)
 
@@ -172,6 +172,7 @@ class TestRemoveSTStorage:
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
             storage_id=create_st_storage.storage_id,
+            study_version=study_version,
         )
         command_output = remove_st_storage.apply_config(recent_study.config)
 
@@ -185,9 +186,7 @@ class TestRemoveSTStorage:
 
     def test_to_dto(self, command_context: CommandContext):
         cmd = RemoveSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            storage_id="storage_1",
+            command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
         )
         actual = cmd.to_dto()
 
@@ -195,57 +194,12 @@ class TestRemoveSTStorage:
         assert actual == CommandDTO(
             action=CommandName.REMOVE_ST_STORAGE.value,
             args={"area_id": "area_fr", "storage_id": "storage_1"},
+            study_version=STUDY_VERSION_8_8,
         )
-
-    def test_match_signature(self, command_context: CommandContext):
-        cmd = RemoveSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            storage_id="storage_1",
-        )
-        assert cmd.match_signature() == "remove_st_storage%area_fr%storage_1"
-
-    @pytest.mark.parametrize("area_id", ["area_fr", "area_en"])
-    @pytest.mark.parametrize("storage_id", ["storage_1", "storage_2"])
-    def test_match(
-        self,
-        command_context: CommandContext,
-        area_id,
-        storage_id,
-    ):
-        cmd1 = RemoveSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            storage_id="storage_1",
-        )
-        cmd2 = RemoveSTStorage(
-            command_context=command_context,
-            area_id=area_id,
-            storage_id=storage_id,
-        )
-        is_equal = area_id == cmd1.area_id and storage_id == cmd1.storage_id
-        assert cmd1.match(cmd2, equal=False) == is_equal
-        assert cmd1.match(cmd2, equal=True) == is_equal
-
-    def test_create_diff(self, command_context: CommandContext):
-        cmd = RemoveSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            storage_id="storage_1",
-        )
-        other = RemoveSTStorage(
-            command_context=command_context,
-            area_id=cmd.area_id,
-            storage_id=cmd.storage_id,
-        )
-        actual = cmd.create_diff(other)
-        assert not actual
 
     def test_get_inner_matrices(self, command_context: CommandContext):
         cmd = RemoveSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            storage_id="storage_1",
+            command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
         )
         actual = cmd.get_inner_matrices()
         assert actual == []

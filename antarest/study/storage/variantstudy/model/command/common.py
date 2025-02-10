@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,8 +10,11 @@
 #
 # This file is part of the Antares project.
 
+import typing as t
 from dataclasses import dataclass
 from enum import Enum
+
+from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
 
 @dataclass
@@ -31,10 +34,12 @@ class CommandName(Enum):
     CREATE_DISTRICT = "create_district"
     REMOVE_DISTRICT = "remove_district"
     CREATE_LINK = "create_link"
+    UPDATE_LINK = "update_link"
     REMOVE_LINK = "remove_link"
     CREATE_BINDING_CONSTRAINT = "create_binding_constraint"
     UPDATE_BINDING_CONSTRAINT = "update_binding_constraint"
     REMOVE_BINDING_CONSTRAINT = "remove_binding_constraint"
+    REMOVE_MULTIPLE_BINDING_CONSTRAINTS = "remove_multiple_binding_constraints"
     CREATE_THERMAL_CLUSTER = "create_cluster"
     REMOVE_THERMAL_CLUSTER = "remove_cluster"
     CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster"
@@ -49,3 +54,9 @@ class CommandName(Enum):
     UPDATE_PLAYLIST = "update_playlist"
     UPDATE_SCENARIO_BUILDER = "update_scenario_builder"
     GENERATE_THERMAL_CLUSTER_TIMESERIES = "generate_thermal_cluster_timeseries"
+    CREATE_USER_RESOURCE = "create_user_resource"
+    REMOVE_USER_RESOURCE = "remove_user_resource"
+
+
+def is_url_writeable(user_node: User, url: t.List[str]) -> bool:
+    return url[0] not in [file.filename for file in user_node.registered_files]

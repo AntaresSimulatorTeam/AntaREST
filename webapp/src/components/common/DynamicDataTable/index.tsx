@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -21,26 +21,20 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import AddIcon from "@mui/icons-material/Add";
-import {
-  ChangeEvent,
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button, Checkbox } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import TableRowGroup from "./TableRowGroup";
 import TableToolbar from "./TableToolbar";
 import TableRowItem from "./TableRowItem";
-import { Item, Column, AddItemDialogProps } from "./utils";
+import type { Item, Column, AddItemDialogProps } from "./utils";
 
 export interface DynamicDataTableProps {
   items: Item[];
   columns: Column[];
   onDeleteItems: (ids: string[]) => void;
   onAddItem: (item: Item) => void;
-  AddItemDialog: FunctionComponent<AddItemDialogProps>;
+  AddItemDialog: React.FunctionComponent<AddItemDialogProps>;
 }
 
 function DynamicDataTable({
@@ -75,23 +69,20 @@ function DynamicDataTable({
   ////////////////////////////////////////////////////////////////
 
   const handleSelectAll = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setSelected(e.target.checked ? items.map((item) => item.id) : []);
     },
     [items],
   );
 
-  const handleSelect = useCallback(
-    (_e: ChangeEvent<HTMLInputElement>, name: string) => {
-      setSelected((prevSelected) => {
-        if (prevSelected.includes(name)) {
-          return prevSelected.filter((item) => item !== name);
-        }
-        return [...prevSelected, name];
-      });
-    },
-    [],
-  );
+  const handleSelect = useCallback((_e: React.ChangeEvent<HTMLInputElement>, name: string) => {
+    setSelected((prevSelected) => {
+      if (prevSelected.includes(name)) {
+        return prevSelected.filter((item) => item !== name);
+      }
+      return [...prevSelected, name];
+    });
+  }, []);
 
   const handleDelete = () => {
     onDeleteItems(selected);
@@ -158,10 +149,7 @@ function DynamicDataTable({
       </Box>
       <TableContainer component={Box} sx={{ px: 3, mt: 1, pb: 3 }}>
         {selected.length > 0 && (
-          <TableToolbar
-            numSelected={selected.length}
-            handleDelete={handleDelete}
-          />
+          <TableToolbar numSelected={selected.length} handleDelete={handleDelete} />
         )}
         <Table>
           <TableHead>
@@ -183,10 +171,7 @@ function DynamicDataTable({
                 />
               </TableCell>
               {columns.map((column) => (
-                <TableCell
-                  key={column.name}
-                  align={column.operation ? "center" : "left"}
-                >
+                <TableCell key={column.name} align={column.operation ? "center" : "left"}>
                   {column.label}
                 </TableCell>
               ))}

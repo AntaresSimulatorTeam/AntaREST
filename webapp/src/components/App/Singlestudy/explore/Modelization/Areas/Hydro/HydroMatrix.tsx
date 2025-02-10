@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,7 +14,7 @@
 
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import { MATRICES, HydroMatrixType } from "./utils";
+import { MATRICES, type HydroMatrixType } from "./utils";
 import Matrix from "../../../../../../common/Matrix";
 import { Box } from "@mui/material";
 

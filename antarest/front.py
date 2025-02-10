@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -30,6 +30,7 @@ from starlette.requests import Request
 from starlette.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp
+from typing_extensions import override
 
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
@@ -76,6 +77,7 @@ class RedirectMiddleware(BaseHTTPMiddleware):
                 return True
         return False
 
+    @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Any:
         """
         Intercepts the incoming request and rewrites the URL path if necessary.

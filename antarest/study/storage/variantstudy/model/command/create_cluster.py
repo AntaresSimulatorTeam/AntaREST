@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 import typing as t
 
 from pydantic import Field, ValidationInfo, field_validator
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
@@ -86,6 +87,7 @@ class CreateCluster(ICommand):
         else:
             return validate_matrix(v, new_values)
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
@@ -120,6 +122,7 @@ class CreateCluster(ICommand):
             {"cluster_id": cluster.id},
         )
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
@@ -158,6 +161,7 @@ class CreateCluster(ICommand):
 
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
@@ -168,64 +172,10 @@ class CreateCluster(ICommand):
                 "prepro": strip_matrix_protocol(self.prepro),
                 "modulation": strip_matrix_protocol(self.modulation),
             },
+            study_version=self.study_version,
         )
 
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.cluster_name
-        )
-
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateCluster):
-            return False
-        simple_match = self.area_id == other.area_id and self.cluster_name == other.cluster_name
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.parameters == other.parameters
-            and self.prepro == other.prepro
-            and self.modulation == other.modulation
-        )
-
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        other = t.cast(CreateCluster, other)
-        from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        # Series identifiers are in lower case.
-        series_id = transform_name_to_id(self.cluster_name, lower=True)
-        commands: t.List[ICommand] = []
-        if self.prepro != other.prepro:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/data",
-                    matrix=strip_matrix_protocol(other.prepro),
-                    command_context=self.command_context,
-                )
-            )
-        if self.modulation != other.modulation:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"input/thermal/prepro/{self.area_id}/{series_id}/modulation",
-                    matrix=strip_matrix_protocol(other.modulation),
-                    command_context=self.command_context,
-                )
-            )
-        if self.parameters != other.parameters:
-            commands.append(
-                UpdateConfig(
-                    target=f"input/thermal/clusters/{self.area_id}/list/{self.cluster_name}",
-                    data=other.parameters,
-                    command_context=self.command_context,
-                )
-            )
-        return commands
-
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         matrices: t.List[str] = []
         if self.prepro:

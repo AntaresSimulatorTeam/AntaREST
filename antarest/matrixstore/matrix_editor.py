@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,6 +15,7 @@ import operator
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field, field_validator, model_validator
+from typing_extensions import override
 
 from antarest.core.serialization import AntaresBaseModel
 
@@ -128,6 +129,7 @@ class Operation(AntaresBaseModel):
             return x
         return OPERATIONS[self.operation](x, self.value)  # type: ignore
 
+    @override
     def __str__(self) -> str:
         """Returns a string representation used in error messages."""
         return f"['{self.operation}' {self.value}]"
@@ -215,6 +217,7 @@ class MatrixEditInstruction(AntaresBaseModel):
                 raise ValueError(f"Invalid coordinate {coordinate}:  values must be greater than or equal to 0.")
         return coordinates
 
+    @override
     def __str__(self) -> str:
         """Returns a string representation used in error messages."""
 

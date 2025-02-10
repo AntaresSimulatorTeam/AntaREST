@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,11 +13,12 @@
  */
 
 import { Box, Divider, IconButton, Tooltip } from "@mui/material";
-import SplitButton, {
-  type SplitButtonProps,
-} from "@/components/common/buttons/SplitButton";
+import SplitButton, { type SplitButtonProps } from "@/components/common/buttons/SplitButton";
 import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
-import { FileDownload, Save, Undo, Redo } from "@mui/icons-material";
+import UndoIcon from "@mui/icons-material/Undo";
+import RedoIcon from "@mui/icons-material/Redo";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import SaveIcon from "@mui/icons-material/Save";
 import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
 
@@ -60,25 +61,15 @@ function MatrixActions({
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <Tooltip title={t("global.undo")}>
         <span>
-          <IconButton
-            onClick={undo}
-            disabled={!canUndo}
-            size="small"
-            color="primary"
-          >
-            <Undo fontSize="small" />
+          <IconButton onClick={undo} disabled={!canUndo} size="small" color="primary">
+            <UndoIcon fontSize="small" />
           </IconButton>
         </span>
       </Tooltip>
       <Tooltip title={t("global.redo")}>
         <span>
-          <IconButton
-            onClick={redo}
-            disabled={!canRedo}
-            size="small"
-            color="primary"
-          >
-            <Redo fontSize="small" />
+          <IconButton onClick={redo} disabled={!canRedo} size="small" color="primary">
+            <RedoIcon fontSize="small" />
           </IconButton>
         </span>
       </Tooltip>
@@ -86,7 +77,7 @@ function MatrixActions({
         onClick={onSave}
         loading={isSubmitting}
         loadingPosition="start"
-        startIcon={<Save />}
+        startIcon={<SaveIcon />}
         variant="contained"
         size="small"
         disabled={pendingUpdatesCount === 0}
@@ -99,17 +90,13 @@ function MatrixActions({
         onClick={onImport}
         size="small"
         ButtonProps={{
-          startIcon: <FileDownload />,
+          startIcon: <FileDownloadIcon />,
         }}
         disabled={isSubmitting || canImport}
       >
         {t("global.import")}
       </SplitButton>
-      <DownloadMatrixButton
-        studyId={studyId}
-        path={path}
-        disabled={disabled || isSubmitting}
-      />
+      <DownloadMatrixButton studyId={studyId} path={path} disabled={disabled || isSubmitting} />
     </Box>
   );
 }

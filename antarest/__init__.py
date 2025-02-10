@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,9 +19,9 @@ from pathlib import Path
 
 # Standard project metadata
 
-__version__ = "2.18.3"
+__version__ = "2.19.0"
 __author__ = "RTE, Antares Web Team"
-__date__ = "2024-12-17"
+__date__ = "2025-02-10"
 # noinspection SpellCheckingInspection
 __credits__ = "(c) Réseau de Transport de l’Électricité (RTE)"
 

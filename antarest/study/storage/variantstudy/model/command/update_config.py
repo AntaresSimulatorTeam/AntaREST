@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 import typing as t
 
 import typing_extensions as te
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -54,6 +55,7 @@ class UpdateConfig(ICommand):
     target: str
     data: _Data
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
         # The renewable-generation-modelling parameter must be reflected in the config
         if self.target.startswith("settings"):
@@ -64,6 +66,7 @@ class UpdateConfig(ICommand):
 
         return CommandOutput(status=True, message="ok"), {}
 
+    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
@@ -78,6 +81,7 @@ class UpdateConfig(ICommand):
         output, _ = self._apply_config(study_data.config)
         return output
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_CONFIG.value,
@@ -85,21 +89,9 @@ class UpdateConfig(ICommand):
                 "target": self.target,
                 "data": self.data,
             },
+            study_version=self.study_version,
         )
 
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target)
-
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, UpdateConfig):
-            return False
-        simple_match = self.target == other.target
-        if not equal:
-            return simple_match
-        return simple_match and self.data == other.data
-
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return [other]
-
+    @override
     def get_inner_matrices(self) -> t.List[str]:
         return []

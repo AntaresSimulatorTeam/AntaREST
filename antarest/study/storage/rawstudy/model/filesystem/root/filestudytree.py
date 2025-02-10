@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,12 +12,14 @@
 
 import logging
 
+from typing_extensions import override
+
+from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.desktop import Desktop
 from antarest.study.storage.rawstudy.model.filesystem.root.input.input import Input
 from antarest.study.storage.rawstudy.model.filesystem.root.layers.layers import Layers
-from antarest.study.storage.rawstudy.model.filesystem.root.logs import Logs
 from antarest.study.storage.rawstudy.model.filesystem.root.output.output import Output
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.settings import Settings
 from antarest.study.storage.rawstudy.model.filesystem.root.study_antares import StudyAntares
@@ -31,16 +33,19 @@ class FileStudyTree(FolderNode):
     Top level node of antares tree structure
     """
 
+    @override
     def build(self) -> TREE:
         children: TREE = {
             "Desktop": Desktop(self.context, self.config.next_file("Desktop.ini")),
             "study": StudyAntares(self.context, self.config.next_file("study.antares")),
             "settings": Settings(self.context, self.config.next_file("settings")),
             "layers": Layers(self.context, self.config.next_file("layers")),
-            "logs": Logs(self.context, self.config.next_file("logs")),
             "input": Input(self.context, self.config.next_file("input")),
             "user": User(self.context, self.config.next_file("user")),
         }
+
+        if (self.config.path / "logs").exists():
+            children["logs"] = BucketNode(self.context, self.config.next_file("logs"))
 
         if self.config.outputs:
             output_config = self.config.next_file("output")

@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -224,6 +224,7 @@ class CorrelationManager:
             target="/".join(self.url),
             data=correlation_cfg,
             command_context=command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 

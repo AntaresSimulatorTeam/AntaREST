@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/common/types";
 import DatabaseUploadDialog from "@/components/common/dialogs/DatabaseUploadDialog";
 import { useTranslation } from "react-i18next";
 import UploadDialog from "../../dialogs/UploadDialog";
@@ -74,14 +74,7 @@ function MatrixUpload({
 
   // Import from the matrix store (database)
   if (type === "database") {
-    return (
-      <DatabaseUploadDialog
-        studyId={studyId}
-        path={path}
-        open={open}
-        onClose={onClose}
-      />
-    );
+    return <DatabaseUploadDialog studyId={studyId} path={path} open={open} onClose={onClose} />;
   }
 
   return null;

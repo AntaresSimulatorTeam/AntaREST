@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ import enum
 import typing as t
 
 import typing_extensions as te
+from typing_extensions import override
 
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
@@ -66,6 +67,7 @@ class ScenarioType(enum.StrEnum):
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
 
+    @override
     def __str__(self) -> str:
         """Return the string representation of the enum value."""
         return self.value
@@ -212,7 +214,7 @@ class ScenarioBuilderManager:
         execute_or_add_commands(
             study,
             file_study,
-            [UpdateScenarioBuilder(data=sections, command_context=context)],
+            [UpdateScenarioBuilder(data=sections, command_context=context, study_version=file_study.config.version)],
             self.storage_service,
         )
 
@@ -236,7 +238,9 @@ class ScenarioBuilderManager:
         ruleset_name = _get_active_ruleset_name(file_study)
         data = {ruleset_name: ruleset.get_rules(allow_nan=True)}
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        update_scenario = UpdateScenarioBuilder(data=data, command_context=command_context)
+        update_scenario = UpdateScenarioBuilder(
+            data=data, command_context=command_context, study_version=file_study.config.version
+        )
         execute_or_add_commands(study, file_study, [update_scenario], self.storage_service)
 
         # Extract the updated table form for the given scenario type

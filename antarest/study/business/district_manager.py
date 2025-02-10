@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -116,6 +116,7 @@ class DistrictManager:
             base_filter=DistrictBaseFilter.remove_all,
             filter_items=list(areas),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
         return DistrictInfoDTO(
@@ -161,6 +162,7 @@ class DistrictManager:
             output=dto.output,
             comments=dto.comments,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
@@ -185,5 +187,6 @@ class DistrictManager:
         command = RemoveDistrict(
             id=district_id,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=file_study.config.version,
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)

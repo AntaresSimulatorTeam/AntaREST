@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -463,8 +463,59 @@ class TestBindingConstraints:
         assert len(dataframe["columns"]) == 3  # less, equal, greater
 
         # =============================
+        # CONSTRAINT DUPLICATION
+        # =============================
+
+        # Change source constraint matrix to ensure it will be copied correctly
+        new_matrix = np.ones((366, 3)).tolist()
+        res = client.post(
+            f"/v1/studies/{study_id}/raw", params={"path": f"input/bindingconstraints/{bc_id}"}, json=new_matrix
+        )
+        res.raise_for_status()
+
+        # Get the source constraint properties to ensure there are copied correctly
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
+        res.raise_for_status()
+        current_constraint = res.json()
+        current_constraint.pop("name")
+        current_constraint.pop("id")
+
+        # Duplicates the constraint
+        duplicated_name = "BC_4"
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", params={"new_constraint_name": duplicated_name}
+        )
+        res.raise_for_status()
+        duplicated_constraint = res.json()
+
+        # Asserts the duplicated constraint has the right name and the right properties
+        assert duplicated_constraint.pop("name") == duplicated_name
+        new_id = duplicated_constraint.pop("id")
+        assert current_constraint == duplicated_constraint
+
+        # Asserts the matrix is duplicated correctly
+        res = client.get(f"/v1/studies/{study_id}/raw", params={"path": f"input/bindingconstraints/{new_id}"})
+        res.raise_for_status()
+        assert res.json()["data"] == new_matrix
+
+        # =============================
         # ERRORS
         # =============================
+
+        # Asserts duplication fails if given an non-exisiting constraint
+        fake_name = "fake_name"
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{fake_name}", params={"new_constraint_name": "aa"}
+        )
+        assert res.status_code == 404
+        assert res.json()["exception"] == "BindingConstraintNotFound"
+        assert res.json()["description"] == f"Binding constraint '{fake_name}' not found"
+
+        # Asserts duplication fails if given an already existing name
+        res = client.post(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}", params={"new_constraint_name": bc_id})
+        assert res.status_code == 409
+        assert res.json()["exception"] == "DuplicateConstraintName"
+        assert res.json()["description"] == f"A binding constraint with the same name already exists: {bc_id}."
 
         # Assert empty name
         res = client.post(
@@ -921,9 +972,89 @@ class TestBindingConstraints:
         binding_constraints_list = preparer.get_binding_constraints(study_id)
         assert len(binding_constraints_list) == 2
 
+        # Delete multiple binding constraint
+        preparer.create_binding_constraint(study_id, name="bc1", group="grp1", **args)
+        preparer.create_binding_constraint(study_id, name="bc2", group="grp2", **args)
+
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 4
+
+        res = client.request(
+            "DELETE",
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=["bc1", "bc2"],
+        )
+        assert res.status_code == 200, res.json()
+
+        # Asserts that the deletion worked
+        binding_constraints_list = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/bindingconstraints/bindingconstraints"},  # type: ignore
+        ).json()
+        assert len(binding_constraints_list) == 2
+        actual_ids = [constraint["id"] for constraint in binding_constraints_list.values()]
+        assert actual_ids == ["binding_constraint_1", "binding_constraint_3"]
+        keys = sorted(int(k) for k in binding_constraints_list.keys())
+        assert keys == list(range(len(keys)))
+
+        # =============================
+        # CONSTRAINT DUPLICATION
+        # =============================
+
+        # Change source constraint matrix to ensure it will be copied correctly
+        new_matrix = np.ones((366, 1)).tolist()
+        res = client.post(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/bindingconstraints/{bc_id_w_matrix}_lt"},
+            json=new_matrix,
+        )
+        res.raise_for_status()
+
+        # Get the source constraint properties to ensure there are copied correctly
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}")
+        res.raise_for_status()
+        current_constraint = res.json()
+        current_constraint.pop("name")
+        current_constraint.pop("id")
+
+        # Duplicates the constraint
+        duplicated_name = "BC_4"
+        res = client.post(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
+            params={"new_constraint_name": duplicated_name},
+        )
+        res.raise_for_status()
+        duplicated_constraint = res.json()
+
+        # Asserts the duplicated constraint has the right name and the right properties
+        assert duplicated_constraint.pop("name") == duplicated_name
+        new_id = duplicated_constraint.pop("id")
+        assert current_constraint == duplicated_constraint
+
+        # Asserts the matrix is duplicated correctly
+        res = client.get(f"/v1/studies/{study_id}/raw", params={"path": f"input/bindingconstraints/{new_id}_lt"})
+        res.raise_for_status()
+        assert res.json()["data"] == new_matrix
+
         # =============================
         #  ERRORS
         # =============================
+
+        # Deletion multiple binding constraints, one does not exist. Make sure none is deleted
+
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 3
+
+        res = client.request(
+            "DELETE",
+            f"/v1/studies/{study_id}/bindingconstraints",
+            json=["binding_constraint_1", "binding_constraint_2", "binding_constraint_3"],
+        )
+        assert res.status_code == 404, res.json()
+        assert res.json()["description"] == "Binding constraint(s) '['binding_constraint_2']' not found"
+
+        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        assert len(binding_constraints_list) == 3
 
         # Creation with wrong matrix according to version
         for operator in ["less", "equal", "greater", "both"]:

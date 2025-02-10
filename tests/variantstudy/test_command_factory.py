@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,6 +19,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -27,25 +28,17 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 COMMANDS: List[CommandDTO] = [
-    CommandDTO(
-        action=CommandName.CREATE_AREA.value,
-        args={"area_name": "area_name"},
-    ),
+    CommandDTO(action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8),
     CommandDTO(
         action=CommandName.CREATE_AREA.value,
         args=[
             {"area_name": "area_name"},
             {"area_name": "area2"},
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
-    CommandDTO(
-        action=CommandName.REMOVE_AREA.value,
-        args={"id": "id"},
-    ),
-    CommandDTO(
-        action=CommandName.REMOVE_AREA.value,
-        args=[{"id": "id"}],
-    ),
+    CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
+    CommandDTO(action=CommandName.REMOVE_AREA.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
     CommandDTO(
         action=CommandName.CREATE_DISTRICT.value,
         args={
@@ -54,6 +47,7 @@ COMMANDS: List[CommandDTO] = [
             "output": True,
             "comments": "",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_DISTRICT.value,
@@ -65,15 +59,10 @@ COMMANDS: List[CommandDTO] = [
                 "comments": "",
             }
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
-    CommandDTO(
-        action=CommandName.REMOVE_DISTRICT.value,
-        args={"id": "id"},
-    ),
-    CommandDTO(
-        action=CommandName.REMOVE_DISTRICT.value,
-        args=[{"id": "id"}],
-    ),
+    CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
+    CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
     CommandDTO(
         action=CommandName.CREATE_LINK.value,
         args={
@@ -82,6 +71,7 @@ COMMANDS: List[CommandDTO] = [
             "parameters": {},
             "series": "series",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_LINK.value,
@@ -93,6 +83,19 @@ COMMANDS: List[CommandDTO] = [
                 "series": "series",
             }
         ],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.UPDATE_LINK.value,
+        args=[
+            {
+                "area1": "area1",
+                "area2": "area2",
+                "parameters": {},
+                "series": "series",
+            }
+        ],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_LINK.value,
@@ -100,6 +103,7 @@ COMMANDS: List[CommandDTO] = [
             "area1": "area1",
             "area2": "area2",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_LINK.value,
@@ -109,10 +113,10 @@ COMMANDS: List[CommandDTO] = [
                 "area2": "area2",
             }
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
-        action=CommandName.CREATE_BINDING_CONSTRAINT.value,
-        args={"name": "name"},
+        action=CommandName.CREATE_BINDING_CONSTRAINT.value, args={"name": "name"}, study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
         action=CommandName.CREATE_BINDING_CONSTRAINT.value,
@@ -126,6 +130,7 @@ COMMANDS: List[CommandDTO] = [
                 "group": "group_1",
             },
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
@@ -136,6 +141,7 @@ COMMANDS: List[CommandDTO] = [
             "operator": "equal",
             "values": "values",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
@@ -147,14 +153,21 @@ COMMANDS: List[CommandDTO] = [
                 "operator": "equal",
             }
         ],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
+    CommandDTO(
+        action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
-        action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
-        args={"id": "id"},
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args={"ids": ["id"]},
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
-        action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
-        args=[{"id": "id"}],
+        action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
+        args=[{"ids": ["id"]}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
@@ -171,6 +184,7 @@ COMMANDS: List[CommandDTO] = [
             "prepro": "prepro",
             "modulation": "modulation",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_THERMAL_CLUSTER.value,
@@ -189,14 +203,17 @@ COMMANDS: List[CommandDTO] = [
                 "modulation": "modulation",
             }
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_THERMAL_CLUSTER.value,
         args={"area_id": "area_name", "cluster_id": "cluster_name"},
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_THERMAL_CLUSTER.value,
         args=[{"area_id": "area_name", "cluster_id": "cluster_name"}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
@@ -208,6 +225,7 @@ COMMANDS: List[CommandDTO] = [
                 "ts-interpretation": "power-generation",
             },
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
@@ -221,38 +239,39 @@ COMMANDS: List[CommandDTO] = [
                 },
             }
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_RENEWABLES_CLUSTER.value,
         args={"area_id": "area_name", "cluster_id": "cluster_name"},
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_RENEWABLES_CLUSTER.value,
         args=[{"area_id": "area_name", "cluster_id": "cluster_name"}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REPLACE_MATRIX.value,
         args={"target": "target_element", "matrix": "matrix"},
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REPLACE_MATRIX.value,
         args=[{"target": "target_element", "matrix": "matrix"}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
-        action=CommandName.UPDATE_CONFIG.value,
-        args={"target": "target", "data": {}},
+        action=CommandName.UPDATE_CONFIG.value, args={"target": "target", "data": {}}, study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
-        action=CommandName.UPDATE_CONFIG.value,
-        args=[{"target": "target", "data": {}}],
+        action=CommandName.UPDATE_CONFIG.value, args=[{"target": "target", "data": {}}], study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
-        action=CommandName.UPDATE_COMMENTS.value,
-        args={"comments": "comments"},
+        action=CommandName.UPDATE_COMMENTS.value, args={"comments": "comments"}, study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
-        action=CommandName.UPDATE_COMMENTS.value,
-        args=[{"comments": "comments"}],
+        action=CommandName.UPDATE_COMMENTS.value, args=[{"comments": "comments"}], study_version=STUDY_VERSION_8_8
     ),
     CommandDTO(
         action=CommandName.UPDATE_FILE.value,
@@ -260,18 +279,22 @@ COMMANDS: List[CommandDTO] = [
             "target": "settings/resources/study",
             "b64Data": "",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.UPDATE_DISTRICT.value,
         args={"id": "id", "filter_items": ["a"]},
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.UPDATE_DISTRICT.value,
         args=[{"id": "id", "base_filter": "add-all"}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.UPDATE_PLAYLIST.value,
         args=[{"active": True, "items": [1, 3], "reverse": False}],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.UPDATE_PLAYLIST.value,
@@ -281,6 +304,7 @@ COMMANDS: List[CommandDTO] = [
             "weights": {1: 5.0},
             "reverse": False,
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.UPDATE_SCENARIO_BUILDER.value,
@@ -293,6 +317,7 @@ COMMANDS: List[CommandDTO] = [
                 },
             }
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_ST_STORAGE.value,
@@ -314,6 +339,7 @@ COMMANDS: List[CommandDTO] = [
             "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
             "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.CREATE_ST_STORAGE.value,
@@ -355,6 +381,7 @@ COMMANDS: List[CommandDTO] = [
                 "inflows": "matrix://e8923768-9bdd-40c2-a6ea-2da2523be727",
             },
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_ST_STORAGE.value,
@@ -362,6 +389,7 @@ COMMANDS: List[CommandDTO] = [
             "area_id": "area 1",
             "storage_id": "storage 1",
         },
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
         action=CommandName.REMOVE_ST_STORAGE.value,
@@ -375,10 +403,25 @@ COMMANDS: List[CommandDTO] = [
                 "storage_id": "storage 2",
             },
         ],
+        study_version=STUDY_VERSION_8_8,
     ),
     CommandDTO(
-        action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
-        args=[{}],
+        action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value, args=[{}], study_version=STUDY_VERSION_8_8
+    ),
+    CommandDTO(
+        action=CommandName.CREATE_USER_RESOURCE.value,
+        args=[{"data": {"path": "folder_1", "resource_type": "folder"}}],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_USER_RESOURCE.value,
+        args=[{"data": {"path": "folder_1"}}],
+        study_version=STUDY_VERSION_8_8,
+    ),
+    CommandDTO(
+        action=CommandName.REMOVE_USER_RESOURCE.value,
+        args=[{"data": {"path": "file_1.txt"}}],
+        study_version=STUDY_VERSION_8_8,
     ),
 ]
 
@@ -407,7 +450,7 @@ class TestCommandFactory:
                 f".{name}",
                 package="antarest.study.storage.variantstudy.model.command",
             )
-        abstract_commands = {"AbstractBindingConstraintCommand"}
+        abstract_commands = {"AbstractBindingConstraintCommand", "AbstractLinkCommand"}
         return {cmd.__name__ for cmd in ICommand.__subclasses__() if cmd.__name__ not in abstract_commands}
 
     def test_all_commands_are_tested(self, command_factory: CommandFactory):
@@ -451,4 +494,6 @@ def test_unknown_command():
             matrix_service=Mock(spec=MatrixService),
             patch_service=Mock(spec=PatchService),
         )
-        command_factory.to_command(command_dto=CommandDTO(action="unknown_command", args={}))
+        command_factory.to_command(
+            command_dto=CommandDTO(action="unknown_command", args={}, study_version=STUDY_VERSION_8_8)
+        )

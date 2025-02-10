@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 from typing import Any, Dict, List, Optional, Tuple
+
+from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -40,6 +42,7 @@ class UpdatePlaylist(ICommand):
     weights: Optional[Dict[int, float]] = None
     reverse: bool = False
 
+    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         FileStudyHelpers.set_playlist(
             study_data,
@@ -50,9 +53,11 @@ class UpdatePlaylist(ICommand):
         )
         return CommandOutput(status=True)
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
+    @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_PLAYLIST.value,
@@ -62,25 +67,9 @@ class UpdatePlaylist(ICommand):
                 "weights": self.weights,
                 "reverse": self.reverse,
             },
+            study_version=self.study_version,
         )
 
-    def match_signature(self) -> str:
-        return CommandName.UPDATE_PLAYLIST.name
-
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        if not isinstance(other, UpdatePlaylist):
-            return False
-        if equal:
-            return (
-                self.active == other.active
-                and self.reverse == other.reverse
-                and self.items == other.items
-                and self.weights == other.weights
-            )
-        return True
-
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        return [other]
-
+    @override
     def get_inner_matrices(self) -> List[str]:
         return []

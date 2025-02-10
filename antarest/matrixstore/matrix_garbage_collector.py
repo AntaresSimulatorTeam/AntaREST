@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,6 +15,8 @@ import time
 from os import listdir
 from pathlib import Path
 from typing import List, Set
+
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -119,6 +121,7 @@ class MatrixGarbageCollector(IService):
         self._delete_unused_saved_matrices(unused_matrices=unused_matrices)
         stopwatch.log_elapsed(lambda x: logger.info(f"Finished cleaning matrices in {x}s"))
 
+    @override
     def _loop(self) -> None:
         while True:
             try:

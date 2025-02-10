@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -19,26 +19,20 @@ import { Box, Divider } from "@mui/material";
 import debug from "debug";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import { StudyMetadata, VariantTree } from "../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../common/types";
 import { getStudyMetadata } from "../../../services/api/study";
 import NavHeader from "./NavHeader";
-import {
-  getVariantChildren,
-  getVariantParents,
-} from "../../../services/api/variant";
+import { getVariantChildren, getVariantParents } from "../../../services/api/variant";
 import TabWrapper from "./explore/TabWrapper";
 import HomeView from "./HomeView";
-import {
-  fetchStudyVersions,
-  setCurrentStudy,
-} from "../../../redux/ducks/studies";
+import { fetchStudyVersions, setCurrentStudy } from "../../../redux/ducks/studies";
 import { findNodeInTree } from "../../../services/utils";
 import CommandDrawer from "./Commands";
 import { addWsEventListener } from "../../../services/webSocket/ws";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
 import FreezeStudy from "./FreezeStudy";
-import { WsEvent } from "@/services/webSocket/types";
+import type { WsEvent } from "@/services/webSocket/types";
 import { WsEventType } from "@/services/webSocket/constants";
 
 const logError = debug("antares:singlestudy:error");
@@ -172,9 +166,7 @@ function SingleStudy(props: Props) {
         isExplorer={isExplorer}
         openCommands={() => setOpenCommands(true)}
         childrenTree={
-          study !== undefined && tree !== undefined
-            ? findNodeInTree(study.id, tree)
-            : undefined
+          study !== undefined && tree !== undefined ? findNodeInTree(study.id, tree) : undefined
         }
       />
       {!isExplorer && <Divider sx={{ width: "98%" }} />}
@@ -194,7 +186,7 @@ function SingleStudy(props: Props) {
         ) : (
           <HomeView study={study} tree={tree} />
         )}
-        <FreezeStudy studyId={studyId!} />
+        {studyId && <FreezeStudy studyId={studyId} />}
       </Box>
       {openCommands && studyId && (
         <CommandDrawer

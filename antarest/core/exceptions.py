@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,6 +15,7 @@ import typing as t
 from http import HTTPStatus
 
 from fastapi.exceptions import HTTPException
+from typing_extensions import override
 
 
 class ShouldNotHappenException(Exception):
@@ -81,6 +82,7 @@ class ConfigFileNotFound(HTTPException):
             detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -127,6 +129,7 @@ class ConfigSectionNotFound(HTTPException):
         detail = f"{object_name.title()} '{section_id}' not found in '{path}'"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -172,6 +175,7 @@ class MatrixNotFound(HTTPException):
             detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.NOT_FOUND, detail)
 
+    @override
     def __str__(self) -> str:
         return self.detail
 
@@ -227,6 +231,7 @@ class DuplicateConfigSection(HTTPException):
             detail = f"{self.object_name.title()} {detail}"
         super().__init__(HTTPStatus.CONFLICT, detail)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -295,6 +300,16 @@ class StudyValidationError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class LinkValidationError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class LinkNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class VariantStudyParentNotValid(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
@@ -343,13 +358,23 @@ class StudyVariantUpgradeError(HTTPException):
             super().__init__(HTTPStatus.EXPECTATION_FAILED, "Upgrade not supported for parent of variants")
 
 
-class FileDeletionNotAllowed(HTTPException):
+class ResourceDeletionNotAllowed(HTTPException):
     """
     Exception raised when deleting a file or a folder which isn't inside the 'User' folder.
     """
 
     def __init__(self, message: str) -> None:
-        msg = f"Raw deletion failed because {message}"
+        msg = f"Resource deletion failed because {message}"
+        super().__init__(HTTPStatus.FORBIDDEN, msg)
+
+
+class FolderCreationNotAllowed(HTTPException):
+    """
+    Exception raised when creating a folder which isn't inside the 'User' folder.
+    """
+
+    def __init__(self, message: str) -> None:
+        msg = f"Folder creation failed because {message}"
         super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 
@@ -377,6 +402,7 @@ class ReferencedObjectDeletionNotAllowed(HTTPException):
         )
         super().__init__(HTTPStatus.FORBIDDEN, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -409,6 +435,7 @@ class OutputNotFound(HTTPException):
         message = f"Output '{output_id}' not found"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -443,6 +470,7 @@ class OutputSubFolderNotFound(HTTPException):
         message = f"The output '{output_id}' sub-folder '{mc_root}' does not exist"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -517,6 +545,11 @@ class WrongMatrixHeightError(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class MatrixImportFailed(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
 class ConstraintTermNotFound(HTTPException):
     """
     Exception raised when a constraint term is not found.
@@ -532,6 +565,7 @@ class ConstraintTermNotFound(HTTPException):
         }[min(count, 2)]
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -552,6 +586,7 @@ class DuplicateConstraintTerm(HTTPException):
         }[min(count, 2)]
         super().__init__(HTTPStatus.CONFLICT, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -569,6 +604,7 @@ class InvalidConstraintTerm(HTTPException):
         )
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
+    @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
@@ -666,6 +702,11 @@ class CannotAccessInternalWorkspace(HTTPException):
 class ChildNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class PathIsAFolderError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
 class WorkspaceNotFound(HTTPException):

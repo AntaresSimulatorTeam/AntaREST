@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -172,6 +172,13 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     ]
     res = client.post(f"/v1/studies/{variant_id}/commands", headers=bot_headers, json=commands)
     assert res.status_code == 200
+
+    # Check if the author's name and date of update are retrieved with commands created by a bot
+    commands_res = client.get(f"/v1/studies/{variant_id}/commands", headers=bot_headers)
+
+    for command in commands_res.json():
+        assert command["user_name"] == "admin_bot"
+        assert command["updated_at"]
 
     # generate variant before running a simulation
     res = client.put(f"/v1/studies/{variant_id}/generate", headers=bot_headers)

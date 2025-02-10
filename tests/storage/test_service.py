@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,6 +21,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session  # type: ignore
 from starlette.responses import Response
 
@@ -352,7 +353,7 @@ def test_partial_sync_studies_from_disk() -> None:
             id=ANY,
             path=f"directory{os.sep}f",
             name="f",
-            folder=f"directory{os.sep}f",
+            folder="directory/f",
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,
@@ -1301,19 +1302,14 @@ def test_edit_study_with_command() -> None:
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
 
-    service._edit_study_using_command(study=Mock(), url="", data=[])
-    command.apply.assert_called_with(file_study)
+    service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
+    command.apply.assert_called_with(file_study, None)
 
     study_service = Mock(spec=VariantStudyService)
     study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
     service._edit_study_using_command(study=Mock(), url="", data=[])
-
-    study_service.append_command.assert_called_once_with(
-        study_id=study_id,
-        command=command.to_dto(),
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    service.storage_service.variant_study_service.append_commands.assert_called_once()
 
 
 @pytest.mark.unit_test
@@ -1349,7 +1345,9 @@ def test_create_command(
         ),
     )
 
-    command = service._create_edit_study_command(tree_node=tree_node, url=url, data=data)
+    command = service._create_edit_study_command(
+        tree_node=tree_node, url=url, data=data, study_version=StudyVersion.parse("880")
+    )
 
     assert command.command_name.value == expected_name
 
@@ -1590,31 +1588,28 @@ def test_get_save_logs(tmp_path: Path) -> None:
     (output_path / "output_id").mkdir()
     (output_path / "logs").mkdir()
 
-    assert (
-        service.get_logs(
-            study_id,
-            "output_id",
-            "job_id",
-            True,
-            RequestParameters(user=DEFAULT_ADMIN_USER),
-        )
-        == ""
-    )
+    possible_log_paths = [
+        output_path / "output_id" / "antares-out.log",
+        output_path / "output_id" / "simulation.log",
+        output_path / "logs" / "job_id-out.log",
+        output_path / "logs" / "output_id-out.log",
+    ]
 
-    (output_path / "output_id" / "antares-out.log").write_text("some log 2")
-    assert (
-        service.get_logs(
-            study_id,
-            "output_id",
-            "job_id",
-            False,
-            RequestParameters(user=DEFAULT_ADMIN_USER),
+    for log_path in possible_log_paths:
+        log_path.write_text("some log 2")
+        assert (
+            service.get_logs(
+                study_id,
+                "output_id",
+                "job_id",
+                False,
+                RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
+            == "some log 2"
         )
-        == "some log 2"
-    )
+        log_path.unlink()
 
     service.save_logs(study_id, "job_id", "out.log", "some log")
-
     assert (
         service.get_logs(
             study_id,
@@ -1627,7 +1622,6 @@ def test_get_save_logs(tmp_path: Path) -> None:
     )
 
     service.save_logs(study_id, "job_id", "err.log", "some log 3")
-
     assert (
         service.get_logs(
             study_id,

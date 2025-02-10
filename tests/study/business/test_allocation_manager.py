@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -27,7 +27,7 @@ from antarest.study.business.allocation_management import (
     AllocationMatrix,
 )
 from antarest.study.business.area_management import AreaInfoDTO, AreaType
-from antarest.study.model import RawStudy, Study, StudyContentStatus
+from antarest.study.model import STUDY_VERSION_8_8, RawStudy, Study, StudyContentStatus
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -348,6 +348,7 @@ class TestAllocationManager:
         ]
         area_id = "n"
         manager = AllocationManager(study_storage_service)
+        study_storage_service.get_storage(study).get_raw(study).config.version = STUDY_VERSION_8_8
         with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
             with patch(
                 "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
@@ -388,6 +389,7 @@ class TestAllocationManager:
 
         area_id = "n"
         manager = AllocationManager(study_storage_service)
+        study_storage_service.get_storage(study).get_raw(study).config.version = STUDY_VERSION_8_8
 
         with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
             with patch(

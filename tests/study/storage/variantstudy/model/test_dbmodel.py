@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,6 +17,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.model import PublicMode
@@ -126,7 +127,7 @@ class TestVariantStudySnapshot:
 
 
 class TestCommandBlock:
-    def test_init(self, db_session: Session, variant_study_id: str) -> None:
+    def test_init(self, db_session: Session, variant_study_id: str, user_id: int) -> None:
         """
         Check the creation of an instance of CommandBlock
         """
@@ -135,6 +136,7 @@ class TestCommandBlock:
         command = "dummy command"
         version = 42
         args = '{"foo": "bar"}'
+        updated_at = datetime.datetime.utcnow()
 
         with db_session:
             block = CommandBlock(
@@ -144,6 +146,9 @@ class TestCommandBlock:
                 command=command,
                 version=version,
                 args=args,
+                study_version="860",
+                updated_at=updated_at,
+                user_id=user_id,
             )
             db_session.add(block)
             db_session.commit()
@@ -169,6 +174,9 @@ class TestCommandBlock:
             "action": command,
             "args": json.loads(args),
             "version": 42,
+            "study_version": StudyVersion.parse("860"),
+            "updated_at": updated_at,
+            "user_id": user_id,
         }
 
 

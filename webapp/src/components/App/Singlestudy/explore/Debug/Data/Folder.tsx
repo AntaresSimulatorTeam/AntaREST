@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -36,7 +36,7 @@ import {
   canEditFile,
 } from "../utils";
 import { Fragment, useState } from "react";
-import EmptyView from "../../../../../common/page/SimpleContent";
+import EmptyView from "../../../../../common/page/EmptyView";
 import { useTranslation } from "react-i18next";
 import { Filename, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
@@ -50,15 +50,7 @@ import type { StudyMetadata } from "../../../../../../common/types";
 import { useSnackbar } from "notistack";
 
 function Folder(props: DataCompProps) {
-  const {
-    filename,
-    filePath,
-    treeData,
-    canEdit,
-    setSelectedFile,
-    reloadTreeData,
-    studyId,
-  } = props;
+  const { filename, filePath, treeData, canEdit, setSelectedFile, reloadTreeData, studyId } = props;
 
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -207,11 +199,7 @@ function Folder(props: DataCompProps) {
         )}
       </List>
       {/* Items menu */}
-      <Menu
-        anchorEl={menuData?.anchorEl}
-        open={!!menuData}
-        onClose={handleMenuClose}
-      >
+      <Menu anchorEl={menuData?.anchorEl} open={!!menuData} onClose={handleMenuClose}>
         <MenuItem onClick={handleDeleteClick}>
           <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
           {t("global.delete")}

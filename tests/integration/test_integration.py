@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -207,7 +207,8 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
     )
     assert len(res.json()) == 3
-    assert filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()["folder"] == "foo/bar"
+    moved_study = filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()
+    assert moved_study["folder"] == f"foo/bar/{moved_study['id']}"
 
     # Study delete
     client.delete(
@@ -593,12 +594,25 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
     )
     res.raise_for_status()
-    res_links = client.get(f"/v1/studies/{study_id}/links?with_ui=true")
+    res_links = client.get(f"/v1/studies/{study_id}/links")
     assert res_links.json() == [
         {
             "area1": "area 1",
             "area2": "area 2",
-            "ui": {"color": "112,112,112", "style": "plain", "width": 1.0},
+            "assetType": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "displayComments": True,
+            "comments": "",
+            "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+            "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+            "hurdlesCost": False,
+            "linkStyle": "plain",
+            "linkWidth": 1.0,
+            "loopFlow": False,
+            "transmissionCapacities": "enabled",
+            "usePhaseShifter": False,
         }
     ]
 
@@ -1209,101 +1223,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Time-series form
 
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
+    res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {
-        "load": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "hydro": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "thermal": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "renewables": {
-            "stochasticTsStatus": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "ntc": {"stochasticTsStatus": False, "intraModal": False},
-    }
-    client.put(
-        f"/v1/studies/{study_id}/config/timeseries/form",
-        json={
-            "thermal": {"stochasticTsStatus": True},
-            "load": {
-                "stochasticTsStatus": True,
-                "storeInInput": True,
-                "seasonCorrelation": "monthly",
-            },
-        },
-    )
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
+    assert res_ts_config_json == {"thermal": {"number": 1}}
+    client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": {"number": 2}})
+    res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {
-        "load": {
-            "stochasticTsStatus": True,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "monthly",
-            "storeInInput": True,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "hydro": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "thermal": {
-            "stochasticTsStatus": True,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "renewables": {
-            "stochasticTsStatus": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "ntc": {"stochasticTsStatus": False, "intraModal": False},
-    }
+    assert res_ts_config_json == {"thermal": {"number": 2}}
 
     # Renewable form
 

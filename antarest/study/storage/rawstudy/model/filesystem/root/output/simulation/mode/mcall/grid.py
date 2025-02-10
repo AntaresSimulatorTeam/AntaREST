@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,7 @@
 import typing as t
 
 import pandas as pd
+from typing_extensions import override
 
 from antarest.core.exceptions import MustNotModifyOutputException
 from antarest.core.model import JSON
@@ -24,6 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 
 class OutputSimulationModeMcAllGrid(FolderNode):
+    @override
     def build(self) -> TREE:
         files = [d.stem for d in self.config.path.iterdir()]
         children: TREE = {}
@@ -37,6 +39,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         super().__init__(context, config)
 
+    @override
     def get_lazy_content(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -45,6 +48,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     ) -> str:
         return f"matrix://{self.config.path.name}"  # prefix used by the front to parse the back-end response
 
+    @override
     def load(
         self,
         url: t.Optional[t.List[str]] = None,
@@ -59,9 +63,11 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
         del output["index"]
         return t.cast(JSON, output)
 
+    @override
     def dump(self, data: bytes, url: t.Optional[t.List[str]] = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
+    @override
     def check_errors(self, data: str, url: t.Optional[t.List[str]] = None, raising: bool = False) -> t.List[str]:
         if not self.config.path.exists():
             msg = f"{self.config.path} not exist"
@@ -70,9 +76,11 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
             return [msg]
         return []
 
+    @override
     def normalize(self) -> None:
         pass  # shouldn't be normalized as it's an output file
 
+    @override
     def denormalize(self) -> None:
         pass  # shouldn't be denormalized as it's an output file
 
@@ -81,6 +89,7 @@ class DigestSynthesis(OutputSynthesis):
     def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
         super().__init__(context, config)
 
+    @override
     def load(
         self,
         url: t.Optional[t.List[str]] = None,

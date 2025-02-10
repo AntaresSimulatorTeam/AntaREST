@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,15 +19,13 @@ import typing_extensions as te
 
 from antarest.core.serialization import AntaresBaseModel
 from antarest.core.utils.utils import assert_this
+from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-if t.TYPE_CHECKING:  # False at runtime, for mypy
-    from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
 
 MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
@@ -51,6 +49,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
     command_name: CommandName
     version: int
     command_context: CommandContext
+    study_version: StudyVersionStr
 
     @abstractmethod
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -124,74 +123,8 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         raise NotImplementedError()
 
     @abstractmethod
-    def match_signature(self) -> str:
-        """Returns the command signature."""
-        raise NotImplementedError()
-
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        """
-        Indicate if the other command is the same type and targets the same element.
-
-        Args:
-            other: other command to match against
-            equal: indicate if the match must check for param equality
-
-        Returns: True if the command match with the other else False
-        """
-        if not isinstance(other, self.__class__):
-            return False
-        excluded_fields = set(ICommand.model_fields)
-        this_values = self.model_dump(mode="json", exclude=excluded_fields)
-        that_values = other.model_dump(mode="json", exclude=excluded_fields)
-        return this_values == that_values
-
-    @abstractmethod
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        """
-        Creates a list of commands representing the differences between
-        the current instance and another `ICommand` object.
-
-        Args:
-            other: Another ICommand object to compare against.
-
-        Returns:
-            A list of commands representing the differences between
-            the two `ICommand` objects.
-        """
-        raise NotImplementedError()
-
-    def create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        """
-        Creates a list of commands representing the differences between
-        the current instance and another `ICommand` object.
-
-        Args:
-            other: Another ICommand object to compare against.
-
-        Returns:
-            A list of commands representing the differences between
-            the two `ICommand` objects.
-        """
-        assert_this(self.match(other))
-        return self._create_diff(other)
-
-    @abstractmethod
     def get_inner_matrices(self) -> t.List[str]:
         """
         Retrieves the list of matrix IDs.
         """
         raise NotImplementedError()
-
-    def get_command_extractor(self) -> "CommandExtractor":
-        """
-        Create a new `CommandExtractor` used to revert the command changes.
-
-        Returns:
-            An instance of `CommandExtractor`.
-        """
-        from antarest.study.storage.variantstudy.business.command_extractor import CommandExtractor
-
-        return CommandExtractor(
-            self.command_context.matrix_service,
-            self.command_context.patch_service,
-        )

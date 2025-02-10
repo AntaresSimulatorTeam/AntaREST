@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 import json
 import uuid
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from zipfile import ZipFile
 
 import pytest
@@ -21,10 +21,12 @@ import pytest
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
-from antarest.study.business.link_management import LinkInfoDTO, LinkManager
+from antarest.study.business.link_management import LinkDTO, LinkManager
+from antarest.study.business.model.link_model import AssetType, LinkStyle, TransmissionCapacity
 from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.patch_service import PatchService
@@ -37,7 +39,7 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.common import CommandName, FilteringOptions
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -85,6 +87,7 @@ def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
+@current_user_context(token=DEFAULT_ADMIN_USER)
 @with_db_context
 def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # Prepare the managers that are used in this UT
@@ -100,10 +103,12 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     # Check `AreaManager` behaviour with a RAW study
     study_id = str(uuid.uuid4())
     # noinspection PyArgumentList
+    study_version = empty_study.config.version
     study = RawStudy(
         id=study_id,
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
+        version="820",
     )
     db.session.add(study)
     db.session.commit()
@@ -134,7 +139,14 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     }
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
-    link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
+
+    link_manager.create_link(
+        study,
+        LinkDTO(
+            area1="test",
+            area2="test2",
+        ),
+    )
     assert empty_study.config.areas["test"].links.get("test2") is not None
 
     link_manager.delete_link(study, "test", "test2")
@@ -150,6 +162,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
         id=variant_id,
         path=str(empty_study.config.study_path),
         additional_data=StudyAdditionalData(),
+        version="820",
     )
     variant_study_service.get_raw.return_value = empty_study
     area_manager.create_area(
@@ -158,12 +171,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     )
     variant_study_service.append_commands.assert_called_with(
         variant_id,
-        [
-            CommandDTO(
-                action=CommandName.CREATE_AREA.value,
-                args={"area_name": "test"},
-            )
-        ],
+        [CommandDTO(action=CommandName.CREATE_AREA.value, args={"area_name": "test"}, study_version=study_version)],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
     assert (empty_study.config.study_path / "patch.json").exists()
@@ -210,13 +218,20 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                         "data": "255,0,100",
                     },
                 ],
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
 
     area_manager.create_area(study, AreaCreationDTO(name="test2", type=AreaType.AREA))
-    link_manager.create_link(study, LinkInfoDTO(area1="test", area2="test2"))
+    link_manager.create_link(
+        study,
+        LinkDTO(
+            area1="test",
+            area2="test2",
+        ),
+    )
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
@@ -225,8 +240,65 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
                 args={
                     "area1": "test",
                     "area2": "test2",
-                    "parameters": None,
+                    "parameters": {
+                        "area1": "test",
+                        "area2": "test2",
+                        "hurdles_cost": False,
+                        "loop_flow": False,
+                        "use_phase_shifter": False,
+                        "transmission_capacities": TransmissionCapacity.ENABLED,
+                        "asset_type": AssetType.AC,
+                        "display_comments": True,
+                        "comments": "",
+                        "colorr": 112,
+                        "colorg": 112,
+                        "colorb": 112,
+                        "link_width": 1.0,
+                        "link_style": LinkStyle.PLAIN,
+                        "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+                        "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+                    },
                 },
+                study_version=study_version,
+            ),
+        ],
+        RequestParameters(DEFAULT_ADMIN_USER),
+    )
+
+    study.version = 810
+    link_manager.create_link(
+        study,
+        LinkDTO(
+            area1="test",
+            area2="test2",
+        ),
+    )
+    variant_study_service.append_commands.assert_called_with(
+        variant_id,
+        [
+            CommandDTO(
+                action=CommandName.CREATE_LINK.value,
+                args={
+                    "area1": "test",
+                    "area2": "test2",
+                    "parameters": {
+                        "area1": "test",
+                        "area2": "test2",
+                        "hurdles_cost": False,
+                        "loop_flow": False,
+                        "use_phase_shifter": False,
+                        "transmission_capacities": TransmissionCapacity.ENABLED,
+                        "asset_type": AssetType.AC,
+                        "display_comments": True,
+                        "comments": "",
+                        "colorr": 112,
+                        "colorg": 112,
+                        "colorb": 112,
+                        "link_width": 1.0,
+                        "link_style": LinkStyle.PLAIN,
+                    },
+                },
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -238,6 +310,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
             CommandDTO(
                 action=CommandName.REMOVE_LINK.value,
                 args={"area1": "test", "area2": "test2"},
+                study_version=study_version,
             ),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
@@ -246,7 +319,7 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     variant_study_service.append_commands.assert_called_with(
         variant_id,
         [
-            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}),
+            CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "test2"}, study_version=study_version),
         ],
         RequestParameters(DEFAULT_ADMIN_USER),
     )
@@ -260,7 +333,7 @@ def test_get_all_area():
     )
     link_manager = LinkManager(storage_service=StudyStorageService(raw_study_service, Mock()))
 
-    study = RawStudy()
+    study = RawStudy(version="900")
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
@@ -416,12 +489,111 @@ def test_get_all_area():
     all_areas = area_manager.get_all_areas(study)
     assert expected_all == [area.model_dump() for area in all_areas]
 
+    file_tree_mock.get.side_effect = [
+        {
+            "a2": {
+                "hurdles-cost": False,
+                "loop-flow": False,
+                "use-phase-shifter": False,
+                "transmission-capacities": TransmissionCapacity.ENABLED,
+                "asset-type": AssetType.AC,
+                "display-comments": False,
+                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
+                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
+            },
+            "a3": {
+                "hurdles-cost": False,
+                "loop-flow": False,
+                "use-phase-shifter": False,
+                "transmission-capacities": TransmissionCapacity.ENABLED,
+                "asset-type": AssetType.AC,
+                "display-comments": False,
+                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
+                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
+            },
+        },
+        {
+            "a3": {
+                "hurdles-cost": False,
+                "loop-flow": False,
+                "use-phase-shifter": False,
+                "transmission-capacities": TransmissionCapacity.ENABLED,
+                "asset-type": AssetType.AC,
+                "display-comments": False,
+                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
+                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
+            }
+        },
+        {
+            "a3": {
+                "hurdles-cost": False,
+                "loop-flow": False,
+                "use-phase-shifter": False,
+                "transmission-capacities": TransmissionCapacity.ENABLED,
+                "asset-type": AssetType.AC,
+                "display-comments": False,
+                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
+                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
+            }
+        },
+    ]
     links = link_manager.get_all_links(study)
     assert [
-        {"area1": "a1", "area2": "a2", "ui": None},
-        {"area1": "a1", "area2": "a3", "ui": None},
-        {"area1": "a2", "area2": "a3", "ui": None},
-    ] == [link.model_dump() for link in links]
+        {
+            "area1": "a1",
+            "area2": "a2",
+            "asset_type": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "display_comments": False,
+            "comments": "",
+            "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+            "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+            "hurdles_cost": False,
+            "link_style": "plain",
+            "link_width": 1.0,
+            "loop_flow": False,
+            "transmission_capacities": "enabled",
+            "use_phase_shifter": False,
+        },
+        {
+            "area1": "a1",
+            "area2": "a3",
+            "asset_type": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "display_comments": False,
+            "comments": "",
+            "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+            "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+            "hurdles_cost": False,
+            "link_style": "plain",
+            "link_width": 1.0,
+            "loop_flow": False,
+            "transmission_capacities": "enabled",
+            "use_phase_shifter": False,
+        },
+        {
+            "area1": "a2",
+            "area2": "a3",
+            "asset_type": "ac",
+            "colorb": 112,
+            "colorg": 112,
+            "colorr": 112,
+            "display_comments": False,
+            "comments": "",
+            "filter_synthesis": "hourly, daily, weekly, monthly, annual",
+            "filter_year_by_year": "hourly, daily, weekly, monthly, annual",
+            "hurdles_cost": False,
+            "link_style": "plain",
+            "link_width": 1.0,
+            "loop_flow": False,
+            "transmission_capacities": "enabled",
+            "use_phase_shifter": False,
+        },
+    ] == [link.model_dump(mode="json") for link in links]
 
 
 def test_update_area():

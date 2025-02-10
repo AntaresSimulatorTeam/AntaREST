@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -17,16 +17,12 @@ import { Box, Button } from "@mui/material";
 import { useParams, useOutletContext, useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useTranslation } from "react-i18next";
-import { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../common/types";
 import Form from "../../../../../../common/Form";
 import Fields from "./Fields";
 import Matrix from "./Matrix";
-import {
-  RenewableCluster,
-  getRenewableCluster,
-  updateRenewableCluster,
-} from "./utils";
-import { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import { getRenewableCluster, updateRenewableCluster, type RenewableCluster } from "./utils";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import useNavigateOnCondition from "../../../../../../../hooks/useNavigateOnCondition";
@@ -54,9 +50,7 @@ function Renewables() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    dirtyValues,
-  }: SubmitHandlerPlus<RenewableCluster>) => {
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<RenewableCluster>) => {
     return updateRenewableCluster(study.id, areaId, clusterId, dirtyValues);
   };
 

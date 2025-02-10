@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,10 +16,10 @@ import secrets
 import typing as t
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from antares.study.version import StudyVersion
-from pydantic import field_serializer, field_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -31,6 +31,8 @@ from sqlalchemy import (  # type: ignore
     String,
 )
 from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy.orm import validates
+from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
@@ -64,6 +66,10 @@ STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
 STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
+
+StudyVersionStr = t.Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
+StudyVersionInt = t.Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
+
 
 STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
     STUDY_VERSION_6_0: "empty_study_613.zip",
@@ -99,10 +105,12 @@ class StudyGroup(Base):  # type:ignore
     group_id: str = Column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
     study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
 
+    @override
     def __str__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         return f"[{cls_name}] study_id={self.study_id}, group={self.group_id}"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         study_id = self.study_id
@@ -125,10 +133,12 @@ class StudyTag(Base):  # type:ignore
     study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
     tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
 
+    @override
     def __str__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         return f"[{cls_name}] study_id={self.study_id}, tag={self.tag}"
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         study_id = self.study_id
@@ -154,9 +164,11 @@ class Tag(Base):  # type:ignore
 
     studies: t.List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
+    @override
     def __str__(self) -> str:  # pragma: no cover
         return t.cast(str, self.label)
 
+    @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         label = self.label
@@ -190,6 +202,7 @@ class StudyAdditionalData(Base):  # type:ignore
     horizon = Column(String)
     patch = Column(String(), index=True, nullable=True)
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
             return False
@@ -240,6 +253,7 @@ class Study(Base):  # type: ignore
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
+    @override
     def __str__(self) -> str:
         cls = self.__class__.__name__
         return (
@@ -254,6 +268,7 @@ class Study(Base):  # type: ignore
             f" groups={[str(u) + ',' for u in self.groups]}"
         )
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not isinstance(other, Study):
             return False
@@ -273,6 +288,23 @@ class Study(Base):  # type: ignore
 
     def to_json_summary(self) -> t.Any:
         return {"id": self.id, "name": self.name}
+
+    @validates("folder")  # type: ignore
+    def validate_folder(self, key: str, folder: t.Optional[str]) -> t.Optional[str]:
+        """
+        We want to store the path in posix format in the database, even on windows.
+        """
+        return normalize_path(folder)
+
+
+def normalize_path(path: t.Optional[str]) -> t.Optional[str]:
+    """
+    Turns any path including a windows path (with \ separator) to a posix path (with / separator).
+    """
+    if not path:
+        return path
+    pure_path = PurePath(path)
+    return pure_path.as_posix()
 
 
 class RawStudy(Study):
@@ -295,6 +327,7 @@ class RawStudy(Study):
         "polymorphic_identity": "rawstudy",
     }
 
+    @override
     def __eq__(self, other: t.Any) -> bool:
         if not super().__eq__(other):
             return False
@@ -319,7 +352,7 @@ class StudyFolder:
     groups: t.List[Group]
 
 
-class NonStudyFolder(AntaresBaseModel):
+class NonStudyFolderDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
     so the user can navigate in the hierarchy
@@ -328,6 +361,24 @@ class NonStudyFolder(AntaresBaseModel):
     path: Path
     workspace: str
     name: str
+    has_children: bool = Field(
+        alias="hasChildren",
+    )  # true when has at least one non-study-folder children
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @computed_field(alias="parentPath")
+    def parent_path(self) -> Path:
+        """
+        This computed field is convenient for the front.
+
+        This field is also aliased as parentPath to match the front-end naming convention.
+
+        Returns: the parent path of the current directory. Starting with the workspace as a root directory (we want /workspafe/folder1/sub... and not workspace/folder1/fsub... ).
+        """
+        workspace_path = Path(f"/{self.workspace}")
+        full_path = workspace_path.joinpath(self.path)
+        return full_path.parent
 
 
 class WorkspaceMetadata(AntaresBaseModel):
@@ -380,7 +431,7 @@ class OwnerInfo(AntaresBaseModel):
 class StudyMetadataDTO(AntaresBaseModel):
     id: str
     name: str
-    version: StudyVersion
+    version: StudyVersionInt
     created: str
     updated: str
     type: str
@@ -397,18 +448,10 @@ class StudyMetadataDTO(AntaresBaseModel):
     folder: t.Optional[str] = None
     tags: t.List[str] = []
 
-    @field_serializer("version")
-    def serialize_version(self, version: StudyVersion) -> int:
-        return version.__int__()
-
     @field_validator("horizon", mode="before")
     def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
         # horizon can be an int.
         return str(val) if val else val  # type: ignore
-
-    @field_validator("version", mode="before")
-    def _validate_version(cls, v: t.Any) -> StudyVersion:
-        return StudyVersion.parse(v)
 
 
 class StudyMetadataPatchDTO(AntaresBaseModel):

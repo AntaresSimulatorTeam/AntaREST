@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,14 +13,14 @@
  */
 
 import { memo, useEffect, useRef } from "react";
-import { FixedSizeList, areEqual, ListChildComponentProps } from "react-window";
+import { FixedSizeList, areEqual, type ListChildComponentProps } from "react-window";
 import {
   DragDropContext,
   Droppable,
   Draggable,
-  OnDragEndResponder,
+  type OnDragEndResponder,
 } from "react-beautiful-dnd";
-import { CommandItem } from "../commandTypes";
+import type { CommandItem } from "../commandTypes";
 import CommandListItem from "./CommandListItem";
 
 const Row = memo((props: ListChildComponentProps) => {
@@ -129,9 +129,9 @@ function CommandListView({
       >
         {(provided) => (
           <FixedSizeList
-            height={500}
+            height={1000}
             itemCount={items.length}
-            itemSize={68}
+            itemSize={80}
             width={300}
             outerRef={provided.innerRef}
             ref={listRef}
@@ -149,7 +149,7 @@ function CommandListView({
             }}
             style={{
               width: "100%",
-              height: "90%",
+              height: "100%",
             }}
           >
             {Row}

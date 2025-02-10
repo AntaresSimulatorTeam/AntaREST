@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
-import { Controller, FieldValues, useForm } from "react-hook-form";
+import { Controller, useForm, type FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
@@ -113,9 +113,7 @@ function Maintenance() {
 
   return (
     <>
-      <Box
-        sx={{ display: "flex", flexDirection: "column", position: "relative" }}
-      >
+      <Box sx={{ display: "flex", flexDirection: "column", position: "relative" }}>
         <Box>
           <FormControlLabel
             sx={{ mb: 1 }}
@@ -140,10 +138,7 @@ function Maintenance() {
           multiline
           {...register("message")}
         />
-        <Button
-          disabled={!isDirty}
-          onClick={() => setShowConfirmationModal(true)}
-        >
+        <Button disabled={!isDirty} onClick={() => setShowConfirmationModal(true)}>
           {t("global.save")}
         </Button>
         <Backdrop

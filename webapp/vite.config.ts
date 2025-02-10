@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-const SERVER_URL = "http://localhost:8080";
+//! Keep '0.0.0.0', because 'localhost' may not working on Mac
+const SERVER_URL = "http://0.0.0.0:8080";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {

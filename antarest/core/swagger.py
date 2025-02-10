@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,9 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, List, Tuple
+import typing as t
 
 from fastapi import FastAPI
+from fastapi.openapi.models import Example
 from fastapi.routing import APIRoute
 
 sim = "{sim} = simulation index <br/>"
@@ -21,7 +22,7 @@ link = "{link} = link name to select <br/>"
 attachment = "User-defined file attachment <br/>"
 
 # noinspection SpellCheckingInspection
-urls: List[Tuple[str, str]] = [
+urls: t.List[t.Tuple[str, str]] = [
     ("layers/layers", ""),
     ("settings/generaldata", ""),
     ("output/{sim}/about-the-study/parameters", sim),
@@ -41,7 +42,7 @@ urls: List[Tuple[str, str]] = [
 ]
 
 
-def get_path_examples() -> Any:
+def get_path_examples() -> t.Dict[str, Example]:
     return {url: {"value": url, "description": des} for url, des in urls}
 
 

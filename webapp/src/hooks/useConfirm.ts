@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import useAutoUpdateRef from "./useAutoUpdateRef";
+import useUpdatedRef from "./useUpdatedRef";
 
 function errorFunction() {
   throw new Error("Promise is not pending.");
@@ -22,7 +22,35 @@ function errorFunction() {
 /**
  * Hook that allows to wait for a confirmation from the user with a `Promise`.
  * It is intended to be used in conjunction with a confirm view (like `ConfirmationDialog`).
- 
+ *
+ * @example
+ * ```tsx
+ * const action = useConfirm();
+ *
+ * return (
+ *   <>
+ *     <Button
+ *       onClick={() => {
+ *         action.showConfirm().then((confirm) => {
+ *           if (confirm) {
+ *             // ...
+ *           }
+ *         });
+ *       }}
+ *     >
+ *       Action
+ *     </Button>
+ *     <ConfirmationDialog
+ *       open={action.isPending}
+ *       onConfirm={action.yes}
+ *       onCancel={action.no}
+ *     >
+ *       Are you sure?
+ *     </ConfirmationDialog>
+ *   </>
+ * );
+ * ```
+ *
  * @returns An object with the following properties:
  * - `showConfirm`: A function that returns a `Promise` that resolves to `true` if the user confirms,
  *   `false` if the user refuses, and `null` if the user cancel.
@@ -33,7 +61,7 @@ function errorFunction() {
  */
 function useConfirm() {
   const [isPending, setIsPending] = useState(false);
-  const isPendingRef = useAutoUpdateRef(isPending);
+  const isPendingRef = useUpdatedRef(isPending);
   const yesRef = useRef<VoidFunction>(errorFunction);
   const noRef = useRef<VoidFunction>(errorFunction);
   const cancelRef = useRef<VoidFunction>(errorFunction);

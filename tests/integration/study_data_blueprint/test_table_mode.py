@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,9 +14,11 @@ import copy
 import typing as t
 
 import pytest
+from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.study.model import STUDY_VERSION_8_2
 from tests.integration.utils import wait_task_completion
 
 # noinspection SpellCheckingInspection
@@ -188,89 +190,43 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["properties"]) == {
-            "colorRgb",
-            "comments",
-            "hurdlesCost",
-            "loopFlow",
-            "usePhaseShifter",
-            "transmissionCapacities",
             "assetType",
-            "linkStyle",
-            "linkWidth",
+            "colorb",
+            "colorg",
+            "colorr",
             "displayComments",
+            "comments",
             "filterSynthesis",
             "filterYearByYear",
+            "hurdlesCost",
+            "linkStyle",
+            "linkWidth",
+            "loopFlow",
+            "transmissionCapacities",
+            "usePhaseShifter",
         }
 
-        res = client.put(
-            f"/v1/studies/{internal_study_id}/table-mode/links",
-            json={
-                "de / fr": {
-                    "colorRgb": "#FFA500",
-                    "displayComments": False,
-                    "filterSynthesis": "hourly, daily, weekly, annual",
-                    "filterYearByYear": "hourly, daily, monthly, annual",
-                    "hurdlesCost": True,
-                    "linkStyle": "plain",
-                    "linkWidth": 2,
-                    "loopFlow": False,
-                    "transmissionCapacities": "ignore",
-                },
-                "es / fr": {
-                    "colorRgb": "#FF6347",
-                    "displayComments": True,
-                    "filterSynthesis": "hourly, daily, weekly, monthly, annual, annual",  # duplicate is ignored
-                    "filterYearByYear": "hourly, daily, weekly, annual",
-                    "hurdlesCost": True,
-                    "linkStyle": "plain",
-                    "linkWidth": 1,
-                    "loopFlow": False,
-                    "transmissionCapacities": "enabled",
-                    "usePhaseShifter": True,
-                },
-                "fr / it": {
-                    "comments": "Link from France to Italie",
-                    "assetType": "DC",  # case-insensitive
-                },
-            },
-        )
-        assert res.status_code == 200, res.json()
-        expected_links = {
+        # Test links
+
+        json_input = {
             "de / fr": {
                 "assetType": "ac",
-                "colorRgb": "#FFA500",
-                "comments": "",
+                "colorb": 100,
+                "colorg": 150,
+                "colorr": 200,
                 "displayComments": False,
-                "filterSynthesis": "hourly, daily, weekly, annual",
-                "filterYearByYear": "hourly, daily, monthly, annual",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
                 "linkWidth": 2,
                 "loopFlow": False,
                 "transmissionCapacities": "ignore",
-                "usePhaseShifter": False,
-            },
-            "de / it": {
-                "assetType": "ac",
-                "colorRgb": "#707070",
-                "comments": "",
-                "displayComments": True,
-                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-                "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-                "hurdlesCost": False,
-                "linkStyle": "plain",
-                "linkWidth": 1,
-                "loopFlow": False,
-                "transmissionCapacities": "enabled",
-                "usePhaseShifter": False,
             },
             "es / fr": {
                 "assetType": "ac",
-                "colorRgb": "#FF6347",
-                "comments": "",
+                "colorb": 100,
+                "colorg": 150,
+                "colorr": 200,
                 "displayComments": True,
-                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-                "filterYearByYear": "hourly, daily, weekly, annual",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
                 "linkWidth": 1,
@@ -279,12 +235,68 @@ class TestTableMode:
                 "usePhaseShifter": True,
             },
             "fr / it": {
-                "assetType": "dc",
-                "colorRgb": "#707070",
-                "comments": "Link from France to Italie",
+                "assetType": "dc",  # case-insensitive
+            },
+        }
+
+        expected_links = {
+            "de / fr": {
+                "area1": "de",
+                "area2": "fr",
+                "assetType": "ac",
+                "colorb": 100,
+                "colorg": 150,
+                "colorr": 200,
+                "displayComments": False,
+                "comments": "",
+                "hurdlesCost": True,
+                "linkStyle": "plain",
+                "linkWidth": 2,
+                "loopFlow": False,
+                "transmissionCapacities": "ignore",
+                "usePhaseShifter": False,
+            },
+            "de / it": {
+                "area1": "de",
+                "area2": "it",
+                "assetType": "ac",
+                "colorr": 112,
+                "colorg": 112,
+                "colorb": 112,
                 "displayComments": True,
-                "filterSynthesis": "",
-                "filterYearByYear": "hourly",
+                "comments": "",
+                "hurdlesCost": False,
+                "linkStyle": "plain",
+                "linkWidth": 1,
+                "loopFlow": False,
+                "transmissionCapacities": "enabled",
+                "usePhaseShifter": False,
+            },
+            "es / fr": {
+                "area1": "es",
+                "area2": "fr",
+                "assetType": "ac",
+                "colorb": 100,
+                "colorg": 150,
+                "colorr": 200,
+                "displayComments": True,
+                "comments": "",
+                "hurdlesCost": True,
+                "linkStyle": "plain",
+                "linkWidth": 1,
+                "loopFlow": False,
+                "transmissionCapacities": "enabled",
+                "usePhaseShifter": True,
+            },
+            "fr / it": {
+                "area1": "fr",
+                "area2": "it",
+                "assetType": "dc",
+                "colorb": 112,
+                "colorg": 112,
+                "colorr": 112,
+                "displayComments": True,
+                "comments": "",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
                 "linkWidth": 1,
@@ -293,17 +305,39 @@ class TestTableMode:
                 "usePhaseShifter": False,
             },
         }
-        # asserts actual equals expected without the non-updated link.
+
+        # Add filters for versions > 8.2
+        if StudyVersion.parse(study_version) > STUDY_VERSION_8_2:
+            for link in json_input.values():
+                link.update(
+                    {
+                        "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+                        "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+                    }
+                )
+            for link in expected_links.values():
+                link.update(
+                    {
+                        "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+                        "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+                    }
+                )
+
+        res = client.put(f"/v1/studies/{internal_study_id}/table-mode/links", json=json_input)
+        assert res.status_code == 200, res.json()
+
         actual = res.json()
-        expected_result = copy.deepcopy(expected_links)
-        del expected_result["de / it"]
-        assert actual == expected_result
+        expected_partial = copy.deepcopy(expected_links)
+        del expected_partial["de / it"]
+        assert actual == expected_partial
 
         res = client.get(f"/v1/studies/{internal_study_id}/table-mode/links")
         assert res.status_code == 200, res.json()
-        actual = res.json()
-        # asserts the `de / it` link is not removed.
-        assert actual == expected_links
+        assert res.json() == expected_links
+
+        # GET request to make sure that the GET /links works
+        res = client.get(f"/v1/studies/{internal_study_id}/links")
+        assert res.status_code == 200, res.json()
 
         # Table Mode - Thermal Clusters
         # =============================

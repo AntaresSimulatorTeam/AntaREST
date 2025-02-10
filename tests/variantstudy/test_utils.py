@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
@@ -18,12 +19,13 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 def test_aggregate_commands(command_context: CommandContext):
+    study_version = STUDY_VERSION_8_8
     command_list = [
-        CreateArea(area_name="a", command_context=command_context),
-        CreateArea(area_name="b", command_context=command_context),
-        CreateLink(area1="a", area2="b", command_context=command_context),
-        CreateArea(area_name="d", command_context=command_context),
-        CreateArea(area_name="e", command_context=command_context),
+        CreateArea(area_name="a", command_context=command_context, study_version=study_version),
+        CreateArea(area_name="b", command_context=command_context, study_version=study_version),
+        CreateLink(area1="a", area2="b", command_context=command_context, study_version=study_version),
+        CreateArea(area_name="d", command_context=command_context, study_version=study_version),
+        CreateArea(area_name="e", command_context=command_context, study_version=study_version),
     ]
     command_dto_list = transform_command_to_dto(command_list, force_aggregate=True)
     assert len(command_dto_list) == 3
@@ -32,10 +34,10 @@ def test_aggregate_commands(command_context: CommandContext):
     assert len(command_dto_list) == 5
 
     command_ref_list = [
-        CommandDTO(action="create_area", args=[{"area_name": "a"}, {"area_name": "b"}]),
-        CommandDTO(action="create_link", args={"area1": "a", "area2": "b"}),
-        CommandDTO(action="create_area", args={"area_name": "d"}),
-        CommandDTO(action="create_area", args={"area_name": "e"}),
+        CommandDTO(action="create_area", args=[{"area_name": "a"}, {"area_name": "b"}], study_version=study_version),
+        CommandDTO(action="create_link", args={"area1": "a", "area2": "b"}, study_version=study_version),
+        CommandDTO(action="create_area", args={"area_name": "d"}, study_version=study_version),
+        CommandDTO(action="create_area", args={"area_name": "e"}, study_version=study_version),
     ]
 
     command_dto_list = transform_command_to_dto(command_list, command_ref_list)

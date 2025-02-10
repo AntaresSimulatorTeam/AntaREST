@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,15 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import {
-  createAsyncThunk,
-  createEntityAdapter,
-  createReducer,
-} from "@reduxjs/toolkit";
-import { UserDetailsDTO } from "../../common/types";
-import { AsyncEntityState, FetchStatus, makeActionName } from "../utils";
+import { createAsyncThunk, createEntityAdapter, createReducer } from "@reduxjs/toolkit";
+import type { UserDetailsDTO } from "../../common/types";
+import { FetchStatus, makeActionName, type AsyncEntityState } from "../utils";
 import * as api from "../../services/api/user";
-import { AppAsyncThunkConfig } from "../store";
+import type { AppAsyncThunkConfig } from "../store";
 
 const usersAdapter = createEntityAdapter<UserDetailsDTO>();
 
@@ -37,13 +33,12 @@ const n = makeActionName("users");
 // Thunks
 ////////////////////////////////////////////////////////////////
 
-export const fetchUsers = createAsyncThunk<
-  UserDetailsDTO[],
-  undefined,
-  AppAsyncThunkConfig
->(n("FETCH_USERS"), (_, { rejectWithValue }) => {
-  return api.getUsers({ details: true }).catch(rejectWithValue);
-});
+export const fetchUsers = createAsyncThunk<UserDetailsDTO[], undefined, AppAsyncThunkConfig>(
+  n("FETCH_USERS"),
+  (_, { rejectWithValue }) => {
+    return api.getUsers({ details: true }).catch(rejectWithValue);
+  },
+);
 
 ////////////////////////////////////////////////////////////////
 // Reducer

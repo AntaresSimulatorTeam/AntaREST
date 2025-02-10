@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -198,13 +198,13 @@ class AllocationManager:
         filtered_allocations = [f for f in data.allocation if f.coefficient > 0 and f.area_id in areas_ids]
 
         command_context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         command = UpdateConfig(
             target=f"input/hydro/allocation/{area_id}/[allocation]",
             data={f.area_id: f.coefficient for f in filtered_allocations},
             command_context=command_context,
+            study_version=file_study.config.version,
         )
-
-        file_study = self.storage_service.get_storage(study).get_raw(study)
 
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 

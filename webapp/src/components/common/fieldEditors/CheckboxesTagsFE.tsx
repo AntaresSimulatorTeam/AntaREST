@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -14,16 +14,16 @@
 
 import {
   Autocomplete,
-  AutocompleteProps,
-  AutocompleteValue,
   Checkbox,
   TextField,
+  type AutocompleteProps,
+  type AutocompleteValue,
 } from "@mui/material";
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import { FieldPath, FieldValues } from "react-hook-form";
+import type { FieldPath, FieldValues } from "react-hook-form";
 import reactHookFormSupport, {
-  ReactHookFormSupportProps,
+  type ReactHookFormSupportProps,
 } from "../../../hoc/reactHookFormSupport";
 
 interface CheckboxesTagsFEProps<
@@ -32,12 +32,7 @@ interface CheckboxesTagsFEProps<
   FreeSolo extends boolean | undefined = undefined,
 > extends Omit<
     AutocompleteProps<T, true, DisableClearable, FreeSolo>,
-    | "multiple"
-    | "disableCloseOnSelect"
-    | "renderOption"
-    | "renderInput"
-    | "renderTags"
-    | "onChange"
+    "multiple" | "disableCloseOnSelect" | "renderOption" | "renderInput" | "renderTags" | "onChange"
   > {
   label?: string;
   error?: boolean;

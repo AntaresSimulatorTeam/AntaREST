@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,10 +13,19 @@
  */
 
 import client from "../client";
-import type { GetTaskParams, GetTasksParams, TaskDTO } from "./types";
+import type {
+  GetTaskParams,
+  GetTasksParams,
+  TaskDTO,
+  TaskStatusValue,
+  TaskTypeValue,
+} from "./types";
 
-export async function getTasks(params: GetTasksParams) {
-  const res = await client.post<TaskDTO[]>("/v1/tasks", {
+export async function getTasks<
+  TStatus extends TaskStatusValue,
+  TType extends TaskTypeValue | undefined,
+>(params: GetTasksParams<TStatus, TType>) {
+  const { data } = await client.post<Array<TaskDTO<TStatus, TType>>>("/v1/tasks", {
     status: params.status,
     type: params.type,
     name: params.name,
@@ -27,13 +36,13 @@ export async function getTasks(params: GetTasksParams) {
     to_completion_date_utc: params.toCompletionDateUtc,
   });
 
-  return res.data;
+  return data;
 }
 
 export async function getTask(params: GetTaskParams) {
   const { id, ...queryParams } = params;
 
-  const res = await client.get<TaskDTO>(`/v1/tasks/${id}`, {
+  const { data } = await client.get<TaskDTO>(`/v1/tasks/${id}`, {
     params: {
       wait_for_completion: queryParams.waitForCompletion,
       with_logs: queryParams.withLogs,
@@ -41,5 +50,5 @@ export async function getTask(params: GetTaskParams) {
     },
   });
 
-  return res.data;
+  return data;
 }

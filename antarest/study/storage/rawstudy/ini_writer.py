@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,6 +15,8 @@ import configparser
 import typing as t
 from pathlib import Path
 
+from typing_extensions import override
+
 from antarest.core.model import JSON
 
 
@@ -24,6 +26,7 @@ class IniConfigParser(configparser.RawConfigParser):
         self.special_keys = special_keys
 
     # noinspection SpellCheckingInspection
+    @override
     def optionxform(self, optionstr: str) -> str:
         return optionstr
 
@@ -89,6 +92,7 @@ class SimpleKeyValueWriter(IniWriter):
     Simple key/value INI writer.
     """
 
+    @override
     def write(self, data: JSON, path: Path) -> None:
         """
         Write `.ini` file from JSON content

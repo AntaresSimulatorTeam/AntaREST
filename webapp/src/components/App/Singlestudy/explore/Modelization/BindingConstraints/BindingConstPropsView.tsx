@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -16,7 +16,7 @@ import { useEffect, useMemo, useState } from "react";
 import PropertiesView from "../../../../../common/PropertiesView";
 import ListElement from "../../common/ListElement";
 import AddDialog from "./AddDialog";
-import { BindingConstraint } from "./BindingConstView/utils";
+import type { BindingConstraint } from "./BindingConstView/utils";
 
 interface Props {
   list: BindingConstraint[];
@@ -26,12 +26,7 @@ interface Props {
 }
 
 // TODO rename ConstraintsList
-function BindingConstPropsView({
-  list,
-  onClick,
-  currentConstraint,
-  reloadConstraintsList,
-}: Props) {
+function BindingConstPropsView({ list, onClick, currentConstraint, reloadConstraintsList }: Props) {
   const [searchedConstraint, setSearchedConstraint] = useState("");
   const [addBindingConst, setAddBindingConst] = useState(false);
   const [filteredConstraints, setFilteredConstraints] = useState(list);
@@ -53,10 +48,7 @@ function BindingConstPropsView({
     setFilteredConstraints(filtered);
   }, [list, searchedConstraint]);
 
-  const existingConstraints = useMemo(
-    () => list.map(({ name }) => name),
-    [list],
-  );
+  const existingConstraints = useMemo(() => list.map(({ name }) => name), [list]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

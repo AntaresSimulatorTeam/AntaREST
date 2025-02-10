@@ -1,4 +1,4 @@
-# Copyright (c) 2024, RTE (https://www.rte-france.com)
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,6 +13,8 @@
 import copy
 import typing as t
 
+from antares.study.version import StudyVersion
+
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.patch_service import PatchService
@@ -25,6 +27,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -34,13 +37,18 @@ from antarest.study.storage.variantstudy.model.command.remove_binding_constraint
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
@@ -53,10 +61,12 @@ COMMAND_MAPPING = {
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,
+    CommandName.UPDATE_LINK.value: UpdateLink,
     CommandName.REMOVE_LINK.value: RemoveLink,
     CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
     CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
+    CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
@@ -71,6 +81,8 @@ COMMAND_MAPPING = {
     CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,
     CommandName.UPDATE_SCENARIO_BUILDER.value: UpdateScenarioBuilder,
     CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenerateThermalClusterTimeSeries,
+    CommandName.CREATE_USER_RESOURCE.value: CreateUserResource,
+    CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
 }
 
 
@@ -91,7 +103,9 @@ class CommandFactory:
             patch_service=patch_service,
         )
 
-    def _to_single_command(self, action: str, args: JSON, version: int, command_id: t.Optional[str]) -> ICommand:
+    def _to_single_command(
+        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: t.Optional[str]
+    ) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
             command_class = COMMAND_MAPPING[action]
@@ -100,6 +114,7 @@ class CommandFactory:
                 command_context=self.command_context,
                 version=version,
                 command_id=command_id,
+                study_version=study_version,
             )
         raise NotImplementedError(action)
 
@@ -121,11 +136,19 @@ class CommandFactory:
             # In some cases, pydantic can modify inplace the given args.
             # We don't want that so before doing so we copy the dictionnary.
             new_args = copy.deepcopy(args)
-            return [self._to_single_command(command_dto.action, new_args, command_dto.version, command_dto.id)]
+            return [
+                self._to_single_command(
+                    command_dto.action, new_args, command_dto.version, command_dto.study_version, command_dto.id
+                )
+            ]
         elif isinstance(args, list):
             return [
                 self._to_single_command(
-                    command_dto.action, copy.deepcopy(argument), command_dto.version, command_dto.id
+                    command_dto.action,
+                    copy.deepcopy(argument),
+                    command_dto.version,
+                    command_dto.study_version,
+                    command_dto.id,
                 )
                 for argument in args
             ]

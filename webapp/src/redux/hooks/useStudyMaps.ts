@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024, RTE (https://www.rte-france.com)
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,32 +13,22 @@
  */
 
 import { useState } from "react";
-import { StudyMetadata } from "../../common/types";
-import { AppState } from "../ducks";
+import type { StudyMetadata } from "../../common/types";
+import type { AppState } from "../ducks";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
 import { getStudyMap } from "../selectors";
-import {
-  createStudyMap,
-  fetchStudyMapLayers,
-  fetchStudyMapDistricts,
-} from "../ducks/studyMaps";
+import { createStudyMap, fetchStudyMapLayers, fetchStudyMapDistricts } from "../ducks/studyMaps";
 import useStudySynthesis from "./useStudySynthesis";
-import { Response } from "../../components/common/utils/UsePromiseCond";
-import usePromise, {
-  PromiseStatus,
-  type TPromiseStatus,
-} from "../../hooks/usePromise";
+import type { Response } from "../../components/common/utils/UsePromiseCond";
+import usePromise, { PromiseStatus, type TPromiseStatus } from "../../hooks/usePromise";
 
 interface Props<T> {
   studyId: StudyMetadata["id"];
   selector: (state: AppState, studyId: StudyMetadata["id"]) => T;
 }
 
-export default function useStudyMaps<T>({
-  studyId,
-  selector,
-}: Props<T>): Response<T> {
+export default function useStudyMaps<T>({ studyId, selector }: Props<T>): Response<T> {
   const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Response["error"]>();
   const dispatch = useAppDispatch();
