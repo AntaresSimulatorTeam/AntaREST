@@ -79,56 +79,6 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
         return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
 
     @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        simple_match = self.area1 == other.area1 and self.area2 == other.area2
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.parameters == other.parameters
-            and self.series == other.series
-            and self.direct == other.direct
-            and self.indirect == other.indirect
-        )
-
-    @override
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.area1 + MATCH_SIGNATURE_SEPARATOR + self.area2
-        )
-
-    @override
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        other = cast(AbstractLinkCommand, other)
-
-        commands: List[ICommand] = []
-        area_from, area_to = sorted([self.area1, self.area2])
-        if self.parameters != other.parameters:
-            properties = LinkInternal.model_validate(other.parameters or {}).model_dump(
-                mode="json", by_alias=True, exclude_none=True, exclude={"area1", "area2"}
-            )
-            commands.append(
-                UpdateConfig(
-                    target=f"input/links/{area_from}/properties/{area_to}",
-                    data=properties,
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        if self.series != other.series:
-            commands.append(
-                ReplaceMatrix(
-                    target=f"@links_series/{area_from}/{area_to}",
-                    matrix=strip_matrix_protocol(other.series),
-                    command_context=self.command_context,
-                    study_version=self.study_version,
-                )
-            )
-        return commands
-
-    @override
     def get_inner_matrices(self) -> List[str]:
         list_matrices = []
         for attr in MATRIX_ATTRIBUTES:
@@ -294,18 +244,6 @@ class CreateLink(AbstractLinkCommand):
     @override
     def to_dto(self) -> CommandDTO:
         return super().to_dto()
-
-    @override
-    def match_signature(self) -> str:
-        return super().match_signature()
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        return super().match(other, equal)
-
-    @override
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        return super()._create_diff(other)
 
     @override
     def get_inner_matrices(self) -> List[str]:

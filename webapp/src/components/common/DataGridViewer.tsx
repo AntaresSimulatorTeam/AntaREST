@@ -20,25 +20,18 @@ import {
   type TextCell,
 } from "@glideapps/glide-data-grid";
 import { useMemo } from "react";
-import { darkTheme, readOnlyDarkTheme } from "../../styles";
-import { formatGridNumber } from "../../shared/utils";
+import { darkTheme, readOnlyDarkTheme } from "./Matrix/styles";
+import { formatGridNumber } from "./Matrix/shared/utils";
 import DataGrid from "@/components/common/DataGrid";
 
 type CellValue = number | string;
 
-interface MatrixGridSynthesisProps {
+interface DataGridViewerProps {
   data: CellValue[][];
   columns: GridColumn[];
-  width?: string | number;
-  height?: string | number;
 }
 
-export function MatrixGridSynthesis({
-  data,
-  columns,
-  width = "100%",
-  height = "100%",
-}: MatrixGridSynthesisProps) {
+function DataGridViewer({ data, columns }: DataGridViewerProps) {
   const theme = useMemo(
     () => ({
       ...darkTheme,
@@ -81,16 +74,17 @@ export function MatrixGridSynthesis({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <div style={{ width, height }}>
-      <DataGrid
-        theme={theme}
-        height="100%"
-        rows={data.length}
-        columns={columns}
-        getCellContent={getCellContent}
-        rowMarkers="both"
-        getCellsForSelection
-      />
-    </div>
+    <DataGrid
+      theme={theme}
+      width="100%"
+      height="100%"
+      rows={data.length}
+      columns={columns}
+      getCellContent={getCellContent}
+      rowMarkers="none"
+      getCellsForSelection
+    />
   );
 }
+
+export default DataGridViewer;
