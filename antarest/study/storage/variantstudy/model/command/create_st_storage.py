@@ -106,10 +106,9 @@ class CreateSTStorage(ICommand):
     @classmethod
     def validate_model(cls, values: t.Dict[str, t.Any], info: ValidationInfo) -> t.Dict[str, t.Any]:
         if isinstance(values["parameters"], dict):
-            parameters = copy.deepcopy(values["parameters"])
+            parameters = values["parameters"]
             if info.context and info.context.version == 1:
-                parameters["name"] = values["cluster_name"]
-                values.pop("cluster_name")
+                parameters["name"] = values.pop("cluster_name")
             values["parameters"] = create_st_storage_properties(values["study_version"], parameters)
         return values
 
