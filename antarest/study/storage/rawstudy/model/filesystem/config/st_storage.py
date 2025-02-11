@@ -163,8 +163,8 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
 
 # NOTE: In the following Union, it is important to place the older version first,
 # because otherwise, creating a short term storage always creates a v8.8 one.
-STStorageConfigType = Union[STStorageConfig, STStorage880Config]
-STStoragePropertiesType = Union[STStorageProperties, STStorage880Properties]
+STStorageConfigType = STStorageConfig | STStorage880Config
+STStoragePropertiesType = STStorageProperties | STStorage880Properties
 
 
 def create_st_storage_properties(study_version: StudyVersion, data: Dict[str, Any]) -> STStoragePropertiesType:

@@ -12,7 +12,7 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -215,6 +215,8 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     Abstract class for binding constraint commands.
     """
 
+    _SERIALIZATION_VERSION: Final[int] = 1
+
     coeffs: Optional[Dict[str, List[float]]] = None
 
     @override
@@ -241,7 +243,12 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             if matrix_attr is not None:
                 args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
 
-        return CommandDTO(action=self.command_name.value, args=args, version=1, study_version=self.study_version)
+        return CommandDTO(
+            action=self.command_name.value,
+            args=args,
+            version=self._SERIALIZATION_VERSION,
+            study_version=self.study_version,
+        )
 
     @override
     def get_inner_matrices(self) -> List[str]:

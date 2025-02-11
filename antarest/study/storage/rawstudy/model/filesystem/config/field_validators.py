@@ -19,9 +19,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
 
 
-_VALID_NAME_PATTERN = re.compile(r"[a-zA-Z0-9_(),& -]+")
-
-
 def _validate_item_name(name: Any) -> str:
     if isinstance(name, int):
         name = str(name)
@@ -36,6 +33,10 @@ def _validate_item_name(name: Any) -> str:
 # does not comply with antares-simulator limitations.
 ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
 
+# Type to be used for area identifiers. An ID is valid if it contains
+# only lower case alphanumeric characters, parenthesis, comma,
+# ampersand, spaces, underscores, or dashes, as defined by
+# antares-simulator.
 AreaId = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
 
 
