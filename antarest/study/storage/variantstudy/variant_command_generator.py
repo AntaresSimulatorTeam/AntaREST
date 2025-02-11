@@ -114,7 +114,6 @@ class VariantCommandGenerator:
         dest_path: Path,
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
-        notifier: Optional[CommandNotifier] = None,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # Build file study
@@ -128,7 +127,6 @@ class VariantCommandGenerator:
             study,
             lambda command, data, listener: command.apply(cast(FileStudy, data), listener),
             metadata,
-            notifier,
         )
 
         if not results.success and delete_on_failure:
@@ -140,7 +138,6 @@ class VariantCommandGenerator:
         commands: List[List[ICommand]],
         config: FileStudyTreeConfig,
         metadata: Optional[VariantStudy] = None,
-        notifier: Optional[CommandNotifier] = None,
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         logger.info("Building config (light generation)")
         results = VariantCommandGenerator._generate(
@@ -148,7 +145,6 @@ class VariantCommandGenerator:
             config,
             lambda command, data, listener: command.apply_config(cast(FileStudyTreeConfig, data)),
             metadata,
-            notifier,
         )
         # because the config has the parent id there
         if metadata:
