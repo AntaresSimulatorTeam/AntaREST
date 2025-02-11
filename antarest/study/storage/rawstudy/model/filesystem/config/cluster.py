@@ -18,13 +18,14 @@ In the near future, this set of classes may be used for solar, wind and hydro cl
 
 import functools
 import typing as t
+from typing import Any
 
 from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import ItemName
 
 
-@functools.total_ordering
 class ItemProperties(
     AntaresBaseModel,
     extra="forbid",
@@ -33,33 +34,9 @@ class ItemProperties(
 ):
     """
     Common properties related to thermal and renewable clusters, and short-term storage.
-
-    Usage:
-
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
-
-    >>> cl1 = ItemProperties(name="cluster-01", group="group-A")
-    >>> cl2 = ItemProperties(name="CLUSTER-01", group="Group-B")
-    >>> cl3 = ItemProperties(name="cluster-02", group="GROUP-A")
-    >>> l = [cl1, cl2, cl3]
-    >>> l.sort()
-    >>> [(c.group, c.name) for c in l]
-    [('group-A', 'cluster-01'), ('GROUP-A', 'cluster-02'), ('Group-B', 'CLUSTER-01')]
     """
 
-    group: str = Field(default="", description="Cluster group")
-
-    name: str = Field(description="Cluster name", pattern=r"[a-zA-Z0-9_(),& -]+")
-
-    def __lt__(self, other: t.Any) -> bool:
-        """
-        Compare two clusters by group and name.
-
-        This method may be used to sort and group clusters by `group` and `name`.
-        """
-        if isinstance(other, ItemProperties):
-            return (self.group.upper(), self.name.upper()).__lt__((other.group.upper(), other.name.upper()))
-        return NotImplemented
+    name: ItemName
 
 
 class ClusterProperties(ItemProperties):

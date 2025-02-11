@@ -14,7 +14,7 @@ import string
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 VALID_CHARS = "azAZ09_-(),&"
 

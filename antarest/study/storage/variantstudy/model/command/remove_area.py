@@ -44,7 +44,6 @@ class RemoveArea(ICommand):
     """
 
     command_name: CommandName = CommandName.REMOVE_AREA
-    version: int = 1
 
     # Properties of the `REMOVE_AREA` command:
     id: str

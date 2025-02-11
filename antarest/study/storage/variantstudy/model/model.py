@@ -12,6 +12,7 @@
 import datetime
 import typing as t
 import uuid
+from typing import List, MutableSequence
 
 import typing_extensions as te
 
@@ -93,7 +94,7 @@ class CommandDTO(AntaresBaseModel):
 
     id: t.Optional[str] = None
     action: str
-    args: t.Union[t.MutableSequence[JSON], JSON]
+    args: List[JSON] | JSON
     version: int = 1
     study_version: StudyVersionStr
     user_id: t.Optional[int] = None
@@ -103,6 +104,9 @@ class CommandDTO(AntaresBaseModel):
         data = self.model_dump(mode="json", exclude={"study_version", "user_id"})
         data["user_name"] = user_name
         return CommandDTOAPI.model_validate(data)
+
+    def get_args_list(self) -> MutableSequence[JSON]:
+        return self.args if isinstance(self.args, list) else [self.args]
 
 
 class CommandResultDTO(AntaresBaseModel):

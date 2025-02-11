@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any, Dict
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -18,7 +19,7 @@ from pydantic import Field
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier, transform_name_to_id
 
 
 class STStorageGroup(EnumIgnoreCase):
@@ -34,15 +35,15 @@ class STStorageGroup(EnumIgnoreCase):
         - OTHER1...OTHER5: Represents other energy storage systems.
     """
 
-    PSP_OPEN = "PSP_open"
-    PSP_CLOSED = "PSP_closed"
-    PONDAGE = "Pondage"
-    BATTERY = "Battery"
-    OTHER1 = "Other1"
-    OTHER2 = "Other2"
-    OTHER3 = "Other3"
-    OTHER4 = "Other4"
-    OTHER5 = "Other5"
+    PSP_OPEN = "psp_open"
+    PSP_CLOSED = "psp_closed"
+    PONDAGE = "pondage"
+    BATTERY = "battery"
+    OTHER1 = "other1"
+    OTHER2 = "other2"
+    OTHER3 = "other3"
+    OTHER4 = "other4"
+    OTHER5 = "other5"
 
 
 # noinspection SpellCheckingInspection
@@ -52,6 +53,9 @@ class STStorageProperties(ItemProperties):
 
     All aliases match the name of the corresponding field in the INI files.
     """
+
+    def get_id(self) -> str:
+        return transform_name_to_id(self.name)
 
     group: STStorageGroup = Field(
         STStorageGroup.OTHER1,
@@ -160,7 +164,29 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
 
 # NOTE: In the following Union, it is important to place the older version first,
 # because otherwise, creating a short term storage always creates a v8.8 one.
-STStorageConfigType = t.Union[STStorageConfig, STStorage880Config]
+STStorageConfigType = STStorageConfig | STStorage880Config
+STStoragePropertiesType = STStorageProperties | STStorage880Properties
+
+
+def create_st_storage_properties(study_version: StudyVersion, data: Dict[str, Any]) -> STStoragePropertiesType:
+    """
+    Factory method to create st_storage properties.
+
+    Args:
+        study_version: The version of the study.
+        data: The dictionary of data to be used to initialize the model.
+
+    Returns:
+        The short term storage properties.
+
+    Raises:
+        ValueError: If the study version is not supported.
+    """
+    if study_version >= STUDY_VERSION_8_8:
+        return STStorage880Properties.model_validate(data)
+    elif study_version >= STUDY_VERSION_8_6:
+        return STStorageProperties.model_validate(data)
+    raise ValueError(f"Unsupported study version: {study_version}")
 
 
 def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageConfigType]:

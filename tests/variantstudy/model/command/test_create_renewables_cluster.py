@@ -12,18 +12,22 @@
 
 import configparser
 import re
-from unittest import mock
 
 import pytest
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
+    RenewableClusterGroup,
+    RenewableProperties,
+    TimeSeriesInterpretation,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
-from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -32,29 +36,30 @@ class TestCreateRenewablesCluster:
     def test_init(self, command_context: CommandContext) -> None:
         cl = CreateRenewablesCluster(
             area_id="foo",
-            cluster_name="Cluster1",
-            parameters={"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=RenewableProperties(
+                name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
+            ),
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         )
 
         # Check the command metadata
         assert cl.command_name == CommandName.CREATE_RENEWABLES_CLUSTER
-        assert cl.version == 1
         assert cl.command_context is command_context
 
         # Check the command data
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Solar Thermal", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.parameters == RenewableProperties(
+            name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
+        )
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
-        with pytest.raises(ValidationError, match="cluster_name"):
+        with pytest.raises(ValidationError, match="Invalid name"):
             CreateRenewablesCluster(
                 area_id="fr",
-                cluster_name="%",
                 command_context=command_context,
-                parameters={},
+                parameters=RenewableProperties(name="%"),
                 study_version=STUDY_VERSION_8_8,
             )
 
@@ -69,14 +74,10 @@ class TestCreateRenewablesCluster:
 
         CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(empty_study)
 
-        parameters = {
-            "name": cluster_name,
-            "ts-interpretation": "power-generation",
-        }
+        parameters = RenewableProperties(name=cluster_name, ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION)
 
         command = CreateRenewablesCluster(
             area_id=area_id,
-            cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
@@ -93,11 +94,10 @@ class TestCreateRenewablesCluster:
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "renewables" / "clusters" / area_id / "list.ini")
         assert str(clusters[cluster_name]["name"]) == cluster_name
-        assert str(clusters[cluster_name]["ts-interpretation"]) == parameters["ts-interpretation"]
+        assert str(clusters[cluster_name]["ts-interpretation"]) == "power-generation"
 
         output = CreateRenewablesCluster(
             area_id=area_id,
-            cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
@@ -106,7 +106,6 @@ class TestCreateRenewablesCluster:
 
         output = CreateRenewablesCluster(
             area_id=area_id,
-            cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
@@ -121,7 +120,6 @@ class TestCreateRenewablesCluster:
 
         output = CreateRenewablesCluster(
             area_id="non_existent_area",
-            cluster_name=cluster_name,
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
@@ -137,8 +135,9 @@ class TestCreateRenewablesCluster:
     def test_to_dto(self, command_context: CommandContext) -> None:
         command = CreateRenewablesCluster(
             area_id="foo",
-            cluster_name="Cluster1",
-            parameters={"group": "Solar Thermal", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=RenewableProperties(
+                name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
+            ),
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         )
@@ -147,12 +146,18 @@ class TestCreateRenewablesCluster:
             "action": "create_renewables_cluster",  # "renewables" with a final "s".
             "args": {
                 "area_id": "foo",
-                "cluster_name": "Cluster1",
-                "parameters": {"group": "Solar Thermal", "nominalcapacity": 2400, "unitcount": 2},
+                "parameters": {
+                    "name": "Cluster1",
+                    "group": "solar thermal",
+                    "nominalcapacity": 2400,
+                    "unitcount": 2,
+                    "enabled": True,
+                    "ts-interpretation": "power-generation",
+                },
             },
             "id": None,
-            "version": 1,
-            "study_version": STUDY_VERSION_8_8,
+            "version": 2,
+            "study_version": "8.8",
             "updated_at": None,
             "user_id": None,
         }
