@@ -111,7 +111,7 @@ def test_binding_constraint_group_writing(tmp_path: Path):
     node.save({"0": {"name": "BC_1", "group": "GRP_1"}})
     assert IniReader().read(file_path) == {"0": {"name": "BC_1", "group": "grp_1"}}
 
-    node.save(data="GRP_2", url=["0", "BC_1"])
+    node.save(data="GRP_2", url=["0", "group"])
     assert IniReader().read(file_path) == {"0": {"name": "BC_1", "group": "grp_2"}}
 
 
