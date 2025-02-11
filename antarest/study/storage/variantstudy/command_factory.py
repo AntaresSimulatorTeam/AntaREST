@@ -143,7 +143,7 @@ class CommandFactory:
         args = command_dto.args
         if isinstance(args, dict):
             # In some cases, pydantic can modify inplace the given args.
-            # We don't want that so before doing so we copy the dictionnary.
+            # We don't want that so before doing so we copy the dictionary.
             new_args = copy.deepcopy(args)
             return [
                 self._to_single_command(

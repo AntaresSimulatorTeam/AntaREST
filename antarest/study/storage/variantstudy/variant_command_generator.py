@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import itertools
 import logging
 import shutil
 import uuid
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union, cast
+from typing import Callable, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -51,7 +51,6 @@ class VariantCommandGenerator:
         data: Union[FileStudy, FileStudyTreeConfig],
         applier: APPLY_CALLBACK,
         metadata: Optional[VariantStudy] = None,
-        notifier: Optional[Callable[[int, bool, str], None]] = None,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
@@ -61,8 +60,8 @@ class VariantCommandGenerator:
         logger.info("Applying commands")
         study_id = "-" if metadata is None else metadata.id
 
-        # flatten the list of commands
-        all_commands = [command for command_batch in commands for command in command_batch]
+        # Flatten the list of commands
+        all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
 
         # Prepare the stopwatch
         cmd_notifier = CmdNotifier(study_id, len(all_commands))
@@ -89,9 +88,6 @@ class VariantCommandGenerator:
             }
             results.details.append(detail)
 
-            if notifier:
-                notifier(index - 1, output.status, output.message)
-
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)
 
@@ -117,7 +113,6 @@ class VariantCommandGenerator:
         dest_path: Path,
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
-        notifier: Optional[Callable[[int, bool, str], None]] = None,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # Build file study
@@ -131,7 +126,6 @@ class VariantCommandGenerator:
             study,
             lambda command, data, listener: command.apply(cast(FileStudy, data), listener),
             metadata,
-            notifier,
         )
 
         if not results.success and delete_on_failure:
@@ -143,7 +137,6 @@ class VariantCommandGenerator:
         commands: List[List[ICommand]],
         config: FileStudyTreeConfig,
         metadata: Optional[VariantStudy] = None,
-        notifier: Optional[Callable[[int, bool, str], None]] = None,
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         logger.info("Building config (light generation)")
         results = VariantCommandGenerator._generate(
@@ -151,7 +144,6 @@ class VariantCommandGenerator:
             config,
             lambda command, data, listener: command.apply_config(cast(FileStudyTreeConfig, data)),
             metadata,
-            notifier,
         )
         # because the config has the parent id there
         if metadata:
