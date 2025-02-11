@@ -108,11 +108,30 @@ def test_binding_constraint_group_writing(tmp_path: Path):
         config=FileStudyTreeConfig(study_path=study_path, path=file_path, version=-1, study_id="id"),
     )
 
-    data = {"0": {"name": "BC_1", "group": "GRP_1"}}
-    node.save(data)
-    # Asserts the data is saved correctly
-    ini_content = IniReader().read(file_path)
-    assert ini_content == data
-    # Asserts the constraint group is returned in lower case
-    content = node.get([])
-    assert content == {"0": {"name": "BC_1", "group": "grp_1"}}
+    node.save({"0": {"name": "BC_1", "group": "GRP_1"}})
+    assert IniReader().read(file_path) == {"0": {"name": "BC_1", "group": "grp_1"}}
+
+    node.save(data="GRP_2", url=["0", "BC_1"])
+    assert IniReader().read(file_path) == {"0": {"name": "BC_1", "group": "grp_2"}}
+
+
+def test_binding_constraint_group_parsing(tmp_path: Path):
+    study_path = tmp_path / "study"
+    study_path.mkdir()
+    file_path = study_path / "test.ini"
+    file_path.write_text(
+        textwrap.dedent(
+            """
+            [0]
+            group = GRP
+            """
+        )
+    )
+
+    node = BindingConstraintsIni(
+        context=Mock(),
+        config=FileStudyTreeConfig(study_path=study_path, path=file_path, version=-1, study_id="id"),
+    )
+
+    content = node.get()
+    assert content == {"0": {"group": "grp"}}
