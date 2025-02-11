@@ -14,6 +14,7 @@ import concurrent.futures
 import logging
 import re
 import shutil
+import typing as t
 from datetime import datetime, timedelta
 from functools import reduce
 from pathlib import Path
@@ -786,41 +787,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         config.study_path = Path(metadata.path)
         return res, config
 
-    def _get_commands_and_notifier(
-        self,
-        variant_study: VariantStudy,
-        notifier: ITaskNotifier,
-        from_index: int = 0,
-    ) -> Tuple[List[List[ICommand]], CommandNotifier]:
-        # Generate
-        commands: List[List[ICommand]] = self._to_commands(variant_study, from_index)
-
-        def notify(command_index: int, command_result: bool, command_message: str) -> None:
-            try:
-                command_result_obj = CommandResultDTO(
-                    study_id=variant_study.id,
-                    id=variant_study.commands[from_index + command_index].id,
-                    success=command_result,
-                    message=command_message,
-                )
-                notifier.notify_message(command_result_obj.model_dump_json())
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_VARIANT_GENERATION_COMMAND_RESULT,
-                        payload=command_result_obj,
-                        permissions=PermissionInfo.from_study(variant_study),
-                        channel=EventChannelDirectory.STUDY_GENERATION + variant_study.id,
-                    )
-                )
-            except Exception as e:
-                logger.error(
-                    f"Fail to notify command result n°{command_index} for study {variant_study.id}",
-                    exc_info=e,
-                )
-
-        return commands, notify
-
-    def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> List[List[ICommand]]:
+    def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> t.List[t.List[ICommand]]:
         commands: List[List[ICommand]] = [
             self.command_factory.to_command(command_block.to_dto())
             for index, command_block in enumerate(metadata.commands)
@@ -832,24 +799,18 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self,
         variant_study: VariantStudy,
         config: FileStudyTreeConfig,
-        notifier: ITaskNotifier = NoopNotifier(),
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        commands, notify = self._get_commands_and_notifier(variant_study=variant_study, notifier=notifier)
-        return self.generator.generate_config(commands, config, variant_study, notifier=notify)
+        commands = self._to_commands(variant_study)
+        return self.generator.generate_config(commands, config, variant_study)
 
     def _generate_snapshot(
         self,
         variant_study: VariantStudy,
         dst_path: Path,
-        notifier: ITaskNotifier = NoopNotifier(),
         from_command_index: int = 0,
     ) -> GenerationResultInfoDTO:
-        commands, notify = self._get_commands_and_notifier(
-            variant_study=variant_study,
-            notifier=notifier,
-            from_index=from_command_index,
-        )
-        return self.generator.generate(commands, dst_path, variant_study, notifier=notify)
+        commands = self._to_commands(variant_study, from_command_index)
+        return self.generator.generate(commands, dst_path, variant_study)
 
     def get_study_task(self, study_id: str, params: RequestParameters) -> TaskDTO:
         """

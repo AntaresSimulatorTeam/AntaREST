@@ -52,7 +52,6 @@ class VariantCommandGenerator:
         data: Union[FileStudy, FileStudyTreeConfig],
         applier: APPLY_CALLBACK,
         metadata: Optional[VariantStudy] = None,
-        notifier: Optional[CommandNotifier] = None,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
@@ -64,18 +63,6 @@ class VariantCommandGenerator:
 
         # Flatten the list of commands
         all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
-        # since we need the commands without their sub commands ONLY for the notifier
-        # we'll use a set to store command blocks that were already used
-        # and a dictionary to associate ICommand id to command block index
-        command_block_set: Set[Optional[uuid.UUID]] = set()
-        command_block_dict: Dict[Optional[uuid.UUID], int] = {}
-
-        command_index = 0
-
-        for command in all_commands:
-            if command.command_id not in command_block_dict:
-                command_block_dict[command.command_id] = command_index
-                command_index += 1
 
         # Prepare the stopwatch
         cmd_notifier = CmdNotifier(study_id, len(all_commands))
@@ -101,10 +88,6 @@ class VariantCommandGenerator:
                 "msg": output.message,
             }
             results.details.append(detail)
-
-            if notifier and cmd.command_id not in command_block_set:
-                notifier(command_block_dict[cmd.command_id], output.status, output.message)
-                command_block_set.add(cmd.command_id)
 
             cmd_notifier.index = index
             stopwatch.log_elapsed(cmd_notifier)
