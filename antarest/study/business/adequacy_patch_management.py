@@ -117,7 +117,7 @@ class AdequacyPatchManager:
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return AdequacyPatchFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return AdequacyPatchFormFields.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(self, study: Study, field_values: AdequacyPatchFormFields) -> None:
         """

@@ -11,13 +11,10 @@
 # This file is part of the Antares project.
 
 import json
-from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.ini_reader import IniReader
+from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea

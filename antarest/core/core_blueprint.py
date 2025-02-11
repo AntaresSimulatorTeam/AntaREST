@@ -15,7 +15,7 @@ from typing import Any
 from fastapi import APIRouter
 
 from antarest.core.config import Config
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
 

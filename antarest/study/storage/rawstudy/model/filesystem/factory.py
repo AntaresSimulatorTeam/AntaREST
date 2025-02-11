@@ -14,8 +14,8 @@ import logging
 import os.path
 import tempfile
 import time
-import typing as t
 from pathlib import Path
+from typing import NamedTuple, Optional
 
 import filelock
 
@@ -30,7 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 logger = logging.getLogger(__name__)
 
 
-class FileStudy(t.NamedTuple):
+class FileStudy(NamedTuple):
     """
     Antares study stored on the disk.
 
@@ -66,7 +66,7 @@ class StudyFactory:
         self,
         path: Path,
         study_id: str,
-        output_path: t.Optional[Path] = None,
+        output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> FileStudy:
         """
@@ -96,7 +96,7 @@ class StudyFactory:
         self,
         path: Path,
         study_id: str,
-        output_path: t.Optional[Path] = None,
+        output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> FileStudy:
         cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"

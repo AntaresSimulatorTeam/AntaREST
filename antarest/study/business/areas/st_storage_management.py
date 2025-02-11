@@ -12,7 +12,7 @@
 
 import collections
 import operator
-import typing as t
+from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -29,7 +29,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_8, Study
@@ -58,7 +58,7 @@ class STStorageInput(STStorage880Properties):
 
     class Config:
         @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = STStorageInput(
                 name="Siemens Battery",
                 group=STStorageGroup.BATTERY,
@@ -78,7 +78,7 @@ class STStorageCreation(STStorageInput):
 
     # noinspection Pydantic
     @field_validator("name", mode="before")
-    def validate_name(cls, name: t.Optional[str]) -> str:
+    def validate_name(cls, name: Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
         """
@@ -101,7 +101,7 @@ class STStorageOutput(STStorage880Config):
 
     class Config:
         @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = STStorageOutput(
                 id="siemens_battery",
                 name="Siemens Battery",
@@ -135,12 +135,12 @@ class STStorageMatrix(AntaresBaseModel):
     class Config:
         extra = "forbid"
 
-    data: t.List[t.List[float]]
-    index: t.List[int]
-    columns: t.List[int]
+    data: List[List[float]]
+    index: List[int]
+    columns: List[int]
 
     @field_validator("data")
-    def validate_time_series(cls, data: t.List[t.List[float]]) -> t.List[t.List[float]]:
+    def validate_time_series(cls, data: List[List[float]]) -> List[List[float]]:
         """
         Validator to check the integrity of the time series data.
 
@@ -230,7 +230,7 @@ _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}
 _ALL_STORAGE_PATH = "input/st-storage/clusters"
 
 
-def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+def _get_values_by_ids(file_study: FileStudy, area_id: str) -> Mapping[str, Mapping[str, Any]]:
     path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
     try:
         return CaseInsensitiveDict(file_study.tree.get(path.split("/"), depth=3))
@@ -243,7 +243,7 @@ def _get_values_by_ids(file_study: FileStudy, area_id: str) -> t.Mapping[str, t.
 def create_storage_output(
     study_version: StudyVersion,
     cluster_id: str,
-    config: t.Mapping[str, t.Any],
+    config: Mapping[str, Any],
 ) -> "STStorageOutput":
     obj = create_st_storage_config(study_version=study_version, **config, id=cluster_id)
     kwargs = obj.model_dump(mode="json", by_alias=False)
@@ -315,7 +315,7 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-    ) -> t.Sequence[STStorageOutput]:
+    ) -> Sequence[STStorageOutput]:
         """
         Get the list of short-term storage configurations for the given `study`, and `area_id`.
 
@@ -345,7 +345,7 @@ class STStorageManager:
     def get_all_storages_props(
         self,
         study: Study,
-    ) -> t.Mapping[str, t.Mapping[str, STStorageOutput]]:
+    ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         """
         Retrieve all short-term storages from all areas within a study.
 
@@ -370,7 +370,7 @@ class STStorageManager:
             raise STStorageConfigNotFound(path) from None
 
         study_version = StudyVersion.parse(study.version)
-        storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageOutput]]
+        storages_by_areas: MutableMapping[str, MutableMapping[str, STStorageOutput]]
         storages_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in storages.items():
             for cluster_id, cluster in cluster_obj.items():
@@ -381,8 +381,8 @@ class STStorageManager:
     def update_storages_props(
         self,
         study: Study,
-        update_storages_by_areas: t.Mapping[str, t.Mapping[str, STStorageInput]],
-    ) -> t.Mapping[str, t.Mapping[str, STStorageOutput]]:
+        update_storages_by_areas: Mapping[str, Mapping[str, STStorageInput]],
+    ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         old_storages_by_areas = self.get_all_storages_props(study)
         new_storages_by_areas = {area_id: dict(clusters) for area_id, clusters in old_storages_by_areas.items()}
 
@@ -482,7 +482,7 @@ class STStorageManager:
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
-        data: t.Dict[str, t.Any] = {}
+        data: Dict[str, Any] = {}
         for field_name, field in new_config.model_fields.items():
             if field_name in new_values:
                 name = field.alias if field.alias else field_name
@@ -506,7 +506,7 @@ class STStorageManager:
         self,
         study: Study,
         area_id: str,
-        storage_ids: t.Sequence[str],
+        storage_ids: Sequence[str],
     ) -> None:
         """
         Delete short-term storage configurations form the given study and area_id.
@@ -584,7 +584,7 @@ class STStorageManager:
         ]
 
         # Prepare and execute commands
-        commands: t.List[t.Union[CreateSTStorage, ReplaceMatrix]] = [create_cluster_cmd]
+        commands: List[CreateSTStorage | ReplaceMatrix] = [create_cluster_cmd]
         storage_service = self.storage_service.get_storage(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):
@@ -626,7 +626,7 @@ class STStorageManager:
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
-    ) -> t.MutableMapping[str, t.Any]:
+    ) -> MutableMapping[str, Any]:
         file_study = self._get_file_study(study)
         path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
@@ -661,7 +661,7 @@ class STStorageManager:
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
-        matrix_data: t.List[t.List[float]],
+        matrix_data: List[List[float]],
     ) -> None:
         file_study = self._get_file_study(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
@@ -718,4 +718,4 @@ class STStorageManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return STStorageOutput.schema()
+        return STStorageOutput.model_json_schema()

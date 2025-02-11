@@ -13,10 +13,10 @@ import logging
 import os
 import shutil
 import tempfile
-import typing as t
 import zipfile
 from enum import StrEnum
 from pathlib import Path
+from typing import Any, BinaryIO, Callable, List, Optional, Tuple
 
 import py7zr
 
@@ -38,7 +38,7 @@ def archive_dir(
     src_dir_path: Path,
     target_archive_path: Path,
     remove_source_dir: bool = False,
-    archive_format: t.Optional[ArchiveFormat] = None,
+    archive_format: Optional[ArchiveFormat] = None,
 ) -> None:
     if archive_format is not None and target_archive_path.suffix != archive_format:
         raise ShouldNotHappenException(
@@ -74,7 +74,7 @@ def is_zip(path: Path) -> bool:
 def read_in_zip(
     zip_path: Path,
     inside_zip_path: Path,
-    read: t.Callable[[t.Optional[Path]], None],
+    read: Callable[[Optional[Path]], None],
 ) -> None:
     tmp_dir = None
     try:
@@ -88,7 +88,7 @@ def read_in_zip(
             tmp_dir.cleanup()
 
 
-def extract_archive(stream: t.BinaryIO, target_dir: Path) -> None:
+def extract_archive(stream: BinaryIO, target_dir: Path) -> None:
     """
     Extract a ZIP archive to a given destination.
 
@@ -122,7 +122,7 @@ def extract_archive(stream: t.BinaryIO, target_dir: Path) -> None:
         raise BadArchiveContent
 
 
-def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> t.Tuple[Path, t.Any]:
+def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> Tuple[Path, Any]:
     str_inside_archive_path = str(inside_archive_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
@@ -184,7 +184,7 @@ def read_file_from_archive(archive_path: Path, posix_path: str) -> str:
     return read_original_file_in_archive(archive_path, posix_path).decode("utf-8")
 
 
-def extract_lines_from_archive(root: Path, posix_path: str) -> t.List[str]:
+def extract_lines_from_archive(root: Path, posix_path: str) -> List[str]:
     """
     Extract text lines from various types of files.
 
