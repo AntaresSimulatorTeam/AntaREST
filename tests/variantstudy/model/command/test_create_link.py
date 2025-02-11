@@ -10,15 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from unittest.mock import Mock
-
 import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import LinkValidationError
+from antarest.core.serde.ini_reader import IniReader
 from antarest.study.model import STUDY_VERSION_8_8, LinksParametersTsGeneration, RawStudy
-from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea

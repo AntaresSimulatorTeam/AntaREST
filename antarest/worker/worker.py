@@ -21,7 +21,7 @@ from typing_extensions import override
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.interfaces.service import IService
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
 
 logger = logging.getLogger(__name__)

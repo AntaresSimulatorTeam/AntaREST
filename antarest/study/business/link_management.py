@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
-from typing import Any
+from typing import Any, Dict, List, Mapping, Tuple
 
 from antares.study.version import StudyVersion
 
@@ -32,9 +31,9 @@ class LinkManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_all_links(self, study: Study) -> t.List[LinkDTO]:
+    def get_all_links(self, study: Study) -> List[LinkDTO]:
         file_study = self.storage_service.get_storage(study).get_raw(study)
-        result: t.List[LinkDTO] = []
+        result: List[LinkDTO] = []
 
         ts_generation_parameters = self.get_all_links_ts_generation_information(study.id)
 
@@ -42,7 +41,7 @@ class LinkManager:
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
 
             for link in area.links:
-                link_tree_config: t.Dict[str, t.Any] = links_config[link]
+                link_tree_config: Dict[str, Any] = links_config[link]
                 link_tree_config.update({"area1": area_id, "area2": link})
 
                 if area_id in ts_generation_parameters and link in ts_generation_parameters[area_id]:
@@ -70,10 +69,10 @@ class LinkManager:
         return updated_link
 
     @staticmethod
-    def get_all_links_ts_generation_information(study_id: str) -> t.Dict[str, t.Dict[str, LinkTsGeneration]]:
-        db_dictionnary: t.Dict[str, t.Dict[str, LinkTsGeneration]] = {}
+    def get_all_links_ts_generation_information(study_id: str) -> dict[str, dict[str, LinkTsGeneration]]:
+        db_dictionnary: dict[str, dict[str, LinkTsGeneration]] = {}
         with db():
-            all_links_parameters: t.List[LinksParametersTsGeneration] = (
+            all_links_parameters: list[LinksParametersTsGeneration] = (
                 db.session.query(LinksParametersTsGeneration).filter_by(study_id=study_id).all()
             )
             for link_parameters in all_links_parameters:
@@ -139,8 +138,8 @@ class LinkManager:
     def update_links(
         self,
         study: RawStudy,
-        update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkBaseDTO],
-    ) -> t.Mapping[t.Tuple[str, str], LinkBaseDTO]:
+        update_links_by_ids: Mapping[Tuple[str, str], LinkBaseDTO],
+    ) -> Mapping[Tuple[str, str], LinkBaseDTO]:
         new_links_by_ids = {}
         for (area1, area2), update_link_dto in update_links_by_ids.items():
             updated_link = self.update_link(study, area1, area2, update_link_dto)

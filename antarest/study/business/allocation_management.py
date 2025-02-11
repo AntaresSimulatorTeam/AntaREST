@@ -19,7 +19,7 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import Annotated
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
-from antarest.study.business.area_management import AreaInfoDTO
+from antarest.study.business.model.area_model import AreaInfoDTO
 from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -210,7 +210,7 @@ class AllocationManager:
 
         updated_allocations = self.get_allocation_data(study, area_id)
 
-        return AllocationFormFields.construct(
+        return AllocationFormFields.model_construct(
             allocation=[
                 AllocationField.construct(area_id=area, coefficient=value)
                 for area, value in updated_allocations.items()
@@ -250,4 +250,4 @@ class AllocationManager:
                 col_idx = columns.index(prod_area)
                 array[row_idx][col_idx] = coefficient
 
-        return AllocationMatrix.construct(index=rows, columns=columns, data=array.tolist())
+        return AllocationMatrix.model_construct(index=rows, columns=columns, data=array.tolist())

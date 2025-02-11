@@ -10,13 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from unittest.mock import Mock
-
 import pytest
 from sqlalchemy.orm import Session
 
+from antarest.core.serde.ini_reader import IniReader
 from antarest.study.model import STUDY_VERSION_8_8, RawStudy
-from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -27,7 +25,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
     default_bc_weekly_daily as default_bc_weekly_daily_870,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
-    default_bc_hourly,
     default_bc_weekly_daily,
 )
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
