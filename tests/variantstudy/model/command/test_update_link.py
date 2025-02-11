@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import LinksParametersTsGeneration, RawStudy
-from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
