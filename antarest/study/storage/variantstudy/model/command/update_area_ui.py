@@ -32,7 +32,6 @@ class UpdateAreaUI(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_AREA_UI
-    version: int = 1
 
     # Command parameters
     # ==================

@@ -36,7 +36,6 @@ class RemoveSTStorage(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_ST_STORAGE
-    version: int = 1
 
     # Command parameters
     # ==================

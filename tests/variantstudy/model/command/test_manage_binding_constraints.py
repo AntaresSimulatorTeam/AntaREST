@@ -17,7 +17,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_870,
@@ -53,7 +54,10 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         empty_study
     )
     CreateCluster(
-        area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context, study_version=study_version
+        area_id=area1,
+        parameters=ThermalProperties(name=cluster),
+        command_context=command_context,
+        study_version=study_version,
     ).apply(empty_study)
 
     output = CreateBindingConstraint(
@@ -328,7 +332,10 @@ def test__update_matrices_names(
         empty_study
     )
     CreateCluster(
-        area_id=area1, cluster_name=cluster, parameters={}, command_context=command_context, study_version=study_version
+        area_id=area1,
+        parameters=ThermalProperties(name=cluster),
+        command_context=command_context,
+        study_version=study_version,
     ).apply(empty_study)
 
     # create a binding constraint
