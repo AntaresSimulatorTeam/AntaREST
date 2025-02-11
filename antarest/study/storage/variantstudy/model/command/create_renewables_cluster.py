@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import field_validator
 from typing_extensions import override
@@ -25,7 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import create_renewable_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -46,7 +46,7 @@ class CreateRenewablesCluster(ICommand):
 
     area_id: str
     cluster_name: str
-    parameters: t.Dict[str, t.Any]
+    parameters: Dict[str, Any]
 
     @field_validator("cluster_name")
     def validate_cluster_name(cls, val: str) -> str:
@@ -56,7 +56,7 @@ class CreateRenewablesCluster(ICommand):
         return val
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:
             # Since version 8.1 of the solver, we can use renewable clusters
             # instead of "Load", "Wind" and "Solar" objects for modelling.
@@ -104,7 +104,7 @@ class CreateRenewablesCluster(ICommand):
         )
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -149,5 +149,5 @@ class CreateRenewablesCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

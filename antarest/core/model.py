@@ -13,7 +13,7 @@
 import enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 if TYPE_CHECKING:
     # These dependencies are only used for type checking with mypy.
