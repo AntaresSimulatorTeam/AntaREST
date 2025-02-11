@@ -390,15 +390,15 @@ class StudyUpgraderTask:
 
 class StudyInterfaceImpl(StudyInterface):
 
-    def __init__(self, service: "StudyService", study: Study):
-        self._service = service
+    def __init__(self, storage: StudyStorageService, study: Study):
+        self._storage = storage
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
 
     @override
     def get_files(self) -> FileStudy:
         if not self._cached_file_study:
-            self._cached_file_study = self._service.storage_service.get_storage(study=self._study).get_raw(self._study)
+            self._cached_file_study = self._storage.get_storage(study=self._study).get_raw(self._study)
         return self._cached_file_study
 
     @override
@@ -415,7 +415,7 @@ class StudyInterfaceImpl(StudyInterface):
                 if not result.status:
                     raise CommandApplicationError(result.message)
                 executed_commands.append(command)
-            self._service.storage_service.variant_study_service.invalidate_cache(study)
+            self._storage.variant_study_service.invalidate_cache(study)
             if not is_managed(study):
                 # In a previous version, de-normalization was performed asynchronously.
                 # However, this cause problems with concurrent file access,
@@ -435,7 +435,7 @@ class StudyInterfaceImpl(StudyInterface):
                 # within the current process (not across multiple processes)...
                 file_study.tree.denormalize()
         else:
-            self._service.storage_service.variant_study_service.append_commands(
+            self._storage.variant_study_service.append_commands(
                 study.id,
                 transform_command_to_dto(commands, force_aggregate=True),
                 RequestParameters(user=current_user),
@@ -444,12 +444,18 @@ class StudyInterfaceImpl(StudyInterface):
 
 class StudiesRepositoryImpl(StudiesRepository):
 
-    def __init__(self, service: "StudyService"):
-        self._service = service
+    def __init__(self, storage: StudyStorageService):
+        self._storage = storage
 
     @override
     def get_study_interface(self, study: Study) -> StudyInterface:
-        return StudyInterfaceImpl(service=self._service, study=study)
+        return StudyInterfaceImpl(storage=self._storage, study=study)
+
+
+def create_thermal_manager(storage: StudyStorageService) -> ThermalManager:
+    return ThermalManager(
+        storage.variant_study_service.command_factory.command_context, StudiesRepositoryImpl(storage=storage)
+    )
 
 
 class StudyService:
@@ -488,9 +494,7 @@ class StudyService:
         self.allocation_manager = AllocationManager(self.storage_service)
         self.properties_manager = PropertiesManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
-        self.thermal_manager = ThermalManager(
-            self.storage_service.variant_study_service.command_factory.command_context, StudiesRepositoryImpl(self)
-        )
+        self.thermal_manager = create_thermal_manager(self.storage_service)
         self.st_storage_manager = STStorageManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
