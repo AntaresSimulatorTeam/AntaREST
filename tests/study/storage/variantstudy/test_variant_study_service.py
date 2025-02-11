@@ -11,36 +11,24 @@
 # This file is part of the Antares project.
 
 import datetime
-import logging
 import re
-import uuid
 from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 
-from antarest.core.config import Config
-from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.tasks.service import TaskJobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
-from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.area_management import AreaCreationDTO, AreaType
-from antarest.study.business.general_management import GeneralFormFields, Mode
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import CommentsDto, RawStudy, StudyAdditionalData
-from antarest.study.service import StudyService
+from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -49,11 +37,8 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import with_db_context
-
-logger = logging.getLogger(__name__)
 
 # noinspection SpellCheckingInspection
 EXPECTED_DENORMALIZED = {
