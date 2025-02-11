@@ -94,7 +94,6 @@ class TestCreateSTStorage:
 
         # Check the attribues
         assert cmd.command_name == CommandName.CREATE_ST_STORAGE
-        assert cmd.version == 2
         assert cmd.study_version == STUDY_VERSION_8_8
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"

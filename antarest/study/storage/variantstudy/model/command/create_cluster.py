@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, ClassVar, Dict, Final, List, Optional, Tuple
 
 from pydantic import Field, model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -56,10 +56,7 @@ class CreateCluster(ICommand):
     modulation: OptionalMatrixData = Field(None, validate_default=True)
 
     # version 2: remove cluster_name and type parameters as ThermalPropertiesType
-    @property
-    @override
-    def version(self) -> int:
-        return 2
+    _SERIALIZATION_VERSION: Final[int] = 2
 
     @property
     def cluster_name(self) -> str:
@@ -165,7 +162,7 @@ class CreateCluster(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            version=self.version,
+            version=self._SERIALIZATION_VERSION,
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,

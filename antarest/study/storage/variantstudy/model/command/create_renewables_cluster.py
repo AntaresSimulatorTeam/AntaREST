@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
@@ -40,10 +40,8 @@ class CreateRenewablesCluster(ICommand):
 
     command_name: CommandName = CommandName.CREATE_RENEWABLES_CLUSTER
 
-    @property
-    @override
-    def version(self) -> int:
-        return 2
+    # version 2: remove cluster_name and type parameters as RenewableProperties
+    _SERIALIZATION_VERSION: Final[int] = 2
 
     # Command parameters
     # ==================
@@ -146,7 +144,7 @@ class CreateRenewablesCluster(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            version=self.version,
+            version=self._SERIALIZATION_VERSION,
             args={
                 "area_id": self.area_id,
                 "parameters": self.parameters.model_dump(mode="json", by_alias=True),

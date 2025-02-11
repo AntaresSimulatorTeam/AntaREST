@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
 
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
@@ -44,24 +45,3 @@ def test_aggregate_commands(command_context: CommandContext):
 
     command_dto_list = transform_command_to_dto(command_list, command_ref_list)
     assert len(command_dto_list) == 4
-
-
-def test_aggregate_commands_with_version(command_context: CommandContext):
-    study_version = STUDY_VERSION_8_8
-    command_list = [
-        CreateCluster(
-            area_id="fr",
-            parameters=ThermalProperties(name="cluster_1"),
-            command_context=command_context,
-            study_version=study_version,
-        ),
-        CreateCluster(
-            area_id="fr",
-            parameters=ThermalProperties(name="cluster_2"),
-            command_context=command_context,
-            study_version=study_version,
-        ),
-    ]
-    command_dto_list = transform_command_to_dto(command_list, force_aggregate=True)
-    assert len(command_dto_list) == 1
-    assert command_dto_list[0].version == 2

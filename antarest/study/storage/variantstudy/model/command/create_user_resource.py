@@ -45,7 +45,6 @@ class CreateUserResource(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_USER_RESOURCE
-    version: int = 1
 
     # Command parameters
     # ==================

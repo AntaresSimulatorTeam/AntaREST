@@ -34,7 +34,6 @@ class RemoveLink(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_LINK
-    version: int = 1
 
     # Command parameters
     # ==================

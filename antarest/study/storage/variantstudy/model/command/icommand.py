@@ -48,17 +48,6 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
     command_context: CommandContext
     study_version: StudyVersionStr
 
-    @property
-    def version(self) -> int:
-        """
-        The version of the command for serialization.
-        Should be overriden by subclass when changing the serialization format,
-        in which the command is saved to database.
-        Command validation must ensure backwards compatibility with commands
-        saved in older versions of the serialization format.
-        """
-        return 1
-
     @abstractmethod
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         """

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Final, List, Optional, Tuple, Union, cast
 
 import numpy as np
 from pydantic import Field, ValidationInfo, model_validator
@@ -62,10 +62,8 @@ class CreateSTStorage(ICommand):
 
     command_name: CommandName = CommandName.CREATE_ST_STORAGE
 
-    @property
-    @override
-    def version(self) -> int:
-        return 2
+    # version 2: remove cluster_name and type parameters as STStoragePropertiesType
+    _SERIALIZATION_VERSION: Final[int] = 2
 
     # Command parameters
     # ==================
@@ -286,7 +284,7 @@ class CreateSTStorage(ICommand):
         """
         return CommandDTO(
             action=self.command_name.value,
-            version=self.version,
+            version=self._SERIALIZATION_VERSION,
             args={
                 "area_id": self.area_id,
                 "parameters": self.parameters.model_dump(mode="json", by_alias=True),

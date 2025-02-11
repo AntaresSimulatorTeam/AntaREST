@@ -61,7 +61,6 @@ class CreateArea(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_AREA
-    version: int = 1
 
     # Command parameters
     # ==================

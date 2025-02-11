@@ -46,7 +46,6 @@ class TestCreateCluster:
 
         # Check the command metadata
         assert cl.command_name == CommandName.CREATE_THERMAL_CLUSTER
-        assert cl.version == 2
         assert cl.study_version == STUDY_VERSION_8_8
         assert cl.command_context is command_context
 

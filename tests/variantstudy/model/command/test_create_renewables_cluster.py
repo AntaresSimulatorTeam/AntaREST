@@ -45,7 +45,6 @@ class TestCreateRenewablesCluster:
 
         # Check the command metadata
         assert cl.command_name == CommandName.CREATE_RENEWABLES_CLUSTER
-        assert cl.version == 2
         assert cl.command_context is command_context
 
         # Check the command data

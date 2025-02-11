@@ -39,7 +39,6 @@ class CreateDistrict(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_DISTRICT
-    version: int = 1
 
     # Command parameters
     # ==================

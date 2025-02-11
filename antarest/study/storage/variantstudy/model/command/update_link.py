@@ -32,7 +32,6 @@ class UpdateLink(AbstractLinkCommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_LINK
-    version: int = 1
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
