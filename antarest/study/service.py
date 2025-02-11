@@ -20,7 +20,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, List, MutableSequence, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
 
 import numpy as np
@@ -68,6 +68,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.login.utils import get_current_user
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -97,6 +98,7 @@ from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
+from antarest.study.business.study_interface import StudiesRepository, StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
@@ -136,6 +138,7 @@ from antarest.study.repository import (
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -385,6 +388,70 @@ class StudyUpgraderTask:
     __call__ = run_task
 
 
+class StudyInterfaceImpl(StudyInterface):
+
+    def __init__(self, service: "StudyService", study: Study):
+        self._service = service
+        self._study = study
+        self._cached_file_study: Optional[FileStudy] = None
+
+    @override
+    def get_files(self) -> FileStudy:
+        if not self._cached_file_study:
+            self._cached_file_study = self._service.storage_service.get_storage(study=self._study).get_raw(self._study)
+        return self._cached_file_study
+
+    @override
+    def add_commands(self, commands: Sequence[ICommand]) -> None:
+        study = self._study
+        file_study = self.get_files()
+        # get current user if not in session, otherwise get session user
+        current_user = get_current_user()
+
+        if isinstance(study, RawStudy):
+            executed_commands: MutableSequence[ICommand] = []
+            for command in commands:
+                result = command.apply(file_study)
+                if not result.status:
+                    raise CommandApplicationError(result.message)
+                executed_commands.append(command)
+            self._service.storage_service.variant_study_service.invalidate_cache(study)
+            if not is_managed(study):
+                # In a previous version, de-normalization was performed asynchronously.
+                # However, this cause problems with concurrent file access,
+                # especially when de-normalizing a matrix (which can take time).
+                #
+                # async_denormalize = threading.Thread(
+                #     name=f"async_denormalize-{study.id}",
+                #     target=file_study.tree.denormalize,
+                # )
+                # async_denormalize.start()
+                #
+                # To avoid this concurrency problem, it would be necessary to implement a
+                # locking system for the entire study using a file lock (since multiple processes,
+                # not only multiple threads, could access the same content simultaneously).
+                #
+                # Currently, we use a synchronous call to address the concurrency problem
+                # within the current process (not across multiple processes)...
+                file_study.tree.denormalize()
+        else:
+            self._service.storage_service.variant_study_service.append_commands(
+                study.id,
+                transform_command_to_dto(commands, force_aggregate=True),
+                RequestParameters(user=current_user),
+            )
+
+
+class StudiesRepositoryImpl(StudiesRepository):
+
+    def __init__(self, service: "StudyService"):
+        self._service = service
+
+    @override
+    def get_study_interface(self, study: Study) -> StudyInterface:
+        return StudyInterfaceImpl(service=self._service, study=study)
+
+
 class StudyService:
     """
     Storage module facade service to handle studies management.
@@ -421,7 +488,9 @@ class StudyService:
         self.allocation_manager = AllocationManager(self.storage_service)
         self.properties_manager = PropertiesManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
-        self.thermal_manager = ThermalManager(self.storage_service)
+        self.thermal_manager = ThermalManager(
+            self.storage_service.variant_study_service.command_factory.command_context, StudiesRepositoryImpl(self)
+        )
         self.st_storage_manager = STStorageManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)

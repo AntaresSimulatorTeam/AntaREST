@@ -2607,7 +2607,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         elif cluster_type == ClusterType.RENEWABLES:
             manager = RenewableManager(study_service.storage_service)
         elif cluster_type == ClusterType.THERMALS:
-            manager = ThermalManager(study_service.storage_service)
+            manager = study_service.thermal_manager
         else:  # pragma: no cover
             raise NotImplementedError(f"Cluster type {cluster_type} not implemented")
 
