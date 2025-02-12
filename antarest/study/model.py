@@ -13,9 +13,10 @@
 import dataclasses
 import enum
 import secrets
-import typing as t
 import uuid
 from datetime import datetime, timedelta
+from pathlib import PurePosixPath
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Mapping, Optional, Tuple, cast
 from enum import StrEnum
 from pathlib import Path, PurePath
 
@@ -38,11 +39,11 @@ from typing_extensions import override
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     # avoid circular import
     from antarest.core.tasks.model import TaskJob
 
@@ -68,11 +69,11 @@ STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 
-StudyVersionStr = t.Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
-StudyVersionInt = t.Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
+StudyVersionStr = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
+StudyVersionInt = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
 
 
-STUDY_REFERENCE_TEMPLATES: t.Mapping[StudyVersion, str] = {
+STUDY_REFERENCE_TEMPLATES: Mapping[StudyVersion, str] = {
     STUDY_VERSION_6_0: "empty_study_613.zip",
     STUDY_VERSION_6_1: "empty_study_613.zip",
     STUDY_VERSION_6_4: "empty_study_613.zip",
@@ -163,11 +164,11 @@ class Tag(Base):  # type:ignore
     label = Column(String(40), primary_key=True, index=True)
     color: str = Column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
 
-    studies: t.List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
+    studies: List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
     @override
     def __str__(self) -> str:  # pragma: no cover
-        return t.cast(str, self.label)
+        return cast(str, self.label)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -204,7 +205,7 @@ class StudyAdditionalData(Base):  # type:ignore
     patch = Column(String(), index=True, nullable=True)
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not super().__eq__(other):
             return False
         if not isinstance(other, StudyAdditionalData):
@@ -239,7 +240,7 @@ class Study(Base):  # type: ignore
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived = Column(Boolean(), default=False, index=True)
 
-    tags: t.List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
+    tags: List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     additional_data = relationship(
@@ -250,7 +251,7 @@ class Study(Base):  # type: ignore
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
-    jobs: t.List["TaskJob"] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
+    jobs: List["TaskJob"] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
@@ -270,7 +271,7 @@ class Study(Base):  # type: ignore
         )
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Study):
             return False
         return bool(
@@ -287,18 +288,18 @@ class Study(Base):  # type: ignore
             and other.archived == self.archived
         )
 
-    def to_json_summary(self) -> t.Any:
+    def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
 
     @validates("folder")  # type: ignore
-    def validate_folder(self, key: str, folder: t.Optional[str]) -> t.Optional[str]:
+    def validate_folder(self, key: str, folder: Optional[str]) -> Optional[str]:
         """
         We want to store the path in posix format in the database, even on windows.
         """
         return normalize_path(folder)
 
 
-def normalize_path(path: t.Optional[str]) -> t.Optional[str]:
+def normalize_path(path: Optional[str]) -> Optional[str]:
     """
     Turns any path including a windows path (with \ separator) to a posix path (with / separator).
     """
@@ -329,7 +330,7 @@ class RawStudy(Study):
     }
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not super().__eq__(other):
             return False
         if not isinstance(other, RawStudy):
@@ -350,7 +351,7 @@ class StudyFolder:
 
     path: Path
     workspace: str
-    groups: t.List[Group]
+    groups: List[Group]
 
 
 class NonStudyFolderDTO(AntaresBaseModel):
@@ -359,7 +360,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
     so the user can navigate in the hierarchy
     """
 
-    path: Path
+    path: PurePosixPath
     workspace: str
     name: str
     has_children: bool = Field(
@@ -369,7 +370,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     @computed_field(alias="parentPath")
-    def parent_path(self) -> Path:
+    def parent_path(self) -> PurePosixPath:
         """
         This computed field is convenient for the front.
 
@@ -377,9 +378,16 @@ class NonStudyFolderDTO(AntaresBaseModel):
 
         Returns: the parent path of the current directory. Starting with the workspace as a root directory (we want /workspafe/folder1/sub... and not workspace/folder1/fsub... ).
         """
-        workspace_path = Path(f"/{self.workspace}")
+        workspace_path = PurePosixPath(f"/{self.workspace}")
         full_path = workspace_path.joinpath(self.path)
         return full_path.parent
+
+    @field_validator("path", mode="before")
+    def to_posix(cls, path: Path) -> PurePosixPath:
+        """
+        Always convert path to posix path.
+        """
+        return PurePosixPath(path)
 
 
 class WorkspaceMetadata(AntaresBaseModel):
@@ -391,21 +399,21 @@ class WorkspaceMetadata(AntaresBaseModel):
 
 
 class PatchStudy(AntaresBaseModel):
-    scenario: t.Optional[str] = None
-    doc: t.Optional[str] = None
-    status: t.Optional[str] = None
-    comments: t.Optional[str] = None
-    tags: t.List[str] = []
+    scenario: Optional[str] = None
+    doc: Optional[str] = None
+    status: Optional[str] = None
+    comments: Optional[str] = None
+    tags: List[str] = []
 
 
 class PatchArea(AntaresBaseModel):
-    country: t.Optional[str] = None
-    tags: t.List[str] = []
+    country: Optional[str] = None
+    tags: List[str] = []
 
 
 class PatchCluster(AntaresBaseModel):
-    type: t.Optional[str] = None
-    code_oi: t.Optional[str] = None
+    type: Optional[str] = None
+    code_oi: Optional[str] = None
 
     class Config:
         @classmethod
@@ -414,18 +422,18 @@ class PatchCluster(AntaresBaseModel):
 
 
 class PatchOutputs(AntaresBaseModel):
-    reference: t.Optional[str] = None
+    reference: Optional[str] = None
 
 
 class Patch(AntaresBaseModel):
-    study: t.Optional[PatchStudy] = None
-    areas: t.Optional[t.Dict[str, PatchArea]] = None
-    thermal_clusters: t.Optional[t.Dict[str, PatchCluster]] = None
-    outputs: t.Optional[PatchOutputs] = None
+    study: Optional[PatchStudy] = None
+    areas: Optional[Dict[str, PatchArea]] = None
+    thermal_clusters: Optional[Dict[str, PatchCluster]] = None
+    outputs: Optional[PatchOutputs] = None
 
 
 class OwnerInfo(AntaresBaseModel):
-    id: t.Optional[int] = None
+    id: Optional[int] = None
     name: str
 
 
@@ -437,35 +445,35 @@ class StudyMetadataDTO(AntaresBaseModel):
     updated: str
     type: str
     owner: OwnerInfo
-    groups: t.List[GroupDTO]
+    groups: List[GroupDTO]
     public_mode: PublicMode
     workspace: str
     managed: bool
     archived: bool
-    horizon: t.Optional[str] = None
-    scenario: t.Optional[str] = None
-    status: t.Optional[str] = None
-    doc: t.Optional[str] = None
-    folder: t.Optional[str] = None
-    tags: t.List[str] = []
+    horizon: Optional[str] = None
+    scenario: Optional[str] = None
+    status: Optional[str] = None
+    doc: Optional[str] = None
+    folder: Optional[str] = None
+    tags: List[str] = []
 
     @field_validator("horizon", mode="before")
-    def transform_horizon_to_str(cls, val: t.Union[str, int, None]) -> t.Optional[str]:
+    def transform_horizon_to_str(cls, val: str | int | None) -> Optional[str]:
         # horizon can be an int.
         return str(val) if val else val  # type: ignore
 
 
 class StudyMetadataPatchDTO(AntaresBaseModel):
-    name: t.Optional[str] = None
-    author: t.Optional[str] = None
-    horizon: t.Optional[str] = None
-    scenario: t.Optional[str] = None
-    status: t.Optional[str] = None
-    doc: t.Optional[str] = None
-    tags: t.List[str] = []
+    name: Optional[str] = None
+    author: Optional[str] = None
+    horizon: Optional[str] = None
+    scenario: Optional[str] = None
+    status: Optional[str] = None
+    doc: Optional[str] = None
+    tags: List[str] = []
 
     @field_validator("tags", mode="before")
-    def _normalize_tags(cls, v: t.List[str]) -> t.List[str]:
+    def _normalize_tags(cls, v: List[str]) -> List[str]:
         """Remove leading and trailing whitespaces, and replace consecutive whitespaces by a single one."""
         tags = []
         for tag in v:
@@ -479,14 +487,14 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
 
 
 class StudySimSettingsDTO(AntaresBaseModel):
-    general: t.Dict[str, t.Any]
-    input: t.Dict[str, t.Any]
-    output: t.Dict[str, t.Any]
-    optimization: t.Dict[str, t.Any]
-    otherPreferences: t.Dict[str, t.Any]
-    advancedParameters: t.Dict[str, t.Any]
-    seedsMersenneTwister: t.Dict[str, t.Any]
-    playlist: t.Optional[t.List[int]] = None
+    general: Dict[str, Any]
+    input: Dict[str, Any]
+    output: Dict[str, Any]
+    optimization: Dict[str, Any]
+    otherPreferences: Dict[str, Any]
+    advancedParameters: Dict[str, Any]
+    seedsMersenneTwister: Dict[str, Any]
+    playlist: Optional[List[int]] = None
 
 
 class StudySimResultDTO(AntaresBaseModel):
@@ -580,12 +588,12 @@ class StudyDownloadDTO(AntaresBaseModel):
     """
 
     type: StudyDownloadType
-    years: t.Optional[t.List[int]]
+    years: Optional[List[int]]
     level: StudyDownloadLevelDTO
-    filterIn: t.Optional[str]
-    filterOut: t.Optional[str]
-    filter: t.Optional[t.List[str]]
-    columns: t.Optional[t.List[str]]
+    filterIn: Optional[str]
+    filterOut: Optional[str]
+    filter: Optional[List[str]]
+    columns: Optional[List[str]]
     synthesis: bool = False
     includeClusters: bool = False
 
@@ -600,31 +608,31 @@ class MatrixIndex(AntaresBaseModel):
 class TimeSerie(AntaresBaseModel):
     name: str
     unit: str
-    data: t.List[t.Optional[float]] = []
+    data: List[Optional[float]] = []
 
 
 class TimeSeriesData(AntaresBaseModel):
     type: StudyDownloadType
     name: str
-    data: t.Dict[str, t.List[TimeSerie]] = {}
+    data: Dict[str, List[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(AntaresBaseModel):
     index: MatrixIndex
-    data: t.List[TimeSeriesData]
-    warnings: t.List[str]
+    data: List[TimeSeriesData]
+    warnings: List[str]
 
 
 class MatrixAggregationResult(AntaresBaseModel):
     index: MatrixIndex
-    data: t.Dict[t.Tuple[StudyDownloadType, str], t.Dict[str, t.List[TimeSerie]]]
-    warnings: t.List[str]
+    data: Dict[Tuple[StudyDownloadType, str], Dict[str, List[TimeSerie]]]
+    warnings: List[str]
 
     def to_dto(self) -> MatrixAggregationResultDTO:
         return MatrixAggregationResultDTO.construct(
             index=self.index,
             data=[
-                TimeSeriesData.construct(
+                TimeSeriesData.model_construct(
                     type=key_type,
                     name=key_name,
                     data=self.data[(key_type, key_name)],

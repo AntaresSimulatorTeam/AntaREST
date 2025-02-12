@@ -15,15 +15,15 @@ import http
 import io
 import logging
 import shutil
-import typing as t
 import zipfile
+from typing import Any, List, MutableMapping, Optional, Sequence
 
 from fastapi import HTTPException, UploadFile
 from pydantic import Field, ValidationError, field_validator, model_validator
 
 from antarest.core.exceptions import BadZipBinary, ChildNotFoundError, LinkNotFound
 from antarest.core.model import JSON
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import Study
@@ -69,11 +69,11 @@ class XpansionSensitivitySettings(AntaresBaseModel):
     """
 
     epsilon: float = Field(default=0, ge=0, description="Max deviation from optimum (€)")
-    projection: t.List[str] = Field(default_factory=list, description="List of candidate names to project")
+    projection: List[str] = Field(default_factory=list, description="List of candidate names to project")
     capex: bool = Field(default=False, description="Whether to include capex in the sensitivity analysis")
 
     @field_validator("projection", mode="before")
-    def projection_validation(cls, v: t.Optional[t.Sequence[str]]) -> t.Sequence[str]:
+    def projection_validation(cls, v: Optional[Sequence[str]]) -> Sequence[str]:
         return [] if v is None else v
 
 
@@ -148,10 +148,10 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     timelimit: int = int(1e12)
 
     # The sensitivity analysis is optional
-    sensitivity_config: t.Optional[XpansionSensitivitySettings] = None
+    sensitivity_config: Optional[XpansionSensitivitySettings] = None
 
     @model_validator(mode="before")
-    def validate_float_values(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
+    def validate_float_values(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
         if "relaxed-optimality-gap" in values:
             values["relaxed_optimality_gap"] = values.pop("relaxed-optimality-gap")
 
@@ -237,20 +237,20 @@ class XpansionCandidateDTO(AntaresBaseModel):
     name: str
     link: str
     annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", ge=0)
-    unit_size: t.Optional[float] = Field(default=None, alias="unit-size", ge=0)
-    max_units: t.Optional[int] = Field(default=None, alias="max-units", ge=0)
-    max_investment: t.Optional[float] = Field(default=None, alias="max-investment", ge=0)
-    already_installed_capacity: t.Optional[int] = Field(default=None, alias="already-installed-capacity", ge=0)
+    unit_size: Optional[float] = Field(default=None, alias="unit-size", ge=0)
+    max_units: Optional[int] = Field(default=None, alias="max-units", ge=0)
+    max_investment: Optional[float] = Field(default=None, alias="max-investment", ge=0)
+    already_installed_capacity: Optional[int] = Field(default=None, alias="already-installed-capacity", ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: t.Optional[str] = Field(default=None, alias="link-profile")
+    link_profile: Optional[str] = Field(default=None, alias="link-profile")
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: t.Optional[str] = Field(default=None, alias="already-installed-link-profile")
-    direct_link_profile: t.Optional[str] = Field(default=None, alias="direct-link-profile")
-    indirect_link_profile: t.Optional[str] = Field(default=None, alias="indirect-link-profile")
-    already_installed_direct_link_profile: t.Optional[str] = Field(
+    already_installed_link_profile: Optional[str] = Field(default=None, alias="already-installed-link-profile")
+    direct_link_profile: Optional[str] = Field(default=None, alias="direct-link-profile")
+    indirect_link_profile: Optional[str] = Field(default=None, alias="indirect-link-profile")
+    already_installed_direct_link_profile: Optional[str] = Field(
         default=None, alias="already-installed-direct-link-profile"
     )
-    already_installed_indirect_link_profile: t.Optional[str] = Field(
+    already_installed_indirect_link_profile: Optional[str] = Field(
         default=None, alias="already-installed-indirect-link-profile"
     )
 
@@ -304,7 +304,7 @@ class XpansionManager:
     def __init__(self, study_storage_service: StudyStorageService):
         self.study_storage_service = study_storage_service
 
-    def create_xpansion_configuration(self, study: Study, zipped_config: t.Optional[UploadFile] = None) -> None:
+    def create_xpansion_configuration(self, study: Study, zipped_config: Optional[UploadFile] = None) -> None:
         logger.info(f"Initiating xpansion configuration for study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         try:
@@ -501,9 +501,9 @@ class XpansionManager:
 
     @staticmethod
     def _assert_investment_candidate_is_valid(
-        max_investment: t.Optional[float],
-        max_units: t.Optional[int],
-        unit_size: t.Optional[float],
+        max_investment: Optional[float],
+        max_units: Optional[int],
+        unit_size: Optional[float],
     ) -> None:
         bool_max_investment = max_investment is None
         bool_max_units = max_units is None
@@ -570,7 +570,7 @@ class XpansionManager:
         except StopIteration:
             raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
 
-    def get_candidates(self, study: Study) -> t.List[XpansionCandidateDTO]:
+    def get_candidates(self, study: Study) -> List[XpansionCandidateDTO]:
         logger.info(f"Getting all candidates of study {study.id}")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
@@ -619,7 +619,7 @@ class XpansionManager:
         xpansion_settings = UpdateXpansionSettings.model_validate(args)
         return self.update_xpansion_settings(study, xpansion_settings)
 
-    def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> t.List[str]:
+    def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> List[str]:
         if raw_file_type == XpansionResourceFileType.CONSTRAINTS:
             return ["user", "expansion", "constraints"]
         elif raw_file_type == XpansionResourceFileType.CAPACITIES:
@@ -631,7 +631,7 @@ class XpansionManager:
     def _add_raw_files(
         self,
         file_study: FileStudy,
-        files: t.List[UploadFile],
+        files: List[UploadFile],
         raw_file_type: XpansionResourceFileType,
     ) -> None:
         keys = self._raw_file_dir(raw_file_type)
@@ -666,7 +666,7 @@ class XpansionManager:
         self,
         study: Study,
         resource_type: XpansionResourceFileType,
-        files: t.List[UploadFile],
+        files: List[UploadFile],
     ) -> None:
         logger.info(f"Adding xpansion {resource_type} resource file list to study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
@@ -703,12 +703,12 @@ class XpansionManager:
         study: Study,
         resource_type: XpansionResourceFileType,
         filename: str,
-    ) -> t.Union[JSON, bytes]:
+    ) -> JSON | bytes:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         return file_study.tree.get(self._raw_file_dir(resource_type) + [filename])
 
-    def list_resources(self, study: Study, resource_type: XpansionResourceFileType) -> t.List[str]:
+    def list_resources(self, study: Study, resource_type: XpansionResourceFileType) -> List[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         file_study = self.study_storage_service.get_storage(study).get_raw(study)
         try:

@@ -24,10 +24,10 @@ from sqlalchemy.orm.session import Session  # type: ignore
 
 from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageMatrixNotFound, STStorageNotFound
 from antarest.core.model import PublicMode
+from antarest.core.serde.ini_reader import IniReader
 from antarest.login.model import Group, User
 from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
 from antarest.study.model import RawStudy, Study, StudyContentStatus
-from antarest.study.storage.rawstudy.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

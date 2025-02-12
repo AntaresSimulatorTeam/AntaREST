@@ -12,9 +12,8 @@
 
 import datetime
 import re
-import typing
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -31,7 +30,11 @@ from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
+    STStorageGroup,
+    STStorageProperties,
+)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -201,8 +204,7 @@ class TestVariantStudyService:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="fr",
-            parameters=STStorageConfig(
-                id="",  # will be calculated ;-)
+            parameters=STStorageProperties(
                 name="Storage1",
                 group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=1500,
@@ -429,6 +431,5 @@ class TestVariantStudyService:
         variant_study_service.task_service.await_task(task_id)
 
         # Check if all snapshots were cleared
-        nb_snapshot_dir = 0  # after the for iterations, must equal 0
         for variant_path in variant_study_path.iterdir():
             assert not variant_path.joinpath("snapshot").exists()

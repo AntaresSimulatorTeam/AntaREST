@@ -10,22 +10,22 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional, cast
 
 import pandas as pd
 from pydantic import Field
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 
 
 class DigestMatrixUI(AntaresBaseModel):
-    columns: t.List[t.Union[str, t.List[str]]]
-    data: t.List[t.List[str]]
+    columns: List[str | List[str]]
+    data: List[List[str]]
     grouped_columns: bool = Field(alias="groupedColumns")
 
 
@@ -88,7 +88,7 @@ class DigestSynthesis(OutputSynthesis):
     @override
     def load(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -97,7 +97,7 @@ class DigestSynthesis(OutputSynthesis):
 
         output = df.to_dict(orient="split")
         del output["index"]
-        return t.cast(JSON, output)
+        return cast(JSON, output)
 
     def get_ui(self) -> DigestUI:
         """

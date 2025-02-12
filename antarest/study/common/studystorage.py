@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -22,10 +22,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
-T = t.TypeVar("T", bound=Study)
+T = TypeVar("T", bound=Study)
 
 
-class IStudyStorageService(ABC, t.Generic[T]):
+class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def create(self, metadata: T) -> T:
         """
@@ -86,7 +86,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: t.Sequence[str], with_outputs: bool = False) -> T:
+    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
         """
         Create a new study by copying a reference study.
 
@@ -116,9 +116,9 @@ class IStudyStorageService(ABC, t.Generic[T]):
     def import_output(
         self,
         study: T,
-        output: t.Union[t.BinaryIO, Path],
-        output_name: t.Optional[str] = None,
-    ) -> t.Optional[str]:
+        output: BinaryIO | Path,
+        output_name: Optional[str] = None,
+    ) -> Optional[str]:
         """
         Import an output
         Args:
@@ -137,7 +137,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         self,
         metadata: T,
         use_cache: bool = True,
-        output_dir: t.Optional[Path] = None,
+        output_dir: Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -150,7 +150,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: T) -> t.List[StudySimResultDTO]:
+    def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
         """
         Get global result information
 
@@ -252,7 +252,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         metadata: T,
         dst_path: Path,
         outputs: bool = True,
-        output_list_filter: t.Optional[t.List[str]] = None,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         """
@@ -267,7 +267,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """
 
     @abstractmethod
-    def get_synthesis(self, metadata: T, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:

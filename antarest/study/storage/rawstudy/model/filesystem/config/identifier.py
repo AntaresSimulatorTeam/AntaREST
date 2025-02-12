@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-import typing as t
+import re
+from typing import Any, Mapping, MutableMapping
 
 from pydantic import Field, model_validator
 
@@ -18,7 +18,7 @@ __all__ = ("IgnoreCaseIdentifier", "LowerCaseIdentifier")
 
 from typing_extensions import override
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 class IgnoreCaseIdentifier(
@@ -45,12 +45,11 @@ class IgnoreCaseIdentifier(
             The ID of the section.
         """
         # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
         return transform_name_to_id(name, lower=False)
 
     @model_validator(mode="before")
-    def validate_id(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    def validate_id(cls, values: MutableMapping[str, Any]) -> Mapping[str, Any]:
         """
         Calculate an ID based on the name, if not provided.
 
@@ -98,6 +97,25 @@ class LowerCaseIdentifier(IgnoreCaseIdentifier):
             The ID of the section.
         """
         # Avoid circular imports
-        from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 
         return transform_name_to_id(name, lower=True)
+
+
+# Invalid chars was taken from Antares Simulator (C++).
+_sub_invalid_chars = re.compile(r"[^a-zA-Z0-9_(),& -]+").sub
+
+
+def transform_name_to_id(name: str, lower: bool = True) -> str:
+    """
+    Transform a name into an identifier by replacing consecutive
+    invalid characters by a single white space, and then whitespaces
+    are striped from both ends.
+
+    Valid characters are `[a-zA-Z0-9_(),& -]` (including space).
+
+    Args:
+        name: The name to convert.
+        lower: The flag used to turn the identifier in lower case.
+    """
+    valid_id = _sub_invalid_chars(" ", name).strip()
+    return valid_id.lower() if lower else valid_id

@@ -22,7 +22,7 @@ import numpy.typing as npt
 from pydantic import ValidationInfo, field_validator
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.area_management import AreaInfoDTO
+from antarest.study.business.model.area_model import AreaInfoDTO
 from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

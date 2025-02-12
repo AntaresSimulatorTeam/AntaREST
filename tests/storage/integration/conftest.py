@@ -22,7 +22,14 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.config import CacheConfig, Config, SecurityConfig, StorageConfig, WorkspaceConfig
+from antarest.core.config import (
+    CacheConfig,
+    Config,
+    InternalMatrixFormat,
+    SecurityConfig,
+    StorageConfig,
+    WorkspaceConfig,
+)
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
@@ -121,9 +128,7 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
 
     matrix_path = tmp_path / "matrices"
     matrix_path.mkdir()
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrix_path,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
     matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     storage_service = build_study_service(
         app_ctxt=Mock(),

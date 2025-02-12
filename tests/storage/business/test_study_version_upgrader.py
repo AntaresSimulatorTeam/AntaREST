@@ -24,8 +24,8 @@ import pytest
 from pandas.errors import EmptyDataError
 
 from antarest.core.exceptions import UnsupportedStudyVersion
-from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.core.serde.ini_reader import IniReader
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 from antarest.study.storage.study_upgrader import (
     InvalidUpgrade,

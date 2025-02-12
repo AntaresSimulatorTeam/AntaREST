@@ -12,19 +12,18 @@
 
 import configparser
 import re
-from unittest.mock import Mock
 
 import numpy as np
 import pytest
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties, ThermalClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
-from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 GEN = np.random.default_rng(1000)
@@ -36,8 +35,9 @@ class TestCreateCluster:
         modulation = GEN.random((8760, 4)).tolist()
         cl = CreateCluster(
             area_id="foo",
-            cluster_name="Cluster1",
-            parameters={"group": "Nuclear", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=Thermal870Properties(
+                name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
+            ),
             command_context=command_context,
             prepro=prepro,
             modulation=modulation,
@@ -46,7 +46,6 @@ class TestCreateCluster:
 
         # Check the command metadata
         assert cl.command_name == CommandName.CREATE_THERMAL_CLUSTER
-        assert cl.version == 1
         assert cl.study_version == STUDY_VERSION_8_8
         assert cl.command_context is command_context
 
@@ -55,26 +54,26 @@ class TestCreateCluster:
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2}
+        assert cl.parameters == Thermal870Properties(
+            name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
+        )
         assert cl.prepro == f"matrix://{prepro_id}"
         assert cl.modulation == f"matrix://{modulation_id}"
 
     def test_validate_cluster_name(self, command_context: CommandContext):
-        with pytest.raises(ValidationError, match="cluster_name"):
+        with pytest.raises(ValidationError, match="name"):
             CreateCluster(
                 area_id="fr",
-                cluster_name="%",
+                parameters=Thermal870Properties(name="%"),
                 command_context=command_context,
-                parameters={},
                 study_version=STUDY_VERSION_8_8,
             )
 
     def test_validate_prepro(self, command_context: CommandContext):
         cl = CreateCluster(
             area_id="fr",
-            cluster_name="C1",
+            parameters=Thermal870Properties(name="C1"),
             command_context=command_context,
-            parameters={},
             study_version=STUDY_VERSION_8_8,
         )
         assert cl.prepro == command_context.generator_matrix_constants.get_thermal_prepro_data()
@@ -82,9 +81,8 @@ class TestCreateCluster:
     def test_validate_modulation(self, command_context: CommandContext):
         cl = CreateCluster(
             area_id="fr",
-            cluster_name="C1",
+            parameters=Thermal870Properties(name="C1"),
             command_context=command_context,
-            parameters={},
             study_version=STUDY_VERSION_8_8,
         )
         assert cl.modulation == command_context.generator_matrix_constants.get_thermal_prepro_modulation()
@@ -100,19 +98,21 @@ class TestCreateCluster:
             empty_study
         )
 
-        parameters = {
-            "group": "Other",
-            "unitcount": "1",
-            "nominalcapacity": "1000000",
-            "marginal-cost": "30",
-            "market-bid-cost": "30",
-        }
+        parameters = Thermal870Properties.model_validate(
+            {
+                "name": cluster_name,
+                "group": "Other",
+                "unitcount": "1",
+                "nominalcapacity": "1000000",
+                "marginal-cost": "30",
+                "market-bid-cost": "30",
+            }
+        )
 
         prepro = GEN.random((365, 6)).tolist()
         modulation = GEN.random((8760, 4)).tolist()
         command = CreateCluster(
             area_id=area_id,
-            cluster_name=cluster_name,
             parameters=parameters,
             prepro=prepro,
             modulation=modulation,
@@ -131,18 +131,17 @@ class TestCreateCluster:
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
         assert str(clusters[cluster_name]["name"]) == cluster_name
-        assert str(clusters[cluster_name]["group"]) == parameters["group"]
-        assert int(clusters[cluster_name]["unitcount"]) == int(parameters["unitcount"])
-        assert float(clusters[cluster_name]["nominalcapacity"]) == float(parameters["nominalcapacity"])
-        assert float(clusters[cluster_name]["marginal-cost"]) == float(parameters["marginal-cost"])
-        assert float(clusters[cluster_name]["market-bid-cost"]) == float(parameters["market-bid-cost"])
+        assert str(clusters[cluster_name]["group"]) == parameters.group
+        assert int(clusters[cluster_name]["unitcount"]) == parameters.unit_count
+        assert float(clusters[cluster_name]["nominalcapacity"]) == parameters.nominal_capacity
+        assert float(clusters[cluster_name]["marginal-cost"]) == parameters.marginal_cost
+        assert float(clusters[cluster_name]["market-bid-cost"]) == parameters.market_bid_cost
 
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "data.txt.link").exists()
         assert (study_path / "input" / "thermal" / "prepro" / area_id / cluster_id / "modulation.txt.link").exists()
 
         output = CreateCluster(
             area_id=area_id,
-            cluster_name=cluster_name,
             parameters=parameters,
             prepro=prepro,
             modulation=modulation,
@@ -158,7 +157,6 @@ class TestCreateCluster:
 
         output = CreateCluster(
             area_id="non_existent_area",
-            cluster_name=cluster_name,
             parameters=parameters,
             prepro=prepro,
             modulation=modulation,
@@ -177,28 +175,66 @@ class TestCreateCluster:
         modulation = GEN.random((8760, 4)).tolist()
         command = CreateCluster(
             area_id="foo",
-            cluster_name="Cluster1",
-            parameters={"group": "Nuclear", "unitcount": 2, "nominalcapacity": 2400},
+            parameters=Thermal870Properties(
+                name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
+            ),
             command_context=command_context,
             prepro=prepro,
             modulation=modulation,
             study_version=STUDY_VERSION_8_8,
         )
+        dto = command.to_dto()
+
         prepro_id = command_context.matrix_service.create(prepro)
         modulation_id = command_context.matrix_service.create(modulation)
-        dto = command.to_dto()
         assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {
                 "area_id": "foo",
-                "cluster_name": "Cluster1",
-                "parameters": {"group": "Nuclear", "nominalcapacity": 2400, "unitcount": 2},
+                "parameters": {
+                    "co2": 0.0,
+                    "costgeneration": "SetManually",
+                    "efficiency": 100.0,
+                    "enabled": True,
+                    "fixed-cost": 0.0,
+                    "gen-ts": "use global",
+                    "group": "nuclear",
+                    "law.forced": "uniform",
+                    "law.planned": "uniform",
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
+                    "must-run": False,
+                    "name": "Cluster1",
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalcapacity": 2400.0,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm2_5": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
+                    "startup-cost": 0.0,
+                    "unitcount": 2,
+                    "variableomcost": 0.0,
+                    "volatility.forced": 0.0,
+                    "volatility.planned": 0.0,
+                },
                 "prepro": prepro_id,
                 "modulation": modulation_id,
             },
             "id": None,
-            "version": 1,
-            "study_version": STUDY_VERSION_8_8,
-            "user_id": None,
+            "study_version": "8.8",
             "updated_at": None,
+            "user_id": None,
+            "version": 2,
         }

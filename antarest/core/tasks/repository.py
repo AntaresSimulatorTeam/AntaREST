@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 import datetime
-import typing as t
 from http import HTTPStatus
 from operator import and_
+from typing import List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session  # type: ignore
@@ -44,7 +44,7 @@ class TaskJobRepository:
         session.commit()
         return task
 
-    def get(self, id: str) -> t.Optional[TaskJob]:
+    def get(self, id: str) -> Optional[TaskJob]:
         session = self.session
         task: TaskJob = session.get(TaskJob, id)
         if task is not None:
@@ -57,7 +57,7 @@ class TaskJobRepository:
             raise HTTPException(HTTPStatus.NOT_FOUND, f"Task {id} not found")
         return task
 
-    def list(self, filter: TaskListFilter, user: t.Optional[int] = None) -> t.List[TaskJob]:
+    def list(self, filter: TaskListFilter, user: Optional[int] = None) -> List[TaskJob]:
         q = self.session.query(TaskJob)
         if user:
             q = q.filter(TaskJob.owner_id == user)
@@ -85,7 +85,7 @@ class TaskJobRepository:
         if filter.type:
             _types = [task_type.value for task_type in filter.type]
             q = q.filter(TaskJob.type.in_(_types))  # type: ignore
-        tasks: t.List[TaskJob] = q.all()
+        tasks: List[TaskJob] = q.all()
         return tasks
 
     def delete(self, tid: str) -> None:

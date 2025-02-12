@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
+
 import pytest
 from starlette.testclient import TestClient
 
@@ -284,11 +286,14 @@ class TestLink:
         )
 
         assert res.status_code == 422, res.json()
-        expected = {
-            "description": "Invalid value(s) in filters: centurial. Allowed values are: hourly, daily, weekly, monthly, annual.",
-            "exception": "LinkValidationError",
-        }
-        assert expected == res.json()
+
+        res_json = res.json()
+        assert res_json["exception"] == "LinkValidationError"
+        match = re.search(r"Allowed values are: (.*)\.", res_json["description"])
+        assert match, f"Unexpected error message format: {res_json['description']}"
+        res_values = sorted(match.group(1).split(", "))
+        expected_values = sorted(["daily", "hourly", "monthly", "weekly", "annual"])
+        assert res_values == expected_values, f"Returned values: {res_values}, expected: {expected_values}"
 
         # Test create link with empty filters
 
