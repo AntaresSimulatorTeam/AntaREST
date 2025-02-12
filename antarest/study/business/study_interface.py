@@ -31,7 +31,6 @@ class StudyInterface(ABC):
     def get_files(self) -> FileStudy:
         """
         Gets the file representation of the study.
-        Expected to return the same object on subsequent calls.
 
         This is meant to be a "read-only" access to the study,
         modifications should be made through commands.

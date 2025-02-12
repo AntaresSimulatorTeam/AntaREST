@@ -443,9 +443,7 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_files(self) -> FileStudy:
-        if not self._cached_file_study:
-            self._cached_file_study = self._variant_service.get_raw(self._study)
-        return self._cached_file_study
+        return self._variant_service.get_raw(self._study)
 
     @override
     def add_commands(self, commands: Sequence[ICommand]) -> None:
