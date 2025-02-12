@@ -119,7 +119,6 @@ def test_area_crud(empty_study: FileStudy, matrix_service: SimpleMatrixService):
     variant_study_service.command_factory = CommandFactory(
         generator_matrix_constants,
         matrix_service,
-        patch_service=Mock(spec=PatchService),
     )
     assert len(empty_study.config.areas.keys()) == 0
 

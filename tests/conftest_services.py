@@ -312,7 +312,6 @@ def command_factory_fixture(
     return CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=simple_matrix_service,
-        patch_service=patch_service,
     )
 
 
