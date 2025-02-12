@@ -178,6 +178,7 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -476,10 +477,8 @@ class StudiesRepositoryImpl(StudiesRepository):
             raise ValueError(f"Unsupported study type '{study.type}'")
 
 
-def create_thermal_manager(storage: StudyStorageService) -> ThermalManager:
-    return ThermalManager(
-        storage.variant_study_service.command_factory.command_context, StudiesRepositoryImpl(storage=storage)
-    )
+def create_thermal_manager(command_context: CommandContext, storage: StudyStorageService) -> ThermalManager:
+    return ThermalManager(command_context, StudiesRepositoryImpl(storage=storage))
 
 
 class StudyService:
@@ -491,6 +490,7 @@ class StudyService:
         self,
         raw_study_service: RawStudyService,
         variant_study_service: VariantStudyService,
+        command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
@@ -518,7 +518,7 @@ class StudyService:
         self.allocation_manager = AllocationManager(self.storage_service)
         self.properties_manager = PropertiesManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
-        self.thermal_manager = create_thermal_manager(self.storage_service)
+        self.thermal_manager = create_thermal_manager(command_context, self.storage_service)
         self.st_storage_manager = STStorageManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)

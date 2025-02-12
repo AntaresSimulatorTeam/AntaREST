@@ -113,6 +113,7 @@ def build_study_service(
     study_service = study_service or StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        command_context=command_factory.command_context,
         user_service=user_service,
         repository=metadata_repository,
         event_bus=event_bus,

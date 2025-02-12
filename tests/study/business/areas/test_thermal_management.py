@@ -122,11 +122,17 @@ def study_legacy_uuid_fixture(
     return study_id
 
 
+@pytest.fixture
+def manager(study_storage_service: StudyStorageService) -> ThermalManager:
+    command_ctxt = study_storage_service.variant_study_service.command_factory.command_context
+    return create_thermal_manager(command_ctxt, study_storage_service)
+
+
 class TestThermalManager:
     def test_get_cluster__study_legacy(
         self,
         db_session: Session,
-        study_storage_service: StudyStorageService,
+        manager: ThermalManager,
         study_legacy_uuid: str,
     ):
         """
@@ -137,9 +143,6 @@ class TestThermalManager:
         """
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_legacy_uuid)
-
-        # Given the following arguments
-        manager = create_thermal_manager(study_storage_service)
 
         # Run the method being tested
         form = manager.get_cluster(study, area_id="north", cluster_id="2 avail and must 1")
@@ -192,7 +195,7 @@ class TestThermalManager:
     def test_get_clusters__study_legacy(
         self,
         db_session: Session,
-        study_storage_service: StudyStorageService,
+        manager: ThermalManager,
         study_legacy_uuid: str,
     ):
         """
@@ -203,9 +206,6 @@ class TestThermalManager:
         """
         # The study must be fetched from the database
         study: RawStudy = db_session.query(Study).get(study_legacy_uuid)
-
-        # Given the following arguments
-        manager = create_thermal_manager(study_storage_service)
 
         # Run the method being tested
         groups = manager.get_clusters(study, area_id="north")
@@ -335,7 +335,7 @@ class TestThermalManager:
 
     def test_create_cluster__study_legacy(
         self,
-        study_storage_service: StudyStorageService,
+        manager: ThermalManager,
         study_legacy_uuid: str,
     ):
         """
@@ -349,8 +349,6 @@ class TestThermalManager:
             study: RawStudy = db.session.query(Study).get(study_legacy_uuid)
 
             # Given the following arguments
-            manager = create_thermal_manager(study_storage_service)
-
             props = dict(
                 name="New Cluster",
                 group=ThermalClusterGroup.NUCLEAR,
@@ -411,15 +409,12 @@ class TestThermalManager:
 
     def test_update_cluster(
         self,
-        study_storage_service: StudyStorageService,
+        manager: ThermalManager,
         study_legacy_uuid: str,
     ):
         with db():
             # The study must be fetched from the database
             study: RawStudy = db.session.query(Study).get(study_legacy_uuid)
-
-            # Given the following arguments
-            manager = create_thermal_manager(study_storage_service)
 
             # When some properties of the cluster are updated
             cluster_data = ThermalClusterInput(name="New name", nominalCapacity=2000)
@@ -473,15 +468,12 @@ class TestThermalManager:
 
     def test_delete_clusters(
         self,
-        study_storage_service: StudyStorageService,
+        manager: ThermalManager,
         study_legacy_uuid: str,
     ):
         with db():
             # The study must be fetched from the database
             study: RawStudy = db.session.query(Study).get(study_legacy_uuid)
-
-            # Given the following arguments
-            manager = create_thermal_manager(study_storage_service)
 
             # When the clusters are deleted
             manager.delete_clusters(study, area_id="north", cluster_ids=["2 avail and must 1", "on and must 2"])

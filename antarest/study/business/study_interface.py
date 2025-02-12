@@ -18,9 +18,22 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
 
 class StudyInterface(ABC):
+    """
+    Business domain managers can read data and add commands to a study
+    through this interface.
+    """
 
+    # TODO: in the end this should provide a read-only DAO which encapsulates
+    #       the actual storage implementation
     @abstractmethod
     def get_files(self) -> FileStudy:
+        """
+        Gets the file representation of the study.
+        Expected to return the same object on subsequent calls.
+
+        This is meant to be a "read-only" access to the study,
+        modifications should be made through commands.
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -28,10 +41,17 @@ class StudyInterface(ABC):
         self,
         commands: Sequence[ICommand],
     ) -> None:
+        """
+        Adds commands to that study.
+        Note that implementations are not required to actually modify the underlying file study.
+        """
         raise NotImplementedError()
 
 
 class StudiesRepository(ABC):
+    """
+    Business domain managers access studies through that interface.
+    """
 
     @abstractmethod
     def get_study_interface(self, study: Study) -> StudyInterface:
