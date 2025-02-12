@@ -151,7 +151,7 @@ def test_st_storage_group_is_written_to_title_case_for_8_6(study_dir: Path, ini_
         textwrap.dedent(
             """
             [Cluster 1]
-            group = Gas
+            group = gas
             """
         )
     )
@@ -161,5 +161,5 @@ def test_st_storage_group_is_written_to_title_case_for_8_6(study_dir: Path, ini_
         area="area_test",
     )
 
-    node.save({"Cluster 1": {"group": "GAS"}})
-    assert IniReader().read(ini_file) == {"Cluster 1": {"group": "Gas"}}
+    node.save({"Cluster 1": {"group": "PsP_open"}, "Cluster 2": {"group": "UnknownGroup"}})
+    assert IniReader().read(ini_file) == {"Cluster 1": {"group": "PSP_open"}, "Cluster 2": {"group": "unknowngroup"}}

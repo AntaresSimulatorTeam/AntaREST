@@ -21,13 +21,26 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 _VALUE_PARSERS = {any_section_option_matcher("group"): LOWER_CASE_PARSER}
 
+_GROUPS_V8_6 = [
+    "PSP_open",
+    "PSP_closed",
+    "Pondage",
+    "Battery",
+    "Other1",
+    "Other2",
+    "Other3",
+    "Other4",
+    "Other5",
+]
+_GROUP_MAPPING_V8_6 = {v.lower(): v for v in _GROUPS_V8_6}
+
 
 def _write_group_8_6(input: str) -> str:
     """
     The solver was not case insensitive to group, before version 8.6.
-    We need to write it with a capital first letter.
+    We need to write it respecting the expected case.
     """
-    return input.title()
+    return _GROUP_MAPPING_V8_6.get(input.lower(), input.lower())
 
 
 def _get_group_serializer(study_version: StudyVersion) -> ValueSerializer:
