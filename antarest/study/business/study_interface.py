@@ -10,9 +10,11 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import List, Sequence
 
-from antarest.study.model import Study
+from typing_extensions import override
+
+from antarest.core.exceptions import CommandApplicationError
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
@@ -46,3 +48,25 @@ class StudyInterface(ABC):
         Note that implementations are not required to actually modify the underlying file study.
         """
         raise NotImplementedError()
+
+
+class FileStudyInterface(StudyInterface):
+    """
+    Basic implementation of study interface.
+    TODO: move it out from this module.
+    """
+
+    def __init__(self, file_study: FileStudy):
+        self.file_study = file_study
+        self.commands: List[ICommand] = []
+
+    @override
+    def get_files(self) -> FileStudy:
+        return self.file_study
+
+    @override
+    def add_commands(self, commands: Sequence[ICommand]) -> None:
+        for command in commands:
+            result = command.apply(self.file_study)
+            if not result.status:
+                raise CommandApplicationError(result.message)
