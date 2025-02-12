@@ -388,17 +388,64 @@ class StudyUpgraderTask:
     __call__ = run_task
 
 
-class StudyInterfaceImpl(StudyInterface):
+class RawStudyInterface(StudyInterface):
 
-    def __init__(self, storage: StudyStorageService, study: Study):
-        self._storage = storage
+    def __init__(self, raw_service: RawStudyService, variant_service: VariantStudyService, study: RawStudy):
+        self._raw_study_service = raw_service
+        self._variant_study_service = variant_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
 
     @override
     def get_files(self) -> FileStudy:
         if not self._cached_file_study:
-            self._cached_file_study = self._storage.get_storage(study=self._study).get_raw(self._study)
+            self._cached_file_study = self._raw_study_service.get_raw(self._study)
+        return self._cached_file_study
+
+    @override
+    def add_commands(self, commands: Sequence[ICommand]) -> None:
+        study = self._study
+        file_study = self.get_files()
+
+        executed_commands: MutableSequence[ICommand] = []
+        for command in commands:
+            result = command.apply(file_study)
+            if not result.status:
+                raise CommandApplicationError(result.message)
+            executed_commands.append(command)
+        self._variant_study_service.invalidate_cache(study)
+
+        if not is_managed(study):
+            # In a previous version, de-normalization was performed asynchronously.
+            # However, this cause problems with concurrent file access,
+            # especially when de-normalizing a matrix (which can take time).
+            #
+            # async_denormalize = threading.Thread(
+            #     name=f"async_denormalize-{study.id}",
+            #     target=file_study.tree.denormalize,
+            # )
+            # async_denormalize.start()
+            #
+            # To avoid this concurrency problem, it would be necessary to implement a
+            # locking system for the entire study using a file lock (since multiple processes,
+            # not only multiple threads, could access the same content simultaneously).
+            #
+            # Currently, we use a synchronous call to address the concurrency problem
+            # within the current process (not across multiple processes)...
+            file_study.tree.denormalize()
+
+
+class VariantStudyInterface(StudyInterface):
+
+    def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
+        self._variant_service = variant_service
+        self._study = study
+        self._cached_file_study: Optional[FileStudy] = None
+
+    @override
+    def get_files(self) -> FileStudy:
+        if not self._cached_file_study:
+            self._cached_file_study = self._variant_service.get_raw(self._study)
         return self._cached_file_study
 
     @override
@@ -407,39 +454,11 @@ class StudyInterfaceImpl(StudyInterface):
         file_study = self.get_files()
         # get current user if not in session, otherwise get session user
         current_user = get_current_user()
-
-        if isinstance(study, RawStudy):
-            executed_commands: MutableSequence[ICommand] = []
-            for command in commands:
-                result = command.apply(file_study)
-                if not result.status:
-                    raise CommandApplicationError(result.message)
-                executed_commands.append(command)
-            self._storage.variant_study_service.invalidate_cache(study)
-            if not is_managed(study):
-                # In a previous version, de-normalization was performed asynchronously.
-                # However, this cause problems with concurrent file access,
-                # especially when de-normalizing a matrix (which can take time).
-                #
-                # async_denormalize = threading.Thread(
-                #     name=f"async_denormalize-{study.id}",
-                #     target=file_study.tree.denormalize,
-                # )
-                # async_denormalize.start()
-                #
-                # To avoid this concurrency problem, it would be necessary to implement a
-                # locking system for the entire study using a file lock (since multiple processes,
-                # not only multiple threads, could access the same content simultaneously).
-                #
-                # Currently, we use a synchronous call to address the concurrency problem
-                # within the current process (not across multiple processes)...
-                file_study.tree.denormalize()
-        else:
-            self._storage.variant_study_service.append_commands(
-                study.id,
-                transform_command_to_dto(commands, force_aggregate=True),
-                RequestParameters(user=current_user),
-            )
+        self._variant_service.append_commands(
+            study.id,
+            transform_command_to_dto(commands, force_aggregate=True),
+            RequestParameters(user=current_user),
+        )
 
 
 class StudiesRepositoryImpl(StudiesRepository):
@@ -449,7 +468,12 @@ class StudiesRepositoryImpl(StudiesRepository):
 
     @override
     def get_study_interface(self, study: Study) -> StudyInterface:
-        return StudyInterfaceImpl(storage=self._storage, study=study)
+        if isinstance(study, VariantStudy):
+            return VariantStudyInterface(self._storage.variant_study_service, study)
+        elif isinstance(study, RawStudy):
+            return RawStudyInterface(self._storage.raw_study_service, self._storage.variant_study_service, study)
+        else:
+            raise ValueError(f"Unsupported study type '{study.type}'")
 
 
 def create_thermal_manager(storage: StudyStorageService) -> ThermalManager:
