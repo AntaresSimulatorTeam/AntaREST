@@ -106,7 +106,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_BINDING_CONSTRAINT
-    version: int = 1
 
     # Command parameters
     # ==================
@@ -216,5 +215,5 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                 json_command[key] = matrix_service.get_matrix_id(json_command[key])
 
         return CommandDTO(
-            action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
+            action=self.command_name.value, args=json_command, version=1, study_version=self.study_version
         )

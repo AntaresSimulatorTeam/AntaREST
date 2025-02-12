@@ -31,7 +31,6 @@ class RemoveMultipleBindingConstraints(ICommand):
     """
 
     command_name: CommandName = CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS
-    version: int = 1
 
     # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINTS` command:
     ids: List[str]

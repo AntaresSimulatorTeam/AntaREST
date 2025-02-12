@@ -185,7 +185,6 @@ class SnapshotGenerator:
             snapshot_dir,
             variant_study,
             delete_on_failure=False,  # Not needed, because we are using a temporary directory
-            notifier=None,
             listener=listener,
         )
         if not results.success:

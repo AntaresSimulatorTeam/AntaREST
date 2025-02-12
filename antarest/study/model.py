@@ -15,7 +15,7 @@ import enum
 import secrets
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Mapping, Optional, Tuple, cast
 
 from antares.study.version import StudyVersion
@@ -358,7 +358,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
     so the user can navigate in the hierarchy
     """
 
-    path: Path
+    path: PurePosixPath
     workspace: str
     name: str
     has_children: bool = Field(
@@ -368,7 +368,7 @@ class NonStudyFolderDTO(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     @computed_field(alias="parentPath")
-    def parent_path(self) -> Path:
+    def parent_path(self) -> PurePosixPath:
         """
         This computed field is convenient for the front.
 
@@ -376,9 +376,16 @@ class NonStudyFolderDTO(AntaresBaseModel):
 
         Returns: the parent path of the current directory. Starting with the workspace as a root directory (we want /workspafe/folder1/sub... and not workspace/folder1/fsub... ).
         """
-        workspace_path = Path(f"/{self.workspace}")
+        workspace_path = PurePosixPath(f"/{self.workspace}")
         full_path = workspace_path.joinpath(self.path)
         return full_path.parent
+
+    @field_validator("path", mode="before")
+    def to_posix(cls, path: Path) -> PurePosixPath:
+        """
+        Always convert path to posix path.
+        """
+        return PurePosixPath(path)
 
 
 class WorkspaceMetadata(AntaresBaseModel):

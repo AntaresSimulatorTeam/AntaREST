@@ -15,7 +15,7 @@ import json
 import pytest
 
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig

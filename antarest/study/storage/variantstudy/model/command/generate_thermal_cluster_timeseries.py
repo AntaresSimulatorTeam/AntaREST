@@ -46,7 +46,6 @@ class GenerateThermalClusterTimeSeries(ICommand):
     """
 
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
-    version: int = 1
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
