@@ -307,9 +307,11 @@ class GeneralManager:
 
         return [
             UpdateConfig(
-                target=f"{GENERAL_PATH}/custom-scenario"
-                if study_version >= STUDY_VERSION_8
-                else f"{GENERAL_PATH}/custom-ts-numbers",
+                target=(
+                    f"{GENERAL_PATH}/custom-scenario"
+                    if study_version >= STUDY_VERSION_8
+                    else f"{GENERAL_PATH}/custom-ts-numbers"
+                ),
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,
                 study_version=study_version,

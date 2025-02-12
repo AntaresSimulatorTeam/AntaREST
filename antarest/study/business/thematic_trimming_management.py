@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Mapping, cast
 
 from antares.study.version import StudyVersion
 
@@ -36,9 +36,9 @@ class ThematicTrimmingManager:
         include_vars = trimming_config.get("select_var +") or []
         selected_vars_reset = trimming_config.get("selected_vars_reset", True)
 
-        def get_value(field_info: t.Mapping[str, t.Any]) -> bool:
+        def get_value(field_info: Mapping[str, Any]) -> bool:
             if selected_vars_reset is None:
-                return t.cast(bool, field_info["default_value"])
+                return cast(bool, field_info["default_value"])
             var_name = field_info["path"]
             return var_name not in exclude_vars if selected_vars_reset else var_name in include_vars
 
@@ -53,12 +53,12 @@ class ThematicTrimmingManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         field_values_dict = field_values.model_dump(mode="json")
 
-        keys_by_bool: t.Dict[bool, t.List[t.Any]] = {True: [], False: []}
+        keys_by_bool: Dict[bool, List[Any]] = {True: [], False: []}
         fields_info = get_fields_info(StudyVersion.parse(study.version))
         for name, info in fields_info.items():
             keys_by_bool[field_values_dict[name]].append(info["path"])
 
-        config_data: t.Dict[str, t.Any]
+        config_data: Dict[str, Any]
         if len(keys_by_bool[True]) > len(keys_by_bool[False]):
             config_data = {
                 "selected_vars_reset": True,

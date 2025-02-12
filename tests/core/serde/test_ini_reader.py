@@ -14,7 +14,36 @@ import io
 import textwrap
 from pathlib import Path
 
-from antarest.study.storage.rawstudy.ini_reader import IniReader, SimpleKeyValueReader
+from antarest.core.serde.ini_common import OptionMatcher, any_section_option_matcher
+from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader, SimpleKeyValueReader, ValueParsers
+
+
+def test_lower_case_parser() -> None:
+    assert LOWER_CASE_PARSER("Hello") == "hello"
+
+
+class TestValueParsers:
+    def test_find_value_parsers(self):
+        def default(input: str) -> str:
+            return "default"
+
+        def custom_exact_match(input: str) -> str:
+            return "custom-exact"
+
+        def custom_any_section_match(input: str) -> str:
+            return "custom-any-section"
+
+        parsers = ValueParsers(
+            default_parser=default,
+            parsers={
+                OptionMatcher("section1", "option1"): custom_exact_match,
+                any_section_option_matcher("option2"): custom_any_section_match,
+            },
+        )
+
+        assert parsers.find_parser("section1", "option1")("test") == "custom-exact"
+        assert parsers.find_parser("section1", "option2")("test") == "custom-any-section"
+        assert parsers.find_parser("section1", "option3")("test") == "default"
 
 
 class TestIniReader:
@@ -322,6 +351,33 @@ class TestIniReader:
         # regex match with section and option
         actual = reader.read(path, section_regex="part.*", option_regex=".*a.*")
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "salut"}}
+        assert actual == expected
+
+    def test_read__with_custom_parser(self, tmp_path):
+        path = Path(tmp_path) / "test.ini"
+        path.write_text(
+            textwrap.dedent(
+                """
+                [part1]
+                bar = Hello
+                
+                [part2]
+                bar = Hello
+                """
+            )
+        )
+
+        def double_parser(value: str) -> str:
+            return value + value
+
+        value_parsers = {OptionMatcher("part2", "bar"): double_parser}
+        actual = IniReader(value_parsers=value_parsers).read(path)
+        expected = {"part1": {"bar": "Hello"}, "part2": {"bar": "HelloHello"}}
+        assert actual == expected
+
+        value_parsers = {any_section_option_matcher("bar"): double_parser}
+        actual = IniReader(value_parsers=value_parsers).read(path)
+        expected = {"part1": {"bar": "HelloHello"}, "part2": {"bar": "HelloHello"}}
         assert actual == expected
 
 

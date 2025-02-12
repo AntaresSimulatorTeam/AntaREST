@@ -134,7 +134,7 @@ export default [
         {
           // Includes hooks from 'react-use'
           additionalHooks:
-            "(useSafeMemo|useUpdateEffectOnce|useDeepCompareEffect|useShallowCompareEffect|useCustomCompareEffect)",
+            "(useSafeMemo|useUpdateEffect|useUpdateEffectOnce|useDeepCompareEffect|useShallowCompareEffect|useCustomCompareEffect)",
         },
       ],
       "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low

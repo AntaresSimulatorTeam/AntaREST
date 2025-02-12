@@ -21,7 +21,8 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
-from antarest.core.serialization import AntaresBaseModel, from_json
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.json import from_json
 from antarest.core.utils.web import APITag
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth

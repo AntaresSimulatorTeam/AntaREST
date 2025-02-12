@@ -3,7 +3,7 @@ requires = ["setuptools"]
 
 [project]
 name = "AntaREST"
-version = "2.18.3"
+version = "2.19.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -75,7 +75,7 @@ line-length = 120
 exclude = "(antares-?launcher/*|alembic/*)"
 
 [tool.coverage.run]
-omit = ["antarest/tools/cli.py", "antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]
+omit = ["antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]
 relative_files = true  # avoids absolute path issues in CI
 
 [tool.isort]

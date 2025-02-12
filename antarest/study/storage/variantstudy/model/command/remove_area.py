@@ -12,7 +12,7 @@
 
 import contextlib
 import logging
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
@@ -31,7 +31,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
     remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -44,7 +44,6 @@ class RemoveArea(ICommand):
     """
 
     command_name: CommandName = CommandName.REMOVE_AREA
-    version: int = 1
 
     # Properties of the `REMOVE_AREA` command:
     id: str
@@ -67,7 +66,7 @@ class RemoveArea(ICommand):
                     study_data_config.sets[id_] = set_
 
     @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         del study_data_config.areas[self.id]
 
         self._remove_area_from_links_in_config(study_data_config)
@@ -227,7 +226,7 @@ class RemoveArea(ICommand):
 
     # noinspection SpellCheckingInspection
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])
@@ -296,17 +295,5 @@ class RemoveArea(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        return isinstance(other, RemoveArea) and self.id == other.id
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
-
-    @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

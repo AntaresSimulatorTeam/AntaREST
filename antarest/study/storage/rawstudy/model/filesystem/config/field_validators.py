@@ -9,13 +9,38 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
+from typing import Annotated, Any, List, Mapping, MutableMapping
 
-import typing as t
+from pydantic import BeforeValidator, Field
+
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
 
 
-def extract_filtering(v: t.Any) -> t.List[str]:
+def _validate_item_name(name: Any) -> str:
+    if isinstance(name, int):
+        name = str(name)
+    if not isinstance(name, str):
+        raise ValueError(f"Invalid name '{name}'.")
+    if not transform_name_to_id(name):
+        raise ValueError(f"Invalid name '{name}'.")
+    return name
+
+
+# Type to be used for item names, will raise an error if name
+# does not comply with antares-simulator limitations.
+ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
+
+# Type to be used for area identifiers. An ID is valid if it contains
+# only lower case alphanumeric characters, parenthesis, comma,
+# ampersand, spaces, underscores, or dashes, as defined by
+# antares-simulator.
+AreaId = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
+
+
+def extract_filtering(v: Any) -> List[str]:
     """
     Extract filtering values from a comma-separated list of values.
     """
@@ -35,7 +60,7 @@ def extract_filtering(v: t.Any) -> t.List[str]:
         raise ValueError(f"Invalid value for filtering: {e!s}") from None
 
 
-def validate_filtering(v: t.Any) -> str:
+def validate_filtering(v: Any) -> str:
     """
     Validate the filtering field and convert it to a comma separated string.
     """
@@ -44,12 +69,12 @@ def validate_filtering(v: t.Any) -> str:
 
 
 # noinspection SpellCheckingInspection
-def validate_colors(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+def validate_colors(values: MutableMapping[str, Any]) -> Mapping[str, Any]:
     """
     Validate ``color_rgb``, ``color_r``, ``color_g``, ``color_b`` and convert them to ``color_rgb``.
     """
 
-    def _pop_any(dictionary: t.MutableMapping[str, t.Any], *keys: str) -> t.Any:
+    def _pop_any(dictionary: MutableMapping[str, Any], *keys: str) -> Any:
         """Save as `pop` but for multiple keys. Return the first found value."""
         return next((dictionary.pop(key, None) for key in keys if key in dictionary), None)
 
@@ -61,7 +86,7 @@ def validate_colors(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.An
     return values
 
 
-def validate_color_rgb(v: t.Any) -> str:
+def validate_color_rgb(v: Any) -> str:
     """
     Validate RGB color field and convert it to color code.
 

@@ -1404,9 +1404,11 @@ class TestStudiesListing:
             res = client.get(
                 STUDIES_URL,
                 headers={"Authorization": f"Bearer {users_tokens['user_1']}"},
-                params={"groups": ",".join(request_groups_ids), "pageNb": 1, "pageSize": 2}
-                if request_groups_ids
-                else {"pageNb": 1, "pageSize": 2},
+                params=(
+                    {"groups": ",".join(request_groups_ids), "pageNb": 1, "pageSize": 2}
+                    if request_groups_ids
+                    else {"pageNb": 1, "pageSize": 2}
+                ),
             )
             assert res.status_code == LIST_STATUS_CODE, res.json()
             assert len(res.json()) == max(0, min(2, len(expected_studies) - 2))

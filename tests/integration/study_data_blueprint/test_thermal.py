@@ -49,7 +49,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.utils.string import to_camel_case
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
 from tests.integration.utils import wait_task_completion
 
@@ -63,7 +63,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "01_solar",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -87,7 +87,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "02_wind_on",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -111,7 +111,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "03_wind_off",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -135,7 +135,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "04_res",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -159,7 +159,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "05_nuclear",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -183,7 +183,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "06_coal",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -207,7 +207,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "07_gas",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -231,7 +231,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "08_non-res",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -255,7 +255,7 @@ EXISTING_CLUSTERS = [
         "enabled": True,
         "fixedCost": 0.0,
         "genTs": "use global",
-        "group": "Other 1",
+        "group": "other 1",
         "id": "09_hydro_pump",
         "lawForced": "uniform",
         "lawPlanned": "uniform",
@@ -358,7 +358,7 @@ class TestThermal:
         fr_gas_conventional_props = {
             **DEFAULT_PROPERTIES,
             "name": fr_gas_conventional,
-            "group": "Gas",
+            "group": "gas",
             "unitCount": 15,
             "nominalCapacity": 31.6,
             "minStablePower": 5.4984,
@@ -756,7 +756,7 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         obj = res.json()
         # If a group is not found, return the default group ('OTHER1' by default).
-        assert obj["group"] == "Other 1"
+        assert obj["group"] == "other 1"
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
@@ -925,7 +925,7 @@ class TestThermal:
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "Nuclear"
+        assert cluster_cfg["group"] == "nuclear"
         assert cluster_cfg["unitCount"] == 13
         assert cluster_cfg["nominalCapacity"] == 42500
         assert cluster_cfg["marginalCost"] == 0.2

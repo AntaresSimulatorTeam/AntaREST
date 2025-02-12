@@ -18,7 +18,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from tests.integration.utils import wait_task_completion
 
 
@@ -118,7 +118,7 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[{"action": "create_st_storage", "args": args}],
+            json=[{"action": "create_st_storage", "version": 2, "args": args}],
         )
         res.raise_for_status()
 
@@ -180,7 +180,7 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[{"action": "create_st_storage", "args": args}],
+            json=[{"action": "create_st_storage", "version": 2, "args": args}],
         )
         res.raise_for_status()
 

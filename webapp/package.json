@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.18.3",
+  "version": "2.19.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -24,7 +24,7 @@
     "@handsontable/react": "14.5.0",
     "@mui/icons-material": "6.1.1",
     "@mui/lab": "6.0.0-beta.10",
-    "@mui/material": "6.1.1",
+    "@mui/material": "6.4.3",
     "@mui/x-tree-view": "7.18.0",
     "@reduxjs/toolkit": "1.9.6",
     "axios": "1.7.7",

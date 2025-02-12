@@ -11,11 +11,17 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.core.serde.ini_common import any_section_option_matcher
+from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
+from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+
+_VALUE_PARSERS = {any_section_option_matcher("group"): LOWER_CASE_PARSER}
+_VALUE_SERIALIZERS = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER}
 
 
 class ClusteredRenewableClusterConfig(IniFileNode):
@@ -30,11 +36,18 @@ class ClusteredRenewableClusterConfig(IniFileNode):
             "group": str,
             "enabled": bool,
             "unitcount": int,
-            "nomialcapacity": 0,
+            "nominalcapacity": float,
             "ts-interpretation": str,
         }
         types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(
+            self,
+            context,
+            config,
+            types,
+            reader=IniReader(value_parsers=_VALUE_PARSERS),
+            writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
+        )
 
 
 class ClusteredRenewableCluster(FolderNode):

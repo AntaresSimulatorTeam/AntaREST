@@ -19,7 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -33,7 +33,6 @@ class UpdateRawFile(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_FILE
-    version: int = 1
 
     # Command parameters
     # ==================
@@ -75,23 +74,6 @@ class UpdateRawFile(ICommand):
             args={"target": self.target, "b64Data": self.b64Data},
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.target)
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, UpdateRawFile):
-            return False
-        simple_match = self.target == other.target
-        if not equal:
-            return simple_match
-        return simple_match and self.b64Data == other.b64Data
-
-    @override
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        return [other]
 
     @override
     def get_inner_matrices(self) -> List[str]:

@@ -193,7 +193,7 @@ class TestBindingConstraints:
         assert len(clusters_list) == 1
         assert clusters_list[0]["id"] == cluster_id
         assert clusters_list[0]["name"] == "Cluster 1"
-        assert clusters_list[0]["group"] == "Nuclear"
+        assert clusters_list[0]["group"] == "nuclear"
 
         if study_type == "variant":
             study_id = preparer.create_variant(study_id, name="Variant 1")
@@ -987,10 +987,15 @@ class TestBindingConstraints:
         assert res.status_code == 200, res.json()
 
         # Asserts that the deletion worked
-        binding_constraints_list = preparer.get_binding_constraints(study_id)
+        binding_constraints_list = client.get(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/bindingconstraints/bindingconstraints"},  # type: ignore
+        ).json()
         assert len(binding_constraints_list) == 2
-        actual_ids = [constraint["id"] for constraint in binding_constraints_list]
+        actual_ids = [constraint["id"] for constraint in binding_constraints_list.values()]
         assert actual_ids == ["binding_constraint_1", "binding_constraint_3"]
+        keys = sorted(int(k) for k in binding_constraints_list.keys())
+        assert keys == list(range(len(keys)))
 
         # =============================
         # CONSTRAINT DUPLICATION
@@ -1257,15 +1262,15 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/constraint-groups")
         assert res.status_code in {200, 201}, res.json()
         groups = res.json()
-        assert set(groups) == {"default", "random_grp", "Group 1", "Group 2"}
-        assert groups["Group 2"] == [
+        assert set(groups) == {"default", "random_grp", "group 1", "group 2"}
+        assert groups["group 2"] == [
             {
                 "comments": "New API",
                 "terms": [],
                 "enabled": True,
                 "filterSynthesis": "",
                 "filterYearByYear": "",
-                "group": "Group 2",
+                "group": "group 2",
                 "id": "second bc",
                 "name": "Second BC",
                 "operator": "less",
