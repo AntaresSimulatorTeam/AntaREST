@@ -87,11 +87,13 @@ def study_path(tmp_path: Path) -> Path:
     resource_zip = ASSETS_DIR.joinpath("thermal_management/study_legacy.zip")
     with zipfile.ZipFile(resource_zip, "r") as zip_ref:
         zip_ref.extractall(study_path)
-    print(os.listdir(study_path))
     return study_path
 
 
 class InMemorySimpleMatrixService(ISimpleMatrixService):
+    """
+    In memory implementation of matrix service, for unit testing purposes.
+    """
 
     def __init__(self) -> None:
         self._content: Dict[str, MatrixDTO] = {}
@@ -166,7 +168,6 @@ class FileStudyInterface(StudyInterface):
             result = command.apply(self.file_study)
             if not result.status:
                 raise CommandApplicationError(result.message)
-        self.file_study.tree.denormalize()
 
 
 @pytest.fixture
