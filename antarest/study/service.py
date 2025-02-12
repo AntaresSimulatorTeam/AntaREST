@@ -98,7 +98,7 @@ from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
-from antarest.study.business.study_interface import StudiesRepository, StudyInterface
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
@@ -462,23 +462,8 @@ class VariantStudyInterface(StudyInterface):
         )
 
 
-class StudiesRepositoryImpl(StudiesRepository):
-
-    def __init__(self, storage: StudyStorageService):
-        self._storage = storage
-
-    @override
-    def get_study_interface(self, study: Study) -> StudyInterface:
-        if isinstance(study, VariantStudy):
-            return VariantStudyInterface(self._storage.variant_study_service, study)
-        elif isinstance(study, RawStudy):
-            return RawStudyInterface(self._storage.raw_study_service, self._storage.variant_study_service, study)
-        else:
-            raise ValueError(f"Unsupported study type '{study.type}'")
-
-
-def create_thermal_manager(command_context: CommandContext, storage: StudyStorageService) -> ThermalManager:
-    return ThermalManager(command_context, StudiesRepositoryImpl(storage=storage))
+def create_thermal_manager(command_context: CommandContext) -> ThermalManager:
+    return ThermalManager(command_context)
 
 
 class StudyService:
@@ -518,7 +503,7 @@ class StudyService:
         self.allocation_manager = AllocationManager(self.storage_service)
         self.properties_manager = PropertiesManager(self.storage_service)
         self.renewable_manager = RenewableManager(self.storage_service)
-        self.thermal_manager = create_thermal_manager(command_context, self.storage_service)
+        self.thermal_manager = create_thermal_manager(command_context)
         self.st_storage_manager = STStorageManager(self.storage_service)
         self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
         self.playlist_manager = PlaylistManager(self.storage_service)
@@ -903,6 +888,19 @@ class StudyService:
         assert_permission(params.user, study, permission)
         self._assert_study_unarchived(study)
         return study
+
+    def get_study_interface(self, study: Study) -> StudyInterface:
+        """
+        Creates the business interface to a particular study.
+        """
+        if isinstance(study, VariantStudy):
+            return VariantStudyInterface(self.storage_service.variant_study_service, study)
+        elif isinstance(study, RawStudy):
+            return RawStudyInterface(
+                self.storage_service.raw_study_service, self.storage_service.variant_study_service, study
+            )
+        else:
+            raise ValueError(f"Unsupported study type '{study.type}'")
 
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """

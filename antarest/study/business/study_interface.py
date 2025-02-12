@@ -46,13 +46,3 @@ class StudyInterface(ABC):
         Note that implementations are not required to actually modify the underlying file study.
         """
         raise NotImplementedError()
-
-
-class StudiesRepository(ABC):
-    """
-    Business domain managers access studies through that interface.
-    """
-
-    @abstractmethod
-    def get_study_interface(self, study: Study) -> StudyInterface:
-        raise NotImplementedError()

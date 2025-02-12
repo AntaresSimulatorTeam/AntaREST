@@ -296,7 +296,6 @@ def event_bus_fixture() -> IEventBus:
 def command_factory_fixture(
     generator_matrix_constants: GeneratorMatrixConstants,
     simple_matrix_service: SimpleMatrixService,
-    patch_service: PatchService,
 ) -> CommandFactory:
     """
     Fixture that creates a CommandFactory instance with a session-level scope.
@@ -304,7 +303,6 @@ def command_factory_fixture(
     Args:
         generator_matrix_constants: An instance of the GeneratorMatrixConstants class.
         simple_matrix_service: An instance of the SimpleMatrixService class.
-        patch_service: An instance of the PatchService class.
 
     Returns:
         An instance of the CommandFactory class with the provided dependencies.

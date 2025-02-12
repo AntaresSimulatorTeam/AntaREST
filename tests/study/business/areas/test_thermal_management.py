@@ -13,18 +13,29 @@
 import datetime
 import re
 import shutil
+import time
 import uuid
 import zipfile
 from pathlib import Path
+from typing import Dict, List, Optional, Sequence
+from unittest.mock import ANY
 
+import numpy as np
 import pytest
+from numpy import typing as npt
+from numpy.matrixlib.defmatrix import matrix
 from sqlalchemy.orm.session import Session  # type: ignore
 
+import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.core.exceptions import CommandApplicationError
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
+from antarest.matrixstore.model import MatrixData, MatrixDTO
+from antarest.matrixstore.service import ISimpleMatrixService, SimpleMatrixService
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.business.areas.thermal_management import ThermalClusterCreation, ThermalClusterInput, ThermalManager
+from antarest.study.business.study_interface import StudiesRepository, StudyInterface
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyContentStatus
 from antarest.study.service import create_thermal_manager
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -32,7 +43,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     LocalTSGenerationBehavior,
     ThermalClusterGroup,
 )
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.business.areas.assets import ASSETS_DIR
 
 
@@ -123,9 +141,103 @@ def study_legacy_uuid_fixture(
 
 
 @pytest.fixture
-def manager(study_storage_service: StudyStorageService) -> ThermalManager:
-    command_ctxt = study_storage_service.variant_study_service.command_factory.command_context
-    return create_thermal_manager(command_ctxt, study_storage_service)
+def legacy_study_path() -> Path:
+
+
+class InMemorySimpleMatrixService(ISimpleMatrixService):
+
+    def __init__(self) -> None:
+        self._content: Dict[str, MatrixDTO] = {}
+
+    def _make_dto(self, id: str, matrix: npt.NDArray[np.float64]) -> MatrixDTO:
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+        data = matrix.tolist()
+        index = [str(i) for i in range(matrix.shape[0])]
+        columns = [str(i) for i in range(matrix.shape[1])]
+        return MatrixDTO(
+            data=data,
+            index=index,
+            columns=columns,
+            id=id,
+            created_at=int(time.time()),
+            width=len(columns),
+            height=len(index),
+        )
+
+    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+        matrix_id = str(uuid.uuid4())
+        matrix = data if isinstance(data, np.ndarray) else np.array(data, dtype=np.float64)
+        self._content[matrix_id] = self._make_dto(matrix_id, matrix)
+        return matrix_id
+
+    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
+        return self._content.get(matrix_id, None)
+
+    def exists(self, matrix_id: str) -> bool:
+        return matrix_id in self._content
+
+    def delete(self, matrix_id: str) -> None:
+        del self._content[matrix_id]
+
+
+def test_matrix_service():
+    service = InMemorySimpleMatrixService()
+    matrix_id = service.create([[1, 2, 3], [4, 5, 6]])
+    assert service.exists(matrix_id)
+    dto = service.get(matrix_id)
+    assert dto == MatrixDTO(
+        id=matrix_id,
+        data=[[1, 2, 3], [4, 5, 6]],
+        index=["0", "1"],
+        columns=["0", "1", "2"],
+        width=3,
+        height=2,
+        created_at=dto.created_at,
+    )
+    service.delete(matrix_id)
+    assert not service.exists(matrix_id)
+
+
+def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path: Path) -> FileStudy:
+    context = ContextServer(matrix_service, UriResolverService(matrix_service))
+    config = antarest.study.storage.rawstudy.model.filesystem.config.files.build(study_id=study_id, study_path=path)
+    tree = FileStudyTree(context, config)
+    return FileStudy(config, tree)
+
+
+class StudyInterfaceMock(StudyInterface):
+
+    def __init__(self, file_study: FileStudy):
+        self.file_study = file_study
+        self.commands: List[ICommand] = []
+
+    def get_files(self) -> FileStudy:
+        return self.file_study
+
+    def add_commands(self, commands: Sequence[ICommand]) -> None:
+        self.commands.extend(commands)
+
+
+class StudiesRepositoryMock(StudiesRepository):
+
+    def __init__(self, studies: Dict[str, FileStudy]) -> None:
+        self._studies = studies
+
+    def get_study_interface(self, study: Study) -> StudyInterface:
+        return StudyInterfaceMock(self._studies[study.id])
+
+
+@pytest.fixture
+@pytest.fixture
+def manager(study_legacy_uuid: str, study_path) -> ThermalManager:
+    matrix_service = InMemorySimpleMatrixService()
+    file_study = create_file_study(matrix_service, study_id=study_legacy_uuid, path=study_path)
+    study_repo = StudiesRepositoryMock({study_legacy_uuid: file_study})
+    matrix_constants = GeneratorMatrixConstants(matrix_service)
+    matrix_constants.init_constant_matrices()
+    return ThermalManager(
+        CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service), study_repo
+    )
 
 
 class TestThermalManager:

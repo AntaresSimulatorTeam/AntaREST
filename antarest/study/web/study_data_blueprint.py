@@ -2075,7 +2075,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.thermal_manager.get_clusters(study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_manager.get_clusters(study_interface, area_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
@@ -2107,7 +2108,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.thermal_manager.get_cluster(study, area_id, cluster_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_manager.get_cluster(study_interface, area_id, cluster_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
@@ -2152,7 +2154,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.thermal_manager.create_cluster(study, area_id, cluster_data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_manager.create_cluster(study_interface, area_id, cluster_data)
 
     @bp.patch(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
@@ -2183,7 +2186,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.thermal_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_manager.update_cluster(study_interface, area_id, cluster_id, cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
@@ -2230,7 +2234,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.thermal_manager.validate_series(study, area_id, cluster_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_manager.validate_series(study_interface, area_id, cluster_id)
 
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
@@ -2261,7 +2266,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_service.asserts_no_thermal_in_binding_constraints(study, area_id, cluster_ids)
-        study_service.thermal_manager.delete_clusters(study, area_id, cluster_ids)
+        study_interface = study_service.get_study_interface(study)
+        study_service.thermal_manager.delete_clusters(study_interface, area_id, cluster_ids)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
