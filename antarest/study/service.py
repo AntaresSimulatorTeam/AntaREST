@@ -408,12 +408,10 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         file_study = self.get_files()
 
-        executed_commands: MutableSequence[ICommand] = []
         for command in commands:
             result = command.apply(file_study)
             if not result.status:
                 raise CommandApplicationError(result.message)
-            executed_commands.append(command)
         self._variant_study_service.invalidate_cache(study)
 
         if not is_managed(study):

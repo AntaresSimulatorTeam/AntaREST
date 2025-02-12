@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 import datetime
+import hashlib
+import os
 import re
 import shutil
 import time
@@ -18,12 +20,10 @@ import uuid
 import zipfile
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
-from unittest.mock import ANY
 
 import numpy as np
 import pytest
 from numpy import typing as npt
-from numpy.matrixlib.defmatrix import matrix
 from sqlalchemy.orm.session import Session  # type: ignore
 
 import antarest.study.storage.rawstudy.model.filesystem.config.files
@@ -32,12 +32,11 @@ from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
 from antarest.matrixstore.model import MatrixData, MatrixDTO
-from antarest.matrixstore.service import ISimpleMatrixService, SimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.business.areas.thermal_management import ThermalClusterCreation, ThermalClusterInput, ThermalManager
-from antarest.study.business.study_interface import StudiesRepository, StudyInterface
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyContentStatus
-from antarest.study.service import create_thermal_manager
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     LawOption,
     LocalTSGenerationBehavior,
@@ -48,7 +47,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.business.areas.assets import ASSETS_DIR
@@ -82,66 +80,15 @@ class TestThermalClusterGroup:
             ThermalClusterGroup(123)
 
 
-@pytest.fixture(name="zip_legacy_path")
-def zip_legacy_path_fixture(tmp_path: Path) -> Path:
-    target_dir = tmp_path.joinpath("resources")
-    target_dir.mkdir()
-    resource_zip = ASSETS_DIR.joinpath("thermal_management/study_legacy.zip")
-    shutil.copy2(resource_zip, target_dir)
-    return target_dir.joinpath(resource_zip.name)
-
-
-@pytest.fixture(name="metadata_legacy")
-def metadata_legacy_fixture(tmp_path: Path, zip_legacy_path: Path) -> RawStudy:
-    with zipfile.ZipFile(zip_legacy_path, mode="r") as zf:
-        content = zf.read("study.antares").decode("utf-8")
-        config = dict(re.findall(r"^(\w+)\s*=\s*(.*?)$", content, flags=re.I | re.M))
-
-    workspace_dir = tmp_path.joinpath("studies")
-    workspace_dir.mkdir()
-
-    # noinspection PyArgumentList,SpellCheckingInspection
-    metadata = RawStudy(
-        id=str(uuid.uuid4()),
-        name=config["caption"],
-        version=config["version"],
-        author=config["author"],
-        created_at=datetime.datetime.fromtimestamp(int(config["created"]), datetime.timezone.utc),
-        updated_at=datetime.datetime.fromtimestamp(int(config["lastsave"]), datetime.timezone.utc),
-        public_mode=PublicMode.FULL,
-        workspace="default",
-        path=str(workspace_dir.joinpath(config["caption"])),
-        content_status=StudyContentStatus.VALID,
-        additional_data=StudyAdditionalData(author=config["author"]),
-    )
-
-    return metadata
-
-
-# noinspection PyArgumentList
-@pytest.fixture(name="study_legacy_uuid")
-def study_legacy_uuid_fixture(
-    zip_legacy_path: Path,
-    metadata_legacy: RawStudy,
-    study_storage_service: StudyStorageService,
-    db_session: Session,
-) -> str:
-    study_id = metadata_legacy.id
-    metadata_legacy.user = User(id=1, name="admin")
-    metadata_legacy.groups = [Group(id="my-group", name="group")]
-    db_session.add(metadata_legacy)
-    db_session.commit()
-
-    with db_session:
-        metadata = db_session.query(Study).get(study_id)
-        with open(zip_legacy_path, mode="rb") as fd:
-            study_storage_service.raw_study_service.import_study(metadata, fd)
-
-    return study_id
-
-
 @pytest.fixture
-def legacy_study_path() -> Path:
+def study_path(tmp_path: Path) -> Path:
+    study_path = tmp_path / "study"
+    study_path.mkdir()
+    resource_zip = ASSETS_DIR.joinpath("thermal_management/study_legacy.zip")
+    with zipfile.ZipFile(resource_zip, "r") as zip_ref:
+        zip_ref.extractall(study_path)
+    print(os.listdir(study_path))
+    return study_path
 
 
 class InMemorySimpleMatrixService(ISimpleMatrixService):
@@ -165,10 +112,10 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         )
 
     def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
-        matrix_id = str(uuid.uuid4())
         matrix = data if isinstance(data, np.ndarray) else np.array(data, dtype=np.float64)
-        self._content[matrix_id] = self._make_dto(matrix_id, matrix)
-        return matrix_id
+        matrix_hash = hashlib.sha256(matrix.data).hexdigest()
+        self._content[matrix_hash] = self._make_dto(matrix_hash, matrix)
+        return matrix_hash
 
     def get(self, matrix_id: str) -> Optional[MatrixDTO]:
         return self._content.get(matrix_id, None)
@@ -205,7 +152,7 @@ def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path:
     return FileStudy(config, tree)
 
 
-class StudyInterfaceMock(StudyInterface):
+class FileStudyInterface(StudyInterface):
 
     def __init__(self, file_study: FileStudy):
         self.file_study = file_study
@@ -215,38 +162,33 @@ class StudyInterfaceMock(StudyInterface):
         return self.file_study
 
     def add_commands(self, commands: Sequence[ICommand]) -> None:
-        self.commands.extend(commands)
-
-
-class StudiesRepositoryMock(StudiesRepository):
-
-    def __init__(self, studies: Dict[str, FileStudy]) -> None:
-        self._studies = studies
-
-    def get_study_interface(self, study: Study) -> StudyInterface:
-        return StudyInterfaceMock(self._studies[study.id])
+        for command in commands:
+            result = command.apply(self.file_study)
+            if not result.status:
+                raise CommandApplicationError(result.message)
+        self.file_study.tree.denormalize()
 
 
 @pytest.fixture
+def matrix_service() -> ISimpleMatrixService:
+    return InMemorySimpleMatrixService()
+
+
 @pytest.fixture
-def manager(study_legacy_uuid: str, study_path) -> ThermalManager:
-    matrix_service = InMemorySimpleMatrixService()
-    file_study = create_file_study(matrix_service, study_id=study_legacy_uuid, path=study_path)
-    study_repo = StudiesRepositoryMock({study_legacy_uuid: file_study})
+def manager(matrix_service: ISimpleMatrixService, study_path) -> ThermalManager:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     matrix_constants.init_constant_matrices()
-    return ThermalManager(
-        CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service), study_repo
-    )
+    return ThermalManager(CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service))
+
+
+@pytest.fixture
+def study_interface(matrix_service: ISimpleMatrixService, study_path) -> FileStudyInterface:
+    file_study = create_file_study(matrix_service, study_id="my-study", path=study_path)
+    return FileStudyInterface(file_study)
 
 
 class TestThermalManager:
-    def test_get_cluster__study_legacy(
-        self,
-        db_session: Session,
-        manager: ThermalManager,
-        study_legacy_uuid: str,
-    ):
+    def test_get_cluster__study_legacy(self, manager: ThermalManager, study_interface: StudyInterface):
         """
         Given a legacy study with a thermal cluster,
         When we get the cluster,
@@ -254,10 +196,9 @@ class TestThermalManager:
         Every property related to version 860 or above should be None.
         """
         # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_legacy_uuid)
 
         # Run the method being tested
-        form = manager.get_cluster(study, area_id="north", cluster_id="2 avail and must 1")
+        form = manager.get_cluster(study_interface, area_id="north", cluster_id="2 avail and must 1")
 
         # Assert that the returned fields match the expected fields
         actual = form.model_dump(by_alias=True)
@@ -306,9 +247,8 @@ class TestThermalManager:
 
     def test_get_clusters__study_legacy(
         self,
-        db_session: Session,
         manager: ThermalManager,
-        study_legacy_uuid: str,
+        study_interface: StudyInterface,
     ):
         """
         Given a legacy study with thermal clusters,
@@ -316,11 +256,8 @@ class TestThermalManager:
         Then we should get all cluster properties with the correct names and IDs.
         Every property related to version 860 or above should be None.
         """
-        # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_legacy_uuid)
-
         # Run the method being tested
-        groups = manager.get_clusters(study, area_id="north")
+        groups = manager.get_clusters(study_interface, area_id="north")
 
         # Assert that the returned fields match the expected fields
         actual = [form.model_dump(by_alias=True) for form in groups]
@@ -448,7 +385,7 @@ class TestThermalManager:
     def test_create_cluster__study_legacy(
         self,
         manager: ThermalManager,
-        study_legacy_uuid: str,
+        study_interface: StudyInterface,
     ):
         """
         Given a legacy study,
@@ -456,146 +393,137 @@ class TestThermalManager:
         Then we should get the cluster properties with the correct name and ID.
         Every property related to version 860 or above should be None.
         """
-        with db():
-            # The study must be fetched from the database
-            study: RawStudy = db.session.query(Study).get(study_legacy_uuid)
+        # Given the following arguments
+        props = dict(
+            name="New Cluster",
+            group=ThermalClusterGroup.NUCLEAR,
+            enabled=True,
+            unitCount=350,
+            nominalCapacity=1000,
+            genTs=LocalTSGenerationBehavior.USE_GLOBAL,
+            minStablePower=0,
+            minUpTime=15,
+            minDownTime=20,
+            co2=12.59,
+        )
+        cluster_data = ThermalClusterCreation(**props)
+        form = manager.create_cluster(study_interface, area_id="north", cluster_data=cluster_data)
 
-            # Given the following arguments
-            props = dict(
-                name="New Cluster",
-                group=ThermalClusterGroup.NUCLEAR,
-                enabled=True,
-                unitCount=350,
-                nominalCapacity=1000,
-                genTs=LocalTSGenerationBehavior.USE_GLOBAL,
-                minStablePower=0,
-                minUpTime=15,
-                minDownTime=20,
-                co2=12.59,
-            )
-            cluster_data = ThermalClusterCreation(**props)
-            form = manager.create_cluster(study, area_id="north", cluster_data=cluster_data)
-
-            # Assert that the returned fields match the expected fields
-            actual = form.model_dump(by_alias=True)
-            expected = {
-                "co2": 12.59,
-                "enabled": True,
-                "fixedCost": 0.0,
-                "genTs": LocalTSGenerationBehavior.USE_GLOBAL,
-                "group": ThermalClusterGroup.NUCLEAR,
-                "id": "New Cluster",
-                "lawForced": LawOption.UNIFORM,
-                "lawPlanned": LawOption.UNIFORM,
-                "marginalCost": 0.0,
-                "marketBidCost": 0.0,
-                "minDownTime": 20,
-                "minStablePower": 0.0,
-                "minUpTime": 15,
-                "mustRun": False,
-                "name": "New Cluster",
-                "nh3": None,
-                "nmvoc": None,
-                "nominalCapacity": 1000.0,
-                "nox": None,
-                "op1": None,
-                "op2": None,
-                "op3": None,
-                "op4": None,
-                "op5": None,
-                "pm10": None,
-                "pm25": None,
-                "pm5": None,
-                "so2": None,
-                "costGeneration": None,
-                "efficiency": None,
-                "variableOMCost": None,
-                "spinning": 0.0,
-                "spreadCost": 0.0,
-                "startupCost": 0.0,
-                "unitCount": 350,
-                "volatilityForced": 0.0,
-                "volatilityPlanned": 0.0,
-            }
-            assert actual == expected
+        # Assert that the returned fields match the expected fields
+        actual = form.model_dump(by_alias=True)
+        expected = {
+            "co2": 12.59,
+            "enabled": True,
+            "fixedCost": 0.0,
+            "genTs": LocalTSGenerationBehavior.USE_GLOBAL,
+            "group": ThermalClusterGroup.NUCLEAR,
+            "id": "New Cluster",
+            "lawForced": LawOption.UNIFORM,
+            "lawPlanned": LawOption.UNIFORM,
+            "marginalCost": 0.0,
+            "marketBidCost": 0.0,
+            "minDownTime": 20,
+            "minStablePower": 0.0,
+            "minUpTime": 15,
+            "mustRun": False,
+            "name": "New Cluster",
+            "nh3": None,
+            "nmvoc": None,
+            "nominalCapacity": 1000.0,
+            "nox": None,
+            "op1": None,
+            "op2": None,
+            "op3": None,
+            "op4": None,
+            "op5": None,
+            "pm10": None,
+            "pm25": None,
+            "pm5": None,
+            "so2": None,
+            "costGeneration": None,
+            "efficiency": None,
+            "variableOMCost": None,
+            "spinning": 0.0,
+            "spreadCost": 0.0,
+            "startupCost": 0.0,
+            "unitCount": 350,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+        }
+        assert actual == expected
 
     def test_update_cluster(
         self,
         manager: ThermalManager,
-        study_legacy_uuid: str,
+        study_interface: StudyInterface,
     ):
-        with db():
-            # The study must be fetched from the database
-            study: RawStudy = db.session.query(Study).get(study_legacy_uuid)
 
-            # When some properties of the cluster are updated
-            cluster_data = ThermalClusterInput(name="New name", nominalCapacity=2000)
-            manager.update_cluster(study, area_id="north", cluster_id="2 avail and must 1", cluster_data=cluster_data)
+        # When some properties of the cluster are updated
+        cluster_data = ThermalClusterInput(name="New name", nominalCapacity=2000)
+        manager.update_cluster(
+            study_interface, area_id="north", cluster_id="2 avail and must 1", cluster_data=cluster_data
+        )
 
-            # Assert that the returned fields match the expected fields
-            form = manager.get_cluster(study, area_id="north", cluster_id="2 avail and must 1")
-            actual = form.model_dump(by_alias=True)
-            expected = {
-                "id": "2 avail and must 1",
-                "group": ThermalClusterGroup.GAS,
-                "name": "New name",
-                "enabled": False,
-                "unitCount": 100,
-                "nominalCapacity": 2000.0,
-                "genTs": LocalTSGenerationBehavior.USE_GLOBAL,
-                "minStablePower": 0.0,
-                "minUpTime": 1,
-                "minDownTime": 1,
-                "mustRun": True,
-                "spinning": 0.0,
-                "volatilityForced": 0.0,
-                "volatilityPlanned": 0.0,
-                "lawForced": LawOption.UNIFORM,
-                "lawPlanned": LawOption.UNIFORM,
-                "marginalCost": 0.0,
-                "spreadCost": 0.0,
-                "fixedCost": 0.0,
-                "startupCost": 0.0,
-                "marketBidCost": 0.0,
-                "co2": 7.0,
-                # Pollutant values are `None` because they are not defined before version 8.6.
-                "nh3": None,
-                "so2": None,
-                "nox": None,
-                "pm25": None,
-                "pm5": None,
-                "pm10": None,
-                "nmvoc": None,
-                "op1": None,
-                "op2": None,
-                "op3": None,
-                "op4": None,
-                "op5": None,
-                # These values are also None as they are defined in v8.7+
-                "costGeneration": None,
-                "efficiency": None,
-                "variableOMCost": None,
-            }
-            assert actual == expected
+        # Assert that the returned fields match the expected fields
+        form = manager.get_cluster(study_interface, area_id="north", cluster_id="2 avail and must 1")
+        actual = form.model_dump(by_alias=True)
+        expected = {
+            "id": "2 avail and must 1",
+            "group": ThermalClusterGroup.GAS,
+            "name": "New name",
+            "enabled": False,
+            "unitCount": 100,
+            "nominalCapacity": 2000.0,
+            "genTs": LocalTSGenerationBehavior.USE_GLOBAL,
+            "minStablePower": 0.0,
+            "minUpTime": 1,
+            "minDownTime": 1,
+            "mustRun": True,
+            "spinning": 0.0,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+            "lawForced": LawOption.UNIFORM,
+            "lawPlanned": LawOption.UNIFORM,
+            "marginalCost": 0.0,
+            "spreadCost": 0.0,
+            "fixedCost": 0.0,
+            "startupCost": 0.0,
+            "marketBidCost": 0.0,
+            "co2": 7.0,
+            # Pollutant values are `None` because they are not defined before version 8.6.
+            "nh3": None,
+            "so2": None,
+            "nox": None,
+            "pm25": None,
+            "pm5": None,
+            "pm10": None,
+            "nmvoc": None,
+            "op1": None,
+            "op2": None,
+            "op3": None,
+            "op4": None,
+            "op5": None,
+            # These values are also None as they are defined in v8.7+
+            "costGeneration": None,
+            "efficiency": None,
+            "variableOMCost": None,
+        }
+        assert actual == expected
 
     def test_delete_clusters(
         self,
         manager: ThermalManager,
-        study_legacy_uuid: str,
+        study_interface: StudyInterface,
     ):
-        with db():
-            # The study must be fetched from the database
-            study: RawStudy = db.session.query(Study).get(study_legacy_uuid)
+        # When the clusters are deleted
+        manager.delete_clusters(study_interface, area_id="north", cluster_ids=["2 avail and must 1", "on and must 2"])
 
-            # When the clusters are deleted
-            manager.delete_clusters(study, area_id="north", cluster_ids=["2 avail and must 1", "on and must 2"])
+        # Assert that the returned fields match the expected fields
+        groups = manager.get_clusters(study_interface, area_id="north")
+        actual = [form.id for form in groups]
+        expected = ["2 avail and must 2"]
+        assert actual == expected
 
-            # Assert that the returned fields match the expected fields
-            groups = manager.get_clusters(study, area_id="north")
-            actual = [form.id for form in groups]
-            expected = ["2 avail and must 2"]
-            assert actual == expected
-
-            # A second attempt should raise an error
-            with pytest.raises(CommandApplicationError):
-                manager.delete_clusters(study, area_id="north", cluster_ids=["2 avail and must 1"])
+        # A second attempt should raise an error
+        with pytest.raises(CommandApplicationError):
+            manager.delete_clusters(study_interface, area_id="north", cluster_ids=["2 avail and must 1"])
