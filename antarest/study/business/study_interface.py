@@ -57,7 +57,6 @@ class FileStudyInterface(StudyInterface):
 
     def __init__(self, file_study: FileStudy):
         self.file_study = file_study
-        self.commands: List[ICommand] = []
 
     @override
     def get_files(self) -> FileStudy:

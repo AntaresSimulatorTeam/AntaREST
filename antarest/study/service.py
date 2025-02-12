@@ -390,6 +390,12 @@ class StudyUpgraderTask:
 
 
 class RawStudyInterface(StudyInterface):
+    """
+    Raw study business domain interface.
+
+    Provides data from raw study service and applies commands instantly
+    on underlying files.
+    """
 
     def __init__(self, raw_service: RawStudyService, variant_service: VariantStudyService, study: RawStudy):
         self._raw_study_service = raw_service
@@ -435,6 +441,12 @@ class RawStudyInterface(StudyInterface):
 
 
 class VariantStudyInterface(StudyInterface):
+    """
+    Variant study business domain interface.
+
+    Provides data from variant study service and simply append commands
+    to the variant.
+    """
 
     def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
         self._variant_service = variant_service
