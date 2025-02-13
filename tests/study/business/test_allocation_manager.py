@@ -312,7 +312,7 @@ class TestAllocationManager:
         fields = manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
 
         expected_allocation = [
-            AllocationField.construct(area_id=area, coefficient=value)
+            AllocationField.model_construct(area_id=area, coefficient=value)
             for area, value in allocation_cfg[area_id]["[allocation]"].items()
         ]
         assert fields.allocation == expected_allocation

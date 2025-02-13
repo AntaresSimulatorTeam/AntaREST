@@ -376,7 +376,7 @@ class XpansionManager:
 
         actual_settings = self.get_xpansion_settings(study)
         settings_fields = new_xpansion_settings.model_dump(
-            mode="json", by_alias=False, exclude_none=True, exclude={"sensitivity_config"}
+            mode="json", exclude_none=True, exclude={"sensitivity_config"}
         )
         updated_settings = actual_settings.copy(deep=True, update=settings_fields)
 
