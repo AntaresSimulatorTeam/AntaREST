@@ -397,9 +397,7 @@ class STStorageManager:
             for storage_id, update_cluster in update_storages_by_ids.items():
                 # Update the storage cluster properties.
                 old_cluster = old_storages_by_ids[storage_id]
-                new_cluster = old_cluster.model_copy(
-                    update=update_cluster.model_dump(mode="json", exclude_none=True)
-                )
+                new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
                 new_storages_by_areas[area_id][storage_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
@@ -480,8 +478,8 @@ class STStorageManager:
         old_config = create_st_storage_config(study_version, **values)
 
         # use Python values to synchronize Config and Form values
-        new_values = form.model_dump(mode="json", by_alias=False, exclude_none=True)
-        new_config = old_config.copy(exclude={"id"}, update=new_values)
+        new_values = form.model_dump(mode="json", exclude_none=True)
+        new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
@@ -502,7 +500,7 @@ class STStorageManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = new_config.model_dump(mode="json", by_alias=False)
+        values = new_config.model_dump(mode="json", exclude={"id"})
         return STStorageOutput(**values, id=storage_id)
 
     def delete_storages(

@@ -123,7 +123,9 @@ class HydroManager:
             target_name = path.split("/")[-1]
             return hydro_config.get(target_name, {}).get(area_id, field_info["default_value"])
 
-        return ManagementOptionsFormFields.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return ManagementOptionsFormFields.model_construct(
+            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
+        )
 
     def set_field_values(
         self,

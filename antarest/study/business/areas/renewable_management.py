@@ -277,9 +277,8 @@ class RenewableManager:
         else:
             old_config = create_renewable_config(study_version, **values)
 
-        # use Python values to synchronize Config and Form values
-        new_values = cluster_data.model_dump(by_alias=False, exclude_none=True)
-        new_config = old_config.copy(exclude={"id"}, update=new_values)
+        new_values = cluster_data.model_dump(exclude_none=True)
+        new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
@@ -299,7 +298,7 @@ class RenewableManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = new_config.model_dump(by_alias=False)
+        values = new_config.model_dump(exclude={"id"})
         return RenewableClusterOutput(**values, id=cluster_id)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
@@ -395,13 +394,11 @@ class RenewableManager:
             for renewable_id, update_cluster in update_renewables_by_ids.items():
                 # Update the renewable cluster properties.
                 old_cluster = old_renewables_by_ids[renewable_id]
-                new_cluster = old_cluster.copy(update=update_cluster.model_dump(by_alias=False, exclude_none=True))
+                new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(exclude_none=True))
                 new_renewables_by_areas[area_id][renewable_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
-                properties = create_renewable_config(
-                    study_version, **new_cluster.model_dump(by_alias=False, exclude_none=True)
-                )
+                properties = create_renewable_config(study_version, **new_cluster.model_dump(exclude_none=True))
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
                 cmd = UpdateConfig(
                     target=path,

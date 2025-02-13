@@ -258,9 +258,7 @@ class ThermalManager:
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
                 old_cluster = old_thermals_by_ids[thermal_id]
-                new_cluster = old_cluster.model_copy(
-                    update=update_cluster.model_dump(mode="json", exclude_none=True)
-                )
+                new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
@@ -359,8 +357,8 @@ class ThermalManager:
             old_config = create_thermal_config(study_version, **values)
 
         # Use Python values to synchronize Config and Form values
-        new_values = cluster_data.model_dump(mode="json", by_alias=False, exclude_none=True)
-        new_config = old_config.copy(exclude={"id"}, update=new_values)
+        new_values = cluster_data.model_dump(mode="json", exclude_none=True)
+        new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
@@ -380,8 +378,8 @@ class ThermalManager:
         ]
         execute_or_add_commands(study, file_study, commands, self.storage_service)
 
-        values = {**new_config.model_dump(mode="json", by_alias=False), "id": cluster_id}
-        return ThermalClusterOutput.model_validate(values)
+        values = {**new_config.model_dump(mode="json", exclude={"id"})}
+        return ThermalClusterOutput(**values, id=cluster_id)
 
     def delete_clusters(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
