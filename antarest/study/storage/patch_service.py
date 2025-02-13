@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import pathlib
 from pathlib import Path
 from typing import Optional
 
@@ -39,7 +39,8 @@ class PatchService:
         patch = Patch()
         patch_path = Path(study.path) / PATCH_JSON
         if patch_path.exists():
-            patch = Patch.parse_file(patch_path)
+            json_string = pathlib.Path(patch_path).read_text()
+            patch = Patch.model_validate_json(json_string)
 
         return patch
 
@@ -47,7 +48,8 @@ class PatchService:
         patch = Patch()
         patch_path = (Path(file_study.config.study_path)) / PATCH_JSON
         if patch_path.exists():
-            patch = Patch.parse_file(patch_path)
+            json_string = pathlib.Path(patch_path).read_text()
+            patch = Patch.model_validate_json(json_string)
         return patch
 
     def set_reference_output(

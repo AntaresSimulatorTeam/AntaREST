@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import re
 import typing as t
 from unittest.mock import ANY

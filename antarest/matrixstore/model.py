@@ -219,8 +219,8 @@ MatrixData = float
 class MatrixDTO(AntaresBaseModel):
     width: int
     height: int
-    index: List[str]
-    columns: List[str]
+    index: List[int | str]
+    columns: List[int | str]
     data: List[List[MatrixData]]
     created_at: int = 0
     id: str = ""

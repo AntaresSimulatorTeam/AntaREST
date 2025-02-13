@@ -13,8 +13,6 @@
 from pathlib import Path
 from typing import Callable
 
-import pytest
-
 # noinspection PyUnresolvedReferences
 from tests.conftest_db import *
 
