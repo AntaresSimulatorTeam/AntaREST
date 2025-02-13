@@ -258,15 +258,15 @@ class ThermalManager:
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
                 old_cluster = old_thermals_by_ids[thermal_id]
-                new_cluster = old_cluster.copy(
-                    update=update_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
+                new_cluster = old_cluster.model_copy(
+                    update=update_cluster.model_dump(mode="json", exclude_none=True)
                 )
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_thermal_config(
                     study_version,
-                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
+                    **new_cluster.model_dump(mode="json", exclude_none=True),
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
                 cmd = UpdateConfig(

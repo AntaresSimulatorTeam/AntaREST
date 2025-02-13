@@ -328,7 +328,7 @@ class CorrelationManager:
         # noinspection PyTypeChecker
         data = [[c for i, c in enumerate(row) if area_ids[i] in columns] for row in array.tolist()]
 
-        return CorrelationMatrix.construct(index=area_ids, columns=columns, data=data)
+        return CorrelationMatrix.model_construct(index=area_ids, columns=columns, data=data)
 
     def set_correlation_matrix(
         self,
@@ -366,4 +366,4 @@ class CorrelationManager:
         # noinspection PyTypeChecker
         data = [[c for i, c in enumerate(row) if area_ids[i] in matrix.columns] for row in array.tolist()]
 
-        return CorrelationMatrix.construct(index=area_ids, columns=matrix.columns, data=data)
+        return CorrelationMatrix.model_construct(index=area_ids, columns=matrix.columns, data=data)
