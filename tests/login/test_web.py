@@ -21,7 +21,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.application import AppBuildContext, create_app_ctxt
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters

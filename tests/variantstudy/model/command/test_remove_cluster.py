@@ -19,9 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorage880Properties
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal870Properties,
     ThermalClusterGroup,
     ThermalProperties,
 )
