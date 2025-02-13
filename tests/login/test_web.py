@@ -95,7 +95,7 @@ def create_auth_token(
             impersonator=0,
             type="users",
             groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
-        ).json(),
+        ).model_dump_json(),
     )
     return {"Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"}
 
