@@ -934,10 +934,10 @@ class BindingConstraintManager:
             # convert table mode object to an object that's the output of this function
             # and we also update the cofig objet that will be serialized in the INI
             bc_props = create_binding_constraint_config(study_version, **value.dict())
-            upd_obj = config[dict_config[bc_id]]
-            upd_obj_copy = copy.deepcopy(upd_obj)
-            update_binding_constraint_from_props(upd_obj, bc_props)
-            output = self.constraint_model_adapter(upd_obj_copy, study_version)
+            bc_config = config[dict_config[bc_id]]
+            bc_config_copy = copy.deepcopy(bc_config)
+            update_binding_constraint_from_props(bc_config, bc_props)
+            output = self.constraint_model_adapter(bc_config_copy, study_version)
             updated_constraints[bc_id] = output
 
         # Updates the file only once with all the information

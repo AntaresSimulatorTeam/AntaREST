@@ -155,7 +155,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
             bc = config[dict_config[bc_id]]
             bc_copy = copy.deepcopy(bc)
             bc.update(bc_props_as_dict)
-            if bc_props.time_step and bc_props.time_step != BindingConstraintFrequency(bc_copy["type"]):
+            if "time_step" in bc_props_as_dict and bc_props.time_step != BindingConstraintFrequency(bc_copy["type"]):
                 # The user changed the time step, we need to update the matrix accordingly
                 for [target, next_matrix] in self.generate_replacement_matrices(
                     bc_id, study_version, bc_props, bc_props.operator
@@ -188,7 +188,11 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                             status=False,
                             message=f"Couldn't save matrix {target}.",
                         )
-            if bc_props.operator and study_version >= STUDY_VERSION_8_7:
+            if (
+                "operator" in bc_props_as_dict
+                and bc_props.operator != bc_copy["operator"]
+                and study_version >= STUDY_VERSION_8_7
+            ):
                 # The user changed the operator, we have to rename matrices accordingly
                 existing_operator = BindingConstraintOperator(bc_copy["operator"])
                 update_matrices_names(file_study, bc_id, existing_operator, bc_props.operator)
