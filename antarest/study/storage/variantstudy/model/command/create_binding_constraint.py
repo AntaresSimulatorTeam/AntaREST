@@ -34,7 +34,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.field_validators im
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.business.utils import validate_matrix
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     parse_bindings_coeffs_and_save_into_config,
 )
@@ -286,7 +286,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             return methods["before_v87"][time_step]() if version < 870 else methods["after_v87"][time_step]()
         if isinstance(v, str):
             # Check the matrix link
-            return validate_matrix(v, {"command_context": self.command_context})
+            return validate_matrix(strip_matrix_protocol(v), {"command_context": self.command_context})
         if isinstance(v, list):
             check_matrix_values(time_step, v, version)
             return validate_matrix(v, {"command_context": self.command_context})

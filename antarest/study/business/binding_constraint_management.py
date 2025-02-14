@@ -904,6 +904,7 @@ class BindingConstraintManager:
         command = UpdateBindingConstraint(**args)
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
+
         updated_matrices = [term for term in [m.value for m in TermMatrices] if getattr(data, term)]
         if updated_matrices:
             time_step = data.time_step or existing_constraint.time_step
@@ -954,7 +955,7 @@ class BindingConstraintManager:
 
         # Variant study with less than 50 updated constraints
         updated_constraints = {}
-        if len(bcs_by_ids) < 50 and isinstance(study, VariantStudy):
+        if len(bcs_by_ids) < 50:
             existing_constraints = {bc.id: bc for bc in self.get_binding_constraints(study)}
             for bc_id, data in bcs_by_ids.items():
                 updated_constraints[bc_id] = self.update_binding_constraint(
