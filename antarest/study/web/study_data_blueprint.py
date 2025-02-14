@@ -1665,8 +1665,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        manager = CorrelationManager(study_service.storage_service)
-        return manager.get_correlation_matrix(
+        return study_service.correlation_manager.get_correlation_matrix(
             all_areas,
             study,
             columns.split(",") if columns else [],
@@ -1713,8 +1712,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        manager = CorrelationManager(study_service.storage_service)
-        return manager.set_correlation_matrix(all_areas, study, matrix)
+        return study_service.correlation_manager.set_correlation_matrix(all_areas, study, matrix)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
@@ -1742,8 +1740,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        manager = CorrelationManager(study_service.storage_service)
-        return manager.get_correlation_form_fields(all_areas, study, area_id)
+        return study_service.correlation_manager.get_correlation_form_fields(all_areas, study, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
@@ -1781,8 +1778,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        manager = CorrelationManager(study_service.storage_service)
-        return manager.set_correlation_form_fields(all_areas, study, area_id, data)
+        return study_service.correlation_manager.set_correlation_form_fields(all_areas, study, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/config/advancedparameters/form",
@@ -2610,17 +2606,15 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         manager: STStorageManager | RenewableManager | ThermalManager
         if cluster_type == ClusterType.ST_STORAGES:
-            manager = STStorageManager(study_service.storage_service)
+            manager = study_service.st_storage_manager
         elif cluster_type == ClusterType.RENEWABLES:
-            manager = RenewableManager(study_service.storage_service)
+            manager = study_service.renewable_manager
         elif cluster_type == ClusterType.THERMALS:
-            study_interface = study_service.get_study_interface(study)
-            return study_service.thermal_manager.duplicate_cluster(
-                study_interface, area_id, source_cluster_id, new_cluster_name
-            )
+            manager = study_service.thermal_manager
         else:  # pragma: no cover
             raise NotImplementedError(f"Cluster type {cluster_type} not implemented")
 
-        return manager.duplicate_cluster(study, area_id, source_cluster_id, new_cluster_name)
+        study_interface = study_service.get_study_interface(study)
+        return manager.duplicate_cluster(study_interface, area_id, source_cluster_id, new_cluster_name)
 
     return bp

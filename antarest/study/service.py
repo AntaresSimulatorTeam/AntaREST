@@ -414,6 +414,11 @@ class RawStudyInterface(StudyInterface):
 
     @override
     @property
+    def id(self) -> str:
+        return self._study.id
+
+    @override
+    @property
     def version(self) -> StudyVersion:
         return StudyVersion.parse(self._study.version)
 
@@ -478,6 +483,11 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     @property
+    def id(self) -> str:
+        return self._study.id
+
+    @override
+    @property
     def version(self) -> StudyVersion:
         return StudyVersion.parse(self._study.version)
 
@@ -535,27 +545,27 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
-        self.district_manager = DistrictManager(self.storage_service)
+        self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
-        self.config_manager = ConfigManager(self.storage_service)
-        self.general_manager = GeneralManager(self.storage_service)
-        self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
-        self.optimization_manager = OptimizationManager(self.storage_service)
-        self.adequacy_patch_manager = AdequacyPatchManager(self.storage_service)
-        self.advanced_parameters_manager = AdvancedParamsManager(self.storage_service)
-        self.hydro_manager = HydroManager(self.storage_service)
-        self.allocation_manager = AllocationManager(self.storage_service)
-        self.properties_manager = PropertiesManager(self.storage_service)
-        self.renewable_manager = RenewableManager(self.storage_service)
+        self.config_manager = ConfigManager(command_context)
+        self.general_manager = GeneralManager(command_context)
+        self.thematic_trimming_manager = ThematicTrimmingManager(command_context)
+        self.optimization_manager = OptimizationManager(command_context)
+        self.adequacy_patch_manager = AdequacyPatchManager(command_context)
+        self.advanced_parameters_manager = AdvancedParamsManager(command_context)
+        self.hydro_manager = HydroManager(command_context)
+        self.allocation_manager = AllocationManager(command_context)
+        self.properties_manager = PropertiesManager(command_context)
+        self.renewable_manager = RenewableManager(command_context)
         self.thermal_manager = create_thermal_manager(command_context)
-        self.st_storage_manager = STStorageManager(self.storage_service)
-        self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
-        self.playlist_manager = PlaylistManager(self.storage_service)
-        self.scenario_builder_manager = ScenarioBuilderManager(self.storage_service)
-        self.xpansion_manager = XpansionManager(self.storage_service)
-        self.matrix_manager = MatrixManager(self.storage_service)
-        self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
-        self.correlation_manager = CorrelationManager(self.storage_service)
+        self.st_storage_manager = STStorageManager(command_context)
+        self.ts_config_manager = TimeSeriesConfigManager(command_context)
+        self.playlist_manager = PlaylistManager(command_context)
+        self.scenario_builder_manager = ScenarioBuilderManager(command_context)
+        self.xpansion_manager = XpansionManager(command_context)
+        self.matrix_manager = MatrixManager(command_context)
+        self.binding_constraint_manager = BindingConstraintManager(command_context)
+        self.correlation_manager = CorrelationManager(command_context)
         self.table_mode_manager = TableModeManager(
             self.area_manager,
             self.links_manager,

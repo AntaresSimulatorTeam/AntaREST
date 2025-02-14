@@ -30,6 +30,11 @@ class StudyInterface(ABC):
 
     @property
     @abstractmethod
+    def id(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
     def version(self) -> StudyVersion:
         raise NotImplementedError()
 
@@ -77,6 +82,11 @@ class FileStudyInterface(StudyInterface):
 
     def __init__(self, file_study: FileStudy):
         self.file_study = file_study
+
+    @override
+    @property
+    def id(self) -> str:
+        return self.file_study.config.study_id
 
     @override
     @property

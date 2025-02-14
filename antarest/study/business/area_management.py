@@ -293,7 +293,7 @@ class AreaManager:
         area_ids = list(file_study.config.areas)
         return _get_ui_info_map(file_study, area_ids)
 
-    def get_layers(self, study: RawStudy) -> List[LayerInfoDTO]:
+    def get_layers(self, study: StudyInterface) -> List[LayerInfoDTO]:
         file_study = study.get_files()
         area_ids = list(file_study.config.areas)
         ui_info_map = _get_ui_info_map(file_study, area_ids)

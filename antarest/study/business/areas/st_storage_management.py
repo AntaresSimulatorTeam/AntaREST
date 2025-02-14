@@ -332,7 +332,7 @@ class STStorageManager:
 
     def get_all_storages_props(
         self,
-        study: Study,
+        study: StudyInterface,
     ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         """
         Retrieve all short-term storages from all areas within a study.
