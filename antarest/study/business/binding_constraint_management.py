@@ -880,7 +880,6 @@ class BindingConstraintManager:
         data: ConstraintInput,
         existing_constraint: Optional[ConstraintOutput] = None,
     ) -> ConstraintOutput:
-        file_study = study.get_files()
         existing_constraint = existing_constraint or self.get_binding_constraint(study, binding_constraint_id)
 
         study_version = StudyVersion.parse(study.version)
@@ -905,13 +904,12 @@ class BindingConstraintManager:
         command = UpdateBindingConstraint(**args)
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
-        if isinstance(study, VariantStudy):
-            updated_matrices = [term for term in [m.value for m in TermMatrices] if getattr(data, term)]
-            if updated_matrices:
-                time_step = data.time_step or existing_constraint.time_step
-                command.validates_and_fills_matrices(
-                    time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False  # type: ignore
-                )
+        updated_matrices = [term for term in [m.value for m in TermMatrices] if getattr(data, term)]
+        if updated_matrices:
+            time_step = data.time_step or existing_constraint.time_step
+            command.validates_and_fills_matrices(
+                time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False  # type: ignore
+            )
 
         study.add_commands([command])
 

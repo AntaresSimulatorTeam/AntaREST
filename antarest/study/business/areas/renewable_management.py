@@ -306,7 +306,6 @@ class RenewableManager:
             area_id: The identifier of the area where clusters will be deleted.
             cluster_ids: A sequence of cluster identifiers to be deleted.
         """
-        file_study = study.get_files()
         commands = [
             RemoveRenewablesCluster(
                 area_id=area_id,
