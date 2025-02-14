@@ -404,7 +404,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.district_manager.get_districts(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.district_manager.get_districts(study_interface)
 
     @bp.post(
         "/studies/{uuid}/districts",
@@ -423,7 +424,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.district_manager.create_district(study, dto)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.district_manager.create_district(study_interface, dto)
 
     @bp.put(
         "/studies/{uuid}/districts/{district_id}",
@@ -442,7 +444,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.district_manager.update_district(study, district_id, dto)
+        study_interface = study_service.get_study_interface(study)
+        study_service.district_manager.update_district(study_interface, district_id, dto)
 
     @bp.delete(
         "/studies/{uuid}/districts/{district_id}",
@@ -460,7 +463,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.district_manager.remove_district(study, district_id)
+        study_interface = study_service.get_study_interface(study)
+        study_service.district_manager.remove_district(study_interface, district_id)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -480,8 +484,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.hydro_manager.get_field_values(study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.hydro_manager.get_field_values(study_interface, area_id)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -500,8 +504,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.hydro_manager.set_field_values(study, data, area_id)
+        study_interface = study_service.get_study_interface(study)
+        study_service.hydro_manager.set_field_values(study_interface, data, area_id)
 
     # noinspection SpellCheckingInspection
     @bp.get(
@@ -522,7 +526,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.hydro_manager.get_inflow_structure(study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.hydro_manager.get_inflow_structure(study_interface, area_id)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
@@ -542,7 +547,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.hydro_manager.update_inflow_structure(study, area_id, values)
+        study_interface = study_service.get_study_interface(study)
+        study_service.hydro_manager.update_inflow_structure(study_interface, area_id, values)
 
     @bp.put(
         "/studies/{uuid}/matrix",
@@ -587,7 +593,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.thematic_trimming_manager.get_field_values(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thematic_trimming_manager.get_field_values(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/thematictrimming/form",
@@ -605,7 +612,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.thematic_trimming_manager.set_field_values(study, field_values)
+        study_interface = study_service.get_study_interface(study)
+        study_service.thematic_trimming_manager.set_field_values(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/playlist/form",
@@ -624,8 +632,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.playlist_manager.get_table_data(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.playlist_manager.get_table_data(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
@@ -643,7 +651,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.playlist_manager.set_table_data(study, data)
+        study_interface = study_service.get_study_interface(study)
+        study_service.playlist_manager.set_table_data(study_interface, data)
 
     @bp.get(
         "/studies/{uuid}/config/playlist",
@@ -661,7 +670,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.config_manager.get_playlist(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.config_manager.get_playlist(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/playlist",
@@ -682,7 +692,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.config_manager.set_playlist(study, playlist, weights, reverse, active)
+        study_interface = study_service.get_study_interface(study)
+        study_service.config_manager.set_playlist(study_interface, playlist, weights, reverse, active)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
@@ -700,8 +711,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.scenario_builder_manager.get_config(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.scenario_builder_manager.get_config(study_interface)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
@@ -782,7 +793,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        table_form = study_service.scenario_builder_manager.get_scenario_by_type(study, scenario_type)
+        study_interface = study_service.get_study_interface(study)
+        table_form = study_service.scenario_builder_manager.get_scenario_by_type(study_interface, scenario_type)
         return {scenario_type: table_form}
 
     @bp.put(
@@ -801,7 +813,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.scenario_builder_manager.update_config(study, data)
+        study_interface = study_service.get_study_interface(study)
+        study_service.scenario_builder_manager.update_config(study_interface, data)
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
@@ -844,8 +857,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        study_interface = study_service.get_study_interface(study)
         table_form = data[scenario_type]
-        table_form = study_service.scenario_builder_manager.update_scenario_by_type(study, table_form, scenario_type)
+        table_form = study_service.scenario_builder_manager.update_scenario_by_type(
+            study_interface, table_form, scenario_type
+        )
         return {scenario_type: table_form}
 
     @bp.get(
@@ -865,8 +881,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.general_manager.get_field_values(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.general_manager.get_field_values(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/general/form",
@@ -884,8 +900,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.general_manager.set_field_values(study, field_values)
+        study_interface = study_service.get_study_interface(study)
+        study_service.general_manager.set_field_values(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/optimization/form",
@@ -904,8 +920,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.optimization_manager.get_field_values(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.optimization_manager.get_field_values(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/optimization/form",
@@ -923,8 +939,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.optimization_manager.set_field_values(study, field_values)
+        study_interface = study_service.get_study_interface(study)
+        study_service.optimization_manager.set_field_values(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/adequacypatch/form",
@@ -943,8 +959,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.adequacy_patch_manager.get_field_values(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.adequacy_patch_manager.get_field_values(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/adequacypatch/form",
@@ -962,8 +978,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.adequacy_patch_manager.set_field_values(study, field_values)
+        study_interface = study_service.get_study_interface(study)
+        study_service.adequacy_patch_manager.set_field_values(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/timeseries/config",
@@ -982,8 +998,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.ts_config_manager.get_values(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.ts_config_manager.get_values(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/timeseries/config",
@@ -999,7 +1015,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.ts_config_manager.set_values(study, field_values)
+        study_interface = study_service.get_study_interface(study)
+        study_service.ts_config_manager.set_values(study_interface, field_values)
 
     @bp.get(
         path="/table-schema/{table_type}",
@@ -1044,8 +1061,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study_interface = study_service.get_study_interface(study)
         column_list = columns.split(",") if columns else []
-        table_data = study_service.table_mode_manager.get_table_data(study, table_type, column_list)
+        table_data = study_service.table_mode_manager.get_table_data(study_interface, table_type, column_list)
         return table_data
 
     @bp.put(
@@ -1089,7 +1107,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        table_data = study_service.table_mode_manager.update_table_data(study, table_type, data)
+        study_interface = study_service.get_study_interface(study)
+        table_data = study_service.table_mode_manager.update_table_data(study_interface, table_type, data)
         return table_data
 
     @bp.post(
@@ -1148,6 +1167,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study_interface = study_service.get_study_interface(study)
         filters = ConstraintFilters(
             enabled=enabled,
             operator=operator,
@@ -1159,7 +1179,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             link_id=link_id,
             cluster_id=cluster_id,
         )
-        return study_service.binding_constraint_manager.get_binding_constraints(study, filters)
+        return study_service.binding_constraint_manager.get_binding_constraints(study_interface, filters)
 
     @bp.get(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -1178,7 +1198,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.get_binding_constraint(study, binding_constraint_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.get_binding_constraint(study_interface, binding_constraint_id)
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -1197,7 +1218,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.update_binding_constraint(study, binding_constraint_id, data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.update_binding_constraint(
+            study_interface, binding_constraint_id, data
+        )
 
     @bp.get(
         "/studies/{uuid}/constraint-groups",
@@ -1223,7 +1247,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        result = study_service.binding_constraint_manager.get_grouped_constraints(study)
+        study_interface = study_service.get_study_interface(study)
+        result = study_service.binding_constraint_manager.get_grouped_constraints(study_interface)
         return result
 
     @bp.get(
@@ -1256,7 +1281,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.validate_constraint_groups(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.validate_constraint_groups(study_interface)
 
     @bp.get(
         "/studies/{uuid}/constraint-groups/{group}",
@@ -1287,7 +1313,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        result = study_service.binding_constraint_manager.get_constraints_by_group(study, group)
+        study_interface = study_service.get_study_interface(study)
+        result = study_service.binding_constraint_manager.get_constraints_by_group(study_interface, group)
         return result
 
     @bp.get(
@@ -1322,7 +1349,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.validate_constraint_group(study, group)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.validate_constraint_group(study_interface, group)
 
     @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
     def create_binding_constraint(
@@ -1336,7 +1364,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.binding_constraint_manager.create_binding_constraint(study, data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.create_binding_constraint(study_interface, data)
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -1355,8 +1384,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        study_interface = study_service.get_study_interface(study)
         return study_service.binding_constraint_manager.duplicate_binding_constraint(
-            study, binding_constraint_id, new_constraint_name
+            study_interface, binding_constraint_id, new_constraint_name
         )
 
     @bp.delete(
@@ -1374,7 +1404,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.remove_binding_constraint(study, binding_constraint_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.remove_binding_constraint(
+            study_interface, binding_constraint_id
+        )
 
     @bp.delete(
         "/studies/{uuid}/bindingconstraints",
@@ -1391,8 +1424,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        study_interface = study_service.get_study_interface(study)
         return study_service.binding_constraint_manager.remove_multiple_binding_constraints(
-            study, binding_constraints_ids
+            study_interface, binding_constraints_ids
         )
 
     @bp.post(
@@ -1420,7 +1454,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.create_constraint_terms(study, binding_constraint_id, [term])
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.create_constraint_terms(
+            study_interface, binding_constraint_id, [term]
+        )
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",
@@ -1447,7 +1484,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.create_constraint_terms(study, binding_constraint_id, terms)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.create_constraint_terms(
+            study_interface, binding_constraint_id, terms
+        )
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term",
@@ -1474,7 +1514,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.update_constraint_terms(study, binding_constraint_id, [term])
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.update_constraint_terms(
+            study_interface, binding_constraint_id, [term]
+        )
 
     @bp.put(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/terms",
@@ -1501,7 +1544,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.binding_constraint_manager.update_constraint_terms(study, binding_constraint_id, terms)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.binding_constraint_manager.update_constraint_terms(
+            study_interface, binding_constraint_id, terms
+        )
 
     @bp.delete(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}/term/{term_id}",
@@ -1520,7 +1566,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.binding_constraint_manager.remove_constraint_term(study, binding_constraint_id, term_id)
+        study_interface = study_service.get_study_interface(study)
+        study_service.binding_constraint_manager.remove_constraint_term(study_interface, binding_constraint_id, term_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/hydro/allocation/matrix",
@@ -1549,7 +1596,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        return study_service.allocation_manager.get_allocation_matrix(study, all_areas)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.allocation_manager.get_allocation_matrix(study_interface, all_areas)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
@@ -1577,7 +1625,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        return study_service.allocation_manager.get_allocation_form_fields(all_areas, study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.allocation_manager.get_allocation_form_fields(all_areas, study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
@@ -1615,7 +1664,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        return study_service.allocation_manager.set_allocation_form_fields(all_areas, study, area_id, data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.allocation_manager.set_allocation_form_fields(all_areas, study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/areas/hydro/correlation/matrix",
@@ -1665,9 +1715,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
+        study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_matrix(
             all_areas,
-            study,
+            study_interface,
             columns.split(",") if columns else [],
         )
 
@@ -1712,7 +1763,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        return study_service.correlation_manager.set_correlation_matrix(all_areas, study, matrix)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.correlation_manager.set_correlation_matrix(all_areas, study_interface, matrix)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
@@ -1740,7 +1792,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        return study_service.correlation_manager.get_correlation_form_fields(all_areas, study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.correlation_manager.get_correlation_form_fields(all_areas, study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
@@ -1778,7 +1831,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             List[AreaInfoDTO],  # because `ui=False`
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False, params=params),
         )
-        return study_service.correlation_manager.set_correlation_form_fields(all_areas, study, area_id, data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.correlation_manager.set_correlation_form_fields(all_areas, study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/config/advancedparameters/form",
@@ -1798,8 +1852,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.advanced_parameters_manager.get_field_values(study)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.advanced_parameters_manager.get_field_values(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/advancedparameters/form",
@@ -1817,8 +1871,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
-        study_service.advanced_parameters_manager.set_field_values(study, field_values)
+        study_interface = study_service.get_study_interface(study)
+        study_service.advanced_parameters_manager.set_field_values(study_interface, field_values)
 
     @bp.put(
         "/studies/{uuid}/timeseries/generate",
@@ -1841,7 +1895,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-
         return study_service.generate_timeseries(study, params)
 
     @bp.get(
@@ -1864,8 +1917,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-
-        return study_service.properties_manager.get_field_values(study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.properties_manager.get_field_values(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
@@ -1886,8 +1939,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-
-        study_service.properties_manager.set_field_values(study, area_id, form_fields)
+        study_interface = study_service.get_study_interface(study)
+        study_service.properties_manager.set_field_values(study_interface, area_id, form_fields)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
@@ -1908,7 +1961,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.renewable_manager.get_clusters(study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.renewable_manager.get_clusters(study_interface, area_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
@@ -1930,7 +1984,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.renewable_manager.get_cluster(study, area_id, cluster_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.renewable_manager.get_cluster(study_interface, area_id, cluster_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
@@ -1975,7 +2030,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.renewable_manager.create_cluster(study, area_id, cluster_data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.renewable_manager.create_cluster(study_interface, area_id, cluster_data)
 
     @bp.patch(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
@@ -1996,7 +2052,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        return study_service.renewable_manager.update_cluster(study, area_id, cluster_id, cluster_data)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.renewable_manager.update_cluster(study_interface, area_id, cluster_id, cluster_data)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
@@ -2042,7 +2099,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        study_service.renewable_manager.delete_clusters(study, area_id, cluster_ids)
+        study_interface = study_service.get_study_interface(study)
+        study_service.renewable_manager.delete_clusters(study_interface, area_id, cluster_ids)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
@@ -2262,8 +2320,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
-        study_service.asserts_no_thermal_in_binding_constraints(study, area_id, cluster_ids)
         study_interface = study_service.get_study_interface(study)
+        study_service.asserts_no_thermal_in_binding_constraints(study, area_id, cluster_ids)
         study_service.thermal_manager.delete_clusters(study_interface, area_id, cluster_ids)
 
     @bp.get(
@@ -2306,7 +2364,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.st_storage_manager.get_storage(study, area_id, storage_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_storage(study_interface, area_id, storage_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages",
@@ -2346,7 +2405,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.st_storage_manager.get_storages(study, area_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_storages(study_interface, area_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
@@ -2384,7 +2444,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.st_storage_manager.get_matrix(study, area_id, storage_id, ts_name)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_matrix(study_interface, area_id, storage_id, ts_name)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
@@ -2418,7 +2479,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.st_storage_manager.update_matrix(study, area_id, storage_id, ts_name, ts)
+        study_interface = study_service.get_study_interface(study)
+        study_service.st_storage_manager.update_matrix(study_interface, area_id, storage_id, ts_name, ts)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/validate",
@@ -2448,7 +2510,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.st_storage_manager.validate_matrices(study, area_id, storage_id)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.validate_matrices(study_interface, area_id, storage_id)
 
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/storages",
@@ -2499,7 +2562,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.st_storage_manager.create_storage(study, area_id, form)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.create_storage(study_interface, area_id, form)
 
     @bp.patch(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
@@ -2551,7 +2615,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.st_storage_manager.update_storage(study, area_id, storage_id, form)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.update_storage(study_interface, area_id, storage_id, form)
 
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/storages",
@@ -2582,7 +2647,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        study_service.st_storage_manager.delete_storages(study, area_id, storage_ids)
+        study_interface = study_service.get_study_interface(study)
+        study_service.st_storage_manager.delete_storages(study_interface, area_id, storage_ids)
 
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/{cluster_type}/{source_cluster_id}",

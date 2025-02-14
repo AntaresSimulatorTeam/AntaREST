@@ -2195,14 +2195,15 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
+        study_interface = self.get_study_interface(study)
         self._assert_study_unarchived(study)
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
-            study, ConstraintFilters(area_name=area_id)
+            study_interface, ConstraintFilters(area_name=area_id)
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
-        self.area_manager.delete_area(self.get_study_interface(study), area_id)
+        self.area_manager.delete_area(study_interface, area_id)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2234,14 +2235,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        study_interface = self.get_study_interface(study)
         link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
-            study, ConstraintFilters(link_id=link_id)
+            study_interface, ConstraintFilters(link_id=link_id)
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
-        self.links_manager.delete_link(self.get_study_interface(study), area_from, area_to)
+        self.links_manager.delete_link(study_interface, area_from, area_to)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2446,18 +2448,21 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.xpansion_manager.create_xpansion_configuration(study, zipped_config)
+        study_interface = self.get_study_interface(study)
+        self.xpansion_manager.create_xpansion_configuration(study_interface, zipped_config)
 
     def delete_xpansion_configuration(self, uuid: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.xpansion_manager.delete_xpansion_configuration(study)
+        study_interface = self.get_study_interface(study)
+        self.xpansion_manager.delete_xpansion_configuration(study_interface)
 
     def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_xpansion_settings(study)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.get_xpansion_settings(study_interface)
 
     def update_xpansion_settings(
         self,
@@ -2468,7 +2473,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.update_xpansion_settings(study, xpansion_settings_dto)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.update_xpansion_settings(study_interface, xpansion_settings_dto)
 
     def add_candidate(
         self,
@@ -2479,17 +2485,20 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.add_candidate(study, xpansion_candidate_dto)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate_dto)
 
     def get_candidate(self, uuid: str, candidate_name: str, params: RequestParameters) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_candidate(study, candidate_name)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.get_candidate(study_interface, candidate_name)
 
     def get_candidates(self, uuid: str, params: RequestParameters) -> List[XpansionCandidateDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_candidates(study)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.get_candidates(study_interface)
 
     def update_xpansion_candidate(
         self,
@@ -2501,13 +2510,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.update_candidate(study, candidate_name, xpansion_candidate_dto)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.update_candidate(study_interface, candidate_name, xpansion_candidate_dto)
 
     def delete_xpansion_candidate(self, uuid: str, candidate_name: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.delete_candidate(study, candidate_name)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.delete_candidate(study_interface, candidate_name)
 
     def update_xpansion_constraints_settings(
         self,
@@ -2518,7 +2529,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.update_xpansion_constraints_settings(study, constraints_file_name)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
 
     def update_matrix(
         self,
@@ -2545,8 +2557,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        study_interface = self.get_study_interface(study)
         try:
-            self.matrix_manager.update_matrix(study, path, matrix_edit_instruction)
+            self.matrix_manager.update_matrix(study_interface, path, matrix_edit_instruction)
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
 
@@ -2876,6 +2889,7 @@ class StudyService:
 
         matrix_path = Path(path)
         study = self.get_study(study_id)
+        study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
             all_areas = cast(
@@ -2883,9 +2897,9 @@ class StudyService:
                 self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
             )
             if matrix_path.parts[-1] == "allocation":
-                hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
+                hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
             else:
-                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study_interface, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         # Gets the data and checks given path existence
@@ -2932,9 +2946,10 @@ class StudyService:
             ReferencedObjectDeletionNotAllowed: if a cluster is referenced in a binding constraint
         """
 
+        study_interface = self.get_study_interface(study)
         for cluster_id in cluster_ids:
             ref_bcs = self.binding_constraint_manager.get_binding_constraints(
-                study, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
+                study_interface, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
             )
             if ref_bcs:
                 binding_ids = [bc.id for bc in ref_bcs]
