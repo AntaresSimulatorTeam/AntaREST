@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import datetime
 import uuid
-from typing import MutableSequence, Optional, Tuple
+from typing import List, MutableSequence, Optional, Tuple
 
 import typing_extensions as te
 
@@ -93,7 +93,7 @@ class CommandDTO(AntaresBaseModel):
 
     id: Optional[str] = None
     action: str
-    args: MutableSequence[JSON] | JSON
+    args: List[JSON] | JSON
     version: int = 1
     study_version: StudyVersionStr
     user_id: Optional[int] = None
@@ -103,6 +103,9 @@ class CommandDTO(AntaresBaseModel):
         data = self.model_dump(mode="json", exclude={"study_version", "user_id"})
         data["user_name"] = user_name
         return CommandDTOAPI.model_validate(data)
+
+    def get_args_list(self) -> MutableSequence[JSON]:
+        return self.args if isinstance(self.args, list) else [self.args]
 
 
 class CommandResultDTO(AntaresBaseModel):

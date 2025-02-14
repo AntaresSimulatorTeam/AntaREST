@@ -34,7 +34,6 @@ class RemoveCluster(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_THERMAL_CLUSTER
-    version: int = 1
 
     # Command parameters
     # ==================

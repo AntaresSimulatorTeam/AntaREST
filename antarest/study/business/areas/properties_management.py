@@ -57,6 +57,8 @@ class PropertiesFormFields(FormFieldsBaseModel):
     non_dispatch_power: bool
     dispatch_hydro_power: bool
     other_dispatch_power: bool
+    spread_unsupplied_energy_cost: float
+    spread_spilled_energy_cost: float
     filter_synthesis: Set[str]
     filter_by_year: Set[str]
     # version 830
@@ -97,6 +99,14 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "other_dispatch_power": {
         "path": f"{NODAL_OPTIMIZATION_PATH}/other-dispatchable-power",
         "default_value": True,
+    },
+    "spread_unsupplied_energy_cost": {
+        "path": f"{NODAL_OPTIMIZATION_PATH}/spread-unsupplied-energy-cost",
+        "default_value": 0.0,
+    },
+    "spread_spilled_energy_cost": {
+        "path": f"{NODAL_OPTIMIZATION_PATH}/spread-spilled-energy-cost",
+        "default_value": 0.0,
     },
     "filter_synthesis": {
         "path": f"{FILTERING_PATH}/filter-synthesis",

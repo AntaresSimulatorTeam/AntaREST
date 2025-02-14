@@ -362,7 +362,7 @@ def get_start_date(
             break
     first_week_size = first_week_offset if first_week_offset != 0 else 7
 
-    return MatrixIndex.construct(
+    return MatrixIndex.model_construct(
         start_date=str(start_date),
         steps=steps,
         first_week_size=first_week_size,

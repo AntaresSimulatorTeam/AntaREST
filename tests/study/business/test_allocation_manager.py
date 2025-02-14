@@ -312,7 +312,7 @@ class TestAllocationManager:
         fields = manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
 
         expected_allocation = [
-            AllocationField.construct(area_id=area, coefficient=value)
+            AllocationField.model_construct(area_id=area, coefficient=value)
             for area, value in allocation_cfg[area_id]["[allocation]"].items()
         ]
         assert fields.allocation == expected_allocation
@@ -358,11 +358,11 @@ class TestAllocationManager:
                     all_areas=all_areas,
                     study=study,
                     area_id=area_id,
-                    data=AllocationFormFields.construct(
+                    data=AllocationFormFields.model_construct(
                         allocation=[
-                            AllocationField.construct(area_id="e", coefficient=0.5),
-                            AllocationField.construct(area_id="s", coefficient=0.25),
-                            AllocationField.construct(area_id="w", coefficient=0.25),
+                            AllocationField.model_construct(area_id="e", coefficient=0.5),
+                            AllocationField.model_construct(area_id="s", coefficient=0.25),
+                            AllocationField.model_construct(area_id="w", coefficient=0.25),
                         ],
                     ),
                 )
@@ -401,11 +401,11 @@ class TestAllocationManager:
                         all_areas=all_areas,
                         study=study,
                         area_id=area_id,
-                        data=AllocationFormFields.construct(
+                        data=AllocationFormFields.model_construct(
                             allocation=[
-                                AllocationField.construct(area_id="e", coefficient=0.5),
-                                AllocationField.construct(area_id="s", coefficient=0.25),
-                                AllocationField.construct(area_id="w", coefficient=0.25),
+                                AllocationField.model_construct(area_id="e", coefficient=0.5),
+                                AllocationField.model_construct(area_id="s", coefficient=0.25),
+                                AllocationField.model_construct(area_id="w", coefficient=0.25),
                             ],
                         ),
                     )
@@ -424,11 +424,11 @@ class TestAllocationManager:
         area_id = "n"
         manager = AllocationManager(study_storage_service)
 
-        data = AllocationFormFields.construct(
+        data = AllocationFormFields.model_construct(
             allocation=[
-                AllocationField.construct(area_id="e", coefficient=0.5),
-                AllocationField.construct(area_id="s", coefficient=0.25),
-                AllocationField.construct(area_id="invalid_area", coefficient=0.25),
+                AllocationField.model_construct(area_id="e", coefficient=0.5),
+                AllocationField.model_construct(area_id="s", coefficient=0.25),
+                AllocationField.model_construct(area_id="invalid_area", coefficient=0.25),
             ]
         )
 

@@ -172,7 +172,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
 
 
 buffer = io.BytesIO()
-np.savetxt(buffer, np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760), delimiter="\t")
+np.savetxt(buffer, np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760), delimiter="\t", fmt="%.6f")
 expected_min_gen_response = buffer.getvalue()
 
 

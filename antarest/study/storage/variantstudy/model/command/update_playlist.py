@@ -32,7 +32,6 @@ class UpdatePlaylist(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_PLAYLIST
-    version: int = 1
 
     # Command parameters
     # ==================
