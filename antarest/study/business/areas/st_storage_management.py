@@ -326,8 +326,7 @@ class STStorageManager:
 
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
-        study_version = StudyVersion.parse(study.version)
-        storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
+        storages = [create_storage_output(study.version, storage_id, options) for storage_id, options in config.items()]
         return sorted(storages, key=order_by)
 
     def get_all_storages_props(
@@ -357,12 +356,11 @@ class STStorageManager:
         except KeyError:
             raise STStorageConfigNotFound(path) from None
 
-        study_version = StudyVersion.parse(study.version)
         storages_by_areas: MutableMapping[str, MutableMapping[str, STStorageOutput]]
         storages_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in storages.items():
             for cluster_id, cluster in cluster_obj.items():
-                storages_by_areas[area_id][cluster_id] = create_storage_output(study_version, cluster_id, cluster)
+                storages_by_areas[area_id][cluster_id] = create_storage_output(study.version, cluster_id, cluster)
 
         return storages_by_areas
 
