@@ -14,22 +14,24 @@ from typing import Any, Dict, List, Mapping, cast
 
 from antares.study.version import StudyVersion
 
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields, get_fields_info
 from antarest.study.business.utils import GENERAL_DATA_PATH, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class ThematicTrimmingManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
-    def get_field_values(self, study: Study) -> ThematicTrimmingFormFields:
+    def get_field_values(self, study: StudyInterface) -> ThematicTrimmingFormFields:
         """
         Get Thematic Trimming field values for the webapp form
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         config = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
         trimming_config = config.get("variables selection") or {}
         exclude_vars = trimming_config.get("select_var -") or []
@@ -46,11 +48,11 @@ class ThematicTrimmingManager:
         fields_values = {name: get_value(info) for name, info in fields_info.items()}
         return ThematicTrimmingFormFields(**fields_values)
 
-    def set_field_values(self, study: Study, field_values: ThematicTrimmingFormFields) -> None:
+    def set_field_values(self, study: StudyInterface, field_values: ThematicTrimmingFormFields) -> None:
         """
         Set Thematic Trimming config from the webapp form
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         field_values_dict = field_values.model_dump(mode="json")
 
         keys_by_bool: Dict[bool, List[Any]] = {True: [], False: []}
@@ -70,16 +72,10 @@ class ThematicTrimmingManager:
                 "select_var +": keys_by_bool[True],
             }
 
-        execute_or_add_commands(
-            study,
-            file_study,
-            [
-                UpdateConfig(
-                    target="settings/generaldata/variables selection",
-                    data=config_data,
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                )
-            ],
-            self.storage_service,
+        command = UpdateConfig(
+            target="settings/generaldata/variables selection",
+            data=config_data,
+            command_context=self._command_context,
+            study_version=file_study.config.version,
         )
+        study.add_commands([command])

@@ -211,7 +211,7 @@ class StudyAdditionalData(Base):  # type:ignore
         return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
 
 
-class Study(Base):  # type: ignore
+class Study(Base):
     """
     Standard Study entity
     """

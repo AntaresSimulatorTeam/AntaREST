@@ -20,8 +20,7 @@ from antarest.core.exceptions import DuplicateRenewableCluster, RenewableCluster
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
@@ -29,12 +28,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableProperties,
     create_renewable_config,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
@@ -110,11 +109,11 @@ class RenewableClusterOutput(RenewableConfig):
 
 
 def create_renewable_output(
-    study_version: str,
+    study_version: StudyVersion,
     cluster_id: str,
     config: Mapping[str, Any],
 ) -> "RenewableClusterOutput":
-    obj = create_renewable_config(study_version=StudyVersion.parse(study_version), **config, id=cluster_id)
+    obj = create_renewable_config(study_version=study_version, **config, id=cluster_id)
     kwargs = obj.model_dump(by_alias=False)
     return RenewableClusterOutput(**kwargs)
 
@@ -127,16 +126,10 @@ class RenewableManager:
         storage_service (StudyStorageService): A service responsible for study data storage and retrieval.
     """
 
-    def __init__(self, storage_service: StudyStorageService):
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext):
+        self._command_context = command_context
 
-    def _get_file_study(self, study: Study) -> FileStudy:
-        """
-        Helper function to get raw study data.
-        """
-        return self.storage_service.get_storage(study).get_raw(study)
-
-    def get_clusters(self, study: Study, area_id: str) -> Sequence[RenewableClusterOutput]:
+    def get_clusters(self, study: StudyInterface, area_id: str) -> Sequence[RenewableClusterOutput]:
         """
         Fetches all clusters related to a specific area in a study.
 
@@ -146,7 +139,7 @@ class RenewableManager:
         Raises:
             RenewableClusterConfigNotFound: If the clusters configuration for the specified area is not found.
         """
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _CLUSTERS_PATH.format(area_id=area_id)
 
         try:
@@ -158,7 +151,7 @@ class RenewableManager:
 
     def get_all_renewables_props(
         self,
-        study: Study,
+        study: StudyInterface,
     ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         """
         Retrieve all renewable clusters from all areas within a study.
@@ -173,7 +166,7 @@ class RenewableManager:
             RenewableClusterConfigNotFound: If no clusters are found in the specified area.
         """
 
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _ALL_CLUSTERS_PATH
         try:
             # may raise KeyError if the path is missing
@@ -192,7 +185,7 @@ class RenewableManager:
         return renewables_by_areas
 
     def create_cluster(
-        self, study: Study, area_id: str, cluster_data: RenewableClusterCreation
+        self, study: StudyInterface, area_id: str, cluster_data: RenewableClusterCreation
     ) -> RenewableClusterOutput:
         """
         Creates a new cluster within an area in the study.
@@ -205,15 +198,10 @@ class RenewableManager:
         Returns:
             The newly created cluster.
         """
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         cluster = cluster_data.to_config(StudyVersion.parse(study.version))
         command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
-        execute_or_add_commands(
-            study,
-            file_study,
-            [command],
-            self.storage_service,
-        )
+        study.add_commands([command])
         output = self.get_cluster(study, area_id, cluster.id)
         return output
 
@@ -224,12 +212,12 @@ class RenewableManager:
             area_id=area_id,
             cluster_name=cluster.id,
             parameters=cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            command_context=self._command_context,
             study_version=study_version,
         )
         return command
 
-    def get_cluster(self, study: Study, area_id: str, cluster_id: str) -> RenewableClusterOutput:
+    def get_cluster(self, study: StudyInterface, area_id: str, cluster_id: str) -> RenewableClusterOutput:
         """
         Retrieves a single cluster's data for a specific area in a study.
 
@@ -244,7 +232,7 @@ class RenewableManager:
         Raises:
             RenewableClusterNotFound: If the specified cluster is not found within the area.
         """
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
             cluster = file_study.tree.get(path.split("/"), depth=1)
@@ -254,7 +242,7 @@ class RenewableManager:
 
     def update_cluster(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         cluster_id: str,
         cluster_data: RenewableClusterInput,
@@ -275,8 +263,7 @@ class RenewableManager:
             RenewableClusterNotFound: If the cluster to update is not found.
         """
 
-        study_version = StudyVersion.parse(study.version)
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
 
         try:
@@ -284,7 +271,7 @@ class RenewableManager:
         except KeyError:
             raise RenewableClusterNotFound(path, cluster_id) from None
         else:
-            old_config = create_renewable_config(study_version, **values)
+            old_config = create_renewable_config(study.version, **values)
 
         # use Python values to synchronize Config and Form values
         new_values = cluster_data.model_dump(by_alias=False, exclude_none=True)
@@ -299,19 +286,18 @@ class RenewableManager:
                 data[name] = new_data[name]
 
         # create the update config commands with the modified data
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
         commands = [
             UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=command_context, study_version=study_version
+                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
             )
             for key, value in data.items()
         ]
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        study.add_commands(commands)
 
         values = new_config.model_dump(by_alias=False)
         return RenewableClusterOutput(**values, id=cluster_id)
 
-    def delete_clusters(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
+    def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
         Deletes multiple clusters from an area in the study.
 
@@ -320,24 +306,22 @@ class RenewableManager:
             area_id: The identifier of the area where clusters will be deleted.
             cluster_ids: A sequence of cluster identifiers to be deleted.
         """
-        file_study = self._get_file_study(study)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-
+        file_study = study.get_files()
         commands = [
             RemoveRenewablesCluster(
                 area_id=area_id,
                 cluster_id=cluster_id,
-                command_context=command_context,
-                study_version=file_study.config.version,
+                command_context=self._command_context,
+                study_version=study.version,
             )
             for cluster_id in cluster_ids
         ]
 
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        study.add_commands(commands)
 
     def duplicate_cluster(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         source_id: str,
         new_cluster_name: str,
@@ -363,12 +347,11 @@ class RenewableManager:
             raise DuplicateRenewableCluster(area_id, new_id)
 
         # Cluster duplication
-        study_version = StudyVersion.parse(study.version)
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
         creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study_version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
+        new_config = creation_form.to_config(study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study.version)
 
         # Matrix edition
         lower_source_id = source_id.lower()
@@ -376,21 +359,19 @@ class RenewableManager:
         new_path = f"input/renewables/series/{area_id}/{lower_new_id}/series"
 
         # Prepare and execute commands
-        storage_service = self.storage_service.get_storage(study)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-        current_matrix = storage_service.get(study, source_path)["data"]
+        file_study = study.get_files()
+        current_matrix = file_study.tree.get(source_path.split("/"))["data"]
         replace_matrix_cmd = ReplaceMatrix(
-            target=new_path, matrix=current_matrix, command_context=command_context, study_version=study_version
+            target=new_path, matrix=current_matrix, command_context=self._command_context, study_version=study.version
         )
         commands = [create_cluster_cmd, replace_matrix_cmd]
-
-        execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
+        study.add_commands(commands)
 
         return RenewableClusterOutput(**new_config.model_dump(by_alias=False))
 
     def update_renewables_props(
         self,
-        study: Study,
+        study: StudyInterface,
         update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterInput]],
     ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
@@ -415,13 +396,12 @@ class RenewableManager:
                 cmd = UpdateConfig(
                     target=path,
                     data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    command_context=self._command_context,
                     study_version=study_version,
                 )
                 commands.append(cmd)
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        study.add_commands(commands)
 
         return new_renewables_by_areas
 

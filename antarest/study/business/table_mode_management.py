@@ -29,6 +29,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.link_model import LinkBaseDTO
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_2, RawStudy
 
 _TableIndex = str  # row name
@@ -97,7 +98,7 @@ class TableModeManager:
         self._st_storage_manager = st_storage_manager
         self._binding_constraint_manager = binding_constraint_manager
 
-    def _get_table_data_unsafe(self, study: RawStudy, table_type: TableModeType) -> TableDataDTO:
+    def _get_table_data_unsafe(self, study: StudyInterface, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
             areas_map = self._area_manager.get_all_area_props(study)
             data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
@@ -142,7 +143,7 @@ class TableModeManager:
 
     def get_table_data(
         self,
-        study: RawStudy,
+        study: StudyInterface,
         table_type: TableModeType,
         columns: Sequence[_TableColumn],
     ) -> TableDataDTO:
@@ -180,7 +181,7 @@ class TableModeManager:
 
     def update_table_data(
         self,
-        study: RawStudy,
+        study: StudyInterface,
         table_type: TableModeType,
         data: TableDataDTO,
     ) -> TableDataDTO:

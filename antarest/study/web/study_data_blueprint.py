@@ -323,7 +323,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        return study_service.area_manager.get_layers(study)
+        return study_service.area_manager.get_layers(study_service.get_study_interface(study))
 
     @bp.post(
         "/studies/{uuid}/layers",
@@ -342,7 +342,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
-        return study_service.area_manager.create_layer(study, name)
+        return study_service.area_manager.create_layer(study_service.get_study_interface(study), name)
 
     @bp.put(
         "/studies/{uuid}/layers/{layer_id}",
@@ -362,10 +362,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
+        study_interface = study_service.get_study_interface(study)
         if name:
-            study_service.area_manager.update_layer_name(study, layer_id, name)
+            study_service.area_manager.update_layer_name(study_interface, layer_id, name)
         if areas:
-            study_service.area_manager.update_layer_areas(study, layer_id, areas)
+            study_service.area_manager.update_layer_areas(study_interface, layer_id, areas)
 
     @bp.delete(
         "/studies/{uuid}/layers/{layer_id}",
@@ -385,7 +386,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
-        study_service.area_manager.remove_layer(study, layer_id)
+        study_service.area_manager.remove_layer(study_service.get_study_interface(study), layer_id)
 
     @bp.get(
         "/studies/{uuid}/districts",

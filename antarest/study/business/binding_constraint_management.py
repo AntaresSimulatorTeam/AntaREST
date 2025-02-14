@@ -35,8 +35,8 @@ from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7, Study
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -46,7 +46,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_hourly as default_bc_hourly_87,
 )
@@ -474,9 +473,9 @@ _ALL_BINDING_CONSTRAINTS_PATH = "input/bindingconstraints/bindingconstraints"
 class BindingConstraintManager:
     def __init__(
         self,
-        storage_service: StudyStorageService,
+        command_context: CommandContext,
     ) -> None:
-        self.storage_service = storage_service
+        self._command_context = command_context
 
     @staticmethod
     def parse_and_add_terms(key: str, value: Any, adapted_constraint: ConstraintOutput) -> None:
@@ -592,9 +591,8 @@ class BindingConstraintManager:
                     coeffs[term.id].append(term.offset)
         return coeffs
 
-    def check_binding_constraints_exists(self, study: Study, bc_ids: List[str]) -> None:
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
+    def check_binding_constraints_exists(self, study: StudyInterface, bc_ids: List[str]) -> None:
+        file_study = study.get_files()
         existing_constraints = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         existing_ids = {constraint["id"] for constraint in existing_constraints.values()}
@@ -604,7 +602,7 @@ class BindingConstraintManager:
         if missing_bc_ids:
             raise BindingConstraintNotFound(f"Binding constraint(s) '{missing_bc_ids}' not found")
 
-    def get_binding_constraint(self, study: Study, bc_id: str) -> ConstraintOutput:
+    def get_binding_constraint(self, study: StudyInterface, bc_id: str) -> ConstraintOutput:
         """
         Retrieves a binding constraint by its ID within a given study.
 
@@ -618,8 +616,7 @@ class BindingConstraintManager:
         Raises:
             BindingConstraintNotFound: If no binding constraint with the specified ID is found.
         """
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
+        file_study = study.get_files()
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         constraints_by_id: Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
@@ -634,7 +631,7 @@ class BindingConstraintManager:
         return constraints_by_id[bc_id]
 
     def get_binding_constraints(
-        self, study: Study, filters: ConstraintFilters = ConstraintFilters()
+        self, study: StudyInterface, filters: ConstraintFilters = ConstraintFilters()
     ) -> Sequence[ConstraintOutput]:
         """
         Retrieves all binding constraints within a given study, optionally filtered by specific criteria.
@@ -646,14 +643,13 @@ class BindingConstraintManager:
         Returns:
             A list of ConstraintOutput objects representing the binding constraints that match the specified filters.
         """
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
+        file_study = study.get_files()
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         outputs = [self.constraint_model_adapter(c, StudyVersion.parse(study.version)) for c in config.values()]
         filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
         return filtered_constraints
 
-    def get_grouped_constraints(self, study: Study) -> Mapping[str, Sequence[ConstraintOutput]]:
+    def get_grouped_constraints(self, study: StudyInterface) -> Mapping[str, Sequence[ConstraintOutput]]:
         """
          Retrieves and groups all binding constraints by their group names within a given study.
 
@@ -670,8 +666,7 @@ class BindingConstraintManager:
         The grouping considers the exact group name, implying case sensitivity. If case-insensitive grouping
         is required, normalization of group names to a uniform case (e.g., all lower or upper) should be performed.
         """
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
+        file_study = study.get_files()
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         grouped_constraints = CaseInsensitiveDict()
 
@@ -682,7 +677,7 @@ class BindingConstraintManager:
 
         return grouped_constraints
 
-    def get_constraints_by_group(self, study: Study, group_name: str) -> Sequence[ConstraintOutput]:
+    def get_constraints_by_group(self, study: StudyInterface, group_name: str) -> Sequence[ConstraintOutput]:
         """
          Retrieve all binding constraints belonging to a specified group within a study.
 
@@ -703,7 +698,7 @@ class BindingConstraintManager:
 
         return grouped_constraints[group_name]
 
-    def validate_constraint_group(self, study: Study, group_name: str) -> bool:
+    def validate_constraint_group(self, study: StudyInterface, group_name: str) -> bool:
         """
         Validates if the specified group name exists within the study's binding constraints
         and checks the validity of the constraints within that group.
@@ -722,8 +717,7 @@ class BindingConstraintManager:
         Raises:
             BindingConstraintNotFound: If no matching group name is found in a case-insensitive manner.
         """
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
+        file_study = study.get_files()
         grouped_constraints = self.get_grouped_constraints(study)
 
         if group_name not in grouped_constraints:
@@ -732,7 +726,7 @@ class BindingConstraintManager:
         constraints = grouped_constraints[group_name]
         return _validate_binding_constraints(file_study, constraints)
 
-    def validate_constraint_groups(self, study: Study) -> bool:
+    def validate_constraint_groups(self, study: StudyInterface) -> bool:
         """
         Validates all groups of binding constraints within the given study.
 
@@ -749,8 +743,7 @@ class BindingConstraintManager:
         Raises:
             IncoherenceBetweenMatricesLength: If any validation checks fail.
         """
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
+        file_study = study.get_files()
         grouped_constraints = self.get_grouped_constraints(study)
         invalid_groups = {}
 
@@ -768,7 +761,7 @@ class BindingConstraintManager:
 
     def create_binding_constraint(
         self,
-        study: Study,
+        study: StudyInterface,
         data: ConstraintCreation,
     ) -> ConstraintOutput:
         bc_id = transform_name_to_id(data.name)
@@ -788,7 +781,7 @@ class BindingConstraintManager:
         }
         args = {
             **new_constraint,
-            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "command_context": self._command_context,
             "study_version": version,
         }
         if data.terms:
@@ -803,14 +796,15 @@ class BindingConstraintManager:
                 time_step=time_step, specific_matrices=None, version=version, create=True
             )
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
         # Processes the constraints to add them inside the endpoint response.
         new_constraint["id"] = bc_id
         return self.constraint_model_adapter(new_constraint, version)
 
-    def duplicate_binding_constraint(self, study: Study, source_id: str, new_constraint_name: str) -> ConstraintOutput:
+    def duplicate_binding_constraint(
+        self, study: StudyInterface, source_id: str, new_constraint_name: str
+    ) -> ConstraintOutput:
         """
         Creates a duplicate constraint with a new name.
 
@@ -845,14 +839,14 @@ class BindingConstraintManager:
         }
         args = {
             **new_constraint,
-            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "command_context": self._command_context,
             "study_version": StudyVersion.parse(study.version),
         }
         if source_constraint.terms:
             args["coeffs"] = self.terms_to_coeffs(source_constraint.terms)
 
         # Retrieval of the source constraint matrices
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         if file_study.config.version < STUDY_VERSION_8_7:
             matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
             args["values"] = matrix["data"]
@@ -872,7 +866,7 @@ class BindingConstraintManager:
 
         # Creates and applies constraint
         command = CreateBindingConstraint(**args)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
         # Returns the new constraint
         source_constraint.name = new_constraint_name
@@ -881,12 +875,12 @@ class BindingConstraintManager:
 
     def update_binding_constraint(
         self,
-        study: Study,
+        study: StudyInterface,
         binding_constraint_id: str,
         data: ConstraintInput,
         existing_constraint: Optional[ConstraintOutput] = None,
     ) -> ConstraintOutput:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         existing_constraint = existing_constraint or self.get_binding_constraint(study, binding_constraint_id)
 
         study_version = StudyVersion.parse(study.version)
@@ -898,7 +892,7 @@ class BindingConstraintManager:
         }
         args = {
             **upd_constraint,
-            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+            "command_context": self._command_context,
             "study_version": study_version,
         }
         if data.terms:
@@ -919,7 +913,7 @@ class BindingConstraintManager:
                     time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False  # type: ignore
                 )
 
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
         # Constructs the endpoint response.
         upd_constraint["name"] = existing_constraint.name
@@ -937,7 +931,7 @@ class BindingConstraintManager:
 
     def update_binding_constraints(
         self,
-        study: Study,
+        study: StudyInterface,
         bcs_by_ids: Mapping[str, ConstraintInput],
     ) -> Mapping[str, ConstraintOutput]:
         """
@@ -973,9 +967,8 @@ class BindingConstraintManager:
         # More efficient way of doing things but using less readable commands.
         study_version = StudyVersion.parse(study.version)
         commands = []
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         dict_config = {value["id"]: key for (key, value) in config.items()}
         for bc_id, value in bcs_by_ids.items():
@@ -993,7 +986,7 @@ class BindingConstraintManager:
             if value.time_step and value.time_step != BindingConstraintFrequency(current_value["type"]):
                 # The user changed the time step, we need to update the matrix accordingly
                 replace_matrix_commands = _generate_replace_matrix_commands(
-                    bc_id, study_version, value, output.operator, command_context
+                    bc_id, study_version, value, output.operator, self._command_context
                 )
                 commands.extend(replace_matrix_commands)
 
@@ -1006,14 +999,14 @@ class BindingConstraintManager:
         command = UpdateConfig(
             target="input/bindingconstraints/bindingconstraints",
             data=config,
-            command_context=command_context,
+            command_context=self._command_context,
             study_version=study_version,
         )
         commands.append(command)
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        study.add_commands(commands)
         return updated_constraints
 
-    def remove_binding_constraint(self, study: Study, binding_constraint_id: str) -> None:
+    def remove_binding_constraint(self, study: StudyInterface, binding_constraint_id: str) -> None:
         """
         Removes a binding constraint from a study.
 
@@ -1026,14 +1019,13 @@ class BindingConstraintManager:
         """
         # Check the existence of the binding constraint before removing it
         bc = self.get_binding_constraint(study, binding_constraint_id)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         command = RemoveBindingConstraint(
-            id=bc.id, command_context=command_context, study_version=file_study.config.version
+            id=bc.id, command_context=self._command_context, study_version=file_study.config.version
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
-    def remove_multiple_binding_constraints(self, study: Study, binding_constraints_ids: List[str]) -> None:
+    def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: List[str]) -> None:
         """
         Removes multiple binding constraints from a study.
 
@@ -1047,37 +1039,35 @@ class BindingConstraintManager:
 
         self.check_binding_constraints_exists(study, binding_constraints_ids)
 
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
 
         command = RemoveMultipleBindingConstraints(
             ids=binding_constraints_ids,
-            command_context=command_context,
+            command_context=self._command_context,
             study_version=file_study.config.version,
         )
 
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
     def _update_constraint_with_terms(
-        self, study: Study, bc: ConstraintOutput, terms: Mapping[str, ConstraintTerm]
+        self, study: StudyInterface, bc: ConstraintOutput, terms: Mapping[str, ConstraintTerm]
     ) -> None:
         coeffs = {
             term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
         }
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         args = {
             "id": bc.id,
             "coeffs": coeffs,
-            "command_context": command_context,
+            "command_context": self._command_context,
             "study_version": file_study.config.version,
         }
         command = UpdateBindingConstraint.model_validate(args)
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
     def update_constraint_terms(
         self,
-        study: Study,
+        study: StudyInterface,
         binding_constraint_id: str,
         constraint_terms: Sequence[ConstraintTerm],
         update_mode: str = "replace",
@@ -1115,7 +1105,7 @@ class BindingConstraintManager:
         self._update_constraint_with_terms(study, constraint, existing_terms)
 
     def create_constraint_terms(
-        self, study: Study, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTerm]
+        self, study: StudyInterface, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTerm]
     ) -> None:
         """
         Adds new constraint terms to an existing binding constraint.
@@ -1129,7 +1119,7 @@ class BindingConstraintManager:
 
     def remove_constraint_term(
         self,
-        study: Study,
+        study: StudyInterface,
         binding_constraint_id: str,
         term_id: str,
     ) -> None:

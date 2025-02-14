@@ -116,6 +116,7 @@ from antarest.study.model import (
     CommentsDto,
     ExportFormat,
     MatrixIndex,
+    Patch,
     PatchArea,
     PatchCluster,
     RawStudy,
@@ -137,6 +138,7 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -397,11 +399,23 @@ class RawStudyInterface(StudyInterface):
     on underlying files.
     """
 
-    def __init__(self, raw_service: RawStudyService, variant_service: VariantStudyService, study: RawStudy):
+    def __init__(
+        self,
+        raw_service: RawStudyService,
+        variant_service: VariantStudyService,
+        patch_service: PatchService,
+        study: RawStudy,
+    ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
+        self._patch_service = patch_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
+
+    @override
+    @property
+    def version(self) -> StudyVersion:
+        return StudyVersion.parse(self._study.version)
 
     @override
     def get_files(self) -> FileStudy:
@@ -439,6 +453,14 @@ class RawStudyInterface(StudyInterface):
             # within the current process (not across multiple processes)...
             file_study.tree.denormalize()
 
+    @override
+    def get_patch_data(self) -> Patch:
+        return self._patch_service.get(self._study)
+
+    @override
+    def update_patch_data(self, patch_data: Patch) -> None:
+        self._patch_service.save(self._study, patch_data)
+
 
 class VariantStudyInterface(StudyInterface):
     """
@@ -448,10 +470,16 @@ class VariantStudyInterface(StudyInterface):
     to the variant.
     """
 
-    def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
+    def __init__(self, variant_service: VariantStudyService, patch_service: PatchService, study: VariantStudy):
         self._variant_service = variant_service
+        self._patch_service = patch_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
+
+    @override
+    @property
+    def version(self) -> StudyVersion:
+        return StudyVersion.parse(self._study.version)
 
     @override
     def get_files(self) -> FileStudy:
@@ -468,6 +496,14 @@ class VariantStudyInterface(StudyInterface):
             transform_command_to_dto(commands, force_aggregate=True),
             RequestParameters(user=current_user),
         )
+
+    @override
+    def get_patch_data(self) -> Patch:
+        return self._patch_service.get(self._study)
+
+    @override
+    def update_patch_data(self, patch_data: Patch) -> None:
+        self._patch_service.save(self._study, patch_data)
 
 
 def create_thermal_manager(command_context: CommandContext) -> ThermalManager:
@@ -498,9 +534,9 @@ class StudyService:
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
-        self.area_manager = AreaManager(self.storage_service, self.repository)
+        self.area_manager = AreaManager(command_context)
         self.district_manager = DistrictManager(self.storage_service)
-        self.links_manager = LinkManager(self.storage_service)
+        self.links_manager = LinkManager(command_context)
         self.config_manager = ConfigManager(self.storage_service)
         self.general_manager = GeneralManager(self.storage_service)
         self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
@@ -902,10 +938,17 @@ class StudyService:
         Creates the business interface to a particular study.
         """
         if isinstance(study, VariantStudy):
-            return VariantStudyInterface(self.storage_service.variant_study_service, study)
+            return VariantStudyInterface(
+                self.storage_service.variant_study_service,
+                self.storage_service.variant_study_service.patch_service,
+                study,
+            )
         elif isinstance(study, RawStudy):
             return RawStudyInterface(
-                self.storage_service.raw_study_service, self.storage_service.variant_study_service, study
+                self.storage_service.raw_study_service,
+                self.storage_service.variant_study_service,
+                self.storage_service.raw_study_service.patch_service,
+                study,
             )
         else:
             raise ValueError(f"Unsupported study type '{study.type}'")
@@ -2003,8 +2046,11 @@ class StudyService:
     ) -> List[AreaInfoDTO] | Dict[str, Any]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
         return (
-            self.area_manager.get_all_areas_ui_info(study) if ui else self.area_manager.get_all_areas(study, area_type)
+            self.area_manager.get_all_areas_ui_info(study_interface)
+            if ui
+            else self.area_manager.get_all_areas(study_interface, area_type)
         )
 
     def get_all_links(
@@ -2014,7 +2060,7 @@ class StudyService:
     ) -> List[LinkDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.links_manager.get_all_links(study)
+        return self.links_manager.get_all_links(self.get_study_interface(study))
 
     def create_area(
         self,
@@ -2025,7 +2071,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_area = self.area_manager.create_area(study, area_creation_dto)
+        new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2044,7 +2090,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_link = self.links_manager.create_link(study, link_creation_dto)
+        new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2065,7 +2111,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_link = self.links_manager.update_link(study, area_from, area_to, link_update_dto)
+        updated_link = self.links_manager.update_link(
+            self.get_study_interface(study), area_from, area_to, link_update_dto
+        )
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2085,7 +2133,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_area = self.area_manager.update_area_metadata(study, area_id, area_patch_dto)
+        updated_area = self.area_manager.update_area_metadata(self.get_study_interface(study), area_id, area_patch_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2106,7 +2154,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.area_manager.update_area_ui(study, area_id, area_ui, layer)
+        return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
 
     def update_thermal_cluster_metadata(
         self,
@@ -2118,7 +2166,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.area_manager.update_thermal_cluster_metadata(study, area_id, clusters_metadata)
+        return self.area_manager.update_thermal_cluster_metadata(
+            self.get_study_interface(study), area_id, clusters_metadata
+        )
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
         """
@@ -2142,7 +2192,7 @@ class StudyService:
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
-        self.area_manager.delete_area(study, area_id)
+        self.area_manager.delete_area(self.get_study_interface(study), area_id)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2181,7 +2231,7 @@ class StudyService:
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
-        self.links_manager.delete_link(study, area_from, area_to)
+        self.links_manager.delete_link(self.get_study_interface(study), area_from, area_to)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,

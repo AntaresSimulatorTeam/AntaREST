@@ -16,6 +16,7 @@ from pydantic import PositiveInt, StrictBool, ValidationInfo, conint, model_vali
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -224,14 +225,14 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
 
 
 class GeneralManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
-    def get_field_values(self, study: Study) -> GeneralFormFields:
+    def get_field_values(self, study: StudyInterface) -> GeneralFormFields:
         """
         Get General field values for the webapp form
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         general_data = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
         general = general_data.get(GENERAL, {})
         output = general_data.get(OUTPUT, {})
@@ -252,13 +253,13 @@ class GeneralManager:
 
         return GeneralFormFields.construct(**{name: get_value(name, info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(self, study: Study, field_values: GeneralFormFields) -> None:
+    def set_field_values(self, study: StudyInterface, field_values: GeneralFormFields) -> None:
         """
         Set Optimization config from the webapp form
         """
         commands: List[UpdateConfig] = []
-        cmd_cx = self.storage_service.variant_study_service.command_factory.command_context
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        cmd_cx = self._command_context
+        file_study = study.get_files()
 
         for field_name, value in field_values.__iter__():
             if value is not None:
@@ -275,7 +276,7 @@ class GeneralManager:
                 )
 
         if commands:
-            execute_or_add_commands(study, file_study, commands, self.storage_service)
+            study.add_commands(commands)
 
     @staticmethod
     def __get_building_mode_value(general_config: Dict[str, Any]) -> str:
