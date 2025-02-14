@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import json
-import uuid
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
@@ -19,8 +18,6 @@ from zipfile import ZipFile
 import pytest
 
 from antarest.core.config import InternalMatrixFormat
-from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.login.utils import current_user_context
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import ISimpleMatrixService, SimpleMatrixService
@@ -29,7 +26,7 @@ from antarest.study.business.area_management import AreaCreationDTO, AreaManager
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy
+from antarest.study.model import Patch, PatchArea, PatchCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
@@ -43,30 +40,8 @@ from tests.storage.business.assets import ASSETS_DIR
 
 
 @pytest.fixture
-def matrix_service() -> ISimpleMatrixService:
-    return InMemorySimpleMatrixService()
-
-
-@pytest.fixture
-def area_manager(command_context: CommandContext) -> AreaManager:
-    return AreaManager(command_context)
-
-
-@pytest.fixture
-def link_manager(command_context: CommandContext) -> LinkManager:
-    return LinkManager(command_context)
-
-
-@pytest.fixture
 def study(empty_study: FileStudy) -> StudyInterface:
     return FileStudyInterface(empty_study)
-
-
-@pytest.fixture
-def command_context(matrix_service: ISimpleMatrixService) -> CommandContext:
-    matrix_constants = GeneratorMatrixConstants(matrix_service)
-    matrix_constants.init_constant_matrices()
-    return CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service)
 
 
 @pytest.fixture(name="empty_study")
@@ -89,23 +64,6 @@ def empty_study_fixture(tmp_path: Path, matrix_service: ISimpleMatrixService) ->
     config = build(study_path, study_id)
     context = ContextServer(matrix_service, UriResolverService(matrix_service))
     return FileStudy(config, FileStudyTree(context, config))
-
-
-@pytest.fixture(name="matrix_service")
-def matrix_service_fixture(tmp_path: Path) -> SimpleMatrixService:
-    """
-    Fixture for creating a matrix service in the `tmp_path`.
-
-    Args:
-        tmp_path: The temporary path provided by pytest.
-
-    Returns:
-        An instance of the `SimpleMatrixService` class representing the matrix service.
-    """
-    matrix_path = tmp_path.joinpath("matrix-store")
-    matrix_path.mkdir()
-    matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
-    return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
 def test_area_crud(
