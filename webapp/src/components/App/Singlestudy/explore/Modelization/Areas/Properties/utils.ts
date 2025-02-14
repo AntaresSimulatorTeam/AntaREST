@@ -35,8 +35,8 @@ export interface PropertiesFormFields {
   posX: number;
   posY: number;
   energyCostUnsupplied: number;
-  spreadUnsuppliedEnergyCost: number;
   energyCostSpilled: number;
+  spreadUnsuppliedEnergyCost: number;
   spreadSpilledEnergyCost: number;
   nonDispatchPower: boolean;
   dispatchHydroPower: boolean;
