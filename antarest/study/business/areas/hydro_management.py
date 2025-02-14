@@ -118,19 +118,19 @@ class HydroManager:
     # @staticmethod
     # def get_id(area_id: str, field_dict: Dict[str, FieldInfo]) -> str:
         """
-            Try to match the current area_id with the one from the original file.
-            These two ids could mismatch based on their character cases since the id from
-            the filesystem could have been modified with capital letters.
-            We first convert it into lower case in order to compare both ids.
+        Try to match the current area_id with the one from the original file.
+        These two ids could mismatch based on their character cases since the id from
+        the filesystem could have been modified with capital letters.
+        We first convert it into lower case in order to compare both ids.
 
-            Returns the area id from the file if both values matched, the initial area id otherwise.
+        Returns the area id from the file if both values matched, the initial area id otherwise.
         """
      #   for file_area_id in field_dict:
      #        if LowerCaseIdentifier.generate_id(file_area_id) == area_id:
      #            return file_area_id
      #    return area_id
 
-    # def get_hydro_config(self, study) -> Dict[str, Dict]:
+    # def get_hydro_config(self, study) -> Dict[str, Dict[str, FieldInfo]]:
         """
             Returns a dictionary of hydro configurations
         """
@@ -188,7 +188,7 @@ class HydroManager:
 
                 commands.append(
                     UpdateConfig(
-                        # target="/".join([info["path"], file_area_id]), # update the right fields
+                        # target="/".join([info["path"], file_area_id]),  # update the right fields
                         target="/".join([info["path"], area_id]),
                         data=value,
                         command_context=self._command_context,
@@ -210,6 +210,7 @@ class HydroManager:
         """
         # NOTE: Focusing on the single field "intermonthly-correlation" due to current model scope.
         path = INFLOW_PATH.format(area_id=area_id)
+        # file_study = self.storage_service.get_storage(study).get_raw(study)
         file_study = study.get_files()
         inter_monthly_correlation = file_study.tree.get(path.split("/")).get("intermonthly-correlation", 0.5)
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
