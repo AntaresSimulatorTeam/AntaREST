@@ -79,7 +79,6 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -790,11 +789,8 @@ class BindingConstraintManager:
         command = CreateBindingConstraint(**args)
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
-        if isinstance(study, VariantStudy):
-            time_step = data.time_step or DEFAULT_TIMESTEP
-            command.validates_and_fills_matrices(
-                time_step=time_step, specific_matrices=None, version=version, create=True
-            )
+        time_step = data.time_step or DEFAULT_TIMESTEP
+        command.validates_and_fills_matrices(time_step=time_step, specific_matrices=None, version=version, create=True)
 
         study.add_commands([command])
 

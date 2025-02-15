@@ -26,7 +26,7 @@ from antarest.study.business.model.area_model import (
     UpdateAreaUi,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy
+from antarest.study.model import Patch, PatchArea, PatchCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaFolder,
     ThermalAreasProperties,
