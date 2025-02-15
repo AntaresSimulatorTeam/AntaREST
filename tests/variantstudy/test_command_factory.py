@@ -13,7 +13,7 @@
 import importlib
 import itertools
 import pkgutil
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional, Set
 from unittest.mock import Mock
 
 import pytest
