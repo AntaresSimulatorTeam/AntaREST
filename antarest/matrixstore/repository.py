@@ -173,9 +173,9 @@ class MatrixContentRepository:
         matrix = storage_format.load_matrix(matrix_path)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         data = matrix.tolist()
-        index = list(range(matrix.shape[0]))
-        columns = list(range(matrix.shape[1]))
-        return MatrixContent.construct(data=data, columns=columns, index=index)
+        index: List[int | str] = list(range(matrix.shape[0]))
+        columns: List[int | str] = list(range(matrix.shape[1]))
+        return MatrixContent.model_construct(data=data, columns=columns, index=index)
 
     def exists(self, matrix_hash: str) -> bool:
         """

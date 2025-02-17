@@ -249,7 +249,7 @@ class CorrelationManager:
         column = array[:, area_ids.index(area_id)] * 100
 
         correlation_field = [
-            AreaCoefficientItem.construct(area_id=a, coefficient=c)
+            AreaCoefficientItem.model_construct(area_id=a, coefficient=c)
             for a, c in zip(area_ids, column)
             if a != area_id and c
         ]
@@ -257,10 +257,10 @@ class CorrelationManager:
         current_area_coefficient = column[area_ids.index(area_id)]
         correlation_field.insert(
             0,
-            AreaCoefficientItem.construct(area_id=area_id, coefficient=current_area_coefficient),
+            AreaCoefficientItem.model_construct(area_id=area_id, coefficient=current_area_coefficient),
         )
 
-        return CorrelationFormFields.construct(correlation=correlation_field)
+        return CorrelationFormFields.model_construct(correlation=correlation_field)
 
     def set_correlation_form_fields(
         self,
@@ -301,8 +301,10 @@ class CorrelationManager:
         self._set_array(study, area_ids, array)
 
         column = array[:, area_ids.index(area_id)] * 100
-        return CorrelationFormFields.construct(
-            correlation=[AreaCoefficientItem.construct(area_id=a, coefficient=c) for a, c in zip(area_ids, column) if c]
+        return CorrelationFormFields.model_construct(
+            correlation=[
+                AreaCoefficientItem.model_construct(area_id=a, coefficient=c) for a, c in zip(area_ids, column) if c
+            ]
         )
 
     def get_correlation_matrix(
@@ -326,7 +328,7 @@ class CorrelationManager:
         # noinspection PyTypeChecker
         data = [[c for i, c in enumerate(row) if area_ids[i] in columns] for row in array.tolist()]
 
-        return CorrelationMatrix.construct(index=area_ids, columns=columns, data=data)
+        return CorrelationMatrix.model_construct(index=area_ids, columns=columns, data=data)
 
     def set_correlation_matrix(
         self,
@@ -364,4 +366,4 @@ class CorrelationManager:
         # noinspection PyTypeChecker
         data = [[c for i, c in enumerate(row) if area_ids[i] in matrix.columns] for row in array.tolist()]
 
-        return CorrelationMatrix.construct(index=area_ids, columns=matrix.columns, data=data)
+        return CorrelationMatrix.model_construct(index=area_ids, columns=matrix.columns, data=data)

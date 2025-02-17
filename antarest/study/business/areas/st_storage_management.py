@@ -32,14 +32,15 @@ from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_8, Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
     STStorage880Properties,
-    STStorageConfigType,
     STStorageGroup,
+    STStoragePropertiesType,
     create_st_storage_config,
+    create_st_storage_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -78,6 +79,7 @@ class STStorageCreation(STStorageInput):
 
     # noinspection Pydantic
     @field_validator("name", mode="before")
+    @classmethod
     def validate_name(cls, name: Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
@@ -86,10 +88,10 @@ class STStorageCreation(STStorageInput):
             raise ValueError("'name' must not be empty")
         return name
 
-    # noinspection PyUnusedLocal
-    def to_config(self, study_version: StudyVersion) -> STStorageConfigType:
-        values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
-        return create_st_storage_config(study_version=study_version, **values)
+    def to_properties(self, version: StudyVersion) -> STStoragePropertiesType:
+        return create_st_storage_properties(
+            study_version=version, data=self.model_dump(mode="json", by_alias=False, exclude_none=True)
+        )
 
 
 @all_optional_model
@@ -278,18 +280,19 @@ class STStorageManager:
         file_study = study.get_files()
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        storage = form.to_config(StudyVersion.parse(study.version))
-        values = values_by_ids.get(storage.id)
+        storage = form.to_properties(StudyVersion.parse(study.version))
+        storage_id = storage.get_id()
+        values = values_by_ids.get(storage_id)
         if values is not None:
-            raise DuplicateSTStorage(area_id, storage.id)
+            raise DuplicateSTStorage(area_id, storage_id)
 
         command = self._make_create_cluster_cmd(area_id, storage, file_study.config.version)
         study.add_commands([command])
-        output = self.get_storage(study, area_id, storage_id=storage.id)
+        output = self.get_storage(study, area_id, storage_id=storage_id)
         return output
 
     def _make_create_cluster_cmd(
-        self, area_id: str, cluster: STStorageConfigType, study_version: StudyVersion
+        self, area_id: str, cluster: STStoragePropertiesType, study_version: StudyVersion
     ) -> CreateSTStorage:
         command = CreateSTStorage(
             area_id=area_id,
@@ -380,15 +383,13 @@ class STStorageManager:
             for storage_id, update_cluster in update_storages_by_ids.items():
                 # Update the storage cluster properties.
                 old_cluster = old_storages_by_ids[storage_id]
-                new_cluster = old_cluster.copy(
-                    update=update_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
-                )
+                new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
                 new_storages_by_areas[area_id][storage_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_st_storage_config(
                     study_version,
-                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
+                    **new_cluster.model_dump(mode="json", exclude_none=True),
                 )
                 path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
                 cmd = UpdateConfig(
@@ -456,8 +457,8 @@ class STStorageManager:
         old_config = create_st_storage_config(study.version, **values)
 
         # use Python values to synchronize Config and Form values
-        new_values = form.model_dump(mode="json", by_alias=False, exclude_none=True)
-        new_config = old_config.copy(exclude={"id"}, update=new_values)
+        new_values = form.model_dump(mode="json", exclude_none=True)
+        new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
@@ -477,7 +478,7 @@ class STStorageManager:
         ]
         study.add_commands(commands)
 
-        values = new_config.model_dump(mode="json", by_alias=False)
+        values = new_config.model_dump(mode="json", exclude={"id"})
         return STStorageOutput(**values, id=storage_id)
 
     def delete_storages(
@@ -545,11 +546,11 @@ class STStorageManager:
         study_version = StudyVersion.parse(study.version)
         if study_version < STUDY_VERSION_8_8:
             fields_to_exclude.add("enabled")
-        creation_form = STStorageCreation(
-            **current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
+        creation_form = STStorageCreation.model_validate(
+            current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
         )
 
-        new_config = creation_form.to_config(study_version)
+        new_config = creation_form.to_properties(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition

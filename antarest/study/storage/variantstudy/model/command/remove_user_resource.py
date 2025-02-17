@@ -38,7 +38,6 @@ class RemoveUserResource(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_USER_RESOURCE
-    version: int = 1
 
     # Command parameters
     # ==================

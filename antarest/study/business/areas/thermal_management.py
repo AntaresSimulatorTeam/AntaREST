@@ -27,13 +27,15 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.business.utils import execute_or_add_commands
+from antarest.study.model import STUDY_VERSION_8_7, Study
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
     Thermal870Properties,
-    ThermalConfigType,
+    ThermalPropertiesType,
     create_thermal_config,
+    create_thermal_properties,
 )
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
@@ -83,6 +85,7 @@ class ThermalClusterCreation(ThermalClusterInput):
 
     # noinspection Pydantic
     @field_validator("name", mode="before")
+    @classmethod
     def validate_name(cls, name: Optional[str]) -> str:
         """
         Validator to check if the name is not empty.
@@ -91,9 +94,9 @@ class ThermalClusterCreation(ThermalClusterInput):
             raise ValueError("name must not be empty")
         return name
 
-    def to_config(self, study_version: StudyVersion) -> ThermalConfigType:
+    def to_properties(self, study_version: StudyVersion) -> ThermalPropertiesType:
         values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
-        return create_thermal_config(study_version=study_version, **values)
+        return create_thermal_properties(study_version=study_version, data=values)
 
 
 @all_optional_model
@@ -248,15 +251,13 @@ class ThermalManager:
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
                 old_cluster = old_thermals_by_ids[thermal_id]
-                new_cluster = old_cluster.copy(
-                    update=update_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
-                )
+                new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_thermal_config(
                     study_version,
-                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
+                    **new_cluster.model_dump(mode="json", exclude_none=True),
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
                 cmd = UpdateConfig(
@@ -290,27 +291,24 @@ class ThermalManager:
         """
 
         study_version = study_interface.get_files().config.version
-        cluster = cluster_data.to_config(study_version)
+        cluster = cluster_data.to_properties(study_version)
         command = self._make_create_cluster_cmd(area_id, cluster, study_version)
         study_interface.add_commands([command])
 
-        output = self.get_cluster(study_interface, area_id, cluster.id)
+        output = self.get_cluster(study_interface, area_id, cluster.get_id())
         return output
 
     def _make_create_cluster_cmd(
-        self, area_id: str, cluster: ThermalConfigType, study_version: StudyVersion
+        self, area_id: str, cluster: ThermalPropertiesType, study_version: StudyVersion
     ) -> CreateCluster:
         # NOTE: currently, in the `CreateCluster` class, there is a confusion
         # between the cluster name and the cluster ID (which is a section name).
-        args = {
-            "area_id": area_id,
-            "cluster_name": cluster.id,
-            "parameters": cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
-            "command_context": self._command_context,
-            "study_version": study_version,
-        }
-        command = CreateCluster.model_validate(args)
-        return command
+        return CreateCluster(
+            area_id=area_id,
+            parameters=cluster,
+            study_version=study_version,
+            command_context=self._command_context,
+        )
 
     def update_cluster(
         self,
@@ -348,8 +346,8 @@ class ThermalManager:
             old_config = create_thermal_config(study_version, **values)
 
         # Use Python values to synchronize Config and Form values
-        new_values = cluster_data.model_dump(mode="json", by_alias=False, exclude_none=True)
-        new_config = old_config.copy(exclude={"id"}, update=new_values)
+        new_values = cluster_data.model_dump(mode="json", exclude_none=True)
+        new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
         # create the dict containing the new values using aliases
@@ -368,8 +366,8 @@ class ThermalManager:
         ]
         study_interface.add_commands(commands)
 
-        values = {**new_config.model_dump(mode="json", by_alias=False), "id": cluster_id}
-        return ThermalClusterOutput.model_validate(values)
+        values = {**new_config.model_dump(mode="json", exclude={"id"})}
+        return ThermalClusterOutput(**values, id=cluster_id)
 
     def delete_clusters(self, study_interface: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
@@ -421,13 +419,13 @@ class ThermalManager:
             raise DuplicateThermalCluster(area_id, new_id)
 
         file_study = study_interface.get_files()
-        study_version = file_study.config.version
+        study_version = study_interface.version
 
         # Cluster duplication
         source_cluster = self.get_cluster(study_interface, area_id, source_id)
         source_cluster.name = new_cluster_name
         creation_form = ThermalClusterCreation(**source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study_version)
+        new_config = creation_form.to_properties(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition

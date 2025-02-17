@@ -32,7 +32,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     ThermalAreasProperties,
     UIProperties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -180,7 +181,7 @@ class AreaManager:
         for area_id, update_area in update_areas_by_ids.items():
             # Update the area properties.
             old_area = old_areas_by_ids[area_id]
-            new_area = old_area.copy(update=update_area.model_dump(mode="json", by_alias=False, exclude_none=True))
+            new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
             # Convert the DTO to a configuration object and update the configuration file.

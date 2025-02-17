@@ -117,7 +117,7 @@ class AllocationManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_allocation_data(self, study: StudyInterface, area_id: str) -> Dict[str, List[AllocationField]]:
+    def get_allocation_data(self, study: StudyInterface, area_id: str) -> Dict[str, float]:
         """
         Get hydraulic allocation data.
 
@@ -160,11 +160,12 @@ class AllocationManager:
         """
 
         areas_ids = {area.id for area in all_areas}
-        allocations = self.get_allocation_data(study, area_id)
+        allocations: Dict[str, float] = self.get_allocation_data(study, area_id)
 
         filtered_allocations = {area: value for area, value in allocations.items() if area in areas_ids}
         final_allocations = [
-            AllocationField.construct(area_id=area, coefficient=value) for area, value in filtered_allocations.items()
+            AllocationField.model_construct(area_id=area, coefficient=value)
+            for area, value in filtered_allocations.items()
         ]
         return AllocationFormFields.model_validate({"allocation": final_allocations})
 
@@ -211,7 +212,7 @@ class AllocationManager:
 
         return AllocationFormFields.model_construct(
             allocation=[
-                AllocationField.construct(area_id=area, coefficient=value)
+                AllocationField.model_construct(area_id=area, coefficient=value)
                 for area, value in updated_allocations.items()
             ]
         )

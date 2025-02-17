@@ -138,7 +138,7 @@ class OptimizationManager:
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return OptimizationFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return OptimizationFormFields.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(self, study: StudyInterface, field_values: OptimizationFormFields) -> None:
         """

@@ -480,7 +480,7 @@ def test_sim_result() -> None:
 
     client = create_test_client(mock_service, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")
-    actual_object = [StudySimResultDTO.parse_obj(res.json()[0])]
+    actual_object = [StudySimResultDTO.model_validate(res.json()[0])]
     assert actual_object == result_data
 
 

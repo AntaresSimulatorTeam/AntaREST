@@ -622,7 +622,7 @@ class MatrixAggregationResult(AntaresBaseModel):
     warnings: List[str]
 
     def to_dto(self) -> MatrixAggregationResultDTO:
-        return MatrixAggregationResultDTO.construct(
+        return MatrixAggregationResultDTO.model_construct(
             index=self.index,
             data=[
                 TimeSeriesData.model_construct(

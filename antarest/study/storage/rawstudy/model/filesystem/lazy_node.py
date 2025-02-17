@@ -51,7 +51,8 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         if self.config.archive_path:
             path, tmp_dir = self._extract_file_to_tmp_dir(self.config.archive_path)
         else:
-            path = self.config.path
+            link_path = self.get_link_path()
+            path = link_path if link_path.exists() else self.config.path
         return path, tmp_dir
 
     def file_exists(self) -> bool:
@@ -82,17 +83,12 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         if get_node:
             return self
 
-        if self.get_link_path().exists():
-            link = self.get_link_path().read_text()
-            if expanded:
-                return link
-            else:
-                return cast(G, self.context.resolver.resolve(link, formatted))
-
         if expanded:
+            if self.get_link_path().exists():
+                return self.get_link_path().read_text()
             return self.get_lazy_content()
-        else:
-            return self.load(url, depth, expanded, formatted)
+
+        return self.load(url, depth, expanded, formatted)
 
     @override
     def get(

@@ -32,7 +32,6 @@ class UpdateDistrict(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_DISTRICT
-    version: int = 1
 
     # Command parameters
     # ==================

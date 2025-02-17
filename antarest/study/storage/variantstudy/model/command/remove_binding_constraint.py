@@ -32,7 +32,6 @@ class RemoveBindingConstraint(ICommand):
     """
 
     command_name: CommandName = CommandName.REMOVE_BINDING_CONSTRAINT
-    version: int = 1
 
     # Properties of the `REMOVE_BINDING_CONSTRAINT` command:
     id: str

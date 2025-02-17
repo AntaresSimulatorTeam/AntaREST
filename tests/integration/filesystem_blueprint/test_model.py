@@ -13,7 +13,6 @@
 import asyncio
 import datetime
 import re
-import shutil
 from pathlib import Path
 
 from pytest_mock import MockerFixture

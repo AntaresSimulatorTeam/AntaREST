@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 
 import copy
-from typing import List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Type
 
 from antares.study.version import StudyVersion
 
@@ -56,7 +57,7 @@ from antarest.study.storage.variantstudy.model.command.update_scenario_builder i
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-COMMAND_MAPPING = {
+COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_AREA.value: CreateArea,
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
     CommandName.REMOVE_AREA.value: RemoveArea,
@@ -88,6 +89,11 @@ COMMAND_MAPPING = {
 }
 
 
+@dataclass(frozen=True)
+class CommandValidationContext:
+    version: int
+
+
 class CommandFactory:
     """
     Service to convert CommendDTO to Command
@@ -109,13 +115,15 @@ class CommandFactory:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
             command_class = COMMAND_MAPPING[action]
-            return command_class(  # type: ignore
-                **args,
-                command_context=self.command_context,
-                version=version,
-                command_id=command_id,
-                study_version=study_version,
+            data = copy.deepcopy(args)
+            data.update(
+                {
+                    "command_context": self.command_context,
+                    "command_id": command_id,
+                    "study_version": study_version,
+                }
             )
+            return command_class.model_validate(data, context=CommandValidationContext(version=version))
         raise NotImplementedError(action)
 
     def to_command(self, command_dto: CommandDTO) -> List[ICommand]:
@@ -134,7 +142,7 @@ class CommandFactory:
         args = command_dto.args
         if isinstance(args, dict):
             # In some cases, pydantic can modify inplace the given args.
-            # We don't want that so before doing so we copy the dictionnary.
+            # We don't want that so before doing so we copy the dictionary.
             new_args = copy.deepcopy(args)
             return [
                 self._to_single_command(
