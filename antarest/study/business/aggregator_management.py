@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 import logging
-import typing as t
 from enum import StrEnum
 from pathlib import Path
+from typing import Any, Dict, List, MutableSequence, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -98,7 +98,7 @@ def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: 
         raise FileTooLargeError(estimated_df_size, maximum_size)
 
 
-def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> t.Sequence[str]:
+def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
     # original columns
     org_cols = df_cols.copy()
     if is_details:
@@ -116,12 +116,12 @@ def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, 
     return new_column_order
 
 
-def _infer_column_from_regex(cols: t.Sequence[str], col_regex: str) -> t.Optional[str]:
+def _infer_column_from_regex(cols: Sequence[str], col_regex: str) -> Optional[str]:
     stripped_lower_col_regex = col_regex.lower().strip()
     return next((c for c in cols if stripped_lower_col_regex in c.lower().strip()), None)
 
 
-def _infer_time_id(df: pd.DataFrame, is_details: bool) -> t.List[int]:
+def _infer_time_id(df: pd.DataFrame, is_details: bool) -> List[int]:
     if is_details:
         return df[TIME_ID_COL].tolist()
     else:
@@ -129,11 +129,11 @@ def _infer_time_id(df: pd.DataFrame, is_details: bool) -> t.List[int]:
 
 
 def _filtered_files_listing(
-    folders_to_check: t.List[Path],
+    folders_to_check: List[Path],
     query_file: str,
     frequency: str,
-) -> t.Dict[str, t.MutableSequence[str]]:
-    filtered_files: t.Dict[str, t.MutableSequence[str]] = {}
+) -> Dict[str, MutableSequence[str]]:
+    filtered_files: Dict[str, MutableSequence[str]] = {}
     for folder_path in folders_to_check:
         for file in folder_path.iterdir():
             if file.stem == f"{query_file}-{frequency}":
@@ -146,11 +146,11 @@ class AggregatorManager:
         self,
         study_path: Path,
         output_id: str,
-        query_file: t.Union[MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile],
+        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
         frequency: MatrixFrequency,
-        ids_to_consider: t.Sequence[str],
-        columns_names: t.Sequence[str],
-        mc_years: t.Optional[t.Sequence[int]] = None,
+        ids_to_consider: Sequence[str],
+        columns_names: Sequence[str],
+        mc_years: Optional[Sequence[int]] = None,
     ):
         self.study_path = study_path
         self.output_id = output_id
@@ -206,7 +206,7 @@ class AggregatorManager:
         df.columns = pd.Index(new_cols)
         return df
 
-    def _filter_ids(self, folder_path: Path) -> t.List[str]:
+    def _filter_ids(self, folder_path: Path) -> List[str]:
         if self.output_type == "areas":
             # Areas names filtering
             areas_ids = sorted([d.name for d in folder_path.iterdir()])
@@ -220,7 +220,7 @@ class AggregatorManager:
             return [link for link in links_ids if link in self.ids_to_consider]
         return links_ids
 
-    def _gather_all_files_to_consider(self) -> t.Sequence[Path]:
+    def _gather_all_files_to_consider(self) -> Sequence[Path]:
         if self.mc_root == MCRoot.MC_IND:
             # Monte Carlo years filtering
             all_mc_years = [d.name for d in self.mc_ind_path.iterdir()]
@@ -312,7 +312,7 @@ class AggregatorManager:
 
             # using a dictionary to build the new data frame with the base columns (NO2, production etc.)
             # and the cluster id and time id
-            new_obj: t.Dict[str, t.Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
+            new_obj: Dict[str, Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
 
             # loop over the cluster id to extract the values of the actual columns
             for cluster_id, dummy_component in cluster_dummy_product_cols:
@@ -356,7 +356,7 @@ class AggregatorManager:
             # just extract the data frame from the file by just merging the columns components
             return self._parse_output_file(file_path)
 
-    def _build_dataframe(self, files: t.Sequence[Path]) -> pd.DataFrame:
+    def _build_dataframe(self, files: Sequence[Path]) -> pd.DataFrame:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [

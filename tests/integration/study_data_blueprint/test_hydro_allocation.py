@@ -191,7 +191,7 @@ class TestHydroAllocation:
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            data=area_info.json(),
+            data=area_info.model_dump_json(),
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
 

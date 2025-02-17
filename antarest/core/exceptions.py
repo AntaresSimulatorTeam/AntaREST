@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import re
-import typing as t
 from http import HTTPStatus
+from typing import Optional, Sequence
 
 from fastapi.exceptions import HTTPException
 from typing_extensions import override
@@ -337,7 +337,7 @@ class TaskAlreadyRunning(HTTPException):
 
 
 class StudyDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str, message: t.Optional[str] = None) -> None:
+    def __init__(self, uuid: str, message: Optional[str] = None) -> None:
         msg = f"Study {uuid} (not managed) is not allowed to be deleted"
         if message:
             msg += f"\n{message}"
@@ -384,7 +384,7 @@ class ReferencedObjectDeletionNotAllowed(HTTPException):
     other objects: areas, links or thermal clusters.
     """
 
-    def __init__(self, object_id: str, binding_ids: t.Sequence[str], *, object_type: str) -> None:
+    def __init__(self, object_id: str, binding_ids: Sequence[str], *, object_type: str) -> None:
         """
         Initialize the exception.
 

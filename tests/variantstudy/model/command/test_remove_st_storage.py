@@ -16,7 +16,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -66,7 +66,6 @@ class TestRemoveSTStorage:
 
         # Check the attribues
         assert cmd.command_name == CommandName.REMOVE_ST_STORAGE
-        assert cmd.version == 1
         assert cmd.study_version == STUDY_VERSION_8_8
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
@@ -88,7 +87,7 @@ class TestRemoveSTStorage:
                 "loc": ("storage_id",),
                 "msg": "String should match pattern '[a-z0-9_(),& -]+'",
                 "type": "string_pattern_mismatch",
-                "url": "https://errors.pydantic.dev/2.8/v/string_pattern_mismatch",
+                "url": "https://errors.pydantic.dev/2.10/v/string_pattern_mismatch",
             }
         ]
 
@@ -196,43 +195,6 @@ class TestRemoveSTStorage:
             args={"area_id": "area_fr", "storage_id": "storage_1"},
             study_version=STUDY_VERSION_8_8,
         )
-
-    def test_match_signature(self, command_context: CommandContext):
-        cmd = RemoveSTStorage(
-            command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
-        )
-        assert cmd.match_signature() == "remove_st_storage%area_fr%storage_1"
-
-    @pytest.mark.parametrize("area_id", ["area_fr", "area_en"])
-    @pytest.mark.parametrize("storage_id", ["storage_1", "storage_2"])
-    def test_match(
-        self,
-        command_context: CommandContext,
-        area_id,
-        storage_id,
-    ):
-        cmd1 = RemoveSTStorage(
-            command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
-        )
-        cmd2 = RemoveSTStorage(
-            command_context=command_context, area_id=area_id, storage_id=storage_id, study_version=STUDY_VERSION_8_8
-        )
-        is_equal = area_id == cmd1.area_id and storage_id == cmd1.storage_id
-        assert cmd1.match(cmd2, equal=False) == is_equal
-        assert cmd1.match(cmd2, equal=True) == is_equal
-
-    def test_create_diff(self, command_context: CommandContext):
-        cmd = RemoveSTStorage(
-            command_context=command_context, area_id="area_fr", storage_id="storage_1", study_version=STUDY_VERSION_8_8
-        )
-        other = RemoveSTStorage(
-            command_context=command_context,
-            area_id=cmd.area_id,
-            storage_id=cmd.storage_id,
-            study_version=STUDY_VERSION_8_8,
-        )
-        actual = cmd.create_diff(other)
-        assert not actual
 
     def test_get_inner_matrices(self, command_context: CommandContext):
         cmd = RemoveSTStorage(

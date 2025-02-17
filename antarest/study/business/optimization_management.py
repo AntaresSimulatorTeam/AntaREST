@@ -12,7 +12,6 @@
 
 from typing import Any, Dict, List, Union, cast
 
-from antares.study.version import StudyVersion
 from pydantic.types import StrictBool
 
 from antarest.study.business.all_optional_meta import all_optional_model
@@ -139,7 +138,7 @@ class OptimizationManager:
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return OptimizationFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return OptimizationFormFields.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(self, study: Study, field_values: OptimizationFormFields) -> None:
         """

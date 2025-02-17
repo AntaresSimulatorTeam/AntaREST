@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import re
-import typing as t
 from builtins import sorted
+from typing import Any, Dict, Iterable, List, Optional, Set, cast
 
 from pydantic import model_validator
 
@@ -34,19 +34,19 @@ FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
 DEFAULT_FILTER_VALUE = FILTER_OPTIONS
 
 
-def sort_filter_options(options: t.Iterable[str]) -> t.List[str]:
+def sort_filter_options(options: Iterable[str]) -> List[str]:
     return sorted(
         options,
         key=lambda x: FILTER_OPTIONS.index(x),
     )
 
 
-def encode_filter(value: str) -> t.Set[str]:
+def encode_filter(value: str) -> Set[str]:
     stripped = value.strip()
     return set(re.split(r"\s*,\s*", stripped) if stripped else [])
 
 
-def decode_filter(encoded_value: t.Set[str], current_filter: t.Optional[str] = None) -> str:
+def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None) -> str:
     return ", ".join(sort_filter_options(encoded_value))
 
 
@@ -57,13 +57,15 @@ class PropertiesFormFields(FormFieldsBaseModel):
     non_dispatch_power: bool
     dispatch_hydro_power: bool
     other_dispatch_power: bool
-    filter_synthesis: t.Set[str]
-    filter_by_year: t.Set[str]
+    spread_unsupplied_energy_cost: float
+    spread_spilled_energy_cost: float
+    filter_synthesis: Set[str]
+    filter_by_year: Set[str]
     # version 830
     adequacy_patch_mode: AdequacyPatchMode
 
     @model_validator(mode="before")
-    def validation(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         filters = {
             "filter_synthesis": values.get("filter_synthesis"),
             "filter_by_year": values.get("filter_by_year"),
@@ -77,7 +79,7 @@ class PropertiesFormFields(FormFieldsBaseModel):
         return values
 
 
-FIELDS_INFO: t.Dict[str, FieldInfo] = {
+FIELDS_INFO: Dict[str, FieldInfo] = {
     "energy_cost_unsupplied": {
         "path": THERMAL_PATH.format(field="unserverdenergycost"),
         "default_value": 0.0,
@@ -97,6 +99,14 @@ FIELDS_INFO: t.Dict[str, FieldInfo] = {
     "other_dispatch_power": {
         "path": f"{NODAL_OPTIMIZATION_PATH}/other-dispatchable-power",
         "default_value": True,
+    },
+    "spread_unsupplied_energy_cost": {
+        "path": f"{NODAL_OPTIMIZATION_PATH}/spread-unsupplied-energy-cost",
+        "default_value": 0.0,
+    },
+    "spread_spilled_energy_cost": {
+        "path": f"{NODAL_OPTIMIZATION_PATH}/spread-spilled-energy-cost",
+        "default_value": 0.0,
     },
     "filter_synthesis": {
         "path": f"{FILTERING_PATH}/filter-synthesis",
@@ -130,9 +140,9 @@ class PropertiesManager:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         study_ver = file_study.config.version
 
-        def get_value(field_info: FieldInfo) -> t.Any:
-            start_ver = t.cast(int, field_info.get("start_version", 0))
-            end_ver = t.cast(int, field_info.get("end_version", study_ver))
+        def get_value(field_info: FieldInfo) -> Any:
+            start_ver = cast(int, field_info.get("start_version", 0))
+            end_ver = cast(int, field_info.get("end_version", study_ver))
             is_in_version = start_ver <= study_ver <= end_ver
             if not is_in_version:
                 return None
@@ -153,7 +163,7 @@ class PropertiesManager:
         area_id: str,
         field_values: PropertiesFormFields,
     ) -> None:
-        commands: t.List[UpdateConfig] = []
+        commands: List[UpdateConfig] = []
         file_study = self.storage_service.get_storage(study).get_raw(study)
         context = self.storage_service.variant_study_service.command_factory.command_context
 

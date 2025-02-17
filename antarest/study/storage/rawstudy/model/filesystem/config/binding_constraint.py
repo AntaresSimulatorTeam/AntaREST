@@ -14,7 +14,7 @@
 Object model used to read and update binding constraint configuration.
 """
 
-import typing as t
+from typing import Dict, List
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
@@ -51,7 +51,7 @@ class BindingConstraintOperator(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-OPERATOR_MATRICES_MAP: t.Dict[BindingConstraintOperator, t.List[str]] = {
+OPERATOR_MATRICES_MAP: Dict[BindingConstraintOperator, List[str]] = {
     BindingConstraintOperator.EQUAL: ["eq"],
     BindingConstraintOperator.GREATER: ["gt"],
     BindingConstraintOperator.LESS: ["lt"],

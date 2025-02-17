@@ -10,16 +10,17 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from abc import ABCMeta
 from enum import Enum
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type
 
 import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.model import LowerCaseStr
+from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
@@ -31,7 +32,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import validate_matrix
@@ -40,11 +42,11 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
 )
 from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType = t.List[t.List[MatrixData]]
+MatrixType = List[List[MatrixData]]
 
 EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.HOURLY: (8784, 3),
@@ -103,7 +105,7 @@ class BindingConstraintPropertiesBase(AntaresBaseModel, extra="forbid", populate
     comments: str = ""
 
     @model_validator(mode="before")
-    def replace_with_alias(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def replace_with_alias(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "type" in values:
             values["time_step"] = values.pop("type")
         return values
@@ -114,22 +116,20 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_synthesis: str = Field("", alias="filter-synthesis")
 
     @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
-    def _validate_filtering(cls, v: t.Any) -> str:
+    def _validate_filtering(cls, v: Any) -> str:
         return validate_filtering(v)
 
 
 class BindingConstraintProperties870(BindingConstraintProperties830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
-BindingConstraintProperties = t.Union[
-    BindingConstraintPropertiesBase,
-    BindingConstraintProperties830,
-    BindingConstraintProperties870,
-]
+BindingConstraintProperties = (
+    BindingConstraintPropertiesBase | BindingConstraintProperties830 | BindingConstraintProperties870
+)
 
 
-def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[BindingConstraintProperties]:
+def get_binding_constraint_config_cls(study_version: StudyVersion) -> Type[BindingConstraintProperties]:
     """
     Retrieves the binding constraint configuration class based on the study version.
     """
@@ -141,7 +141,7 @@ def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[Bin
         return BindingConstraintPropertiesBase
 
 
-def create_binding_constraint_config(study_version: StudyVersion, **kwargs: t.Any) -> BindingConstraintProperties:
+def create_binding_constraint_config(study_version: StudyVersion, **kwargs: Any) -> BindingConstraintProperties:
     """
     Factory method to create a binding constraint configuration model.
 
@@ -173,27 +173,25 @@ class BindingConstraintMatrices(AntaresBaseModel, extra="forbid", populate_by_na
     Class used to store the matrices of a binding constraint.
     """
 
-    values: t.Optional[t.Union[MatrixType, str]] = Field(
+    values: Optional[MatrixType | str] = Field(
         default=None,
         description="2nd member matrix for studies before v8.7",
     )
-    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    less_term_matrix: Optional[MatrixType | str] = Field(
         default=None,
         description="less term matrix for v8.7+ studies",
     )
-    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    greater_term_matrix: Optional[MatrixType | str] = Field(
         default=None,
         description="greater term matrix for v8.7+ studies",
     )
-    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    equal_term_matrix: Optional[MatrixType | str] = Field(
         default=None,
         description="equal term matrix for v8.7+ studies",
     )
 
     @model_validator(mode="before")
-    def check_matrices(
-        cls, values: t.Dict[str, t.Optional[t.Union[MatrixType, str]]]
-    ) -> t.Dict[str, t.Optional[t.Union[MatrixType, str]]]:
+    def check_matrices(cls, values: Dict[str, Optional[MatrixType | str]]) -> Dict[str, Optional[MatrixType | str]]:
         values_matrix = values.get("values") or None
         less_term_matrix = values.get("less_term_matrix") or None
         greater_term_matrix = values.get("greater_term_matrix") or None
@@ -217,7 +215,9 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     Abstract class for binding constraint commands.
     """
 
-    coeffs: t.Optional[t.Dict[str, t.List[float]]] = None
+    _SERIALIZATION_VERSION: Final[int] = 1
+
+    coeffs: Optional[Dict[str, List[float]]] = None
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -244,11 +244,14 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                 args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
 
         return CommandDTO(
-            action=self.command_name.value, args=args, version=self.version, study_version=self.study_version
+            action=self.command_name.value,
+            args=args,
+            version=self._SERIALIZATION_VERSION,
+            study_version=self.study_version,
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         matrix_service = self.command_context.matrix_service
         return [
             matrix_service.get_matrix_id(matrix)
@@ -263,11 +266,11 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
     def get_corresponding_matrices(
         self,
-        v: t.Optional[t.Union[MatrixType, str]],
+        v: Optional[MatrixType | str],
         time_step: BindingConstraintFrequency,
         version: StudyVersion,
         create: bool,
-    ) -> t.Optional[str]:
+    ) -> Optional[str]:
         constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
 
         if v is None:
@@ -302,7 +305,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         self,
         *,
         time_step: BindingConstraintFrequency,
-        specific_matrices: t.Optional[t.List[str]],
+        specific_matrices: Optional[List[str]],
         version: StudyVersion,
         create: bool,
     ) -> None:
@@ -323,11 +326,11 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     def apply_binding_constraint(
         self,
         study_data: FileStudy,
-        binding_constraints: t.Dict[str, t.Any],
+        binding_constraints: Dict[str, Any],
         new_key: str,
         bd_id: str,
         *,
-        old_groups: t.Optional[t.Set[str]] = None,
+        old_groups: Optional[Set[str]] = None,
     ) -> CommandOutput:
         version = study_data.config.version
 
@@ -417,7 +420,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     name: str
 
     @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         bd_id = transform_name_to_id(self.name)
         group = self.group or DEFAULT_GROUP
         operator = self.operator or DEFAULT_OPERATOR
@@ -433,7 +436,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         return CommandOutput(status=True), {}
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = str(len(binding_constraints))
         bd_id = transform_name_to_id(self.name)
@@ -456,51 +459,3 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         dto = super().to_dto()
         dto.args["name"] = self.name  # type: ignore
         return dto
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
-
-        other = t.cast(CreateBindingConstraint, other)
-        bd_id = transform_name_to_id(self.name)
-        args = {"id": bd_id, "command_context": other.command_context, "study_version": other.study_version}
-
-        excluded_fields = set(ICommand.model_fields)
-        self_command = self.model_dump(mode="json", exclude=excluded_fields)
-        other_command = other.model_dump(mode="json", exclude=excluded_fields)
-        properties = [
-            "enabled",
-            "coeffs",
-            "comments",
-            "filter_year_by_year",
-            "filter_synthesis",
-            "group",
-            "time_step",
-            "operator",
-        ]
-        for prop in properties:
-            if self_command[prop] != other_command[prop]:
-                args[prop] = other_command[prop]
-
-        matrix_service = self.command_context.matrix_service
-        for matrix_name in ["values"] + [m.value for m in TermMatrices]:
-            self_matrix = getattr(self, matrix_name)  # matrix, ID or `None`
-            other_matrix = getattr(other, matrix_name)  # matrix, ID or `None`
-            self_matrix_id = None if self_matrix is None else matrix_service.get_matrix_id(self_matrix)
-            other_matrix_id = None if other_matrix is None else matrix_service.get_matrix_id(other_matrix)
-            if self_matrix_id != other_matrix_id:
-                args[matrix_name] = other_matrix_id
-
-        return [UpdateBindingConstraint.model_validate(args)]
-
-    @override
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        if not equal:
-            return self.name == other.name
-        return super().match(other, equal)

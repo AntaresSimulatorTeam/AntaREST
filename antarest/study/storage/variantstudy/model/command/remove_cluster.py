@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
@@ -20,7 +20,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
     remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -34,7 +34,6 @@ class RemoveCluster(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_THERMAL_CLUSTER
-    version: int = 1
 
     # Command parameters
     # ==================
@@ -43,7 +42,7 @@ class RemoveCluster(ICommand):
     cluster_id: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data: remove the thermal clusters from the storages list.
 
@@ -102,7 +101,7 @@ class RemoveCluster(ICommand):
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update thermal cluster configurations and saves the changes:
         remove corresponding the configuration and remove the attached time series.
@@ -152,27 +151,7 @@ class RemoveCluster(ICommand):
         )
 
     @override
-    def match_signature(self) -> str:
-        return str(
-            self.command_name.value
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.cluster_id
-            + MATCH_SIGNATURE_SEPARATOR
-            + self.area_id
-        )
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveCluster):
-            return False
-        return self.cluster_id == other.cluster_id and self.area_id == other.area_id
-
-    @override
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return []
-
-    @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []
 
     def _remove_cluster_from_binding_constraints(self, study_data: FileStudy) -> None:

@@ -11,19 +11,16 @@
 # This file is part of the Antares project.
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import field_validator
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    DistrictSet,
-    FileStudyTreeConfig,
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -42,7 +39,6 @@ class CreateDistrict(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_DISTRICT
-    version: int = 1
 
     # Command parameters
     # ==================
@@ -119,49 +115,6 @@ class CreateDistrict(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.name)
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, CreateDistrict):
-            return False
-        simple_match = self.name == other.name
-        if not equal:
-            return simple_match
-        return (
-            simple_match
-            and self.base_filter == other.base_filter
-            and self.filter_items == other.filter_items
-            and self.output == other.output
-            and self.comments == other.comments
-        )
-
-    @override
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        other = cast(CreateDistrict, other)
-        district_id = transform_name_to_id(self.name)
-        from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-        base_filter = other.base_filter or DistrictBaseFilter.remove_all
-        inverted_set = base_filter == DistrictBaseFilter.add_all
-        item_key = "-" if inverted_set else "+"
-        return [
-            UpdateConfig(
-                target=f"input/areas/sets/{district_id}",
-                data={
-                    "caption": other.name,
-                    "apply-filter": (other.base_filter or DistrictBaseFilter.remove_all).value,
-                    item_key: other.filter_items or [],
-                    "output": other.output,
-                    "comments": other.comments,
-                },
-                command_context=self.command_context,
-                study_version=self.study_version,
-            )
-        ]
 
     @override
     def get_inner_matrices(self) -> List[str]:

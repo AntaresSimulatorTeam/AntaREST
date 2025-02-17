@@ -55,7 +55,7 @@ import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import type { EmptyObject } from "../../../../../utils/tsUtils";
-import DigestDialog from "../../../../common/dialogs/DigestDialog";
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
 
 interface OutputDetail {
   name: string;

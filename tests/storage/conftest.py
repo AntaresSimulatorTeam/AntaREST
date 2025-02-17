@@ -13,7 +13,7 @@
 import datetime
 import uuid
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest
@@ -26,24 +26,6 @@ from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
-
-
-@pytest.fixture
-def ini_cleaner() -> Callable[[str], str]:
-    def cleaner(txt: str) -> str:
-        lines = filter(None, map(str.strip, txt.splitlines(keepends=False)))
-        return "\n".join(lines)
-
-    return cleaner
-
-
-@pytest.fixture
-def clean_ini_writer(ini_cleaner: Callable[[str], str]) -> Callable[[Path, str], None]:
-    def write_clean_ini(path: Path, txt: str) -> None:
-        clean_ini = ini_cleaner(txt)
-        path.write_text(clean_ini)
-
-    return write_clean_ini
 
 
 @pytest.fixture

@@ -1,12 +1,11 @@
-import typing as t
 from datetime import timedelta
-from typing import List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 from pydantic import BaseModel, StrictBool, StrictInt, StrictStr, ValidationError, field_validator, model_validator
 
 
 class LoadConfig(BaseModel):
-    authjwt_token_location: Optional[t.Set[StrictStr]] = {"headers"}
+    authjwt_token_location: Optional[Set[StrictStr]] = {"headers"}
     authjwt_secret_key: Optional[StrictStr] = None
     authjwt_public_key: Optional[StrictStr] = None
     authjwt_private_key: Optional[StrictStr] = None
@@ -17,7 +16,7 @@ class LoadConfig(BaseModel):
     authjwt_decode_issuer: Optional[StrictStr] = None
     authjwt_decode_audience: Optional[Union[StrictStr, Sequence[StrictStr]]] = None
     authjwt_denylist_enabled: Optional[StrictBool] = False
-    authjwt_denylist_token_checks: Optional[t.Set[StrictStr]] = {"access", "refresh"}
+    authjwt_denylist_token_checks: Optional[Set[StrictStr]] = {"access", "refresh"}
     authjwt_header_name: Optional[StrictStr] = "Authorization"
     authjwt_header_type: Optional[StrictStr] = "Bearer"
     authjwt_access_token_expires: Optional[Union[StrictBool, StrictInt, timedelta]] = timedelta(minutes=15)
@@ -39,7 +38,7 @@ class LoadConfig(BaseModel):
     authjwt_refresh_csrf_cookie_path: Optional[StrictStr] = "/"
     authjwt_access_csrf_header_name: Optional[StrictStr] = "X-CSRF-Token"
     authjwt_refresh_csrf_header_name: Optional[StrictStr] = "X-CSRF-Token"
-    authjwt_csrf_methods: Optional[t.Set[StrictStr]] = {"POST", "PUT", "PATCH", "DELETE"}
+    authjwt_csrf_methods: Optional[Set[StrictStr]] = {"POST", "PUT", "PATCH", "DELETE"}
 
     @field_validator("authjwt_access_token_expires")
     def validate_access_token_expires(
@@ -64,7 +63,7 @@ class LoadConfig(BaseModel):
         return v
 
     @model_validator(mode="before")
-    def check_type_validity(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def check_type_validity(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         for _ in values.get("authjwt_csrf_methods", []):
             if _.upper() not in ["POST", "PUT", "PATCH", "DELETE"]:
                 raise ValidationError(

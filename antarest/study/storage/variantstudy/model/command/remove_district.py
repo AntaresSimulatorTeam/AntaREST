@@ -17,7 +17,7 @@ from typing_extensions import override
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -31,7 +31,6 @@ class RemoveDistrict(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_DISTRICT
-    version: int = 1
 
     # Command parameters
     # ==================
@@ -58,20 +57,6 @@ class RemoveDistrict(ICommand):
             },
             study_version=self.study_version,
         )
-
-    @override
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
-
-    @override
-    def match(self, other: ICommand, equal: bool = False) -> bool:
-        if not isinstance(other, RemoveDistrict):
-            return False
-        return self.id == other.id
-
-    @override
-    def _create_diff(self, other: "ICommand") -> List["ICommand"]:
-        return []
 
     @override
     def get_inner_matrices(self) -> List[str]:

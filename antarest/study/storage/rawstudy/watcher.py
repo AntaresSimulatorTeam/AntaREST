@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-import re
 import tempfile
 from html import escape
 from pathlib import Path

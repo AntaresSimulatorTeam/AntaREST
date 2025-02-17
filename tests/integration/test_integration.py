@@ -533,19 +533,19 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 {
                     "code-oi": None,
                     "enabled": True,
-                    "group": None,
+                    "group": "other 1",
                     "id": "cluster 1",
-                    "marginal-cost": None,
-                    "market-bid-cost": None,
-                    "min-down-time": None,
-                    "min-stable-power": None,
-                    "min-up-time": None,
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
                     "name": "cluster 1",
-                    "nominalcapacity": 0,
-                    "spinning": None,
-                    "spread-cost": None,
+                    "nominalcapacity": 0.0,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
                     "type": None,
-                    "unitcount": 0,
+                    "unitcount": 1,
                 }
             ],
             "type": "AREA",
@@ -559,19 +559,19 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 {
                     "code-oi": None,
                     "enabled": True,
-                    "group": None,
+                    "group": "other 1",
                     "id": "cluster 2",
-                    "marginal-cost": None,
-                    "market-bid-cost": None,
-                    "min-down-time": None,
-                    "min-stable-power": None,
-                    "min-up-time": None,
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
                     "name": "cluster 2",
                     "nominalcapacity": 2.5,
-                    "spinning": None,
-                    "spread-cost": None,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
                     "type": None,
-                    "unitcount": 0,
+                    "unitcount": 1,
                 }
             ],
             "type": "AREA",
@@ -580,7 +580,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "id": "all areas",
             "metadata": {"country": None, "tags": []},
             "name": "All areas",
-            "set": ANY,  # because some time the order is not the same
+            "set": ["area 1", "area 2"],
             "thermals": None,
             "type": "DISTRICT",
         },
@@ -1154,6 +1154,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "nonDispatchPower": True,
         "dispatchHydroPower": True,
         "otherDispatchPower": True,
+        "spreadUnsuppliedEnergyCost": 0.0,
+        "spreadSpilledEnergyCost": 0.0,
         "filterSynthesis": {"hourly", "daily", "weekly", "monthly", "annual"},
         "filterByYear": {"hourly", "daily", "weekly", "monthly", "annual"},
         "adequacyPatchMode": "outside",
@@ -1167,6 +1169,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "nonDispatchPower": False,
             "dispatchHydroPower": False,
             "otherDispatchPower": False,
+            "spreadUnsuppliedEnergyCost": 10.0,
+            "spreadSpilledEnergyCost": 10.0,
             "filterSynthesis": ["monthly", "annual"],
             "filterByYear": ["hourly", "daily", "annual"],
             "adequacyPatchMode": "inside",
@@ -1182,6 +1186,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "nonDispatchPower": False,
         "dispatchHydroPower": False,
         "otherDispatchPower": False,
+        "spreadUnsuppliedEnergyCost": 10.0,
+        "spreadSpilledEnergyCost": 10.0,
         "filterSynthesis": {"monthly", "annual"},
         "filterByYear": {"hourly", "daily", "annual"},
         "adequacyPatchMode": "inside",
@@ -1223,101 +1229,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Time-series form
 
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
+    res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {
-        "load": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "hydro": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "thermal": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "renewables": {
-            "stochasticTsStatus": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "ntc": {"stochasticTsStatus": False, "intraModal": False},
-    }
-    client.put(
-        f"/v1/studies/{study_id}/config/timeseries/form",
-        json={
-            "thermal": {"stochasticTsStatus": True},
-            "load": {
-                "stochasticTsStatus": True,
-                "storeInInput": True,
-                "seasonCorrelation": "monthly",
-            },
-        },
-    )
-    res_ts_config = client.get(f"/v1/studies/{study_id}/config/timeseries/form")
+    assert res_ts_config_json == {"thermal": {"number": 1}}
+    client.put(f"/v1/studies/{study_id}/timeseries/config", json={"thermal": {"number": 2}})
+    res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
-    assert res_ts_config_json == {
-        "load": {
-            "stochasticTsStatus": True,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "monthly",
-            "storeInInput": True,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "hydro": {
-            "stochasticTsStatus": False,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "seasonCorrelation": "annual",
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "thermal": {
-            "stochasticTsStatus": True,
-            "number": 1,
-            "refresh": False,
-            "refreshInterval": 100,
-            "storeInInput": False,
-            "storeInOutput": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "renewables": {
-            "stochasticTsStatus": False,
-            "intraModal": False,
-            "interModal": False,
-        },
-        "ntc": {"stochasticTsStatus": False, "intraModal": False},
-    }
+    assert res_ts_config_json == {"thermal": {"number": 2}}
 
     # Renewable form
 
@@ -1338,7 +1256,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     )
     expected = {
         "enabled": False,
-        "group": "Other RES 1",  # Default group used when not specified.
+        "group": "other res 1",
         "id": "cluster renewable 1",
         "name": "cluster renewable 1 renamed",
         "nominalCapacity": 3.0,
@@ -1351,7 +1269,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Thermal form
 
     obj = {
-        "group": "Lignite",
+        "group": "lignite",
         "name": "cluster 1 renamed",
         "unitCount": 3,
         "enabled": False,
@@ -1472,19 +1390,19 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 {
                     "code-oi": None,
                     "enabled": True,
-                    "group": None,
+                    "group": "other 1",
                     "id": "cluster 2",
-                    "marginal-cost": None,
-                    "market-bid-cost": None,
-                    "min-down-time": None,
-                    "min-stable-power": None,
-                    "min-up-time": None,
+                    "marginal-cost": 0.0,
+                    "market-bid-cost": 0.0,
+                    "min-down-time": 1,
+                    "min-stable-power": 0.0,
+                    "min-up-time": 1,
                     "name": "cluster 2",
                     "nominalcapacity": 2.5,
-                    "spinning": None,
-                    "spread-cost": None,
+                    "spinning": 0.0,
+                    "spread-cost": 0.0,
                     "type": None,
-                    "unitcount": 0,
+                    "unitcount": 1,
                 }
             ],
             "type": "AREA",

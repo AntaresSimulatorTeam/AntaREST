@@ -14,8 +14,8 @@ import collections
 import http
 import io
 import logging
-import typing as t
 from pathlib import Path, PurePosixPath
+from typing import Annotated, Any, List, Sequence
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Query
@@ -25,7 +25,7 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.requests import RequestParameters
-from antarest.core.serialization import from_json, to_json
+from antarest.core.serde.json import from_json, to_json
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -82,10 +82,10 @@ CONTENT_TYPES = {
 }
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-PATH_TYPE = t.Annotated[str, Query(openapi_examples=get_path_examples())]
+PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
 
 
-def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
+def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
     """Split a comma-separated list of values into an ordered set of strings."""
     values = value.split(",") if value else default
     # drop whitespace around values
@@ -121,7 +121,7 @@ def create_raw_study_routes(
         depth: int = 3,
         formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Any:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -200,7 +200,7 @@ def create_raw_study_routes(
         uuid: str,
         path: PATH_TYPE = "/",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Any:
         """
         Fetches for a file in its original format from a study folder
 
@@ -236,7 +236,7 @@ def create_raw_study_routes(
     )
     def delete_file(
         uuid: str,
-        path: t.Annotated[
+        path: Annotated[
             str,
             Query(
                 openapi_examples={
@@ -245,7 +245,7 @@ def create_raw_study_routes(
             ),
         ] = "/",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Any:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}", extra={"user": current_user.id})
         study_service.delete_user_file_or_folder(uuid, path, current_user)
@@ -598,12 +598,12 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/validate",
         summary="Launch test validation on study",
         tags=[APITag.study_raw_data],
-        response_model=t.List[str],
+        response_model=List[str],
     )
     def validate(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.List[str]:
+    ) -> List[str]:
         """
         Launches test validation on the raw data of a study.
         The validation is done recursively on all the files in the study

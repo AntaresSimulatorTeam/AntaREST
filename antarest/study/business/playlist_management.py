@@ -42,7 +42,7 @@ class PlaylistManager:
         nb_years = file_study.tree.get(FIELDS_INFO["nb_years"]["path"].split("/")) or len(playlist)
 
         return {
-            year: PlaylistColumns.construct(
+            year: PlaylistColumns.model_construct(
                 status=year in playlist,
                 # TODO the real value for disable year
                 weight=playlist.get(year, DEFAULT_WEIGHT),

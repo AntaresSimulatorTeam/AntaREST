@@ -19,7 +19,7 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import Annotated
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
-from antarest.study.business.area_management import AreaInfoDTO
+from antarest.study.business.model.area_model import AreaInfoDTO
 from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
 from antarest.study.storage.storage_service import StudyStorageService
@@ -117,7 +117,7 @@ class AllocationManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
 
-    def get_allocation_data(self, study: Study, area_id: str) -> Dict[str, List[AllocationField]]:
+    def get_allocation_data(self, study: Study, area_id: str) -> Dict[str, float]:
         """
         Get hydraulic allocation data.
 
@@ -160,11 +160,12 @@ class AllocationManager:
         """
 
         areas_ids = {area.id for area in all_areas}
-        allocations = self.get_allocation_data(study, area_id)
+        allocations: Dict[str, float] = self.get_allocation_data(study, area_id)
 
         filtered_allocations = {area: value for area, value in allocations.items() if area in areas_ids}
         final_allocations = [
-            AllocationField.construct(area_id=area, coefficient=value) for area, value in filtered_allocations.items()
+            AllocationField.model_construct(area_id=area, coefficient=value)
+            for area, value in filtered_allocations.items()
         ]
         return AllocationFormFields.model_validate({"allocation": final_allocations})
 
@@ -210,9 +211,9 @@ class AllocationManager:
 
         updated_allocations = self.get_allocation_data(study, area_id)
 
-        return AllocationFormFields.construct(
+        return AllocationFormFields.model_construct(
             allocation=[
-                AllocationField.construct(area_id=area, coefficient=value)
+                AllocationField.model_construct(area_id=area, coefficient=value)
                 for area, value in updated_allocations.items()
             ]
         )
@@ -250,4 +251,4 @@ class AllocationManager:
                 col_idx = columns.index(prod_area)
                 array[row_idx][col_idx] = coefficient
 
-        return AllocationMatrix.construct(index=rows, columns=columns, data=array.tolist())
+        return AllocationMatrix.model_construct(index=rows, columns=columns, data=array.tolist())
