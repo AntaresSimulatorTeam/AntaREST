@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyTreeNode } from "./types";
+import type { NonStudyFolderDTO } from "./types";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
@@ -22,14 +22,8 @@ import { getParentPaths } from "../../../../utils/pathUtils";
 import * as R from "ramda";
 import React, { useState } from "react";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
-import {
-  mergeDeepRightStudyTree,
-  fetchAndInsertSubfolders,
-  fetchAndInsertWorkspaces,
-} from "./utils";
+import { fetchSubfolders, insertFoldersIfNotExist } from "./utils";
 import { useTranslation } from "react-i18next";
-import { toError } from "@/utils/fnUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
 import { useUpdateEffect } from "react-use";
@@ -37,22 +31,16 @@ import { useUpdateEffect } from "react-use";
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
+  const [subFolders, setSubFolders] = useState<NonStudyFolderDTO[]>([]);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
 
-  // Initialize folders once we have the tree
-  // we use useUpdateEffectOnce because at first render initialStudiesTree isn't initialized
-  useUpdateEffectOnce(() => {
-    // be carefull to pass initialStudiesTree and not studiesTree at rootNode parameter
-    // otherwise we'll lose the default workspace
-    updateTree(ROOT_FOLDER_NAME, initialStudiesTree);
-  }, [initialStudiesTree]);
-
   useUpdateEffect(() => {
-    setStudiesTree((currentState) => mergeDeepRightStudyTree(currentState, initialStudiesTree));
+    const nextStudiesTree = insertFoldersIfNotExist(initialStudiesTree, subFolders);
+    setStudiesTree(nextStudiesTree);
   }, [initialStudiesTree]);
 
   /**
@@ -71,53 +59,36 @@ function StudyTree() {
    * @param rootNode - The root node of the tree
    * @param selectedNode - The node of the item clicked
    */
-  async function updateTree(itemId: string, rootNode: StudyTreeNode) {
+  async function updateTree(itemId: string) {
     if (itemId.startsWith(DEFAULT_WORKSPACE_PREFIX)) {
       // we don't update the tree if the user clicks on the default workspace
       // api doesn't allow to fetch the subfolders of the default workspace
       return;
     }
-    setItemsLoading([...itemsLoading, itemId]);
-    // Bug fix : this function used to take only the itemId and the selectedNode, and we used to initialize treeAfterWorkspacesUpdate
-    // with the studiesTree closure, referencing directly the state, like this : treeAfterWorkspacesUpdate = studiesTree;
-    // The thing is at the first render studiesTree was empty.
-    // This made updateTree override studiesTree with an empty tree during the first call. This caused a bug where we didn't see the default
-    // workspace in the UI, as it was overridden by an empty tree at start and then the get workspaces api never returns the default workspace.
-    // Now we don't use the closure anymore, we pass the root tree as a parameter. Thus at the first call of updateTree, we pass initialStudiesTree.
-    // You may think why we don't just capture initialStudiesTree then, it's because in the following call we need to pass studiesTree.
-    let treeAfterWorkspacesUpdate = rootNode;
-
-    let pathsToFetch: string[] = [];
-    // If the user clicks on the root folder, we fetch the workspaces and insert them.
-    // Then we fetch the direct subfolders of the workspaces.
+    // If the user clicks on the root folder, we don't update the tree,
+    // there're no subfolders under the root only workspaces.
     if (itemId === ROOT_FOLDER_NAME) {
-      try {
-        treeAfterWorkspacesUpdate = await fetchAndInsertWorkspaces(rootNode);
-      } catch (error) {
-        enqueueErrorSnackbar(t("studies.tree.error.failToFetchWorkspace"), toError(error));
-      }
-      pathsToFetch = treeAfterWorkspacesUpdate.children
-        .filter((t) => t.name !== "default") // We don't fetch the default workspace subfolders, api don't allow it
-        .map((child) => `root${child.path}`);
-    } else {
-      // If the user clicks on a folder, we add the path of the clicked folder to the list of paths to fetch.
-      pathsToFetch = [itemId];
+      return;
     }
-
-    const [treeAfterSubfoldersUpdate, failedPath] = await fetchAndInsertSubfolders(
-      pathsToFetch,
-      treeAfterWorkspacesUpdate,
-    );
-    if (failedPath.length > 0) {
+    // usefull flag to display "loading..." message
+    setItemsLoading([...itemsLoading, itemId]);
+    // fetch subfolders and inesrt them to the tree
+    try {
+      const newSubFolders = await fetchSubfolders(itemId);
+      // use union to prioritize new subfolders
+      const nextSubfolders = R.unionWith(R.eqBy(R.prop("path")), newSubFolders, subFolders);
+      setSubFolders(nextSubfolders);
+      const nextStudiesTree = insertFoldersIfNotExist(studiesTree, nextSubfolders);
+      setStudiesTree(nextStudiesTree);
+    } catch {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {
-          path: failedPath.join(" "),
+          path: itemId,
           interpolation: { escapeValue: false },
         }),
         "",
       );
     }
-    setStudiesTree(treeAfterSubfoldersUpdate);
     setItemsLoading(itemsLoading.filter((e) => e !== itemId));
   }
 
@@ -135,7 +106,7 @@ function StudyTree() {
     isExpanded: boolean,
   ) => {
     if (isExpanded) {
-      updateTree(itemId, studiesTree);
+      updateTree(itemId);
     }
   };
 

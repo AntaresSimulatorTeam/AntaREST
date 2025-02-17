@@ -160,7 +160,7 @@ export function insertFoldersIfNotExist(
  * @param path - path of the subfolder to fetch, should sart with root, e.g. root/workspace/folder1
  * @returns list of subfolders under the given path
  */
-async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
+export async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
   if (path === "root") {
     console.error("this function should not be called with path 'root'", path);
     // Under root there're workspaces not subfolders
@@ -214,108 +214,4 @@ export async function fetchAndInsertSubfolders(
     },
     [studiesTree, []],
   );
-}
-
-/**
- * Insert a workspace into the study tree if it doesn't exist already.
- *
- * This function doesn't mutate the tree, it returns a new tree with the workspace inserted.
- *
- * @param workspace - key of the workspace
- * @param stydyTree - study tree to insert the workspace into
- * @returns study tree with the empty workspace inserted if it wasn't already there.
- */
-function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string): StudyTreeNode {
-  const emptyNode = {
-    name: workspace,
-    path: `/${workspace}`,
-    children: [],
-  };
-  if (stydyTree.children.some((child) => child.name === workspace)) {
-    return stydyTree;
-  }
-  return {
-    ...stydyTree,
-    children: [...stydyTree.children, emptyNode],
-  };
-}
-
-/**
- * Insert several workspaces into the study tree if they don't exist already in the tree.
- *
- * This function doesn't mutate the tree, it returns a new tree with the workspaces inserted.
- *
- * The workspaces are inserted in the order they are given.
- *
- * @param workspaces - workspaces to insert into the tree
- * @param stydyTree - study tree to insert the workspaces into
- * @returns study tree with the empty workspaces inserted if they weren't already there.
- */
-export function insertWorkspacesIfNotExist(
-  stydyTree: StudyTreeNode,
-  workspaces: string[],
-): StudyTreeNode {
-  return workspaces.reduce(
-    (acc, workspace) => insertWorkspaceIfNotExist(acc, workspace),
-    stydyTree,
-  );
-}
-
-/**
- * Fetch and insert the workspaces into the study tree.
- *
- * Workspaces are inserted only if they don't exist already in the tree.
- *
- * This function doesn't mutate the tree, it returns a new tree with the workspaces inserted.
- *
- * @param studyTree - study tree to insert the workspaces into
- * @returns study tree with the workspaces inserted if they weren't already there.
- */
-export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promise<StudyTreeNode> {
-  const workspaces = await api.getWorkspaces();
-  return insertWorkspacesIfNotExist(studyTree, workspaces);
-}
-
-/**
- * This function is used when we want to get updates of rTree withouth loosing data from lTree.
- *
- *
- * @param left
- * @param right
- * @returns a new tree with the data from rTree merged into lTree.
- */
-export function mergeDeepRightStudyTree(left: StudyTreeNode, right: StudyTreeNode): StudyTreeNode {
-  const onlyLeft = left.children.filter(
-    (eLeft) => !right.children.some((eRight) => eLeft.name === eRight.name),
-  );
-  const onlyRight = right.children.filter(
-    (eRight) => !left.children.some((eLeft) => eLeft.name === eRight.name),
-  );
-  const both = innerJoin(left.children, right.children);
-  const bothAfterMerge = both.map((e) => mergeDeepRightStudyTree(e[0], e[1]));
-  const childrenAfterMerge = [...onlyLeft, ...bothAfterMerge, ...onlyRight];
-  return {
-    ...right,
-    children: childrenAfterMerge,
-  };
-}
-
-/**
- * This function joins based on the name property.
- *
- * @param left
- * @param right
- * @returns list of tuples where the first element is from the left list and the second element is from the right list.
- */
-export function innerJoin(
-  left: StudyTreeNode[],
-  right: StudyTreeNode[],
-): Array<[StudyTreeNode, StudyTreeNode]> {
-  return left.reduce<Array<[StudyTreeNode, StudyTreeNode]>>((acc, leftNode) => {
-    const matchedRightNode = right.find((rightNode) => rightNode.name === leftNode.name);
-    if (matchedRightNode) {
-      acc.push([{ ...leftNode }, { ...matchedRightNode }]);
-    }
-    return acc;
-  }, []);
 }
