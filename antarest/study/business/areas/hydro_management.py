@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
@@ -123,7 +123,9 @@ class HydroManager:
             target_name = path.split("/")[-1]
             return hydro_config.get(target_name, {}).get(area_id, field_info["default_value"])
 
-        return ManagementOptionsFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return ManagementOptionsFormFields.model_construct(
+            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
+        )
 
     def set_field_values(
         self,

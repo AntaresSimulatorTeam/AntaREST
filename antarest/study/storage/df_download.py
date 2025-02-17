@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import http
-import typing as t
 from pathlib import Path
 
 import pandas as pd
@@ -71,7 +70,7 @@ class TableExportFormat(EnumIgnoreCase):
     def export_table(
         self,
         df: pd.DataFrame,
-        export_path: t.Union[str, Path],
+        export_path: str | Path,
         *,
         with_index: bool = True,
         with_header: bool = True,

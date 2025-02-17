@@ -240,7 +240,7 @@ class AdvancedParamsManager:
                 parent = seeds
             return parent.get(target_name, field_info["default_value"])
 
-        return AdvancedParamsFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return AdvancedParamsFormFields.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(self, study: Study, field_values: AdvancedParamsFormFields) -> None:
         """

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-import typing as t
+from typing import Dict, Sequence
 
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
@@ -20,7 +20,7 @@ from antarest.core.roles import RoleType
 logger = logging.getLogger(__name__)
 
 
-permission_matrix: t.Dict[str, t.Dict[str, t.Sequence[t.Union[RoleType, PublicMode]]]] = {
+permission_matrix: Dict[str, Dict[str, Sequence[RoleType | PublicMode]]] = {
     StudyPermissionType.READ.value: {
         "roles": [
             RoleType.ADMIN,

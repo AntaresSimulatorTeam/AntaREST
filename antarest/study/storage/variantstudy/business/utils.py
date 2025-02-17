@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Sequence
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def validate_matrix(matrix: t.Union[t.List[t.List[MatrixData]], str], values: t.Dict[str, t.Any]) -> str:
+def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]) -> str:
     """
     Validates the matrix, stores the matrix array in the matrices repository,
     and returns a reference to the stored array.
@@ -75,7 +75,7 @@ def remove_none_args(command_dto: CommandDTO) -> CommandDTO:
     return command_dto
 
 
-def strip_matrix_protocol(matrix_uri: t.Union[t.List[t.List[float]], str, None]) -> str:
+def strip_matrix_protocol(matrix_uri: List[List[float]] | str | None) -> str:
     assert isinstance(matrix_uri, str)
     if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
         return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
@@ -102,39 +102,59 @@ class AliasDecoder:
 
 
 def transform_command_to_dto(
-    commands: t.Sequence[ICommand],
-    ref_commands: t.Optional[t.Sequence[CommandDTO]] = None,
+    commands: Sequence[ICommand],
+    ref_command_dtos: Optional[Sequence[CommandDTO]] = None,
     force_aggregate: bool = False,
-) -> t.List[CommandDTO]:
+) -> List[CommandDTO]:
+    """
+    Converts the list of input commands to DTOs.
+
+    Since DTOs can contain the arguments for multiple commands:
+    - if ref_commands is provided, we keep the same aggregation
+    - if force_aggregate is True, we aggregate all we can
+
+    # TODO: the implementation is a mess, and actually the 2 additional
+    #       arguments are mutually exclusive, we should separate in 2 methods.
+    """
     if len(commands) <= 1:
         return [command.to_dto() for command in commands]
-    commands_dto: t.List[CommandDTO] = []
-    ref_commands_dto = ref_commands if ref_commands is not None else [command.to_dto() for command in commands]
+    commands_dto: List[CommandDTO] = []
+    ref_commands_dto = ref_command_dtos if ref_command_dtos is not None else [command.to_dto() for command in commands]
     prev_command = commands[0]
     cur_dto_index = 0
-    cur_dto = ref_commands_dto[cur_dto_index]
-    cur_dto_arg_count = 1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
-    cur_command_args_batch = [prev_command.to_dto().args]
+    ref_dto = ref_commands_dto[cur_dto_index]
+    cur_dto_arg_count = len(ref_dto.get_args_list())
+    new_dto = prev_command.to_dto()
+    cur_command_version = new_dto.version
+    cur_command_args_batch = [new_dto.args]
     for command in commands[1:]:
         cur_dto_arg_count -= 1
         if command.command_name == prev_command.command_name and (cur_dto_arg_count > 0 or force_aggregate):
-            cur_command_args_batch.append(command.to_dto().args)
+            new_dto = command.to_dto()
+            if new_dto.version != cur_command_version:
+                raise ValueError("Aggregated commands cannot have different versions.")
+            cur_command_args_batch.append(new_dto.args)
         else:
             commands_dto.append(
                 CommandDTO(
                     action=prev_command.command_name.value,
+                    version=cur_command_version,
                     args=cur_command_args_batch,
                     study_version=prev_command.study_version,
                 )
             )
-            cur_command_args_batch = [command.to_dto().args]
+            new_dto = command.to_dto()
+            cur_command_version = new_dto.version
+            cur_command_args_batch = [new_dto.args]
+
             cur_dto_index += 1
-            cur_dto = ref_commands_dto[cur_dto_index]
-            cur_dto_arg_count = 1 if isinstance(cur_dto.args, dict) else len(cur_dto.args)
+            ref_dto = ref_commands_dto[cur_dto_index]
+            cur_dto_arg_count = len(ref_dto.get_args_list())
             prev_command = command
     commands_dto.append(
         CommandDTO(
             action=prev_command.command_name.value,
+            version=cur_command_version,
             args=cur_command_args_batch,
             study_version=prev_command.study_version,
         )

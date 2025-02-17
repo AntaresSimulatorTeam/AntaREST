@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-import typing as t
+import pathlib
 from pathlib import Path
+from typing import Optional
 
-from antarest.core.serialization import from_json
+from antarest.core.serde.json import from_json
 from antarest.study.model import Patch, PatchOutputs, RawStudy, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -27,10 +27,10 @@ class PatchService:
     Handle patch file ("patch.json") for a RawStudy or VariantStudy
     """
 
-    def __init__(self, repository: t.Optional[StudyMetadataRepository] = None):
+    def __init__(self, repository: Optional[StudyMetadataRepository] = None):
         self.repository = repository
 
-    def get(self, study: t.Union[RawStudy, VariantStudy], get_from_file: bool = False) -> Patch:
+    def get(self, study: RawStudy | VariantStudy, get_from_file: bool = False) -> Patch:
         if not get_from_file and study.additional_data is not None:
             # the `study.additional_data.patch` field is optional
             if study.additional_data.patch:
@@ -39,7 +39,8 @@ class PatchService:
         patch = Patch()
         patch_path = Path(study.path) / PATCH_JSON
         if patch_path.exists():
-            patch = Patch.parse_file(patch_path)
+            json_string = pathlib.Path(patch_path).read_text()
+            patch = Patch.model_validate_json(json_string)
 
         return patch
 
@@ -47,12 +48,13 @@ class PatchService:
         patch = Patch()
         patch_path = (Path(file_study.config.study_path)) / PATCH_JSON
         if patch_path.exists():
-            patch = Patch.parse_file(patch_path)
+            json_string = pathlib.Path(patch_path).read_text()
+            patch = Patch.model_validate_json(json_string)
         return patch
 
     def set_reference_output(
         self,
-        study: t.Union[RawStudy, VariantStudy],
+        study: RawStudy | VariantStudy,
         output_id: str,
         status: bool = True,
     ) -> None:
@@ -63,7 +65,7 @@ class PatchService:
             patch.outputs = PatchOutputs(reference=output_id)
         self.save(study, patch)
 
-    def save(self, study: t.Union[RawStudy, VariantStudy], patch: Patch) -> None:
+    def save(self, study: RawStudy | VariantStudy, patch: Patch) -> None:
         if self.repository:
             study.additional_data = study.additional_data or StudyAdditionalData()
             study.additional_data.patch = patch.model_dump_json()

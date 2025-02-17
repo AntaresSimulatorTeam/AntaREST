@@ -97,7 +97,7 @@ class TestGenerateThermalClusterTimeseries:
         )
         assert res.status_code == 200
         data = res.json()["data"]
-        assert data == [[]]  # no generation c.f. gen-ts parameter
+        assert data == 8760 * [[0]]  # no generation c.f. gen-ts parameter -> empty file -> default simulator value
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str, study_type: str) -> None:
