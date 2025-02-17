@@ -201,6 +201,8 @@ class StorageConfig:
             if "workspaces" in data
             else defaults.workspaces
         )
+
+        cls._validate_workspaces(data, workspaces)
         return cls(
             matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
             archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
@@ -224,6 +226,19 @@ class StorageConfig:
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
         )
+
+    @classmethod
+    def _validate_workspaces(cls, config_as_json: JSON, workspaces: Dict[str, WorkspaceConfig]) -> None:
+        """
+        Validate that no two workspaces have overlapping paths.
+        """
+        workspace_name_by_path = [(config.path, name) for name, config in workspaces.items()]
+        for path, name in workspace_name_by_path:
+            for path2, name2 in workspace_name_by_path:
+                if name != name2 and path.is_relative_to(path2):
+                    raise ValueError(
+                        f"Overlapping workspace paths found: '{name}' and '{name2}' '{path}' is relative to '{path2}' "
+                    )
 
 
 @dataclass(frozen=True)

@@ -957,16 +957,17 @@ class StudyService:
                 all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
             else:
                 all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
-        studies_by_path = {study.path: study for study in all_studies}
+        studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
-        paths = [str(f.path) for f in folders]
+        # key should be workspace, path to sync correctly studies with same path in different workspace
+        workspace_paths = [(f.workspace, str(f.path)) for f in folders]
 
         for study in all_studies:
             if (
                 isinstance(study, RawStudy)
                 and not study.archived
-                and (study.workspace != DEFAULT_WORKSPACE_NAME and study.path not in paths)
+                and (study.workspace != DEFAULT_WORKSPACE_NAME and (study.workspace, study.path) not in workspace_paths)
             ):
                 if not study.missing:
                     logger.info(
@@ -993,11 +994,12 @@ class StudyService:
                     self.repository.delete(study.id)
 
         # Add new studies
-        study_paths = [study.path for study in all_studies if study.missing is None]
+        study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
         missing_studies = {study.path: study for study in all_studies if study.missing is not None}
         for folder in folders:
             study_path = str(folder.path)
-            if study_path not in study_paths:
+            workspace = folder.workspace
+            if (workspace, study_path) not in study_paths:
                 try:
                     if study_path not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[folder.workspace].path
@@ -1007,7 +1009,7 @@ class StudyService:
                             name=folder.path.name,
                             path=study_path,
                             folder=str(dir_name),
-                            workspace=folder.workspace,
+                            workspace=workspace,
                             owner=None,
                             groups=folder.groups,
                             public_mode=PublicMode.FULL if len(folder.groups) == 0 else PublicMode.NONE,
@@ -1042,8 +1044,8 @@ class StudyService:
                     )
                 except Exception as e:
                     logger.error(f"Failed to add study {folder.path}", exc_info=e)
-            elif directory and study_path in studies_by_path:
-                existing_study = studies_by_path[study_path]
+            elif directory and (workspace, study_path) in studies_by_path_workspace:
+                existing_study = studies_by_path_workspace[(workspace, study_path)]
                 if self.storage_service.raw_study_service.update_name_and_version_from_raw_meta(existing_study):
                     self.repository.save(existing_study)
 
