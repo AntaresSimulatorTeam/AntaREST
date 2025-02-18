@@ -184,34 +184,3 @@ export async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]
   const subPath = pathParts.slice(2).join("/");
   return api.getFolders(workspace, subPath);
 }
-
-/**
- * Fetch and insert the subfolders under the given paths into the study tree.
- *
- * This function is used to fill the study tree when the user clicks on a folder.
- *
- * Subfolders are inserted only if they don't exist already in the tree.
- *
- * This function doesn't mutate the tree, it returns a new tree with the subfolders inserted
- *
- * @param paths - list of paths to fetch the subfolders for
- * @param studiesTree - study tree to insert the subfolders into
- * @returns a tuple with study tree with the subfolders inserted if they weren't already there and path for which
- * the fetch failed.
- */
-export async function fetchAndInsertSubfolders(
-  paths: string[],
-  studiesTree: StudyTreeNode,
-): Promise<[StudyTreeNode, string[]]> {
-  const results = await Promise.allSettled(paths.map((path) => fetchSubfolders(path)));
-  return results.reduce<[StudyTreeNode, string[]]>(
-    ([tree, failed], result, index) => {
-      if (result.status === "fulfilled") {
-        return [insertFoldersIfNotExist(tree, result.value), failed];
-      }
-      console.error("Failed to load path:", paths[index], result.reason);
-      return [tree, [...failed, paths[index]]];
-    },
-    [studiesTree, []],
-  );
-}
