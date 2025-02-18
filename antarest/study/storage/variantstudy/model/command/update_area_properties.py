@@ -34,7 +34,7 @@ class UpdateAreaProperties(ICommand):
 
     # Command parameters
     # ==================
-    list_area_folder: Dict[str, AreaFolder]
+    dict_area_folder: Dict[str, AreaFolder]
     list_thermal_area_properties: List[ThermalAreasProperties]
 
     @override
@@ -45,7 +45,7 @@ class UpdateAreaProperties(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         self.update_thermal_properties(study_data)
 
-        for area_id, area_folder in self.list_area_folder.items():
+        for area_id, area_folder in self.dict_area_folder.items():
             self.update_area_optimization(area_id, study_data)
             self.update_adequacy_patch(area_id, study_data)
 
@@ -61,7 +61,7 @@ class UpdateAreaProperties(ICommand):
         study_data.tree.save(thermal_properties, ["input", "thermal", "areas"])
 
     def update_adequacy_patch(self, area_id: str, study_data: FileStudy) -> None:
-        area_folder = self.list_area_folder.get(area_id)
+        area_folder = self.dict_area_folder.get(area_id)
 
         if area_folder and area_folder.adequacy_patch:
             new_config = area_folder.adequacy_patch.to_config()
@@ -72,7 +72,7 @@ class UpdateAreaProperties(ICommand):
                 study_data.tree.save(adequacy_patch_properties, ["input", "areas", area_id, "adequacy_patch"])
 
     def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
-        area_folder = self.list_area_folder.get(area_id)
+        area_folder = self.dict_area_folder.get(area_id)
         if area_folder is None:
             raise ValueError(f"No Area Folder found for area_id {area_id}")
 
@@ -87,7 +87,7 @@ class UpdateAreaProperties(ICommand):
         return CommandDTO(
             action=CommandName.UPDATE_AREA_PROPERTIES.value,
             args={
-                "area_folder": self.list_area_folder,
+                "area_folder": self.dict_area_folder,
                 "thermal_area_properties": self.list_thermal_area_properties,
             },
             study_version=self.study_version,
