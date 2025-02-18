@@ -516,10 +516,6 @@ class VariantStudyInterface(StudyInterface):
         self._patch_service.save(self._study, patch_data)
 
 
-def create_thermal_manager(command_context: CommandContext) -> ThermalManager:
-    return ThermalManager(command_context)
-
-
 class StudyService:
     """
     Storage module facade service to handle studies management.
@@ -557,7 +553,7 @@ class StudyService:
         self.allocation_manager = AllocationManager(command_context)
         self.properties_manager = PropertiesManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
-        self.thermal_manager = create_thermal_manager(command_context)
+        self.thermal_manager = ThermalManager(command_context)
         self.st_storage_manager = STStorageManager(command_context)
         self.ts_config_manager = TimeSeriesConfigManager(command_context)
         self.playlist_manager = PlaylistManager(command_context)
