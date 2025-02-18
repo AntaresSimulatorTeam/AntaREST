@@ -28,11 +28,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     create_renewable_config,
     create_renewable_properties,
 )
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
@@ -263,19 +263,17 @@ class RenewableManager:
         new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
-        # create the dict containing the new values using aliases
-        data: Dict[str, Any] = {}
-        for field_name, field in new_config.model_fields.items():
-            if field_name in new_values:
-                name = field.alias if field.alias else field_name
-                data[name] = new_data[name]
+        renewables_properties = RenewableProperties.model_validate(new_data)
 
         # create the update config commands with the modified data
         commands = [
-            UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
+            UpdateRenewablesCluster(
+                area_id=area_id,
+                cluster_id=cluster_id,
+                properties=renewables_properties,
+                command_context=self._command_context,
+                study_version=study.version,
             )
-            for key, value in data.items()
         ]
         study.add_commands(commands)
 

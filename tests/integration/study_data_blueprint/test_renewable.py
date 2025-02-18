@@ -614,7 +614,7 @@ class TestRenewable:
         assert actions == [
             "create_area",
             "create_renewables_cluster",
-            "update_config",
+            'update_renewables_cluster',
             "replace_matrix",
             "create_renewables_cluster",
             "replace_matrix",
