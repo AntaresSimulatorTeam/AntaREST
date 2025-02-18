@@ -15,10 +15,10 @@ from typing import Any, Dict, List
 from pydantic import Field
 
 from antarest.study.business.all_optional_meta import all_optional_model
-from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
-from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
 
@@ -108,14 +108,14 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
 
 
 class HydroManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
-    def get_field_values(self, study: Study, area_id: str) -> ManagementOptionsFormFields:
+    def get_field_values(self, study: StudyInterface, area_id: str) -> ManagementOptionsFormFields:
         """
         Get management options for a given area
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         hydro_config = file_study.tree.get(HYDRO_PATH.split("/"))
 
         def get_value(field_info: FieldInfo) -> Any:
@@ -129,7 +129,7 @@ class HydroManager:
 
     def set_field_values(
         self,
-        study: Study,
+        study: StudyInterface,
         field_values: ManagementOptionsFormFields,
         area_id: str,
     ) -> None:
@@ -146,17 +146,16 @@ class HydroManager:
                     UpdateConfig(
                         target="/".join([info["path"], area_id]),
                         data=value,
-                        command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                        command_context=self._command_context,
                         study_version=study.version,
                     )
                 )
 
         if len(commands) > 0:
-            file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(study, file_study, commands, self.storage_service)
+            study.add_commands(commands)
 
     # noinspection SpellCheckingInspection
-    def get_inflow_structure(self, study: Study, area_id: str) -> InflowStructure:
+    def get_inflow_structure(self, study: StudyInterface, area_id: str) -> InflowStructure:
         """
         Retrieves inflow structure values for a specific area within a study.
 
@@ -165,12 +164,12 @@ class HydroManager:
         """
         # NOTE: Focusing on the single field "intermonthly-correlation" due to current model scope.
         path = INFLOW_PATH.format(area_id=area_id)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         inter_monthly_correlation = file_study.tree.get(path.split("/")).get("intermonthly-correlation", 0.5)
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
 
     # noinspection SpellCheckingInspection
-    def update_inflow_structure(self, study: Study, area_id: str, values: InflowStructure) -> None:
+    def update_inflow_structure(self, study: StudyInterface, area_id: str, values: InflowStructure) -> None:
         """
         Updates inflow structure values for a specific area within a study.
 
@@ -184,11 +183,10 @@ class HydroManager:
         """
         # NOTE: Updates only "intermonthly-correlation" due to current model scope.
         path = INFLOW_PATH.format(area_id=area_id)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
         command = UpdateConfig(
             target=path,
             data={"intermonthly-correlation": values.inter_monthly_correlation},
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])

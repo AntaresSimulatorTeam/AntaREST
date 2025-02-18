@@ -31,8 +31,8 @@ from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_8, Study
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
@@ -43,11 +43,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     create_st_storage_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 @all_optional_model
@@ -257,19 +257,12 @@ class STStorageManager:
     Manage short-term storage configuration in a study
     """
 
-    def __init__(self, storage_service: StudyStorageService):
-        self.storage_service = storage_service
-
-    def _get_file_study(self, study: Study) -> FileStudy:
-        """
-        Helper function to get raw study data.
-        """
-
-        return self.storage_service.get_storage(study).get_raw(study)
+    def __init__(self, command_context: CommandContext):
+        self._command_context = command_context
 
     def create_storage(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         form: STStorageCreation,
     ) -> STStorageOutput:
@@ -284,22 +277,17 @@ class STStorageManager:
         Returns:
             The ID of the newly created short-term storage.
         """
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        storage = form.to_properties(StudyVersion.parse(study.version))
+        storage = form.to_properties(study.version)
         storage_id = storage.get_id()
         values = values_by_ids.get(storage_id)
         if values is not None:
             raise DuplicateSTStorage(area_id, storage_id)
 
-        command = self._make_create_cluster_cmd(area_id, storage, file_study.config.version)
-        execute_or_add_commands(
-            study,
-            file_study,
-            [command],
-            self.storage_service,
-        )
+        command = self._make_create_cluster_cmd(area_id, storage, study.version)
+        study.add_commands([command])
         output = self.get_storage(study, area_id, storage_id=storage_id)
         return output
 
@@ -309,14 +297,14 @@ class STStorageManager:
         command = CreateSTStorage(
             area_id=area_id,
             parameters=cluster,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            command_context=self._command_context,
             study_version=study_version,
         )
         return command
 
     def get_storages(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
     ) -> Sequence[STStorageOutput]:
         """
@@ -330,7 +318,7 @@ class STStorageManager:
             The list of forms used to display the short-term storages.
         """
 
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
@@ -341,13 +329,12 @@ class STStorageManager:
 
         # Sort STStorageConfig by groups and then by name
         order_by = operator.attrgetter("group", "name")
-        study_version = StudyVersion.parse(study.version)
-        storages = [create_storage_output(study_version, storage_id, options) for storage_id, options in config.items()]
+        storages = [create_storage_output(study.version, storage_id, options) for storage_id, options in config.items()]
         return sorted(storages, key=order_by)
 
     def get_all_storages_props(
         self,
-        study: Study,
+        study: StudyInterface,
     ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         """
         Retrieve all short-term storages from all areas within a study.
@@ -362,7 +349,7 @@ class STStorageManager:
             STStorageConfigNotFound: If no storages are found in the specified area.
         """
 
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _ALL_STORAGE_PATH
         try:
             # may raise KeyError if the path is missing
@@ -372,18 +359,17 @@ class STStorageManager:
         except KeyError:
             raise STStorageConfigNotFound(path) from None
 
-        study_version = StudyVersion.parse(study.version)
         storages_by_areas: MutableMapping[str, MutableMapping[str, STStorageOutput]]
         storages_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in storages.items():
             for cluster_id, cluster in cluster_obj.items():
-                storages_by_areas[area_id][cluster_id] = create_storage_output(study_version, cluster_id, cluster)
+                storages_by_areas[area_id][cluster_id] = create_storage_output(study.version, cluster_id, cluster)
 
         return storages_by_areas
 
     def update_storages_props(
         self,
-        study: Study,
+        study: StudyInterface,
         update_storages_by_areas: Mapping[str, Mapping[str, STStorageInput]],
     ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         old_storages_by_areas = self.get_all_storages_props(study)
@@ -391,7 +377,7 @@ class STStorageManager:
 
         # Prepare the commands to update the storage clusters.
         commands = []
-        study_version = StudyVersion.parse(study.version)
+        study_version = study.version
         for area_id, update_storages_by_ids in update_storages_by_areas.items():
             old_storages_by_ids = old_storages_by_areas[area_id]
             for storage_id, update_cluster in update_storages_by_ids.items():
@@ -409,19 +395,17 @@ class STStorageManager:
                 cmd = UpdateConfig(
                     target=path,
                     data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                    command_context=self._command_context,
                     study_version=study_version,
                 )
                 commands.append(cmd)
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
-
+        study.add_commands(commands)
         return new_storages_by_areas
 
     def get_storage(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_id: str,
     ) -> STStorageOutput:
@@ -437,17 +421,17 @@ class STStorageManager:
             Form used to display and edit a short-term storage.
         """
 
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageNotFound(path, storage_id) from None
-        return create_storage_output(StudyVersion.parse(study.version), storage_id, config)
+        return create_storage_output(study.version, storage_id, config)
 
     def update_storage(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_id: str,
         form: STStorageInput,
@@ -463,19 +447,14 @@ class STStorageManager:
         Returns:
             Updated form of short-term storage.
         """
-        study_version = StudyVersion.parse(study.version)
-
-        #  For variants, this method requires generating a snapshot, which takes time.
-        #  But sadly, there's no other way to prevent creating wrong commands.
-
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
         values = values_by_ids.get(storage_id)
         if values is None:
             path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
             raise STStorageNotFound(path, storage_id)
-        old_config = create_st_storage_config(study_version, **values)
+        old_config = create_st_storage_config(study.version, **values)
 
         # use Python values to synchronize Config and Form values
         new_values = form.model_dump(mode="json", exclude_none=True)
@@ -490,22 +469,21 @@ class STStorageManager:
                 data[name] = new_data[name]
 
         # create the update config commands with the modified data
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         commands = [
             UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=command_context, study_version=study_version
+                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
             )
             for key, value in data.items()
         ]
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        study.add_commands(commands)
 
         values = new_config.model_dump(mode="json", exclude={"id"})
         return STStorageOutput(**values, id=storage_id)
 
     def delete_storages(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_ids: Sequence[str],
     ) -> None:
@@ -517,7 +495,7 @@ class STStorageManager:
             area_id: The area ID of the short-term storage.
             storage_ids: IDs list of short-term storages to remove.
         """
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
         for storage_id in storage_ids:
@@ -525,17 +503,21 @@ class STStorageManager:
                 path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
                 raise STStorageNotFound(path, storage_id)
 
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        commands = []
         for storage_id in storage_ids:
-            command = RemoveSTStorage(
-                area_id=area_id,
-                storage_id=storage_id,
-                command_context=command_context,
-                study_version=file_study.config.version,
+            commands.append(
+                RemoveSTStorage(
+                    area_id=area_id,
+                    storage_id=storage_id,
+                    command_context=self._command_context,
+                    study_version=study.version,
+                )
             )
-            execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands(commands)
 
-    def duplicate_cluster(self, study: Study, area_id: str, source_id: str, new_cluster_name: str) -> STStorageOutput:
+    def duplicate_cluster(
+        self, study: StudyInterface, area_id: str, source_id: str, new_cluster_name: str
+    ) -> STStorageOutput:
         """
         Creates a duplicate cluster within the study area with a new name.
 
@@ -561,15 +543,14 @@ class STStorageManager:
         current_cluster.name = new_cluster_name
         fields_to_exclude = {"id"}
         # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
-        study_version = StudyVersion.parse(study.version)
-        if study_version < STUDY_VERSION_8_8:
+        if study.version < STUDY_VERSION_8_8:
             fields_to_exclude.add("enabled")
         creation_form = STStorageCreation.model_validate(
             current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
         )
 
-        new_config = creation_form.to_properties(study_version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
+        new_config = creation_form.to_properties(study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study.version)
 
         # Matrix edition
         lower_source_id = source_id.lower()
@@ -585,23 +566,25 @@ class STStorageManager:
         ]
 
         # Prepare and execute commands
+        file_study = study.get_files()
         commands: List[CreateSTStorage | ReplaceMatrix] = [create_cluster_cmd]
-        storage_service = self.storage_service.get_storage(study)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
         for source_path, new_path in zip(source_paths, new_paths):
-            current_matrix = storage_service.get(study, source_path)["data"]
+            current_matrix = file_study.tree.get(source_path.split("/"))["data"]
             command = ReplaceMatrix(
-                target=new_path, matrix=current_matrix, command_context=command_context, study_version=study_version
+                target=new_path,
+                matrix=current_matrix,
+                command_context=self._command_context,
+                study_version=study.version,
             )
             commands.append(command)
 
-        execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
+        study.add_commands(commands)
 
         return STStorageOutput(**new_config.model_dump(mode="json", by_alias=False))
 
     def get_matrix(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
@@ -623,12 +606,12 @@ class STStorageManager:
 
     def _get_matrix_obj(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
     ) -> MutableMapping[str, Any]:
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         try:
             matrix = file_study.tree.get(path.split("/"), depth=1)
@@ -638,7 +621,7 @@ class STStorageManager:
 
     def update_matrix(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
@@ -658,23 +641,24 @@ class STStorageManager:
 
     def _save_matrix_obj(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_id: str,
         ts_name: STStorageTimeSeries,
         matrix_data: List[List[float]],
     ) -> None:
-        file_study = self._get_file_study(study)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
         path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         command = ReplaceMatrix(
-            target=path, matrix=matrix_data, command_context=command_context, study_version=file_study.config.version
+            target=path,
+            matrix=matrix_data,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
     def validate_matrices(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         storage_id: str,
     ) -> bool:

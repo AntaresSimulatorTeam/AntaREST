@@ -22,7 +22,6 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple, cast
 from uuid import uuid4
 
 import humanize
-from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from filelock import FileLock
 from typing_extensions import override
@@ -163,9 +162,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self, study_id: str, api_commands: List[CommandDTOAPI], params: RequestParameters
     ) -> List[CommandDTO]:
         study = self._get_variant_study(study_id, params, raw_study_accepted=True)
-        study_version = StudyVersion.parse(study.version)
         return [
-            CommandDTO.model_validate({"study_version": study_version, **command.model_dump(mode="json")})
+            CommandDTO.model_validate({"study_version": study.version, **command.model_dump(mode="json")})
             for command in api_commands
         ]
 
