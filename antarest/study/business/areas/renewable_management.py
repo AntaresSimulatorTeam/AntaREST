@@ -111,9 +111,6 @@ def create_renewable_output(
 class RenewableManager:
     """
     A manager class responsible for handling operations related to renewable clusters within a study.
-
-    Attributes:
-        storage_service (StudyStorageService): A service responsible for study data storage and retrieval.
     """
 
     def __init__(self, command_context: CommandContext):

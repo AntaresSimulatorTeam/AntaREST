@@ -24,10 +24,8 @@ from pydantic import ValidationInfo, field_validator
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaInfoDTO
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 

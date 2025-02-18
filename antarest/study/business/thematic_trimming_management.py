@@ -12,13 +12,9 @@
 
 from typing import Any, Dict, List, Mapping, cast
 
-from antares.study.version import StudyVersion
-
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields, get_fields_info
-from antarest.study.business.utils import GENERAL_DATA_PATH, execute_or_add_commands
-from antarest.study.model import Study
-from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 

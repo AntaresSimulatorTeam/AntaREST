@@ -15,7 +15,6 @@ from typing import Any, Mapping, MutableMapping, Optional, Sequence, cast
 
 import numpy as np
 import pandas as pd
-from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -30,7 +29,7 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.link_model import LinkBaseDTO
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_2, RawStudy
+from antarest.study.model import STUDY_VERSION_8_2
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name

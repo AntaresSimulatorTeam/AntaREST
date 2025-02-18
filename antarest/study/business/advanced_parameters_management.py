@@ -12,7 +12,6 @@
 
 from typing import Any, Dict, List
 
-from antares.study.version import StudyVersion
 from pydantic import field_validator
 from pydantic.types import StrictInt, StrictStr
 

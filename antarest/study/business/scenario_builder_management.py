@@ -17,11 +17,8 @@ import typing_extensions as te
 from typing_extensions import override
 
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices, TableForm
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 

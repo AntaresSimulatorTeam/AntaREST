@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Sequence
+from typing import Sequence
 
 from antares.study.version import StudyVersion
 from typing_extensions import override

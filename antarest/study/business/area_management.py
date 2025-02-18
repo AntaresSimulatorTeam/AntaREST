@@ -93,12 +93,6 @@ def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
 class AreaManager:
     """
     Manages operations related to areas in a study, including retrieval, creation, and updates.
-
-    Attributes:
-        storage_service: The service responsible for study storage operations.
-        patch_service: The service responsible for study patch operations.
-            This service is used to store additional data for each area, in particular the country
-            of origin (`country`) and a list of tags for searching (`tags`).
     """
 
     def __init__(
