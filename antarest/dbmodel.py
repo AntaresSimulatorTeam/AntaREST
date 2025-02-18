@@ -11,22 +11,6 @@
 # This file is part of the Antares project.
 
 # noinspection PyUnresolvedReferences
-
-# noinspection PyUnresolvedReferences
-
-# noinspection PyUnresolvedReferences
 from antarest.core.persistence import Base as PersistenceBase
-
-# noinspection PyUnresolvedReferences
-
-# noinspection PyUnresolvedReferences
-
-# noinspection PyUnresolvedReferences
-
-# noinspection PyUnresolvedReferences
-
-# noinspection PyUnresolvedReferences
-
-# noinspection PyUnresolvedReferences
 
 Base = PersistenceBase
