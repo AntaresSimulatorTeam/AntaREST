@@ -64,9 +64,9 @@ class PreparerProxy(Proxy):
         # noinspection SpellCheckingInspection
         res = self.client.put(
             f"/v1/studies/{internal_study_id}/raw",
-            params={"path": matrix_path, "create_missing": True},
+            params={"path": matrix_path},
             headers=self.headers,
-            files={"file": tsv, "create_missing": "true"},
+            files={"file": tsv},
         )
         res.raise_for_status()
 
