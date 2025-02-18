@@ -283,11 +283,10 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     res = client.get("/v1/launcher/load")
     assert res.status_code == 200, res.json()
     launcher_load = LauncherLoadDTO(**res.json())
+    assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
+    assert launcher_load.cluster_load_rate == 100 / (os.cpu_count() or 1)
     assert launcher_load.nb_queued_jobs == 0
     assert launcher_load.launcher_status == "SUCCESS"
-    # We can't ensure the job is still running. So either the cpu usage is the expected value or it's 0
-    assert launcher_load.allocated_cpu_rate in {100 / (os.cpu_count() or 1), 0}
-    assert launcher_load.cluster_load_rate in {100 / (os.cpu_count() or 1), 0}
 
     res = client.get(
         f"/v1/launcher/jobs?study_id={study_id}",
