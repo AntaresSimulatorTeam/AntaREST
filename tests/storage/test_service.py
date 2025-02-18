@@ -103,6 +103,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        command_context=Mock(),
         user_service=user_service,
         repository=repository,
         event_bus=event_bus,
