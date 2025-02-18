@@ -93,7 +93,9 @@ class TestConstraintFilter:
 
     @pytest.mark.parametrize("group, expected", [("grp1", True), ("GRP1", True), ("grp2", False), ("", True)])
     @pytest.mark.parametrize("cls", [ConstraintOutput870])
-    def test_filter_by__group(self, group: str, expected: bool, cls: t.Type[ConstraintOutput870]) -> None:
+    def test_filter_by__group_with_existing_grp(
+        self, group: str, expected: bool, cls: t.Type[ConstraintOutput870]
+    ) -> None:
         """
         The filter should match if the `group` is equal to the constraint's `group` or if the filter is empty.
         Comparisons should be case-insensitive.

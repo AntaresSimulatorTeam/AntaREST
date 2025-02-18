@@ -182,7 +182,7 @@ def test_get_matrices_used_in_dataset(
     with db():
         matrix1_id = matrix_service.create(np.ones((1, 1)))
         matrix2_id = matrix_service.create(np.ones((2, 1)))
-        dataset = matrix_service.create_dataset(
+        matrix_service.create_dataset(
             dataset_info=MatrixDataSetUpdateDTO(name="name", groups=[], public=True),
             matrices=[MatrixInfoDTO(id=matrix1_id, name="matrix_1"), MatrixInfoDTO(id=matrix2_id, name="matrix_2")],
             params=RequestParameters(admin_user),

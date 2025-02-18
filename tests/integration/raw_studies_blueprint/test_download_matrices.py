@@ -113,9 +113,6 @@ class PreparerProxy(Proxy):
         res.raise_for_status()
 
 
-from tests.integration.prepare_proxy import PreparerProxy
-
-
 @pytest.mark.integration_test
 class TestDownloadMatrices:
     """
@@ -132,7 +129,7 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_study_and_upgrade(internal_study_id, target_version=820)
+        study_820_id = preparer.copy_upgrade_study(internal_study_id, target_version=820)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
@@ -147,7 +144,7 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_study_and_upgrade(internal_study_id, target_version=860)
+        study_860_id = preparer.copy_upgrade_study(internal_study_id, target_version=860)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
         generator = np.random.default_rng(11)

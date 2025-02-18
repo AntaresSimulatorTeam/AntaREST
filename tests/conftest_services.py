@@ -16,6 +16,7 @@ This module provides various pytest fixtures for unit testing the AntaREST appli
 Fixtures in this module are used to set up and provide instances of different classes
 and services required during testing.
 """
+
 import datetime
 import typing as t
 import uuid

@@ -13,6 +13,7 @@
 The aim of this module is to contain fixtures for
 instantiating objects such as users, studies, ...
 """
+
 import pytest
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER

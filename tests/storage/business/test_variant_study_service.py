@@ -123,7 +123,6 @@ def test_get_cache(tmp_path: str) -> None:
     path_study.mkdir()
     (path_study / "settings").mkdir()
     (path_study / "study.antares").touch()
-    path = path_study / "settings"
 
     data = {"titi": 43}
     study = Mock()

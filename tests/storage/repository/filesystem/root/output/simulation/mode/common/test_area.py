@@ -58,8 +58,10 @@ class TestOutputSimulationAreaItem:
         actual = node.build()
 
         # check the result
-        value: AreaOutputSeriesMatrix
-        actual_obj = {key: {"freq": value.freq} for key, value in actual.items()}
+        actual_obj: dict[str, MatrixFrequency] = {}
+        for key, value in actual.items():
+            assert isinstance(value, AreaOutputSeriesMatrix)
+            actual_obj[key] = value.freq
         assert actual_obj == expected
 
         new_config = FileStudyTreeConfig(

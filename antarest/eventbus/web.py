@@ -12,7 +12,6 @@
 
 import dataclasses
 import logging
-import pathlib
 from enum import StrEnum
 from http import HTTPStatus
 from typing import List, Optional

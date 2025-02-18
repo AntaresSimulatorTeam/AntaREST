@@ -16,7 +16,7 @@ import json
 import time
 import typing as t
 import zipfile
-from unittest.mock import ANY, Mock
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -364,18 +364,6 @@ def test_dataset_lifecycle() -> None:
     ]
 
     user_service.get_group.return_value = Group(id="groupA", name="groupA")
-    expected = MatrixDataSet(
-        name=dataset_info.name,
-        public=dataset_info.public,
-        owner_id=userA.user.id,
-        groups=[Group(id="groupA", name="groupA")],
-        created_at=ANY,
-        updated_at=ANY,
-        matrices=[
-            MatrixDataSetRelation(name="A", matrix_id="m1"),
-            MatrixDataSetRelation(name="B", matrix_id="m2"),
-        ],
-    )
     service.create_dataset(dataset_info, matrices, params=userA)
     assert dataset_repo.save.call_count == 1
     call = dataset_repo.save.call_args_list[0]

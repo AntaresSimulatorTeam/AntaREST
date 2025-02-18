@@ -239,7 +239,6 @@ class TestAllocationManager:
             AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
-        area_id = "*"  # all areas
         manager = AllocationManager(study_storage_service)
 
         # run
@@ -277,7 +276,6 @@ class TestAllocationManager:
             AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
-        area_id = "*"
         manager = AllocationManager(study_storage_service)
 
         with pytest.raises(AllocationDataNotFound) as ctx:
@@ -391,7 +389,7 @@ class TestAllocationManager:
         manager = AllocationManager(study_storage_service)
         study_storage_service.get_storage(study).get_raw(study).config.version = STUDY_VERSION_8_8
 
-        with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
+        with patch(EXECUTE_OR_ADD_COMMANDS):
             with patch(
                 "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
                 side_effect=AllocationDataNotFound(area_id),

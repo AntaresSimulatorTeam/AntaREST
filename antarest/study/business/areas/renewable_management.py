@@ -11,10 +11,9 @@
 # This file is part of the Antares project.
 
 import collections
-from typing import Any, Dict, Mapping, MutableMapping, Optional, Sequence
+from typing import Any, Dict, Mapping, MutableMapping, Sequence
 
 from antares.study.version import StudyVersion
-from pydantic import field_validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.core.model import JSON
@@ -25,7 +24,6 @@ from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
-    RenewableConfigType,
     RenewableProperties,
     RenewablePropertiesType,
     create_renewable_config,

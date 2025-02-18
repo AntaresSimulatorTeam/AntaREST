@@ -438,7 +438,6 @@ def create_study_variant_routes(
             f"Creating new raw study {name} from variant study {uuid}",
             extra={"user": current_user.id},
         )
-        params = RequestParameters(user=current_user)
         raise NotImplementedError()
 
     @bp.put(
