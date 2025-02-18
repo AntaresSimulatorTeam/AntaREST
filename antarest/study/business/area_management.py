@@ -210,16 +210,14 @@ class AreaManager:
             dict_area_folder[area_id] = area_folder
             list_thermal_area_properties.append(thermal_area_properties)
 
-        command = [
-            UpdateAreaProperties(
-                dict_area_folder=dict_area_folder,
-                list_thermal_area_properties=list_thermal_area_properties,
-                command_context=self._command_context,
-                study_version=study.version,
-            )
-        ]
+        command = UpdateAreaProperties(
+            dict_area_folder=dict_area_folder,
+            list_thermal_area_properties=list_thermal_area_properties,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
 
-        study.add_commands(command)
+        study.add_commands([command])
 
         return new_areas_by_ids
 
