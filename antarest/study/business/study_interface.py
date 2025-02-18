@@ -77,7 +77,7 @@ class StudyInterface(ABC):
 class FileStudyInterface(StudyInterface):
     """
     Basic implementation of study interface.
-    TODO: move it out from this module.
+    Only used for test purposes, currently.
     """
 
     def __init__(self, file_study: FileStudy):
@@ -107,13 +107,13 @@ class FileStudyInterface(StudyInterface):
     @override
     def get_patch_data(self) -> Patch:
         patch = Patch()
-        patch_path = Path(self.file_study.config.study_path) / "patch.json"
+        patch_path = self.file_study.config.study_path / "patch.json"
         if patch_path.exists():
             patch = Patch.model_validate_json(patch_path.read_bytes())
         return patch
 
     @override
     def update_patch_data(self, patch_data: Patch) -> None:
-        patch_path = (Path(self.file_study.config.path)) / "patch.json"
+        patch_path = self.file_study.config.study_path / "patch.json"
         patch_path.parent.mkdir(parents=True, exist_ok=True)
         patch_path.write_text(patch_data.model_dump_json())
