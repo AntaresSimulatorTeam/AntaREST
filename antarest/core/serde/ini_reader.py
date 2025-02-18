@@ -14,7 +14,7 @@ import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 from re import Pattern
-from typing import Any, Callable, Dict, Mapping, Sequence, TextIO, cast, Protocol
+from typing import Any, Callable, Dict, Mapping, Protocol, Sequence, TextIO, cast
 
 from typing_extensions import override
 
@@ -23,33 +23,40 @@ from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_sec
 
 ValueParser = Callable[[str], PrimitiveType]
 
+
 class NameMatcher(Protocol):
     """
     Used to decided if a name matches a condition, for exemple
     a section name.
     """
-    def __call__(self, name: str) -> bool:
-        ...
+
+    def __call__(self, name: str) -> bool: ...
+
 
 class NameMatchingStrategy(Protocol):
     """
     Creates name matchers, based on a reference name,
     typically a requested section name.
     """
-    def __call__(self, ref_name: str) -> NameMatcher:
-        ...
+
+    def __call__(self, ref_name: str) -> NameMatcher: ...
+
 
 def _make_ignore_case_matcher(ref_name: str) -> NameMatcher:
     lower = ref_name.lower()
+
     def matches(name: str) -> bool:
         return name.lower() == lower
+
     return matches
 
 
 def _make_equals_matcher(ref_name: str) -> NameMatcher:
     def matches(name: str) -> bool:
         return name == ref_name
+
     return matches
+
 
 IGNORE_CASE_STRATEGY = _make_ignore_case_matcher
 EQUALS_STRATEGY = _make_equals_matcher
@@ -138,7 +145,9 @@ class ReadOptions:
     """
     Super class for implementation-specific reading options.
     """
+
     pass
+
 
 class IReader(ABC):
     """
@@ -180,6 +189,7 @@ class IniReadOptions(ReadOptions):
         if self.option_matcher and option and not self.option_matcher(option):
             return False
         return True
+
 
 class IniReader(IReader):
     """

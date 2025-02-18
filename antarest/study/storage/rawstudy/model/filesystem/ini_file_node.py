@@ -27,7 +27,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.serde.ini_reader import IniReader, IReader, MatchingStrategy, IGNORE_CASE_STRATEGY
+from antarest.core.serde.ini_reader import IGNORE_CASE_STRATEGY, IniReader, IReader, MatchingStrategy
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.serde.json import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig

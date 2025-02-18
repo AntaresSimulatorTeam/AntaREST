@@ -13,7 +13,7 @@
 from copy import deepcopy
 from typing import Any, Dict
 
-from antarest.core.serde.ini_reader import IniReader, MatchingStrategy, IGNORE_CASE_STRATEGY
+from antarest.core.serde.ini_reader import IGNORE_CASE_STRATEGY, IniReader, MatchingStrategy
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.study.model import (
     STUDY_VERSION_6_5,

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from antarest.core.serde.ini_reader import IniReader, MatchingStrategy, IGNORE_CASE_STRATEGY
+from antarest.core.serde.ini_reader import IGNORE_CASE_STRATEGY, IniReader, MatchingStrategy
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
