@@ -860,3 +860,57 @@ class TestSTStorage:
             "replace_matrix",
             "remove_st_storage",
         ]
+
+    @pytest.mark.parametrize("base_study_id", [{"name": "Base Study", "version": 860}], indirect=True)
+    @pytest.mark.parametrize("variant_id", ["Variant Study"], indirect=True)
+    def test_uppercase_name_update(self, client: TestClient, user_access_token: str, variant_id: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create an area
+        area_name = "France"
+        res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": area_name, "type": "AREA"})
+        assert res.status_code in {200, 201}, res.json()
+        area_cfg = res.json()
+        area_id = area_cfg["id"]
+
+        # Create a short-term storage
+        cluster_name = "Tesla1"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+            json={
+                "name": cluster_name,
+                "group": "Battery",
+                "injectionNominalCapacity": 4500,
+                "withdrawalNominalCapacity": 4230,
+                "reservoirCapacity": 5700,
+            },
+        )
+        assert res.status_code in {200, 201}, res.json()
+        cluster_id: str = res.json()["id"]
+
+        # Perform raw call in order to change the section name to upper case
+        res = client.get(
+            f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list",
+        )
+        assert res.status_code in {200, 201}, res.json()
+        print(res.json())
+
+        content = dict(res.json())
+        content[cluster_name] = content.pop(cluster_id)
+
+        res = client.post(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list", json=content)
+        assert res.status_code in {204}, res.json()
+
+        res = client.get(
+            f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list",
+        )
+        assert res.status_code in {200, 201}, res.json()
+        print(res.json())
+
+        # Update the short-term storage
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/{cluster_id}", json={"reservoirCapacity": 5600}
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["reservoirCapacity"] == 5600
