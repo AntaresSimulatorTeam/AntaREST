@@ -498,12 +498,10 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def add_commands(self, commands: Sequence[ICommand]) -> None:
-        study = self._study
-        file_study = self.get_files()
         # get current user if not in session, otherwise get session user
         current_user = get_current_user()
         self._variant_service.append_commands(
-            study.id,
+            self._study.id,
             transform_command_to_dto(commands, force_aggregate=True),
             RequestParameters(user=current_user),
         )
