@@ -24,7 +24,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class UpdateAreaProperties(ICommand):
     """
-    Command used to move an area inside the map and to update its UI.
+    Command used to update area properties
     """
 
     # Overloaded metadata
