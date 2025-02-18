@@ -962,13 +962,13 @@ class BindingConstraintManager:
 
         # Variant study with less than 50 updated constraints
         updated_constraints = {}
-        if len(bcs_by_ids) < 50 and isinstance(study, VariantStudy):
-            existing_constraints = {bc.id: bc for bc in self.get_binding_constraints(study)}
-            for bc_id, data in bcs_by_ids.items():
-                updated_constraints[bc_id] = self.update_binding_constraint(
-                    study, bc_id, data, existing_constraints[bc_id]
-                )
-            return updated_constraints
+        # if len(bcs_by_ids) < 50 and isinstance(study, VariantStudy):
+        #     existing_constraints = {bc.id: bc for bc in self.get_binding_constraints(study)}
+        #     for bc_id, data in bcs_by_ids.items():
+        #         updated_constraints[bc_id] = self.update_binding_constraint(
+        #             study, bc_id, data, existing_constraints[bc_id]
+        #         )
+        #     return updated_constraints
 
         # More efficient way of doing things but using less readable commands.
         study_version = StudyVersion.parse(study.version)
