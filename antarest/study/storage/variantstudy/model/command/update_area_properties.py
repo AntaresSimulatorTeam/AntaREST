@@ -39,7 +39,7 @@ class UpdateAreaProperties(ICommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message=f"area properties updated"), {}
+        return CommandOutput(status=True, message=f"Area properties updated"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -54,11 +54,11 @@ class UpdateAreaProperties(ICommand):
         return output
 
     def update_thermal_properties(self, study_data: FileStudy) -> None:
-        properties = study_data.tree.get(["input", "thermal", "areas"])
+        thermal_properties = study_data.tree.get(["input", "thermal", "areas"])
         for thermal_area_property in self.list_thermal_area_properties:
-            properties["spilledenergycost"].update(thermal_area_property.spilled_energy_cost)
-            properties["unserverdenergycost"].update(thermal_area_property.unserverd_energy_cost)
-        study_data.tree.save(properties, ["input", "thermal", "areas"])
+            thermal_properties["spilledenergycost"].update(thermal_area_property.spilled_energy_cost)
+            thermal_properties["unserverdenergycost"].update(thermal_area_property.unserverd_energy_cost)
+        study_data.tree.save(thermal_properties, ["input", "thermal", "areas"])
 
     def update_adequacy_patch(self, area_id: str, study_data: FileStudy) -> None:
         area_folder = self.list_area_folder.get(area_id)
@@ -74,7 +74,7 @@ class UpdateAreaProperties(ICommand):
     def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
         area_folder = self.list_area_folder.get(area_id)
         if area_folder is None:
-            raise ValueError(f"No AreaFolder found for area_id {area_id}")
+            raise ValueError(f"No Area Folder found for area_id {area_id}")
 
         optimization_properties = study_data.tree.get(["input", "areas", area_id, "optimization"])
         new_config = area_folder.optimization.to_config()
