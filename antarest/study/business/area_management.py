@@ -212,7 +212,7 @@ class AreaManager:
 
         commands = [
             UpdateAreaProperties(
-                list_area_folder=dict_area_folder,
+                dict_area_folder=dict_area_folder,
                 list_thermal_area_properties=list_thermal_area_properties,
                 command_context=self._command_context,
                 study_version=study.version,
