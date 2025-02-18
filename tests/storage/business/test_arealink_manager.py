@@ -17,10 +17,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.core.config import InternalMatrixFormat
-from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import ISimpleMatrixService, SimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkDTO, LinkManager
@@ -33,9 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Ther
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.storage.business.assets import ASSETS_DIR
 
 

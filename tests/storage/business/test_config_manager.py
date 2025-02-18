@@ -11,13 +11,11 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import Sequence
 from unittest.mock import Mock
 
 import pytest
 from antares.study.version import StudyVersion
 
-from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.thematic_trimming_field_infos import FIELDS_INFO
@@ -29,19 +27,9 @@ from antarest.study.business.thematic_trimming_management import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-
-
-@pytest.fixture
-def matrix_service() -> ISimpleMatrixService:
-    return InMemorySimpleMatrixService()
 
 
 @pytest.fixture
