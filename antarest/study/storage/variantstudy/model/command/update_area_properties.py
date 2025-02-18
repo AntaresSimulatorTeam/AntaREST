@@ -74,7 +74,7 @@ class UpdateAreaProperties(ICommand):
     def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
         area_folder = self.list_area_folder.get(area_id)
         if area_folder is None:
-            raise ValueError(f"Aucun AreaFolder trouvé pour l'area_id {area_id}")
+            raise ValueError(f"No AreaFolder found for area_id {area_id}")
 
         optimization_properties = study_data.tree.get(["input", "areas", area_id, "optimization"])
         new_config = area_folder.optimization.to_config()
