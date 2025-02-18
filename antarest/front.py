@@ -20,9 +20,8 @@ This includes:
    what are the API and websocket prefixes
 """
 
-import re
 from pathlib import Path
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional
 
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction, RequestResponseEndpoint
@@ -32,7 +31,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import ASGIApp
 from typing_extensions import override
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 
 

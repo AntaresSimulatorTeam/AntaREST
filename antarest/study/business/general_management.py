@@ -250,7 +250,7 @@ class GeneralManager:
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return GeneralFormFields.construct(**{name: get_value(name, info) for name, info in FIELDS_INFO.items()})
+        return GeneralFormFields.model_construct(**{name: get_value(name, info) for name, info in FIELDS_INFO.items()})
 
     def set_field_values(self, study: Study, field_values: GeneralFormFields) -> None:
         """
@@ -307,9 +307,11 @@ class GeneralManager:
 
         return [
             UpdateConfig(
-                target=f"{GENERAL_PATH}/custom-scenario"
-                if study_version >= STUDY_VERSION_8
-                else f"{GENERAL_PATH}/custom-ts-numbers",
+                target=(
+                    f"{GENERAL_PATH}/custom-scenario"
+                    if study_version >= STUDY_VERSION_8
+                    else f"{GENERAL_PATH}/custom-ts-numbers"
+                ),
                 data=new_value == BuildingMode.CUSTOM,
                 command_context=cmd_context,
                 study_version=study_version,

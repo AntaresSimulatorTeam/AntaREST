@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 import logging
-import typing as t
 import uuid
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Tuple
 
 import typing_extensions as te
 
-from antarest.core.serialization import AntaresBaseModel
-from antarest.core.utils.utils import assert_this
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -31,7 +30,7 @@ MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
 
 # note: we ought to use a named tuple here ;-)
-OutputTuple: te.TypeAlias = t.Tuple[CommandOutput, t.Dict[str, t.Any]]
+OutputTuple: te.TypeAlias = Tuple[CommandOutput, Dict[str, Any]]
 
 
 class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
@@ -41,13 +40,11 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
     Attributes:
         command_id: The ID of the command extracted from the database, if any.
         command_name: The name of the command.
-        version: The version of the command (currently always equal to 1).
         command_context: The context of the command.
     """
 
-    command_id: t.Optional[uuid.UUID] = None
+    command_id: Optional[uuid.UUID] = None
     command_name: CommandName
-    version: int
     command_context: CommandContext
     study_version: StudyVersionStr
 
@@ -78,7 +75,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         return output
 
     @abstractmethod
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -90,7 +87,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -123,7 +120,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         raise NotImplementedError()
 
     @abstractmethod
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         """
         Retrieves the list of matrix IDs.
         """

@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 import paramiko
 from pydantic import model_validator
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 
 class SSHConfigDTO(AntaresBaseModel):

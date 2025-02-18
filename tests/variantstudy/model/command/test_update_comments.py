@@ -10,8 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from unittest.mock import Mock
-
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

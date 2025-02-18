@@ -24,7 +24,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 logger = logging.getLogger(__name__)

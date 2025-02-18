@@ -16,9 +16,9 @@ import io
 import logging
 import os
 import tempfile
-import typing as t
 import zipfile
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import py7zr
 import pydantic_core
@@ -27,9 +27,9 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.serialization import from_json
-from antarest.study.storage.rawstudy.ini_reader import IniReader, IReader
-from antarest.study.storage.rawstudy.ini_writer import IniWriter
+from antarest.core.serde.ini_reader import IniReader, IReader
+from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.serde.json import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
@@ -51,7 +51,7 @@ class IniFileNodeWarning(UserWarning):
         super().__init__(f"INI File error '{relpath}': {message}")
 
 
-def log_warning(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
     """
     Decorator to suppress `UserWarning` exceptions by logging them as warnings.
 
@@ -63,7 +63,7 @@ def log_warning(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
     """
 
     @functools.wraps(f)
-    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return f(*args, **kwargs)
         except UserWarning as w:
@@ -78,9 +78,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        types: t.Optional[t.Dict[str, t.Any]] = None,
-        reader: t.Optional[IReader] = None,
-        writer: t.Optional[IniWriter] = None,
+        types: Optional[Dict[str, Any]] = None,
+        reader: Optional[IReader] = None,
+        writer: Optional[IniWriter] = None,
     ):
         super().__init__(config)
         self.context = context
@@ -91,11 +91,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
     def _get(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         get_node: bool = False,
-    ) -> t.Union[SUB_JSON, INode[SUB_JSON, SUB_JSON, JSON]]:
+    ) -> SUB_JSON | INode[SUB_JSON, SUB_JSON, JSON]:
         if get_node:
             return self
 
@@ -124,10 +124,10 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             data = self.reader.read(self.path, **kwargs)
 
         data = self._handle_urls(data, depth, url)
-        return t.cast(SUB_JSON, data)
+        return cast(SUB_JSON, data)
 
     @staticmethod
-    def _handle_urls(data: t.Dict[str, t.Any], depth: int, url: t.List[str]) -> t.Dict[str, t.Any]:
+    def _handle_urls(data: Dict[str, Any], depth: int, url: List[str]) -> Dict[str, Any]:
         if len(url) == 2:
             if url[0] in data and url[1] in data[url[0]]:
                 data = data[url[0]][url[1]]
@@ -148,7 +148,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         return data
 
     # noinspection PyMethodMayBeStatic
-    def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
+    def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
         """
         Extracts the filtering arguments from the URL components.
 
@@ -172,7 +172,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     @override
     def get(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -184,14 +184,14 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     @override
     def get_node(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
     ) -> INode[SUB_JSON, SUB_JSON, JSON]:
         output = self._get(url, get_node=True)
         assert isinstance(output, INode)
         return output
 
     @override
-    def save(self, data: SUB_JSON, url: t.Optional[t.List[str]] = None) -> None:
+    def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         url = url or []
         with FileLock(
@@ -212,12 +212,12 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             elif len(url) == 1:
                 info[url[0]] = obj
             else:
-                info = t.cast(JSON, obj)
+                info = cast(JSON, obj)
             self.writer.write(info, self.path)
 
     @log_warning
     @override
-    def delete(self, url: t.Optional[t.List[str]] = None) -> None:
+    def delete(self, url: Optional[List[str]] = None) -> None:
         """
         Deletes the specified section or key from the INI file,
         or the entire INI file if no URL is provided.
@@ -283,9 +283,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def check_errors(
         self,
         data: JSON,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         raising: bool = False,
-    ) -> t.List[str]:
+    ) -> List[str]:
         errors = []
         for section, params in self.types.items():
             if section not in data:
@@ -309,9 +309,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def _validate_param(
         self,
         section: str,
-        params: t.Any,
+        params: Any,
         data: JSON,
-        errors: t.List[str],
+        errors: List[str],
         raising: bool,
     ) -> None:
         for param, typing in params.items():

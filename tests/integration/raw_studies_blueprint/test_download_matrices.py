@@ -275,7 +275,7 @@ class TestDownloadMatrices:
             assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
             assert all(np.isclose(dataframe.iloc[i, i], 1.0) for i in range(len(dataframe)))
 
-        # test for empty matrix
+        # checks default value for an empty water_values matrix
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
@@ -283,7 +283,7 @@ class TestDownloadMatrices:
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.empty
+        assert dataframe.to_numpy().tolist() == 365 * [101 * [0.0]]
 
         # modulation matrix
         res = client.get(
@@ -328,7 +328,7 @@ class TestDownloadMatrices:
             "('HURDLE COST', 'Euro', '')",
         ]
 
-        # test energy matrix to test the regex
+        # checks default value for an empty energy matrix
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
@@ -336,7 +336,7 @@ class TestDownloadMatrices:
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.empty
+        assert dataframe.to_numpy().tolist() == 12 * [5 * [0.0]]
 
         # test the Min Gen of the 8.6 study
         for export_format in ["tsv", "xlsx"]:

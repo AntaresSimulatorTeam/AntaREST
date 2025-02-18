@@ -13,7 +13,7 @@
 import collections
 import copy
 import logging
-import typing as t
+from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Tuple
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -30,9 +30,9 @@ from antarest.core.exceptions import (
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
-from antarest.core.model import JSON
+from antarest.core.model import JSON, LowerCaseStr
 from antarest.core.requests import CaseInsensitiveDict
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
@@ -44,7 +44,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -142,13 +142,13 @@ class ConstraintTerm(AntaresBaseModel):
         data: the constraint term data (link or cluster), if any.
     """
 
-    id: t.Optional[str] = None
-    weight: t.Optional[float] = None
-    offset: t.Optional[int] = None
-    data: t.Optional[t.Union[LinkTerm, ClusterTerm]] = None
+    id: Optional[str] = None
+    weight: Optional[float] = None
+    offset: Optional[int] = None
+    data: Optional[LinkTerm | ClusterTerm] = None
 
     @field_validator("id")
-    def id_to_lower(cls, v: t.Optional[str]) -> t.Optional[str]:
+    def id_to_lower(cls, v: Optional[str]) -> Optional[str]:
         """Ensure the ID is lower case."""
         if v is None:
             return None
@@ -179,11 +179,11 @@ class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
     """
 
     bc_id: str = ""
-    enabled: t.Optional[bool] = None
-    operator: t.Optional[BindingConstraintOperator] = None
+    enabled: Optional[bool] = None
+    operator: Optional[BindingConstraintOperator] = None
     comments: str = ""
     group: str = ""
-    time_step: t.Optional[BindingConstraintFrequency] = None
+    time_step: Optional[BindingConstraintFrequency] = None
     area_name: str = ""
     cluster_name: str = ""
     link_id: str = ""
@@ -269,7 +269,7 @@ class ConstraintInput870(OptionalProperties):
 
 @camel_case_model
 class ConstraintInput(BindingConstraintMatrices, ConstraintInput870):
-    terms: t.MutableSequence[ConstraintTerm] = Field(
+    terms: MutableSequence[ConstraintTerm] = Field(
         default_factory=lambda: [],
     )
 
@@ -279,7 +279,7 @@ class ConstraintCreation(ConstraintInput):
     name: str
 
     @model_validator(mode="before")
-    def check_matrices_dimensions(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def check_matrices_dimensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         for _key in ["time_step"] + [m.value for m in TermMatrices]:
             _camel = to_camel_case(_key)
             values[_key] = values.pop(_camel, values.get(_key))
@@ -332,9 +332,9 @@ class ConstraintCreation(ConstraintInput):
 class ConstraintOutputBase(BindingConstraintPropertiesBase):
     id: str
     name: str
-    terms: t.MutableSequence[ConstraintTerm] = Field(default_factory=lambda: [])
+    terms: MutableSequence[ConstraintTerm] = Field(default_factory=lambda: [])
     # I have to redefine the time_step attribute to give him another alias.
-    time_step: t.Optional[BindingConstraintFrequency] = Field(DEFAULT_TIMESTEP, alias="timeStep")  # type: ignore
+    time_step: Optional[BindingConstraintFrequency] = Field(DEFAULT_TIMESTEP, alias="timeStep")  # type: ignore
 
 
 class ConstraintOutput830(ConstraintOutputBase):
@@ -343,12 +343,12 @@ class ConstraintOutput830(ConstraintOutputBase):
 
 
 class ConstraintOutput870(ConstraintOutput830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
 # WARNING: Do not change the order of the following line, it is used to determine
 # the type of the output constraint in the FastAPI endpoint.
-ConstraintOutput = t.Union[ConstraintOutputBase, ConstraintOutput830, ConstraintOutput870]
+ConstraintOutput = ConstraintOutputBase | ConstraintOutput830 | ConstraintOutput870
 
 OPERATOR_MATRIX_FILE_MAP = {
     BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
@@ -359,8 +359,8 @@ OPERATOR_MATRIX_FILE_MAP = {
 
 
 def _get_references_by_widths(
-    file_study: FileStudy, bcs: t.Sequence[ConstraintOutput]
-) -> t.Mapping[int, t.Sequence[t.Tuple[str, str]]]:
+    file_study: FileStudy, bcs: Sequence[ConstraintOutput]
+) -> Mapping[int, Sequence[Tuple[str, str]]]:
     """
     Iterates over each BC and its associated matrices.
     For each matrix, it checks its width according to the expected matrix shapes.
@@ -371,7 +371,7 @@ def _get_references_by_widths(
         but the width should be consistent within a group of binding constraints.
     """
 
-    references_by_width: t.Dict[int, t.List[t.Tuple[str, str]]] = {}
+    references_by_width: Dict[int, List[Tuple[str, str]]] = {}
     _total = len(bcs)
     for _index, bc in enumerate(bcs):
         matrices_name = (
@@ -405,8 +405,8 @@ def _generate_replace_matrix_commands(
     value: ConstraintInput,
     operator: BindingConstraintOperator,
     command_context: CommandContext,
-) -> t.List[ICommand]:
-    commands: t.List[ICommand] = []
+) -> List[ICommand]:
+    commands: List[ICommand] = []
     if study_version < STUDY_VERSION_8_7:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
@@ -439,7 +439,7 @@ def _generate_replace_matrix_commands(
     return commands
 
 
-def _validate_binding_constraints(file_study: FileStudy, bcs: t.Sequence[ConstraintOutput]) -> bool:
+def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
     """
     Validates the binding constraints within a group.
     """
@@ -447,7 +447,7 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: t.Sequence[Constra
 
     if len(references_by_widths) > 1:
         most_common = collections.Counter(references_by_widths.keys()).most_common()
-        invalid_constraints: t.Dict[str, str] = {}
+        invalid_constraints: Dict[str, str] = {}
 
         for width, _ in most_common[1:]:
             references = references_by_widths[width]
@@ -479,7 +479,7 @@ class BindingConstraintManager:
         self.storage_service = storage_service
 
     @staticmethod
-    def parse_and_add_terms(key: str, value: t.Any, adapted_constraint: ConstraintOutput) -> None:
+    def parse_and_add_terms(key: str, value: Any, adapted_constraint: ConstraintOutput) -> None:
         """Parse a single term from the constraint dictionary and add it to the adapted_constraint model."""
         if "%" in key or "." in key:
             separator = "%" if "%" in key else "."
@@ -518,7 +518,7 @@ class BindingConstraintManager:
                 )
 
     @staticmethod
-    def constraint_model_adapter(constraint: t.Mapping[str, t.Any], study_version: StudyVersion) -> ConstraintOutput:
+    def constraint_model_adapter(constraint: Mapping[str, Any], study_version: StudyVersion) -> ConstraintOutput:
         """
         Adapts a binding constraint configuration to the appropriate model version.
 
@@ -576,7 +576,7 @@ class BindingConstraintManager:
         return adapted_constraint
 
     @staticmethod
-    def terms_to_coeffs(terms: t.Sequence[ConstraintTerm]) -> t.Dict[str, t.List[float]]:
+    def terms_to_coeffs(terms: Sequence[ConstraintTerm]) -> Dict[str, List[float]]:
         """
         Converts a sequence of terms into a dictionary mapping each term's ID to its coefficients,
         including the weight and, optionally, the offset.
@@ -592,7 +592,7 @@ class BindingConstraintManager:
                     coeffs[term.id].append(term.offset)
         return coeffs
 
-    def check_binding_constraints_exists(self, study: Study, bc_ids: t.List[str]) -> None:
+    def check_binding_constraints_exists(self, study: Study, bc_ids: List[str]) -> None:
         storage_service = self.storage_service.get_storage(study)
         file_study = storage_service.get_raw(study)
         existing_constraints = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
@@ -622,7 +622,7 @@ class BindingConstraintManager:
         file_study = storage_service.get_raw(study)
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        constraints_by_id: t.Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
+        constraints_by_id: Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
 
         for constraint in config.values():
             constraint_config = self.constraint_model_adapter(constraint, StudyVersion.parse(study.version))
@@ -635,7 +635,7 @@ class BindingConstraintManager:
 
     def get_binding_constraints(
         self, study: Study, filters: ConstraintFilters = ConstraintFilters()
-    ) -> t.Sequence[ConstraintOutput]:
+    ) -> Sequence[ConstraintOutput]:
         """
         Retrieves all binding constraints within a given study, optionally filtered by specific criteria.
 
@@ -653,7 +653,7 @@ class BindingConstraintManager:
         filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
         return filtered_constraints
 
-    def get_grouped_constraints(self, study: Study) -> t.Mapping[str, t.Sequence[ConstraintOutput]]:
+    def get_grouped_constraints(self, study: Study) -> Mapping[str, Sequence[ConstraintOutput]]:
         """
          Retrieves and groups all binding constraints by their group names within a given study.
 
@@ -682,7 +682,7 @@ class BindingConstraintManager:
 
         return grouped_constraints
 
-    def get_constraints_by_group(self, study: Study, group_name: str) -> t.Sequence[ConstraintOutput]:
+    def get_constraints_by_group(self, study: Study, group_name: str) -> Sequence[ConstraintOutput]:
         """
          Retrieve all binding constraints belonging to a specified group within a study.
 
@@ -884,7 +884,7 @@ class BindingConstraintManager:
         study: Study,
         binding_constraint_id: str,
         data: ConstraintInput,
-        existing_constraint: t.Optional[ConstraintOutput] = None,
+        existing_constraint: Optional[ConstraintOutput] = None,
     ) -> ConstraintOutput:
         file_study = self.storage_service.get_storage(study).get_raw(study)
         existing_constraint = existing_constraint or self.get_binding_constraint(study, binding_constraint_id)
@@ -938,8 +938,8 @@ class BindingConstraintManager:
     def update_binding_constraints(
         self,
         study: Study,
-        bcs_by_ids: t.Mapping[str, ConstraintInput],
-    ) -> t.Mapping[str, ConstraintOutput]:
+        bcs_by_ids: Mapping[str, ConstraintInput],
+    ) -> Mapping[str, ConstraintOutput]:
         """
         Updates multiple binding constraints within a study.
 
@@ -982,7 +982,7 @@ class BindingConstraintManager:
             if bc_id not in dict_config:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-            props = create_binding_constraint_config(study_version, **value.dict())
+            props = create_binding_constraint_config(study_version, **value.model_dump())
             new_values = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             upd_obj = config[dict_config[bc_id]]
             current_value = copy.deepcopy(upd_obj)
@@ -1033,7 +1033,7 @@ class BindingConstraintManager:
         )
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
-    def remove_multiple_binding_constraints(self, study: Study, binding_constraints_ids: t.List[str]) -> None:
+    def remove_multiple_binding_constraints(self, study: Study, binding_constraints_ids: List[str]) -> None:
         """
         Removes multiple binding constraints from a study.
 
@@ -1059,7 +1059,7 @@ class BindingConstraintManager:
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
     def _update_constraint_with_terms(
-        self, study: Study, bc: ConstraintOutput, terms: t.Mapping[str, ConstraintTerm]
+        self, study: Study, bc: ConstraintOutput, terms: Mapping[str, ConstraintTerm]
     ) -> None:
         coeffs = {
             term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
@@ -1079,7 +1079,7 @@ class BindingConstraintManager:
         self,
         study: Study,
         binding_constraint_id: str,
-        constraint_terms: t.Sequence[ConstraintTerm],
+        constraint_terms: Sequence[ConstraintTerm],
         update_mode: str = "replace",
     ) -> None:
         """
@@ -1115,7 +1115,7 @@ class BindingConstraintManager:
         self._update_constraint_with_terms(study, constraint, existing_terms)
 
     def create_constraint_terms(
-        self, study: Study, binding_constraint_id: str, constraint_terms: t.Sequence[ConstraintTerm]
+        self, study: Study, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTerm]
     ) -> None:
         """
         Adds new constraint terms to an existing binding constraint.
@@ -1150,12 +1150,12 @@ class BindingConstraintManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return ConstraintOutput870.schema()
+        return ConstraintOutput870.model_json_schema()
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    data: ConstraintInput, version: StudyVersion, args: t.Dict[str, t.Any]
-) -> t.Dict[str, t.Any]:
+    data: ConstraintInput, version: StudyVersion, args: Dict[str, Any]
+) -> Dict[str, Any]:
     if version < STUDY_VERSION_8_7:
         if "values" not in args:
             matrix = {
@@ -1177,7 +1177,7 @@ def _replace_matrices_according_to_frequency_and_version(
 
 
 def check_attributes_coherence(
-    data: t.Union[ConstraintCreation, ConstraintInput],
+    data: ConstraintCreation | ConstraintInput,
     study_version: StudyVersion,
     operator: BindingConstraintOperator,
 ) -> None:
