@@ -12,7 +12,7 @@
 from typing_extensions import override
 
 from antarest.core.serde.ini_common import any_section_option_matcher
-from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
+from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader, MatchingStrategy, IGNORE_CASE_STRATEGY
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -45,7 +45,10 @@ class ClusteredRenewableClusterConfig(IniFileNode):
             context,
             config,
             types,
-            reader=IniReader(value_parsers=_VALUE_PARSERS),
+            reader=IniReader(
+                value_parsers=_VALUE_PARSERS,
+                matching_strategy=MatchingStrategy(IGNORE_CASE_STRATEGY, IGNORE_CASE_STRATEGY),
+            ),
             writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
         )
 

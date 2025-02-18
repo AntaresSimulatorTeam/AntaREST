@@ -27,7 +27,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.serde.ini_reader import IniReader, IReader
+from antarest.core.serde.ini_reader import IniReader, IReader, MatchingStrategy, IGNORE_CASE_STRATEGY
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.serde.json import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -86,7 +86,9 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.context = context
         self.path = config.path
         self.types = types or {}
-        self.reader = reader or IniReader()
+        self.reader = reader or IniReader(
+            matching_strategy=MatchingStrategy(IGNORE_CASE_STRATEGY, IGNORE_CASE_STRATEGY)
+        )
         self.writer = writer or IniWriter()
 
     def _get(

@@ -12,7 +12,7 @@
 from antares.study.version import StudyVersion
 
 from antarest.core.serde.ini_common import any_section_option_matcher
-from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
+from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader, MatchingStrategy, IGNORE_CASE_STRATEGY
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter, ValueSerializer
 from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -73,6 +73,9 @@ class InputSTStorageAreaList(IniFileNode):
             context,
             config,
             types,
-            reader=IniReader(value_parsers=_VALUE_PARSERS),
+            reader=IniReader(
+                value_parsers=_VALUE_PARSERS,
+                matching_strategy=MatchingStrategy(IGNORE_CASE_STRATEGY, IGNORE_CASE_STRATEGY),
+            ),
             writer=IniWriter(value_serializers=value_serializers),
         )

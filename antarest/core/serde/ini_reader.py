@@ -13,7 +13,8 @@ import dataclasses
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Sequence, TextIO, cast
+from re import Pattern
+from typing import Any, Callable, Dict, Mapping, Sequence, TextIO, cast, Protocol
 
 from typing_extensions import override
 
@@ -21,6 +22,37 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
 
 ValueParser = Callable[[str], PrimitiveType]
+
+class NameMatcher(Protocol):
+    """
+    Used to decided if a name matches a condition, for exemple
+    a section name.
+    """
+    def __call__(self, name: str) -> bool:
+        ...
+
+class NameMatchingStrategy(Protocol):
+    """
+    Creates name matchers, based on a reference name,
+    typically a requested section name.
+    """
+    def __call__(self, ref_name: str) -> NameMatcher:
+        ...
+
+def _make_ignore_case_matcher(ref_name: str) -> NameMatcher:
+    lower = ref_name.lower()
+    def matches(name: str) -> bool:
+        return name.lower() == lower
+    return matches
+
+
+def _make_equals_matcher(ref_name: str) -> NameMatcher:
+    def matches(name: str) -> bool:
+        return name == ref_name
+    return matches
+
+IGNORE_CASE_STRATEGY = _make_ignore_case_matcher
+EQUALS_STRATEGY = _make_equals_matcher
 
 
 def _lower_case(input: str) -> str:
@@ -66,52 +98,23 @@ class ValueParsers:
 
 
 @dataclasses.dataclass(frozen=True)
+class MatchingStrategy:
+    section_strategy: NameMatchingStrategy = IGNORE_CASE_STRATEGY
+    options_strategy: NameMatchingStrategy = IGNORE_CASE_STRATEGY
+
+
+@dataclasses.dataclass(frozen=True)
 class IniFilter:
     """
     Filter sections and options in an INI file based on regular expressions.
 
     Attributes:
-        section_regex: A compiled regex for matching section names.
-        option_regex: A compiled regex for matching option names.
+        section_matcher: A compiled regex for matching section names.
+        option_matcher: A compiled regex for matching option names.
     """
 
-    section_regex: Optional[Pattern[str]] = None
-    option_regex: Optional[Pattern[str]] = None
-
-    @classmethod
-    def from_kwargs(
-        cls,
-        section: str = "",
-        option: str = "",
-        section_regex: Optional[str | Pattern[str]] = None,
-        option_regex: Optional[str | Pattern[str]] = None,
-        **_unused: Any,  # ignore unknown options
-    ) -> "IniFilter":
-        """
-        Create an instance from given filtering parameters.
-
-        When using `section` or `option` parameters, an exact match is done.
-        Alternatively, one can use `section_regex` or `option_regex` to perform a full match using a regex.
-
-        Args:
-            section: The section name to match (by default, all sections are matched)
-            option: The option name to match (by default, all options are matched)
-            section_regex: The regex for matching section names.
-            option_regex: The regex for matching option names.
-            _unused: Placeholder for any unknown options.
-
-        Returns:
-            The newly created instance
-        """
-        if section:
-            section_regex = re.compile(re.escape(section), re.IGNORECASE)
-        if option:
-            option_regex = re.compile(re.escape(option), re.IGNORECASE)
-        if isinstance(section_regex, str):
-            section_regex = re.compile(section_regex, re.IGNORECASE) if section_regex else None
-        if isinstance(option_regex, str):
-            option_regex = re.compile(option_regex, re.IGNORECASE) if option_regex else None
-        return cls(section_regex=section_regex, option_regex=option_regex)
+    section_matcher: NameMatcher | None
+    option_matcher: NameMatcher | None
 
     def select_section_option(self, section: str, option: str = "") -> bool:
         """
@@ -124,12 +127,18 @@ class IniFilter:
         Returns:
             Whether the section and option match their respective regular expressions.
         """
-        if self.section_regex and not self.section_regex.fullmatch(section):
+        if self.section_matcher and not self.section_matcher(section):
             return False
-        if self.option_regex and option and not self.option_regex.fullmatch(option):
+        if self.option_matcher and option and not self.option_matcher(option):
             return False
         return True
 
+
+class ReadOptions:
+    """
+    Super class for implementation-specific reading options.
+    """
+    pass
 
 class IReader(ABC):
     """
@@ -137,7 +146,7 @@ class IReader(ABC):
     """
 
     @abstractmethod
-    def read(self, path: Any, **kwargs: Any) -> JSON:
+    def read(self, path: Any, options: ReadOptions) -> JSON:
         """
         Parse `.ini` file to json object.
 
@@ -149,6 +158,28 @@ class IReader(ABC):
             Dictionary of parsed `.ini` file which can be converted to JSON.
         """
 
+
+@dataclasses.dataclass(frozen=True)
+class IniReadOptions(ReadOptions):
+    section_matcher: NameMatcher | None
+    option_matcher: NameMatcher | None
+
+    def select_section_option(self, section: str, option: str = "") -> bool:
+        """
+        Check if a given section and option match the regular expressions.
+
+        Args:
+            section: The section name to match.
+            option: The option name to match (optional).
+
+        Returns:
+            Whether the section and option match their respective regular expressions.
+        """
+        if self.section_matcher and not self.section_matcher(section):
+            return False
+        if self.option_matcher and option and not self.option_matcher(option):
+            return False
+        return True
 
 class IniReader(IReader):
     """
@@ -184,12 +215,14 @@ class IniReader(IReader):
         special_keys: Sequence[str] = (),
         section_name: str = "settings",
         value_parsers: Dict[OptionMatcher, ValueParser] | None = None,
+        matching_strategy: MatchingStrategy | None = None,
     ) -> None:
         super().__init__()
 
         # Default section name to use if `.ini` file has no section.
         self._special_keys = set(special_keys)
         self._value_parsers = ValueParsers(default_parser=_convert_value, parsers=value_parsers or {})
+        self._matching_strategy = matching_strategy or MatchingStrategy()
 
         # List of keys which should be parsed as list.
         self._section_name = section_name
@@ -213,15 +246,15 @@ class IniReader(IReader):
         return f"{cls}(special_keys={special_keys!r}, section_name={section_name!r})"
 
     @override
-    def read(self, path: Any, **kwargs: Any) -> JSON:
+    def read(self, path: Any, options: ReadOptions | None) -> JSON:
         if isinstance(path, (Path, str)):
             try:
                 with open(path, mode="r", encoding="utf-8") as f:
-                    sections = self._parse_ini_file(f, **kwargs)
+                    sections = self._parse_ini_file(f, options)
             except UnicodeDecodeError:
                 # On windows, `.ini` files may use "cp1252" encoding
                 with open(path, mode="r", encoding="cp1252") as f:
-                    sections = self._parse_ini_file(f, **kwargs)
+                    sections = self._parse_ini_file(f, options)
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned.
                 # This is required to mimic the behavior of `configparser.ConfigParser`.
@@ -229,14 +262,14 @@ class IniReader(IReader):
 
         elif hasattr(path, "read"):
             with path:
-                sections = self._parse_ini_file(path, **kwargs)
+                sections = self._parse_ini_file(path, options)
 
         else:  # pragma: no cover
             raise TypeError(repr(type(path)))
 
         return cast(JSON, sections)
 
-    def _parse_ini_file(self, ini_file: TextIO, **kwargs: Any) -> JSON:
+    def _parse_ini_file(self, ini_file: TextIO, options: ReadOptions | None) -> JSON:
         """
         Parse `.ini` file to JSON object.
 
@@ -275,7 +308,7 @@ class IniReader(IReader):
         Returns:
             Dictionary of parsed `.ini` file which can be converted to JSON.
         """
-        ini_filter = IniFilter.from_kwargs(**kwargs)
+        ini_filter = self._ini_filter_from_kwargs(**kwargs)
 
         # NOTE: This algorithm is 1.93x faster than configparser.ConfigParser
         section_name = self._section_name
@@ -354,6 +387,28 @@ class IniReader(IReader):
             values[key] = parsed
         self._curr_option = key
 
+    def _ini_filter_from_kwargs(
+        self,
+        section: str = "",
+        option: str = "",
+        section_regex: str | Pattern[str] | None = None,
+        option_regex: str | Pattern[str] | None = None,
+        **_unused: Any,  # ignore unknown options
+    ) -> "IniFilter":
+        if section:
+            section_matcher = self._matching_strategy.section_strategy(section) if section else None
+        if option:
+            option_matcher = self._matching_strategy.options_strategy(option) if option else None
+        if option_regex:
+            if isinstance(option_regex, str):
+                option_regex = re.compile(option_regex, re.IGNORECASE)
+
+        if section_regex:
+            if isinstance(section_regex, str):
+                section_regex = re.compile(section_regex, re.IGNORECASE)
+            section_matcher = self._matching_strategy.section_strategy(section) if section else None
+        return IniFilter(section_matcher, option_matcher)
+
 
 class SimpleKeyValueReader(IniReader):
     """
@@ -361,7 +416,7 @@ class SimpleKeyValueReader(IniReader):
     """
 
     @override
-    def read(self, path: Any, **kwargs: Any) -> JSON:
+    def read(self, path: Any, options: ReadOptions | None = None) -> JSON:
         """
         Parse `.ini` file which has no section to JSON object.
 
@@ -369,7 +424,7 @@ class SimpleKeyValueReader(IniReader):
 
         Args:
             path: Path to `.ini` file or file-like object.
-            kwargs: Additional options used for reading.
+            options: Additional options used for reading.
 
         Returns:
             Dictionary of parsed key/value pairs.
