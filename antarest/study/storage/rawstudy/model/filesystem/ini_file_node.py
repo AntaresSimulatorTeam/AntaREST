@@ -17,6 +17,8 @@ import logging
 import os
 import tempfile
 import zipfile
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, cast
 
@@ -80,6 +82,151 @@ def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
+@dataclass(frozen=True)
+class IniMatch(ABC):
+
+    @abstractmethod
+    def get_part(self) -> SUB_JSON:
+        pass
+
+    def replace_part(self, new_part: SUB_JSON) -> JSON:
+        raise NotImplementedError()
+
+    def delete_part(self) -> JSON:
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True)
+class SectionMatch(IniMatch):
+
+    data: JSON
+    req_section: str
+    matched_section: str | None = None
+
+    @override
+    def get_part(self) -> JSON:
+        if not self.matched_section:
+            raise KeyError(f"Could not match section {self.req_section}")
+        return cast(JSON, self.data[self.matched_section])
+
+    @override
+    def replace_part(self, new_part: SUB_JSON) -> JSON:
+        if self.matched_section:
+            self.data[self.matched_section] = new_part
+        else:
+            self.data[self.req_section] = new_part
+        return self.data
+
+    @override
+    def delete_part(self) -> JSON:
+        if self.matched_section is not None:
+            del self.data[self.matched_section]
+        return self.data
+
+
+@dataclass(frozen=True)
+class OptionMatch(IniMatch):
+    data: JSON
+    req_section: str
+    req_option: str
+    matched_section: str | None = None
+    matched_option: str | None = None
+
+    @override
+    def get_part(self) -> SUB_JSON:
+        if not self.matched_section:
+            raise KeyError(f"Could not match section {self.req_section}")
+        if not self.matched_option:
+            raise KeyError(f"Could not match option {self.req_option}")
+        return cast(JSON, self.data[self.matched_section][self.matched_option])
+
+    @override
+    def replace_part(self, new_part: SUB_JSON) -> JSON:
+        section_data = self.data.setdefault(self.matched_section or self.req_section, {})
+        section_data[self.matched_option or self.req_option] = new_part
+        return self.data
+
+    @override
+    def delete_part(self) -> JSON:
+        if self.matched_section is not None and self.matched_option is not None:
+            del self.data[self.matched_section][self.matched_option]
+        return self.data
+
+
+@dataclass(frozen=True)
+class OnlySections(IniMatch):
+
+    data: JSON
+
+    @override
+    def get_part(self) -> SUB_JSON:
+        return {k: {} for k in self.data}
+
+
+@dataclass(frozen=True)
+class WholeFile(IniMatch):
+    data: JSON
+
+    @override
+    def get_part(self) -> JSON:
+        return self.data
+
+    @override
+    def replace_part(self, new_part: Any) -> JSON:
+        return cast(JSON, new_part)
+
+
+def _match_lower(data: JSON, key: str) -> str | None:
+    lower = key.lower()
+    for k in data:
+        if k.lower() == lower:
+            return k
+    return None
+
+
+def _match_section(data: JSON, section: str) -> SectionMatch:
+    matched_section: str | None = None
+    if section in data:
+        matched_section = section
+    else:
+        matched_section = _match_lower(data, section)
+    return SectionMatch(data=data, req_section=section, matched_section=matched_section)
+
+
+def _match_option(data: JSON, section: str, option: str) -> OptionMatch:
+    section_match = _match_section(data, section)
+    if not section_match.req_section:
+        return OptionMatch(
+            data=data,
+            req_section=section,
+            req_option=option,
+        )
+    section_data = section_match.get_part()
+    matched_option: str | None = None
+    if option in section_data:
+        matched_option = option
+    else:
+        matched_option = _match_lower(section_data, option)
+    return OptionMatch(
+        data=data,
+        req_section=section,
+        req_option=option,
+        matched_section=section_match.matched_section,
+        matched_option=matched_option,
+    )
+
+
+def _match_url(data: JSON, url: List[str], depth: int | None = None) -> IniMatch:
+    if len(url) == 2:
+        return _match_option(data, section=url[0], option=url[1])
+    elif len(url) == 1:
+        return _match_section(data, section=url[0])
+    else:
+        if depth == 1:
+            return OnlySections(data)
+        return WholeFile(data)
+
+
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
@@ -132,29 +279,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         else:
             data = self.reader.read(self.path, read_options)
 
-        data = self._handle_urls(data, depth, url)
-        return cast(SUB_JSON, data)
-
-    @staticmethod
-    def _handle_urls(data: Dict[str, Any], depth: int, url: List[str]) -> Dict[str, Any]:
-        if len(url) == 2:
-            if url[0] in data and url[1] in data[url[0]]:
-                data = data[url[0]][url[1]]
-            else:
-                # lower keys to find a match
-                data = {k.lower(): v for k, v in {k.lower(): v for k, v in data.items()}[url[0].lower()].items()}[
-                    url[1].lower()
-                ]
-        elif len(url) == 1:
-            if url[0] in data:
-                data = data[url[0]]
-            else:
-                # lower keys to find a match
-                data = {k.lower(): v for k, v in data.items()}[url[0].lower()]
-
-        else:
-            data = {k: {} for k in data} if depth == 1 else data
-        return data
+        return _match_url(data, url, depth).get_part()
 
     # noinspection PyMethodMayBeStatic
     def _get_read_options(self, url: List[str]) -> IniReadOptions:
@@ -209,20 +334,15 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            info = self.reader.read(self.path) if self.path.exists() else {}
-            obj = data
-            if isinstance(data, str):
+            existing_data = self.reader.read(self.path) if self.path.exists() else {}
+            new_data = data
+            if isinstance(new_data, str):
                 with contextlib.suppress(pydantic_core.ValidationError):
-                    obj = from_json(data)
-            if len(url) == 2:
-                if url[0] not in info:
-                    info[url[0]] = {}
-                info[url[0]][url[1]] = obj
-            elif len(url) == 1:
-                info[url[0]] = obj
-            else:
-                info = cast(JSON, obj)
-            self.writer.write(info, self.path)
+                    new_data = from_json(new_data)
+
+            updated_data = _match_url(existing_data, url).replace_part(new_data)
+
+            self.writer.write(updated_data, self.path)
 
     @log_warning
     @override
@@ -258,33 +378,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
         data = self.reader.read(self.path)
 
-        if url_len == 1:
-            section_name = url[0]
-            try:
-                del data[section_name]
-            except KeyError:
-                raise IniFileNodeWarning(
-                    self.config,
-                    f"Cannot delete section: Section [{section_name}] not found",
-                ) from None
-
-        elif url_len == 2:
-            section_name, key_name = url
-            try:
-                section = data[section_name]
-            except KeyError:
-                raise IniFileNodeWarning(
-                    self.config,
-                    f"Cannot delete key: Section [{section_name}] not found",
-                ) from None
-            else:
-                try:
-                    del section[key_name]
-                except KeyError:
-                    raise IniFileNodeWarning(
-                        self.config,
-                        f"Cannot delete key: Key '{key_name}' not found in section [{section_name}]",
-                    ) from None
+        data = _match_url(data, url).delete_part()
 
         self.writer.write(data, self.path)
 
