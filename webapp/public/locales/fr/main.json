@@ -678,7 +678,6 @@
   "studies.exportOutput": "Exporter une sortie",
   "studies.exportOutputFilter": "Exporter une sortie filtrée",
   "studies.selectOutput": "Selectionnez une sortie",
-  "studies.tree.error.failToFetchWorkspace": "Échec lors de la récupération de l'espace de travail",
   "studies.tree.error.failToFetchFolder": "Échec lors de la récupération des sous dossiers de {{path}}",
   "studies.tree.fetchFolderLoading": "Chargement...",
   "variants.createNewVariant": "Créer une nouvelle variante",

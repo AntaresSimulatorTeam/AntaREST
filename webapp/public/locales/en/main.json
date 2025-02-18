@@ -679,7 +679,6 @@
   "studies.exportOutputFilter": "Export filtered output",
   "studies.selectOutput": "Select an output",
   "studies.variant": "Variant",
-  "studies.tree.error.failToFetchWorkspace": "Failed to load workspaces",
   "studies.tree.error.failToFetchFolder": "Failed to load subfolders for {{path}}",
   "studies.tree.fetchFolderLoading": "Loading...",
   "variants.createNewVariant": "Create new variant",
