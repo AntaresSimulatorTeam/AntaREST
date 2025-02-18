@@ -14,13 +14,12 @@ from typing import List
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class DistrictUpdateDTO(AntaresBaseModel):
@@ -53,10 +52,10 @@ class DistrictManager:
     This class updates the `input/areas/sets.ini` file of the study working directory.
     """
 
-    def __init__(self, storage_service: StudyStorageService):
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext):
+        self._command_context = command_context
 
-    def get_districts(self, study: Study) -> List[DistrictInfoDTO]:
+    def get_districts(self, study: StudyInterface) -> List[DistrictInfoDTO]:
         """
         Get the list of districts defined in this study.
 
@@ -66,7 +65,7 @@ class DistrictManager:
         Returns:
             The (unordered) list of Data Transfer Objects (DTO) representing districts.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         all_areas = list(file_study.config.areas)
         districts = []
         for district_id, district in file_study.config.sets.items():
@@ -84,7 +83,7 @@ class DistrictManager:
 
     def create_district(
         self,
-        study: Study,
+        study: StudyInterface,
         dto: DistrictCreationDTO,
     ) -> DistrictInfoDTO:
         """
@@ -101,7 +100,7 @@ class DistrictManager:
             DistrictAlreadyExist: exception raised when district already exists (duplicate).
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         district_id = transform_name_to_id(dto.name)
         if district_id in file_study.config.sets:
             raise DistrictAlreadyExist(district_id)
@@ -115,10 +114,10 @@ class DistrictManager:
             comments=dto.comments,
             base_filter=DistrictBaseFilter.remove_all,
             filter_items=list(areas),
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
         return DistrictInfoDTO(
             id=district_id,
             name=dto.name,
@@ -129,7 +128,7 @@ class DistrictManager:
 
     def update_district(
         self,
-        study: Study,
+        study: StudyInterface,
         district_id: str,
         dto: DistrictUpdateDTO,
     ) -> None:
@@ -148,7 +147,7 @@ class DistrictManager:
             DistrictNotFound: exception raised when district is not found in the study.
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         if district_id not in file_study.config.sets:
             raise DistrictNotFound(district_id)
         areas = set(dto.areas or [])
@@ -161,14 +160,14 @@ class DistrictManager:
             filter_items=dto.areas or [],
             output=dto.output,
             comments=dto.comments,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
     def remove_district(
         self,
-        study: Study,
+        study: StudyInterface,
         district_id: str,
     ) -> None:
         """
@@ -181,12 +180,12 @@ class DistrictManager:
         Raises:
             DistrictNotFound: exception raised when district is not found in the study.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         if district_id not in file_study.config.sets:
             raise DistrictNotFound(district_id)
         command = RemoveDistrict(
             id=district_id,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])

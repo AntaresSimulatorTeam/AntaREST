@@ -18,11 +18,12 @@ from pydantic import model_validator
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.all_optional_meta import all_optional_model
-from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_3, Study
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel
+from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 AREA_PATH = "input/areas/{area}"
 THERMAL_PATH = "input/thermal/areas/{field}/{{area}}"
@@ -129,16 +130,16 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
 
 
 class PropertiesManager:
-    def __init__(self, storage_service: StudyStorageService):
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext):
+        self._command_context = command_context
 
     def get_field_values(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
     ) -> PropertiesFormFields:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        study_ver = file_study.config.version
+        file_study = study.get_files()
+        study_ver = study.version
 
         def get_value(field_info: FieldInfo) -> Any:
             start_ver = cast(int, field_info.get("start_version", 0))
@@ -159,13 +160,12 @@ class PropertiesManager:
 
     def set_field_values(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         field_values: PropertiesFormFields,
     ) -> None:
         commands: List[UpdateConfig] = []
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study = study.get_files()
 
         for field_name, value in field_values.__iter__():
             if value is not None:
@@ -183,9 +183,12 @@ class PropertiesManager:
 
                 commands.append(
                     UpdateConfig(
-                        target=target, data=data, command_context=context, study_version=file_study.config.version
+                        target=target,
+                        data=data,
+                        command_context=self._command_context,
+                        study_version=study.version,
                     )
                 )
 
         if commands:
-            execute_or_add_commands(study, file_study, commands, self.storage_service)
+            study.add_commands(commands)
