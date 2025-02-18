@@ -103,6 +103,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        command_context=Mock(),
         user_service=user_service,
         repository=repository,
         event_bus=event_bus,
@@ -259,8 +260,8 @@ def test_study_listing(db_session: Session) -> None:
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
-    ma = RawStudy(id="a", path="a")
-    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
+    ma = RawStudy(id="a", path="a", workspace="workspace1")
+    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
