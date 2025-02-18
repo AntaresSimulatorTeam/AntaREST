@@ -17,7 +17,6 @@ import pytest
 
 import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.core.exceptions import CommandApplicationError
-from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.business.areas.thermal_management import ThermalClusterCreation, ThermalClusterInput, ThermalManager
@@ -78,11 +77,6 @@ def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path:
     config = antarest.study.storage.rawstudy.model.filesystem.config.files.build(study_id=study_id, study_path=path)
     tree = FileStudyTree(context, config)
     return FileStudy(config, tree)
-
-
-@pytest.fixture
-def matrix_service() -> ISimpleMatrixService:
-    return InMemorySimpleMatrixService()
 
 
 @pytest.fixture
