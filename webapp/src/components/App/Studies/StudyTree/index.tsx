@@ -44,7 +44,7 @@ function StudyTree() {
   }, [initialStudiesTree]);
 
   /**
-   * This function is called at the initialization of the component and when the user clicks on a folder.
+   * This function is called when the user clicks on a folder.
    *
    * The study tree is built from the studies in the database. There's a scan process that run on the server
    * to update continuously the studies in the database.
@@ -55,9 +55,7 @@ function StudyTree() {
    *
    * To enable this, we'll fetch the subfolders of a folder when the user clicks on it using the explorer API.
    *
-   * @param itemId - The id of the item clicked
-   * @param rootNode - The root node of the tree
-   * @param selectedNode - The node of the item clicked
+   * @param itemId - The id of the item clicked, which is its path
    */
   async function updateTree(itemId: string) {
     if (itemId.startsWith(DEFAULT_WORKSPACE_PREFIX)) {
