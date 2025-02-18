@@ -30,8 +30,6 @@ if t.TYPE_CHECKING:
 from antarest.matrixstore.model import MatrixDTO
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -127,7 +125,6 @@ def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
     command_context = CommandContext(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
-        patch_service=PatchService(repository=Mock(spec=StudyMetadataRepository)),
     )
     return command_context
 
@@ -148,7 +145,6 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
     return CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
-        patch_service=PatchService(),
     )
 
 

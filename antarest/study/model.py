@@ -314,13 +314,13 @@ class RawStudy(Study):
 
     __tablename__ = "rawstudy"
 
-    id = Column(
+    id: str = Column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status = Column(Enum(StudyContentStatus))
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
+    content_status: StudyContentStatus = Column(Enum(StudyContentStatus))
+    workspace: str = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
     missing = Column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
