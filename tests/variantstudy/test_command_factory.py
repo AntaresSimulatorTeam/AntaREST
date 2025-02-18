@@ -13,7 +13,7 @@
 import importlib
 import itertools
 import pkgutil
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional, Set
 from unittest.mock import Mock
 
 import pytest
@@ -761,7 +761,6 @@ def command_factory() -> CommandFactory:
     return CommandFactory(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService, get_matrix_id=get_matrix_id),
-        patch_service=Mock(spec=PatchService),
     )
 
 
@@ -816,7 +815,6 @@ def test_unknown_command():
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
             matrix_service=Mock(spec=MatrixService),
-            patch_service=Mock(spec=PatchService),
         )
         command_factory.to_command(
             command_dto=CommandDTO(action="unknown_command", args={}, study_version=STUDY_VERSION_8_8)

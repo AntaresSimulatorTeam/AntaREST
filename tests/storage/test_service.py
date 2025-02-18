@@ -103,6 +103,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        command_context=Mock(),
         user_service=user_service,
         repository=repository,
         event_bus=event_bus,
@@ -259,8 +260,8 @@ def test_study_listing(db_session: Session) -> None:
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
-    ma = RawStudy(id="a", path="a")
-    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
+    ma = RawStudy(id="a", path="a", workspace="workspace1")
+    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
@@ -624,7 +625,7 @@ def test_download_output() -> None:
             params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(
@@ -684,7 +685,7 @@ def test_download_output() -> None:
             params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
     # CLUSTER TYPE
     input_data.type = StudyDownloadType.DISTRICT
@@ -722,7 +723,7 @@ def test_download_output() -> None:
             params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
 
 # noinspection PyArgumentList
@@ -879,22 +880,22 @@ def test_check_errors() -> None:
 @pytest.mark.unit_test
 def test_study_match() -> None:
     assert not study_matcher(name=None, folder="ab", workspace="hell")(
-        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
     )
     assert study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
     )
     assert not study_matcher(name=None, folder="abd", workspace="hello")(
-        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
     )
     assert not study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.construct(id="1", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", workspace="hello")
     )
     assert study_matcher(name="f", folder=None, workspace="hello")(
-        StudyMetadataDTO.construct(id="1", name="foo", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
     )
     assert not study_matcher(name="foob", folder=None, workspace="hell")(
-        StudyMetadataDTO.construct(id="1", name="foo", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
     )
 
 

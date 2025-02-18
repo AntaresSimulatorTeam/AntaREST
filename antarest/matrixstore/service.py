@@ -120,7 +120,7 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def get(self, matrix_id: str) -> MatrixDTO:
         data = self.matrix_content_repository.get(matrix_id)
-        return MatrixDTO.construct(
+        return MatrixDTO.model_construct(
             id=matrix_id,
             width=len(data.columns),
             height=len(data.index),
@@ -394,7 +394,7 @@ class MatrixService(ISimpleMatrixService):
         if matrix is None:
             return None
         content = self.matrix_content_repository.get(matrix_id)
-        return MatrixDTO.construct(
+        return MatrixDTO.model_construct(
             id=matrix.id,
             width=matrix.width,
             height=matrix.height,

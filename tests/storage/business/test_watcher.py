@@ -82,6 +82,7 @@ def build_study_service(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
         user_service=user_service,
+        command_context=Mock(),
         repository=repository,
         event_bus=Mock(),
         task_service=task_service,

@@ -26,7 +26,6 @@ from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
     STStorageGroup,
     STStorageProperties,
 )
