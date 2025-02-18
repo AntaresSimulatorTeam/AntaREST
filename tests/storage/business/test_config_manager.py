@@ -32,13 +32,6 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.fixture
-def command_context(matrix_service: ISimpleMatrixService) -> CommandContext:
-    matrix_constants = GeneratorMatrixConstants(matrix_service)
-    matrix_constants.init_constant_matrices()
-    return CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service)
-
-
 def test_thematic_trimming_config(command_context: CommandContext) -> None:
     thematic_trimming_manager = ThematicTrimmingManager(
         command_context=command_context,

@@ -70,19 +70,6 @@ def empty_study_810(tmp_path: Path) -> StudyInterface:
     return make_empty_study(tmp_path, 810)
 
 
-@pytest.fixture
-def initialized_study(
-    xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
-    area_manager: AreaManager,
-    link_manager: LinkManager,
-) -> StudyInterface:
-    """
-    Study 810 with 2 areas, 1 link, and xpansion config
-    """
-    return make_empty_study(tmp_path, 810)
-
-
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
     "version, expected_output",
