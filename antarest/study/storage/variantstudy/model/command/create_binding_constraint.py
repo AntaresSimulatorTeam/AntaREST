@@ -12,13 +12,14 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type
 
 import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
+from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
@@ -31,10 +32,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.business.utils import validate_matrix
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     parse_bindings_coeffs_and_save_into_config,
 )
@@ -119,7 +121,7 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
 
 
 class BindingConstraintProperties870(BindingConstraintProperties830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
 BindingConstraintProperties = (
@@ -213,6 +215,8 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     Abstract class for binding constraint commands.
     """
 
+    _SERIALIZATION_VERSION: Final[int] = 1
+
     coeffs: Optional[Dict[str, List[float]]] = None
 
     @override
@@ -240,7 +244,10 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
                 args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
 
         return CommandDTO(
-            action=self.command_name.value, args=args, version=self.version, study_version=self.study_version
+            action=self.command_name.value,
+            args=args,
+            version=self._SERIALIZATION_VERSION,
+            study_version=self.study_version,
         )
 
     @override
@@ -286,7 +293,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             return methods["before_v87"][time_step]() if version < 870 else methods["after_v87"][time_step]()
         if isinstance(v, str):
             # Check the matrix link
-            return validate_matrix(v, {"command_context": self.command_context})
+            return validate_matrix(strip_matrix_protocol(v), {"command_context": self.command_context})
         if isinstance(v, list):
             check_matrix_values(time_step, v, version)
             return validate_matrix(v, {"command_context": self.command_context})

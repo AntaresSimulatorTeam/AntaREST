@@ -353,13 +353,13 @@ class RawStudy(Study):
 
     __tablename__ = "rawstudy"
 
-    id = Column(
+    id: str = Column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status = Column(Enum(StudyContentStatus))
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
+    content_status: StudyContentStatus = Column(Enum(StudyContentStatus))
+    workspace: str = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
     missing = Column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
@@ -661,7 +661,7 @@ class MatrixAggregationResult(AntaresBaseModel):
     warnings: List[str]
 
     def to_dto(self) -> MatrixAggregationResultDTO:
-        return MatrixAggregationResultDTO.construct(
+        return MatrixAggregationResultDTO.model_construct(
             index=self.index,
             data=[
                 TimeSeriesData.model_construct(

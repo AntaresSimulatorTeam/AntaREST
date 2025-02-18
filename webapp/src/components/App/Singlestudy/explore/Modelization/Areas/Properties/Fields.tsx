@@ -51,6 +51,16 @@ function Fields() {
           label={t("study.modelization.properties.spilled")}
           control={control}
         />
+        <NumberFE
+          name="spreadUnsuppliedEnergyCost"
+          label={t("study.modelization.properties.spreadUnsupplied")}
+          control={control}
+        />
+        <NumberFE
+          name="spreadSpilledEnergyCost"
+          label={t("study.modelization.properties.spreadSpilled")}
+          control={control}
+        />
       </Fieldset>
       <Fieldset legend={t("study.modelization.properties.lastResortShedding")}>
         <SwitchFE

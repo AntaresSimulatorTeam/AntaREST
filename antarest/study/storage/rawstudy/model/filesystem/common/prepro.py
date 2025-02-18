@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import numpy as np
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -16,6 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import ContextServ
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
@@ -44,14 +46,29 @@ class PreproAreaSettings(IniFileNode):
         IniFileNode.__init__(self, context, config, types={})
 
 
+default_k = np.zeros((24, 12), dtype=np.float64)
+default_k.flags.writeable = False
+
+default_conversion = np.array([[-9999999980506447872, 0, -9999999980506447872], [0, 0, 0]], dtype=np.float64)
+default_conversion.flags.writeable = False
+
+default_data = np.ones((12, 6), dtype=np.float64)
+default_data[:, 2] = 0
+default_data.flags.writeable = False
+
+
 class PreproArea(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "conversion": InputSeriesMatrix(self.context, self.config.next_file("conversion.txt")),
-            "data": InputSeriesMatrix(self.context, self.config.next_file("data.txt")),
-            "k": InputSeriesMatrix(self.context, self.config.next_file("k.txt")),
-            "translation": InputSeriesMatrix(self.context, self.config.next_file("translation.txt")),
+            "conversion": InputSeriesMatrix(
+                self.context, self.config.next_file("conversion.txt"), default_empty=default_conversion
+            ),
+            "data": InputSeriesMatrix(self.context, self.config.next_file("data.txt"), default_empty=default_data),
+            "k": InputSeriesMatrix(self.context, self.config.next_file("k.txt"), default_empty=default_k),
+            "translation": InputSeriesMatrix(
+                self.context, self.config.next_file("translation.txt"), default_empty=default_scenario_hourly
+            ),
             "settings": PreproAreaSettings(self.context, self.config.next_file("settings.ini")),
         }
         return children

@@ -19,7 +19,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 class CommandContext(AntaresBaseModel):
     generator_matrix_constants: GeneratorMatrixConstants
     matrix_service: ISimpleMatrixService
-    patch_service: PatchService
 
     class Config:
         arbitrary_types_allowed = True

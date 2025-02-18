@@ -12,7 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import type { MatrixDataDTO, AggregateConfig } from "../../../../../../common/Matrix/shared/types";
+import type {
+  MatrixDataDTO,
+  AggregateConfig,
+  RowCountSource,
+} from "../../../../../../common/Matrix/shared/types";
 import type { SplitViewProps } from "../../../../../../common/SplitView";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
@@ -53,6 +57,7 @@ export interface HydroMatrixProps {
   dateTimeColumn?: boolean;
   readOnly?: boolean;
   showPercent?: boolean;
+  rowCountSource?: RowCountSource;
 }
 
 type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
@@ -128,6 +133,7 @@ export const MATRICES: Matrices = {
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     columns: generateColumns("%"),
     rowHeaders: ["Generating Power", "Pumping Power"],
+    rowCountSource: "dataLength",
     dateTimeColumn: false,
   },
   [HydroMatrix.EnergyCredits]: {
@@ -139,6 +145,7 @@ export const MATRICES: Matrices = {
       "Pumping Max Power (MW)",
       "Pumping Max Energy (Hours at Pmax)",
     ],
+    rowCountSource: "dataLength",
   },
   [HydroMatrix.ReservoirLevels]: {
     title: "Reservoir Levels",
@@ -187,6 +194,7 @@ export const MATRICES: Matrices = {
       "November",
       "December",
     ],
+    rowCountSource: "dataLength",
     dateTimeColumn: false,
   },
   [HydroMatrix.Allocation]: {
