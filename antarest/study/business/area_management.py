@@ -12,7 +12,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
@@ -41,6 +41,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
+from antarest.study.storage.variantstudy.model.command.update_area_properties import UpdateAreaProperties
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
@@ -49,6 +50,7 @@ logger = logging.getLogger(__name__)
 
 _ALL_AREAS_PATH = "input/areas"
 _THERMAL_AREAS_PATH = "input/thermal/areas"
+T = TypeVar("T")
 
 
 def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str, Any]:
@@ -91,6 +93,44 @@ def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
         return re.split(r"\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
     return []
 
+
+def pick_value(
+    old: Optional[T],
+    new: Optional[T],
+    condition: Callable[[Optional[T]], bool] = lambda x: True
+) -> Optional[T]:
+    return new if (old != new and condition(new)) else old
+
+def update_area_folder_configuration(
+    old_area: AreaOutput, new_area: AreaOutput
+) -> AreaFolder:
+    optimization = pick_value(
+        old_area.area_folder.optimization,
+        new_area.area_folder.optimization
+    )
+    adequacy_patch = pick_value(
+        old_area.area_folder.adequacy_patch,
+        new_area.area_folder.adequacy_patch,
+        lambda x: bool(x)
+    )
+    return AreaFolder(adequacy_patch=adequacy_patch, optimization=optimization)
+
+def update_thermal_configuration(
+    area_id: str, old_area: AreaOutput, new_area: AreaOutput
+) -> ThermalAreasProperties:
+    average_unsupplied_energy_cost = pick_value(
+        old_area.average_unsupplied_energy_cost,
+        new_area.average_unsupplied_energy_cost
+    )
+    average_spilled_energy_cost = pick_value(
+        old_area.average_spilled_energy_cost,
+        new_area.average_spilled_energy_cost
+    )
+    return ThermalAreasProperties(
+        # type: ignore[call-arg]
+        unserverdenergycost={area_id: average_unsupplied_energy_cost},
+        spilledenergycost={area_id: average_spilled_energy_cost},
+    )
 
 class AreaManager:
     """
@@ -179,59 +219,33 @@ class AreaManager:
         Returns:
             A mapping of ALL area IDs to area properties.
         """
-        old_areas_by_ids = self.get_all_area_props(study)
-        new_areas_by_ids = {k: v for k, v in old_areas_by_ids.items()}
-
-        # Prepare the commands to update the thermal clusters.
-        commands = []
         command_context = self.storage_service.variant_study_service.command_factory.command_context
 
+        old_areas_by_ids = self.get_all_area_props(study)
+        new_areas_by_ids = dict(old_areas_by_ids)
+
+        dict_area_folder: Dict[str, AreaFolder] = {}
+        list_thermal_area_properties: List[ThermalAreasProperties] = []
+
         for area_id, update_area in update_areas_by_ids.items():
-            # Update the area properties.
             old_area = old_areas_by_ids[area_id]
             new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
-            # Convert the DTO to a configuration object and update the configuration file.
-            old_area_folder = old_area.area_folder
-            new_area_folder = new_area.area_folder
+            area_folder = update_area_folder_configuration(old_area, new_area)
+            thermal_area_properties = update_thermal_configuration(area_id, old_area, new_area)
 
-            if old_area_folder.optimization != new_area_folder.optimization:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/areas/{area_id}/optimization",
-                        data=new_area_folder.optimization.to_config(),
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
-            if old_area_folder.adequacy_patch != new_area_folder.adequacy_patch and new_area_folder.adequacy_patch:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/areas/{area_id}/adequacy_patch",
-                        data=new_area_folder.adequacy_patch.to_config(),
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
-            if old_area.average_unsupplied_energy_cost != new_area.average_unsupplied_energy_cost:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/thermal/areas/unserverdenergycost/{area_id}",
-                        data=new_area.average_unsupplied_energy_cost,
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
-            if old_area.average_spilled_energy_cost != new_area.average_spilled_energy_cost:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/thermal/areas/spilledenergycost/{area_id}",
-                        data=new_area.average_spilled_energy_cost,
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
+            dict_area_folder[area_id] = area_folder
+            list_thermal_area_properties.append(thermal_area_properties)
+
+        commands = [
+            UpdateAreaProperties(
+                list_area_folder=dict_area_folder,
+                list_thermal_area_properties=list_thermal_area_properties,
+                command_context=command_context,
+                study_version=study.version,
+            )
+        ]
 
         file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, commands, self.storage_service)
