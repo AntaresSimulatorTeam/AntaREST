@@ -183,11 +183,10 @@ class HydroManager:
         """
         # NOTE: Updates only "intermonthly-correlation" due to current model scope.
         path = INFLOW_PATH.format(area_id=area_id)
-        file_study = study.get_files()
         command = UpdateConfig(
             target=path,
             data={"intermonthly-correlation": values.inter_monthly_correlation},
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])

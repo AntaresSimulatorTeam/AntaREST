@@ -257,7 +257,7 @@ class AdvancedParamsManager:
                 if (
                     field_name == "unit_commitment_mode"
                     and value == UnitCommitmentMode.MILP
-                    and StudyVersion.parse(study.version) < STUDY_VERSION_8_8
+                    and study.version < STUDY_VERSION_8_8
                 ):
                     raise InvalidFieldForVersionError("Unit commitment mode `MILP` only exists in v8.8+ studies")
 

@@ -49,7 +49,6 @@ class TimeSeriesConfigManager:
         """
         Set Time-Series generation values
         """
-        file_study = study.get_files()
 
         if field_values.thermal:
             url = f"{GENERAL_DATA_PATH}/general/nbtimeseriesthermal"
@@ -57,6 +56,6 @@ class TimeSeriesConfigManager:
                 target=url,
                 data=field_values.thermal.number,
                 command_context=self._command_context,
-                study_version=file_study.config.version,
+                study_version=study.version,
             )
             study.add_commands([command])

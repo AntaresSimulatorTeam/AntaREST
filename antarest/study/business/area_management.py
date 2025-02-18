@@ -341,19 +341,19 @@ class AreaManager:
                     target=f"input/areas/{area_id}/ui/layerX",
                     data=areas_ui[area_id]["layerX"],
                     command_context=self._command_context,
-                    study_version=file_study.config.version,
+                    study_version=study.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/layerY",
                     data=areas_ui[area_id]["layerY"],
                     command_context=self._command_context,
-                    study_version=file_study.config.version,
+                    study_version=study.version,
                 ),
                 UpdateConfig(
                     target=f"input/areas/{area_id}/ui/ui/layers",
                     data=areas_ui[area_id]["ui"]["layers"],
                     command_context=self._command_context,
-                    study_version=file_study.config.version,
+                    study_version=study.version,
                 ),
             ]
 
@@ -390,7 +390,7 @@ class AreaManager:
             target=f"layers/layers/layers/{layer_id}",
             data=layer_name,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
 
@@ -404,14 +404,14 @@ class AreaManager:
                 target="layers/layers/layers",
                 data={"0": "All", "1": layer_name},
                 command_context=command_context,
-                study_version=file_study.config.version,
+                study_version=study.version,
             )
         else:
             command = UpdateConfig(
                 target=f"layers/layers/layers/{new_id}",
                 data=layer_name,
                 command_context=command_context,
-                study_version=file_study.config.version,
+                study_version=study.version,
             )
         study.add_commands([command])
         return str(new_id)
@@ -439,7 +439,7 @@ class AreaManager:
             target="layers/layers/layers",
             data=layers,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
 
@@ -455,7 +455,7 @@ class AreaManager:
         command = CreateArea(
             area_name=area_creation_info.name,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
 
@@ -494,14 +494,13 @@ class AreaManager:
         )
 
     def update_area_ui(self, study: StudyInterface, area_id: str, area_ui: UpdateAreaUi, layer: str) -> None:
-        file_study = study.get_files()
 
         command = UpdateAreaUI(
             area_id=area_id,
             area_ui=area_ui,
             layer=layer,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
 
         study.add_commands([command])
@@ -528,11 +527,10 @@ class AreaManager:
         )
 
     def delete_area(self, study: StudyInterface, area_id: str) -> None:
-        file_study = study.get_files()
         command = RemoveArea(
             id=area_id,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
 

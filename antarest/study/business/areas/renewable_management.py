@@ -188,9 +188,8 @@ class RenewableManager:
         Returns:
             The newly created cluster.
         """
-        file_study = study.get_files()
-        cluster = cluster_data.to_properties(StudyVersion.parse(study.version))
-        command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
+        cluster = cluster_data.to_properties(study.version)
+        command = self._make_create_cluster_cmd(area_id, cluster, study.version)
 
         study.add_commands([command])
         output = self.get_cluster(study, area_id, cluster.get_id())
@@ -367,7 +366,7 @@ class RenewableManager:
 
         # Prepare the commands to update the renewable clusters.
         commands = []
-        study_version = StudyVersion.parse(study.version)
+        study_version = study.version
         for area_id, update_renewables_by_ids in update_renewables_by_areas.items():
             old_renewables_by_ids = old_renewables_by_areas[area_id]
             for renewable_id, update_cluster in update_renewables_by_ids.items():

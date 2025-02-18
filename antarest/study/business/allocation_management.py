@@ -198,12 +198,11 @@ class AllocationManager:
 
         filtered_allocations = [f for f in data.allocation if f.coefficient > 0 and f.area_id in areas_ids]
 
-        file_study = study.get_files()
         command = UpdateConfig(
             target=f"input/hydro/allocation/{area_id}/[allocation]",
             data={f.area_id: f.coefficient for f in filtered_allocations},
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
 
         study.add_commands([command])

@@ -56,15 +56,14 @@ class LinkManager:
         return updated_link
 
     def create_link(self, study: StudyInterface, link_creation_dto: LinkDTO) -> LinkDTO:
-        file_study = study.get_files()
-        link = link_creation_dto.to_internal(file_study.config.version)
+        link = link_creation_dto.to_internal(study.version)
 
         command = CreateLink(
             area1=link.area1,
             area2=link.area2,
             parameters=link.model_dump(exclude_none=True),
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
 
         study.add_commands([command])
@@ -75,7 +74,7 @@ class LinkManager:
         link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
 
         file_study = study.get_files()
-        link = link_dto.to_internal(file_study.config.version)
+        link = link_dto.to_internal(study.version)
 
         self._get_link_if_exists(file_study, link)
 
@@ -86,7 +85,7 @@ class LinkManager:
                 include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
             ),
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
 
         study.add_commands([command])
@@ -108,12 +107,11 @@ class LinkManager:
         return new_links_by_ids
 
     def delete_link(self, study: StudyInterface, area1_id: str, area2_id: str) -> None:
-        file_study = study.get_files()
         command = RemoveLink(
             area1=area1_id,
             area2=area2_id,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
 

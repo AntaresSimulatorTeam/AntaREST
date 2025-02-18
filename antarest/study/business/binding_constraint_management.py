@@ -621,7 +621,7 @@ class BindingConstraintManager:
         constraints_by_id: Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
 
         for constraint in config.values():
-            constraint_config = self.constraint_model_adapter(constraint, StudyVersion.parse(study.version))
+            constraint_config = self.constraint_model_adapter(constraint, study.version)
             constraints_by_id[constraint_config.id] = constraint_config
 
         if bc_id not in constraints_by_id:
@@ -644,7 +644,7 @@ class BindingConstraintManager:
         """
         file_study = study.get_files()
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        outputs = [self.constraint_model_adapter(c, StudyVersion.parse(study.version)) for c in config.values()]
+        outputs = [self.constraint_model_adapter(c, study.version) for c in config.values()]
         filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
         return filtered_constraints
 
@@ -670,7 +670,7 @@ class BindingConstraintManager:
         grouped_constraints = CaseInsensitiveDict()
 
         for constraint in config.values():
-            constraint_config = self.constraint_model_adapter(constraint, StudyVersion.parse(study.version))
+            constraint_config = self.constraint_model_adapter(constraint, study.version)
             constraint_group = getattr(constraint_config, "group", DEFAULT_GROUP)
             grouped_constraints.setdefault(constraint_group, []).append(constraint_config)
 
@@ -764,7 +764,6 @@ class BindingConstraintManager:
         data: ConstraintCreation,
     ) -> ConstraintOutput:
         bc_id = transform_name_to_id(data.name)
-        version = StudyVersion.parse(study.version)
 
         if not bc_id:
             raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
@@ -772,7 +771,7 @@ class BindingConstraintManager:
         if bc_id in {bc.id for bc in self.get_binding_constraints(study)}:
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
-        check_attributes_coherence(data, version, data.operator or DEFAULT_OPERATOR)
+        check_attributes_coherence(data, study.version, data.operator or DEFAULT_OPERATOR)
 
         new_constraint = {
             "name": data.name,
@@ -781,7 +780,7 @@ class BindingConstraintManager:
         args = {
             **new_constraint,
             "command_context": self._command_context,
-            "study_version": version,
+            "study_version": study.version,
         }
         if data.terms:
             args["coeffs"] = self.terms_to_coeffs(data.terms)
@@ -790,13 +789,15 @@ class BindingConstraintManager:
 
         # Validates the matrices. Needed when the study is a variant because we only append the command to the list
         time_step = data.time_step or DEFAULT_TIMESTEP
-        command.validates_and_fills_matrices(time_step=time_step, specific_matrices=None, version=version, create=True)
+        command.validates_and_fills_matrices(
+            time_step=time_step, specific_matrices=None, version=study.version, create=True
+        )
 
         study.add_commands([command])
 
         # Processes the constraints to add them inside the endpoint response.
         new_constraint["id"] = bc_id
-        return self.constraint_model_adapter(new_constraint, version)
+        return self.constraint_model_adapter(new_constraint, study.version)
 
     def duplicate_binding_constraint(
         self, study: StudyInterface, source_id: str, new_constraint_name: str
@@ -836,14 +837,14 @@ class BindingConstraintManager:
         args = {
             **new_constraint,
             "command_context": self._command_context,
-            "study_version": StudyVersion.parse(study.version),
+            "study_version": study.version,
         }
         if source_constraint.terms:
             args["coeffs"] = self.terms_to_coeffs(source_constraint.terms)
 
         # Retrieval of the source constraint matrices
         file_study = study.get_files()
-        if file_study.config.version < STUDY_VERSION_8_7:
+        if study.version < STUDY_VERSION_8_7:
             matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
             args["values"] = matrix["data"]
         else:
@@ -878,8 +879,7 @@ class BindingConstraintManager:
     ) -> ConstraintOutput:
         existing_constraint = existing_constraint or self.get_binding_constraint(study, binding_constraint_id)
 
-        study_version = StudyVersion.parse(study.version)
-        check_attributes_coherence(data, study_version, data.operator or existing_constraint.operator)
+        check_attributes_coherence(data, study.version, data.operator or existing_constraint.operator)
 
         upd_constraint = {
             "id": binding_constraint_id,
@@ -888,14 +888,14 @@ class BindingConstraintManager:
         args = {
             **upd_constraint,
             "command_context": self._command_context,
-            "study_version": study_version,
+            "study_version": study.version,
         }
         if data.terms:
             args["coeffs"] = self.terms_to_coeffs(data.terms)
 
         if data.time_step is not None and data.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
-            args = _replace_matrices_according_to_frequency_and_version(data, study_version, args)
+            args = _replace_matrices_according_to_frequency_and_version(data, study.version, args)
 
         command = UpdateBindingConstraint(**args)
 
@@ -905,7 +905,7 @@ class BindingConstraintManager:
         if updated_matrices:
             time_step = data.time_step or existing_constraint.time_step
             command.validates_and_fills_matrices(
-                time_step=time_step, specific_matrices=updated_matrices, version=study_version, create=False  # type: ignore
+                time_step=time_step, specific_matrices=updated_matrices, version=study.version, create=False  # type: ignore
             )
 
         study.add_commands([command])
@@ -915,14 +915,14 @@ class BindingConstraintManager:
         upd_constraint["type"] = upd_constraint.get("time_step", existing_constraint.time_step)
         upd_constraint["terms"] = data.terms or existing_constraint.terms
         new_fields = ["enabled", "operator", "comments", "terms"]
-        if study_version >= STUDY_VERSION_8_3:
+        if study.version >= STUDY_VERSION_8_3:
             new_fields.extend(["filter_year_by_year", "filter_synthesis"])
-        if study_version >= STUDY_VERSION_8_7:
+        if study.version >= STUDY_VERSION_8_7:
             new_fields.append("group")
         for field in new_fields:
             if field not in upd_constraint:
                 upd_constraint[field] = getattr(data, field) or getattr(existing_constraint, field)
-        return self.constraint_model_adapter(upd_constraint, study_version)
+        return self.constraint_model_adapter(upd_constraint, study.version)
 
     def update_binding_constraints(
         self,
@@ -960,7 +960,6 @@ class BindingConstraintManager:
             return updated_constraints
 
         # More efficient way of doing things but using less readable commands.
-        study_version = StudyVersion.parse(study.version)
         commands = []
 
         file_study = study.get_files()
@@ -970,22 +969,22 @@ class BindingConstraintManager:
             if bc_id not in dict_config:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-            props = create_binding_constraint_config(study_version, **value.model_dump())
+            props = create_binding_constraint_config(study.version, **value.model_dump())
             new_values = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             upd_obj = config[dict_config[bc_id]]
             current_value = copy.deepcopy(upd_obj)
             upd_obj.update(new_values)
-            output = self.constraint_model_adapter(upd_obj, study_version)
+            output = self.constraint_model_adapter(upd_obj, study.version)
             updated_constraints[bc_id] = output
 
             if value.time_step and value.time_step != BindingConstraintFrequency(current_value["type"]):
                 # The user changed the time step, we need to update the matrix accordingly
                 replace_matrix_commands = _generate_replace_matrix_commands(
-                    bc_id, study_version, value, output.operator, self._command_context
+                    bc_id, study.version, value, output.operator, self._command_context
                 )
                 commands.extend(replace_matrix_commands)
 
-            if value.operator and study_version >= STUDY_VERSION_8_7:
+            if value.operator and study.version >= STUDY_VERSION_8_7:
                 # The user changed the operator, we have to rename matrices accordingly
                 existing_operator = BindingConstraintOperator(current_value["operator"])
                 update_matrices_names(file_study, bc_id, existing_operator, value.operator)
@@ -995,7 +994,7 @@ class BindingConstraintManager:
             target="input/bindingconstraints/bindingconstraints",
             data=config,
             command_context=self._command_context,
-            study_version=study_version,
+            study_version=study.version,
         )
         commands.append(command)
         study.add_commands(commands)
@@ -1014,10 +1013,7 @@ class BindingConstraintManager:
         """
         # Check the existence of the binding constraint before removing it
         bc = self.get_binding_constraint(study, binding_constraint_id)
-        file_study = study.get_files()
-        command = RemoveBindingConstraint(
-            id=bc.id, command_context=self._command_context, study_version=file_study.config.version
-        )
+        command = RemoveBindingConstraint(id=bc.id, command_context=self._command_context, study_version=study.version)
         study.add_commands([command])
 
     def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: List[str]) -> None:
@@ -1034,12 +1030,10 @@ class BindingConstraintManager:
 
         self.check_binding_constraints_exists(study, binding_constraints_ids)
 
-        file_study = study.get_files()
-
         command = RemoveMultipleBindingConstraints(
             ids=binding_constraints_ids,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
 
         study.add_commands([command])
@@ -1050,12 +1044,11 @@ class BindingConstraintManager:
         coeffs = {
             term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
         }
-        file_study = study.get_files()
         args = {
             "id": bc.id,
             "coeffs": coeffs,
             "command_context": self._command_context,
-            "study_version": file_study.config.version,
+            "study_version": study.version,
         }
         command = UpdateBindingConstraint.model_validate(args)
         study.add_commands([command])

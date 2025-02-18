@@ -104,11 +104,7 @@ class TableModeManager:
             data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links(study)
-            excludes = (
-                set()
-                if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
-                else {"filter_synthesis", "filter_year_by_year"}
-            )
+            excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
             data = {
                 f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True, exclude=excludes)
                 for link in links_map
@@ -206,11 +202,7 @@ class TableModeManager:
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkBaseDTO(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links(study, links_map)  # type: ignore
-            excludes = (
-                set()
-                if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
-                else {"filter_synthesis", "filter_year_by_year"}
-            )
+            excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
             data = {
                 f"{area1_id} / {area2_id}": link.model_dump(by_alias=True, exclude=excludes)
                 for (area1_id, area2_id), link in updated_map.items()

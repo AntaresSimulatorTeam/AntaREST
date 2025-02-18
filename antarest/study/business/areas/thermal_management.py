@@ -167,8 +167,7 @@ class ThermalManager:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise ThermalClusterNotFound(path, cluster_id) from None
-        study_version = file_study.config.version
-        return create_thermal_output(study_version, cluster_id, cluster)
+        return create_thermal_output(study.version, cluster_id, cluster)
 
     def get_clusters(
         self,
@@ -195,8 +194,7 @@ class ThermalManager:
             clusters = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise ThermalClusterConfigNotFound(path, area_id) from None
-        study_version = file_study.config.version
-        return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
+        return [create_thermal_output(study.version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
 
     def get_all_thermals_props(
         self,
@@ -225,12 +223,11 @@ class ThermalManager:
         except KeyError:
             raise ThermalClusterConfigNotFound(path) from None
 
-        study_version = file_study.config.version
         thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalClusterOutput]]
         thermals_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                thermals_by_areas[area_id][cluster_id] = create_thermal_output(study_version, cluster_id, cluster)
+                thermals_by_areas[area_id][cluster_id] = create_thermal_output(study.version, cluster_id, cluster)
 
         return thermals_by_areas
 
@@ -241,8 +238,6 @@ class ThermalManager:
     ) -> Mapping[str, Mapping[str, ThermalClusterOutput]]:
         old_thermals_by_areas = self.get_all_thermals_props(study)
         new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}
-
-        study_version = study.get_files().config.version
 
         # Prepare the commands to update the thermal clusters.
         commands = []
@@ -256,7 +251,7 @@ class ThermalManager:
 
                 # Convert the DTO to a configuration object and update the configuration file.
                 properties = create_thermal_config(
-                    study_version,
+                    study.version,
                     **new_cluster.model_dump(mode="json", exclude_none=True),
                 )
                 path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
@@ -264,7 +259,7 @@ class ThermalManager:
                     target=path,
                     data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
                     command_context=self._command_context,
-                    study_version=study_version,
+                    study_version=study.version,
                 )
                 commands.append(cmd)
 
@@ -290,9 +285,8 @@ class ThermalManager:
             The created cluster.
         """
 
-        study_version = study.get_files().config.version
-        cluster = cluster_data.to_properties(study_version)
-        command = self._make_create_cluster_cmd(area_id, cluster, study_version)
+        cluster = cluster_data.to_properties(study.version)
+        command = self._make_create_cluster_cmd(area_id, cluster, study.version)
         study.add_commands([command])
 
         output = self.get_cluster(study, area_id, cluster.get_id())
@@ -335,7 +329,6 @@ class ThermalManager:
             in the provided cluster_data.
         """
 
-        study_version = study.get_files().config.version
         file_study = study.get_files()
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
@@ -343,7 +336,7 @@ class ThermalManager:
         except KeyError:
             raise ThermalClusterNotFound(path, cluster_id) from None
         else:
-            old_config = create_thermal_config(study_version, **values)
+            old_config = create_thermal_config(study.version, **values)
 
         # Use Python values to synchronize Config and Form values
         new_values = cluster_data.model_dump(mode="json", exclude_none=True)
@@ -360,7 +353,7 @@ class ThermalManager:
         # create the update config commands with the modified data
         commands = [
             UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study_version
+                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
             )
             for key, value in data.items()
         ]
@@ -384,7 +377,7 @@ class ThermalManager:
                 area_id=area_id,
                 cluster_id=cluster_id,
                 command_context=self._command_context,
-                study_version=study.get_files().config.version,
+                study_version=study.version,
             )
             for cluster_id in cluster_ids
         ]
@@ -466,8 +459,7 @@ class ThermalManager:
         series_path = [thermal_cluster_path / "series"]
 
         file_study = study.get_files()
-        study_version = file_study.config.version
-        if study_version >= STUDY_VERSION_8_7:
+        if study.version >= STUDY_VERSION_8_7:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 

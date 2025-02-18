@@ -186,7 +186,7 @@ class PropertiesManager:
                         target=target,
                         data=data,
                         command_context=self._command_context,
-                        study_version=file_study.config.version,
+                        study_version=study.version,
                     )
                 )
 

@@ -118,7 +118,7 @@ class DistrictManager:
             base_filter=DistrictBaseFilter.remove_all,
             filter_items=list(areas),
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
         return DistrictInfoDTO(
@@ -164,7 +164,7 @@ class DistrictManager:
             output=dto.output,
             comments=dto.comments,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
 
@@ -189,6 +189,6 @@ class DistrictManager:
         command = RemoveDistrict(
             id=district_id,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])

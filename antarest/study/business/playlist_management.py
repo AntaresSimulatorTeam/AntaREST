@@ -55,8 +55,6 @@ class PlaylistManager:
         study: StudyInterface,
         data: Dict[int, PlaylistColumns],
     ) -> None:
-        file_study = study.get_files()
-
         years_by_bool: Dict[bool, List[int]] = {True: [], False: []}
         for year, col in data.items():
             years_by_bool[col.status].append(year - 1)
@@ -70,6 +68,6 @@ class PlaylistManager:
             weights=weights,
             active=True,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])

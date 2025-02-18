@@ -44,7 +44,7 @@ class ThematicTrimmingManager:
             var_name = field_info["path"]
             return var_name not in exclude_vars if selected_vars_reset else var_name in include_vars
 
-        fields_info = get_fields_info(StudyVersion.parse(study.version))
+        fields_info = get_fields_info(study.version)
         fields_values = {name: get_value(info) for name, info in fields_info.items()}
         return ThematicTrimmingFormFields(**fields_values)
 
@@ -52,11 +52,10 @@ class ThematicTrimmingManager:
         """
         Set Thematic Trimming config from the webapp form
         """
-        file_study = study.get_files()
         field_values_dict = field_values.model_dump(mode="json")
 
         keys_by_bool: Dict[bool, List[Any]] = {True: [], False: []}
-        fields_info = get_fields_info(StudyVersion.parse(study.version))
+        fields_info = get_fields_info(study.version)
         for name, info in fields_info.items():
             keys_by_bool[field_values_dict[name]].append(info["path"])
 
@@ -76,6 +75,6 @@ class ThematicTrimmingManager:
             target="settings/generaldata/variables selection",
             data=config_data,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])

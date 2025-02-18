@@ -238,7 +238,7 @@ class ScenarioBuilderManager:
         ruleset_name = _get_active_ruleset_name(file_study)
         data = {ruleset_name: ruleset.get_rules(allow_nan=True)}
         update_scenario = UpdateScenarioBuilder(
-            data=data, command_context=self._command_context, study_version=file_study.config.version
+            data=data, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([update_scenario])
 

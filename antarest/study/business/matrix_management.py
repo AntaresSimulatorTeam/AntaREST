@@ -292,7 +292,7 @@ class MatrixManager:
                 target=path,
                 matrix=strip_matrix_protocol(new_matrix_id),
                 command_context=self._command_context,
-                study_version=file_study.config.version,
+                study_version=study.version,
             )
         ]
 

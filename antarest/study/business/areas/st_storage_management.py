@@ -280,13 +280,13 @@ class STStorageManager:
         file_study = study.get_files()
         values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        storage = form.to_properties(StudyVersion.parse(study.version))
+        storage = form.to_properties(study.version)
         storage_id = storage.get_id()
         values = values_by_ids.get(storage_id)
         if values is not None:
             raise DuplicateSTStorage(area_id, storage_id)
 
-        command = self._make_create_cluster_cmd(area_id, storage, file_study.config.version)
+        command = self._make_create_cluster_cmd(area_id, storage, study.version)
         study.add_commands([command])
         output = self.get_storage(study, area_id, storage_id=storage_id)
         return output
@@ -377,7 +377,7 @@ class STStorageManager:
 
         # Prepare the commands to update the storage clusters.
         commands = []
-        study_version = StudyVersion.parse(study.version)
+        study_version = study.version
         for area_id, update_storages_by_ids in update_storages_by_areas.items():
             old_storages_by_ids = old_storages_by_areas[area_id]
             for storage_id, update_cluster in update_storages_by_ids.items():
@@ -427,7 +427,7 @@ class STStorageManager:
             config = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageNotFound(path, storage_id) from None
-        return create_storage_output(StudyVersion.parse(study.version), storage_id, config)
+        return create_storage_output(study.version, storage_id, config)
 
     def update_storage(
         self,
@@ -510,7 +510,7 @@ class STStorageManager:
                     area_id=area_id,
                     storage_id=storage_id,
                     command_context=self._command_context,
-                    study_version=file_study.config.version,
+                    study_version=study.version,
                 )
             )
         study.add_commands(commands)
@@ -543,15 +543,14 @@ class STStorageManager:
         current_cluster.name = new_cluster_name
         fields_to_exclude = {"id"}
         # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
-        study_version = StudyVersion.parse(study.version)
-        if study_version < STUDY_VERSION_8_8:
+        if study.version < STUDY_VERSION_8_8:
             fields_to_exclude.add("enabled")
         creation_form = STStorageCreation.model_validate(
             current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
         )
 
-        new_config = creation_form.to_properties(study_version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
+        new_config = creation_form.to_properties(study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study.version)
 
         # Matrix edition
         lower_source_id = source_id.lower()
@@ -575,7 +574,7 @@ class STStorageManager:
                 target=new_path,
                 matrix=current_matrix,
                 command_context=self._command_context,
-                study_version=study_version,
+                study_version=study.version,
             )
             commands.append(command)
 
@@ -648,13 +647,12 @@ class STStorageManager:
         ts_name: STStorageTimeSeries,
         matrix_data: List[List[float]],
     ) -> None:
-        file_study = study.get_files()
         path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
         command = ReplaceMatrix(
             target=path,
             matrix=matrix_data,
             command_context=self._command_context,
-            study_version=file_study.config.version,
+            study_version=study.version,
         )
         study.add_commands([command])
 

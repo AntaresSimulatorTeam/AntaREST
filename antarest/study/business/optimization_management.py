@@ -131,10 +131,9 @@ class OptimizationManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
-            study_ver = file_study.config.version
             start_ver = cast(int, field_info.get("start_version", 0))
             target_name = path.split("/")[-1]
-            is_in_version = start_ver <= study_ver
+            is_in_version = start_ver <= study.version
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
