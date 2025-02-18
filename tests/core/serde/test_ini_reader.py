@@ -15,7 +15,13 @@ import textwrap
 from pathlib import Path
 
 from antarest.core.serde.ini_common import OptionMatcher, any_section_option_matcher
-from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader, SimpleKeyValueReader, ValueParsers
+from antarest.core.serde.ini_reader import (
+    LOWER_CASE_PARSER,
+    IniReader,
+    SimpleKeyValueReader,
+    ValueParsers,
+    ini_read_options,
+)
 
 
 def test_lower_case_parser() -> None:
@@ -295,12 +301,12 @@ class TestIniReader:
         reader = IniReader()
 
         # exact match
-        actual = reader.read(path, section="part1")
+        actual = reader.read(path, ini_read_options(section="part1"))
         expected = {"part1": {"foo": 5, "bar": "hello"}}
         assert actual == expected
 
         # regex match
-        actual = reader.read(path, section_regex="part.*")
+        actual = reader.read(path, ini_read_options(section_regex="part.*"))
         expected = {
             "part1": {"foo": 5, "bar": "hello"},
             "part2": {"foo": 6, "bar": "salut"},
@@ -329,27 +335,27 @@ class TestIniReader:
         reader = IniReader()
 
         # exact match
-        actual = reader.read(path, option="foo")
+        actual = reader.read(path, ini_read_options(option="foo"))
         expected = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
         assert actual == expected
 
         # regex match
-        actual = reader.read(path, option_regex="fo.*")
+        actual = reader.read(path, ini_read_options(option_regex="fo.*"))
         expected = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
         assert actual == expected
 
         # exact match with section
-        actual = reader.read(path, section="part2", option="foo")
+        actual = reader.read(path, ini_read_options(section="part2", option="foo"))
         expected = {"part2": {"foo": 6}}
         assert actual == expected
 
         # regex match with section
-        actual = reader.read(path, section_regex="part.*", option="foo")
+        actual = reader.read(path, ini_read_options(section_regex="part.*", option="foo"))
         expected = {"part1": {"foo": 5}, "part2": {"foo": 6}}
         assert actual == expected
 
         # regex match with section and option
-        actual = reader.read(path, section_regex="part.*", option_regex=".*a.*")
+        actual = reader.read(path, ini_read_options(section_regex="part.*", option_regex=".*a.*"))
         expected = {"part1": {"bar": "hello"}, "part2": {"bar": "salut"}}
         assert actual == expected
 

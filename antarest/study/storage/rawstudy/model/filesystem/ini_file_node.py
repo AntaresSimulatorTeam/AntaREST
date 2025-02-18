@@ -27,7 +27,14 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.serde.ini_reader import IGNORE_CASE_STRATEGY, IniReader, IReader, MatchingStrategy
+from antarest.core.serde.ini_reader import (
+    IGNORE_CASE_STRATEGY,
+    IniReader,
+    IniReadOptions,
+    IReader,
+    MatchingStrategy,
+    ini_read_options,
+)
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.serde.json import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -108,22 +115,22 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             return {}
 
         url = url or []
-        kwargs = self._get_filtering_kwargs(url)
+        read_options = self._get_read_options(url)
 
         if self.config.archive_path:
             inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
             if self.config.archive_path.suffix == ".zip":
                 with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
                     with io.TextIOWrapper(zipped_folder.open(inside_archive_path)) as f:
-                        data = self.reader.read(f, **kwargs)
+                        data = self.reader.read(f, read_options)
             elif self.config.archive_path.suffix == ".7z":
                 with py7zr.SevenZipFile(self.config.archive_path, mode="r") as zipped_folder:
                     with io.TextIOWrapper(zipped_folder.read([inside_archive_path])[inside_archive_path]) as f:
-                        data = self.reader.read(f, **kwargs)
+                        data = self.reader.read(f, read_options)
             else:
                 raise ShouldNotHappenException(f"Unsupported archived study format: {self.config.archive_path.suffix}")
         else:
-            data = self.reader.read(self.path, **kwargs)
+            data = self.reader.read(self.path, read_options)
 
         data = self._handle_urls(data, depth, url)
         return cast(SUB_JSON, data)
@@ -150,7 +157,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         return data
 
     # noinspection PyMethodMayBeStatic
-    def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
+    def _get_read_options(self, url: List[str]) -> IniReadOptions:
         """
         Extracts the filtering arguments from the URL components.
 
@@ -165,11 +172,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         if len(url) > 2:
             raise ValueError(f"Invalid URL: {url!r}")
         elif len(url) == 2:
-            return {"section": url[0], "option": url[1]}
+            return ini_read_options(section=url[0], option=url[1])
         elif len(url) == 1:
-            return {"section": url[0]}
+            return ini_read_options(section=url[0])
         else:
-            return {}
+            return ini_read_options()
 
     @override
     def get(

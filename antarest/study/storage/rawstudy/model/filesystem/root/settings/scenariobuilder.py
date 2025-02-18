@@ -16,6 +16,7 @@ from typing import Dict, List, MutableMapping, Type
 import typing_extensions as te
 from typing_extensions import override
 
+from antarest.core.serde.ini_reader import IniReadOptions, ini_read_options
 from antarest.study.model import (
     STUDY_VERSION_8,
     STUDY_VERSION_8_1,
@@ -126,14 +127,14 @@ class ScenarioBuilder(IniFileNode):
             rules[f"hgp,{area_id},0"] = _TSNumber
 
     @override
-    def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
+    def _get_read_options(self, url: List[str]) -> IniReadOptions:
         # If the URL contains 2 elements, we can filter the options based on the generator type.
         if len(url) == 2:
             section, symbol = url
             if re.fullmatch(r"\w+", symbol):
                 # Mutate the URL to get all values matching the generator type.
                 url[:] = [section]
-                return {"section": section, "option_regex": f"{symbol},.*"}
+                return ini_read_options(section=section, option_regex=f"{symbol},.*")
 
         # If the URL contains 3 elements, we can filter on the generator type and area (or group for BC).
         elif len(url) == 3:
@@ -142,7 +143,7 @@ class ScenarioBuilder(IniFileNode):
                 # Mutate the URL to get all values matching the generator type.
                 url[:] = [section]
                 area_re = re.escape(area)
-                return {"section": section, "option_regex": f"{symbol},{area_re},.*"}
+                return ini_read_options(section=section, option_regex=f"{symbol},{area_re},.*")
 
         # If the URL contains 4 elements, we can filter on the generator type, area, and cluster.
         elif len(url) == 4:
@@ -153,10 +154,10 @@ class ScenarioBuilder(IniFileNode):
                 if symbol in ("t", "r"):
                     area_re = re.escape(area)
                     cluster_re = re.escape(cluster)
-                    return {"section": section, "option_regex": rf"{symbol},{area_re},\d+,{cluster_re}"}
+                    return ini_read_options(section=section, option_regex=rf"{symbol},{area_re},\d+,{cluster_re}")
                 elif symbol == "ntc":
                     area1_re = re.escape(area)
                     area2_re = re.escape(cluster)
-                    return {"section": section, "option_regex": f"{symbol},{area1_re},{area2_re},.*"}
+                    return ini_read_options(section=section, option_regex=f"{symbol},{area1_re},{area2_re},.*")
 
-        return super()._get_filtering_kwargs(url)
+        return super()._get_read_options(url)

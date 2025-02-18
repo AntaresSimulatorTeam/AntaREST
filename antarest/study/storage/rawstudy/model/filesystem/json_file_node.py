@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional, cast
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.core.serde.ini_reader import IReader
+from antarest.core.serde.ini_reader import IReader, ReadOptions
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.serde.json import from_json, to_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -31,7 +31,7 @@ class JsonReader(IReader):
     """
 
     @override
-    def read(self, path: Any, **kwargs: Any) -> JSON:
+    def read(self, path: Any, options: ReadOptions | None = None) -> JSON:
         content: str | bytes
 
         if isinstance(path, (Path, str)):

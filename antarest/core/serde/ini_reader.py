@@ -51,6 +51,16 @@ def _make_ignore_case_matcher(ref_name: str) -> NameMatcher:
     return matches
 
 
+def _make_ignorecase_regex_matcher(pattern: str | Pattern[str]) -> NameMatcher:
+    if isinstance(pattern, str):
+        pattern = re.compile(pattern, re.IGNORECASE)
+
+    def matches(name: str) -> bool:
+        return bool(pattern.fullmatch(name))
+
+    return matches
+
+
 def _make_equals_matcher(ref_name: str) -> NameMatcher:
     def matches(name: str) -> bool:
         return name == ref_name
@@ -155,7 +165,7 @@ class IReader(ABC):
     """
 
     @abstractmethod
-    def read(self, path: Any, options: ReadOptions) -> JSON:
+    def read(self, path: Any, options: ReadOptions | None = None) -> JSON:
         """
         Parse `.ini` file to json object.
 
@@ -170,25 +180,30 @@ class IReader(ABC):
 
 @dataclasses.dataclass(frozen=True)
 class IniReadOptions(ReadOptions):
-    section_matcher: NameMatcher | None
-    option_matcher: NameMatcher | None
+    section_matcher: NameMatcher | None = None
+    option_matcher: NameMatcher | None = None
 
-    def select_section_option(self, section: str, option: str = "") -> bool:
-        """
-        Check if a given section and option match the regular expressions.
+    def to_filter(self) -> IniFilter:
+        return IniFilter(self.section_matcher, self.option_matcher)
 
-        Args:
-            section: The section name to match.
-            option: The option name to match (optional).
 
-        Returns:
-            Whether the section and option match their respective regular expressions.
-        """
-        if self.section_matcher and not self.section_matcher(section):
-            return False
-        if self.option_matcher and option and not self.option_matcher(option):
-            return False
-        return True
+def ini_read_options(
+    section: str = "",
+    option: str = "",
+    section_regex: str | Pattern[str] | None = None,
+    option_regex: str | Pattern[str] | None = None,
+) -> IniReadOptions:
+    section_matcher = None
+    option_matcher = None
+    if section:
+        section_matcher = _make_ignore_case_matcher(section)
+    if option:
+        option_matcher = _make_ignore_case_matcher(option)
+    if section_regex:
+        section_matcher = _make_ignorecase_regex_matcher(section_regex)
+    if option_regex:
+        option_matcher = _make_ignorecase_regex_matcher(option_regex)
+    return IniReadOptions(section_matcher, option_matcher)
 
 
 class IniReader(IReader):
@@ -256,7 +271,7 @@ class IniReader(IReader):
         return f"{cls}(special_keys={special_keys!r}, section_name={section_name!r})"
 
     @override
-    def read(self, path: Any, options: ReadOptions | None) -> JSON:
+    def read(self, path: Any, options: ReadOptions | None = None) -> JSON:
         if isinstance(path, (Path, str)):
             try:
                 with open(path, mode="r", encoding="utf-8") as f:
@@ -318,7 +333,12 @@ class IniReader(IReader):
         Returns:
             Dictionary of parsed `.ini` file which can be converted to JSON.
         """
-        ini_filter = self._ini_filter_from_kwargs(**kwargs)
+        if options:
+            if not isinstance(options, IniReadOptions):
+                raise ValueError("Ini reader only accepts ini options.")
+        else:
+            options = IniReadOptions()
+        ini_filter = options.to_filter()
 
         # NOTE: This algorithm is 1.93x faster than configparser.ConfigParser
         section_name = self._section_name
@@ -396,28 +416,6 @@ class IniReader(IReader):
         else:
             values[key] = parsed
         self._curr_option = key
-
-    def _ini_filter_from_kwargs(
-        self,
-        section: str = "",
-        option: str = "",
-        section_regex: str | Pattern[str] | None = None,
-        option_regex: str | Pattern[str] | None = None,
-        **_unused: Any,  # ignore unknown options
-    ) -> "IniFilter":
-        if section:
-            section_matcher = self._matching_strategy.section_strategy(section) if section else None
-        if option:
-            option_matcher = self._matching_strategy.options_strategy(option) if option else None
-        if option_regex:
-            if isinstance(option_regex, str):
-                option_regex = re.compile(option_regex, re.IGNORECASE)
-
-        if section_regex:
-            if isinstance(section_regex, str):
-                section_regex = re.compile(section_regex, re.IGNORECASE)
-            section_matcher = self._matching_strategy.section_strategy(section) if section else None
-        return IniFilter(section_matcher, option_matcher)
 
 
 class SimpleKeyValueReader(IniReader):
