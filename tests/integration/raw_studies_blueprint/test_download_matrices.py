@@ -135,7 +135,7 @@ class TestDownloadMatrices:
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
 
         # Create a new area to implicitly create normalized matrices
-        area_id = preparer.create_area(variant_id, name="Mayenne", country="France")["id"]
+        area_id = preparer.create_area(variant_id, name="Mayenne", country="France")
 
         # Change study start_date
         preparer.update_general_data(variant_id, firstMonth="July")

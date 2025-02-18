@@ -58,8 +58,8 @@ class TestOutputSimulationBindingConstraintItem:
         actual = node.build()
 
         # check the result
-        actual_obj: dict[str, MatrixFrequency] = {}
+        actual_obj: dict[str, dict[str, MatrixFrequency]] = {}
         for key, value in actual.items():
             assert isinstance(value, BindingConstraintOutputSeriesMatrix)
-            actual_obj[key] = value.freq
+            actual_obj[key] = {"freq": value.freq}
         assert actual_obj == expected
