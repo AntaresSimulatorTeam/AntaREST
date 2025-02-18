@@ -543,6 +543,7 @@ class StudyService:
         self.area_manager = AreaManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
+        self.load_manager = LoadManager(command_context)
         self.config_manager = ConfigManager(command_context)
         self.general_manager = GeneralManager(command_context)
         self.thematic_trimming_manager = ThematicTrimmingManager(command_context)

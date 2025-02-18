@@ -15,10 +15,9 @@ import enum
 import secrets
 import uuid
 from datetime import datetime, timedelta
-from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Mapping, Optional, Tuple, cast
 from enum import StrEnum
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Mapping, Optional, Tuple, cast
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator

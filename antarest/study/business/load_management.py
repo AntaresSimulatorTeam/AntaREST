@@ -16,19 +16,19 @@ import pandas as pd
 
 from antarest.study.model import MatrixIndex, Study
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import get_start_date
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 LOAD_PATH = "input/load/series/load_{area_id}"
 matrix_columns = ["ts-0"]
 
 
 class LoadManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
     def get_load_matrix(self, study: Study, area_id: str) -> t.Tuple[pd.DataFrame, t.Dict[str | bytes, str | bytes]]:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         load_path = LOAD_PATH.format(area_id=area_id).split("/")
 
         node = file_study.tree.get_node(load_path)
