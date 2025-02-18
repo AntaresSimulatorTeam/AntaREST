@@ -411,6 +411,7 @@ class RawStudyInterface(StudyInterface):
         self._patch_service = patch_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
+        self._version = StudyVersion.parse(self._study.version)
 
     @override
     @property
@@ -420,7 +421,7 @@ class RawStudyInterface(StudyInterface):
     @override
     @property
     def version(self) -> StudyVersion:
-        return StudyVersion.parse(self._study.version)
+        return self._version
 
     @override
     def get_files(self) -> FileStudy:
@@ -479,7 +480,7 @@ class VariantStudyInterface(StudyInterface):
         self._variant_service = variant_service
         self._patch_service = patch_service
         self._study = study
-        self._cached_file_study: Optional[FileStudy] = None
+        self._version = StudyVersion.parse(self._study.version)
 
     @override
     @property
@@ -489,7 +490,7 @@ class VariantStudyInterface(StudyInterface):
     @override
     @property
     def version(self) -> StudyVersion:
-        return StudyVersion.parse(self._study.version)
+        return self._version
 
     @override
     def get_files(self) -> FileStudy:
