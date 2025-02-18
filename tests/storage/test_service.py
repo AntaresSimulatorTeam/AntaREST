@@ -260,8 +260,8 @@ def test_study_listing(db_session: Session) -> None:
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
-    ma = RawStudy(id="a", path="a")
-    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
+    ma = RawStudy(id="a", path="a", workspace="workspace1")
+    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
