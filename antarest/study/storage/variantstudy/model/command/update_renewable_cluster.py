@@ -46,7 +46,7 @@ class UpdateRenewablesCluster(ICommand):
         return (
             CommandOutput(
                 status=True,
-                message=f"The renewable cluster '{self.cluster_id}' in the area'{self.area_id}' has been updated.",
+                message=f"The renewable cluster '{self.cluster_id}' in the area '{self.area_id}' has been updated.",
             ),
             {},
         )
