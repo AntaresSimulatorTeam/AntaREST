@@ -70,7 +70,7 @@ class UpdateSTStorage(ICommand):
             args={
                 "area_id": self.area_id,
                 "st_storage_id": self.st_storage_id,
-                "properties": self.properties.model_dump(),
+                "properties": self.properties.model_dump(mode="json"),
             },
             study_version=self.study_version,
         )
