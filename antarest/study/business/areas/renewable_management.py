@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import collections
-from typing import Any, Dict, Mapping, MutableMapping, Sequence
+from typing import Any, Mapping, MutableMapping, Sequence
 
 from antares.study.version import StudyVersion
 

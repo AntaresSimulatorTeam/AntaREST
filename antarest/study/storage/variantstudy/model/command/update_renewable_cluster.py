@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from typing_extensions import override
 
