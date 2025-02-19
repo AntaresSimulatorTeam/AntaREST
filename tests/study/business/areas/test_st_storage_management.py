@@ -343,7 +343,7 @@ class TestSTStorageManager:
         st_storage_output = manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
 
         assert st_storage_output.initial_level == 0.0
-        assert st_storage_output.initial_level_optim == False
+        assert not st_storage_output.initial_level_optim
         assert st_storage_output.injection_nominal_capacity == 2000.0
 
     def test_get_st_storage__config_not_found(self, st_storage_manager: STStorageManager) -> None:

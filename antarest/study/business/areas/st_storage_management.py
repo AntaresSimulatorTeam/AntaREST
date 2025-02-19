@@ -38,7 +38,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
     STStorage880Properties,
     STStorageGroup,
-    STStorageProperties,
     STStoragePropertiesType,
     create_st_storage_config,
     create_st_storage_properties,

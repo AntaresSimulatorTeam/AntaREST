@@ -15,7 +15,6 @@ from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Properties,
     STStoragePropertiesType,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
