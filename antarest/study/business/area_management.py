@@ -486,7 +486,6 @@ class AreaManager:
         )
 
     def update_area_ui(self, study: StudyInterface, area_id: str, area_ui: UpdateAreaUi, layer: str) -> None:
-
         command = UpdateAreaUI(
             area_id=area_id,
             area_ui=area_ui,

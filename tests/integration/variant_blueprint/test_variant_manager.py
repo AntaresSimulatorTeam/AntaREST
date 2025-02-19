@@ -151,13 +151,13 @@ def test_variant_manager(
         george_credentials = res.json()
         base_study_res = client.post(
             "/v1/studies?name=foo",
-            headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+            headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         )
 
         base_study_id = base_study_res.json()
         res = client.post(
             f"/v1/studies/{base_study_id}/variants?name=foo_2",
-            headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+            headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         )
         variant_id = res.json()
         res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
@@ -410,9 +410,9 @@ def test_clear_snapshots(
     # Set up
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    older = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[0], "snapshot")
-    old = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[1], "snapshot")
-    recent = Path(tmp_path).joinpath(f"internal_workspace", generate_snapshots[2], "snapshot")
+    older = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[0], "snapshot")
+    old = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[1], "snapshot")
+    recent = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[2], "snapshot")
 
     # Test
     # Check initial data
@@ -420,19 +420,19 @@ def test_clear_snapshots(
 
     # Delete the older snapshot (default retention hours implicitly equals to 24 hours)
     # and check if it was successfully deleted
-    response = client.put(f"v1/studies/variants/clear-snapshots", headers=admin_headers)
+    response = client.put("v1/studies/variants/clear-snapshots", headers=admin_headers)
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert (not older.exists()) and old.exists() and recent.exists()
 
     # Delete the old snapshot and check if it was successfully deleted
-    response = client.put(f"v1/studies/variants/clear-snapshots?hours=6", headers=admin_headers)
+    response = client.put("v1/studies/variants/clear-snapshots?hours=6", headers=admin_headers)
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert (not older.exists()) and (not old.exists()) and recent.exists()
 
     # Delete the recent snapshot and check if it was successfully deleted
-    response = client.put(f"v1/studies/variants/clear-snapshots?hours=-1", headers=admin_headers)
+    response = client.put("v1/studies/variants/clear-snapshots?hours=-1", headers=admin_headers)
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert not (older.exists() and old.exists() and recent.exists())

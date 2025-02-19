@@ -989,7 +989,7 @@ class TestBindingConstraints:
         # Asserts that the deletion worked
         binding_constraints_list = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"input/bindingconstraints/bindingconstraints"},  # type: ignore
+            params={"path": "input/bindingconstraints/bindingconstraints"},  # type: ignore
         ).json()
         assert len(binding_constraints_list) == 2
         actual_ids = [constraint["id"] for constraint in binding_constraints_list.values()]

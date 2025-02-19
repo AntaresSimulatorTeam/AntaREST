@@ -22,7 +22,6 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple, cast
 from uuid import uuid4
 
 import humanize
-from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from filelock import FileLock
 from typing_extensions import override
@@ -42,13 +41,13 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, NoopNotifier
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
@@ -70,7 +69,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
-    CommandResultDTO,
     GenerationResultInfoDTO,
     VariantTreeDTO,
 )
@@ -612,8 +610,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         if not is_managed(study):
             raise VariantStudyParentNotValid(
-                f"The study {study.name} is not managed. Cannot create a variant from it."
-                f" It must be imported first."
+                f"The study {study.name} is not managed. Cannot create a variant from it. It must be imported first."
             )
 
         assert_permission(params.user, study, StudyPermissionType.READ)
