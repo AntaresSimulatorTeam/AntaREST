@@ -362,7 +362,6 @@ class TestThermalManager:
         manager: ThermalManager,
         study_interface: StudyInterface,
     ):
-
         # When some properties of the cluster are updated
         cluster_data = ThermalClusterInput(name="New name", nominalCapacity=2000)
         manager.update_cluster(

@@ -62,7 +62,6 @@ from antarest.study.business.binding_constraint_management import (
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
     CorrelationFormFields,
-    CorrelationManager,
     CorrelationMatrix,
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO

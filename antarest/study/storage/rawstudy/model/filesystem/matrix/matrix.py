@@ -18,7 +18,6 @@ from typing import List, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
-from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.model import JSON

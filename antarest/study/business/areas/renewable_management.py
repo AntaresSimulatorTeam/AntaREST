@@ -28,7 +28,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     create_renewable_config,
     create_renewable_properties,
 )
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix

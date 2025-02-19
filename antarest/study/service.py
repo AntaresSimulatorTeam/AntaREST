@@ -20,7 +20,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, MutableSequence, Optional, Sequence, Tuple, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
 
 import numpy as np

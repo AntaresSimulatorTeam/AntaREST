@@ -83,7 +83,6 @@ def create_study_interface(tree: FileStudyTree) -> StudyInterface:
 
 
 class TestSTStorageManager:
-
     def test_get_all_storages__nominal_case(
         self,
         st_storage_manager: STStorageManager,
@@ -453,7 +452,6 @@ class TestSTStorageManager:
 
     # noinspection SpellCheckingInspection
     def test_validate_matrices__nominal(self, st_storage_manager: STStorageManager) -> None:
-
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
             "pmax_injection": GEN.random((8760, 1)),
@@ -487,7 +485,6 @@ class TestSTStorageManager:
         self,
         st_storage_manager: STStorageManager,
     ) -> None:
-
         # prepare some random matrices, insuring `lower_rule_curve` <= `upper_rule_curve`
         matrices = {
             "pmax_injection": GEN.random((8760, 1)) * 2 - 0.5,  # out of bound

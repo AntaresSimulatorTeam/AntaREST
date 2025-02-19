@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Sequence
 
 from antares.study.version import StudyVersion

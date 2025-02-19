@@ -35,7 +35,7 @@ def file_study_820(tmpdir: Path) -> FileStudy:
     cur_dir: Path = Path(__file__).parent
     study_path = Path(tmpdir / str(uuid.uuid4()))
     os.mkdir(study_path)
-    with ZipFile(cur_dir / "assets" / f"empty_study_820.zip") as zip_output:
+    with ZipFile(cur_dir / "assets" / "empty_study_820.zip") as zip_output:
         zip_output.extractall(path=study_path)
     config = build(study_path, "1")
     return FileStudy(config, FileStudyTree(Mock(), config))

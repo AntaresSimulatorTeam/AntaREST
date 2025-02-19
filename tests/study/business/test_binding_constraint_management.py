@@ -18,6 +18,7 @@ from antarest.study.business.binding_constraint_management import (
     ClusterTerm,
     ConstraintFilters,
     ConstraintOutput,
+    ConstraintOutput830,
     ConstraintOutput870,
     ConstraintOutputBase,
     ConstraintTerm,
@@ -82,24 +83,23 @@ class TestConstraintFilter:
         assert bc_filter.match_filters(constraint) == expected
 
     @pytest.mark.parametrize("group, expected", [("grp1", False), ("grp2", False), ("", True)])
-    @pytest.mark.parametrize("cls", [ConstraintOutput])
-    def test_filter_by__group(self, group: str, expected: bool, cls: t.Type[ConstraintOutput]) -> None:
+    def test_filter_by__group(self, group: str, expected: bool) -> None:
         """
         The filter should never match if the filter's `group` is not empty.
         """
         bc_filter = ConstraintFilters(group=group)
-        constraint = cls(id="bc1", name="BC1")
-        assert bc_filter.match_filters(constraint) == expected
+        for cls in [ConstraintOutputBase, ConstraintOutput830, ConstraintOutput870]:
+            constraint = cls(id="bc1", name="BC1")
+            assert bc_filter.match_filters(constraint) == expected
 
     @pytest.mark.parametrize("group, expected", [("grp1", True), ("GRP1", True), ("grp2", False), ("", True)])
-    @pytest.mark.parametrize("cls", [ConstraintOutput870])
-    def test_filter_by__group(self, group: str, expected: bool, cls: t.Type[ConstraintOutput870]) -> None:
+    def test_filter_by__group_with_existing_group(self, group: str, expected: bool) -> None:
         """
         The filter should match if the `group` is equal to the constraint's `group` or if the filter is empty.
         Comparisons should be case-insensitive.
         """
         bc_filter = ConstraintFilters(group=group)
-        constraint = cls(id="bc1", name="BC1", group="Grp1")
+        constraint = ConstraintOutput870(id="bc1", name="BC1", group="Grp1")
         assert bc_filter.match_filters(constraint) == expected
 
     @pytest.mark.parametrize("time_step, expected", [("hourly", True), ("daily", False), (None, True)])
