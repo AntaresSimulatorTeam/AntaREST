@@ -39,6 +39,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
+logger = logging.getLogger(__name__)
+
 
 class IniFileNodeWarning(UserWarning):
     """
@@ -47,35 +49,11 @@ class IniFileNodeWarning(UserWarning):
     This warning class is designed to provide more informative warning messages for INI file errors.
 
     Args:
-        config: The configuration associated with the INI file.
         message: The specific warning message.
     """
 
-    def __init__(self, config: FileStudyTreeConfig, message: str) -> None:
-        relpath = config.path.relative_to(config.study_path).as_posix()
-        super().__init__(f"INI File error '{relpath}': {message}")
-
-
-def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
-    """
-    Decorator to suppress `UserWarning` exceptions by logging them as warnings.
-
-    Args:
-        f: The function or method to be decorated.
-
-    Returns:
-        Callable[..., Any]: The decorated function.
-    """
-
-    @functools.wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return f(*args, **kwargs)
-        except UserWarning as w:
-            # noinspection PyUnresolvedReferences
-            logging.getLogger(f.__module__).warning(str(w))
-
-    return wrapper
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
 
 
 @dataclass(frozen=True)
@@ -137,8 +115,9 @@ class SectionMatch(IniMatch):
 
     @override
     def delete_part(self) -> JSON:
-        if self.matched_section is not None:
-            del self.data[self.matched_section]
+        if not self.matched_section:
+            raise IniFileNodeWarning(f"Cannot delete section: Section [{self.req_section}] not found")
+        del self.data[self.matched_section]
         return self.data
 
 
@@ -170,8 +149,13 @@ class OptionMatch(IniMatch):
 
     @override
     def delete_part(self) -> JSON:
-        if self.matched_section is not None and self.matched_option is not None:
-            del self.data[self.matched_section][self.matched_option]
+        if not self.matched_section:
+            raise IniFileNodeWarning(f"Cannot delete key: Section [{self.req_section}] not found")
+        if not self.matched_option:
+            raise IniFileNodeWarning(
+                f"Cannot delete key: Key '{self.req_option}' not found in section [{self.matched_section}]"
+            )
+        del self.data[self.matched_section][self.matched_option]
         return self.data
 
 
@@ -357,7 +341,6 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
 
             self.writer.write(updated_data, self.path)
 
-    @log_warning
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
         """
@@ -372,28 +355,25 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 If the specified section or key cannot be deleted due to errors such as
                 missing configuration file, non-resolved URL, or non-existent section/key.
         """
-        if not self.path.exists():
-            raise IniFileNodeWarning(
-                self.config,
-                "fCannot delete item {url!r}: Config file not found",
-            )
+        try:
+            if not self.path.exists():
+                raise IniFileNodeWarning(f"Cannot delete item {url!r}: Config file not found")
 
-        if not url:
-            self.config.path.unlink()
-            return
+            if not url:
+                self.config.path.unlink()
+                return
 
-        url_len = len(url)
-        if url_len > 2:
-            raise IniFileNodeWarning(
-                self.config,
-                f"Cannot delete item {url!r}: URL should be fully resolved",
-            )
+            url_len = len(url)
+            if url_len > 2:
+                raise IniFileNodeWarning(f"Cannot delete item {url!r}: URL should be fully resolved")
 
-        data = self.reader.read(self.path)
+            data = self.reader.read(self.path)
+            data = _match_url(data, url).delete_part()
+            self.writer.write(data, self.path)
 
-        data = _match_url(data, url).delete_part()
-
-        self.writer.write(data, self.path)
+        except IniFileNodeWarning as w:
+            relpath = self.config.path.relative_to(self.config.study_path).as_posix()
+            logger.warning(f"INI File error '{relpath}': {w}")
 
     @override
     def check_errors(
