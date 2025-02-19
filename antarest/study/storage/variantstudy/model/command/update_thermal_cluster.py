@@ -68,7 +68,7 @@ class UpdateThermalCluster(ICommand):
             args={
                 "area_id": self.area_id,
                 "thermal_cluster_id": self.thermal_cluster_id,
-                "properties": self.properties.model_dump(),
+                "properties": self.properties.model_dump(mode="json"),
             },
             study_version=self.study_version,
         )
