@@ -21,8 +21,6 @@ from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 
-__all__ = ("db_engine_fixture", "db_session_fixture", "db_middleware_fixture")
-
 
 @pytest.fixture(name="db_engine")
 def db_engine_fixture() -> t.Generator[Engine, None, None]:

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, ClassVar, Dict, Final, List, Optional, Tuple
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from pydantic import Field, model_validator
 from pydantic_core.core_schema import ValidationInfo

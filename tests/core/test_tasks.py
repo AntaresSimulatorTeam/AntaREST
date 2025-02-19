@@ -22,7 +22,7 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import Session, sessionmaker  # type: ignore
+from sqlalchemy.orm import sessionmaker  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
