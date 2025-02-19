@@ -129,7 +129,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path, sta_mi
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
-@pytest.mark.parametrize("outputs", [True, False, "prout"])
+@pytest.mark.parametrize("outputs", [True, False, "test"])
 @pytest.mark.parametrize("output_list", [None, [], ["20201014-1427eco"], ["20201014-1430adq-2"]])
 @pytest.mark.parametrize("denormalize", [True, False])
 def test_export_flat(
