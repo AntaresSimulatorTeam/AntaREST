@@ -16,6 +16,10 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from core.utils.fastapi_sqlalchemy import db
+from matrixstore.uri_resolver_service import UriResolverService
+from study.business.study_interface import FileStudyInterface, StudyInterface
+from study.storage.rawstudy.model.filesystem.context import ContextServer
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
@@ -28,10 +32,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Ther
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
-from core.utils.fastapi_sqlalchemy import db
-from matrixstore.uri_resolver_service import UriResolverService
-from study.business.study_interface import FileStudyInterface, StudyInterface
-from study.storage.rawstudy.model.filesystem.context import ContextServer
 from tests.storage.business.assets import ASSETS_DIR
 
 

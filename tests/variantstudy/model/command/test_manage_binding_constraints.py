@@ -14,7 +14,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.model import STUDY_VERSION_8_8, RawStudy
+from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
