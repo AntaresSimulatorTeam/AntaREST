@@ -47,6 +47,7 @@ class CommandName(Enum):
     REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
     CREATE_ST_STORAGE = "create_st_storage"
     REMOVE_ST_STORAGE = "remove_st_storage"
+    UPDATE_ST_STORAGE = "update_st_storage"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"

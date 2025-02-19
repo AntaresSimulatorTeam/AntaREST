@@ -38,6 +38,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
     STStorage880Properties,
     STStorageGroup,
+    STStorageProperties,
     STStoragePropertiesType,
     create_st_storage_config,
     create_st_storage_properties,
@@ -47,6 +48,7 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -225,7 +227,6 @@ STStorageTimeSeries = Literal[
 # ============================
 #  Short-term storage manager
 # ============================
-
 
 _STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
 _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
@@ -461,22 +462,21 @@ class STStorageManager:
         new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
-        # create the dict containing the new values using aliases
-        data: Dict[str, Any] = {}
-        for field_name, field in new_config.model_fields.items():
-            if field_name in new_values:
-                name = field.alias if field.alias else field_name
-                data[name] = new_data[name]
+        st_storage_properties: STStoragePropertiesType
+        if study.version >= STUDY_VERSION_8_8:
+            st_storage_properties = STStorage880Properties.model_validate(new_data)
+        else:
+            st_storage_properties = STStorageProperties.model_validate(new_data)
 
-        # create the update config commands with the modified data
-        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
-        commands = [
-            UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
-            )
-            for key, value in data.items()
-        ]
-        study.add_commands(commands)
+        command = UpdateSTStorage(
+            area_id=area_id,
+            st_storage_id=storage_id,
+            properties=st_storage_properties,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        study.add_commands([command])
 
         values = new_config.model_dump(mode="json", exclude={"id"})
         return STStorageOutput(**values, id=storage_id)

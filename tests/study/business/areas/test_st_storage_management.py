@@ -322,7 +322,7 @@ class TestSTStorageManager:
         study = FileStudyInterface(file_study)
 
         # Given the following arguments
-        edit_form = STStorageInput(initial_level=0, initial_level_optim=False)
+        edit_form = STStorageInput(initial_level=0, initial_level_optim=False, injection_nominal_capacity=2000.0)
 
         # Test behavior for area not in study
         # noinspection PyTypeChecker
@@ -341,34 +341,11 @@ class TestSTStorageManager:
 
         # Test behavior for nominal case
         file_study.tree.get.return_value = LIST_CFG
-        manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
+        st_storage_output = manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
 
-        # Assert that the storage fields have been updated
-        #
-        # Currently, the method used to update the fields is the `UpdateConfig` command
-        # which only does a partial update of the configuration file: only the fields
-        # that are explicitly mentioned in the form are updated. The other fields are left unchanged.
-        #
-        # The effective update of the fields is done by the `save` method of the `IniFileNode` class.
-        # The signature of the `save` method is: `save(self, value: Any, path: Sequence[str]) -> None`
-
-        assert file_study.tree.save.call_count == 2
-
-        # Fields "initiallevel" and "initialleveloptim" could be updated in any order.
-        # We construct a *set* of the actual calls to the `save` method and compare it
-        # to the expected set of calls.
-        actual = {(call_args[0][0], tuple(call_args[0][1])) for call_args in file_study.tree.save.call_args_list}
-        expected = {
-            (
-                0.0,
-                ("input", "st-storage", "clusters", "West", "list", "storage1", "initiallevel"),
-            ),
-            (
-                False,
-                ("input", "st-storage", "clusters", "West", "list", "storage1", "initialleveloptim"),
-            ),
-        }
-        assert actual == expected
+        assert st_storage_output.initial_level == 0.0
+        assert st_storage_output.initial_level_optim == False
+        assert st_storage_output.injection_nominal_capacity == 2000.0
 
     def test_get_st_storage__config_not_found(self, st_storage_manager: STStorageManager) -> None:
         """

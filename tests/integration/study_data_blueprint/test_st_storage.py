@@ -681,10 +681,20 @@ class TestSTStorage:
         actual = commands[1]
         expected = {
             "id": ANY,
-            "action": "update_config",
+            "action": "update_st_storage",
             "args": {
-                "data": 0.5,
-                "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
+                "area_id": "fr",
+                "properties": {
+                    "efficiency": 1.0,
+                    "group": "battery",
+                    "initial_level": 0.5,
+                    "initial_level_optim": False,
+                    "injection_nominal_capacity": 0.0,
+                    "name": "Siemens Battery",
+                    "reservoir_capacity": 0.0,
+                    "withdrawal_nominal_capacity": 0.0,
+                },
+                "st_storage_id": "siemens battery",
             },
             "version": 1,
             "updated_at": ANY,
@@ -707,17 +717,21 @@ class TestSTStorage:
         actual = commands[2]
         expected = {
             "id": ANY,
-            "action": "update_config",
-            "args": [
-                {
-                    "data": 1600.0,
-                    "target": "input/st-storage/clusters/fr/list/siemens battery/injectionnominalcapacity",
+            "action": "update_st_storage",
+            "args": {
+                "area_id": "fr",
+                "properties": {
+                    "efficiency": 1.0,
+                    "group": "battery",
+                    "initial_level": 0.0,
+                    "initial_level_optim": False,
+                    "injection_nominal_capacity": 1600.0,
+                    "name": "Siemens Battery",
+                    "reservoir_capacity": 0.0,
+                    "withdrawal_nominal_capacity": 0.0,
                 },
-                {
-                    "data": 0.0,
-                    "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
-                },
-            ],
+                "st_storage_id": "siemens battery",
+            },
             "version": 1,
             "updated_at": ANY,
             "user_name": ANY,
