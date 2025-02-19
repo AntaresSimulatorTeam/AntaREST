@@ -878,7 +878,7 @@ class TestSTStorage:
         assert actions == [
             "create_area",
             "create_st_storage",
-            "update_config",
+            "update_st_storage",
             "replace_matrix",
             "create_st_storage",
             "replace_matrix",
