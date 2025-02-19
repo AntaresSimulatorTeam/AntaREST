@@ -266,16 +266,15 @@ class RenewableManager:
         renewables_properties = RenewableProperties.model_validate(new_data)
 
         # create the update config commands with the modified data
-        commands = [
-            UpdateRenewablesCluster(
-                area_id=area_id,
-                cluster_id=cluster_id,
-                properties=renewables_properties,
-                command_context=self._command_context,
-                study_version=study.version,
-            )
-        ]
-        study.add_commands(commands)
+        command = UpdateRenewablesCluster(
+            area_id=area_id,
+            cluster_id=cluster_id,
+            properties=renewables_properties,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        study.add_commands([command])
 
         values = new_config.model_dump(exclude={"id"})
         return RenewableClusterOutput(**values, id=cluster_id)
