@@ -75,9 +75,9 @@ nav:
           - 'Deployment': 'developer-guide/install/2-DEPLOY.md'
       - 'Architecture': 'developer-guide/architecture/0-introduction.md'
       - 'Database management': 'developer-guide/architecture/1-database.md'
-      - 'Add a new study version': 'developer-guide/2-add-new-antares-version.md'
+      - 'Add a new study version': 'developer-guide/1-add-new-antares-version.md'
       - 'Changelog': 'CHANGELOG.md'
-      - 'Roadmap': 'developer-guide/5-roadmap.md'
+      - 'Roadmap': 'developer-guide/2-roadmap.md'
   - 'External links' :
     - 'Antares ecosystem': 'https://antares-doc.readthedocs.io'
     - 'Antares website' : 'https://antares-simulator.org/'

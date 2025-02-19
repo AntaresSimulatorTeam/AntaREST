@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from antares.study.version import StudyVersion
@@ -22,13 +21,11 @@ from antarest.study.business.district_manager import (
     DistrictManager,
     DistrictUpdateDTO,
 )
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, FileStudyTreeConfig
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
@@ -62,7 +59,6 @@ def create_study_interface(file_study: FileStudy, version: StudyVersion = STUDY_
 
 
 class TestDistrictManager:
-
     def test_get_districts(self, manager: DistrictManager):
         # prepare data
         areas = dict.fromkeys(["n1", "n2", "n3"])

@@ -108,13 +108,12 @@ class TestInputHydroSeriesArea:
         actual = node.build()
 
         # check the result
-        value: InputSeriesMatrix
-        actual_obj = {
-            key: {
+        actual_obj = {}
+        for key, value in actual.items():
+            assert isinstance(value, InputSeriesMatrix)
+            actual_obj[key] = {
                 "default_empty": value.default_empty.tolist(),
                 "freq": value.freq,
                 "nb_columns": value.nb_columns,
             }
-            for key, value in actual.items()
-        }
         assert actual_obj == expected
