@@ -80,15 +80,35 @@ def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
 
 @dataclass(frozen=True)
 class IniMatch(ABC):
+    """
+    Represents a match of a sub-part of INI file content.
+    """
+
+    def __bool__(self) -> bool:
+        """
+        True if a match has been found.
+        """
+        return True
 
     @abstractmethod
     def get_part(self) -> SUB_JSON:
+        """
+        The content of the matched sub-part.
+        """
         pass
 
     def replace_part(self, new_part: SUB_JSON) -> JSON:
+        """
+        Replaces the content of the matched sub-part,
+        and returns the whole updated content.
+        """
         raise NotImplementedError()
 
     def delete_part(self) -> JSON:
+        """
+        Removes the content of the matched sub-part,
+        and returns the whole updated content.
+        """
         raise NotImplementedError()
 
 
@@ -100,6 +120,10 @@ class SectionMatch(IniMatch):
     matched_section: str | None = None
 
     @override
+    def __bool__(self) -> bool:
+        return bool(self.matched_section)
+
+    @override
     def get_part(self) -> JSON:
         if not self.matched_section:
             raise KeyError(f"Could not match section {self.req_section}")
@@ -107,10 +131,8 @@ class SectionMatch(IniMatch):
 
     @override
     def replace_part(self, new_part: SUB_JSON) -> JSON:
-        if self.matched_section:
-            self.data[self.matched_section] = new_part
-        else:
-            self.data[self.req_section] = new_part
+        section = self.matched_section or self.req_section
+        self.data[section] = new_part
         return self.data
 
     @override
@@ -129,12 +151,16 @@ class OptionMatch(IniMatch):
     matched_option: str | None = None
 
     @override
+    def __bool__(self) -> bool:
+        return bool(self.matched_section) and bool(self.matched_option)
+
+    @override
     def get_part(self) -> SUB_JSON:
         if not self.matched_section:
             raise KeyError(f"Could not match section {self.req_section}")
         if not self.matched_option:
             raise KeyError(f"Could not match option {self.req_option}")
-        return cast(JSON, self.data[self.matched_section][self.matched_option])
+        return cast(SUB_JSON, self.data[self.matched_section][self.matched_option])
 
     @override
     def replace_part(self, new_part: SUB_JSON) -> JSON:
@@ -151,7 +177,6 @@ class OptionMatch(IniMatch):
 
 @dataclass(frozen=True)
 class OnlySections(IniMatch):
-
     data: JSON
 
     @override
@@ -172,7 +197,12 @@ class WholeFile(IniMatch):
         return cast(JSON, new_part)
 
 
-def _match_lower(data: JSON, key: str) -> str | None:
+def _match_exact_or_lower(data: JSON, key: str) -> str | None:
+    """
+    Tries to match one of the keys as-is, or in lowercase.
+    """
+    if key in data:
+        return key
     lower = key.lower()
     for k in data:
         if k.lower() == lower:
@@ -181,28 +211,16 @@ def _match_lower(data: JSON, key: str) -> str | None:
 
 
 def _match_section(data: JSON, section: str) -> SectionMatch:
-    matched_section: str | None = None
-    if section in data:
-        matched_section = section
-    else:
-        matched_section = _match_lower(data, section)
+    matched_section = _match_exact_or_lower(data, section)
     return SectionMatch(data=data, req_section=section, matched_section=matched_section)
 
 
 def _match_option(data: JSON, section: str, option: str) -> OptionMatch:
     section_match = _match_section(data, section)
-    if not section_match.req_section:
-        return OptionMatch(
-            data=data,
-            req_section=section,
-            req_option=option,
-        )
+    if not section_match:
+        return OptionMatch(data=data, req_section=section, req_option=option)
     section_data = section_match.get_part()
-    matched_option: str | None = None
-    if option in section_data:
-        matched_option = option
-    else:
-        matched_option = _match_lower(section_data, option)
+    matched_option = _match_exact_or_lower(section_data, option)
     return OptionMatch(
         data=data,
         req_section=section,
