@@ -20,6 +20,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.areas.st_storage_management import create_storage_output
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from tests.integration.utils import wait_task_completion
@@ -679,21 +680,25 @@ class TestSTStorage:
         commands = res.json()
         assert len(commands) == 2
         actual = commands[1]
+        properties = {
+            "efficiency": 1.0,
+            "group": "battery",
+            "initial_level": 0.5,
+            "initial_level_optim": False,
+            "injection_nominal_capacity": 0.0,
+            "name": "Siemens Battery",
+            "reservoir_capacity": 0.0,
+            "withdrawal_nominal_capacity": 0.0,
+        }
+        if study_version >= STUDY_VERSION_8_8:
+            properties.update({"enabled": True})
+
         expected = {
             "id": ANY,
             "action": "update_st_storage",
             "args": {
                 "area_id": "fr",
-                "properties": {
-                    "efficiency": 1.0,
-                    "group": "battery",
-                    "initial_level": 0.5,
-                    "initial_level_optim": False,
-                    "injection_nominal_capacity": 0.0,
-                    "name": "Siemens Battery",
-                    "reservoir_capacity": 0.0,
-                    "withdrawal_nominal_capacity": 0.0,
-                },
+                "properties": properties,
                 "st_storage_id": "siemens battery",
             },
             "version": 1,
@@ -715,21 +720,26 @@ class TestSTStorage:
         commands = res.json()
         assert len(commands) == 3
         actual = commands[2]
+        properties = {
+            "efficiency": 1.0,
+            "group": "battery",
+            "initial_level": 0.0,
+            "initial_level_optim": False,
+            "injection_nominal_capacity": 1600.0,
+            "name": "Siemens Battery",
+            "reservoir_capacity": 0.0,
+            "withdrawal_nominal_capacity": 0.0,
+        }
+
+        if study_version >= STUDY_VERSION_8_8:
+            properties.update({"enabled": True})
+
         expected = {
             "id": ANY,
             "action": "update_st_storage",
             "args": {
                 "area_id": "fr",
-                "properties": {
-                    "efficiency": 1.0,
-                    "group": "battery",
-                    "initial_level": 0.0,
-                    "initial_level_optim": False,
-                    "injection_nominal_capacity": 1600.0,
-                    "name": "Siemens Battery",
-                    "reservoir_capacity": 0.0,
-                    "withdrawal_nominal_capacity": 0.0,
-                },
+                "properties": properties,
                 "st_storage_id": "siemens battery",
             },
             "version": 1,

@@ -12,7 +12,7 @@
 
 import collections
 import operator
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Sequence
+from typing import Any, List, Mapping, MutableMapping, Optional, Sequence
 
 import numpy as np
 from antares.study.version import StudyVersion
