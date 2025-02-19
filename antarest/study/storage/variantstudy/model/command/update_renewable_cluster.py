@@ -14,7 +14,7 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewablePropertiesType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
@@ -24,7 +24,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 _RENEWABLE_CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 
 
-class UpdateRenewablesCluster(ICommand):
+class UpdateRenewableCluster(ICommand):
     """
     Command used to update a renewable cluster in an area.
     """
@@ -32,14 +32,14 @@ class UpdateRenewablesCluster(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_RENEWABLES_CLUSTER
+    command_name: CommandName = CommandName.UPDATE_RENEWABLE_CLUSTER
 
     # Command parameters
     # ==================
 
     area_id: str
     cluster_id: str
-    properties: RenewableProperties
+    properties: RenewablePropertiesType
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -68,7 +68,7 @@ class UpdateRenewablesCluster(ICommand):
             args={
                 "area_id": self.area_id,
                 "cluster_id": self.cluster_id,
-                "properties": self.properties.model_dump(),
+                "properties": self.properties.model_dump(mode="json"),
             },
             study_version=self.study_version,
         )

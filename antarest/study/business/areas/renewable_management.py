@@ -32,7 +32,7 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
@@ -263,10 +263,9 @@ class RenewableManager:
         new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
-        renewables_properties = RenewableProperties.model_validate(new_data)
+        renewables_properties = create_renewable_properties(study_version=study.version, data=new_data)
 
-        # create the update config commands with the modified data
-        command = UpdateRenewablesCluster(
+        command = UpdateRenewableCluster(
             area_id=area_id,
             cluster_id=cluster_id,
             properties=renewables_properties,
