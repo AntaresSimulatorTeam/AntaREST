@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, MutableMapping, MutableSequence, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from pydantic import field_validator
+from pydantic import field_validator, Extra
 
 from antarest.core.exceptions import (
     DuplicateThermalCluster,
@@ -48,6 +48,7 @@ __all__ = (
     "ThermalManager",
 )
 
+from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
@@ -106,6 +107,8 @@ class ThermalClusterOutput(Thermal870Config):
     """
 
     class Config:
+        extra = "allow"
+
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = ThermalClusterOutput(
@@ -342,21 +345,17 @@ class ThermalManager:
         new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
-        # create the dict containing the new values using aliases
-        data: Dict[str, Any] = {}
-        for field_name, field in new_config.model_fields.items():
-            if field_name in new_values:
-                name = field.alias if field.alias else field_name
-                data[name] = new_data[name]
+        thermal_properties = create_thermal_properties(study_version=study.version, data=new_data)
 
-        # create the update config commands with the modified data
-        commands = [
-            UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
-            )
-            for key, value in data.items()
-        ]
-        study.add_commands(commands)
+        command = UpdateThermalCluster(
+            area_id=area_id,
+            thermal_cluster_id=cluster_id,
+            properties=thermal_properties,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        study.add_commands([command])
 
         values = {**new_config.model_dump(mode="json", exclude={"id"})}
         return ThermalClusterOutput(**values, id=cluster_id)

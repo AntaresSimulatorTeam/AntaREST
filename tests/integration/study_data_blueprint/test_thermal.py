@@ -952,7 +952,7 @@ class TestThermal:
         assert actions == [
             "create_area",
             "create_cluster",
-            "update_config",
+            "update_thermal_cluster",
             "replace_matrix",
             "create_cluster",
             "replace_matrix",
