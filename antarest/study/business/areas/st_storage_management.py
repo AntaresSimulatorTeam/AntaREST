@@ -462,11 +462,7 @@ class STStorageManager:
         new_config = old_config.model_copy(update=new_values)
         new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
 
-        st_storage_properties: STStoragePropertiesType
-        if study.version >= STUDY_VERSION_8_8:
-            st_storage_properties = STStorage880Properties.model_validate(new_data)
-        else:
-            st_storage_properties = STStorageProperties.model_validate(new_data)
+        st_storage_properties = create_st_storage_properties(study_version=study.version, data=new_data)
 
         command = UpdateSTStorage(
             area_id=area_id,
