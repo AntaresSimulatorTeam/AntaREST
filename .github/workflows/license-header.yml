@@ -2,7 +2,7 @@ name: license-header
 on:
   push:
     branches:
-      - "**"
+      - "dfgdf"
 
 jobs:
   check-license-headers:
