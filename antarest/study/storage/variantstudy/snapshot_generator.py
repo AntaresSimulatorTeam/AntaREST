@@ -13,6 +13,7 @@
 """
 This module dedicated to variant snapshot generation.
 """
+
 import datetime
 import logging
 import shutil

@@ -57,7 +57,7 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
             lines = extract_lines_from_archive(self.config.archive_path, AREAS_LIST_RELATIVE_PATH)
         else:
             lines = self.config.path.read_text().split("\n")
-        return [l.strip() for l in lines if l.strip()]
+        return [line.strip() for line in lines if line.strip()]
 
     @override
     def save(self, data: List[str], url: Optional[List[str]] = None) -> None:

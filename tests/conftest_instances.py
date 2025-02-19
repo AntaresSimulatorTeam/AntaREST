@@ -13,15 +13,16 @@
 The aim of this module is to contain fixtures for
 instantiating objects such as users, studies, ...
 """
+
 import pytest
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import User
 
 
 @pytest.fixture
-def admin_user(db_middleware: DBSessionMiddleware) -> User:
+def admin_user() -> User:
     with db(commit_on_exit=True):
         user = User(id=DEFAULT_ADMIN_USER.id)
         db.session.add(user)

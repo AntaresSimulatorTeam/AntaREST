@@ -31,8 +31,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import relationship  # type: ignore
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import relationship, validates  # type: ignore
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException

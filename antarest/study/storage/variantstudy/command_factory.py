@@ -18,7 +18,6 @@ from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea

@@ -392,7 +392,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
 
 
 def test_update_area(area_manager: AreaManager):
-
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
@@ -429,7 +428,6 @@ def test_update_area(area_manager: AreaManager):
 
 
 def test_update_clusters(area_manager: AreaManager):
-
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
