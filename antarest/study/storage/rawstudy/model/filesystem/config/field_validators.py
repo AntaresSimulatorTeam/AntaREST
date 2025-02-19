@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import re
 from typing import Annotated, Any, List, Mapping, MutableMapping
 
 from pydantic import BeforeValidator, Field

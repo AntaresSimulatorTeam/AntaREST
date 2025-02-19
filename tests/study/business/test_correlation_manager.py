@@ -165,9 +165,7 @@ def create_study_interface(tree: FileStudyTree, version: StudyVersion = STUDY_VE
 
 
 class TestCorrelationManager:
-
     def test_get_correlation_matrix__nominal_case(self, correlation_manager):
-
         # Prepare the mocks
         correlation_cfg = {
             "n%n": 0.1,
@@ -209,7 +207,6 @@ class TestCorrelationManager:
         )
 
     def test_get_field_values__nominal_case(self, correlation_manager):
-
         # Prepare the mocks
         # NOTE: "s%s" value is ignored
         correlation_cfg = {"s%s": 0.1, "n%s": 0.2, "w%n": 0.6}
@@ -238,7 +235,6 @@ class TestCorrelationManager:
         )
 
     def test_set_field_values__nominal_case(self, correlation_manager):
-
         # Prepare the mocks: North + South
         correlation_cfg = {}
         study = create_study_interface(
@@ -282,7 +278,6 @@ class TestCorrelationManager:
         assert cmd.data == {"e%s": 0.3, "n%s": 0.4}
 
     def test_set_field_values__area_not_found(self, correlation_manager):
-
         # Prepare the mocks: North + South
         correlation_cfg = {}
         study = create_study_interface(

@@ -1369,11 +1369,10 @@ class TestStudiesListing:
         ##########################
 
         # user_1 access
+        # fmt: off
         requests_params_expected_studies = [
-            # fmt: off
             ([], {"1", "2", "5", "6", "7", "8", "9", "10", "13", "14", "15", "16", "17",
                   "18", "21", "22", "23", "24", "25", "26", "29", "30", "31", "32", "34"}),
-            # fmt: on
             (["1"], {"1", "7", "8", "9", "17", "23", "24", "25"}),
             (["2"], {"2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"}),
             (["3"], set()),
@@ -1385,10 +1384,11 @@ class TestStudiesListing:
                 {"1", "2", "5", "6", "7", "8", "9", "17", "18", "21", "22", "23", "24", "25", "34"},
             ),
         ]
+        # fmt: on
         for request_groups_numbers, expected_studies_numbers in requests_params_expected_studies:
             request_groups_ids = [groups_ids[f"group_{group_number}"] for group_number in request_groups_numbers]
             expected_studies = [
-                studies_ids_mapping[f"study_{(study_number if int(study_number) <= 9 else 'X'+study_number)}"]
+                studies_ids_mapping[f"study_{(study_number if int(study_number) <= 9 else 'X' + study_number)}"]
                 for study_number in expected_studies_numbers
             ]
             res = client.get(
@@ -1415,11 +1415,10 @@ class TestStudiesListing:
             # assert list(res.json()) == expected_studies[2:4]
 
         # user_2 access
+        # fmt: off
         requests_params_expected_studies = [
-            # fmt: off
             ([], {"1", "3", "4", "5", "7", "8", "9", "11", "13", "14", "15", "16", "17",
                   "19", "20", "21", "23", "24", "25", "27", "29", "30", "31", "32", "33"}),
-            # fmt: on
             (["1"], {"1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"}),
             (["2"], {"5", "7", "8", "9", "21", "23", "24", "25"}),
             (["3"], set()),
@@ -1431,10 +1430,11 @@ class TestStudiesListing:
                 {"1", "3", "4", "5", "7", "8", "9", "17", "19", "20", "21", "23", "24", "25", "33"},
             ),
         ]
+        # fmt: on
         for request_groups_numbers, expected_studies_numbers in requests_params_expected_studies:
             request_groups_ids = [groups_ids[f"group_{group_number}"] for group_number in request_groups_numbers]
             expected_studies = {
-                studies_ids_mapping[f"study_{(study_number if int(study_number) <= 9 else 'X'+study_number)}"]
+                studies_ids_mapping[f"study_{(study_number if int(study_number) <= 9 else 'X' + study_number)}"]
                 for study_number in expected_studies_numbers
             }
             res = client.get(
@@ -1461,7 +1461,7 @@ class TestStudiesListing:
         for request_groups_numbers, expected_studies_numbers in requests_params_expected_studies:
             request_groups_ids = [groups_ids[f"group_{group_number}"] for group_number in request_groups_numbers]
             expected_studies = {
-                studies_ids_mapping[f"study_{(study_number if int(study_number) <= 9 else 'X'+study_number)}"]
+                studies_ids_mapping[f"study_{(study_number if int(study_number) <= 9 else 'X' + study_number)}"]
                 for study_number in expected_studies_numbers
             }
             res = client.get(

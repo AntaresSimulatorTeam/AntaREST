@@ -54,7 +54,7 @@ class JobResultRepository:
         return job_results
 
     def get_running(self) -> List[JobResult]:
-        query = db.session.query(JobResult).where(JobResult.completion_date == None)
+        query = db.session.query(JobResult).where(JobResult.completion_date == None)  # noqa: E711
         job_results: List[JobResult] = query.all()
         return job_results
 
