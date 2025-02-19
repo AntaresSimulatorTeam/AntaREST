@@ -21,6 +21,7 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
+HYDRO_PATH = "input/hydro/hydro"
 
 
 class InflowStructure(FormFieldsBaseModel):
@@ -38,7 +39,7 @@ class InflowStructure(FormFieldsBaseModel):
 
 
 @all_optional_model
-class ManagementOptionsFormFields(FormFieldsBaseModel):
+class HydroManagementOptions(FormFieldsBaseModel):
     inter_daily_breakdown: float = Field(ge=0)
     intra_daily_modulation: float = Field(ge=1)
     inter_monthly_breakdown: float = Field(ge=0)
@@ -55,8 +56,6 @@ class ManagementOptionsFormFields(FormFieldsBaseModel):
     leeway_up: float = Field(ge=0)
     pumping_efficiency: float = Field(ge=0)
 
-
-HYDRO_PATH = "input/hydro/hydro"
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
     "inter_daily_breakdown": {
@@ -111,7 +110,7 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_field_values(self, study: StudyInterface, area_id: str) -> ManagementOptionsFormFields:
+    def get_hydro_management_options(self, study: StudyInterface, area_id: str) -> HydroManagementOptions:
         """
         Get management options for a given area
         """
@@ -123,18 +122,16 @@ class HydroManager:
             target_name = path.split("/")[-1]
             return hydro_config.get(target_name, {}).get(area_id, field_info["default_value"])
 
-        return ManagementOptionsFormFields.model_construct(
-            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
-        )
+        return HydroManagementOptions.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(
+    def update_hydro_management_options(
         self,
         study: StudyInterface,
-        field_values: ManagementOptionsFormFields,
+        field_values: HydroManagementOptions,
         area_id: str,
     ) -> None:
         """
-        Set management options for a given area
+        update hydro management options for a given area
         """
         commands: List[UpdateConfig] = []
 
