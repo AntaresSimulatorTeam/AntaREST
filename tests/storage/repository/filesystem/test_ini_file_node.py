@@ -19,7 +19,9 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
@@ -350,7 +352,7 @@ def create_ini_node(study_path: Path, ini_path: Path) -> IniFileNode:
 def test_update_ignorecase(tmp_path: Path) -> None:
     ini_path = tmp_path.joinpath("test.ini")
     ini_content = textwrap.dedent(
-        f"""\
+        """\
         [sts_FR]
         key = 1
         """
@@ -373,7 +375,7 @@ def test_update_ignorecase(tmp_path: Path) -> None:
 def test_delete_ignorecase(tmp_path: Path) -> None:
     ini_path = tmp_path.joinpath("test.ini")
     ini_content = textwrap.dedent(
-        f"""\
+        """\
         [sts_FR]
         Key = 1
         key2 = 3

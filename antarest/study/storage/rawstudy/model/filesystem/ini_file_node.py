@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import contextlib
-import functools
 import io
 import logging
 import os
@@ -20,7 +19,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import py7zr
 import pydantic_core
@@ -35,7 +34,9 @@ from antarest.core.serde.ini_reader import (
 )
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.serde.json import from_json
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
@@ -92,7 +93,6 @@ class IniMatch(ABC):
 
 @dataclass(frozen=True)
 class SectionMatch(IniMatch):
-
     data: JSON
     req_section: str
     matched_section: str | None = None
