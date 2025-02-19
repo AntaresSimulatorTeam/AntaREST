@@ -12,10 +12,10 @@
 
 import collections
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, MutableMapping, MutableSequence, Optional, Sequence
+from typing import Any, List, Mapping, MutableMapping, MutableSequence, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from pydantic import field_validator, Extra
+from pydantic import field_validator
 
 from antarest.core.exceptions import (
     DuplicateThermalCluster,

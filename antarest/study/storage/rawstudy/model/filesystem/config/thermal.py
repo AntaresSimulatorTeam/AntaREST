@@ -380,8 +380,10 @@ class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     >>> cl.op1
     0.0
     """
+
     class Config:
         extra = "ignore"
+
 
 class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
     """
@@ -409,6 +411,7 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
     >>> cl.cost_generation == ThermalCostGeneration.SET_MANUALLY
     True
     """
+
 
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
