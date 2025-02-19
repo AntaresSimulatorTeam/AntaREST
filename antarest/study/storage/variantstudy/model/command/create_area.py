@@ -253,12 +253,12 @@ class CreateArea(ICommand):
             hydro_config.setdefault("leeway up", {})[area_id] = 1
             hydro_config.setdefault("pumping efficiency", {})[area_id] = 1
 
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"creditmodulations_{area_id}"
-            ] = self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"inflowPattern_{area_id}"
-            ] = self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
+                self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
+            )
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
+                self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
+            )
             new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
 
         has_renewables = version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS

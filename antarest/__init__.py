@@ -15,6 +15,7 @@ Antares Web
 
 This module contains the project metadata.
 """
+
 from pathlib import Path
 
 # Standard project metadata

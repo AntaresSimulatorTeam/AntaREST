@@ -179,7 +179,7 @@ def test_refresh() -> None:
     meta, b64, sign = str(data["access_token"]).split(".")
 
     data = b64 + "==="  # fix padding issue
-    identity = json.loads(base64.b64decode(data))["sub"]
+    json.loads(base64.b64decode(data))["sub"]
 
 
 @pytest.mark.unit_test
