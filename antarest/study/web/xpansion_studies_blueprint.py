@@ -227,7 +227,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.WRITE,
             RequestParameters(user=current_user),
         )
-        return study_service.xpansion_manager.add_resource(study, resource_type, [file])
+        study_interface = study_service.get_study_interface(study)
+        return study_service.xpansion_manager.add_resource(study_interface, resource_type, [file])
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
@@ -249,7 +250,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.WRITE,
             RequestParameters(user=current_user),
         )
-        return study_service.xpansion_manager.delete_resource(study, resource_type, filename)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.xpansion_manager.delete_resource(study_interface, resource_type, filename)
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
@@ -271,7 +273,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.READ,
             RequestParameters(user=current_user),
         )
-        output: JSON | bytes | str = study_service.xpansion_manager.get_resource_content(study, resource_type, filename)
+        study_interface = study_service.get_study_interface(study)
+        output: JSON | bytes | str = study_service.xpansion_manager.get_resource_content(
+            study_interface, resource_type, filename
+        )
 
         if isinstance(output, bytes):
             try:
@@ -302,6 +307,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             StudyPermissionType.READ,
             RequestParameters(user=current_user),
         )
-        return study_service.xpansion_manager.list_resources(study, resource_type)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.xpansion_manager.list_resources(study_interface, resource_type)
 
     return bp

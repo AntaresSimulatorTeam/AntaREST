@@ -30,8 +30,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import relationship  # type: ignore
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import relationship, validates  # type: ignore
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -314,13 +313,13 @@ class RawStudy(Study):
 
     __tablename__ = "rawstudy"
 
-    id = Column(
+    id: str = Column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status = Column(Enum(StudyContentStatus))
-    workspace = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
+    content_status: StudyContentStatus = Column(Enum(StudyContentStatus))
+    workspace: str = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
     missing = Column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
