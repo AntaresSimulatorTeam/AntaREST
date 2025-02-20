@@ -25,6 +25,7 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
+from antares.study.version.create_app import CreateApp
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 
 from antarest.core.config import Config, WorkspaceConfig
@@ -185,16 +186,13 @@ def remove_from_cache(cache: ICache, root_id: str) -> None:
     )
 
 
-def create_new_empty_study(version: StudyVersion, path_study: Path, path_resources: Path) -> None:
-    version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
-    if version_template is None:
-        msg = f"{version} is not a supported version, supported versions are: {list(STUDY_REFERENCE_TEMPLATES.keys())}"
+def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
+    if version not in STUDY_REFERENCE_TEMPLATES:
+        msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    empty_study_zip = path_resources / version_template
-
-    with ZipFile(empty_study_zip) as zip_output:
-        zip_output.extractall(path=path_study)
+    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
+    app()
 
 
 def study_matcher(

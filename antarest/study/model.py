@@ -16,7 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Mapping, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, cast
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
@@ -47,9 +47,6 @@ if TYPE_CHECKING:
 DEFAULT_WORKSPACE_NAME = "default"
 
 NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("8.8")
-STUDY_VERSION_6_0 = StudyVersion.parse("6.0")
-STUDY_VERSION_6_1 = StudyVersion.parse("6.1")
-STUDY_VERSION_6_4 = StudyVersion.parse("6.4")
 STUDY_VERSION_6_5 = StudyVersion.parse("6.5")
 STUDY_VERSION_7_0 = StudyVersion.parse("7.0")
 STUDY_VERSION_7_1 = StudyVersion.parse("7.1")
@@ -70,22 +67,19 @@ StudyVersionStr = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), P
 StudyVersionInt = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
 
 
-STUDY_REFERENCE_TEMPLATES: Mapping[StudyVersion, str] = {
-    STUDY_VERSION_6_0: "empty_study_613.zip",
-    STUDY_VERSION_6_1: "empty_study_613.zip",
-    STUDY_VERSION_6_4: "empty_study_613.zip",
-    STUDY_VERSION_7_0: "empty_study_700.zip",
-    STUDY_VERSION_7_1: "empty_study_710.zip",
-    STUDY_VERSION_7_2: "empty_study_720.zip",
-    STUDY_VERSION_8: "empty_study_803.zip",
-    STUDY_VERSION_8_1: "empty_study_810.zip",
-    STUDY_VERSION_8_2: "empty_study_820.zip",
-    STUDY_VERSION_8_3: "empty_study_830.zip",
-    STUDY_VERSION_8_4: "empty_study_840.zip",
-    STUDY_VERSION_8_5: "empty_study_850.zip",
-    STUDY_VERSION_8_6: "empty_study_860.zip",
-    STUDY_VERSION_8_7: "empty_study_870.zip",
-    STUDY_VERSION_8_8: "empty_study_880.zip",
+STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
+    STUDY_VERSION_7_0,
+    STUDY_VERSION_7_1,
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_2,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_8_8,
 }
 
 
