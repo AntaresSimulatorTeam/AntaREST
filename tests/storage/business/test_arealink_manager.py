@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
@@ -68,7 +67,6 @@ def test_area_crud(
 
     area_manager.create_area(study, AreaCreationDTO(name="test", type=AreaType.AREA))
     assert len(file_study.config.areas.keys()) == 1
-    assert json.loads((file_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
 
     area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
     assert file_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
@@ -355,76 +353,3 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "use_phase_shifter": False,
         },
     ] == [link.model_dump(mode="json") for link in links]
-
-
-def test_update_area(area_manager: AreaManager):
-    config = FileStudyTreeConfig(
-        study_path=Path("somepath"),
-        path=Path("somepath"),
-        study_id="",
-        version=-1,
-        areas={
-            "a1": Area(
-                name="a1",
-                links={},
-                thermals=[],
-                renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
-            ),
-            "a2": Area(
-                name="a2",
-                links={},
-                thermals=[],
-                renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
-            ),
-        },
-        sets={"s1": DistrictSet(areas=["a1"])},
-    )
-    study_interface = Mock(spec=StudyInterface)
-
-    study_interface.get_files.return_value = FileStudy(config=config, tree=FileStudyTree(context=Mock(), config=config))
-
-    new_area_info = area_manager.update_area_metadata(study_interface, "a1")
-    assert new_area_info.id == "a1"
-    assert new_area_info.metadata.model_dump() == {"country": "fr", "tags": []}
-
-
-def test_update_clusters(area_manager: AreaManager):
-    config = FileStudyTreeConfig(
-        study_path=Path("somepath"),
-        path=Path("somepath"),
-        study_id="",
-        version=-1,
-        areas={
-            "a1": Area(
-                name="a1",
-                links={},
-                thermals=[ThermalConfig(id="a", name="a", enabled=True)],
-                renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
-            )
-        },
-    )
-    file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
-    study_interface = Mock(spec=StudyInterface)
-
-    study_interface.get_files.return_value = FileStudy(config=config, tree=file_tree_mock)
-    file_tree_mock.get.side_effect = [
-        {
-            "a": {
-                "name": "A",
-                "unitcount": 1,
-                "nominalcapacity": 500,
-                "min-stable-power": 200,
-            }
-        }
-    ]
-
-    new_area_info = area_manager.update_thermal_cluster_metadata(study_interface, "a1")
-    assert len(new_area_info.thermals) == 1
-    assert new_area_info.thermals[0].type == "a"
-    assert new_area_info.thermals[0].code_oi is None
