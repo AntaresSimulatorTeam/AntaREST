@@ -407,7 +407,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas",
         json={
             "name": "Area 1",  # Same name but with different case
-            "type": "AREA"
+            "type": "AREA",
         },
     )
     assert res.status_code == 409, res.json()
@@ -418,10 +418,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/areas",
-        json={
-            "name": "area 2",
-            "type": "AREA"
-        },
+        json={"name": "area 2", "type": "AREA"},
     )
 
     res = client.post(
