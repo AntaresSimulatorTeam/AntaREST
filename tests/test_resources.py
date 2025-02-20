@@ -91,7 +91,7 @@ def test_empty_study_zip(tmp_path: pathlib.Path, version: StudyVersion):
     existing_paths = sorted(study_path.rglob("*"))
     existing_files = []
     for file in existing_paths:
-        existing_files.append(str(file.relative_to(study_path)))
+        existing_files.append(file.relative_to(study_path).as_posix())
 
     if StudyVersion.parse(version) < 860:
         expected_files = STUDY_FILES
