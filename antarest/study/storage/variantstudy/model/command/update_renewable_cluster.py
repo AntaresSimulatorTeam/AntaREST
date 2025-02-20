@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import override
 
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdateInternal
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewablePropertiesType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
@@ -39,7 +39,7 @@ class UpdateRenewableCluster(ICommand):
 
     area_id: str
     cluster_id: str
-    properties: RenewablePropertiesType
+    properties: Dict[str, Any]
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -55,7 +55,15 @@ class UpdateRenewableCluster(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         path = _RENEWABLE_CLUSTER_PATH.format(area_id=self.area_id, cluster_id=self.cluster_id)
 
-        study_data.tree.save(self.properties.model_dump(by_alias=True), path.split("/"))
+        properties = study_data.tree.get(path.split("/"), depth=1)
+
+        new_properties = RenewableClusterUpdateInternal.model_validate(self.properties).model_dump(
+            include=self.properties, by_alias=True
+        )
+
+        properties.update(new_properties)
+
+        study_data.tree.save(properties, path.split("/"))
 
         output, _ = self._apply_config(study_data.config)
 
@@ -68,7 +76,7 @@ class UpdateRenewableCluster(ICommand):
             args={
                 "area_id": self.area_id,
                 "cluster_id": self.cluster_id,
-                "properties": self.properties.model_dump(mode="json"),
+                "properties": self.properties,
             },
             study_version=self.study_version,
         )

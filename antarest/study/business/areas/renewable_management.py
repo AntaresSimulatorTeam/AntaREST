@@ -21,14 +21,13 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterOutput,
-    RenewableClusterUpdate,
+    RenewableClusterUpdateDTO,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewablePropertiesType,
     create_renewable_config,
-    create_renewable_properties,
 )
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
@@ -181,7 +180,7 @@ class RenewableManager:
         study: StudyInterface,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterUpdate,
+        cluster_data: RenewableClusterUpdateDTO,
     ) -> RenewableClusterOutput:
         """
         Updates the configuration of an existing cluster within an area in the study.
@@ -211,14 +210,11 @@ class RenewableManager:
 
         new_values = cluster_data.model_dump(exclude_none=True)
         new_config = old_config.model_copy(update=new_values)
-        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
-
-        renewables_properties = create_renewable_properties(study_version=study.version, data=new_data)
 
         command = UpdateRenewableCluster(
             area_id=area_id,
             cluster_id=cluster_id,
-            properties=renewables_properties,
+            properties=cluster_data.model_dump(exclude_none=True),
             command_context=self._command_context,
             study_version=study.version,
         )
@@ -302,7 +298,7 @@ class RenewableManager:
     def update_renewables_props(
         self,
         study: StudyInterface,
-        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterUpdate]],
+        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterUpdateDTO]],
     ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}

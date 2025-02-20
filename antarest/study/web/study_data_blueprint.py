@@ -66,7 +66,7 @@ from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterOutput,
-    RenewableClusterUpdate,
+    RenewableClusterUpdateDTO,
 )
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
@@ -2042,7 +2042,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterUpdate,
+        cluster_data: RenewableClusterUpdateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
         logger.info(
@@ -2065,7 +2065,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterUpdate,
+        cluster_data: RenewableClusterUpdateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
