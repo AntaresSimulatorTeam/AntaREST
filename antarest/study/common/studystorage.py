@@ -17,7 +17,7 @@ from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
+from antarest.study.model import Study, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -101,18 +101,6 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def patch_update_study_metadata(self, study: T, metadata: StudyMetadataPatchDTO) -> StudyMetadataDTO:
-        """
-        Update patch study metadata
-        Args:
-            study: study
-            metadata: patch
-
-        Returns: study metadata
-
-        """
-
-    @abstractmethod
     def import_output(
         self,
         study: T,
@@ -159,17 +147,6 @@ class IStudyStorageService(ABC, Generic[T]):
 
         Returns:
             study output data
-        """
-
-    @abstractmethod
-    def set_reference_output(self, metadata: T, output_id: str, status: bool) -> None:
-        """
-        Set an output to the reference output of a study
-
-        Args:
-            metadata: study
-            output_id: the id of output to set the reference status.
-            status: true to set it as reference, false to unset it.
         """
 
     @abstractmethod

@@ -17,7 +17,6 @@ from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPathProperties,
     AreaFolder,
@@ -33,11 +32,10 @@ class AreaType(enum.Enum):
 class AreaCreationDTO(AntaresBaseModel):
     name: str
     type: AreaType
-    metadata: t.Optional[PatchArea] = None
     set: t.Optional[t.List[str]] = None
 
 
-class ClusterInfoDTO(PatchCluster):
+class ClusterInfoDTO(AntaresBaseModel):
     id: str
     name: str
     enabled: bool = True

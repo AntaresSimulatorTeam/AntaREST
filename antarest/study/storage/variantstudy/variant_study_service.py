@@ -55,7 +55,6 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -90,7 +89,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
-        patch_service: PatchService,
         repository: VariantStudyRepository,
         event_bus: IEventBus,
         config: Config,
@@ -98,7 +96,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         super().__init__(
             config=config,
             study_factory=study_factory,
-            patch_service=patch_service,
             cache=cache,
         )
         self.task_service = task_service
@@ -691,7 +688,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     raw_study_service=self.raw_study_service,
                     command_factory=self.command_factory,
                     study_factory=self.study_factory,
-                    patch_service=self.patch_service,
                     repository=self.repository,
                 )
                 generate_result = generator.generate_snapshot(
@@ -994,19 +990,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         self._safe_generation(study, timeout=600)
         return super().get_study_sim_result(study=study)
-
-    @override
-    def set_reference_output(self, metadata: VariantStudy, output_id: str, status: bool) -> None:
-        """
-        Set an output to the reference output of a study
-        Args:
-            metadata: study.
-            output_id: the id of output to set the reference status.
-            status: true to set it as reference, false to unset it.
-        Returns:
-        """
-        self.patch_service.set_reference_output(metadata, output_id, status)
-        remove_from_cache(self.cache, metadata.id)
 
     @override
     def delete(self, metadata: VariantStudy) -> None:

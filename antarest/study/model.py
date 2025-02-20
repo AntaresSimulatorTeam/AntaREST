@@ -397,29 +397,14 @@ class PatchStudy(AntaresBaseModel):
     tags: List[str] = []
 
 
-class PatchArea(AntaresBaseModel):
-    country: Optional[str] = None
-    tags: List[str] = []
-
-
-class PatchCluster(AntaresBaseModel):
-    type: Optional[str] = None
-    code_oi: Optional[str] = None
-
-    class Config:
-        @classmethod
-        def alias_generator(cls, string: str) -> str:
-            return "-".join(string.split("_"))
-
-
 class PatchOutputs(AntaresBaseModel):
     reference: Optional[str] = None
 
 
 class Patch(AntaresBaseModel):
     study: Optional[PatchStudy] = None
-    areas: Optional[Dict[str, PatchArea]] = None
-    thermal_clusters: Optional[Dict[str, PatchCluster]] = None
+    areas: Optional[Dict[str, Any]] = None
+    thermal_clusters: Optional[Dict[str, Any]] = None
     outputs: Optional[PatchOutputs] = None
 
 
@@ -458,9 +443,6 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
     name: Optional[str] = None
     author: Optional[str] = None
     horizon: Optional[str] = None
-    scenario: Optional[str] = None
-    status: Optional[str] = None
-    doc: Optional[str] = None
     tags: List[str] = []
 
     @field_validator("tags", mode="before")
@@ -493,8 +475,6 @@ class StudySimResultDTO(AntaresBaseModel):
     type: str
     settings: StudySimSettingsDTO
     completionDate: str
-    referenceStatus: bool
-    synchronized: bool
     status: str
     archived: bool
 
