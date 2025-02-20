@@ -533,9 +533,6 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "managed": True,
             "archived": False,
             "horizon": "2030",
-            "scenario": None,
-            "status": None,
-            "doc": None,
             "folder": None,
             "tags": [],
         }

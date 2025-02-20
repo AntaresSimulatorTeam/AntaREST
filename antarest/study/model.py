@@ -420,9 +420,6 @@ class StudyMetadataDTO(AntaresBaseModel):
     managed: bool
     archived: bool
     horizon: Optional[str] = None
-    scenario: Optional[str] = None
-    status: Optional[str] = None
-    doc: Optional[str] = None
     folder: Optional[str] = None
     tags: List[str] = []
 
