@@ -24,6 +24,7 @@ from pandas.errors import ParserError
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
@@ -41,6 +42,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
     XpansionResourceFileType,
 )
+from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -67,7 +69,13 @@ def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
 
 @pytest.fixture
 def empty_study_810(tmp_path: Path) -> StudyInterface:
-    return make_empty_study(tmp_path, 810)
+    study_interface = make_empty_study(tmp_path, 810)
+    # todo: this link with the db should be removed. It's only there temporarily to make the test work
+    study = Study(id="1", path=str(study_interface.get_files().config.study_path), version="810")
+    with db():
+        db.session.add(study)
+        db.session.commit()
+    return study_interface
 
 
 @pytest.mark.unit_test

@@ -12,9 +12,10 @@
 
 import pytest
 from checksumdir import dirhash
+from sqlalchemy.orm import Session
 
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -81,10 +82,15 @@ class TestRemoveArea:
         assert output.status, output.message
 
     @pytest.mark.parametrize("empty_study", ["empty_study_810.zip", "empty_study_840.zip"], indirect=True)
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study: FileStudy, command_context: CommandContext, db_session: Session):
         # noinspection SpellCheckingInspection
         (empty_study, area_id) = self._set_up(empty_study, command_context)
         study_version = empty_study.config.version
+        study_path = empty_study.config.study_path
+
+        raw_study = RawStudy(id=empty_study.config.study_id, version=str(study_version), path=str(study_path))
+        db_session.add(raw_study)
+        db_session.commit()
 
         create_district_command = CreateDistrict(
             name="foo",
@@ -113,8 +119,8 @@ class TestRemoveArea:
         ########################################################################################
 
         # Line ending of the `settings/scenariobuilder.dat` must be reset before checksum
-        reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
-        hash_before_removal = dirhash(empty_study.config.study_path, "md5")
+        reset_line_separator(study_path.joinpath("settings/scenariobuilder.dat"))
+        hash_before_removal = dirhash(study_path, "md5")
 
         empty_study_cfg = empty_study.tree.get(depth=999)
         if study_version >= 830:
@@ -240,7 +246,7 @@ class TestRemoveArea:
         )
         output = remove_area_command.apply(study_data=empty_study)
         assert output.status, output.message
-        assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
+        assert dirhash(study_path, "md5") == hash_before_removal
 
         actual_cfg = empty_study.tree.get(depth=999)
         assert actual_cfg == empty_study_cfg

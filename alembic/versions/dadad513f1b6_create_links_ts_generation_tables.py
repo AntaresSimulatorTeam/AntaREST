@@ -1,0 +1,59 @@
+"""create_links_ts_generation_tables
+
+Revision ID: dadad513f1b6
+Revises: bae9c99bc42d
+Create Date: 2025-01-20 10:11:01.293931
+
+"""
+from alembic import op
+import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision = 'dadad513f1b6'
+down_revision = 'bae9c99bc42d'
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    op.create_table(
+        "nb_years_ts_generation",
+        sa.Column("id", sa.String(length=36), nullable=False),
+        sa.Column("links", sa.Integer(), server_default="1", nullable=False),
+        sa.ForeignKeyConstraint(
+            ["id"],
+            ["study.id"],
+            ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.Index('ix_nb_years_ts_generation_study_id', 'study_id')
+    )
+
+    default_boolean = sa.text('1') if op.get_context().dialect.name == 'sqlite' else 't'
+    op.create_table(
+        "links_parameters_ts_generation",
+        sa.Column("id", sa.Integer()),
+        sa.Column("area_from", sa.String(), nullable=False),
+        sa.Column("area_to", sa.String(), nullable=False),
+        sa.Column("prepro", sa.String(), nullable=True),
+        sa.Column("modulation", sa.String(), nullable=True),
+        sa.Column("unit_count", sa.Integer(), nullable=False, server_default="1"),
+        sa.Column("nominal_capacity", sa.Float(), nullable=False, server_default="0"),
+        sa.Column("law_planned", sa.Enum('uniform', 'geometric', name='lawplanned'), nullable=False),
+        sa.Column("law_forced", sa.Enum('uniform', 'geometric', name='lawforced'), nullable=False),
+        sa.Column("volatility_planned", sa.String(), nullable=False, server_default="0"),
+        sa.Column("volatility_forced", sa.String(), nullable=False, server_default="0"),
+        sa.Column("force_no_generation", sa.Boolean(), nullable=False, server_default=default_boolean),
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+            ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id")
+    )
+
+
+def downgrade():
+    op.drop_table("nb_years_ts_generation")
+    op.drop_table("links_parameters_ts_generation")

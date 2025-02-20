@@ -15,7 +15,8 @@ from typing import Any, Dict, List, Optional
 from pydantic import field_validator, model_validator
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.model import STUDY_VERSION_8_2, LinksParametersTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -103,12 +104,8 @@ class RemoveLink(ICommand):
             A tuple containing the command output and a dictionary of extra data.
             On success, the dictionary contains the source and target areas.
         """
-        output, data = self._check_link_exists(study_cfg)
-
-        if output.status:
-            del study_cfg.areas[self.area1].links[self.area2]
-
-        return output, data
+        del study_cfg.areas[self.area1].links[self.area2]
+        return CommandOutput(status=True, message=f"Link between '{self.area1}' and '{self.area2}' removed"), {}
 
     def _remove_link_from_scenario_builder(self, study_data: FileStudy) -> None:
         """
@@ -140,17 +137,28 @@ class RemoveLink(ICommand):
         """
 
         output = self._check_link_exists(study_data.config)[0]
+        if not output.status:
+            return output
 
-        if output.status:
-            if study_data.config.version < STUDY_VERSION_8_2:
-                study_data.tree.delete(["input", "links", self.area1, self.area2])
-            else:
-                study_data.tree.delete(["input", "links", self.area1, f"{self.area2}_parameters"])
-                study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_direct"])
-                study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_indirect"])
-            study_data.tree.delete(["input", "links", self.area1, "properties", self.area2])
+        if study_data.config.version < STUDY_VERSION_8_2:
+            study_data.tree.delete(["input", "links", self.area1, self.area2])
+        else:
+            study_data.tree.delete(["input", "links", self.area1, f"{self.area2}_parameters"])
+            study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_direct"])
+            study_data.tree.delete(["input", "links", self.area1, "capacities", f"{self.area2}_indirect"])
+        study_data.tree.delete(["input", "links", self.area1, "properties", self.area2])
 
-            self._remove_link_from_scenario_builder(study_data)
+        self._remove_link_from_scenario_builder(study_data)
+
+        with db():
+            removed_link = (
+                db.session.query(LinksParametersTsGeneration)
+                .filter_by(study_id=study_data.config.study_id, area_from=self.area1, area_to=self.area2)
+                .first()
+            )
+            if removed_link:  # The DB can be empty for the considered study as we're filling it on the fly
+                db.session.delete(removed_link)
+                db.session.commit()
 
         return self._apply_config(study_data.config)[0]
 

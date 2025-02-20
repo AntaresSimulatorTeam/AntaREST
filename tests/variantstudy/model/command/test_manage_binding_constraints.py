@@ -11,8 +11,10 @@
 # This file is part of the Antares project.
 
 import pytest
+from sqlalchemy.orm import Session
 
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -227,13 +229,17 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
 
 
 @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-def test_scenario_builder(empty_study: FileStudy, command_context: CommandContext):
+def test_scenario_builder(empty_study: FileStudy, command_context: CommandContext, db_session: Session):
     """
     Test that the scenario builder is updated when a binding constraint group is renamed or removed
     """
     # This test requires a study with version >= 870, which support "scenarised" binding constraints.
     study_version = empty_study.config.version
     assert study_version >= 870
+    study_id = empty_study.config.study_id
+    raw_study = RawStudy(id=study_id, version=str(study_version), path=str(empty_study.config.study_path))
+    db_session.add(raw_study)
+    db_session.commit()
 
     # Create two areas and a link between them:
     areas = {name: transform_name_to_id(name) for name in ["Area X", "Area Y"]}

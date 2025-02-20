@@ -52,7 +52,15 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
-from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.model import (
+    LinksParametersTsGeneration,
+    NbYearsTsGeneration,
+    RawStudy,
+    Study,
+    StudyAdditionalData,
+    StudyMetadataDTO,
+    StudySimResultDTO,
+)
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.patch_service import PatchService
@@ -429,8 +437,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         invalidate_self_snapshot: bool = False,
     ) -> None:
         remove_from_cache(self.cache, variant_study.id)
-        if isinstance(variant_study, VariantStudy) and variant_study.snapshot and invalidate_self_snapshot:
-            variant_study.snapshot.last_executed_command = None
+        if isinstance(variant_study, VariantStudy):
+            # Removes TS-generation related information from the database
+            with db():
+                db.session.query(NbYearsTsGeneration).filter_by(id=variant_study.id).delete()
+                db.session.query(LinksParametersTsGeneration).filter_by(study_id=variant_study.id).delete()
+                db.session.commit()
+
+            if variant_study.snapshot and invalidate_self_snapshot:
+                variant_study.snapshot.last_executed_command = None
+
         self.repository.save(
             metadata=variant_study,
             update_modification_date=True,

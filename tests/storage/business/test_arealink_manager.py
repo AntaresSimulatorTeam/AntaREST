@@ -16,18 +16,19 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from core.utils.fastapi_sqlalchemy import db
+from matrixstore.uri_resolver_service import UriResolverService
+from study.business.study_interface import FileStudyInterface, StudyInterface
+from study.storage.rawstudy.model.filesystem.context import ContextServer
 
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.model import Patch, PatchArea, PatchCluster
+from antarest.study.model import Patch, PatchArea, PatchCluster, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
@@ -64,6 +65,12 @@ def empty_study_fixture(tmp_path: Path, matrix_service: ISimpleMatrixService) ->
 def test_area_crud(
     study: StudyInterface, matrix_service: ISimpleMatrixService, area_manager: AreaManager, link_manager: LinkManager
 ) -> None:
+    # todo: this link with the db should be removed. It's only there temporarily to make the test work
+    db_study = Study(id=study.id, path=str(study.get_files().config.study_path), version="810")
+    with db():
+        db.session.add(db_study)
+        db.session.commit()
+
     file_study = study.get_files()
     assert len(file_study.config.areas.keys()) == 0
 
@@ -139,6 +146,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
 
     study_interface = Mock(spec=StudyInterface)
+    study_interface.id = "mock_study"
     study_interface.get_files.return_value = FileStudy(config, file_tree_mock)
     study_interface.get_patch_data.return_value = Patch(
         areas={"a1": PatchArea(country="fr")},
@@ -304,7 +312,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         },
     ]
     links = link_manager.get_all_links(study_interface)
-    assert [
+    assert [link.model_dump(mode="json") for link in links] == [
         {
             "area1": "a1",
             "area2": "a2",
@@ -322,6 +330,13 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "loop_flow": False,
             "transmission_capacities": "enabled",
             "use_phase_shifter": False,
+            "force_no_generation": True,
+            "law_forced": "uniform",
+            "law_planned": "uniform",
+            "nominal_capacity": 0.0,
+            "unit_count": 1,
+            "volatility_forced": 0.0,
+            "volatility_planned": 0.0,
         },
         {
             "area1": "a1",
@@ -340,6 +355,13 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "loop_flow": False,
             "transmission_capacities": "enabled",
             "use_phase_shifter": False,
+            "force_no_generation": True,
+            "law_forced": "uniform",
+            "law_planned": "uniform",
+            "nominal_capacity": 0.0,
+            "unit_count": 1,
+            "volatility_forced": 0.0,
+            "volatility_planned": 0.0,
         },
         {
             "area1": "a2",
@@ -358,8 +380,15 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "loop_flow": False,
             "transmission_capacities": "enabled",
             "use_phase_shifter": False,
+            "force_no_generation": True,
+            "law_forced": "uniform",
+            "law_planned": "uniform",
+            "nominal_capacity": 0.0,
+            "unit_count": 1,
+            "volatility_forced": 0.0,
+            "volatility_planned": 0.0,
         },
-    ] == [link.model_dump(mode="json") for link in links]
+    ]
 
 
 def test_update_area(area_manager: AreaManager):

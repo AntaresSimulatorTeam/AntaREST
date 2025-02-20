@@ -25,7 +25,8 @@ from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
-from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.model import LinksParametersTsGeneration, RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -127,6 +128,7 @@ class SnapshotGenerator:
             logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
             variant_study.additional_data = self._read_additional_data(file_study)
             self.repository.save(variant_study)
+            self._copy_parent_ts_generation_info(parent_study_id=ref_study.id, variant_study_id=variant_study_id)
 
             self._update_cache(file_study)
 
@@ -217,6 +219,21 @@ class SnapshotGenerator:
             f"{CacheConstants.STUDY_FACTORY}/{file_study.config.study_id}",
             FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump(),
         )
+
+    @staticmethod
+    def _copy_parent_ts_generation_info(parent_study_id: str, variant_study_id: str) -> None:
+        with db():
+            parent_parameters: list[LinksParametersTsGeneration] = (
+                db.session.query(LinksParametersTsGeneration).filter_by(study_id=parent_study_id).all()
+            )
+            if not parent_parameters:
+                return
+            child_parameters = []
+            for parameter in parent_parameters:
+                parameter.study_id = variant_study_id
+                child_parameters.append(parameter)
+            db.session.add_all(child_parameters)
+            db.session.commit()
 
 
 class RefStudySearchResult(NamedTuple):

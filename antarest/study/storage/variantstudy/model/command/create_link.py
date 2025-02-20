@@ -17,10 +17,11 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkValidationError
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.link_model import LinkInternal
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.business.model.link_model import Area, LinkInternal, LinkTsGeneration
+from antarest.study.model import STUDY_VERSION_8_2, LinksParametersTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -216,19 +217,38 @@ class CreateLink(AbstractLinkCommand):
         if not output.status:
             return output
 
-        to_exclude = {"area1", "area2"}
-        if version < STUDY_VERSION_8_2:
-            to_exclude.update("filter-synthesis", "filter-year-by-year")
-
-        validated_properties = LinkInternal.model_validate(self.parameters).model_dump(
-            by_alias=True, exclude=to_exclude
-        )
-
+        internal_link = LinkInternal.model_validate(self.parameters)
         area_from = data["area_from"]
         area_to = data["area_to"]
 
-        study_data.tree.save(validated_properties, ["input", "links", area_from, "properties", area_to])
+        # Saves ini properties
+        to_exclude = set(Area.model_fields.keys() | LinkTsGeneration.model_fields.keys())
+        if version < STUDY_VERSION_8_2:
+            to_exclude.update("filter-synthesis", "filter-year-by-year")
+        ini_properties = internal_link.model_dump(by_alias=True, exclude=to_exclude)
+        study_data.tree.save(ini_properties, ["input", "links", area_from, "properties", area_to])
 
+        # Saves DB properties
+        includes = set(LinkTsGeneration.model_fields.keys())
+        db_properties = LinkTsGeneration.model_validate(internal_link.model_dump(mode="json", include=includes))
+
+        with db():
+            new_parameters = LinksParametersTsGeneration(
+                study_id=study_data.config.study_id,
+                area_from=area_from,
+                area_to=area_to,
+                unit_count=db_properties.unit_count,
+                nominal_capacity=db_properties.nominal_capacity,
+                law_planned=db_properties.law_planned,
+                law_forced=db_properties.law_forced,
+                volatility_planned=db_properties.volatility_planned,
+                volatility_forced=db_properties.volatility_forced,
+                force_no_generation=db_properties.force_no_generation,
+            )
+            db.session.add(new_parameters)
+            db.session.commit()
+
+        # Saves matrices
         self.series = self.series or (self.command_context.generator_matrix_constants.get_link(version=version))
         self.direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
         self.indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())

@@ -20,8 +20,9 @@ from zipfile import ZipFile
 import pytest
 from checksumdir import dirhash
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, LinksParametersTsGeneration, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -92,9 +93,15 @@ class TestRemoveLink:
         return FileStudy(config, FileStudyTree(Mock(), config))
 
     @pytest.mark.parametrize("version", [810, 820])
-    def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int) -> None:
+    def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int, db_session: Session) -> None:
         empty_study = self.make_study(tmpdir, version)
         study_version = empty_study.config.version
+        study_path = empty_study.config.study_path
+        study_id = empty_study.config.study_id
+
+        raw_study = RawStudy(id=study_id, version=str(study_version), path=str(study_path))
+        db_session.add(raw_study)
+        db_session.commit()
 
         # Create some areas
         areas = {transform_name_to_id(area, lower=True): area for area in ["Area_X", "Area_Y", "Area_Z"]}
@@ -121,8 +128,8 @@ class TestRemoveLink:
         ########################################################################################
 
         # Line ending of the `settings/scenariobuilder.dat` must be reset before checksum
-        reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
-        hash_before_removal = dirhash(empty_study.config.study_path, "md5")
+        reset_line_separator(study_path.joinpath("settings/scenariobuilder.dat"))
+        hash_before_removal = dirhash(study_path, "md5")
 
         # Create a link between Area_X and Area_Z
         output = CreateLink(
@@ -138,9 +145,25 @@ class TestRemoveLink:
         ).apply(study_data=empty_study)
         assert output.status, output.message
 
+        # Ensures that the DB isn't empty
+        ts_gen_properties = (
+            db_session.query(LinksParametersTsGeneration)
+            .filter_by(study_id=study_id, area_from="area_x", area_to="area_z")
+            .all()
+        )
+        assert len(ts_gen_properties) == 1
+
         output = RemoveLink(
             area1="area_x", area2="area_z", command_context=command_context, study_version=study_version
         ).apply(empty_study)
         assert output.status, output.message
+
+        # Ensures that the DB was emptied by the command
+        ts_gen_properties = (
+            db_session.query(LinksParametersTsGeneration)
+            .filter_by(study_id=study_id, area_from="area_x", area_to="area_z")
+            .all()
+        )
+        assert not ts_gen_properties
 
         assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal

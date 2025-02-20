@@ -19,7 +19,8 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case, to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.model import STUDY_VERSION_8_2, LinksParametersTsGeneration
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LawOption
 
 
 class AssetType(EnumIgnoreCase):
@@ -139,7 +140,7 @@ FILTER_VALUES: List[FilterOption] = [
 ]
 
 
-class LinkBaseDTO(AntaresBaseModel):
+class LinkIniDTO(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     hurdles_cost: bool = False
@@ -156,6 +157,49 @@ class LinkBaseDTO(AntaresBaseModel):
     link_style: LinkStyle = LinkStyle.PLAIN
     filter_synthesis: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
     filter_year_by_year: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+
+
+class LinkTsGeneration(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    unit_count: int = 1
+    nominal_capacity: float = 0
+    law_planned: LawOption = LawOption.UNIFORM
+    law_forced: LawOption = LawOption.UNIFORM
+    volatility_planned: float = Field(default=0.0, ge=0, le=1)
+    volatility_forced: float = Field(default=0.0, ge=0, le=1)
+    force_no_generation: bool = True
+
+    @staticmethod
+    def from_db_model(links_parameters_db: LinksParametersTsGeneration) -> "LinkTsGeneration":
+        args = {
+            "unit_count": links_parameters_db.unit_count,
+            "nominal_capacity": links_parameters_db.nominal_capacity,
+            "law_planned": links_parameters_db.law_planned,
+            "law_forced": links_parameters_db.law_forced,
+            "volatility_planned": links_parameters_db.volatility_planned,
+            "volatility_forced": links_parameters_db.volatility_forced,
+            "force_no_generation": links_parameters_db.force_no_generation,
+        }
+        return LinkTsGeneration.model_validate(args)
+
+    def to_db_model(self, study_id: str, area_from: str, area_to: str) -> LinksParametersTsGeneration:
+        return LinksParametersTsGeneration(
+            study_id=study_id,
+            area_from=area_from,
+            area_to=area_to,
+            unit_count=self.unit_count,
+            nominal_capacity=self.nominal_capacity,
+            law_planned=self.law_planned,
+            law_forced=self.law_forced,
+            volatility_planned=self.volatility_planned,
+            volatility_forced=self.volatility_forced,
+            force_no_generation=self.force_no_generation,
+        )
+
+
+class LinkBaseDTO(LinkIniDTO, LinkTsGeneration):
+    pass
 
 
 class Area(AntaresBaseModel):
@@ -177,7 +221,7 @@ class LinkDTO(Area, LinkBaseDTO):
         if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
-        data = self.model_dump()
+        data = self.model_dump(mode="json")
 
         if version < STUDY_VERSION_8_2:
             data["filter_synthesis"] = None
@@ -205,6 +249,15 @@ class LinkInternal(AntaresBaseModel):
     link_style: LinkStyle = LinkStyle.PLAIN
     filter_synthesis: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
     filter_year_by_year: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+
+    # Ts-generation part
+    unit_count: int = 1
+    nominal_capacity: float = 0
+    law_planned: LawOption = LawOption.UNIFORM
+    law_forced: LawOption = LawOption.UNIFORM
+    volatility_planned: float = Field(default=0.0, ge=0, le=1)
+    volatility_forced: float = Field(default=0.0, ge=0, le=1)
+    force_no_generation: bool = True
 
     def to_dto(self) -> LinkDTO:
         data = self.model_dump()

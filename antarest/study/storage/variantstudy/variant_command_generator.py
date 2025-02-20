@@ -117,7 +117,8 @@ class VariantCommandGenerator:
     ) -> GenerationResultInfoDTO:
         # Build file study
         logger.info("Building study tree")
-        study = self.study_factory.create_from_fs(dest_path, "", use_cache=False)
+        study_id = metadata.id if metadata else ""
+        study = self.study_factory.create_from_fs(dest_path, study_id, use_cache=False)
         if metadata:
             update_antares_info(metadata, study.tree, update_author=True)
 

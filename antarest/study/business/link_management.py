@@ -14,8 +14,10 @@ from typing import Any, Dict, List, Mapping, Tuple
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.core.model import JSON
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal, LinkTsGeneration
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import LinksParametersTsGeneration
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
@@ -31,12 +33,18 @@ class LinkManager:
         file_study = study.get_files()
         result: List[LinkDTO] = []
 
+        ts_generation_parameters = self.get_all_links_ts_generation_information(study.id)
+
         for area_id, area in file_study.config.areas.items():
             links_config = file_study.tree.get(["input", "links", area_id, "properties"])
 
             for link in area.links:
                 link_tree_config: Dict[str, Any] = links_config[link]
                 link_tree_config.update({"area1": area_id, "area2": link})
+
+                if area_id in ts_generation_parameters and link in ts_generation_parameters[area_id]:
+                    link_ts_generation = ts_generation_parameters[area_id][link]
+                    link_tree_config.update(link_ts_generation.model_dump(mode="json"))
 
                 link_internal = LinkInternal.model_validate(link_tree_config)
 
@@ -51,9 +59,37 @@ class LinkManager:
 
         link_properties.update({"area1": link.area1, "area2": link.area2})
 
+        ts_generation_parameters = self.get_single_link_ts_generation_information(study.id, link.area1, link.area2)
+        link_properties.update(ts_generation_parameters.model_dump(mode="json"))
+
         updated_link = LinkInternal.model_validate(link_properties)
 
         return updated_link
+
+    @staticmethod
+    def get_all_links_ts_generation_information(study_id: str) -> dict[str, dict[str, LinkTsGeneration]]:
+        db_dictionnary: dict[str, dict[str, LinkTsGeneration]] = {}
+        with db():
+            all_links_parameters: list[LinksParametersTsGeneration] = (
+                db.session.query(LinksParametersTsGeneration).filter_by(study_id=study_id).all()
+            )
+            for link_parameters in all_links_parameters:
+                area_from = link_parameters.area_from
+                area_to = link_parameters.area_to
+                db_dictionnary.setdefault(area_from, {})[area_to] = LinkTsGeneration.from_db_model(link_parameters)
+        return db_dictionnary
+
+    @staticmethod
+    def get_single_link_ts_generation_information(study_id: str, area_from: str, area_to: str) -> LinkTsGeneration:
+        with db():
+            links_parameters = (
+                db.session.query(LinksParametersTsGeneration)
+                .filter_by(study_id=study_id, area_from=area_from, area_to=area_to)
+                .first()
+            )
+            if links_parameters:
+                return LinkTsGeneration.from_db_model(links_parameters)
+        return LinkTsGeneration()
 
     def create_link(self, study: StudyInterface, link_creation_dto: LinkDTO) -> LinkDTO:
         link = link_creation_dto.to_internal(study.version)

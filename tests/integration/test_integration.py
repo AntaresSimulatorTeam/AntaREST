@@ -613,6 +613,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
+            "forceNoGeneration": True,
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "nominalCapacity": 0.0,
+            "unitCount": 1,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
         }
     ]
 

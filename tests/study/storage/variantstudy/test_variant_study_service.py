@@ -28,7 +28,7 @@ from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.model import LinksParametersTsGeneration, NbYearsTsGeneration, RawStudy, StudyAdditionalData
 from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageGroup,
@@ -402,6 +402,16 @@ class TestVariantStudyService:
         variant_list[2].last_access = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
         db.session.commit()
 
+        # Fills the DB with TS gen information to ensure it will be removed with the snapshot cleaning
+        study_id = variant_list[0].id
+        ts_gen_link_info = LinksParametersTsGeneration(study_id=study_id, area_from="from", area_to="to")
+        db.session.add(ts_gen_link_info)
+        db.session.commit()
+
+        nb_years_ts_gen_info = NbYearsTsGeneration(id=study_id, links=4)
+        db.session.add(nb_years_ts_gen_info)
+        db.session.commit()
+
         # Clear old snapshots
         task_id = variant_study_service.clear_all_snapshots(
             datetime.timedelta(hours=5),
@@ -432,3 +442,10 @@ class TestVariantStudyService:
         # Check if all snapshots were cleared
         for variant_path in variant_study_path.iterdir():
             assert not variant_path.joinpath("snapshot").exists()
+
+        # Ensures that the DB was emptied by the snapshot cleaning
+        ts_gen_properties = db.session.query(LinksParametersTsGeneration).filter_by(study_id=study_id).all()
+        assert not ts_gen_properties
+
+        nb_years_properties = db.session.query(NbYearsTsGeneration).filter_by(id=study_id).all()
+        assert not nb_years_properties
