@@ -521,7 +521,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "area 1",
-            "metadata": {"country": "FR", "tags": ["a"]},
             "name": "area 1",
             "set": None,
             "thermals": [
@@ -547,7 +546,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
         {
             "id": "area 2",
-            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [
@@ -573,7 +571,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         },
         {
             "id": "all areas",
-            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": ["area 1", "area 2"],
             "thermals": None,

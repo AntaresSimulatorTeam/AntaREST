@@ -170,8 +170,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                     "marginal_cost": None,
                     "spread_cost": None,
                     "market_bid_cost": None,
-                    "type": None,
-                    "code_oi": "1",
                 }
             ],
             "id": "a1",
