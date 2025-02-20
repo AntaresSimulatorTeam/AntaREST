@@ -314,7 +314,6 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
         json={
             "name": "STA-mini-copy",
-            "status": "copied",
             "horizon": "2035",
             "author": "Luffy",
         },
@@ -324,9 +323,9 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
     )
     assert res.json() == new_meta.json()
-    assert new_meta.json()["status"] == "copied"
     assert new_meta.json()["name"] == "STA-mini-copy"
     assert new_meta.json()["horizon"] == "2035"
+    assert new_meta.json()["owner"]["name"] == "Luffy"
 
 
 def test_matrix(client: TestClient, admin_access_token: str) -> None:
