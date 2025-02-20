@@ -57,7 +57,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         config: Config,
         study_factory: StudyFactory,
-        path_resources: Path,
         patch_service: PatchService,
         cache: ICache,
     ):
@@ -67,7 +66,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             patch_service=patch_service,
             cache=cache,
         )
-        self.path_resources: Path = path_resources
         self.cleanup_thread = Thread(
             target=RawStudyService.cleanup_lazynode_zipfilelist_cache,
             name=f"{self.__class__.__name__}-Cleaner",
@@ -206,13 +204,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             An updated `RawStudy` instance with the path to the newly created study.
         """
         path_study = Path(metadata.path)
-        path_study.mkdir()
 
-        create_new_empty_study(
-            version=StudyVersion.parse(metadata.version),
-            path_study=path_study,
-            path_resources=self.path_resources,
-        )
+        create_new_empty_study(version=StudyVersion.parse(metadata.version), path_study=path_study)
 
         study = self.study_factory.create_from_fs(path_study, metadata.id)
         update_antares_info(metadata, study.tree, update_author=True)
