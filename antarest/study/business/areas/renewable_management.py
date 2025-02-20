@@ -17,13 +17,15 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.renewable_cluster_model import (
+    RenewableClusterCreation,
+    RenewableClusterOutput,
+    RenewableClusterUpdate,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableConfig,
-    RenewableProperties,
     RenewablePropertiesType,
     create_renewable_config,
     create_renewable_properties,
@@ -45,66 +47,13 @@ class TimeSeriesInterpretation(EnumIgnoreCase):
     PRODUCTION_FACTOR = "production-factor"
 
 
-@all_optional_model
-@camel_case_model
-class RenewableClusterInput(RenewableProperties):
-    """
-    Model representing the data structure required to edit an existing renewable cluster.
-    """
-
-    class Config:
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = RenewableClusterInput(
-                group="Gas",
-                name="Gas Cluster XY",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                ts_interpretation="power-generation",
-            ).model_dump(mode="json")
-
-
-class RenewableClusterCreation(RenewableClusterInput):
-    """
-    Model representing the data structure required to create a new Renewable cluster within a study.
-    """
-
-    def to_properties(self, study_version: StudyVersion) -> RenewablePropertiesType:
-        values = self.model_dump(by_alias=False, exclude_none=True)
-        return create_renewable_properties(study_version=study_version, data=values)
-
-
-@all_optional_model
-@camel_case_model
-class RenewableClusterOutput(RenewableConfig):
-    """
-    Model representing the output data structure to display the details of a renewable cluster.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = RenewableClusterOutput(
-                id="Gas cluster YZ",
-                group="Gas",
-                name="Gas Cluster YZ",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                ts_interpretation="power-generation",
-            ).model_dump()
-
-
 def create_renewable_output(
     study_version: StudyVersion,
     cluster_id: str,
     config: Mapping[str, Any],
 ) -> "RenewableClusterOutput":
     obj = create_renewable_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.model_dump(by_alias=False)
+    kwargs = obj.model_dump()
     return RenewableClusterOutput(**kwargs)
 
 
@@ -127,6 +76,7 @@ class RenewableManager:
             RenewableClusterConfigNotFound: If the clusters configuration for the specified area is not found.
         """
         file_study = study.get_files()
+
         path = _CLUSTERS_PATH.format(area_id=area_id)
 
         try:
@@ -231,7 +181,7 @@ class RenewableManager:
         study: StudyInterface,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterInput,
+        cluster_data: RenewableClusterUpdate,
     ) -> RenewableClusterOutput:
         """
         Updates the configuration of an existing cluster within an area in the study.
@@ -352,7 +302,7 @@ class RenewableManager:
     def update_renewables_props(
         self,
         study: StudyInterface,
-        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterInput]],
+        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterUpdate]],
     ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}

@@ -20,7 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
-from antarest.study.business.areas.renewable_management import RenewableClusterInput, RenewableManager
+from antarest.study.business.areas.renewable_management import RenewableClusterUpdate, RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalClusterInput, ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintInput
@@ -221,11 +221,11 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.RENEWABLE:
-            renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterInput]]
+            renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterUpdate]]
             renewables_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                renewables_by_areas[area_id][cluster_id] = RenewableClusterInput(**values)
+                renewables_by_areas[area_id][cluster_id] = RenewableClusterUpdate(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
