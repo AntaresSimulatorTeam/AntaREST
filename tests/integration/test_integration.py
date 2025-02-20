@@ -407,8 +407,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas",
         json={
             "name": "Area 1",  # Same name but with different case
-            "type": "AREA",
-            "metadata": {"country": "FR"},
+            "type": "AREA"
         },
     )
     assert res.status_code == 409, res.json()
@@ -421,8 +420,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas",
         json={
             "name": "area 2",
-            "type": "AREA",
-            "metadata": {"country": "DE"},
+            "type": "AREA"
         },
     )
 
@@ -525,7 +523,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
                     "enabled": True,
                     "group": "other 1",
                     "id": "cluster 1",
@@ -538,7 +535,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "nominalcapacity": 0.0,
                     "spinning": 0.0,
                     "spread-cost": 0.0,
-                    "type": None,
                     "unitcount": 1,
                 }
             ],
@@ -550,7 +546,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
                     "enabled": True,
                     "group": "other 1",
                     "id": "cluster 2",
@@ -563,7 +558,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "nominalcapacity": 2.5,
                     "spinning": 0.0,
                     "spread-cost": 0.0,
-                    "type": None,
                     "unitcount": 1,
                 }
             ],
