@@ -16,12 +16,12 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
+from antarest.study.business.areas.thermal_management import ThermalClusterOutput, create_thermal_output
 from antarest.study.business.model.area_model import (
     AreaCreationDTO,
     AreaInfoDTO,
     AreaOutput,
     AreaType,
-    ClusterInfoDTO,
     LayerInfoDTO,
     UpdateAreaUi,
 )
@@ -476,7 +476,10 @@ class AreaManager:
         study.add_commands([command])
 
     @staticmethod
-    def _get_clusters(file_study: FileStudy, area: str) -> List[ClusterInfoDTO]:
+    def _get_clusters(file_study: FileStudy, area: str) -> List[ThermalClusterOutput]:
         thermal_clusters_data = file_study.tree.get(["input", "thermal", "clusters", area, "list"])
-        result = [ClusterInfoDTO(id=tid, **obj) for tid, obj in thermal_clusters_data.items()]
+        result = []
+        for tid, obj in thermal_clusters_data.items():
+            cluster_info = create_thermal_output(file_study.config.version, tid, obj)
+            result.append(cluster_info)
         return result
