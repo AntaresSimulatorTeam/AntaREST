@@ -397,11 +397,8 @@ class PatchStudy(AntaresBaseModel):
     tags: List[str] = []
 
 
-class Patch(AntaresBaseModel):
+class Patch(AntaresBaseModel, extra="allow"):
     study: Optional[PatchStudy] = None
-    areas: Optional[dict[str, Any]] = None
-    thermal_clusters: Optional[dict[str, Any]] = None
-    outputs: Optional[dict[str, Any]] = None
 
 
 class OwnerInfo(AntaresBaseModel):

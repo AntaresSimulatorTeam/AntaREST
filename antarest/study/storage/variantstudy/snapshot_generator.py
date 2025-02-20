@@ -203,7 +203,9 @@ class SnapshotGenerator:
     def _read_additional_data(self, file_study: FileStudy) -> StudyAdditionalData:
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch={})
+        assert isinstance(author, str)
+        assert isinstance(horizon, (str, int))
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
 
     def _update_cache(self, file_study: FileStudy) -> None:

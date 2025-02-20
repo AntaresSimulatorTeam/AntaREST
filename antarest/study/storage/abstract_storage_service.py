@@ -335,7 +335,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch={})
+        assert isinstance(author, str)
+        assert isinstance(horizon, (str, int))
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
 
     @override

@@ -388,7 +388,6 @@ class TestFilesystemEndpoints:
         self,
         client: TestClient,
         user_access_token: str,
-        caplog: t.Any,
     ):
         """
         This test demonstrates how to compute the size of all studies.
@@ -399,35 +398,33 @@ class TestFilesystemEndpoints:
         """
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        # For this demo, we can disable the logs
-        with caplog.at_level(level="CRITICAL", logger="antarest.main"):
-            # Create a new study in the "default" workspace for this demo
-            res = client.post(
-                "/v1/studies",
+        # Create a new study in the "default" workspace for this demo
+        res = client.post(
+            "/v1/studies",
+            headers=user_headers,
+            params={"name": "New Study", "version": "860"},
+        )
+        res.raise_for_status()
+
+        # Get the list of studies from all workspaces
+        res = client.get("/v1/studies", headers=user_headers)
+        res.raise_for_status()
+        actual = res.json()
+
+        # Get the size of each study
+        sizes = []
+        for study in actual.values():
+            res = client.get(
+                f"/v1/filesystem/ws/{study['workspace']}/ls",
                 headers=user_headers,
-                params={"name": "New Study", "version": "860"},
+                params={"path": study["folder"], "details": True},
             )
             res.raise_for_status()
-
-            # Get the list of studies from all workspaces
-            res = client.get("/v1/studies", headers=user_headers)
-            res.raise_for_status()
             actual = res.json()
+            sizes.append(actual[0]["size_bytes"])
 
-            # Get the size of each study
-            sizes = []
-            for study in actual.values():
-                res = client.get(
-                    f"/v1/filesystem/ws/{study['workspace']}/ls",
-                    headers=user_headers,
-                    params={"path": study["folder"], "details": True},
-                )
-                res.raise_for_status()
-                actual = res.json()
-                sizes.append(actual[0]["size_bytes"])
-
-            # Check the sizes
-            # The size of the new study should be between 140 and 350 KB.
-            # The suze of 'STA-mini' should be between 9 and 11 MB.
-            sizes.sort()
-            assert sizes == [IntegerRange(140_000, 350_000), IntegerRange(9_000_000, 11_000_000)]
+        # Check the sizes
+        # The size of the new study should be between 140 and 350 KB.
+        # The suze of 'STA-mini' should be between 9 and 11 MB.
+        sizes.sort()
+        assert sizes == [IntegerRange(140_000, 350_000), IntegerRange(9_000_000, 11_000_000)]
