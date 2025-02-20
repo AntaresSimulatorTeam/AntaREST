@@ -21,7 +21,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterOutput,
-    RenewableClusterUpdateDTO,
+    RenewableClusterUpdate,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -180,7 +180,7 @@ class RenewableManager:
         study: StudyInterface,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterUpdateDTO,
+        cluster_data: RenewableClusterUpdate,
     ) -> RenewableClusterOutput:
         """
         Updates the configuration of an existing cluster within an area in the study.
@@ -214,7 +214,7 @@ class RenewableManager:
         command = UpdateRenewableCluster(
             area_id=area_id,
             cluster_id=cluster_id,
-            properties=cluster_data.model_dump(exclude_none=True),
+            properties=cluster_data,
             command_context=self._command_context,
             study_version=study.version,
         )
@@ -298,7 +298,7 @@ class RenewableManager:
     def update_renewables_props(
         self,
         study: StudyInterface,
-        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterUpdateDTO]],
+        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterUpdate]],
     ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}

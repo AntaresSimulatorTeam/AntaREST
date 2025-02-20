@@ -12,7 +12,6 @@
 
 from antares.study.version import StudyVersion
 
-from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
@@ -24,24 +23,13 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
 
 @all_optional_model
 @camel_case_model
-class RenewableClusterUpdateDTO(RenewableProperties):
+class RenewableClusterUpdate(RenewableProperties):
     """
-    Model representing the external data structure required to edit an existing renewable cluster.
-    """
-
-    class Config:
-        populate_by_name = True
-
-
-@all_optional_model
-class RenewableClusterUpdateInternal(RenewableProperties):
-    """
-    Model representing the internal data structure required to edit an existing renewable cluster.
+    Model representing the data structure required to edit an existing renewable cluster.
     """
 
     class Config:
         populate_by_name = True
-        alias_generator = to_kebab_case
 
 
 @all_optional_model

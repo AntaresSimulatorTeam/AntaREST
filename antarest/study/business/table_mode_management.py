@@ -28,7 +28,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.link_model import LinkBaseDTO
-from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdateDTO
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_2
 
@@ -222,11 +222,11 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.RENEWABLE:
-            renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterUpdateDTO]]
+            renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterUpdate]]
             renewables_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                renewables_by_areas[area_id][cluster_id] = RenewableClusterUpdateDTO(**values)
+                renewables_by_areas[area_id][cluster_id] = RenewableClusterUpdate(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})

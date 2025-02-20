@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdateInternal
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import create_renewable_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
@@ -39,7 +40,7 @@ class UpdateRenewableCluster(ICommand):
 
     area_id: str
     cluster_id: str
-    properties: Dict[str, Any]
+    properties: RenewableClusterUpdate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -55,15 +56,14 @@ class UpdateRenewableCluster(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         path = _RENEWABLE_CLUSTER_PATH.format(area_id=self.area_id, cluster_id=self.cluster_id)
 
-        properties = study_data.tree.get(path.split("/"), depth=1)
-
-        new_properties = RenewableClusterUpdateInternal.model_validate(self.properties).model_dump(
-            include=self.properties, by_alias=True
+        current_renewable_config = create_renewable_config(
+            study_version=self.study_version, **study_data.tree.get(path.split("/"), depth=1)
         )
 
-        properties.update(new_properties)
+        current_properties = current_renewable_config.model_dump(exclude={"id"})
+        current_properties.update(self.properties.model_dump(exclude_unset=True))
 
-        study_data.tree.save(properties, path.split("/"))
+        study_data.tree.save(current_properties, path.split("/"))
 
         output, _ = self._apply_config(study_data.config)
 
@@ -76,7 +76,7 @@ class UpdateRenewableCluster(ICommand):
             args={
                 "area_id": self.area_id,
                 "cluster_id": self.cluster_id,
-                "properties": self.properties,
+                "properties": self.properties.model_dump(mode="json", exclude_unset=True),
             },
             study_version=self.study_version,
         )
