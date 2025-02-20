@@ -397,15 +397,11 @@ class PatchStudy(AntaresBaseModel):
     tags: List[str] = []
 
 
-class PatchOutputs(AntaresBaseModel):
-    reference: Optional[str] = None
-
-
 class Patch(AntaresBaseModel):
     study: Optional[PatchStudy] = None
-    areas: Optional[Dict[str, Any]] = None
-    thermal_clusters: Optional[Dict[str, Any]] = None
-    outputs: Optional[PatchOutputs] = None
+    areas: Optional[dict[str, Any]] = None
+    thermal_clusters: Optional[dict[str, Any]] = None
+    outputs: Optional[dict[str, Any]] = None
 
 
 class OwnerInfo(AntaresBaseModel):
