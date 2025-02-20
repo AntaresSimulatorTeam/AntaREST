@@ -74,8 +74,6 @@ def build_study_service(
 
     """
 
-    path_resources = config.resources_path
-
     resolver = UriResolverService(matrix_service=matrix_service)
     study_factory = StudyFactory(matrix=matrix_service, resolver=resolver, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
@@ -86,7 +84,6 @@ def build_study_service(
     raw_study_service = RawStudyService(
         config=config,
         study_factory=study_factory,
-        path_resources=path_resources,
         patch_service=patch_service,
         cache=cache,
     )
