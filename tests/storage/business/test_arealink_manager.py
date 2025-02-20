@@ -23,7 +23,6 @@ from antarest.study.business.area_management import AreaCreationDTO, AreaManager
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.model import Patch, PatchArea, PatchCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
@@ -140,10 +139,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
 
     study_interface = Mock(spec=StudyInterface)
     study_interface.get_files.return_value = FileStudy(config, file_tree_mock)
-    study_interface.get_patch_data.return_value = Patch(
-        areas={"a1": PatchArea(country="fr")},
-        thermal_clusters={"a1.a": PatchCluster.model_validate({"code-oi": "1"})},
-    )
     file_tree_mock.get.side_effect = [
         {
             "a": {
@@ -391,9 +386,8 @@ def test_update_area(area_manager: AreaManager):
     study_interface = Mock(spec=StudyInterface)
 
     study_interface.get_files.return_value = FileStudy(config=config, tree=FileStudyTree(context=Mock(), config=config))
-    study_interface.get_patch_data.return_value = Patch(areas={"a1": PatchArea(country="fr")})
 
-    new_area_info = area_manager.update_area_metadata(study_interface, "a1", PatchArea(country="fr"))
+    new_area_info = area_manager.update_area_metadata(study_interface, "a1")
     assert new_area_info.id == "a1"
     assert new_area_info.metadata.model_dump() == {"country": "fr", "tags": []}
 
@@ -419,10 +413,6 @@ def test_update_clusters(area_manager: AreaManager):
     study_interface = Mock(spec=StudyInterface)
 
     study_interface.get_files.return_value = FileStudy(config=config, tree=file_tree_mock)
-    study_interface.get_patch_data.return_value = Patch(
-        areas={"a1": PatchArea(country="fr")},
-        thermal_clusters={"a1.a": PatchCluster.model_validate({"code-oi": "1"})},
-    )
     file_tree_mock.get.side_effect = [
         {
             "a": {
@@ -434,7 +424,7 @@ def test_update_clusters(area_manager: AreaManager):
         }
     ]
 
-    new_area_info = area_manager.update_thermal_cluster_metadata(study_interface, "a1", {"a": PatchCluster(type="a")})
+    new_area_info = area_manager.update_thermal_cluster_metadata(study_interface, "a1")
     assert len(new_area_info.thermals) == 1
     assert new_area_info.thermals[0].type == "a"
     assert new_area_info.thermals[0].code_oi is None

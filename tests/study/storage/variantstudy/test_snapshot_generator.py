@@ -819,14 +819,12 @@ class TestSnapshotGenerator:
             raw_study_service=variant_study_service.raw_study_service,
             command_factory=variant_study_service.command_factory,
             study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
             repository=variant_study_service.repository,
         )
         assert generator.cache == variant_study_service.cache
         assert generator.raw_study_service == variant_study_service.raw_study_service
         assert generator.command_factory == variant_study_service.command_factory
         assert generator.study_factory == variant_study_service.study_factory
-        assert generator.patch_service == variant_study_service.patch_service
         assert generator.repository == variant_study_service.repository
 
     @with_db_context
@@ -860,7 +858,6 @@ class TestSnapshotGenerator:
             raw_study_service=variant_study_service.raw_study_service,
             command_factory=variant_study_service.command_factory,
             study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
             repository=variant_study_service.repository,
         )
 
@@ -1040,7 +1037,6 @@ class TestSnapshotGenerator:
             raw_study_service=variant_study_service.raw_study_service,
             command_factory=variant_study_service.command_factory,
             study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
             repository=variant_study_service.repository,
         )
 
@@ -1120,7 +1116,6 @@ class TestSnapshotGenerator:
             raw_study_service=variant_study_service.raw_study_service,
             command_factory=variant_study_service.command_factory,
             study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
             repository=variant_study_service.repository,
         )
 
@@ -1159,7 +1154,6 @@ class TestSnapshotGenerator:
             raw_study_service=variant_study_service.raw_study_service,
             command_factory=variant_study_service.command_factory,
             study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
             repository=variant_study_service.repository,
         )
 
@@ -1223,7 +1217,6 @@ class TestSnapshotGenerator:
             raw_study_service=variant_study_service.raw_study_service,
             command_factory=variant_study_service.command_factory,
             study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
             repository=variant_study_service.repository,
         )
 

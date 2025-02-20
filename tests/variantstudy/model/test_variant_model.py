@@ -164,7 +164,6 @@ class TestVariantStudyService:
             raw_study_service=variant_study_service.raw_study_service,
             command_factory=variant_study_service.command_factory,
             study_factory=variant_study_service.study_factory,
-            patch_service=variant_study_service.patch_service,
             repository=variant_study_service.repository,
         )
         results = generator.generate_snapshot(saved_id, jwt_user, denormalize=False)

@@ -34,7 +34,6 @@ def test_export_file(tmp_path: Path):
     study_service = RawStudyService(
         config=Config(),
         study_factory=Mock(),
-        patch_service=Mock(),
         cache=Mock(),
     )
     study_service.check_study_exist = Mock()
@@ -65,7 +64,6 @@ def test_export_archived_study(tmp_path: Path, outputs: bool):
     study_service = RawStudyService(
         config=Config(),
         study_factory=study_factory,
-        patch_service=Mock(),
         cache=Mock(),
     )
 
@@ -109,7 +107,6 @@ def test_export_flat(tmp_path: Path):
     study_service = RawStudyService(
         config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
         study_factory=study_factory,
-        patch_service=Mock(),
         cache=Mock(),
     )
     study_tree = Mock()
@@ -147,7 +144,6 @@ def test_export_output(tmp_path: Path):
     study_service = RawStudyService(
         config=Config(),
         study_factory=study_factory,
-        patch_service=Mock(),
         cache=Mock(),
     )
 
