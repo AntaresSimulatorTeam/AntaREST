@@ -389,7 +389,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "all areas",
-            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": [],
             "thermals": None,
@@ -399,11 +398,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        json={
-            "name": "area 1",
-            "type": "AREA",
-            "metadata": {"country": "FR", "tags": ["a"]},
-        },
+        json={"name": "area 1", "type": "AREA"},
     )
     assert res.status_code == 200, res.json()
 

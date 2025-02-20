@@ -154,7 +154,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a1",
             "type": AreaType.AREA,
-            "metadata": {"country": "fr", "tags": []},
             "set": None,
             "thermals": [
                 {
@@ -180,7 +179,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a2",
             "type": AreaType.AREA,
-            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a2",
@@ -188,7 +186,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a3",
             "type": AreaType.AREA,
-            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a3",

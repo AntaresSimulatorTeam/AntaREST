@@ -901,7 +901,7 @@ class StudyService:
         )
 
         remove_from_cache(cache=self.cache_service, root_id=study.id)
-        return self.get_study_information(study, params)
+        return self.get_study_information(study.id, params)
 
     def check_study_access(
         self,
