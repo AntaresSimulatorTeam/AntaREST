@@ -355,7 +355,6 @@ def raw_study_service_fixture(
     return RawStudyService(
         config=core_config,
         study_factory=study_factory,
-        path_resources=core_config.resources_path,
         patch_service=patch_service,
         cache=core_cache,
     )
