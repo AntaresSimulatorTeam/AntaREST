@@ -32,8 +32,30 @@ class XpansionCandidateInternal(AntaresBaseModel):
         default=None, alias="already-installed-indirect-link-profile"
     )
 
+
+class XpansionCandidateDTO(AntaresBaseModel):  # todo: we should refactor this class as the fields are not in camel case
+    name: str
+    link: str
+    annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", gt=0)
+    unit_size: Optional[float] = Field(default=None, alias="unit-size", ge=0)
+    max_units: Optional[int] = Field(default=None, alias="max-units", ge=0)
+    max_investment: Optional[float] = Field(default=None, alias="max-investment", ge=0)
+    already_installed_capacity: Optional[int] = Field(default=None, alias="already-installed-capacity", ge=0)
+    # this is obsolete (replaced by direct/indirect)
+    link_profile: Optional[str] = Field(default=None, alias="link-profile")
+    # this is obsolete (replaced by direct/indirect)
+    already_installed_link_profile: Optional[str] = Field(default=None, alias="already-installed-link-profile")
+    direct_link_profile: Optional[str] = Field(default=None, alias="direct-link-profile")
+    indirect_link_profile: Optional[str] = Field(default=None, alias="indirect-link-profile")
+    already_installed_direct_link_profile: Optional[str] = Field(
+        default=None, alias="already-installed-direct-link-profile"
+    )
+    already_installed_indirect_link_profile: Optional[str] = Field(
+        default=None, alias="already-installed-indirect-link-profile"
+    )
+
     @model_validator(mode="after")
-    def validate_model(self) -> "XpansionCandidateInternal":
+    def validate_model(self) -> "XpansionCandidateDTO":
         possible_format_1 = self.max_investment is None and (self.max_units is not None and self.unit_size is not None)
         possible_format_2 = self.max_investment is not None and (self.max_units is None and self.unit_size is None)
 
@@ -64,9 +86,5 @@ class XpansionCandidateInternal(AntaresBaseModel):
             raise WrongLinkFormatError(f"The link must be in the format 'area1 - area2'. Currently: {link}")
         return link
 
-
-class XpansionCandidateDTO(XpansionCandidateInternal):
-    pass
-
-
-# todo: we should refactor this class as the fields are not in camel case
+    def to_internal_model(self) -> XpansionCandidateInternal:
+        return XpansionCandidateInternal.model_validate(self.model_dump(mode="json", by_alias=True))

@@ -363,10 +363,11 @@ class XpansionManager:
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
 
         file_study = study.get_files()
-        assert_link_exist(file_study, xpansion_candidate)
+        internal_candidate = xpansion_candidate.to_internal_model()
+        assert_link_exist(file_study, internal_candidate)
 
         command = CreateXpansionCandidate(
-            candidate=xpansion_candidate, command_context=self._command_context, study_version=study.version
+            candidate=internal_candidate, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
 
@@ -397,9 +398,10 @@ class XpansionManager:
         candidate_name: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
+        internal_candidate = xpansion_candidate_dto.to_internal_model()
         command = UpdateXpansionCandidate(
             candidate_name=candidate_name,
-            new_properties=xpansion_candidate_dto,
+            new_properties=internal_candidate,
             command_context=self._command_context,
             study_version=study.version,
         )
