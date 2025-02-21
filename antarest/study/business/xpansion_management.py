@@ -23,14 +23,12 @@ from pydantic import Field, ValidationError, field_validator, model_validator
 from antarest.core.exceptions import (
     BadCandidateFormatError,
     BadZipBinary,
-    CandidateAlreadyExistsError,
     CandidateNameIsEmpty,
     CandidateNotFoundError,
     ChildNotFoundError,
     FileAlreadyExistsError,
     FileCurrentlyUsedInSettings,
     IllegalCharacterInNameError,
-    LinkNotFound,
     WrongLinkFormatError,
     XpansionFileNotFoundError,
 )
@@ -417,53 +415,6 @@ class XpansionManager:
             file_study.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
         return self.get_xpansion_settings(study)
-
-    @staticmethod
-    def _assert_link_profile_are_files(
-        file_study: FileStudy,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> None:
-        existing_files = file_study.tree.get(["user", "expansion", "capa"])
-        for attr in [
-            "link_profile",
-            "already_installed_link_profile",
-            "direct_link_profile",
-            "indirect_link_profile",
-            "already_installed_direct_link_profile",
-            "already_installed_indirect_link_profile",
-        ]:
-            if link_file := getattr(xpansion_candidate_dto, attr, None):
-                if link_file not in existing_files:
-                    raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
-
-    @staticmethod
-    def _assert_link_exist(
-        file_study: FileStudy,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> None:
-        area1, area2 = xpansion_candidate_dto.link.split(" - ")
-        area_from, area_to = sorted([area1, area2])
-        if area_to not in file_study.config.get_links(area_from):
-            raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
-
-    @staticmethod
-    def _assert_candidate_name_is_not_already_taken(candidates: JSON, xpansion_candidate_name: str) -> None:
-        for candidate in candidates.values():
-            if candidate["name"] == xpansion_candidate_name:
-                raise CandidateAlreadyExistsError(f"The candidate '{xpansion_candidate_name}' already exists")
-
-    def _assert_candidate_is_correct(
-        self,
-        candidates: JSON,
-        file_study: FileStudy,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-        new_name: bool = False,
-    ) -> None:
-        logger.info("Checking given candidate is correct")
-        if new_name:
-            self._assert_candidate_name_is_not_already_taken(candidates, xpansion_candidate_dto.name)
-        self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
-        self._assert_link_exist(file_study, xpansion_candidate_dto)
 
     def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
