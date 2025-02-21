@@ -29,6 +29,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -356,8 +357,8 @@ class XpansionManager:
 
     def delete_xpansion_configuration(self, study: StudyInterface) -> None:
         logger.info(f"Deleting xpansion configuration for study '{study.id}'")
-        file_study = study.get_files()
-        file_study.tree.delete(["user", "expansion"])
+        command = RemoveXpansionConfiguration(command_context=self._command_context, study_version=study.version)
+        study.add_commands([command])
 
     def get_xpansion_settings(self, study: StudyInterface) -> GetXpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
