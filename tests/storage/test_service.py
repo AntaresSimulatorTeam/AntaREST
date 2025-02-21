@@ -60,7 +60,6 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
@@ -1085,13 +1084,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
         raw_study_service,
-        Mock(),
         Mock(),
         Mock(),
         variant_study_repository,
@@ -1170,13 +1168,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
 # noinspection PyArgumentList
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
         raw_study_service,
-        Mock(),
         Mock(),
         Mock(),
         variant_study_repository,
@@ -1333,7 +1330,6 @@ def test_create_command(
     command_context = CommandContext(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService, create=Mock(return_value=matrix_id)),
-        patch_service=Mock(spec=PatchService),
     )
 
     service = build_study_service(

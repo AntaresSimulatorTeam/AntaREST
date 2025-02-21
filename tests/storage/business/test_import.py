@@ -43,7 +43,6 @@ def test_import_study(tmp_path: Path) -> None:
     study_service = RawStudyService(
         config=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
         cache=Mock(),
     )
     study_service.get = Mock()

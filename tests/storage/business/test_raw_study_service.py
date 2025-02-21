@@ -75,7 +75,6 @@ def test_get(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     metadata = RawStudy(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
@@ -112,7 +111,6 @@ def test_get_cache(tmp_path: str) -> None:
         config=Mock(),
         cache=cache,
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
@@ -137,7 +135,6 @@ def test_check_errors():
         config=config,
         cache=Mock(),
         study_factory=factory,
-        patch_service=Mock(),
     )
 
     metadata = RawStudy(
@@ -166,7 +163,6 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         cache=Mock(),
         study_factory=Mock(),
-        patch_service=Mock(),
     )
 
     metadata = RawStudy(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
@@ -192,7 +188,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         cache=Mock(),
         study_factory=Mock(),
-        patch_service=Mock(),
     )
 
     metadata = RawStudy(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
@@ -213,7 +208,6 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         config=config,
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     metadata = RawStudy(
@@ -250,7 +244,6 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
         config=config,
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     def create_study(version: str):
@@ -426,7 +419,6 @@ def test_copy_study(
         config=config,
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
     groups = ["fake_group_1", "fake_group_2"]
 
@@ -460,7 +452,6 @@ def test_zipped_output(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
         cache=cache,
         study_factory=Mock(),
-        patch_service=Mock(),
     )
 
     md = RawStudy(id=name, workspace="foo", path=str(study_path))
@@ -518,7 +509,6 @@ def test_delete_study(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
         cache=cache,
         study_factory=Mock(),
-        patch_service=Mock(),
     )
 
     md = RawStudy(id=name, workspace="foo", path=str(study_path))
@@ -529,7 +519,6 @@ def test_delete_study(tmp_path: Path) -> None:
         config=build_config(tmp_path, allow_deletion=True),
         cache=cache,
         study_factory=Mock(),
-        patch_service=Mock(),
     )
 
     md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
@@ -562,7 +551,6 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo"),
         cache=cache,
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     assert not study_service.initialize_additional_data(raw_study)
@@ -591,7 +579,6 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo"),
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     study_service.check_and_update_study_version_in_database(raw_study)
@@ -610,7 +597,6 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo"),
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     study_service.check_and_update_study_version_in_database(raw_study)
@@ -626,7 +612,6 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo"),
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     study_service.check_and_update_study_version_in_database(raw_study)
@@ -656,7 +641,6 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo"),
         cache=Mock(),
         study_factory=study_factory,
-        patch_service=Mock(),
     )
 
     study_tree_mock.get.side_effect = [

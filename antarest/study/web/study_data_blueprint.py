@@ -74,7 +74,6 @@ from antarest.study.business.scenario_builder_management import Rulesets, Scenar
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
-from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -235,33 +234,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         return study_service.update_area_ui(uuid, area_id, area_ui, layer, params)
-
-    @bp.put(
-        "/studies/{uuid}/areas/{area_id}",
-        tags=[APITag.study_data],
-        summary="Update area information",
-        response_model=AreaInfoDTO,
-    )
-    def update_area_info(
-        uuid: str,
-        area_id: str,
-        area_patch_dto: PatchArea | Dict[str, PatchCluster],
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Updating area {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        if isinstance(area_patch_dto, PatchArea):
-            return study_service.update_area(uuid, area_id, area_patch_dto, params)
-        else:
-            return study_service.update_thermal_cluster_metadata(
-                uuid,
-                area_id,
-                area_patch_dto,
-                params,
-            )
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",
