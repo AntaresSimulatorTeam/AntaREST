@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
@@ -25,8 +24,6 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import assert_candidate_is_correct
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-logger = logging.getLogger(__name__)
 
 
 class CreateXpansionCandidate(ICommand):
