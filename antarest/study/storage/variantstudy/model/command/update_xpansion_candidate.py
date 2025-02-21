@@ -57,11 +57,14 @@ class UpdateXpansionCandidate(ICommand):
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
 
         if self.new_properties.name != self.candidate_name:
-            assert_xpansion_candidate_name_is_not_already_taken(candidates, self.new_name)
+            assert_xpansion_candidate_name_is_not_already_taken(candidates, self.new_properties.name)
 
         for candidate_id, candidate in candidates.items():
-            if candidate["name"] == self.old_name:
-                candidates[candidate_id]["name"] = self.new_name
+            if candidate["name"] == self.candidate_name:
+                existing_properties = candidates[candidate_id]
+                modified_properties = self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True)
+                existing_properties.update(modified_properties)
+
                 study_data.tree.save(candidates, ["user", "expansion", "candidates"])
 
                 return self._apply_config(study_data.config)[0]
@@ -72,7 +75,7 @@ class UpdateXpansionCandidate(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"old_name": self.old_name, "new_name": self.new_name},
+            args=self.model_dump(mode="json", by_alias=True, exclude_none=True),
             study_version=self.study_version,
         )
 
