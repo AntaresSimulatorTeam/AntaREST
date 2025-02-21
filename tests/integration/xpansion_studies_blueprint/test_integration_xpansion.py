@@ -16,6 +16,7 @@ import typing as t
 from pathlib import Path
 from urllib.parse import urljoin
 
+import pytest
 from starlette.testclient import TestClient
 
 from antarest.study.business.xpansion_management import XpansionCandidateDTO
@@ -46,7 +47,8 @@ def _create_link(
     assert res.status_code in {200, 201}, res.json()
 
 
-def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_token: str) -> None:
+@pytest.mark.parametrize("study_type", ["raw", "variant"])
+def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_token: str, study_type: str) -> None:
     headers = {"Authorization": f"Bearer {admin_access_token}"}
     client.headers = headers
 
@@ -59,11 +61,16 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     area3_id = _create_area(client, study_id, "area3", country="DE")
     _create_link(client, study_id, area1_id, area2_id)
 
+    if study_type == "variant":
+        res = client.post(f"/v1/studies/{study_id}/variants", params={"name": "variant 1"})
+        study_id = res.json()
+
     res = client.post(f"/v1/studies/{study_id}/extensions/xpansion")
     assert res.status_code in {200, 201}, res.json()
 
     expansion_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion"
-    assert expansion_path.exists()
+    if study_type == "raw":  # todo: remove the if once this triggers a command
+        assert expansion_path.exists()
 
     # Create a client for Xpansion with the xpansion URL
     xpansion_base_url = f"/v1/studies/{study_id}/extensions/xpansion/"
@@ -136,7 +143,8 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     res = xp_client.post("resources/constraints", files=files)
     assert res.status_code in {200, 201}
     actual_path = expansion_path / "constraints" / filename_constraints1
-    assert actual_path.read_text() == content_constraints1
+    if study_type == "raw":  # todo: remove the if once this triggers a command
+        assert actual_path.read_text() == content_constraints1
 
     files = {
         "file": (

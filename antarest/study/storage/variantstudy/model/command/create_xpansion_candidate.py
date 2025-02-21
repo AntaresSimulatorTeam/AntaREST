@@ -63,7 +63,7 @@ class CreateXpansionCandidate(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args=self.candidate.model_dump(mode="json", exclude_unset=True),
+            args={"candidate": self.candidate.model_dump(mode="json", by_alias=False)},
             study_version=self.study_version,
         )
 

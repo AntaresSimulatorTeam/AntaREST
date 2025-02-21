@@ -58,7 +58,7 @@ class UpdateXpansionCandidate(ICommand):
 
         for candidate_id, candidate in candidates.items():
             if candidate["name"] == self.candidate_name:
-                # NOTE: this behavior is weird but we have to keep it as is to fit with the existing code
+                # NOTE: this behavior is weird, but we have to keep it as is to fit with the existing code
                 candidates[candidate_id] = self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True)
                 study_data.tree.save(candidates, ["user", "expansion", "candidates"])
 
@@ -72,7 +72,7 @@ class UpdateXpansionCandidate(ICommand):
             action=self.command_name.value,
             args={
                 "candidate_name": self.candidate_name,
-                "new_properties": self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True),
+                "new_properties": self.new_properties.model_dump(mode="json", by_alias=False),
             },
             study_version=self.study_version,
         )
