@@ -448,38 +448,18 @@ class XpansionManager:
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
-        for fieldname, filename in [
-            ("link-profile", xpansion_candidate_dto.link_profile),
-            (
-                "already-installed-link-profile",
-                xpansion_candidate_dto.already_installed_link_profile,
-            ),
-            (
-                "direct-link-profile",
-                xpansion_candidate_dto.direct_link_profile,
-            ),
-            (
-                "indirect-direct-link-profile",
-                xpansion_candidate_dto.indirect_link_profile,
-            ),
-            (
-                "already-installed-direct-link-profile",
-                xpansion_candidate_dto.already_installed_direct_link_profile,
-            ),
-            (
-                "already-installed-indirect-link-profile",
-                xpansion_candidate_dto.already_installed_indirect_link_profile,
-            ),
+        existing_files = file_study.tree.get(["user", "expansion", "capa"])
+        for attr in [
+            "link_profile",
+            "already_installed_link_profile",
+            "direct_link_profile",
+            "indirect_link_profile",
+            "already_installed_direct_link_profile",
+            "already_installed_indirect_link_profile",
         ]:
-            if filename and not file_study.tree.get(
-                [
-                    "user",
-                    "expansion",
-                    "capa",
-                    filename,
-                ]
-            ):
-                raise XpansionFileNotFoundError(f"The '{fieldname}' file '{filename}' does not exist")
+            if link_file := getattr(xpansion_candidate_dto, attr, None):
+                if link_file not in existing_files:
+                    raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
 
     @staticmethod
     def _assert_link_exist(
