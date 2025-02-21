@@ -22,7 +22,7 @@ import pytest
 from fastapi import UploadFile
 from pandas.errors import ParserError
 
-from antarest.core.exceptions import ChildNotFoundError, CommandApplicationError
+from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, LinkNotFound
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
@@ -253,12 +253,12 @@ def test_add_candidate(
         }
     )
 
-    with pytest.raises(CommandApplicationError, match="area1"):
+    with pytest.raises(AreaNotFound, match="Area is not found: 'area1'"):
         xpansion_manager.add_candidate(study, new_candidate)
 
     make_areas(area_manager, study)
 
-    with pytest.raises(CommandApplicationError, match="The link from 'area1' to 'area2' not found"):
+    with pytest.raises(LinkNotFound, match="The link from 'area1' to 'area2' not found"):
         xpansion_manager.add_candidate(study, new_candidate)
 
     make_link(link_manager, study)

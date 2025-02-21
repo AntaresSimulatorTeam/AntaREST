@@ -38,6 +38,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.xpansion_common import assert_link_exist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -359,6 +360,9 @@ class XpansionManager:
 
     def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
+
+        file_study = study.get_files()
+        assert_link_exist(file_study, xpansion_candidate)
 
         command = CreateXpansionCandidate(
             candidate=xpansion_candidate, command_context=self._command_context, study_version=study.version

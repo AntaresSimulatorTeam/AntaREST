@@ -1,6 +1,6 @@
 from typing import Any
 
-from antarest.core.exceptions import CandidateAlreadyExistsError, LinkNotFound, XpansionFileNotFoundError
+from antarest.core.exceptions import AreaNotFound, CandidateAlreadyExistsError, LinkNotFound, XpansionFileNotFoundError
 from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -29,6 +29,8 @@ def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto:
 def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidateInternal) -> None:
     area1, area2 = xpansion_candidate_dto.link.split(" - ")
     area_from, area_to = sorted([area1, area2])
+    if area_from not in file_study.config.areas:
+        raise AreaNotFound(area_from)
     if area_to not in file_study.config.get_links(area_from):
         raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 
