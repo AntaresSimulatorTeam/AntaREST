@@ -20,7 +20,6 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.areas.st_storage_management import create_storage_output
-from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from tests.integration.utils import wait_task_completion
@@ -685,7 +684,7 @@ class TestSTStorage:
             "action": "update_st_storage",
             "args": {
                 "area_id": "fr",
-                "properties": {'initial_level': 0.5},
+                "properties": {"initial_level": 0.5},
                 "st_storage_id": "siemens battery",
             },
             "version": 1,
@@ -712,7 +711,7 @@ class TestSTStorage:
             "action": "update_st_storage",
             "args": {
                 "area_id": "fr",
-                "properties": {'initial_level': 0.0, 'injection_nominal_capacity': 1600.0},
+                "properties": {"initial_level": 0.0, "injection_nominal_capacity": 1600.0},
                 "st_storage_id": "siemens battery",
             },
             "version": 1,

@@ -384,7 +384,7 @@ class STStorageManager:
         except KeyError:
             raise AreaNotFound(area_id)
 
-        sts_storage = next((sts for sts in area.st_storages if sts.id == storage_id))
+        sts_storage = next((sts for sts in area.st_storages if sts.id == storage_id), None)
         if sts_storage is None:
             raise STStorageNotFound(path, storage_id)
 

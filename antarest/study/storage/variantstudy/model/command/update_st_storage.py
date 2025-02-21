@@ -16,7 +16,6 @@ from typing_extensions import override
 from antarest.study.business.model.sts_model import STStorageUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
     create_st_storage_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -51,7 +50,9 @@ class UpdateSTStorage(ICommand):
             if sts.id == self.st_storage_id:
                 values = sts.model_dump()
                 values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
-                study_data.areas[self.area_id].st_storages[index] = STStorageConfig.model_validate(values)
+                study_data.areas[self.area_id].st_storages[index] = create_st_storage_config(
+                    study_version=self.study_version, **values
+                )
                 break
 
         return (
@@ -68,10 +69,11 @@ class UpdateSTStorage(ICommand):
 
         current_sts_config = create_st_storage_config(study_version=self.study_version, **study_data.tree.get(path))
 
-        current_properties = current_sts_config.model_dump(exclude={"id"})
-        current_properties.update(self.properties.model_dump(exclude_unset=True))
+        new_sts_config = current_sts_config.model_copy(update=self.properties.model_dump(exclude_unset=True))
 
-        study_data.tree.save(current_properties, path)
+        new_properties = new_sts_config.model_dump(exclude={"id"}, by_alias=True)
+
+        study_data.tree.save(new_properties, path)
 
         output, _ = self._apply_config(study_data.config)
 
