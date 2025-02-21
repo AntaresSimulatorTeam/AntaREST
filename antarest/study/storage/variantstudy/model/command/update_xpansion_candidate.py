@@ -21,9 +21,11 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    assert_xpansion_candidate_name_is_not_already_taken,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.xpansion_common import (
+    assert_xpansion_candidate_name_is_not_already_taken,
+)
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -40,6 +42,9 @@ class UpdateXpansionCandidate(ICommand):
 
     command_name: CommandName = CommandName.UPDATE_XPANSION_CANDIDATE
 
+    # Command parameters
+    # ==================
+
     candidate_name: str
     new_properties: XpansionCandidateDTO
 
@@ -51,7 +56,8 @@ class UpdateXpansionCandidate(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
 
-        assert_xpansion_candidate_name_is_not_already_taken(candidates, self.new_name)
+        if self.new_properties.name != self.candidate_name:
+            assert_xpansion_candidate_name_is_not_already_taken(candidates, self.new_name)
 
         for candidate_id, candidate in candidates.items():
             if candidate["name"] == self.old_name:
@@ -60,7 +66,7 @@ class UpdateXpansionCandidate(ICommand):
 
                 return self._apply_config(study_data.config)[0]
 
-        raise CandidateNotFoundError(f"The candidate '{self.old_name}' does not exist")
+        raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
 
     @override
     def to_dto(self) -> CommandDTO:

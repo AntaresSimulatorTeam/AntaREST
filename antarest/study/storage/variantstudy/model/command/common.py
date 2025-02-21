@@ -12,9 +12,8 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List
+from typing import List
 
-from antarest.core.exceptions import CandidateAlreadyExistsError
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
 
@@ -64,9 +63,3 @@ class CommandName(Enum):
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:
     return url[0] not in [file.filename for file in user_node.registered_files]
-
-
-def assert_xpansion_candidate_name_is_not_already_taken(candidates: dict[str, Any], candidate_name: str) -> None:
-    for candidate in candidates.values():
-        if candidate["name"] == candidate_name:
-            raise CandidateAlreadyExistsError(f"The candidate '{candidate_name}' already exists")
