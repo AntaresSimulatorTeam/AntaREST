@@ -52,7 +52,7 @@ class CreateXpansionCandidate(ICommand):
         # Checks candidate validity
         assert_candidate_is_correct(candidates_obj, study_data, self.candidate)
 
-        new_id = str(len(candidates_obj))
+        new_id = str(len(candidates_obj) + 1)  # The first candidate key is 1
         candidates_obj[new_id] = self.candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
         candidates_data = {"user": {"expansion": {"candidates": candidates_obj}}}
         study_data.tree.save(candidates_data)
