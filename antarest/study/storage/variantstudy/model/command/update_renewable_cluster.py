@@ -46,11 +46,10 @@ class UpdateRenewableCluster(ICommand):
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         for index, renewable in enumerate(study_data.areas[self.area_id].renewables):
             if renewable.id == self.cluster_id:
-                properties = renewable.model_dump()
-                for key, value in self.properties.model_dump(exclude_unset=True, exclude_none=True).items():
-                    properties[key] = value
-                    break
-                study_data.areas[self.area_id].renewables[index] = RenewableConfig.model_validate(properties)
+                values = renewable.model_dump()
+                values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
+                study_data.areas[self.area_id].renewables[index] = RenewableConfig.model_validate(values)
+                break
 
         return (
             CommandOutput(

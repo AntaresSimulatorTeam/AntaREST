@@ -213,9 +213,8 @@ class RenewableManager:
         for renewable in file_study.config.areas[area_id].renewables:
             if renewable.id == cluster_id:
                 values = renewable.model_dump(exclude={"id"})
-                for key, value in cluster_data.model_dump(exclude_unset=True, exclude_none=True).items():
-                    values[key] = value
-                    break
+                values.update(cluster_data.model_dump(exclude_unset=True, exclude_none=True))
+                break
 
         return RenewableClusterOutput(**values, id=cluster_id)
 
