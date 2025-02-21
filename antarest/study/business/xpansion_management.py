@@ -42,6 +42,7 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -499,23 +500,13 @@ class XpansionManager:
         candidate_name: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
-        file_study = study.get_files()
-
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-
-        new_name = candidate_name != xpansion_candidate_dto.name
-        self._assert_candidate_is_correct(candidates, file_study, xpansion_candidate_dto, new_name=new_name)
-
-        logger.info(f"Checking candidate {candidate_name} exists")
-        for candidate_id, candidate in candidates.items():
-            if candidate["name"] == candidate_name:
-                logger.info(f"Updating candidate '{candidate_name}' of study '{study.id}'")
-                candidates[candidate_id] = xpansion_candidate_dto.model_dump(
-                    mode="json", by_alias=True, exclude_none=True
-                )
-                file_study.tree.save(candidates, ["user", "expansion", "candidates"])
-                return
-        raise CandidateNotFoundError(f"The candidate '{xpansion_candidate_dto.name}' does not exist")
+        command = UpdateXpansionCandidate(
+            candidate_name=candidate_name,
+            new_properties=xpansion_candidate_dto,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
 
     def delete_candidate(self, study: StudyInterface, candidate_name: str) -> None:
         file_study = study.get_files()
