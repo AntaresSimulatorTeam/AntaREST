@@ -49,6 +49,7 @@ class UpdateRenewableCluster(ICommand):
                 properties = renewable.model_dump()
                 for key, value in self.properties.model_dump(exclude_unset=True, exclude_none=True).items():
                     properties[key] = value
+                    break
                 study_data.areas[self.area_id].renewables[index] = RenewableConfig.model_validate(properties)
 
         return (
@@ -61,16 +62,16 @@ class UpdateRenewableCluster(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        path = _RENEWABLE_CLUSTER_PATH.format(area_id=self.area_id, cluster_id=self.cluster_id)
+        path = _RENEWABLE_CLUSTER_PATH.format(area_id=self.area_id, cluster_id=self.cluster_id).split("/")
 
         current_renewable_config = create_renewable_config(
-            study_version=self.study_version, **study_data.tree.get(path.split("/"))
+            study_version=self.study_version, **study_data.tree.get(path)
         )
 
         current_properties = current_renewable_config.model_dump(exclude={"id"})
         current_properties.update(self.properties.model_dump(exclude_unset=True))
 
-        study_data.tree.save(current_properties, path.split("/"))
+        study_data.tree.save(current_properties, path)
 
         output, _ = self._apply_config(study_data.config)
 

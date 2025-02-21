@@ -215,6 +215,7 @@ class RenewableManager:
                 values = renewable.model_dump(exclude={"id"})
                 for key, value in cluster_data.model_dump(exclude_unset=True, exclude_none=True).items():
                     values[key] = value
+                    break
 
         return RenewableClusterOutput(**values, id=cluster_id)
 
