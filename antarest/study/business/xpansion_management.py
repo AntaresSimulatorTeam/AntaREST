@@ -267,25 +267,17 @@ class XpansionManager:
                     )
                     raise BadZipBinary("Only zip file are allowed.")
 
-            xpansion_settings = XpansionSettings()
-            settings_obj = xpansion_settings.model_dump(
+            settings_obj = XpansionSettings().model_dump(
                 mode="json",
                 by_alias=True,
                 exclude_none=True,
                 exclude={"sensitivity_config", "yearly_weights", "additional_constraints"},
             )
-            if xpansion_settings.sensitivity_config:
-                sensitivity_obj = xpansion_settings.sensitivity_config.model_dump(
-                    mode="json", by_alias=True, exclude_none=True
-                )
-            else:
-                sensitivity_obj = {}
-
             xpansion_configuration_data = {
                 "user": {
                     "expansion": {
                         "settings": settings_obj,
-                        "sensitivity": {"sensitivity_in": sensitivity_obj},
+                        "sensitivity": {"sensitivity_in": {}},
                         "candidates": {},
                         "capa": {},
                         "weights": {},
