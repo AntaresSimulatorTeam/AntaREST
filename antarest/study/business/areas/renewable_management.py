@@ -15,7 +15,12 @@ from typing import Any, Mapping, MutableMapping, Sequence
 
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    DuplicateRenewableCluster,
+    RenewableClusterConfigNotFound,
+    RenewableClusterNotFound,
+)
 from antarest.core.model import JSON
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.renewable_cluster_model import (
@@ -198,6 +203,21 @@ class RenewableManager:
             RenewableClusterNotFound: If the cluster to update is not found.
         """
 
+        file_study = study.get_files()
+        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
+
+        try:
+            area = file_study.config.areas[area_id]
+        except KeyError:
+            raise AreaNotFound(area_id)
+
+        renewable = next((r for r in area.renewables if r.id == cluster_id), None)
+        if renewable is None:
+            raise RenewableClusterNotFound(path, cluster_id)
+
+        values = renewable.model_dump(exclude={"id"})
+        values.update(cluster_data.model_dump(exclude_unset=True, exclude_none=True))
+
         command = UpdateRenewableCluster(
             area_id=area_id,
             cluster_id=cluster_id,
@@ -207,14 +227,6 @@ class RenewableManager:
         )
 
         study.add_commands([command])
-
-        file_study = study.get_files()
-        values = {}
-        for renewable in file_study.config.areas[area_id].renewables:
-            if renewable.id == cluster_id:
-                values = renewable.model_dump(exclude={"id"})
-                values.update(cluster_data.model_dump(exclude_unset=True, exclude_none=True))
-                break
 
         return RenewableClusterOutput(**values, id=cluster_id)
 
