@@ -12,10 +12,10 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import field_validator
 from typing_extensions import override
 
-from antarest.core.exceptions import CandidateNameIsEmpty, CandidateNotFoundError, IllegalCharacterInNameError
+from antarest.core.exceptions import CandidateNotFoundError
+from antarest.study.business.xpansion_management import XpansionCandidateDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -30,35 +30,18 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 logger = logging.getLogger(__name__)
 
 
-def validate_candidate_name(name: str) -> str:
-    # The name is written directly inside the ini file so a specific check is performed here
-    if name.strip() == "":
-        raise CandidateNameIsEmpty()
-
-    illegal_name_characters = [" ", "\n", "\t", "\r", "\f", "\v", "-", "+", "=", ":", "[", "]", "(", ")"]
-    for char in name:
-        if char in illegal_name_characters:
-            raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
-
-    return name
-
-
-class RenameXpansionCandidate(ICommand):
+class UpdateXpansionCandidate(ICommand):
     """
-    Command used to rename a xpansion candidate
+    Command used to update a xpansion candidate
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.RENAME_XPANSION_CANDIDATE
+    command_name: CommandName = CommandName.UPDATE_XPANSION_CANDIDATE
 
-    old_name: str
-    new_name: str
-
-    @field_validator("old_name", "new_name", mode="before")
-    def validate_name(cls, name: str) -> str:
-        return validate_candidate_name(name)
+    candidate_name: str
+    new_properties: XpansionCandidateDTO
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:

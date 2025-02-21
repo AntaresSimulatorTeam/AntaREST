@@ -24,10 +24,12 @@ from antarest.core.exceptions import (
     BadCandidateFormatError,
     BadZipBinary,
     CandidateAlreadyExistsError,
+    CandidateNameIsEmpty,
     CandidateNotFoundError,
     ChildNotFoundError,
     FileAlreadyExistsError,
     FileCurrentlyUsedInSettings,
+    IllegalCharacterInNameError,
     LinkNotFound,
     WrongLinkFormatError,
     XpansionFileNotFoundError,
@@ -40,7 +42,6 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
-from antarest.study.storage.variantstudy.model.command.rename_xpansion_candidate import validate_candidate_name
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -281,7 +282,16 @@ class XpansionCandidateDTO(AntaresBaseModel):
 
     @field_validator("name", mode="before")
     def validate_name(cls, name: str) -> str:
-        return validate_candidate_name(name)
+        # The name is written directly inside the ini file so a specific check is performed here
+        if name.strip() == "":
+            raise CandidateNameIsEmpty()
+
+        illegal_name_characters = [" ", "\n", "\t", "\r", "\f", "\v", "-", "+", "=", ":", "[", "]", "(", ")"]
+        for char in name:
+            if char in illegal_name_characters:
+                raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
+
+        return name
 
     @field_validator("link", mode="before")
     def validate_link(cls, link: str) -> str:
