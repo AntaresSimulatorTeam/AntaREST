@@ -24,8 +24,11 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
+    STStorageGroup,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -318,6 +321,33 @@ class TestSTStorageManager:
         mock_config = Mock(spec=FileStudyTreeConfig, study_id="id", version=STUDY_VERSION_8_6)
         file_study.config = mock_config
 
+        st_storage = STStorageConfig(
+            id="storage1",
+            name="storage1",
+            group=STStorageGroup.OTHER1,
+            injection_nominal_capacity=100.0,
+            withdrawal_nominal_capacity=100.0,
+            reservoir_capacity=100.0,
+            efficiency=1.0,
+            initial_level=0.5,
+            initial_level_optim=True,
+        )
+
+        # Création de l'objet Area pour "West", qui inclut le stockage créé
+        area_west = Area(
+            name="West",
+            links={},
+            thermals=[],
+            renewables=[],
+            filters_synthesis=[],
+            filters_year=[],
+            st_storages=[st_storage],
+        )
+
+        # Affectation de l'attribut 'areas' dans la config sous forme de dictionnaire
+        mock_config.areas = {"West": area_west}
+        file_study.config = mock_config
+
         study = FileStudyInterface(file_study)
 
         # Given the following arguments
@@ -327,20 +357,19 @@ class TestSTStorageManager:
         # noinspection PyTypeChecker
         file_study.tree.get.return_value = {}
         with pytest.raises((AreaNotFound, STStorageNotFound)) as ctx:
-            manager.update_storage(study, area_id="unknown_area", storage_id="storage1", form=edit_form)
+            manager.update_storage(study, area_id="unknown_area", storage_id="storage1", cluster_data=edit_form)
         assert "unknown_area" in ctx.value.detail
-        assert "storage1" in ctx.value.detail
 
         # Test behavior for st_storage not in study
         file_study.tree.get.return_value = {"storage1": LIST_CFG["storage1"]}
         with pytest.raises(STStorageNotFound) as ctx:
-            manager.update_storage(study, area_id="West", storage_id="unknown_storage", form=edit_form)
+            manager.update_storage(study, area_id="West", storage_id="unknown_storage", cluster_data=edit_form)
         assert "West" in ctx.value.detail
         assert "unknown_storage" in ctx.value.detail
 
         # Test behavior for nominal case
-        file_study.tree.get.return_value = LIST_CFG
-        st_storage_output = manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
+        file_study.tree.get.return_value = LIST_CFG["storage1"]
+        st_storage_output = manager.update_storage(study, area_id="West", storage_id="storage1", cluster_data=edit_form)
 
         assert st_storage_output.initial_level == 0.0
         assert not st_storage_output.initial_level_optim

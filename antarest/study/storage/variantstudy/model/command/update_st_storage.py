@@ -17,6 +17,7 @@ from antarest.study.business.model.sts_model import STStorageUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     create_st_storage_config,
+    create_st_storage_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -67,11 +68,11 @@ class UpdateSTStorage(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         path = _ST_STORAGE_PATH.format(area_id=self.area_id, storage_id=self.st_storage_id).split("/")
 
-        current_sts_config = create_st_storage_config(study_version=self.study_version, **study_data.tree.get(path))
-
-        new_sts_config = current_sts_config.model_copy(update=self.properties.model_dump(exclude_unset=True))
-
-        new_properties = new_sts_config.model_dump(exclude={"id"}, by_alias=True)
+        current_sts_properties = create_st_storage_properties(
+            study_version=self.study_version, data=study_data.tree.get(path)
+        )
+        new_sts_properties = current_sts_properties.model_copy(update=self.properties.model_dump(exclude_unset=True))
+        new_properties = new_sts_properties.model_dump(by_alias=True)
 
         study_data.tree.save(new_properties, path)
 
