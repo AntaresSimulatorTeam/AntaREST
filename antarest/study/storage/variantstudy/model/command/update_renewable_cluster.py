@@ -15,7 +15,10 @@ from typing_extensions import override
 
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig, create_renewable_config
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
+    RenewableConfig,
+    create_renewable_config,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
@@ -67,10 +70,13 @@ class UpdateRenewableCluster(ICommand):
             study_version=self.study_version, **study_data.tree.get(path)
         )
 
-        current_properties = current_renewable_config.model_dump(exclude={"id"})
-        current_properties.update(self.properties.model_dump(exclude_unset=True))
+        new_renewable_config = current_renewable_config.model_copy(
+            update=self.properties.model_dump(exclude_unset=True)
+        )
 
-        study_data.tree.save(current_properties, path)
+        new_properties = new_renewable_config.model_dump(exclude={"id"}, by_alias=True)
+
+        study_data.tree.save(new_properties, path)
 
         output, _ = self._apply_config(study_data.config)
 
