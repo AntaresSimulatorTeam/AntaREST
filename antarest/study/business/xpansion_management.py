@@ -11,17 +11,27 @@
 # This file is part of the Antares project.
 
 import contextlib
-import http
 import io
 import logging
 import shutil
 import zipfile
 from typing import Any, List, MutableMapping, Optional, Sequence
 
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 from pydantic import Field, ValidationError, field_validator, model_validator
 
-from antarest.core.exceptions import BadZipBinary, ChildNotFoundError, LinkNotFound
+from antarest.core.exceptions import (
+    BadCandidateFormatError,
+    BadZipBinary,
+    CandidateAlreadyExistsError,
+    CandidateNotFoundError,
+    ChildNotFoundError,
+    FileAlreadyExistsError,
+    FileCurrentlyUsedInSettings,
+    LinkNotFound,
+    WrongLinkFormatError,
+    XpansionFileNotFoundError,
+)
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
@@ -30,6 +40,7 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.rename_xpansion_candidate import validate_candidate_name
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -270,67 +281,13 @@ class XpansionCandidateDTO(AntaresBaseModel):
 
     @field_validator("name", mode="before")
     def validate_name(cls, name: str) -> str:
-        # The name is written directly inside the ini file so a specific check is performed here
-        if name.strip() == "":
-            raise CandidateNameIsEmpty()
-
-        illegal_name_characters = [" ", "\n", "\t", "\r", "\f", "\v", "-", "+", "=", ":", "[", "]", "(", ")"]
-        for char in name:
-            if char in illegal_name_characters:
-                raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
-
-        return name
+        return validate_candidate_name(name)
 
     @field_validator("link", mode="before")
     def validate_link(cls, link: str) -> str:
         if " - " not in link:
             raise WrongLinkFormatError(f"The link must be in the format 'area1 - area2'. Currently: {link}")
         return link
-
-
-class XpansionFileNotFoundError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.NOT_FOUND, message)
-
-
-class IllegalCharacterInNameError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
-
-
-class CandidateNameIsEmpty(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(http.HTTPStatus.BAD_REQUEST)
-
-
-class WrongLinkFormatError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
-
-
-class CandidateAlreadyExistsError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
-
-
-class BadCandidateFormatError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.BAD_REQUEST, message)
-
-
-class CandidateNotFoundError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.NOT_FOUND, message)
-
-
-class FileCurrentlyUsedInSettings(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.CONFLICT, message)
-
-
-class FileAlreadyExistsError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.CONFLICT, message)
 
 
 class XpansionManager:

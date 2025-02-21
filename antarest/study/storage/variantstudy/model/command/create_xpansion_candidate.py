@@ -14,15 +14,15 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound
-from antarest.study.business.xpansion_management import (
-    CandidateAlreadyExistsError,
-    XpansionCandidateDTO,
-    XpansionFileNotFoundError,
-)
+from antarest.core.exceptions import LinkNotFound, XpansionFileNotFoundError
+from antarest.study.business.xpansion_management import XpansionCandidateDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    assert_xpansion_candidate_name_is_not_already_taken,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -52,17 +52,11 @@ def _assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCa
         raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 
 
-def _assert_candidate_name_is_not_already_taken(candidates: dict[str, Any], xpansion_candidate_name: str) -> None:
-    for candidate in candidates.values():
-        if candidate["name"] == xpansion_candidate_name:
-            raise CandidateAlreadyExistsError(f"The candidate '{xpansion_candidate_name}' already exists")
-
-
 def _assert_candidate_is_correct(
     existing_candidates: dict[str, Any], file_study: FileStudy, candidate: XpansionCandidateDTO
 ) -> None:
     logger.info("Checking given candidate is correct")
-    _assert_candidate_name_is_not_already_taken(existing_candidates, candidate.name)
+    assert_xpansion_candidate_name_is_not_already_taken(existing_candidates, candidate.name)
     _assert_link_profile_are_files(file_study, candidate)
     _assert_link_exist(file_study, candidate)
 

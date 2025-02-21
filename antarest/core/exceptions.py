@@ -734,3 +734,48 @@ class FolderNotFoundInWorkspace(HTTPException):
 
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class XpansionFileNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class IllegalCharacterInNameError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateNameIsEmpty(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST)
+
+
+class WrongLinkFormatError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateAlreadyExistsError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class BadCandidateFormatError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class FileCurrentlyUsedInSettings(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class FileAlreadyExistsError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
