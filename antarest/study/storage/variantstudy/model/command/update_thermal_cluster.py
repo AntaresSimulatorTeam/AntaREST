@@ -13,8 +13,12 @@ from typing import List, Optional
 
 from typing_extensions import override
 
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalPropertiesType
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    create_thermal_config,
+    create_thermal_properties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
@@ -39,10 +43,19 @@ class UpdateThermalCluster(ICommand):
 
     area_id: str
     thermal_cluster_id: str
-    properties: ThermalPropertiesType
+    properties: ThermalClusterUpdate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+        for index, thermal in enumerate(study_data.areas[self.area_id].thermals):
+            if thermal.id == self.thermal_cluster_id:
+                values = thermal.model_dump()
+                values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
+                study_data.areas[self.area_id].thermals[index] = create_thermal_config(
+                    study_version=self.study_version, **values
+                )
+                break
+
         return (
             CommandOutput(
                 status=True,
@@ -53,9 +66,17 @@ class UpdateThermalCluster(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        path = _THERMAL_CLUSTER_PATH.format(area_id=self.area_id, thermal_cluster_id=self.thermal_cluster_id)
+        path = _THERMAL_CLUSTER_PATH.format(area_id=self.area_id, thermal_cluster_id=self.thermal_cluster_id).split("/")
 
-        study_data.tree.save(self.properties.model_dump(by_alias=True), path.split("/"))
+        current_thermal_properties = create_thermal_properties(
+            study_version=self.study_version, data=study_data.tree.get(path)
+        )
+        new_thermal_properties = current_thermal_properties.model_copy(
+            update=self.properties.model_dump(exclude_unset=True)
+        )
+        new_properties = new_thermal_properties.model_dump(by_alias=True)
+
+        study_data.tree.save(new_properties, path)
 
         output, _ = self._apply_config(study_data.config)
 

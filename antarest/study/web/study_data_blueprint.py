@@ -47,9 +47,6 @@ from antarest.study.business.areas.st_storage_management import (
     STStorageTimeSeries,
 )
 from antarest.study.business.areas.thermal_management import (
-    ThermalClusterCreation,
-    ThermalClusterInput,
-    ThermalClusterOutput,
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
@@ -68,6 +65,11 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.thermal_cluster_model import (
+    ThermalClusterCreation,
+    ThermalClusterOutput,
+    ThermalClusterUpdate,
+)
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -2221,7 +2223,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: ThermalClusterInput,
+        cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
         """
@@ -2254,7 +2256,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: ThermalClusterInput,
+        cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.

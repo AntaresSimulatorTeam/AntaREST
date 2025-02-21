@@ -22,12 +22,13 @@ from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.renewable_management import RenewableClusterInput, RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
-from antarest.study.business.areas.thermal_management import ThermalClusterInput, ThermalManager
+from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintInput
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.link_model import LinkBaseDTO
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_2
 
@@ -208,11 +209,11 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.THERMAL:
-            thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalClusterInput]]
+            thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalClusterUpdate]]
             thermals_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                thermals_by_areas[area_id][cluster_id] = ThermalClusterInput(**values)
+                thermals_by_areas[area_id][cluster_id] = ThermalClusterUpdate(**values)
             thermals_map = self._thermal_manager.update_thermals_props(study, thermals_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
