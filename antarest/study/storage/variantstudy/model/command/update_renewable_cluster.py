@@ -15,7 +15,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import create_renewable_config
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig, create_renewable_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
@@ -44,6 +44,13 @@ class UpdateRenewableCluster(ICommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+        for index, renewable in enumerate(study_data.areas[self.area_id].renewables):
+            if renewable.id == self.cluster_id:
+                properties = renewable.model_dump()
+                for key, value in self.properties.model_dump(exclude_unset=True, exclude_none=True).items():
+                    properties[key] = value
+                study_data.areas[self.area_id].renewables[index] = RenewableConfig.model_validate(properties)
+
         return (
             CommandOutput(
                 status=True,
@@ -57,7 +64,7 @@ class UpdateRenewableCluster(ICommand):
         path = _RENEWABLE_CLUSTER_PATH.format(area_id=self.area_id, cluster_id=self.cluster_id)
 
         current_renewable_config = create_renewable_config(
-            study_version=self.study_version, **study_data.tree.get(path.split("/"), depth=1)
+            study_version=self.study_version, **study_data.tree.get(path.split("/"))
         )
 
         current_properties = current_renewable_config.model_dump(exclude={"id"})

@@ -198,19 +198,6 @@ class RenewableManager:
             RenewableClusterNotFound: If the cluster to update is not found.
         """
 
-        file_study = study.get_files()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-
-        try:
-            values = file_study.tree.get(path.split("/"), depth=1)
-        except KeyError:
-            raise RenewableClusterNotFound(path, cluster_id) from None
-        else:
-            old_config = create_renewable_config(study.version, **values)
-
-        new_values = cluster_data.model_dump(exclude_none=True)
-        new_config = old_config.model_copy(update=new_values)
-
         command = UpdateRenewableCluster(
             area_id=area_id,
             cluster_id=cluster_id,
@@ -221,7 +208,14 @@ class RenewableManager:
 
         study.add_commands([command])
 
-        values = new_config.model_dump(exclude={"id"})
+        file_study = study.get_files()
+        values = {}
+        for renewable in file_study.config.areas[area_id].renewables:
+            if renewable.id == cluster_id:
+                values = renewable.model_dump(exclude={"id"})
+                for key, value in cluster_data.model_dump(exclude_unset=True, exclude_none=True).items():
+                    values[key] = value
+
         return RenewableClusterOutput(**values, id=cluster_id)
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:

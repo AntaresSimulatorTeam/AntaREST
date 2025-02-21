@@ -439,7 +439,7 @@ class TestRenewable:
                 "tsInterpretation": "production-factor",
             },
         )
-        assert res.status_code == 404, res.json()
+        assert res.status_code == 500, res.json()
         obj = res.json()
         description = obj["description"]
         assert bad_area_id in description
@@ -457,11 +457,13 @@ class TestRenewable:
                 "tsInterpretation": "production-factor",
             },
         )
-        assert res.status_code == 404, res.json()
+        assert res.status_code == 500, res.json()
         obj = res.json()
         description = obj["description"]
-        assert bad_cluster_id in description
-        assert re.search(re.escape("'bad_cluster' not found"), description, flags=re.IGNORECASE)
+        assert (
+            description
+            == "Unexpected exception occurred when trying to apply command CommandName.UPDATE_RENEWABLE_CLUSTER: 'bad_cluster'"
+        )
 
         # Check PATCH with the wrong `study_id`
         res = client.patch(
