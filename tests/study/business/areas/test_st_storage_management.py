@@ -21,7 +21,7 @@ from pydantic import ValidationError
 
 from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageMatrixNotFound, STStorageNotFound
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
+from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -321,7 +321,7 @@ class TestSTStorageManager:
         study = FileStudyInterface(file_study)
 
         # Given the following arguments
-        edit_form = STStorageInput(initial_level=0, initial_level_optim=False, injection_nominal_capacity=2000.0)
+        edit_form = STStorageUpdate(initial_level=0, initial_level_optim=False, injection_nominal_capacity=2000.0)
 
         # Test behavior for area not in study
         # noinspection PyTypeChecker

@@ -680,25 +680,12 @@ class TestSTStorage:
         commands = res.json()
         assert len(commands) == 2
         actual = commands[1]
-        properties = {
-            "efficiency": 1.0,
-            "group": "battery",
-            "initial_level": 0.5,
-            "initial_level_optim": False,
-            "injection_nominal_capacity": 0.0,
-            "name": "Siemens Battery",
-            "reservoir_capacity": 0.0,
-            "withdrawal_nominal_capacity": 0.0,
-        }
-        if study_version >= STUDY_VERSION_8_8:
-            properties.update({"enabled": True})
-
         expected = {
             "id": ANY,
             "action": "update_st_storage",
             "args": {
                 "area_id": "fr",
-                "properties": properties,
+                "properties": {'initial_level': 0.5},
                 "st_storage_id": "siemens battery",
             },
             "version": 1,
@@ -720,26 +707,12 @@ class TestSTStorage:
         commands = res.json()
         assert len(commands) == 3
         actual = commands[2]
-        properties = {
-            "efficiency": 1.0,
-            "group": "battery",
-            "initial_level": 0.0,
-            "initial_level_optim": False,
-            "injection_nominal_capacity": 1600.0,
-            "name": "Siemens Battery",
-            "reservoir_capacity": 0.0,
-            "withdrawal_nominal_capacity": 0.0,
-        }
-
-        if study_version >= STUDY_VERSION_8_8:
-            properties.update({"enabled": True})
-
         expected = {
             "id": ANY,
             "action": "update_st_storage",
             "args": {
                 "area_id": "fr",
-                "properties": properties,
+                "properties": {'initial_level': 0.0, 'injection_nominal_capacity': 1600.0},
                 "st_storage_id": "siemens battery",
             },
             "version": 1,

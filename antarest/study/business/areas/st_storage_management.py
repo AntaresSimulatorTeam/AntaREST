@@ -12,7 +12,7 @@
 
 import collections
 import operator
-from typing import Any, List, Mapping, MutableMapping, Optional, Sequence
+from typing import Any, List, Mapping, MutableMapping, Sequence
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -30,17 +30,13 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Config,
-    STStorage880Properties,
-    STStorageGroup,
     STStoragePropertiesType,
     create_st_storage_config,
-    create_st_storage_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -49,73 +45,6 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-@all_optional_model
-@camel_case_model
-class STStorageInput(STStorage880Properties):
-    """
-    Model representing the form used to EDIT an existing short-term storage.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = STStorageInput(
-                name="Siemens Battery",
-                group=STStorageGroup.BATTERY,
-                injection_nominal_capacity=150,
-                withdrawal_nominal_capacity=150,
-                reservoir_capacity=600,
-                efficiency=0.94,
-                initial_level=0.5,
-                initial_level_optim=True,
-            ).model_dump(mode="json")
-
-
-class STStorageCreation(STStorageInput):
-    """
-    Model representing the form used to CREATE a new short-term storage.
-    """
-
-    # noinspection Pydantic
-    @field_validator("name", mode="before")
-    @classmethod
-    def validate_name(cls, name: Optional[str]) -> str:
-        """
-        Validator to check if the name is not empty.
-        """
-        if not name:
-            raise ValueError("'name' must not be empty")
-        return name
-
-    def to_properties(self, version: StudyVersion) -> STStoragePropertiesType:
-        return create_st_storage_properties(
-            study_version=version, data=self.model_dump(mode="json", by_alias=False, exclude_none=True)
-        )
-
-
-@all_optional_model
-@camel_case_model
-class STStorageOutput(STStorage880Config):
-    """
-    Model representing the form used to display the details of a short-term storage entry.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = STStorageOutput(
-                id="siemens_battery",
-                name="Siemens Battery",
-                group=STStorageGroup.BATTERY,
-                injection_nominal_capacity=150,
-                withdrawal_nominal_capacity=150,
-                reservoir_capacity=600,
-                efficiency=0.94,
-                initial_level_optim=True,
-            ).model_dump(mode="json")
-
 
 # =============
 #  Time series
@@ -370,7 +299,7 @@ class STStorageManager:
     def update_storages_props(
         self,
         study: StudyInterface,
-        update_storages_by_areas: Mapping[str, Mapping[str, STStorageInput]],
+        update_storages_by_areas: Mapping[str, Mapping[str, STStorageUpdate]],
     ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         old_storages_by_areas = self.get_all_storages_props(study)
         new_storages_by_areas = {area_id: dict(clusters) for area_id, clusters in old_storages_by_areas.items()}
@@ -434,7 +363,7 @@ class STStorageManager:
         study: StudyInterface,
         area_id: str,
         storage_id: str,
-        form: STStorageInput,
+        cluster_data: STStorageUpdate,
     ) -> STStorageOutput:
         """
         Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
@@ -443,37 +372,35 @@ class STStorageManager:
             study: The study object.
             area_id: The area ID of the short-term storage.
             storage_id: The ID of the short-term storage.
-            form: Form used to Update a short-term storage.
+            cluster_data: Form used to Update a short-term storage.
         Returns:
             Updated form of short-term storage.
         """
+        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         file_study = study.get_files()
-        values_by_ids = _get_values_by_ids(file_study, area_id)
 
-        values = values_by_ids.get(storage_id)
-        if values is None:
-            path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
+        try:
+            area = file_study.config.areas[area_id]
+        except KeyError:
+            raise AreaNotFound(area_id)
+
+        sts_storage = next((sts for sts in area.st_storages if sts.id == storage_id))
+        if sts_storage is None:
             raise STStorageNotFound(path, storage_id)
-        old_config = create_st_storage_config(study.version, **values)
 
-        # use Python values to synchronize Config and Form values
-        new_values = form.model_dump(mode="json", exclude_none=True)
-        new_config = old_config.model_copy(update=new_values)
-        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
-
-        st_storage_properties = create_st_storage_properties(study_version=study.version, data=new_data)
+        values = sts_storage.model_dump(exclude={"id"})
+        values.update(cluster_data.model_dump(exclude_unset=True, exclude_none=True))
 
         command = UpdateSTStorage(
             area_id=area_id,
             st_storage_id=storage_id,
-            properties=st_storage_properties,
+            properties=cluster_data,
             command_context=self._command_context,
             study_version=study.version,
         )
 
         study.add_commands([command])
 
-        values = new_config.model_dump(mode="json", exclude={"id"})
         return STStorageOutput(**values, id=storage_id)
 
     def delete_storages(

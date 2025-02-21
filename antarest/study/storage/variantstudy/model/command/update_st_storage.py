@@ -13,9 +13,11 @@ from typing import List, Optional
 
 from typing_extensions import override
 
+from antarest.study.business.model.sts_model import STStorageUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStoragePropertiesType,
+    STStorageConfig,
+    create_st_storage_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -41,23 +43,35 @@ class UpdateSTStorage(ICommand):
 
     area_id: str
     st_storage_id: str
-    properties: STStoragePropertiesType
+    properties: STStorageUpdate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+        for index, sts in enumerate(study_data.areas[self.area_id].st_storages):
+            if sts.id == self.st_storage_id:
+                values = sts.model_dump()
+                values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
+                study_data.areas[self.area_id].st_storages[index] = STStorageConfig.model_validate(values)
+                break
+
         return (
             CommandOutput(
                 status=True,
-                message=f"The renewable cluster '{self.st_storage_id}' in the area '{self.area_id}' has been updated.",
+                message=f"The st_storage cluster '{self.st_storage_id}' in the area '{self.area_id}' has been updated.",
             ),
             {},
         )
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        path = _ST_STORAGE_PATH.format(area_id=self.area_id, storage_id=self.st_storage_id)
+        path = _ST_STORAGE_PATH.format(area_id=self.area_id, storage_id=self.st_storage_id).split("/")
 
-        study_data.tree.save(self.properties.model_dump(by_alias=True), path.split("/"))
+        current_sts_config = create_st_storage_config(study_version=self.study_version, **study_data.tree.get(path))
+
+        current_properties = current_sts_config.model_dump(exclude={"id"})
+        current_properties.update(self.properties.model_dump(exclude_unset=True))
+
+        study_data.tree.save(current_properties, path)
 
         output, _ = self._apply_config(study_data.config)
 
@@ -70,7 +84,7 @@ class UpdateSTStorage(ICommand):
             args={
                 "area_id": self.area_id,
                 "st_storage_id": self.st_storage_id,
-                "properties": self.properties.model_dump(mode="json"),
+                "properties": self.properties.model_dump(mode="json", exclude_unset=True),
             },
             study_version=self.study_version,
         )
