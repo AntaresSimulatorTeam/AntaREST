@@ -37,6 +37,7 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.xpansion_common import assert_link_exist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -405,15 +406,14 @@ class XpansionManager:
         study.add_commands([command])
 
     def delete_candidate(self, study: StudyInterface, candidate_name: str) -> None:
-        file_study = study.get_files()
-
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        candidate_id = next(
-            candidate_id for candidate_id, candidate in candidates.items() if candidate["name"] == candidate_name
-        )
-
         logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")
-        file_study.tree.delete(["user", "expansion", "candidates", candidate_id])
+
+        command = RemoveXpansionCandidate(
+            candidate_name=candidate_name,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
 
     def update_xpansion_constraints_settings(
         self, study: StudyInterface, constraints_file_name: str

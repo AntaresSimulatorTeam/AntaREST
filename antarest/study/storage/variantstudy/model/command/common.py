@@ -58,6 +58,7 @@ class CommandName(Enum):
     CREATE_USER_RESOURCE = "create_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
     CREATE_XPANSION_CANDIDATE = "create_xpansion_candidate"
+    REMOVE_XPANSION_CANDIDATE = "remove_xpansion_candidate"
     UPDATE_XPANSION_CANDIDATE = "update_xpansion_candidate"
 
 

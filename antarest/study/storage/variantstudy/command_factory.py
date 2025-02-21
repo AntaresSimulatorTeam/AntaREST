@@ -44,6 +44,7 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
@@ -91,6 +92,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
     CommandName.CREATE_XPANSION_CANDIDATE.value: CreateXpansionCandidate,
     CommandName.UPDATE_XPANSION_CANDIDATE.value: UpdateXpansionCandidate,
+    CommandName.REMOVE_XPANSION_CANDIDATE.value: RemoveXpansionCandidate,
 }
 
 
