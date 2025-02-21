@@ -254,6 +254,32 @@ class XpansionCandidateDTO(AntaresBaseModel):
         default=None, alias="already-installed-indirect-link-profile"
     )
 
+    @model_validator(mode="after")
+    def validate_model(self) -> "XpansionCandidateDTO":
+        possible_format_1 = self.max_investment is None and (self.max_units is not None and self.unit_size is not None)
+        possible_format_2 = self.max_investment is not None and (self.max_units is None and self.unit_size is None)
+
+        if not (possible_format_1 or possible_format_2):
+            raise BadCandidateFormatError(
+                "The candidate is not well formatted."
+                "\nIt should either contain max-investment or (max-units and unit-size)."
+            )
+
+        return self
+
+    @field_validator("name", mode="before")
+    def validate_name(cls, name: str) -> str:
+        # The name is written directly inside the ini file so a specific check is performed here
+        if name.strip() == "":
+            raise CandidateNameIsEmpty()
+
+        illegal_name_characters = [" ", "\n", "\t", "\r", "\f", "\v", "-", "+", "=", ":", "[", "]", "(", ")"]
+        for char in name:
+            if char in illegal_name_characters:
+                raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
+
+        return name
+
 
 class XpansionFileNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
@@ -468,55 +494,10 @@ class XpansionManager:
             raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 
     @staticmethod
-    def _assert_no_illegal_character_is_in_candidate_name(
-        xpansion_candidate_name: str,
-    ) -> None:
-        illegal_chars = [
-            " ",
-            "\n",
-            "\t",
-            "\r",
-            "\f",
-            "\v",
-            "-",
-            "+",
-            "=",
-            ":",
-            "[",
-            "]",
-            "(",
-            ")",
-        ]
-        if xpansion_candidate_name.strip() == "":
-            raise CandidateNameIsEmpty()
-        for char in illegal_chars:
-            if char in xpansion_candidate_name:
-                raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
-
-    @staticmethod
     def _assert_candidate_name_is_not_already_taken(candidates: JSON, xpansion_candidate_name: str) -> None:
         for candidate in candidates.values():
             if candidate["name"] == xpansion_candidate_name:
                 raise CandidateAlreadyExistsError(f"The candidate '{xpansion_candidate_name}' already exists")
-
-    @staticmethod
-    def _assert_investment_candidate_is_valid(
-        max_investment: Optional[float],
-        max_units: Optional[int],
-        unit_size: Optional[float],
-    ) -> None:
-        bool_max_investment = max_investment is None
-        bool_max_units = max_units is None
-        bool_unit_size = unit_size is None
-
-        if not (
-            (not bool_max_investment and bool_max_units and bool_unit_size)
-            or (bool_max_investment and not bool_max_units and not bool_unit_size)
-        ):
-            raise BadCandidateFormatError(
-                "The candidate is not well formatted."
-                "\nIt should either contain max-investment or (max-units and unit-size)."
-            )
 
     def _assert_candidate_is_correct(
         self,
@@ -526,16 +507,10 @@ class XpansionManager:
         new_name: bool = False,
     ) -> None:
         logger.info("Checking given candidate is correct")
-        self._assert_no_illegal_character_is_in_candidate_name(xpansion_candidate_dto.name)
         if new_name:
             self._assert_candidate_name_is_not_already_taken(candidates, xpansion_candidate_dto.name)
         self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
         self._assert_link_exist(file_study, xpansion_candidate_dto)
-        self._assert_investment_candidate_is_valid(
-            xpansion_candidate_dto.max_investment,
-            xpansion_candidate_dto.max_units,
-            xpansion_candidate_dto.unit_size,
-        )
         assert xpansion_candidate_dto.annual_cost_per_mw
 
     def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
