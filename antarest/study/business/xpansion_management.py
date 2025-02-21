@@ -29,6 +29,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
+from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -236,7 +237,7 @@ class XpansionCandidateDTO(AntaresBaseModel):
     # The names should be the section titles of the file, and the id should be removed
     name: str
     link: str
-    annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", ge=0)
+    annual_cost_per_mw: float = Field(alias="annual-cost-per-mw", gt=0)
     unit_size: Optional[float] = Field(default=None, alias="unit-size", ge=0)
     max_units: Optional[int] = Field(default=None, alias="max-units", ge=0)
     max_investment: Optional[float] = Field(default=None, alias="max-investment", ge=0)
@@ -279,6 +280,12 @@ class XpansionCandidateDTO(AntaresBaseModel):
                 raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
 
         return name
+
+    @field_validator("link", mode="before")
+    def validate_link(cls, link: str) -> str:
+        if " - " not in link:
+            raise WrongLinkFormatError(f"The link must be in the format 'area1 - area2'. Currently: {link}")
+        return link
 
 
 class XpansionFileNotFoundError(HTTPException):
@@ -466,8 +473,6 @@ class XpansionManager:
         file_study: FileStudy,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
-        if " - " not in xpansion_candidate_dto.link:
-            raise WrongLinkFormatError("The link must be in the format 'area1 - area2'")
         area1, area2 = xpansion_candidate_dto.link.split(" - ")
         area_from, area_to = sorted([area1, area2])
         if area_to not in file_study.config.get_links(area_from):
@@ -491,25 +496,15 @@ class XpansionManager:
             self._assert_candidate_name_is_not_already_taken(candidates, xpansion_candidate_dto.name)
         self._assert_link_profile_are_files(file_study, xpansion_candidate_dto)
         self._assert_link_exist(file_study, xpansion_candidate_dto)
-        assert xpansion_candidate_dto.annual_cost_per_mw
 
     def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
-        file_study = study.get_files()
-
-        candidates_obj = file_study.tree.get(["user", "expansion", "candidates"])
-
-        self._assert_candidate_is_correct(candidates_obj, file_study, xpansion_candidate)
-
-        # Find next candidate id
-        max_id = 2 if not candidates_obj else int(sorted(candidates_obj.keys()).pop()) + 2
-        next_id = next(
-            str(i) for i in range(1, max_id) if str(i) not in candidates_obj
-        )  # The primary key is actually the name, the id does not matter and is never checked.
-
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
-        candidates_obj[next_id] = xpansion_candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
-        candidates_data = {"user": {"expansion": {"candidates": candidates_obj}}}
-        file_study.tree.save(candidates_data)
+
+        command = CreateXpansionCandidate(
+            candidate=xpansion_candidate, command_context=self._command_context, study_version=study.version
+        )
+        study.add_commands([command])
+
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
         return self.get_candidate(study, xpansion_candidate.name)
 
