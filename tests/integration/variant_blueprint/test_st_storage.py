@@ -72,9 +72,6 @@ class TestSTStorage:
             "managed": False,
             "archived": False,
             "horizon": "2030",
-            "scenario": None,
-            "status": None,
-            "doc": None,
             "folder": "STA-mini",
             "tags": [],
         }
