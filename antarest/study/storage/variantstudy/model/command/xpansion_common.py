@@ -1,7 +1,7 @@
 from typing import Any
 
 from antarest.core.exceptions import CandidateAlreadyExistsError, LinkNotFound, XpansionFileNotFoundError
-from antarest.study.business.xpansion_management import XpansionCandidateDTO
+from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -11,7 +11,7 @@ def assert_xpansion_candidate_name_is_not_already_taken(candidates: dict[str, An
             raise CandidateAlreadyExistsError(f"The candidate '{candidate_name}' already exists")
 
 
-def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidateDTO) -> None:
+def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidateInternal) -> None:
     existing_files = file_study.tree.get(["user", "expansion", "capa"])
     for attr in [
         "link_profile",
@@ -26,7 +26,7 @@ def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto:
                 raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
 
 
-def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidateDTO) -> None:
+def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidateInternal) -> None:
     area1, area2 = xpansion_candidate_dto.link.split(" - ")
     area_from, area_to = sorted([area1, area2])
     if area_to not in file_study.config.get_links(area_from):
@@ -34,7 +34,7 @@ def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCan
 
 
 def assert_candidate_is_correct(
-    existing_candidates: dict[str, Any], file_study: FileStudy, candidate: XpansionCandidateDTO
+    existing_candidates: dict[str, Any], file_study: FileStudy, candidate: XpansionCandidateInternal
 ) -> None:
     assert_xpansion_candidate_name_is_not_already_taken(existing_candidates, candidate.name)
     assert_link_profile_are_files(file_study, candidate)

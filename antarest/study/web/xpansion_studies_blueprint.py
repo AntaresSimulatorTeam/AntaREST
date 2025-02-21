@@ -23,10 +23,10 @@ from antarest.core.requests import RequestParameters
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.business.model.xpansion_model import XpansionCandidateDTO
 from antarest.study.business.xpansion_management import (
     GetXpansionSettings,
     UpdateXpansionSettings,
-    XpansionCandidateDTO,
     XpansionResourceFileType,
 )
 from antarest.study.service import StudyService

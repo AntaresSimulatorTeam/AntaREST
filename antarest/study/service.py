@@ -95,6 +95,7 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.xpansion_model import XpansionCandidateDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -106,7 +107,6 @@ from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
     GetXpansionSettings,
     UpdateXpansionSettings,
-    XpansionCandidateDTO,
     XpansionManager,
 )
 from antarest.study.model import (
