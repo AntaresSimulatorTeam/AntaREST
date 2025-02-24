@@ -370,7 +370,13 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         # todo: make this test evolve for each new xpansion command created
         res = client.get(f"/v1/studies/{study_id}/commands")
         commands_list = res.json()
-        assert len(commands_list) == 1
+        assert len(commands_list) == 2
         assert commands_list[0]["action"] == "create_xpansion_configuration"
+        assert commands_list[1]["action"] == "remove_xpansion_configuration"
 
+    if study_type == "variant":
+        # Generate the fs
+        task_id = client.put(f"/v1/studies/{study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        assert res.status_code == 200
     assert not expansion_path.exists()
