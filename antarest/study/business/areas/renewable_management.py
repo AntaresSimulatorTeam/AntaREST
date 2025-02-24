@@ -215,8 +215,7 @@ class RenewableManager:
         if renewable is None:
             raise RenewableClusterNotFound(path, cluster_id)
 
-        values = renewable.model_dump(exclude={"id"})
-        values.update(cluster_data.model_dump(exclude_unset=True, exclude_none=True))
+        updated_renewable = renewable.model_copy(update=cluster_data.model_dump(exclude_unset=True, exclude_none=True))
 
         command = UpdateRenewableCluster(
             area_id=area_id,
@@ -228,7 +227,7 @@ class RenewableManager:
 
         study.add_commands([command])
 
-        return RenewableClusterOutput(**values, id=cluster_id)
+        return RenewableClusterOutput(**updated_renewable.model_dump(exclude={"id"}), id=cluster_id)
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
