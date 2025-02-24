@@ -57,6 +57,7 @@ class CommandName(Enum):
     GENERATE_THERMAL_CLUSTER_TIMESERIES = "generate_thermal_cluster_timeseries"
     CREATE_USER_RESOURCE = "create_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
+    CREATE_XPANSION_CONFIGURATION = "create_xpansion_configuration"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:

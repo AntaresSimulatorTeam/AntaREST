@@ -28,14 +28,11 @@ from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
 from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.xpansion_model import Master, Solver, UcType, UpdateXpansionSettings
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.business.xpansion_management import (
     FileCurrentlyUsedInSettings,
     LinkNotFound,
-    Master,
-    Solver,
-    UcType,
-    UpdateXpansionSettings,
     XpansionCandidateDTO,
     XpansionFileNotFoundError,
     XpansionManager,

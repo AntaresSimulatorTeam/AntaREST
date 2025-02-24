@@ -16,6 +16,7 @@ import typing as t
 from pathlib import Path
 from urllib.parse import urljoin
 
+import pytest
 from starlette.testclient import TestClient
 
 from antarest.study.business.xpansion_management import XpansionCandidateDTO
@@ -46,7 +47,8 @@ def _create_link(
     assert res.status_code in {200, 201}, res.json()
 
 
-def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_token: str) -> None:
+@pytest.mark.parametrize("study_type", ["raw", "variant"])
+def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_token: str, study_type: str) -> None:
     headers = {"Authorization": f"Bearer {admin_access_token}"}
     client.headers = headers
 
@@ -59,11 +61,16 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     area3_id = _create_area(client, study_id, "area3", country="DE")
     _create_link(client, study_id, area1_id, area2_id)
 
+    if study_type == "variant":
+        res = client.post(f"/v1/studies/{study_id}/variants", params={"name": "variant 1"})
+        study_id = res.json()
+
     res = client.post(f"/v1/studies/{study_id}/extensions/xpansion")
     assert res.status_code in {200, 201}, res.json()
 
     expansion_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion"
-    assert expansion_path.exists()
+    if study_type == "variant":
+        expansion_path = tmp_path / "internal_workspace" / study_id / "snapshot" / "user" / "expansion"
 
     # Create a client for Xpansion with the xpansion URL
     xpansion_base_url = f"/v1/studies/{study_id}/extensions/xpansion/"
@@ -136,6 +143,11 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     res = xp_client.post("resources/constraints", files=files)
     assert res.status_code in {200, 201}
     actual_path = expansion_path / "constraints" / filename_constraints1
+    if study_type == "variant":
+        # Generate the fs to check the content
+        task_id = client.put(f"/v1/studies/{study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        assert res.status_code == 200
     assert actual_path.read_text() == content_constraints1
 
     files = {
@@ -353,5 +365,12 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
 
     res = client.delete(f"/v1/studies/{study_id}/extensions/xpansion")
     assert res.status_code == 200
+
+    if study_type == "variant":
+        # todo: make this test evolve for each new xpansion command created
+        res = client.get(f"/v1/studies/{study_id}/commands")
+        commands_list = res.json()
+        assert len(commands_list) == 1
+        assert commands_list[0]["action"] == "create_xpansion_configuration"
 
     assert not expansion_path.exists()
