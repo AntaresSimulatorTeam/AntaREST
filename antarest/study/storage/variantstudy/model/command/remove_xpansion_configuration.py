@@ -43,7 +43,7 @@ class RemoveXpansionConfiguration(ICommand):
         except ChildNotFoundError:
             return CommandOutput(status=False, message="Couldn't delete the xpansion configuration, it doesn't exist")
 
-        return CommandOutput(status=True, message="ok")
+        return self._apply_config(study_data.config)[0]
 
     @override
     def to_dto(self) -> CommandDTO:
