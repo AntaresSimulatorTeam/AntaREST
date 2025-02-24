@@ -40,8 +40,9 @@ import { GridCellKind } from "@glideapps/glide-data-grid";
 import { uploadFile } from "../../../../../services/api/studies/raw";
 import type { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { Aggregate, Column, Operation } from "../../shared/constants";
-import { aggregatesTheme } from "../../styles";
+import { aggregatesAvgTheme, aggregatesTheme, dateTimeTheme } from "../../styles";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import { useColorScheme } from "@mui/material";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -124,6 +125,9 @@ export function useMatrix(
     }
   };
 
+  const { mode } = useColorScheme();
+  const isDarkMode = mode === "dark";
+
   useEffect(() => {
     fetchMatrix();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -146,7 +150,7 @@ export function useMatrix(
         title: "Date",
         type: Column.DateTime,
         editable: false,
-        themeOverride: { bgCell: "#2D2E40" },
+        themeOverride: isDarkMode ? dateTimeTheme.dark : dateTimeTheme.light,
       });
     }
 
@@ -173,8 +177,12 @@ export function useMatrix(
       editable: false,
       themeOverride:
         aggregateType === Aggregate.Avg
-          ? aggregatesTheme
-          : { ...aggregatesTheme, bgCell: "#464770" },
+          ? isDarkMode
+            ? aggregatesAvgTheme.dark
+            : aggregatesAvgTheme.light
+          : isDarkMode
+            ? aggregatesTheme.dark
+            : aggregatesTheme.light,
     }));
 
     return [...baseColumns, ...dataColumns, ...aggregatesColumns];

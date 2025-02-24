@@ -24,7 +24,7 @@ import {
 import "@glideapps/glide-data-grid/dist/index.css";
 import { useCallback, useMemo, useState } from "react";
 import { voidFn } from "@/utils/fnUtils";
-import { darkTheme, readOnlyDarkTheme } from "./Matrix/styles";
+import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
 import { useUpdateEffect } from "react-use";
 import { useColorScheme } from "@mui/material";
 
@@ -86,19 +86,17 @@ function DataGrid({
 
   const { mode, systemMode } = useColorScheme();
   const isDarkMode = mode === "dark" || systemMode === "dark";
+  const baseTheme = isDarkMode ? darkTheme : lightTheme;
 
   const theme = useMemo(() => {
-    if (isDarkMode) {
-      return readOnly
-        ? {
-            ...darkTheme,
-            ...readOnlyDarkTheme,
-          }
-        : darkTheme;
+    if (readOnly) {
+      return {
+        ...baseTheme,
+        ...(isDarkMode ? readOnlyDarkTheme : readOnlyLightTheme),
+      };
     }
-
-    return undefined;
-  }, [isDarkMode, readOnly]);
+    return baseTheme;
+  }, [readOnly, isDarkMode, baseTheme]);
 
   useUpdateEffect(() => {
     setColumns(initColumns());
