@@ -57,6 +57,7 @@ class CommandName(Enum):
     GENERATE_THERMAL_CLUSTER_TIMESERIES = "generate_thermal_cluster_timeseries"
     CREATE_USER_RESOURCE = "create_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
+    REMOVE_XPANSION_CONFIGURATION = "remove_xpansion_configuration"
     CREATE_XPANSION_CANDIDATE = "create_xpansion_candidate"
     REMOVE_XPANSION_CANDIDATE = "remove_xpansion_candidate"
     UPDATE_XPANSION_CANDIDATE = "update_xpansion_candidate"

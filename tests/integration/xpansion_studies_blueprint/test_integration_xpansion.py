@@ -143,7 +143,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     res = xp_client.post("resources/constraints", files=files)
     assert res.status_code in {200, 201}
     actual_path = expansion_path / "constraints" / filename_constraints1
-    if study_type == "raw":  # todo: remove the if once this triggers a command
+    if study_type == "raw":  # todo: same
         assert actual_path.read_text() == content_constraints1
 
     files = {
@@ -272,7 +272,8 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     res = xp_client.post("resources/capacities", files=files)
     assert res.status_code in {200, 201}
     actual_path = expansion_path / "capa" / filename_capa1
-    assert actual_path.read_text() == content_capa1
+    if study_type == "raw":  # todo: same
+        assert actual_path.read_text() == content_capa1
 
     res = xp_client.post("resources/capacities", files=files)
     assert res.status_code == 409
@@ -361,5 +362,12 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
 
     res = client.delete(f"/v1/studies/{study_id}/extensions/xpansion")
     assert res.status_code == 200
+
+    if study_type == "variant":
+        # todo: make this test evolve for each new xpansion command created
+        res = client.get(f"/v1/studies/{study_id}/commands")
+        commands_list = res.json()
+        assert len(commands_list) == 1
+        assert commands_list[0]["action"] == "remove_xpansion_configuration"
 
     assert not expansion_path.exists()

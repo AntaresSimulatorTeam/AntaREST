@@ -38,6 +38,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import fix_study_root
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.xpansion_common import assert_link_exist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -290,8 +291,8 @@ class XpansionManager:
 
     def delete_xpansion_configuration(self, study: StudyInterface) -> None:
         logger.info(f"Deleting xpansion configuration for study '{study.id}'")
-        file_study = study.get_files()
-        file_study.tree.delete(["user", "expansion"])
+        command = RemoveXpansionConfiguration(command_context=self._command_context, study_version=study.version)
+        study.add_commands([command])
 
     def get_xpansion_settings(self, study: StudyInterface) -> GetXpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
