@@ -359,9 +359,6 @@ class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
       ...
     AttributeError: 'ThermalConfig' object has no attribute 'nh3'"""
 
-    class Config:
-        extra = "ignore"
-
 
 class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
@@ -383,9 +380,6 @@ class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     >>> cl.op1
     0.0
     """
-
-    class Config:
-        extra = "ignore"
 
 
 class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):

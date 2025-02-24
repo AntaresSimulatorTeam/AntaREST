@@ -272,8 +272,16 @@ class ThermalManager:
         if thermal_cluster is None:
             raise ThermalClusterNotFound(path, cluster_id)
 
-        values = thermal_cluster.model_dump(exclude={"id"})
-        values.update(cluster_data.model_dump(exclude_unset=True, exclude_none=True))
+        versionned_cluster = create_thermal_config(
+            study_version=study.version, **thermal_cluster.model_dump(exclude_unset=True, exclude_none=True)
+        )
+
+        updated_thermal = create_thermal_config(
+            study_version=study.version,
+            **versionned_cluster.model_copy(
+                update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
+            ).model_dump(exclude_unset=True, exclude_none=True),
+        )
 
         command = UpdateThermalCluster(
             area_id=area_id,
@@ -285,7 +293,7 @@ class ThermalManager:
 
         study.add_commands([command])
 
-        return ThermalClusterOutput(**values, id=cluster_id)
+        return ThermalClusterOutput(**updated_thermal.model_dump(exclude={"id"}), id=cluster_id)
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """

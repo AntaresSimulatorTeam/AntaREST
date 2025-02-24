@@ -777,7 +777,7 @@ class TestThermal:
         obj = res.json()
         description = obj["description"]
         assert bad_area_id in description
-        assert re.search(r"not a child of ", description, flags=re.IGNORECASE)
+        assert re.search(r"is not found", description, flags=re.IGNORECASE)
 
         # Check PATCH with the wrong `cluster_id`
         bad_cluster_id = "bad_cluster"

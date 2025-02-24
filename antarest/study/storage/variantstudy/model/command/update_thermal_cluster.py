@@ -49,11 +49,19 @@ class UpdateThermalCluster(ICommand):
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         for index, thermal in enumerate(study_data.areas[self.area_id].thermals):
             if thermal.id == self.thermal_cluster_id:
-                values = thermal.model_dump()
-                values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
-                study_data.areas[self.area_id].thermals[index] = create_thermal_config(
-                    study_version=self.study_version, **values
+                # Set the object to the correct version
+                versioned_cluster = create_thermal_config(
+                    study_version=self.study_version, **thermal.model_dump(exclude_unset=True, exclude_none=True)
                 )
+                # Update the object with the new properties
+                updated_thermal = create_thermal_config(
+                    study_version=self.study_version,
+                    **versioned_cluster.model_copy(
+                        update=self.properties.model_dump(exclude_unset=True, exclude_none=True)
+                    ).model_dump(exclude_unset=True, exclude_none=True),
+                )
+
+                study_data.areas[self.area_id].thermals[index] = updated_thermal
                 break
 
         return (
@@ -89,7 +97,7 @@ class UpdateThermalCluster(ICommand):
             args={
                 "area_id": self.area_id,
                 "thermal_cluster_id": self.thermal_cluster_id,
-                "properties": self.properties.model_dump(mode="json"),
+                "properties": self.properties.model_dump(mode="json", exclude_unset=True),
             },
             study_version=self.study_version,
         )
