@@ -26,7 +26,6 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.model import RawStudy, StudyAdditionalData
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -55,14 +54,12 @@ class SnapshotGenerator:
         raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
-        patch_service: PatchService,
         repository: VariantStudyRepository,
     ):
         self.cache = cache
         self.raw_study_service = raw_study_service
         self.command_factory = command_factory
         self.study_factory = study_factory
-        self.patch_service = patch_service
         self.repository = repository
 
     def generate_snapshot(
@@ -206,8 +203,9 @@ class SnapshotGenerator:
     def _read_additional_data(self, file_study: FileStudy) -> StudyAdditionalData:
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
-        patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
+        assert isinstance(author, str)
+        assert isinstance(horizon, (str, int))
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
 
     def _update_cache(self, file_study: FileStudy) -> None:

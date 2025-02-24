@@ -116,9 +116,6 @@ from antarest.study.model import (
     CommentsDto,
     ExportFormat,
     MatrixIndex,
-    Patch,
-    PatchArea,
-    PatchCluster,
     RawStudy,
     Study,
     StudyAdditionalData,
@@ -138,7 +135,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -403,12 +399,10 @@ class RawStudyInterface(StudyInterface):
         self,
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
-        patch_service: PatchService,
         study: RawStudy,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
-        self._patch_service = patch_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
@@ -459,14 +453,6 @@ class RawStudyInterface(StudyInterface):
             # within the current process (not across multiple processes)...
             file_study.tree.denormalize()
 
-    @override
-    def get_patch_data(self) -> Patch:
-        return self._patch_service.get(self._study)
-
-    @override
-    def update_patch_data(self, patch_data: Patch) -> None:
-        self._patch_service.save(self._study, patch_data)
-
 
 class VariantStudyInterface(StudyInterface):
     """
@@ -476,9 +462,8 @@ class VariantStudyInterface(StudyInterface):
     to the variant.
     """
 
-    def __init__(self, variant_service: VariantStudyService, patch_service: PatchService, study: VariantStudy):
+    def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
         self._variant_service = variant_service
-        self._patch_service = patch_service
         self._study = study
         self._version = StudyVersion.parse(self._study.version)
 
@@ -505,14 +490,6 @@ class VariantStudyInterface(StudyInterface):
             transform_command_to_dto(commands, force_aggregate=True),
             RequestParameters(user=current_user),
         )
-
-    @override
-    def get_patch_data(self) -> Patch:
-        return self._patch_service.get(self._study)
-
-    @override
-    def update_patch_data(self, patch_data: Patch) -> None:
-        self._patch_service.save(self._study, patch_data)
 
 
 class StudyService:
@@ -915,8 +892,6 @@ class StudyService:
         if metadata_patch.tags:
             self.repository.update_tags(study, metadata_patch.tags)
 
-        new_metadata = self.storage_service.get_storage(study).patch_update_study_metadata(study, metadata_patch)
-
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -925,7 +900,8 @@ class StudyService:
             )
         )
 
-        return new_metadata
+        remove_from_cache(cache=self.cache_service, root_id=study.id)
+        return self.get_study_information(study.id, params)
 
     def check_study_access(
         self,
@@ -945,14 +921,12 @@ class StudyService:
         if isinstance(study, VariantStudy):
             return VariantStudyInterface(
                 self.storage_service.variant_study_service,
-                self.storage_service.variant_study_service.patch_service,
                 study,
             )
         elif isinstance(study, RawStudy):
             return RawStudyInterface(
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
-                self.storage_service.raw_study_service.patch_service,
                 study,
             )
         else:
@@ -1633,32 +1607,6 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get_study_sim_result(study)
 
-    def set_sim_reference(
-        self,
-        study_id: str,
-        output_id: str,
-        status: bool,
-        params: RequestParameters,
-    ) -> None:
-        """
-        Set simulation as the reference output.
-
-        Args:
-            study_id: study ID.
-            output_id: The ID of the output to set as reference.
-            status: state of the reference status.
-            params: request parameters
-        """
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-
-        logger.info(
-            f"output {output_id} set by user {params.get_user_id()} as reference ({status}) for study {study_id}"
-        )
-
-        self.storage_service.get_storage(study).set_reference_output(study, output_id, status)
-
     def import_study(
         self,
         stream: BinaryIO,
@@ -2130,26 +2078,6 @@ class StudyService:
         )
         return updated_link
 
-    def update_area(
-        self,
-        uuid: str,
-        area_id: str,
-        area_patch_dto: PatchArea,
-        params: RequestParameters,
-    ) -> AreaInfoDTO:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        updated_area = self.area_manager.update_area_metadata(self.get_study_interface(study), area_id, area_patch_dto)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        return updated_area
-
     def update_area_ui(
         self,
         uuid: str,
@@ -2162,20 +2090,6 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
-
-    def update_thermal_cluster_metadata(
-        self,
-        uuid: str,
-        area_id: str,
-        clusters_metadata: Dict[str, PatchCluster],
-        params: RequestParameters,
-    ) -> AreaInfoDTO:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        return self.area_manager.update_thermal_cluster_metadata(
-            self.get_study_interface(study), area_id, clusters_metadata
-        )
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
         """
@@ -2434,7 +2348,7 @@ class StudyService:
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> List[str]:
-        return [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
+        return sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])
 
     def create_xpansion_configuration(
         self,
