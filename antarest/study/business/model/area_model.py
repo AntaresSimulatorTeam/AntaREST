@@ -17,7 +17,7 @@ from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.model import PatchArea, PatchCluster
+from antarest.study.business.areas.thermal_management import ThermalClusterOutput
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPathProperties,
     AreaFolder,
@@ -33,29 +33,12 @@ class AreaType(enum.Enum):
 class AreaCreationDTO(AntaresBaseModel):
     name: str
     type: AreaType
-    metadata: t.Optional[PatchArea] = None
     set: t.Optional[t.List[str]] = None
-
-
-class ClusterInfoDTO(PatchCluster):
-    id: str
-    name: str
-    enabled: bool = True
-    unitcount: int = 0
-    nominalcapacity: float = 0
-    group: t.Optional[str] = None
-    min_stable_power: t.Optional[float] = None
-    min_up_time: t.Optional[int] = None
-    min_down_time: t.Optional[int] = None
-    spinning: t.Optional[float] = None
-    marginal_cost: t.Optional[float] = None
-    spread_cost: t.Optional[float] = None
-    market_bid_cost: t.Optional[float] = None
 
 
 class AreaInfoDTO(AreaCreationDTO):
     id: str
-    thermals: t.Optional[t.List[ClusterInfoDTO]] = None
+    thermals: t.Optional[t.List[ThermalClusterOutput]] = None
 
 
 class LayerInfoDTO(AntaresBaseModel):

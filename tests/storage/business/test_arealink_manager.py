@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
@@ -23,7 +22,6 @@ from antarest.study.business.area_management import AreaCreationDTO, AreaManager
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.model import Patch, PatchArea, PatchCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
@@ -69,7 +67,6 @@ def test_area_crud(
 
     area_manager.create_area(study, AreaCreationDTO(name="test", type=AreaType.AREA))
     assert len(file_study.config.areas.keys()) == 1
-    assert json.loads((file_study.config.study_path / "patch.json").read_text())["areas"]["test"]["country"] is None
 
     area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
     assert file_study.tree.get(["input", "areas", "test", "ui", "ui"]) == {
@@ -140,10 +137,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
 
     study_interface = Mock(spec=StudyInterface)
     study_interface.get_files.return_value = FileStudy(config, file_tree_mock)
-    study_interface.get_patch_data.return_value = Patch(
-        areas={"a1": PatchArea(country="fr")},
-        thermal_clusters={"a1.a": PatchCluster.model_validate({"code-oi": "1"})},
-    )
     file_tree_mock.get.side_effect = [
         {
             "a": {
@@ -161,25 +154,46 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a1",
             "type": AreaType.AREA,
-            "metadata": {"country": "fr", "tags": []},
             "set": None,
             "thermals": [
                 {
-                    "id": "a",
-                    "name": "A",
+                    "co2": 0.0,
+                    "cost_generation": None,
+                    "efficiency": None,
                     "enabled": True,
-                    "unitcount": 1,
-                    "nominalcapacity": 500,
-                    "group": None,
-                    "min_stable_power": 200,
-                    "min_up_time": None,
-                    "min_down_time": None,
-                    "spinning": None,
-                    "marginal_cost": None,
-                    "spread_cost": None,
-                    "market_bid_cost": None,
-                    "type": None,
-                    "code_oi": "1",
+                    "fixed_cost": 0.0,
+                    "gen_ts": "use global",
+                    "group": "other 1",
+                    "id": "a",
+                    "law_forced": "uniform",
+                    "law_planned": "uniform",
+                    "marginal_cost": 0.0,
+                    "market_bid_cost": 0.0,
+                    "min_down_time": 1,
+                    "min_stable_power": 200.0,
+                    "min_up_time": 1,
+                    "must_run": False,
+                    "name": "A",
+                    "nh3": None,
+                    "nmvoc": None,
+                    "nominal_capacity": 500.0,
+                    "nox": None,
+                    "op1": None,
+                    "op2": None,
+                    "op3": None,
+                    "op4": None,
+                    "op5": None,
+                    "pm10": None,
+                    "pm2_5": None,
+                    "pm5": None,
+                    "so2": None,
+                    "spinning": 0.0,
+                    "spread_cost": 0.0,
+                    "startup_cost": 0.0,
+                    "unit_count": 1,
+                    "variable_o_m_cost": None,
+                    "volatility_forced": 0.0,
+                    "volatility_planned": 0.0,
                 }
             ],
             "id": "a1",
@@ -187,7 +201,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a2",
             "type": AreaType.AREA,
-            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a2",
@@ -195,7 +208,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a3",
             "type": AreaType.AREA,
-            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a3",
@@ -208,7 +220,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "s1",
             "type": AreaType.DISTRICT,
-            "metadata": {"country": None, "tags": []},
             "set": ["a1"],
             "thermals": None,
             "id": "s1",
@@ -222,7 +233,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a1",
             "type": AreaType.AREA,
-            "metadata": {"country": "fr", "tags": []},
             "set": None,
             "thermals": [],
             "id": "a1",
@@ -230,7 +240,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a2",
             "type": AreaType.AREA,
-            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a2",
@@ -238,7 +247,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "a3",
             "type": AreaType.AREA,
-            "metadata": {"country": None, "tags": []},
             "set": None,
             "thermals": [],
             "id": "a3",
@@ -246,7 +254,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {
             "name": "s1",
             "type": AreaType.DISTRICT,
-            "metadata": {"country": None, "tags": []},
             "set": ["a1"],
             "thermals": None,
             "id": "s1",
@@ -360,81 +367,3 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "use_phase_shifter": False,
         },
     ] == [link.model_dump(mode="json") for link in links]
-
-
-def test_update_area(area_manager: AreaManager):
-    config = FileStudyTreeConfig(
-        study_path=Path("somepath"),
-        path=Path("somepath"),
-        study_id="",
-        version=-1,
-        areas={
-            "a1": Area(
-                name="a1",
-                links={},
-                thermals=[],
-                renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
-            ),
-            "a2": Area(
-                name="a2",
-                links={},
-                thermals=[],
-                renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
-            ),
-        },
-        sets={"s1": DistrictSet(areas=["a1"])},
-    )
-    study_interface = Mock(spec=StudyInterface)
-
-    study_interface.get_files.return_value = FileStudy(config=config, tree=FileStudyTree(context=Mock(), config=config))
-    study_interface.get_patch_data.return_value = Patch(areas={"a1": PatchArea(country="fr")})
-
-    new_area_info = area_manager.update_area_metadata(study_interface, "a1", PatchArea(country="fr"))
-    assert new_area_info.id == "a1"
-    assert new_area_info.metadata.model_dump() == {"country": "fr", "tags": []}
-
-
-def test_update_clusters(area_manager: AreaManager):
-    config = FileStudyTreeConfig(
-        study_path=Path("somepath"),
-        path=Path("somepath"),
-        study_id="",
-        version=-1,
-        areas={
-            "a1": Area(
-                name="a1",
-                links={},
-                thermals=[ThermalConfig(id="a", name="a", enabled=True)],
-                renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
-            )
-        },
-    )
-    file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
-    study_interface = Mock(spec=StudyInterface)
-
-    study_interface.get_files.return_value = FileStudy(config=config, tree=file_tree_mock)
-    study_interface.get_patch_data.return_value = Patch(
-        areas={"a1": PatchArea(country="fr")},
-        thermal_clusters={"a1.a": PatchCluster.model_validate({"code-oi": "1"})},
-    )
-    file_tree_mock.get.side_effect = [
-        {
-            "a": {
-                "name": "A",
-                "unitcount": 1,
-                "nominalcapacity": 500,
-                "min-stable-power": 200,
-            }
-        }
-    ]
-
-    new_area_info = area_manager.update_thermal_cluster_metadata(study_interface, "a1", {"a": PatchCluster(type="a")})
-    assert len(new_area_info.thermals) == 1
-    assert new_area_info.thermals[0].type == "a"
-    assert new_area_info.thermals[0].code_oi is None
