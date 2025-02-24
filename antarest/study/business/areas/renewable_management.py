@@ -11,27 +11,34 @@
 # This file is part of the Antares project.
 
 import collections
-from typing import Any, Dict, Mapping, MutableMapping, Sequence
+from typing import Any, Mapping, MutableMapping, Sequence
 
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    DuplicateRenewableCluster,
+    RenewableClusterConfigNotFound,
+    RenewableClusterNotFound,
+)
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.renewable_cluster_model import (
+    RenewableClusterCreation,
+    RenewableClusterOutput,
+    RenewableClusterUpdate,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableConfig,
-    RenewableProperties,
     RenewablePropertiesType,
     create_renewable_config,
-    create_renewable_properties,
 )
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
@@ -44,66 +51,13 @@ class TimeSeriesInterpretation(EnumIgnoreCase):
     PRODUCTION_FACTOR = "production-factor"
 
 
-@all_optional_model
-@camel_case_model
-class RenewableClusterInput(RenewableProperties):
-    """
-    Model representing the data structure required to edit an existing renewable cluster.
-    """
-
-    class Config:
-        populate_by_name = True
-
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = RenewableClusterInput(
-                group="Gas",
-                name="Gas Cluster XY",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                ts_interpretation="power-generation",
-            ).model_dump(mode="json")
-
-
-class RenewableClusterCreation(RenewableClusterInput):
-    """
-    Model representing the data structure required to create a new Renewable cluster within a study.
-    """
-
-    def to_properties(self, study_version: StudyVersion) -> RenewablePropertiesType:
-        values = self.model_dump(by_alias=False, exclude_none=True)
-        return create_renewable_properties(study_version=study_version, data=values)
-
-
-@all_optional_model
-@camel_case_model
-class RenewableClusterOutput(RenewableConfig):
-    """
-    Model representing the output data structure to display the details of a renewable cluster.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = RenewableClusterOutput(
-                id="Gas cluster YZ",
-                group="Gas",
-                name="Gas Cluster YZ",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                ts_interpretation="power-generation",
-            ).model_dump()
-
-
 def create_renewable_output(
     study_version: StudyVersion,
     cluster_id: str,
     config: Mapping[str, Any],
 ) -> "RenewableClusterOutput":
     obj = create_renewable_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.model_dump(by_alias=False)
+    kwargs = obj.model_dump()
     return RenewableClusterOutput(**kwargs)
 
 
@@ -126,6 +80,7 @@ class RenewableManager:
             RenewableClusterConfigNotFound: If the clusters configuration for the specified area is not found.
         """
         file_study = study.get_files()
+
         path = _CLUSTERS_PATH.format(area_id=area_id)
 
         try:
@@ -230,7 +185,7 @@ class RenewableManager:
         study: StudyInterface,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterInput,
+        cluster_data: RenewableClusterUpdate,
     ) -> RenewableClusterOutput:
         """
         Updates the configuration of an existing cluster within an area in the study.
@@ -252,34 +207,27 @@ class RenewableManager:
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
 
         try:
-            values = file_study.tree.get(path.split("/"), depth=1)
+            area = file_study.config.areas[area_id]
         except KeyError:
-            raise RenewableClusterNotFound(path, cluster_id) from None
-        else:
-            old_config = create_renewable_config(study.version, **values)
+            raise AreaNotFound(area_id)
 
-        new_values = cluster_data.model_dump(exclude_none=True)
-        new_config = old_config.model_copy(update=new_values)
-        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
+        renewable = next((r for r in area.renewables if r.id == cluster_id), None)
+        if renewable is None:
+            raise RenewableClusterNotFound(path, cluster_id)
 
-        # create the dict containing the new values using aliases
-        data: Dict[str, Any] = {}
-        for field_name, field in new_config.model_fields.items():
-            if field_name in new_values:
-                name = field.alias if field.alias else field_name
-                data[name] = new_data[name]
+        updated_renewable = renewable.model_copy(update=cluster_data.model_dump(exclude_unset=True, exclude_none=True))
 
-        # create the update config commands with the modified data
-        commands = [
-            UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
-            )
-            for key, value in data.items()
-        ]
-        study.add_commands(commands)
+        command = UpdateRenewableCluster(
+            area_id=area_id,
+            cluster_id=cluster_id,
+            properties=cluster_data,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
 
-        values = new_config.model_dump(exclude={"id"})
-        return RenewableClusterOutput(**values, id=cluster_id)
+        study.add_commands([command])
+
+        return RenewableClusterOutput(**updated_renewable.model_dump(exclude={"id"}), id=cluster_id)
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
@@ -355,7 +303,7 @@ class RenewableManager:
     def update_renewables_props(
         self,
         study: StudyInterface,
-        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterInput]],
+        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterUpdate]],
     ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}

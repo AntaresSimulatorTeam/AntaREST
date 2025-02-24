@@ -49,9 +49,6 @@ export const convertStudyDtoToMetadata = (
   archived: metadata.archived,
   folder: metadata.folder,
   horizon: metadata.horizon,
-  scenario: metadata.scenario,
-  status: metadata.status,
-  doc: metadata.doc,
   tags: metadata.tags,
 });
 

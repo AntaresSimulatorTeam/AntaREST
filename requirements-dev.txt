@@ -2,6 +2,7 @@
 -r requirements-desktop.txt
 ruff~=0.9.6
 mypy~=1.15.0
+pre-commit~=4.1.0
 pyinstaller==6.10.0
 pyinstaller-hooks-contrib==2024.8
 
