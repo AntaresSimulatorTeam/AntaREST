@@ -388,8 +388,7 @@ class STStorageManager:
         if sts_storage is None:
             raise STStorageNotFound(path, storage_id)
 
-        values = sts_storage.model_dump(exclude={"id"})
-        values.update(cluster_data.model_dump(exclude_unset=True, exclude_none=True))
+        updated_sts = sts_storage.model_copy(update=cluster_data.model_dump(exclude_unset=True, exclude_none=True))
 
         command = UpdateSTStorage(
             area_id=area_id,
@@ -401,7 +400,7 @@ class STStorageManager:
 
         study.add_commands([command])
 
-        return STStorageOutput(**values, id=storage_id)
+        return STStorageOutput(**updated_sts.model_dump(exclude={"id"}), id=storage_id)
 
     def delete_storages(
         self,
