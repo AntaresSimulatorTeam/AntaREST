@@ -35,7 +35,7 @@ class CreateXpansionConfiguration(ICommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="ok"), {}
+        return CommandOutput(status=True, message="Xpansion configuration created successfully"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
