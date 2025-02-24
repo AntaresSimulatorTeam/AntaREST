@@ -53,6 +53,7 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -74,6 +75,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
+    CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,
     CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
     CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
