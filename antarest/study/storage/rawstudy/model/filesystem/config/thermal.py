@@ -362,6 +362,7 @@ class ThermalConfig(ThermalProperties, IgnoreCaseIdentifier):
     class Config:
         extra = "ignore"
 
+
 class Thermal860Config(Thermal860Properties, IgnoreCaseIdentifier):
     """
     Thermal properties for study in version 860
