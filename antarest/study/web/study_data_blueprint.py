@@ -60,12 +60,12 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
-from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterOutput,
     RenewableClusterUpdate,
 )
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
