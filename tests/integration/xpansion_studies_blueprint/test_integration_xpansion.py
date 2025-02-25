@@ -370,9 +370,16 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         # todo: make this test evolve for each new xpansion command created
         res = client.get(f"/v1/studies/{study_id}/commands")
         commands_list = res.json()
-        assert len(commands_list) == 2
+        assert len(commands_list) == 4
         assert commands_list[0]["action"] == "create_xpansion_configuration"
-        assert commands_list[1]["action"] == "remove_xpansion_configuration"
+
+        assert commands_list[1]["action"] == "remove_xpansion_resource"
+        assert commands_list[1]["args"] == {"filename": "filename_constraints1.txt", "resource_type": "constraints"}
+
+        assert commands_list[2]["action"] == "remove_xpansion_resource"
+        assert commands_list[2]["args"] == {"filename": "filename_capa1.txt", "resource_type": "capacities"}
+
+        assert commands_list[3]["action"] == "remove_xpansion_configuration"
 
     if study_type == "variant":
         # Generate the fs
