@@ -734,3 +734,8 @@ class FolderNotFoundInWorkspace(HTTPException):
 
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class XpansionConfigurationAlreadyExists(Exception):
+    def __init__(self, study_id: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, f"Xpansion configuration already exists for study {study_id}")
