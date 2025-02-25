@@ -33,6 +33,7 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_configura
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
     checks_resource_deletion_is_allowed,
+    get_resource_dir,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -380,22 +381,13 @@ class XpansionManager:
         xpansion_settings = XpansionSettingsUpdate.model_validate(args)
         return self.update_xpansion_settings(study, xpansion_settings)
 
-    def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> List[str]:
-        if raw_file_type == XpansionResourceFileType.CONSTRAINTS:
-            return ["user", "expansion", "constraints"]
-        elif raw_file_type == XpansionResourceFileType.CAPACITIES:
-            return ["user", "expansion", "capa"]
-        elif raw_file_type == XpansionResourceFileType.WEIGHTS:
-            return ["user", "expansion", "weights"]
-        raise NotImplementedError(f"raw_file_type '{raw_file_type}' not implemented")
-
     def _add_raw_files(
         self,
         file_study: FileStudy,
         files: List[UploadFile],
-        raw_file_type: XpansionResourceFileType,
+        resource_type: XpansionResourceFileType,
     ) -> None:
-        keys = self._raw_file_dir(raw_file_type)
+        keys = get_resource_dir(resource_type)
         data: JSON = {}
         buffer = data
 
@@ -459,12 +451,12 @@ class XpansionManager:
     ) -> JSON | bytes:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         file_study = study.get_files()
-        return file_study.tree.get(self._raw_file_dir(resource_type) + [filename])
+        return file_study.tree.get(get_resource_dir(resource_type) + [filename])
 
     def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> List[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         file_study = study.get_files()
         try:
-            return [filename for filename in file_study.tree.get(self._raw_file_dir(resource_type)).keys()]
+            return [filename for filename in file_study.tree.get(get_resource_dir(resource_type)).keys()]
         except ChildNotFoundError:
             return []

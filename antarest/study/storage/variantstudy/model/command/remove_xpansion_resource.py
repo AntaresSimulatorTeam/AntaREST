@@ -24,16 +24,20 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore
+def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:
     with contextlib.suppress(KeyError):
         constraints = file_study.tree.get(["user", "expansion", "settings", "additional-constraints"])
-        return str(constraints) == filename
+        if str(constraints) == filename:
+            return True
+    return False
 
 
-def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore
+def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:
     with contextlib.suppress(KeyError):
         weights = file_study.tree.get(["user", "expansion", "settings", "yearly-weights"])
-        return str(weights) == filename
+        if str(weights) == filename:
+            return True
+    return False
 
 
 def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
@@ -43,14 +47,14 @@ def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
     return filename in all_link_profiles
 
 
-def _raw_file_dir(raw_file_type: XpansionResourceFileType) -> List[str]:
-    if raw_file_type == XpansionResourceFileType.CONSTRAINTS:
+def get_resource_dir(resource_type: XpansionResourceFileType) -> List[str]:
+    if resource_type == XpansionResourceFileType.CONSTRAINTS:
         return ["user", "expansion", "constraints"]
-    elif raw_file_type == XpansionResourceFileType.CAPACITIES:
+    elif resource_type == XpansionResourceFileType.CAPACITIES:
         return ["user", "expansion", "capa"]
-    elif raw_file_type == XpansionResourceFileType.WEIGHTS:
+    elif resource_type == XpansionResourceFileType.WEIGHTS:
         return ["user", "expansion", "weights"]
-    raise NotImplementedError(f"raw_file_type '{raw_file_type}' not implemented")
+    raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
 
 
 def checks_resource_deletion_is_allowed(
@@ -90,7 +94,7 @@ class RemoveXpansionResource(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         checks_resource_deletion_is_allowed(self.resource_type, self.filename, study_data)
 
-        study_data.tree.delete(_raw_file_dir(self.resource_type) + [self.filename])
+        study_data.tree.delete(get_resource_dir(self.resource_type) + [self.filename])
 
         return self._apply_config(study_data.config)[0]
 
