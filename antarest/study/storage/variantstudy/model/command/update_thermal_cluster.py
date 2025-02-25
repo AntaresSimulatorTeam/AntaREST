@@ -52,19 +52,17 @@ class UpdateThermalCluster(ICommand):
             if thermal.id == self.thermal_cluster_id:
                 thermal_cluster_config = self.update_thermal_config(thermal)
                 study_data.areas[self.area_id].thermals[index] = thermal_cluster_config
-                break
-        else:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"The thermal cluster '{self.thermal_cluster_id}' in the area '{self.area_id}' is not found.",
-                ),
-                {},
-            )
+                return (
+                    CommandOutput(
+                        status=True,
+                        message=f"The thermal cluster '{self.thermal_cluster_id}' in the area '{self.area_id}' has been updated.",
+                    ),
+                    {},
+                )
         return (
             CommandOutput(
-                status=True,
-                message=f"The thermal cluster '{self.thermal_cluster_id}' in the area '{self.area_id}' has been updated.",
+                status=False,
+                message=f"The thermal cluster '{self.thermal_cluster_id}' in the area '{self.area_id}' is not found.",
             ),
             {},
         )
