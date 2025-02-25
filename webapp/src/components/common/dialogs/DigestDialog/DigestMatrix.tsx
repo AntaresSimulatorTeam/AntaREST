@@ -17,7 +17,7 @@ import {
   generateResultColumns,
   groupResultColumns,
 } from "@/components/common/Matrix/shared/utils";
-import { Box } from "@mui/material";
+import { Box, useColorScheme } from "@mui/material";
 import type { DigestMatrixData } from "./types";
 import { GridOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
@@ -34,6 +34,7 @@ interface DigestMatrixProps {
 
 function DigestMatrix({ matrix }: DigestMatrixProps) {
   const [t] = useTranslation();
+  const { mode } = useColorScheme();
 
   const columns = matrix.groupedColumns
     ? groupResultColumns(
@@ -41,6 +42,7 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
           titles: isGroupedColumns(matrix.columns) ? matrix.columns : [],
           width: 130,
         }),
+        mode === "dark",
       )
     : generateDataColumns({
         timeSeriesColumns: false,

@@ -75,7 +75,7 @@ function DataGridViewer({ data, columns }: DataGridViewerProps) {
 
   return (
     <DataGrid
-      theme={theme}
+      readOnly
       width="100%"
       height="100%"
       rows={data.length}

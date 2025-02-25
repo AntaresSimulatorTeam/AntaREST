@@ -48,10 +48,15 @@ const darkColors = {
   dateTimeBg: "#161c2a",
   text: "#ffffff",
   textMedium: "#c1c3d9",
+  textLight: "#a1a5b9",
   accent: "rgba(255, 184, 0, 0.9)",
   accentLight: "rgba(255, 184, 0, 0.2)",
   aggregateBg: "#464770",
   aggregateAvgBg: "#3d3e5f",
+  readonlyBg: "#111722",
+  readonlyHeader: "#161c2a",
+  groupHeaderBg: "#1d2433",
+  groupHeaderHover: "#242b3b",
 };
 
 const lightColors = {
@@ -61,11 +66,16 @@ const lightColors = {
   header: "#e8e8e8",
   text: "#000000",
   textMedium: "#555555",
+  textLight: "#777777",
   accent: "rgba(25, 118, 210, 0.9)",
   accentLight: "rgba(25, 118, 210, 0.2)",
   dateTimeBg: "#e3e3e8",
   aggregateBg: "#ffe4e1",
   aggregateAvgBg: "#ffc4bc",
+  readonlyBg: "#f0f0f0",
+  readonlyHeader: "#e8e8e8",
+  groupHeaderBg: "#efefef",
+  groupHeaderHover: "#f5f5f5",
 };
 
 export const darkTheme: Theme = {
@@ -74,7 +84,7 @@ export const darkTheme: Theme = {
   accentFg: darkColors.text,
   textDark: darkColors.text,
   textMedium: darkColors.textMedium,
-  textLight: "#a1a5b9",
+  textLight: darkColors.textLight,
   textBubble: darkColors.text,
   bgIconHeader: darkColors.header,
   fgIconHeader: darkColors.text,
@@ -110,7 +120,7 @@ export const lightTheme: Theme = {
   accentFg: lightColors.text,
   textDark: lightColors.text,
   textMedium: lightColors.textMedium,
-  textLight: "#777777",
+  textLight: lightColors.textLight,
   textBubble: lightColors.text,
   bgIconHeader: lightColors.header,
   fgIconHeader: lightColors.text,
@@ -130,27 +140,48 @@ export const lightTheme: Theme = {
 };
 
 export const readOnlyDarkTheme: Partial<Theme> = {
-  bgCell: darkColors.header,
-  bgCellMedium: darkColors.base,
-  textDark: "#faf9f6",
-  textMedium: "#808080",
-  textLight: "#606060",
-  accentColor: "#2a365a",
-  accentLight: "rgba(42, 54, 90, 0.2)",
+  bgCell: darkColors.readonlyBg,
+  bgCellMedium: darkColors.readonlyHeader,
+  bgHeader: darkColors.readonlyHeader,
+  bgHeaderHasFocus: darkColors.readonlyBg,
+  bgHeaderHovered: darkColors.readonlyHeader,
+  textDark: darkColors.text,
+  textMedium: darkColors.textMedium,
+  textLight: darkColors.textLight,
+  accentColor: darkColors.accent,
+  accentLight: darkColors.accentLight,
   borderColor: "rgba(255, 255, 255, 0.08)",
   drilldownBorder: "rgba(255, 255, 255, 0.2)",
 };
 
 export const readOnlyLightTheme: Partial<Theme> = {
-  bgCell: lightColors.header,
-  bgCellMedium: lightColors.lighter,
+  bgCell: lightColors.readonlyBg,
+  bgCellMedium: lightColors.readonlyHeader,
+  bgHeader: lightColors.readonlyHeader,
+  bgHeaderHasFocus: lightColors.readonlyBg,
+  bgHeaderHovered: lightColors.readonlyHeader,
   textDark: lightColors.text,
-  textMedium: "#666666",
-  textLight: "#888888",
-  accentColor: "#e0e0e0",
-  accentLight: "rgba(224, 224, 224, 0.2)",
+  textMedium: lightColors.textMedium,
+  textLight: lightColors.textLight,
+  accentColor: lightColors.accent,
+  accentLight: lightColors.accentLight,
   borderColor: "rgba(0, 0, 0, 0.08)",
   drilldownBorder: "rgba(0, 0, 0, 0.2)",
+};
+
+export const groupHeaderTheme = {
+  dark: {
+    bgHeader: darkColors.groupHeaderBg,
+    bgHeaderHovered: darkColors.groupHeaderHover,
+    textHeader: darkColors.text,
+    textGroupHeader: darkColors.textMedium,
+  },
+  light: {
+    bgHeader: lightColors.groupHeaderBg,
+    bgHeaderHovered: lightColors.groupHeaderHover,
+    textHeader: lightColors.text,
+    textGroupHeader: lightColors.textMedium,
+  },
 };
 
 export const dateTimeTheme = {

@@ -17,6 +17,7 @@ import {
   Skeleton,
   ToggleButton,
   ToggleButtonGroup,
+  useColorScheme,
   type ToggleButtonGroupProps,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
@@ -55,6 +56,7 @@ type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { mode } = useColorScheme();
   const { outputId } = useParams();
 
   const outputRes = useStudySynthesis({
@@ -190,16 +192,19 @@ function ResultDetails() {
       return [];
     }
 
-    return groupResultColumns([
-      {
-        id: "date",
-        title: "Date",
-        type: Column.DateTime,
-        editable: false,
-      },
-      ...generateResultColumns({ titles: resultColHeaders }),
-    ]);
-  }, [matrixRes.data, resultColHeaders]);
+    return groupResultColumns(
+      [
+        {
+          id: "date",
+          title: "Date",
+          type: Column.DateTime,
+          editable: false,
+        },
+        ...generateResultColumns({ titles: resultColHeaders }),
+      ],
+      mode === "dark",
+    );
+  }, [matrixRes.data, mode, resultColHeaders]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
