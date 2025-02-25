@@ -28,14 +28,16 @@ from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
 from antarest.study.business.model.link_model import LinkDTO
-from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.business.xpansion_management import (
-    LinkNotFound,
+from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
-    UpdateXpansionSettings,
+    XpansionResourceFileType,
+    XpansionSettingsUpdate,
+)
+from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.business.xpansion_management import (
+    LinkNotFound,
     XpansionCandidateDTO,
     XpansionFileNotFoundError,
     XpansionManager,
@@ -199,7 +201,7 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
         "sensitivity_config": {"epsilon": 10500.0, "projection": ["foo"], "capex": False},
     }
 
-    new_settings = UpdateXpansionSettings(**new_settings_obj)
+    new_settings = XpansionSettingsUpdate(**new_settings_obj)
 
     actual = xpansion_manager.update_xpansion_settings(study, new_settings)
 
@@ -467,7 +469,7 @@ def test_update_constraints_via_the_front(
     study.get_files().tree.save({"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}})
 
     # asserts we can update a field without writing the field additional constraint in the file
-    front_settings = UpdateXpansionSettings(master="relaxed")
+    front_settings = XpansionSettingsUpdate(master="relaxed")
     xpansion_manager.update_xpansion_settings(study, front_settings)
     json_content = study.get_files().tree.get(["user", "expansion", "settings"])
     assert "additional-constraints" not in json_content
@@ -475,14 +477,14 @@ def test_update_constraints_via_the_front(
 
     # asserts the front-end can fill additional constraints
     new_constraint = {"additional-constraints": "constraints.txt"}
-    front_settings = UpdateXpansionSettings.model_validate(new_constraint)
+    front_settings = XpansionSettingsUpdate.model_validate(new_constraint)
     actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
     assert actual_settings.additional_constraints == "constraints.txt"
     json_content = study.get_files().tree.get(["user", "expansion", "settings"])
     assert json_content["additional-constraints"] == "constraints.txt"
 
     # asserts the front-end can unselect this constraint by not filling it
-    front_settings = UpdateXpansionSettings()
+    front_settings = XpansionSettingsUpdate()
     actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
     assert actual_settings.additional_constraints == ""
     json_content = study.get_files().tree.get(["user", "expansion", "settings"])
@@ -500,7 +502,7 @@ def test_update_weights_via_the_front(
     study.get_files().tree.save({"user": {"expansion": {"weights": {"weights.txt": b"0"}}}})
 
     # asserts we can update a field without writing the field yearly-weights in the file
-    front_settings = UpdateXpansionSettings(master="relaxed")
+    front_settings = XpansionSettingsUpdate(master="relaxed")
     xpansion_manager.update_xpansion_settings(study, front_settings)
     json_content = study.get_files().tree.get(["user", "expansion", "settings"])
     assert "yearly-weights" not in json_content
@@ -508,14 +510,14 @@ def test_update_weights_via_the_front(
 
     # asserts the front-end can fill yearly weights
     new_constraint = {"yearly-weights": "weights.txt"}
-    front_settings = UpdateXpansionSettings.model_validate(new_constraint)
+    front_settings = XpansionSettingsUpdate.model_validate(new_constraint)
     actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
     assert actual_settings.yearly_weights == "weights.txt"
     json_content = study.get_files().tree.get(["user", "expansion", "settings"])
     assert json_content["yearly-weights"] == "weights.txt"
 
     # asserts the front-end can unselect this weight by not filling it
-    front_settings = UpdateXpansionSettings()
+    front_settings = XpansionSettingsUpdate()
     actual_settings = xpansion_manager.update_xpansion_settings(study, front_settings)
     assert actual_settings.yearly_weights == ""
     json_content = study.get_files().tree.get(["user", "expansion", "settings"])
@@ -567,7 +569,7 @@ def test_add_resources(
 
     settings = xpansion_manager.get_xpansion_settings(study)
     settings.yearly_weights = filename3
-    update_settings = UpdateXpansionSettings(**settings.model_dump())
+    update_settings = XpansionSettingsUpdate(**settings.model_dump())
     xpansion_manager.update_xpansion_settings(study, update_settings)
 
     with pytest.raises(
@@ -577,7 +579,7 @@ def test_add_resources(
         xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 
     settings.yearly_weights = ""
-    update_settings = UpdateXpansionSettings(**settings.model_dump())
+    update_settings = XpansionSettingsUpdate(**settings.model_dump())
     xpansion_manager.update_xpansion_settings(study, update_settings)
     xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 

@@ -60,6 +60,7 @@ class CommandName(Enum):
     REMOVE_USER_RESOURCE = "remove_user_resource"
     REMOVE_XPANSION_CONFIGURATION = "remove_xpansion_configuration"
     REMOVE_XPANSION_RESOURCE = "remove_xpansion_resource"
+    CREATE_XPANSION_CONFIGURATION = "create_xpansion_configuration"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:

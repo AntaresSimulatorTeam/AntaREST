@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Any, Optional, Sequence
+from typing import Any, Sequence
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
@@ -23,10 +23,12 @@ from antarest.core.requests import RequestParameters
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.business.xpansion_management import (
+from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
-    UpdateXpansionSettings,
+    XpansionResourceFileType,
+    XpansionSettingsUpdate,
+)
+from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
 )
 from antarest.study.service import StudyService
@@ -52,7 +54,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def create_xpansion_configuration(
         uuid: str,
-        file: Optional[UploadFile] = File(None),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         logger.info(
@@ -60,7 +61,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        study_service.create_xpansion_configuration(uuid=uuid, zipped_config=file, params=params)
+        study_service.create_xpansion_configuration(uuid=uuid, params=params)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion",
@@ -101,7 +102,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def update_settings(
         uuid: str,
-        xpansion_settings: UpdateXpansionSettings,
+        xpansion_settings: XpansionSettingsUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GetXpansionSettings:
         logger.info(
