@@ -36,6 +36,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalPropertiesType,
     create_thermal_config,
+    create_thermal_properties,
 )
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
@@ -272,15 +273,18 @@ class ThermalManager:
         if thermal_cluster is None:
             raise ThermalClusterNotFound(path, cluster_id)
 
-        versionned_cluster = create_thermal_config(
-            study_version=study.version, **thermal_cluster.model_dump(exclude_unset=True, exclude_none=True)
+        versioned_thermal = create_thermal_properties(
+            study_version=study.version,
+            data=thermal_cluster.model_dump(exclude_unset=True, exclude_none=True, exclude={"id"}),
         )
 
-        updated_thermal = create_thermal_config(
+        updated_versioned_thermal = versioned_thermal.model_copy(
+            update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
+        )
+
+        thermal_cluster_properties = create_thermal_properties(
             study_version=study.version,
-            **versionned_cluster.model_copy(
-                update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
-            ).model_dump(exclude_unset=True, exclude_none=True),
+            data=updated_versioned_thermal.model_dump(),
         )
 
         command = UpdateThermalCluster(
@@ -293,7 +297,7 @@ class ThermalManager:
 
         study.add_commands([command])
 
-        return ThermalClusterOutput(**updated_thermal.model_dump(exclude={"id"}), id=cluster_id)
+        return ThermalClusterOutput(**thermal_cluster_properties.model_dump(), id=cluster_id)
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """

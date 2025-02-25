@@ -49,21 +49,17 @@ class UpdateThermalCluster(ICommand):
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         for index, thermal in enumerate(study_data.areas[self.area_id].thermals):
             if thermal.id == self.thermal_cluster_id:
-                # Set the object to the correct version
-                versioned_cluster = create_thermal_config(
-                    study_version=self.study_version, **thermal.model_dump(exclude_unset=True, exclude_none=True)
-                )
-                # Update the object with the new properties
-                updated_thermal = create_thermal_config(
-                    study_version=self.study_version,
-                    **versioned_cluster.model_copy(
-                        update=self.properties.model_dump(exclude_unset=True, exclude_none=True)
-                    ).model_dump(exclude_unset=True, exclude_none=True),
-                )
-
-                study_data.areas[self.area_id].thermals[index] = updated_thermal
+                thermal_cluster_config = self.update_thermal_config(thermal)
+                study_data.areas[self.area_id].thermals[index] = thermal_cluster_config
                 break
-
+        else:
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"The thermal cluster '{self.thermal_cluster_id}' in the area '{self.area_id}' is not found.",
+                ),
+                {},
+            )
         return (
             CommandOutput(
                 status=True,
@@ -105,3 +101,19 @@ class UpdateThermalCluster(ICommand):
     @override
     def get_inner_matrices(self) -> List[str]:
         return []
+
+    def update_thermal_config(self, thermal):
+        # Set the object to the correct version
+        versioned_thermal = create_thermal_config(
+            study_version=self.study_version, **thermal.model_dump(exclude_unset=True, exclude_none=True)
+        )
+        # Update the object with the new properties
+        updated_versioned_thermal = versioned_thermal.model_copy(
+            update=self.properties.model_dump(exclude_unset=True, exclude_none=True)
+        )
+        # Create the new object to be saved
+        thermal_cluster_config = create_thermal_config(
+            study_version=self.study_version,
+            **updated_versioned_thermal.model_dump(),
+        )
+        return thermal_cluster_config
