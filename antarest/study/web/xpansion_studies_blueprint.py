@@ -23,7 +23,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.model.xpansion_model import GetXpansionSettings, UpdateXpansionSettings
+from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
 from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionResourceFileType,
@@ -99,7 +99,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def update_settings(
         uuid: str,
-        xpansion_settings: UpdateXpansionSettings,
+        xpansion_settings: XpansionSettingsUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GetXpansionSettings:
         logger.info(

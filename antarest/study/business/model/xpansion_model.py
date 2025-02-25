@@ -191,7 +191,7 @@ class GetXpansionSettings(XpansionSettings):
 
 
 @all_optional_model
-class UpdateXpansionSettings(XpansionSettings):
+class XpansionSettingsUpdate(XpansionSettings):
     """
     DTO object used to update the Xpansion settings.
 

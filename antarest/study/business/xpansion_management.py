@@ -22,7 +22,7 @@ from antarest.core.exceptions import ChildNotFoundError, LinkNotFound
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.xpansion_model import GetXpansionSettings, UpdateXpansionSettings
+from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
@@ -133,7 +133,7 @@ class XpansionManager:
         return GetXpansionSettings.from_config(config_obj)
 
     def update_xpansion_settings(
-        self, study: StudyInterface, new_xpansion_settings: UpdateXpansionSettings
+        self, study: StudyInterface, new_xpansion_settings: XpansionSettingsUpdate
     ) -> GetXpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
 
@@ -381,7 +381,7 @@ class XpansionManager:
         constraints_file_name = constraints_file_name or ""
         # noinspection PyArgumentList
         args = {"additional_constraints": constraints_file_name}
-        xpansion_settings = UpdateXpansionSettings.model_validate(args)
+        xpansion_settings = XpansionSettingsUpdate.model_validate(args)
         return self.update_xpansion_settings(study, xpansion_settings)
 
     def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> List[str]:

@@ -95,7 +95,7 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
-from antarest.study.business.model.xpansion_model import GetXpansionSettings, UpdateXpansionSettings
+from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -2373,7 +2373,7 @@ class StudyService:
     def update_xpansion_settings(
         self,
         uuid: str,
-        xpansion_settings_dto: UpdateXpansionSettings,
+        xpansion_settings_dto: XpansionSettingsUpdate,
         params: RequestParameters,
     ) -> GetXpansionSettings:
         study = self.get_study(uuid)
