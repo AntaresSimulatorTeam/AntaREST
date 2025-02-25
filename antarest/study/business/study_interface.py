@@ -16,7 +16,6 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import CommandApplicationError
-from antarest.study.model import Patch
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
@@ -60,18 +59,6 @@ class StudyInterface(ABC):
         """
         raise NotImplementedError()
 
-    # TODO: Technical debt, see if it's still necessary or remove it.
-    def get_patch_data(self) -> Patch:
-        raise NotImplementedError()
-
-    # TODO: Technical debt, see if it's still necessary.
-    def update_patch_data(self, patch_data: Patch) -> None:
-        """
-        Adds commands to that study.
-        Note that implementations are not required to actually modify the underlying file study.
-        """
-        raise NotImplementedError()
-
 
 class FileStudyInterface(StudyInterface):
     """
@@ -102,17 +89,3 @@ class FileStudyInterface(StudyInterface):
             result = command.apply(self.file_study)
             if not result.status:
                 raise CommandApplicationError(result.message)
-
-    @override
-    def get_patch_data(self) -> Patch:
-        patch = Patch()
-        patch_path = self.file_study.config.study_path / "patch.json"
-        if patch_path.exists():
-            patch = Patch.model_validate_json(patch_path.read_bytes())
-        return patch
-
-    @override
-    def update_patch_data(self, patch_data: Patch) -> None:
-        patch_path = self.file_study.config.study_path / "patch.json"
-        patch_path.parent.mkdir(parents=True, exist_ok=True)
-        patch_path.write_text(patch_data.model_dump_json())

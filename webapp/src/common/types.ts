@@ -55,9 +55,6 @@ export interface StudyMetadataDTO extends IdentityDTO {
   public_mode: StudyPublicMode;
   folder?: string;
   horizon?: string;
-  scenario?: string;
-  status?: string;
-  doc?: string;
   tags?: string[];
 }
 
@@ -76,9 +73,6 @@ export interface StudyMetadata {
   publicMode: StudyPublicMode;
   folder?: string;
   horizon?: string;
-  scenario?: string;
-  status?: string;
-  doc?: string;
   tags?: string[];
 }
 
@@ -86,9 +80,6 @@ export interface StudyMetadataPatchDTO {
   name?: string;
   author?: string;
   horizon?: string;
-  scenario?: string;
-  status?: string;
-  doc?: string;
   tags?: string[];
 }
 
@@ -96,8 +87,6 @@ export interface StudyOutput {
   name: string;
   type: string;
   completionDate: string;
-  referenceStatus: boolean;
-  synchronized: boolean;
   status: string;
   archived: boolean;
 }

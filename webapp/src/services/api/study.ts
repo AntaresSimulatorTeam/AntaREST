@@ -41,7 +41,7 @@ interface Workspace {
 }
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
-  const res = await client.get(`/v1/studies`);
+  const res = await client.get(`/v1/studies?exists=True`);
   return res.data;
 };
 
