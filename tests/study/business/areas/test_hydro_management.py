@@ -42,7 +42,7 @@ class TestHydroManagement:
         tmp_path: Path,
         task_service: TaskJobService,
         core_cache: ICache,
-        event_bus: IEventBus
+        event_bus: IEventBus,
     ) -> Tuple[RawStudy, StudyService]:
         """
         Set up data for the next tests
@@ -89,7 +89,6 @@ class TestHydroManagement:
 
         return raw_study, study_service
 
-
     @with_db_context
     def test_get_field_values(
         self,
@@ -98,7 +97,7 @@ class TestHydroManagement:
         tmp_path: Path,
         task_service: TaskJobService,
         core_cache: ICache,
-        event_bus: IEventBus
+        event_bus: IEventBus,
     ):
         """
         Create an area, edit manually some fields with capital letters
@@ -109,12 +108,7 @@ class TestHydroManagement:
 
         # retrieve setup data
         raw_study, study_service = self.setup(
-            raw_study_service,
-            variant_study_service,
-            tmp_path,
-            task_service,
-            core_cache,
-            event_bus
+            raw_study_service, variant_study_service, tmp_path, task_service, core_cache, event_bus
         )
         # create an area
         area_creation_dto = AreaCreationDTO(name="AreaTestGet", type=AreaType.AREA)
@@ -129,8 +123,8 @@ class TestHydroManagement:
         with open(hydro_ini_path) as f:
             old_content = f.read()
             new_content = old_content.replace("areatestget", "AreaTestGet").replace(
-                "[inter-daily-breakdown]\n" "AreaTestGet = 1",
-                "[inter-daily-breakdown]\n" "AreaTestGet = 2",
+                "[inter-daily-breakdown]\nAreaTestGet = 1",
+                "[inter-daily-breakdown]\nAreaTestGet = 2",
             )
 
         with open(hydro_ini_path, "w") as f:
@@ -150,7 +144,7 @@ class TestHydroManagement:
         tmp_path: Path,
         task_service: TaskJobService,
         core_cache: ICache,
-        event_bus: IEventBus
+        event_bus: IEventBus,
     ):
         """
         Test if set_field_values works as expected
@@ -158,12 +152,7 @@ class TestHydroManagement:
         """
         # retrieve setup data
         raw_study, study_service = self.setup(
-            raw_study_service,
-            variant_study_service,
-            tmp_path,
-            task_service,
-            core_cache,
-            event_bus
+            raw_study_service, variant_study_service, tmp_path, task_service, core_cache, event_bus
         )
         # create an area
         area_creation_dto = AreaCreationDTO(name="AreaTestSet", type=AreaType.AREA)

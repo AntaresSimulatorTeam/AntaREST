@@ -136,9 +136,7 @@ class HydroManager:
         file_study = study.get_files()
         return file_study.tree.get(HYDRO_PATH.split("/"))
 
-    def get_field_values(
-        self, study: StudyInterface, area_id: str
-    ) -> ManagementOptionsFormFields:
+    def get_field_values(self, study: StudyInterface, area_id: str) -> ManagementOptionsFormFields:
         """
         Get management options for a given area
         """
@@ -148,9 +146,7 @@ class HydroManager:
             path = field_info["path"]
             target_name = path.split("/")[-1]
             field_dict = hydro_config.get(target_name, {})
-            return field_dict.get(
-                self.get_id(area_id, field_dict), field_info["default_value"]
-            )
+            return field_dict.get(self.get_id(area_id, field_dict), field_info["default_value"])
 
         return ManagementOptionsFormFields.model_construct(
             **{name: get_value(info) for name, info in FIELDS_INFO.items()}
@@ -177,16 +173,12 @@ class HydroManager:
         for field_name, value in field_values.__iter__():
             if value is not None:
                 # retrieve the area id from the original file, including its capital letters
-                file_area_id = self.get_id(
-                    area_id, reformat_hydro_config.get(field_name, {})
-                )
+                file_area_id = self.get_id(area_id, reformat_hydro_config.get(field_name, {}))
                 info = FIELDS_INFO[field_name]
 
                 commands.append(
                     UpdateConfig(
-                        target="/".join(
-                            [info["path"], file_area_id]
-                        ),  # update the right fields
+                        target="/".join([info["path"], file_area_id]),  # update the right fields
                         data=value,
                         command_context=self._command_context,
                         study_version=study.version,
@@ -197,9 +189,7 @@ class HydroManager:
             study.add_commands(commands)
 
     # noinspection SpellCheckingInspection
-    def get_inflow_structure(
-        self, study: StudyInterface, area_id: str
-    ) -> InflowStructure:
+    def get_inflow_structure(self, study: StudyInterface, area_id: str) -> InflowStructure:
         """
         Retrieves inflow structure values for a specific area within a study.
 
@@ -210,15 +200,11 @@ class HydroManager:
         path = INFLOW_PATH.format(area_id=area_id)
         # file_study = self.storage_service.get_storage(study).get_raw(study)
         file_study = study.get_files()
-        inter_monthly_correlation = file_study.tree.get(path.split("/")).get(
-            "intermonthly-correlation", 0.5
-        )
+        inter_monthly_correlation = file_study.tree.get(path.split("/")).get("intermonthly-correlation", 0.5)
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
 
     # noinspection SpellCheckingInspection
-    def update_inflow_structure(
-        self, study: StudyInterface, area_id: str, values: InflowStructure
-    ) -> None:
+    def update_inflow_structure(self, study: StudyInterface, area_id: str, values: InflowStructure) -> None:
         """
         Updates inflow structure values for a specific area within a study.
 
