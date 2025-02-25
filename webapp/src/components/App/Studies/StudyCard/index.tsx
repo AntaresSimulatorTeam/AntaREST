@@ -58,6 +58,7 @@ import PropertiesDialog from "../../Singlestudy/PropertiesDialog";
 import ActionsMenu from "./ActionsMenu";
 import type { DialogsType } from "./types";
 import CopyButton from "@/components/common/buttons/CopyButton";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 const logError = debug("antares:studieslist:error");
 
@@ -94,6 +95,7 @@ const StudyCard = memo((props: Props) => {
   const study = useAppSelector((state) => getStudy(state, id));
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { isDarkMode } = useThemeColorScheme();
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -313,7 +315,7 @@ const StudyCard = memo((props: Props) => {
             <Chip
               icon={<AltRouteOutlinedIcon />}
               label={t("studies.variant").toLowerCase()}
-              color="primary"
+              color={isDarkMode ? "primary" : "secondary"}
             />
           )}
           <Chip label={study.workspace} color={study.managed ? "info" : "default"} />

@@ -17,12 +17,13 @@ import {
   generateResultColumns,
   groupResultColumns,
 } from "@/components/common/Matrix/shared/utils";
-import { Box, useColorScheme } from "@mui/material";
+import { Box } from "@mui/material";
 import type { DigestMatrixData } from "./types";
 import { GridOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import EmptyView from "../../page/EmptyView";
 import DataGridViewer from "../../DataGridViewer";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 const isGroupedColumns = (columns: string[] | string[][]): columns is string[][] => {
   return Array.isArray(columns[0]);
@@ -34,7 +35,7 @@ interface DigestMatrixProps {
 
 function DigestMatrix({ matrix }: DigestMatrixProps) {
   const [t] = useTranslation();
-  const { mode } = useColorScheme();
+  const { isDarkMode } = useThemeColorScheme();
 
   const columns = matrix.groupedColumns
     ? groupResultColumns(
@@ -42,7 +43,7 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
           titles: isGroupedColumns(matrix.columns) ? matrix.columns : [],
           width: 130,
         }),
-        mode === "dark",
+        isDarkMode,
       )
     : generateDataColumns({
         timeSeriesColumns: false,

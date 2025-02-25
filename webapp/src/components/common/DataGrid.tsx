@@ -26,7 +26,7 @@ import { useCallback, useMemo, useState } from "react";
 import { voidFn } from "@/utils/fnUtils";
 import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
 import { useUpdateEffect } from "react-use";
-import { useColorScheme } from "@mui/material";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 interface StringRowMarkerOptions {
   kind: "string" | "clickable-string";
@@ -84,19 +84,20 @@ function DataGrid({
     columns: CompactSelection.empty(),
   });
 
-  const { mode, systemMode } = useColorScheme();
-  const isDarkMode = mode === "dark" || systemMode === "dark";
-  const baseTheme = isDarkMode ? darkTheme : lightTheme;
+  const { isDarkMode } = useThemeColorScheme();
 
   const theme = useMemo(() => {
+    const baseTheme = isDarkMode ? darkTheme : lightTheme;
+
     if (readOnly) {
       return {
         ...baseTheme,
         ...(isDarkMode ? readOnlyDarkTheme : readOnlyLightTheme),
       };
     }
+
     return baseTheme;
-  }, [readOnly, isDarkMode, baseTheme]);
+  }, [isDarkMode, readOnly]);
 
   useUpdateEffect(() => {
     setColumns(initColumns());

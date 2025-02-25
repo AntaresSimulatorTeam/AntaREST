@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { useColorScheme } from "@mui/material";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import type { EventListeners, PartialOptions } from "overlayscrollbars";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import "overlayscrollbars/overlayscrollbars.css";
 import "./styles.css";
 
@@ -30,8 +30,7 @@ function CustomScrollbar<T extends React.ElementType>({
   options,
   ...rest
 }: CustomScrollbarProps<T>) {
-  const { mode, systemMode } = useColorScheme();
-  const isDarkMode = mode === "dark" || systemMode === "dark";
+  const { isDarkMode } = useThemeColorScheme();
 
   return (
     <OverlayScrollbarsComponent

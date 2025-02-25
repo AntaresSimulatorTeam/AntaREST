@@ -42,7 +42,7 @@ import type { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modeliza
 import { Aggregate, Column, Operation } from "../../shared/constants";
 import { aggregatesAvgTheme, aggregatesTheme, dateTimeTheme } from "../../styles";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
-import { useColorScheme } from "@mui/material";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -75,6 +75,8 @@ export function useMatrix(
     pendingUpdates: [],
     updateCount: 0,
   });
+
+  const { isDarkMode } = useThemeColorScheme();
 
   // Determine the aggregate types to display in the matrix
   const aggregateTypes = useMemo(
@@ -124,9 +126,6 @@ export function useMatrix(
       setIsLoading(false);
     }
   };
-
-  const { mode } = useColorScheme();
-  const isDarkMode = mode === "dark";
 
   useEffect(() => {
     fetchMatrix();
@@ -195,6 +194,7 @@ export function useMatrix(
     customColumns,
     colWidth,
     aggregateTypes,
+    isDarkMode,
   ]);
 
   // Apply updates to the matrix data and store them in the pending updates list

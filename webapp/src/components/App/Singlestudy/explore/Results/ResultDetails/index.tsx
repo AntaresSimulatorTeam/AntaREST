@@ -17,7 +17,6 @@ import {
   Skeleton,
   ToggleButton,
   ToggleButtonGroup,
-  useColorScheme,
   type ToggleButtonGroupProps,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
@@ -51,12 +50,13 @@ import EmptyView from "../../../../../common/page/EmptyView";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
 import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
 import DataGridViewer from "@/components/common/DataGridViewer";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const { mode } = useColorScheme();
+  const { isDarkMode } = useThemeColorScheme();
   const { outputId } = useParams();
 
   const outputRes = useStudySynthesis({
@@ -202,9 +202,9 @@ function ResultDetails() {
         },
         ...generateResultColumns({ titles: resultColHeaders }),
       ],
-      mode === "dark",
+      isDarkMode,
     );
-  }, [matrixRes.data, mode, resultColHeaders]);
+  }, [matrixRes.data, isDarkMode, resultColHeaders]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
