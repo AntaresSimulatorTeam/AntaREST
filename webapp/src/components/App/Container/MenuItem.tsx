@@ -19,7 +19,7 @@ import LaunchIcon from "@mui/icons-material/Launch";
 interface Props {
   title: string;
   isMenuOpen: boolean;
-  icon: SvgIconComponent;
+  icon: React.ReactNode;
   onClick?: VoidFunction;
   link?: string;
 }
@@ -55,7 +55,7 @@ function MenuItem({ title, isMenuOpen, icon, onClick, link }: Props) {
           <ListItemIcon
             sx={[{ minWidth: 0, justifyContent: "center", mr: isMenuOpen ? 3 : "auto" }]}
           >
-            <Icon />
+            {icon}
           </ListItemIcon>
           <ListItemText primary={title} sx={[{ opacity: isMenuOpen ? 1 : 0 }]} />
           {isExternalLink && (

@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
 import type { AxiosError } from "axios";
 import debug from "debug";
@@ -54,9 +53,12 @@ import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import { getJobProgress } from "../../../services/api/launcher";
 import type { TaskDTO } from "../../../services/api/tasks/types";
-import { TaskStatus, TaskType } from "../../../services/api/tasks/constants";
+import { TaskStatus } from "../../../services/api/tasks/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import { TASK_TYPES_MANAGED } from "./utils";
+import { useMount } from "react-use";
+import { resetTaskNotifications } from "@/redux/ducks/ui";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -74,6 +76,10 @@ function JobsListing() {
   const dispatch = useAppDispatch();
   const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
 
+  useMount(() => {
+    dispatch(resetTaskNotifications());
+  });
+
   const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
     try {
@@ -88,14 +94,7 @@ function JobsListing() {
 
       const allTasks = await getTasks({
         status: [TaskStatus.Running, TaskStatus.Pending, TaskStatus.Failed, TaskStatus.Completed],
-        type: [
-          TaskType.Copy,
-          TaskType.Archive,
-          TaskType.Unarchive,
-          TaskType.UpgradeStudy,
-          TaskType.ThermalClusterSeriesGeneration,
-          TaskType.Scan,
-        ],
+        type: TASK_TYPES_MANAGED,
       });
 
       const dateThreshold = moment().subtract(1, "m");

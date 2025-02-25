@@ -17,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
-import AssignmentIcon from "@mui/icons-material/Assignment";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
 import ApiIcon from "@mui/icons-material/Api";
@@ -45,17 +44,17 @@ const topMenuItems = [
   {
     titleKey: "studies.title",
     link: "/studies",
-    icon: TravelExploreOutlinedIcon,
+    icon: <TravelExploreOutlinedIcon />,
   },
-  { titleKey: "tasks.title", link: "/tasks", icon: AssignmentIcon },
-  { titleKey: "data.title", link: "/data", icon: StorageIcon },
+  { titleKey: "tasks.title", link: "/tasks", icon: <TaskIcon /> },
+  { titleKey: "data.title", link: "/data", icon: <StorageIcon /> },
 ];
 
 const subMenuItems = [
   {
     titleKey: "api.title",
     link: "/apidoc",
-    icon: ApiIcon,
+    icon: <ApiIcon />,
   },
   {
     titleKey: "documentation.title",
@@ -65,7 +64,7 @@ const subMenuItems = [
 ];
 
 const bottomMenuItems = [
-  { titleKey: "settings.title", link: "/settings", icon: SettingsOutlinedIcon },
+  { titleKey: "settings.title", link: "/settings", icon: <SettingsOutlinedIcon /> },
 ];
 
 interface Props {
@@ -128,7 +127,7 @@ function Container({ children }: Props) {
             {currentStudyId && (
               <MenuItem
                 title={t("recentStudy.title")}
-                icon={CenterFocusStrongIcon}
+                icon={<CenterFocusStrongIcon />}
                 isMenuOpen={isDrawerOpen}
                 link={`/studies/${currentStudyId}`}
               />
@@ -167,7 +166,7 @@ function Container({ children }: Props) {
             ))}
             <MenuItem
               title={t("global.signOut")}
-              icon={LogoutIcon}
+              icon={<LogoutIcon />}
               isMenuOpen={isDrawerOpen}
               onClick={() => setOpenLogoutDialog(true)}
             />
@@ -176,7 +175,7 @@ function Container({ children }: Props) {
           <List>
             <MenuItem
               title={t("global.reduce")}
-              icon={isDrawerOpen ? ChevronLeftIcon : ChevronRightIcon}
+              icon={isDrawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
               isMenuOpen={isDrawerOpen}
               onClick={() => dispatch(setMenuOpen(!isDrawerOpen))}
             />
