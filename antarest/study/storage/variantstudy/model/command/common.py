@@ -30,7 +30,7 @@ class FilteringOptions:
 
 class CommandName(Enum):
     CREATE_AREA = "create_area"
-    UPDATE_AREA_PROPERTIES = "update_area_properties"
+    UPDATE_AREAS_PROPERTIES = "update_area_properties"
     UPDATE_AREA_UI = "update_area_ui"
     REMOVE_AREA = "remove_area"
     CREATE_DISTRICT = "create_district"

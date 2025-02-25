@@ -22,15 +22,15 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateAreaProperties(ICommand):
+class UpdateAreasProperties(ICommand):
     """
-    Command used to update area properties
+    Command used to update multiple areas properties
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_AREA_PROPERTIES
+    command_name: CommandName = CommandName.UPDATE_AREAS_PROPERTIES
 
     # Command parameters
     # ==================
@@ -39,7 +39,7 @@ class UpdateAreaProperties(ICommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message="Area properties updated"), {}
+        return CommandOutput(status=True, message="Areas properties updated"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -84,11 +84,19 @@ class UpdateAreaProperties(ICommand):
 
     @override
     def to_dto(self) -> CommandDTO:
+        area_folder_model = {
+            key: area_folder.model_dump(mode="json", exclude_unset=True, exclude_none=True)
+            for key, area_folder in self.dict_area_folder.items()
+        }
+        thermal_area_properties = [
+            thermal.model_dump(mode="json", exclude_unset=True, exclude_none=True)
+            for thermal in self.list_thermal_area_properties
+        ]
         return CommandDTO(
-            action=CommandName.UPDATE_AREA_PROPERTIES.value,
+            action=CommandName.UPDATE_AREAS_PROPERTIES.value,
             args={
-                "area_folder": self.dict_area_folder,
-                "thermal_area_properties": self.list_thermal_area_properties,
+                "area_folder": area_folder_model,
+                "thermal_area_properties": thermal_area_properties,
             },
             study_version=self.study_version,
         )

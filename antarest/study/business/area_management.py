@@ -37,7 +37,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
-from antarest.study.storage.variantstudy.model.command.update_area_properties import UpdateAreaProperties
+from antarest.study.storage.variantstudy.model.command.update_area_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -195,8 +195,8 @@ class AreaManager:
         old_areas_by_ids = self.get_all_area_props(study)
         new_areas_by_ids = dict(old_areas_by_ids)
 
-        dict_area_folder: Dict[str, AreaFolder] = {}
-        list_thermal_area_properties: List[ThermalAreasProperties] = []
+        dict_areas_folder: Dict[str, AreaFolder] = {}
+        list_thermal_areas_properties: List[ThermalAreasProperties] = []
 
         for area_id, update_area in update_areas_by_ids.items():
             old_area = old_areas_by_ids[area_id]
@@ -206,12 +206,12 @@ class AreaManager:
             area_folder = update_area_folder_configuration(old_area, new_area)
             thermal_area_properties = update_thermal_configuration(area_id, old_area, new_area)
 
-            dict_area_folder[area_id] = area_folder
-            list_thermal_area_properties.append(thermal_area_properties)
+            dict_areas_folder[area_id] = area_folder
+            list_thermal_areas_properties.append(thermal_area_properties)
 
-        command = UpdateAreaProperties(
-            dict_area_folder=dict_area_folder,
-            list_thermal_area_properties=list_thermal_area_properties,
+        command = UpdateAreasProperties(
+            dict_area_folder=dict_areas_folder,
+            list_thermal_area_properties=list_thermal_areas_properties,
             command_context=self._command_context,
             study_version=study.version,
         )
