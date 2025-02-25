@@ -16,6 +16,7 @@ from typing_extensions import override
 from antarest.study.business.model.sts_model import STStorageUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfigType,
     create_st_storage_config,
     create_st_storage_properties,
 )
@@ -49,12 +50,15 @@ class UpdateSTStorage(ICommand):
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         for index, sts in enumerate(study_data.areas[self.area_id].st_storages):
             if sts.id == self.st_storage_id:
-                values = sts.model_dump()
-                values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
-                study_data.areas[self.area_id].st_storages[index] = create_st_storage_config(
-                    study_version=self.study_version, **values
+                sts_config = self.update_st_storage(sts)
+                study_data.areas[self.area_id].st_storages[index] = sts_config
+                return (
+                    CommandOutput(
+                        status=True,
+                        message=f"The st_storage cluster '{self.st_storage_id}' in the area '{self.area_id}' has been updated.",
+                    ),
+                    {},
                 )
-                break
         else:
             return (
                 CommandOutput(
@@ -63,14 +67,6 @@ class UpdateSTStorage(ICommand):
                 ),
                 {},
             )
-
-        return (
-            CommandOutput(
-                status=True,
-                message=f"The st_storage cluster '{self.st_storage_id}' in the area '{self.area_id}' has been updated.",
-            ),
-            {},
-        )
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -103,3 +99,9 @@ class UpdateSTStorage(ICommand):
     @override
     def get_inner_matrices(self) -> List[str]:
         return []
+
+    def update_st_storage(self, sts: STStorageConfigType) -> STStorageConfigType:
+        values = sts.model_dump()
+        values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
+        sts_config = create_st_storage_config(study_version=self.study_version, **values)
+        return sts_config
