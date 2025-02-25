@@ -17,7 +17,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalClusterUp
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     create_thermal_config,
-    create_thermal_properties,
+    create_thermal_properties, ThermalConfig, ThermalConfigType,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -102,7 +102,7 @@ class UpdateThermalCluster(ICommand):
     def get_inner_matrices(self) -> List[str]:
         return []
 
-    def update_thermal_config(self, thermal):
+    def update_thermal_config(self, thermal: ThermalConfigType) -> ThermalConfigType:
         # Set the object to the correct version
         versioned_thermal = create_thermal_config(
             study_version=self.study_version, **thermal.model_dump(exclude_unset=True, exclude_none=True)
