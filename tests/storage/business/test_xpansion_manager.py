@@ -22,15 +22,15 @@ import pytest
 from fastapi import UploadFile
 from pandas.errors import ParserError
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, FileCurrentlyUsedInSettings
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
 from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.business.xpansion_management import (
-    FileCurrentlyUsedInSettings,
     LinkNotFound,
     Master,
     Solver,
@@ -39,7 +39,6 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionFileNotFoundError,
     XpansionManager,
-    XpansionResourceFileType,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -571,7 +570,10 @@ def test_add_resources(
     update_settings = UpdateXpansionSettings(**settings.model_dump())
     xpansion_manager.update_xpansion_settings(study, update_settings)
 
-    with pytest.raises(FileCurrentlyUsedInSettings):
+    with pytest.raises(
+        FileCurrentlyUsedInSettings,
+        match=f"The weights file '{filename3}' is still used in the xpansion settings and cannot be deleted",
+    ):
         xpansion_manager.delete_resource(study, XpansionResourceFileType.WEIGHTS, filename3)
 
     settings.yearly_weights = ""

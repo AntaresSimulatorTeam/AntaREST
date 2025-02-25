@@ -734,3 +734,9 @@ class FolderNotFoundInWorkspace(HTTPException):
 
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class FileCurrentlyUsedInSettings(HTTPException):
+    def __init__(self, resource_type: str, filename: str) -> None:
+        msg = f"The {resource_type} file '{filename}' is still used in the xpansion settings and cannot be deleted"
+        super().__init__(HTTPStatus.CONFLICT, msg)
