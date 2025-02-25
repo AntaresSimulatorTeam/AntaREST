@@ -55,6 +55,14 @@ class UpdateSTStorage(ICommand):
                     study_version=self.study_version, **values
                 )
                 break
+        else:
+            return (
+                CommandOutput(
+                    status=False,
+                    message=f"The st_storage cluster '{self.st_storage_id}' in the area '{self.area_id}' is not found.",
+                ),
+                {},
+            )
 
         return (
             CommandOutput(

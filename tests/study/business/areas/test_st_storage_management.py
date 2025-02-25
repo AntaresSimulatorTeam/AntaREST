@@ -333,7 +333,6 @@ class TestSTStorageManager:
             initial_level_optim=True,
         )
 
-        # Création de l'objet Area pour "West", qui inclut le stockage créé
         area_west = Area(
             name="West",
             links={},
@@ -344,7 +343,6 @@ class TestSTStorageManager:
             st_storages=[st_storage],
         )
 
-        # Affectation de l'attribut 'areas' dans la config sous forme de dictionnaire
         mock_config.areas = {"West": area_west}
         file_study.config = mock_config
 
@@ -374,6 +372,7 @@ class TestSTStorageManager:
         assert st_storage_output.initial_level == 0.0
         assert not st_storage_output.initial_level_optim
         assert st_storage_output.injection_nominal_capacity == 2000.0
+        assert st_storage_output.efficiency == 1.0
 
     def test_get_st_storage__config_not_found(self, st_storage_manager: STStorageManager) -> None:
         """
