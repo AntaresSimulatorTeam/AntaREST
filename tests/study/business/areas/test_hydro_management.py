@@ -23,7 +23,6 @@ from tests.helpers import with_db_context
 
 
 class TestHydroManagement:
-    """ """
     @staticmethod
     def setup(
         raw_study_service: RawStudyService,
@@ -66,6 +65,7 @@ class TestHydroManagement:
         study_service = StudyService(
             raw_study_service=raw_study_service,
             variant_study_service=variant_study_service,
+            command_context=Mock(),
             user_service=Mock(spec=LoginService),
             repository=repository,
             event_bus=event_bus,
@@ -76,6 +76,7 @@ class TestHydroManagement:
         )
 
         return raw_study, study_service
+
 
     @with_db_context
     def test_get_field_values(
@@ -91,6 +92,9 @@ class TestHydroManagement:
         Create an area, edit manually some fields with capital letters
         Check if data retrieved match the original files
         """
+        user = db.session.add(User(id=30, name="regular"))
+        print(f"hello, {user.name}")
+
         # retrieve setup data
         raw_study, study_service = self.setup(
             raw_study_service,
