@@ -21,11 +21,14 @@ from pydantic import ValidationError
 
 from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageMatrixNotFound, STStorageNotFound
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
+from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorageConfig,
+    STStorageGroup,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -318,56 +321,58 @@ class TestSTStorageManager:
         mock_config = Mock(spec=FileStudyTreeConfig, study_id="id", version=STUDY_VERSION_8_6)
         file_study.config = mock_config
 
+        st_storage = STStorageConfig(
+            id="storage1",
+            name="storage1",
+            group=STStorageGroup.OTHER1,
+            injection_nominal_capacity=100.0,
+            withdrawal_nominal_capacity=100.0,
+            reservoir_capacity=100.0,
+            efficiency=1.0,
+            initial_level=0.5,
+            initial_level_optim=True,
+        )
+
+        area_west = Area(
+            name="West",
+            links={},
+            thermals=[],
+            renewables=[],
+            filters_synthesis=[],
+            filters_year=[],
+            st_storages=[st_storage],
+        )
+
+        mock_config.areas = {"West": area_west}
+        file_study.config = mock_config
+
         study = FileStudyInterface(file_study)
 
         # Given the following arguments
-        edit_form = STStorageInput(initial_level=0, initial_level_optim=False)
+        edit_form = STStorageUpdate(initial_level=0, initial_level_optim=False, injection_nominal_capacity=2000.0)
 
         # Test behavior for area not in study
         # noinspection PyTypeChecker
         file_study.tree.get.return_value = {}
         with pytest.raises((AreaNotFound, STStorageNotFound)) as ctx:
-            manager.update_storage(study, area_id="unknown_area", storage_id="storage1", form=edit_form)
+            manager.update_storage(study, area_id="unknown_area", storage_id="storage1", cluster_data=edit_form)
         assert "unknown_area" in ctx.value.detail
-        assert "storage1" in ctx.value.detail
 
         # Test behavior for st_storage not in study
         file_study.tree.get.return_value = {"storage1": LIST_CFG["storage1"]}
         with pytest.raises(STStorageNotFound) as ctx:
-            manager.update_storage(study, area_id="West", storage_id="unknown_storage", form=edit_form)
+            manager.update_storage(study, area_id="West", storage_id="unknown_storage", cluster_data=edit_form)
         assert "West" in ctx.value.detail
         assert "unknown_storage" in ctx.value.detail
 
         # Test behavior for nominal case
-        file_study.tree.get.return_value = LIST_CFG
-        manager.update_storage(study, area_id="West", storage_id="storage1", form=edit_form)
+        file_study.tree.get.return_value = LIST_CFG["storage1"]
+        st_storage_output = manager.update_storage(study, area_id="West", storage_id="storage1", cluster_data=edit_form)
 
-        # Assert that the storage fields have been updated
-        #
-        # Currently, the method used to update the fields is the `UpdateConfig` command
-        # which only does a partial update of the configuration file: only the fields
-        # that are explicitly mentioned in the form are updated. The other fields are left unchanged.
-        #
-        # The effective update of the fields is done by the `save` method of the `IniFileNode` class.
-        # The signature of the `save` method is: `save(self, value: Any, path: Sequence[str]) -> None`
-
-        assert file_study.tree.save.call_count == 2
-
-        # Fields "initiallevel" and "initialleveloptim" could be updated in any order.
-        # We construct a *set* of the actual calls to the `save` method and compare it
-        # to the expected set of calls.
-        actual = {(call_args[0][0], tuple(call_args[0][1])) for call_args in file_study.tree.save.call_args_list}
-        expected = {
-            (
-                0.0,
-                ("input", "st-storage", "clusters", "West", "list", "storage1", "initiallevel"),
-            ),
-            (
-                False,
-                ("input", "st-storage", "clusters", "West", "list", "storage1", "initialleveloptim"),
-            ),
-        }
-        assert actual == expected
+        assert st_storage_output.initial_level == 0.0
+        assert not st_storage_output.initial_level_optim
+        assert st_storage_output.injection_nominal_capacity == 2000.0
+        assert st_storage_output.efficiency == 1.0
 
     def test_get_st_storage__config_not_found(self, st_storage_manager: STStorageManager) -> None:
         """
