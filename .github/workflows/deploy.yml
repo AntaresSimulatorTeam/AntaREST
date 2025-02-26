@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "chore/build-dekstok-version-2773-tests"
 
 jobs:
   binary:
