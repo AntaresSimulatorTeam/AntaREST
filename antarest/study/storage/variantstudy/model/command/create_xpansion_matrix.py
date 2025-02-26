@@ -57,7 +57,7 @@ class AbstractCreateXpansionMatrix(ICommand):
         return (
             CommandOutput(
                 status=True,
-                message=f"Xpansion {resource_type} matrix '{self.filename}' has been successfully replaced.",
+                message=f"Xpansion {resource_type} matrix '{self.filename}' has been successfully created.",
             ),
             {},
         )
@@ -81,7 +81,7 @@ class CreateXpansionWeight(AbstractCreateXpansionMatrix):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        return super()._apply_with_url(study_data, ["expansion", "capa", self.filename])
+        return super()._apply_with_url(study_data, ["user", "expansion", "capa", self.filename])
 
 
 class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
@@ -97,4 +97,4 @@ class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        return super()._apply_with_url(study_data, ["expansion", "weights", self.filename])
+        return super()._apply_with_url(study_data, ["user", "expansion", "weights", self.filename])

@@ -21,12 +21,14 @@ from pydantic import Field
 from antarest.core.exceptions import ChildNotFoundError, LinkNotFound
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.json import from_json
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.service import imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
 from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
     CreateXpansionCapacity,
     CreateXpansionWeight,
@@ -446,22 +448,26 @@ class XpansionManager:
         if isinstance(content, str):
             content = content.encode(encoding="utf-8")
 
-        matrix = imports_matrix_from_bytes(content)
-        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        matrix = matrix.tolist()
-
-        if resource_type == XpansionResourceFileType.WEIGHTS:
-            command: ICommand = CreateXpansionWeight(
-                filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+        if resource_type == XpansionResourceFileType.CONSTRAINTS:
+            data = from_json(content)
+            command: ICommand = CreateXpansionConstraint(
+                filename=filename, data=data, command_context=self._command_context, study_version=study.version
             )
-        elif resource_type == XpansionResourceFileType.CAPACITIES:
-            command = CreateXpansionCapacity(
-                filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
-            )
-        elif resource_type == XpansionResourceFileType.CONSTRAINTS:
-            print("should use command")
         else:
-            raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
+            matrix = imports_matrix_from_bytes(content)
+            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+            matrix = matrix.tolist()
+
+            if resource_type == XpansionResourceFileType.WEIGHTS:
+                command = CreateXpansionWeight(
+                    filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+                )
+            elif resource_type == XpansionResourceFileType.CAPACITIES:
+                command = CreateXpansionCapacity(
+                    filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+                )
+            else:
+                raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
 
         study.add_commands([command])
 
