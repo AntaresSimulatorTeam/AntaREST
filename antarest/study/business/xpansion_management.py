@@ -24,11 +24,16 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.service import imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
+    CreateXpansionCapacity,
+    CreateXpansionWeight,
+)
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from study.storage.variantstudy.model.command.create_xpansion_matrix import CreateXpansionWeight, CreateXpansionCapacity
 
 logger = logging.getLogger(__name__)
 
@@ -437,23 +442,28 @@ class XpansionManager:
         filename = file.filename
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
-        matrix: List[List[MatrixData]] | str = Field(validate_default=True)
-
         content = file.file.read()
         if isinstance(content, str):
             content = content.encode(encoding="utf-8")
 
+        matrix = imports_matrix_from_bytes(content)
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+        matrix = matrix.tolist()
+
         if resource_type == XpansionResourceFileType.WEIGHTS:
-            command = CreateXpansionWeight(filename=filename, command_context=self._command_context, study_version=study.version)
+            command: ICommand = CreateXpansionWeight(
+                filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+            )
         elif resource_type == XpansionResourceFileType.CAPACITIES:
-            command = CreateXpansionCapacity(filename=filename, command_context=self._command_context, study_version=study.version)
+            command = CreateXpansionCapacity(
+                filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+            )
         elif resource_type == XpansionResourceFileType.CONSTRAINTS:
             print("should use command")
         else:
             raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
 
         study.add_commands([command])
-
 
     def delete_resource(
         self,

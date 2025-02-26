@@ -201,7 +201,7 @@ def get_disk_usage(path: str | Path) -> int:
     return total_size
 
 
-def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
+def imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
     """Tries to convert bytes to a numpy array when importing a matrix"""
     str_data = data.decode("utf-8")
     if not str_data:
@@ -1706,7 +1706,7 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                matrix = _imports_matrix_from_bytes(data)
+                matrix = imports_matrix_from_bytes(data)
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
