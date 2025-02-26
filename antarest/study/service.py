@@ -1690,7 +1690,7 @@ class StudyService:
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
                 matrix = imports_matrix_from_bytes(data)
-                if not matrix:
+                if matrix is None:
                     raise MatrixImportFailed("Could not parse the given matrix")
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(

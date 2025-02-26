@@ -535,18 +535,13 @@ def test_add_resources(
     content2 = "1"
     content3 = "2"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.StringIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.StringIO(content2))
+    file_3 = UploadFile(filename=filename3, file=io.StringIO(content3))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, upload_file_list)
-
-    xpansion_manager.add_resource(
-        study,
-        XpansionResourceFileType.WEIGHTS,
-        [UploadFile(filename=filename3, file=io.StringIO(content3))],
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, file_1)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, file_2)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.WEIGHTS, file_3)
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "constraints"])
     expected1 = study.get_files().tree.get(["user", "expansion", "constraints", filename1])

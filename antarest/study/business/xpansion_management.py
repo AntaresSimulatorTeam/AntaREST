@@ -21,7 +21,6 @@ from pydantic import Field
 from antarest.core.exceptions import ChildNotFoundError, LinkNotFound, MatrixImportFailed
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.json import from_json
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
 from antarest.study.business.study_interface import StudyInterface
@@ -449,13 +448,12 @@ class XpansionManager:
             content = content.encode(encoding="utf-8")
 
         if resource_type == XpansionResourceFileType.CONSTRAINTS:
-            data = from_json(content)
             command: ICommand = CreateXpansionConstraint(
-                filename=filename, data=data, command_context=self._command_context, study_version=study.version
+                filename=filename, data=content, command_context=self._command_context, study_version=study.version
             )
         else:
             matrix = imports_matrix_from_bytes(content)
-            if not matrix:
+            if matrix is None:
                 raise MatrixImportFailed(f"Could not parse the matrix corresponding to file {filename}")
             matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
             matrix = matrix.tolist()

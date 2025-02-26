@@ -36,7 +36,7 @@ class CreateXpansionConstraint(ICommand):
     # ==================
 
     filename: str
-    data: dict[str, Any]
+    data: bytes
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
