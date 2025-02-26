@@ -28,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from study.storage.variantstudy.model.command.create_xpansion_matrix import CreateXpansionWeight, CreateXpansionCapacity
 
 logger = logging.getLogger(__name__)
 
@@ -431,11 +432,28 @@ class XpansionManager:
         self,
         study: StudyInterface,
         resource_type: XpansionResourceFileType,
-        files: List[UploadFile],
+        file: UploadFile,
     ) -> None:
-        logger.info(f"Adding xpansion {resource_type} resource file list to study '{study.id}'")
-        file_study = study.get_files()
-        self._add_raw_files(file_study, files, resource_type)
+        filename = file.filename
+        logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
+
+        matrix: List[List[MatrixData]] | str = Field(validate_default=True)
+
+        content = file.file.read()
+        if isinstance(content, str):
+            content = content.encode(encoding="utf-8")
+
+        if resource_type == XpansionResourceFileType.WEIGHTS:
+            command = CreateXpansionWeight(filename=filename, command_context=self._command_context, study_version=study.version)
+        elif resource_type == XpansionResourceFileType.CAPACITIES:
+            command = CreateXpansionCapacity(filename=filename, command_context=self._command_context, study_version=study.version)
+        elif resource_type == XpansionResourceFileType.CONSTRAINTS:
+            print("should use command")
+        else:
+            raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
+
+        study.add_commands([command])
+
 
     def delete_resource(
         self,

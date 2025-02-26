@@ -226,7 +226,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             RequestParameters(user=current_user),
         )
         study_interface = study_service.get_study_interface(study)
-        return study_service.xpansion_manager.add_resource(study_interface, resource_type, [file])
+        return study_service.xpansion_manager.add_resource(study_interface, resource_type, file)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
