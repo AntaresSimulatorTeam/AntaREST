@@ -18,15 +18,15 @@ from typing import List, Optional
 from fastapi import HTTPException, UploadFile
 from pydantic import Field
 
-from antarest.core.exceptions import ChildNotFoundError, LinkNotFound
+from antarest.core.exceptions import ChildNotFoundError, LinkNotFound, MatrixImportFailed
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.service import imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
 from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
@@ -455,6 +455,8 @@ class XpansionManager:
             )
         else:
             matrix = imports_matrix_from_bytes(content)
+            if not matrix:
+                raise MatrixImportFailed(f"Could not parse the matrix corresponding to file {filename}")
             matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
             matrix = matrix.tolist()
 
