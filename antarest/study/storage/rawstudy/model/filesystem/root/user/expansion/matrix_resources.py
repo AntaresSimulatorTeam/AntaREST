@@ -27,8 +27,7 @@ class ExpansionMatrixResources(BucketNode):
         children: TREE = {}
         for resource in self.config.path.iterdir():
             if resource.is_file():
-                # Removes the .link suffix if the matrix is normalized
-                file_name = resource.name.removesuffix(".link")
-                children[file_name] = InputSeriesMatrix(self.context, self.config.next_file(file_name))
+                node = InputSeriesMatrix(self.context, self.config.next_file(resource.name))
+                children[node.config.path.name] = node
 
         return children
