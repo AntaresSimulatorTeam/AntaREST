@@ -115,24 +115,31 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        bindings_update = {}
-        for i, existing_constraint in study_data.bindings:
-            existing_constraint = study_data.bindings[i]
-            areas_set = existing_constraint.areas
-            clusters_set = existing_constraint.clusters
-            group = self.group or existing_constraint.group
-            operator = self.operator or existing_constraint.operator
-            time_step = self.time_step or existing_constraint.time_step
-            new_constraint = BindingConstraintDTO(
-                id=self.id,
-                group=group,
-                areas=areas_set,
-                clusters=clusters_set,
-                operator=operator,
-                time_step=time_step,
-            )
-            bindings_update[i] = new_constraint
-        study_data.bindings.update(bindings_update)
+        index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
+        existing_constraint = study_data.bindings[index]
+        areas_set = existing_constraint.areas
+        clusters_set = existing_constraint.clusters
+        if self.coeffs:
+            areas_set = set()
+            clusters_set = set()
+            for j in self.coeffs.keys():
+                if "%" in j:
+                    areas_set |= set(j.split("%"))
+                elif "." in j:
+                    clusters_set.add(j)
+                    areas_set.add(j.split(".")[0])
+        group = self.group or existing_constraint.group
+        operator = self.operator or existing_constraint.operator
+        time_step = self.time_step or existing_constraint.time_step
+        new_constraint = BindingConstraintDTO(
+            id=self.id,
+            group=group,
+            areas=areas_set,
+            clusters=clusters_set,
+            operator=operator,
+            time_step=time_step,
+        )
+        study_data.bindings[index] = new_constraint
         return CommandOutput(status=True), {}
 
     def _find_binding_config(self, binding_constraints: Mapping[str, JSON]) -> Optional[Tuple[str, JSON]]:

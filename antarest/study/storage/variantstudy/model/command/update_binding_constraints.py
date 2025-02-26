@@ -48,7 +48,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     create_binding_constraint_props,
     remove_bc_from_scenario_builder,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import update_matrices_names
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -70,10 +70,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
     # Command parameters
     # ==================
 
-    # # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
-    # id: str
-    # TODO input should be ConstraintProperties
-    # TODO
+    # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     bc_props_by_id: t.Mapping[str, BindingConstraintProperties]
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
@@ -174,7 +171,6 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         removed_groups = old_groups - new_groups
         remove_bc_from_scenario_builder(file_study, removed_groups)
 
-        # call appl_config on this constraint
         study_file_target = "input/bindingconstraints/bindingconstraints"
         url = study_file_target.split("/")
         tree_node = file_study.tree.get_node(url)
@@ -185,31 +181,14 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
             )
         file_study.tree.save(config, url)
 
-        # TODO add group logic remove_bc_from_scenario_builder(study_data, removed_groups)
         return CommandOutput(status=True, message="ok")
 
     def to_dto(self) -> CommandDTO:
-        # matrices = ["values"] + [m.value for m in TermMatrices]
-        # matrix_service = self.command_context.matrix_service
-
         excluded_fields = set(ICommand.model_fields)
         json_command = self.model_dump(mode="json", exclude=excluded_fields, exclude_unset=True)
         return CommandDTO(
             action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
         )
-
-    def match_signature(self) -> str:
-        return str(self.command_name.value + MATCH_SIGNATURE_SEPARATOR + self.id)
-
-    def _create_diff(self, other: "ICommand") -> t.List["ICommand"]:
-        return [other]
-
-    def match(self, other: "ICommand", equal: bool = False) -> bool:
-        if not isinstance(other, self.__class__):
-            return False
-        if not equal:
-            return self.id == other.id
-        return super().match(other, equal)
 
     def generate_replacement_matrices(
         self,
@@ -237,9 +216,3 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                 matrix_id = matrix_name.format(bc_id=bc_id)
                 target = f"input/bindingconstraints/{matrix_id}"
                 yield (target, matrix)
-
-    def get_inner_matrices(self) -> t.List[str]:
-        """
-        Retrieves the list of matrix IDs.
-        """
-        return []
