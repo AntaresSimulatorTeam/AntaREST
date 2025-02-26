@@ -141,7 +141,7 @@ def get_binding_constraint_config_cls(study_version: StudyVersion) -> Type[Bindi
         return BindingConstraintPropertiesBase
 
 
-def create_binding_constraint_config(study_version: StudyVersion, **kwargs: Any) -> BindingConstraintProperties:
+def create_binding_constraint_props(study_version: StudyVersion, **kwargs: Any) -> BindingConstraintProperties:
     """
     Factory method to create a binding constraint configuration model.
 
@@ -442,7 +442,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         bd_id = transform_name_to_id(self.name)
 
         study_version = study_data.config.version
-        props = create_binding_constraint_config(**self.model_dump())
+        props = create_binding_constraint_props(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True)
 
         new_binding = {"id": bd_id, "name": self.name, **obj}

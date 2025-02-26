@@ -18,7 +18,6 @@ from abc import ABCMeta
 from antares.study.version import StudyVersion
 from pydantic import model_validator
 
-from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
@@ -28,7 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -46,7 +45,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     BindingConstraintProperties,
-    create_binding_constraint_config,
+    create_binding_constraint_props,
     remove_bc_from_scenario_builder,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
@@ -78,31 +77,23 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
     bc_props_by_id: t.Mapping[str, BindingConstraintProperties]
 
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        # index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
-        # existing_constraint = study_data.bindings[index]
-        # areas_set = existing_constraint.areas
-        # clusters_set = existing_constraint.clusters
-        # if self.coeffs:
-        #     areas_set = set()
-        #     clusters_set = set()
-        #     for j in self.coeffs.keys():
-        #         if "%" in j:
-        #             areas_set |= set(j.split("%"))
-        #         elif "." in j:
-        #             clusters_set.add(j)
-        #             areas_set.add(j.split(".")[0])
-        # group = self.group or existing_constraint.group
-        # operator = self.operator or existing_constraint.operator
-        # time_step = self.time_step or existing_constraint.time_step
-        # new_constraint = BindingConstraintDTO(
-        #     id=self.id,
-        #     group=group,
-        #     areas=areas_set,
-        #     clusters=clusters_set,
-        #     operator=operator,
-        #     time_step=time_step,
-        # )
-        # study_data.bindings[index] = new_constraint
+        for i, bc in enumerate(study_data):
+            bc_props = self.bc_props_by_id[bc.id]
+            existing_constraint = study_data.bindings[i]
+            areas_set = existing_constraint.areas
+            clusters_set = existing_constraint.clusters
+            group = bc_props.group or existing_constraint.group
+            operator = bc_props.operator or existing_constraint.operator
+            time_step = bc_props.time_step or existing_constraint.time_step
+            new_constraint = BindingConstraintDTO(
+                id=bc.id,
+                group=group,
+                areas=areas_set,
+                clusters=clusters_set,
+                operator=operator,
+                time_step=time_step,
+            )
+            study_data.bindings[i] = new_constraint
         return CommandOutput(status=True), {}
 
     @model_validator(mode="before")
@@ -118,7 +109,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         # input_bc_props = create_binding_constraint_config(study_version, **bc_input_as_dict)
 
         bc_props_by_id = {
-            key: create_binding_constraint_config(study_version, **value) for key, value in bc_by_id.items()
+            key: create_binding_constraint_props(study_version, **value) for key, value in bc_by_id.items()
         }
 
         # for bc_prop in bcs_props:
@@ -160,34 +151,14 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                 for [target, next_matrix] in self.generate_replacement_matrices(
                     bc_id, study_version, bc_props, bc_props.operator
                 ):
-                    try:
-                        matrix_url = target.split("/")
-                        # matrix_as_str = validate_matrix(next_matrix, {"command_context": self.command_context})
-                        replace_matrix_data: JSON = {}
-                        target_matrix = replace_matrix_data
-                        for element in matrix_url[:-1]:
-                            target_matrix[element] = {}
-                            target_matrix = target_matrix[element]
-                        target_matrix[matrix_url[-1]] = next_matrix
-                        file_study.tree.save(replace_matrix_data)
-                    except (KeyError, ChildNotFoundError) as e:
-                        logger.error(e)
-                        return CommandOutput(
-                            status=False,
-                            message=f"Path '{target}' does not exist.",
-                        )
-                    except AssertionError as e:
-                        logger.error(e)
-                        return CommandOutput(
-                            status=False,
-                            message=f"Path '{target}' does not target a matrix.",
-                        )
-                    except Exception as e:
-                        logger.error(e)
-                        return CommandOutput(
-                            status=False,
-                            message=f"Couldn't save matrix {target}.",
-                        )
+                    matrix_url = target.split("/")
+                    replace_matrix_data: JSON = {}
+                    target_matrix = replace_matrix_data
+                    for element in matrix_url[:-1]:
+                        target_matrix[element] = {}
+                        target_matrix = target_matrix[element]
+                    target_matrix[matrix_url[-1]] = next_matrix
+                    file_study.tree.save(replace_matrix_data)
             if (
                 "operator" in bc_props_as_dict
                 and bc_props.operator != bc_copy["operator"]
@@ -223,10 +194,6 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
 
         excluded_fields = set(ICommand.model_fields)
         json_command = self.model_dump(mode="json", exclude=excluded_fields, exclude_unset=True)
-        # for key in json_command:
-        #     if key in matrices:
-        #         json_command[key] = matrix_service.get_matrix_id(json_command[key])
-
         return CommandDTO(
             action=self.command_name.value, args=json_command, version=self.version, study_version=self.study_version
         )

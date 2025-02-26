@@ -29,7 +29,7 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
     TermMatrices,
-    create_binding_constraint_config,
+    create_binding_constraint_props,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -115,31 +115,24 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
-        existing_constraint = study_data.bindings[index]
-        areas_set = existing_constraint.areas
-        clusters_set = existing_constraint.clusters
-        if self.coeffs:
-            areas_set = set()
-            clusters_set = set()
-            for j in self.coeffs.keys():
-                if "%" in j:
-                    areas_set |= set(j.split("%"))
-                elif "." in j:
-                    clusters_set.add(j)
-                    areas_set.add(j.split(".")[0])
-        group = self.group or existing_constraint.group
-        operator = self.operator or existing_constraint.operator
-        time_step = self.time_step or existing_constraint.time_step
-        new_constraint = BindingConstraintDTO(
-            id=self.id,
-            group=group,
-            areas=areas_set,
-            clusters=clusters_set,
-            operator=operator,
-            time_step=time_step,
-        )
-        study_data.bindings[index] = new_constraint
+        bindings_update = {}
+        for i, existing_constraint in study_data.bindings:
+            existing_constraint = study_data.bindings[i]
+            areas_set = existing_constraint.areas
+            clusters_set = existing_constraint.clusters
+            group = self.group or existing_constraint.group
+            operator = self.operator or existing_constraint.operator
+            time_step = self.time_step or existing_constraint.time_step
+            new_constraint = BindingConstraintDTO(
+                id=self.id,
+                group=group,
+                areas=areas_set,
+                clusters=clusters_set,
+                operator=operator,
+                time_step=time_step,
+            )
+            bindings_update[i] = new_constraint
+        study_data.bindings.update(bindings_update)
         return CommandOutput(status=True), {}
 
     def _find_binding_config(self, binding_constraints: Mapping[str, JSON]) -> Optional[Tuple[str, JSON]]:
@@ -187,7 +180,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        props = create_binding_constraint_config(**self.model_dump())
+        props = create_binding_constraint_props(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
         updated_cfg = binding_constraints[index]

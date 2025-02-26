@@ -256,7 +256,7 @@ class TableModeManager:
             return data
         elif table_type == TableModeType.BINDING_CONSTRAINT:
             bcs_by_ids = {key: ConstraintInput(**values) for key, values in data.items()}
-            bcs_map = self._binding_constraint_manager.update_binding_constraints_2(study, bcs_by_ids)
+            bcs_map = self._binding_constraint_manager.update_binding_constraints(study, bcs_by_ids)
             return {
                 bc_id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()
             }
