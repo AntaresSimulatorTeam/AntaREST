@@ -16,10 +16,11 @@ from pydantic.types import StrictBool, confloat, conint
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_5, Study
-from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_5
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class PriceTakingOrder(EnumIgnoreCase):
@@ -98,14 +99,14 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
 
 
 class AdequacyPatchManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
-    def get_field_values(self, study: Study) -> AdequacyPatchFormFields:
+    def get_field_values(self, study: StudyInterface) -> AdequacyPatchFormFields:
         """
         Get adequacy patch field values for the webapp form
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         general_data = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
         parent = general_data.get("adequacy patch", {})
 
@@ -113,13 +114,13 @@ class AdequacyPatchManager:
             path = field_info["path"]
             start_version = field_info.get("start_version", -1)
             target_name = path.split("/")[-1]
-            is_in_version = file_study.config.version >= start_version
+            is_in_version = study.version >= start_version
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
         return AdequacyPatchFormFields.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(self, study: Study, field_values: AdequacyPatchFormFields) -> None:
+    def set_field_values(self, study: StudyInterface, field_values: AdequacyPatchFormFields) -> None:
         """
         Set adequacy patch config from the webapp form
         """
@@ -133,11 +134,10 @@ class AdequacyPatchManager:
                     UpdateConfig(
                         target=info["path"],
                         data=value,
-                        command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                        command_context=self._command_context,
                         study_version=study.version,
                     )
                 )
 
         if commands:
-            file_study = self.storage_service.get_storage(study).get_raw(study)
-            execute_or_add_commands(study, file_study, commands, self.storage_service)
+            study.add_commands(commands)

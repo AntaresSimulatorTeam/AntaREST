@@ -65,7 +65,7 @@ const URL_SCHEMES = {
   FILE: "file://",
 } as const;
 
-const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini", ".yml"] as const;
+const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini", ".yml", ".json"] as const;
 
 // Maps file types to their corresponding icon components.
 const iconByFileType: Record<FileType, SvgIconComponent> = {

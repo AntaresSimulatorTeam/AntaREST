@@ -13,8 +13,11 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+import pytest
 from antares.study.version import StudyVersion
 
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.thematic_trimming_field_infos import FIELDS_INFO
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingFormFields,
@@ -24,25 +27,16 @@ from antarest.study.business.thematic_trimming_management import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
-def test_thematic_trimming_config() -> None:
-    command_context = CommandContext.model_construct()
-    command_factory_mock = Mock()
-    command_factory_mock.command_context = command_context
-    raw_study_service = Mock(spec=RawStudyService)
-    variant_study_service = Mock(spec=VariantStudyService, command_factory=command_factory_mock)
+def test_thematic_trimming_config(command_context: CommandContext) -> None:
     thematic_trimming_manager = ThematicTrimmingManager(
-        storage_service=StudyStorageService(raw_study_service, variant_study_service),
+        command_context=command_context,
     )
 
-    study = VariantStudy()
     config = FileStudyTreeConfig(
         study_path=Path("somepath"),
         path=Path("somepath"),
@@ -52,7 +46,6 @@ def test_thematic_trimming_config() -> None:
         sets={},
     )
     file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
-    variant_study_service.get_raw.return_value = FileStudy(config=config, tree=file_tree_mock)
     file_tree_mock.get.side_effect = [
         # For study version < 800:
         {},
@@ -65,6 +58,9 @@ def test_thematic_trimming_config() -> None:
         # For study version >= 840:
         {"variables selection": {"selected_vars_reset": False, "select_var +": ["CONG. FEE (ALG.)"]}},
     ]
+
+    study = Mock(StudyInterface)
+    study.get_files.return_value = FileStudy(config=config, tree=file_tree_mock)
 
     study.version = config.version = 700
     actual = thematic_trimming_manager.get_field_values(study)
@@ -105,7 +101,7 @@ def test_thematic_trimming_config() -> None:
     new_config = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, True))
     new_config.coal = False
     thematic_trimming_manager.set_field_values(study, new_config)
-    assert variant_study_service.append_commands.called_with(
+    assert study.add_commands.called_with(
         UpdateConfig(
             target="settings/generaldata/variables selection",
             data={"select_var -": [FIELDS_INFO["coal"]["path"]]},
@@ -117,7 +113,7 @@ def test_thematic_trimming_config() -> None:
     new_config = ThematicTrimmingFormFields(**dict.fromkeys(fields_info, False))
     new_config.renw_1 = True
     thematic_trimming_manager.set_field_values(study, new_config)
-    assert variant_study_service.append_commands.called_with(
+    assert study.add_commands.called_with(
         UpdateConfig(
             target="settings/generaldata/variables selection",
             data={

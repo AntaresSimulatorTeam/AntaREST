@@ -23,11 +23,11 @@ from pydantic import ValidationInfo, field_validator
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_model import AreaInfoDTO
-from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class AreaCoefficientItem(FormFieldsBaseModel):
@@ -200,8 +200,8 @@ class CorrelationManager:
     # categories but the usage is deprecated.
     url = ["input", "hydro", "prepro", "correlation", "annual"]
 
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
     def _get_array(
         self,
@@ -213,23 +213,21 @@ class CorrelationManager:
 
     def _set_array(
         self,
-        study: Study,
-        file_study: FileStudy,
+        study: StudyInterface,
         area_ids: Sequence[str],
         array: npt.NDArray[np.float64],
     ) -> None:
         correlation_cfg = _array_to_config(area_ids, array)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
         command = UpdateConfig(
             target="/".join(self.url),
             data=correlation_cfg,
-            command_context=command_context,
-            study_version=file_study.config.version,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
     def get_correlation_form_fields(
-        self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
+        self, all_areas: List[AreaInfoDTO], study: StudyInterface, area_id: str
     ) -> CorrelationFormFields:
         """
         Get the correlation form fields (percentage values) for a given area.
@@ -242,7 +240,7 @@ class CorrelationManager:
         Returns:
             The correlation coefficients.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
 
         area_ids = [area.id for area in all_areas]
         array = self._get_array(file_study, area_ids)
@@ -265,7 +263,7 @@ class CorrelationManager:
     def set_correlation_form_fields(
         self,
         all_areas: List[AreaInfoDTO],
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         data: CorrelationFormFields,
     ) -> CorrelationFormFields:
@@ -292,13 +290,13 @@ class CorrelationManager:
             # sort for deterministic error message and testing
             raise AreaNotFound(*sorted(invalid_ids))
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         array = self._get_array(file_study, area_ids)
         j = area_ids.index(area_id)
         for i, coefficient in enumerate(correlation_values.values()):
             array[i][j] = coefficient / 100
             array[j][i] = coefficient / 100
-        self._set_array(study, file_study, area_ids, array)
+        self._set_array(study, area_ids, array)
 
         column = array[:, area_ids.index(area_id)] * 100
         return CorrelationFormFields.model_construct(
@@ -308,7 +306,7 @@ class CorrelationManager:
         )
 
     def get_correlation_matrix(
-        self, all_areas: List[AreaInfoDTO], study: Study, columns: List[str]
+        self, all_areas: List[AreaInfoDTO], study: StudyInterface, columns: List[str]
     ) -> CorrelationMatrix:
         """
         Read the correlation coefficients and get the correlation matrix (values in the range -1 to 1).
@@ -321,7 +319,7 @@ class CorrelationManager:
         Returns:
             The correlation matrix.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         area_ids = [area.id for area in all_areas]
         columns = [a for a in area_ids if a in columns] if columns else area_ids
         array = self._get_array(file_study, area_ids)
@@ -333,7 +331,7 @@ class CorrelationManager:
     def set_correlation_matrix(
         self,
         all_areas: List[AreaInfoDTO],
-        study: Study,
+        study: StudyInterface,
         matrix: CorrelationMatrix,
     ) -> CorrelationMatrix:
         """
@@ -347,7 +345,7 @@ class CorrelationManager:
         Returns:
             The updated correlation matrix.
         """
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         area_ids = [area.id for area in all_areas]
 
         array = self._get_array(file_study, area_ids)
@@ -361,7 +359,7 @@ class CorrelationManager:
                 array[i][j] = coefficient
                 array[j][i] = coefficient
 
-        self._set_array(study, file_study, area_ids, array)
+        self._set_array(study, area_ids, array)
 
         # noinspection PyTypeChecker
         data = [[c for i, c in enumerate(row) if area_ids[i] in matrix.columns] for row in array.tolist()]

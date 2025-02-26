@@ -27,6 +27,7 @@ import type {
   MatrixUpdateDTO,
   MatrixAggregates,
   AggregateConfig,
+  RowCountSource,
 } from "../../shared/types";
 import {
   calculateMatrixAggregates,
@@ -59,6 +60,7 @@ export function useMatrix(
   customColumns?: string[] | readonly string[],
   colWidth?: number,
   fetchMatrixData?: fetchMatrixFn,
+  rowCountSource: RowCountSource = "matrixIndex",
 ) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [columnCount, setColumnCount] = useState(0);
@@ -312,6 +314,8 @@ export function useMatrix(
     // Use the matrix index 'steps' field to determine the number of rows
     // This ensures consistent row display (8760 for hourly, 365 for daily/weekly)
     // rather than using data.length which can vary for Binding Constraints (8784/366)
-    rowCount: index?.steps,
+    // !Bugfix: some matrices have a fixed number of rows regardless of the time stamps
+    // for those we want to use the data.length instead of the matrix index via `rowCountSource` prop
+    rowCount: rowCountSource === "matrixIndex" ? index?.steps : currentState.data.length,
   };
 }

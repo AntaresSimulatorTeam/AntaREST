@@ -43,6 +43,7 @@ function HydroMatrix({ type }: Props) {
         readOnly={hydroMatrix.readOnly}
         showPercent={hydroMatrix.showPercent}
         fetchMatrixData={hydroMatrix.fetchFn}
+        rowCountSource={hydroMatrix.rowCountSource}
       />
     </Box>
   );

@@ -10,16 +10,13 @@
 #
 # This file is part of the Antares project.
 
-import datetime
 import re
-import uuid
 from unittest.mock import Mock, patch
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
-from antarest.core.model import PublicMode
-from antarest.login.model import Group, User
 from antarest.study.business.allocation_management import (
     AllocationField,
     AllocationFormFields,
@@ -27,16 +24,31 @@ from antarest.study.business.allocation_management import (
     AllocationMatrix,
 )
 from antarest.study.business.area_management import AreaInfoDTO, AreaType
-from antarest.study.model import STUDY_VERSION_8_8, RawStudy, Study, StudyContentStatus
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+
+
+def create_study_interface(tree: FileStudyTree, version: StudyVersion = STUDY_VERSION_8_6) -> StudyInterface:
+    """
+    Creates a mock study interface which returns the provided study tree.
+    """
+    file_study = Mock(spec=FileStudy)
+    file_study.tree = tree
+    study = Mock(StudyInterface)
+    study.get_files.return_value = file_study
+    study.version = version
+    file_study.config.version = version
+    return study
+
+
+@pytest.fixture
+def manager(command_context: CommandContext) -> AllocationManager:
+    return AllocationManager(command_context)
 
 
 class TestAllocationField:
@@ -171,52 +183,9 @@ class TestAllocationMatrix:
             )
 
 
-# noinspection SpellCheckingInspection
-EXECUTE_OR_ADD_COMMANDS = "antarest.study.business.allocation_management.execute_or_add_commands"
-
-
 class TestAllocationManager:
-    @pytest.fixture(name="study_storage_service")
-    def study_storage_service(self) -> StudyStorageService:
-        """Return a mocked StudyStorageService."""
-        return Mock(
-            spec=StudyStorageService,
-            variant_study_service=Mock(
-                spec=VariantStudyService,
-                command_factory=Mock(
-                    spec=CommandFactory,
-                    command_context=Mock(spec=CommandContext),
-                ),
-            ),
-            get_storage=Mock(return_value=Mock(spec=RawStudyService, get_raw=Mock(spec=FileStudy))),
-        )
 
-    # noinspection PyArgumentList
-    @pytest.fixture(name="study_uuid")
-    def study_uuid_fixture(self, db_session) -> str:
-        user = User(id=0, name="admin")
-        group = Group(id="my-group", name="group")
-        raw_study = RawStudy(
-            id=str(uuid.uuid4()),
-            name="Dummy",
-            version="850",
-            author="John Smith",
-            created_at=datetime.datetime.now(datetime.timezone.utc),
-            updated_at=datetime.datetime.now(datetime.timezone.utc),
-            public_mode=PublicMode.FULL,
-            owner=user,
-            groups=[group],
-            workspace="default",
-            path="/path/to/study",
-            content_status=StudyContentStatus.WARNING,
-        )
-        db_session.add(raw_study)
-        db_session.commit()
-        return raw_study.id
-
-    def test_get_allocation_matrix__nominal_case(self, db_session, study_storage_service, study_uuid):
-        # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_uuid)
+    def test_get_allocation_matrix__nominal_case(self, manager):
 
         # Prepare the mocks
         allocation_cfg = {
@@ -225,11 +194,12 @@ class TestAllocationManager:
             "s": {"[allocation]": {"s": 0.1, "n": 0.2, "w": 0.6}},
             "w": {"[allocation]": {"w": 1}},
         }
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=allocation_cfg),
+
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=allocation_cfg),
+            )
         )
 
         # Given the following arguments
@@ -239,8 +209,6 @@ class TestAllocationManager:
             AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
-        area_id = "*"  # all areas
-        manager = AllocationManager(study_storage_service)
 
         # run
         matrix = manager.get_allocation_matrix(study, all_areas)
@@ -257,17 +225,15 @@ class TestAllocationManager:
             ],
         )
 
-    def test_get_allocation_matrix__no_allocation(self, db_session, study_storage_service, study_uuid):
-        # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_uuid)
+    def test_get_allocation_matrix__no_allocation(self, manager):
 
         # Prepare the mocks
         allocation_cfg = {}
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=allocation_cfg),
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=allocation_cfg),
+            )
         )
 
         # Given the following arguments
@@ -277,26 +243,23 @@ class TestAllocationManager:
             AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
-        area_id = "*"
-        manager = AllocationManager(study_storage_service)
 
         with pytest.raises(AllocationDataNotFound) as ctx:
             manager.get_allocation_matrix(study, all_areas)
         assert re.fullmatch(r"Allocation data.*is not found", ctx.value.detail)
 
-    def test_get_allocation_form_fields__nominal_case(self, db_session, study_storage_service, study_uuid):
-        study: RawStudy = db_session.query(Study).get(study_uuid)
+    def test_get_allocation_form_fields__nominal_case(self, manager):
         allocation_cfg = {
             "n": {"[allocation]": {"n": 1}},
             "e": {"[allocation]": {"e": 3, "s": 1}},
             "s": {"[allocation]": {"s": 0.1, "n": 0.2, "w": 0.6}},
             "w": {"[allocation]": {"w": 1}},
         }
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=allocation_cfg["n"]),
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=allocation_cfg["n"]),
+            )
         )
 
         all_areas = [
@@ -307,7 +270,6 @@ class TestAllocationManager:
         ]
 
         area_id = "n"
-        manager = AllocationManager(study_storage_service)
 
         fields = manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
 
@@ -317,14 +279,13 @@ class TestAllocationManager:
         ]
         assert fields.allocation == expected_allocation
 
-    def test_get_allocation_form_fields__no_allocation_data(self, db_session, study_storage_service, study_uuid):
-        study: RawStudy = db_session.query(Study).get(study_uuid)
+    def test_get_allocation_form_fields__no_allocation_data(self, manager):
         allocation_cfg = {"n": {}}
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=allocation_cfg["n"]),
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=allocation_cfg["n"]),
+            )
         )
 
         all_areas = [
@@ -332,14 +293,12 @@ class TestAllocationManager:
         ]
 
         area_id = "n"
-        manager = AllocationManager(study_storage_service)
 
         with pytest.raises(AllocationDataNotFound) as ctx:
             manager.get_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
         assert "n" in ctx.value.detail
 
-    def test_set_allocation_form_fields__nominal_case(self, db_session, study_storage_service, study_uuid):
-        study: RawStudy = db_session.query(Study).get(study_uuid)
+    def test_set_allocation_form_fields__nominal_case(self, manager):
         all_areas = [
             AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
             AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
@@ -347,13 +306,59 @@ class TestAllocationManager:
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
         area_id = "n"
-        manager = AllocationManager(study_storage_service)
-        study_storage_service.get_storage(study).get_raw(study).config.version = STUDY_VERSION_8_8
-        with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
-            with patch(
-                "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
-                return_value={"e": 0.5, "s": 0.25, "w": 0.25},
-            ):
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+            ),
+            version=STUDY_VERSION_8_8,
+        )
+        with patch(
+            "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
+            return_value={"e": 0.5, "s": 0.25, "w": 0.25},
+        ):
+            manager.set_allocation_form_fields(
+                all_areas=all_areas,
+                study=study,
+                area_id=area_id,
+                data=AllocationFormFields.construct(
+                    allocation=[
+                        AllocationField.construct(area_id="e", coefficient=0.5),
+                        AllocationField.construct(area_id="s", coefficient=0.25),
+                        AllocationField.construct(area_id="w", coefficient=0.25),
+                    ],
+                ),
+            )
+
+        assert study.add_commands.call_count == 1
+        mock_call = study.add_commands.mock_calls[0]
+        (actual_commands,) = mock_call.args
+        assert len(actual_commands) == 1
+        cmd: UpdateConfig = actual_commands[0]
+        assert cmd.command_name == CommandName.UPDATE_CONFIG
+        assert cmd.target == f"input/hydro/allocation/{area_id}/[allocation]"
+        assert cmd.data == {"e": 0.5, "s": 0.25, "w": 0.25}
+
+    def test_set_allocation_form_fields__no_allocation_data(self, manager):
+
+        all_areas = [
+            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
+            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
+            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
+            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+        ]
+
+        area_id = "n"
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+            ),
+            version=STUDY_VERSION_8_8,
+        )
+        with patch(
+            "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
+            side_effect=AllocationDataNotFound(area_id),
+        ):
+            with pytest.raises(AllocationDataNotFound) as ctx:
                 manager.set_allocation_form_fields(
                     all_areas=all_areas,
                     study=study,
@@ -366,53 +371,9 @@ class TestAllocationManager:
                         ],
                     ),
                 )
-
-        assert exe.call_count == 1
-        mock_call = exe.mock_calls[0]
-        actual_study, _, actual_commands, _ = mock_call.args
-        assert actual_study == study
-        assert len(actual_commands) == 1
-        cmd: UpdateConfig = actual_commands[0]
-        assert cmd.command_name == CommandName.UPDATE_CONFIG
-        assert cmd.target == f"input/hydro/allocation/{area_id}/[allocation]"
-        assert cmd.data == {"e": 0.5, "s": 0.25, "w": 0.25}
-
-    def test_set_allocation_form_fields__no_allocation_data(self, db_session, study_storage_service, study_uuid):
-        study: RawStudy = db_session.query(Study).get(study_uuid)
-
-        all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
-        ]
-
-        area_id = "n"
-        manager = AllocationManager(study_storage_service)
-        study_storage_service.get_storage(study).get_raw(study).config.version = STUDY_VERSION_8_8
-
-        with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
-            with patch(
-                "antarest.study.business.allocation_management.AllocationManager.get_allocation_data",
-                side_effect=AllocationDataNotFound(area_id),
-            ):
-                with pytest.raises(AllocationDataNotFound) as ctx:
-                    manager.set_allocation_form_fields(
-                        all_areas=all_areas,
-                        study=study,
-                        area_id=area_id,
-                        data=AllocationFormFields.model_construct(
-                            allocation=[
-                                AllocationField.model_construct(area_id="e", coefficient=0.5),
-                                AllocationField.model_construct(area_id="s", coefficient=0.25),
-                                AllocationField.model_construct(area_id="w", coefficient=0.25),
-                            ],
-                        ),
-                    )
         assert "n" in ctx.value.detail
 
-    def test_set_allocation_form_fields__invalid_area_ids(self, db_session, study_storage_service, study_uuid):
-        study: RawStudy = db_session.query(Study).get(study_uuid)
+    def test_set_allocation_form_fields__invalid_area_ids(self, manager):
 
         all_areas = [
             AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
@@ -422,8 +383,6 @@ class TestAllocationManager:
         ]
 
         area_id = "n"
-        manager = AllocationManager(study_storage_service)
-
         data = AllocationFormFields.model_construct(
             allocation=[
                 AllocationField.model_construct(area_id="e", coefficient=0.5),
@@ -433,6 +392,6 @@ class TestAllocationManager:
         )
 
         with pytest.raises(AreaNotFound) as ctx:
-            manager.set_allocation_form_fields(all_areas=all_areas, study=study, area_id=area_id, data=data)
+            manager.set_allocation_form_fields(all_areas=all_areas, study=Mock(), area_id=area_id, data=data)
 
         assert "invalid_area" in ctx.value.detail

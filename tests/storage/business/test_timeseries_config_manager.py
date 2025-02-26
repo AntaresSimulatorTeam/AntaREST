@@ -18,19 +18,16 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.timeseries_config_management import (
     TimeSeriesConfigDTO,
     TimeSeriesConfigManager,
     TimeSeriesTypeConfig,
 )
-from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_db_context
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 @pytest.fixture
@@ -44,17 +41,14 @@ def file_study_820(tmpdir: Path) -> FileStudy:
     return FileStudy(config, FileStudyTree(Mock(), config))
 
 
-@with_db_context
-def test_nominal_case(
-    file_study_820: FileStudy, raw_study_service: RawStudyService, variant_study_service: VariantStudyService
-):
+def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext):
     # Checks default value
     assert file_study_820.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"]) == 1
 
+    study = FileStudyInterface(file_study_820)
+
     # Prepares the test
-    storage_service = StudyStorageService(raw_study_service, variant_study_service)
-    config_manager = TimeSeriesConfigManager(storage_service)
-    study = RawStudy(id="test", path=str(file_study_820.config.path))
+    config_manager = TimeSeriesConfigManager(command_context)
 
     # Asserts the get method returns the right value
     assert config_manager.get_values(study) == TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=1))

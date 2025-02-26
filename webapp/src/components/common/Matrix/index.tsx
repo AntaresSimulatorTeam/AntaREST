@@ -23,7 +23,7 @@ import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 import MatrixActions from "./components/MatrixActions";
 import EmptyView from "../page/EmptyView";
 import type { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import type { AggregateConfig } from "./shared/types";
+import type { AggregateConfig, RowCountSource } from "./shared/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
 
@@ -41,6 +41,7 @@ interface MatrixProps {
   colWidth?: number;
   fetchMatrixData?: fetchMatrixFn;
   canImport?: boolean;
+  rowCountSource?: RowCountSource;
 }
 
 function Matrix({
@@ -57,6 +58,7 @@ function Matrix({
   colWidth,
   fetchMatrixData,
   canImport = false,
+  rowCountSource,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -92,6 +94,7 @@ function Matrix({
     customColumns,
     colWidth,
     fetchMatrixData,
+    rowCountSource,
   );
 
   ////////////////////////////////////////////////////////////////

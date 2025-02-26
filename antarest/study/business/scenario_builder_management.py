@@ -16,12 +16,11 @@ from typing import Any, Dict, Mapping, MutableMapping, cast
 import typing_extensions as te
 from typing_extensions import override
 
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices, TableForm
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 # Symbols used in scenario builder data
 _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
@@ -162,11 +161,11 @@ def _build_ruleset(file_study: FileStudy, symbol: str = "") -> RulesetMatrices:
 
 
 class ScenarioBuilderManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
-    def get_config(self, study: Study) -> Rulesets:
-        sections = cast(_Sections, self.storage_service.get_storage(study).get(study, "/settings/scenariobuilder"))
+    def get_config(self, study: StudyInterface) -> Rulesets:
+        sections = cast(_Sections, study.get_files().tree.get(["settings", "scenariobuilder"]))
 
         rulesets: Rulesets = {}
         for ruleset_name, data in sections.items():
@@ -192,8 +191,7 @@ class ScenarioBuilderManager:
 
         return rulesets
 
-    def update_config(self, study: Study, rulesets: Rulesets) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+    def update_config(self, study: StudyInterface, rulesets: Rulesets) -> None:
 
         sections: _Sections = {}
         for ruleset_name, ruleset in rulesets.items():
@@ -210,17 +208,14 @@ class ScenarioBuilderManager:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unknown symbol {symbol}")
 
-        context = self.storage_service.variant_study_service.command_factory.command_context
-        execute_or_add_commands(
-            study,
-            file_study,
-            [UpdateScenarioBuilder(data=sections, command_context=context, study_version=file_study.config.version)],
-            self.storage_service,
+        command = UpdateScenarioBuilder(
+            data=sections, command_context=self._command_context, study_version=study.version
         )
+        study.add_commands([command])
 
-    def get_scenario_by_type(self, study: Study, scenario_type: ScenarioType) -> TableForm:
+    def get_scenario_by_type(self, study: StudyInterface, scenario_type: ScenarioType) -> TableForm:
         symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         ruleset = _build_ruleset(file_study, symbol)
         ruleset.sort_scenarios()
 
@@ -228,8 +223,10 @@ class ScenarioBuilderManager:
         table_form = ruleset.get_table_form(str(scenario_type), nan_value="")
         return table_form
 
-    def update_scenario_by_type(self, study: Study, table_form: TableForm, scenario_type: ScenarioType) -> TableForm:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+    def update_scenario_by_type(
+        self, study: StudyInterface, table_form: TableForm, scenario_type: ScenarioType
+    ) -> TableForm:
+        file_study = study.get_files()
         ruleset = _build_ruleset(file_study)
         ruleset.update_table_form(table_form, str(scenario_type), nan_value="")
         ruleset.sort_scenarios()
@@ -237,11 +234,10 @@ class ScenarioBuilderManager:
         # Create the UpdateScenarioBuilder command
         ruleset_name = _get_active_ruleset_name(file_study)
         data = {ruleset_name: ruleset.get_rules(allow_nan=True)}
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
         update_scenario = UpdateScenarioBuilder(
-            data=data, command_context=command_context, study_version=file_study.config.version
+            data=data, command_context=self._command_context, study_version=study.version
         )
-        execute_or_add_commands(study, file_study, [update_scenario], self.storage_service)
+        study.add_commands([update_scenario])
 
         # Extract the updated table form for the given scenario type
         table_form = ruleset.get_table_form(str(scenario_type), nan_value="")

@@ -18,7 +18,6 @@ from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -105,12 +104,10 @@ class CommandFactory:
         self,
         generator_matrix_constants: GeneratorMatrixConstants,
         matrix_service: ISimpleMatrixService,
-        patch_service: PatchService,
     ):
         self.command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=matrix_service,
-            patch_service=patch_service,
         )
 
     def _to_single_command(

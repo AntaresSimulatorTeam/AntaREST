@@ -12,40 +12,36 @@
 
 from typing import Dict, List, Optional
 
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class ConfigManager:
     def __init__(
         self,
-        storage_service: StudyStorageService,
+        command_context: CommandContext,
     ) -> None:
-        self.storage_service = storage_service
+        self._command_context = command_context
 
-    def get_playlist(self, study: Study) -> Optional[Dict[int, float]]:
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
-        return FileStudyHelpers.get_playlist(file_study)
+    def get_playlist(self, study: StudyInterface) -> Optional[Dict[int, float]]:
+        return FileStudyHelpers.get_playlist(study.get_files())
 
     def set_playlist(
         self,
-        study: Study,
+        study: StudyInterface,
         playlist: Optional[List[int]],
         weights: Optional[Dict[int, int]],
         reverse: bool,
         active: bool,
     ) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
         command = UpdatePlaylist(
             items=playlist,
             weights=weights,
             reverse=reverse,
             active=active,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])

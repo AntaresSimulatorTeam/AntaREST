@@ -20,7 +20,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, List, MutableSequence, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
 
 import numpy as np
@@ -68,6 +68,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
+from antarest.login.utils import get_current_user
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -97,6 +98,7 @@ from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
@@ -114,6 +116,7 @@ from antarest.study.model import (
     CommentsDto,
     ExportFormat,
     MatrixIndex,
+    Patch,
     PatchArea,
     PatchCluster,
     RawStudy,
@@ -135,7 +138,9 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
+from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -175,6 +180,7 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -385,6 +391,130 @@ class StudyUpgraderTask:
     __call__ = run_task
 
 
+class RawStudyInterface(StudyInterface):
+    """
+    Raw study business domain interface.
+
+    Provides data from raw study service and applies commands instantly
+    on underlying files.
+    """
+
+    def __init__(
+        self,
+        raw_service: RawStudyService,
+        variant_service: VariantStudyService,
+        patch_service: PatchService,
+        study: RawStudy,
+    ):
+        self._raw_study_service = raw_service
+        self._variant_study_service = variant_service
+        self._patch_service = patch_service
+        self._study = study
+        self._cached_file_study: Optional[FileStudy] = None
+        self._version = StudyVersion.parse(self._study.version)
+
+    @override
+    @property
+    def id(self) -> str:
+        return self._study.id
+
+    @override
+    @property
+    def version(self) -> StudyVersion:
+        return self._version
+
+    @override
+    def get_files(self) -> FileStudy:
+        if not self._cached_file_study:
+            self._cached_file_study = self._raw_study_service.get_raw(self._study)
+        return self._cached_file_study
+
+    @override
+    def add_commands(self, commands: Sequence[ICommand]) -> None:
+        study = self._study
+        file_study = self.get_files()
+
+        for command in commands:
+            result = command.apply(file_study)
+            if not result.status:
+                raise CommandApplicationError(result.message)
+        self._variant_study_service.invalidate_cache(study)
+
+        if not is_managed(study):
+            # In a previous version, de-normalization was performed asynchronously.
+            # However, this cause problems with concurrent file access,
+            # especially when de-normalizing a matrix (which can take time).
+            #
+            # async_denormalize = threading.Thread(
+            #     name=f"async_denormalize-{study.id}",
+            #     target=file_study.tree.denormalize,
+            # )
+            # async_denormalize.start()
+            #
+            # To avoid this concurrency problem, it would be necessary to implement a
+            # locking system for the entire study using a file lock (since multiple processes,
+            # not only multiple threads, could access the same content simultaneously).
+            #
+            # Currently, we use a synchronous call to address the concurrency problem
+            # within the current process (not across multiple processes)...
+            file_study.tree.denormalize()
+
+    @override
+    def get_patch_data(self) -> Patch:
+        return self._patch_service.get(self._study)
+
+    @override
+    def update_patch_data(self, patch_data: Patch) -> None:
+        self._patch_service.save(self._study, patch_data)
+
+
+class VariantStudyInterface(StudyInterface):
+    """
+    Variant study business domain interface.
+
+    Provides data from variant study service and simply append commands
+    to the variant.
+    """
+
+    def __init__(self, variant_service: VariantStudyService, patch_service: PatchService, study: VariantStudy):
+        self._variant_service = variant_service
+        self._patch_service = patch_service
+        self._study = study
+        self._version = StudyVersion.parse(self._study.version)
+
+    @override
+    @property
+    def id(self) -> str:
+        return self._study.id
+
+    @override
+    @property
+    def version(self) -> StudyVersion:
+        return self._version
+
+    @override
+    def get_files(self) -> FileStudy:
+        return self._variant_service.get_raw(self._study)
+
+    @override
+    def add_commands(self, commands: Sequence[ICommand]) -> None:
+        # get current user if not in session, otherwise get session user
+        current_user = get_current_user()
+        self._variant_service.append_commands(
+            self._study.id,
+            transform_command_to_dto(commands, force_aggregate=True),
+            RequestParameters(user=current_user),
+        )
+
+    @override
+    def get_patch_data(self) -> Patch:
+        return self._patch_service.get(self._study)
+
+    @override
+    def update_patch_data(self, patch_data: Patch) -> None:
+        self._patch_service.save(self._study, patch_data)
+
+
 class StudyService:
     """
     Storage module facade service to handle studies management.
@@ -394,6 +524,7 @@ class StudyService:
         self,
         raw_study_service: RawStudyService,
         variant_study_service: VariantStudyService,
+        command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
         event_bus: IEventBus,
@@ -408,28 +539,28 @@ class StudyService:
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
-        self.area_manager = AreaManager(self.storage_service, self.repository)
-        self.district_manager = DistrictManager(self.storage_service)
-        self.links_manager = LinkManager(self.storage_service)
-        self.config_manager = ConfigManager(self.storage_service)
-        self.general_manager = GeneralManager(self.storage_service)
-        self.thematic_trimming_manager = ThematicTrimmingManager(self.storage_service)
-        self.optimization_manager = OptimizationManager(self.storage_service)
-        self.adequacy_patch_manager = AdequacyPatchManager(self.storage_service)
-        self.advanced_parameters_manager = AdvancedParamsManager(self.storage_service)
-        self.hydro_manager = HydroManager(self.storage_service)
-        self.allocation_manager = AllocationManager(self.storage_service)
-        self.properties_manager = PropertiesManager(self.storage_service)
-        self.renewable_manager = RenewableManager(self.storage_service)
-        self.thermal_manager = ThermalManager(self.storage_service)
-        self.st_storage_manager = STStorageManager(self.storage_service)
-        self.ts_config_manager = TimeSeriesConfigManager(self.storage_service)
-        self.playlist_manager = PlaylistManager(self.storage_service)
-        self.scenario_builder_manager = ScenarioBuilderManager(self.storage_service)
-        self.xpansion_manager = XpansionManager(self.storage_service)
-        self.matrix_manager = MatrixManager(self.storage_service)
-        self.binding_constraint_manager = BindingConstraintManager(self.storage_service)
-        self.correlation_manager = CorrelationManager(self.storage_service)
+        self.area_manager = AreaManager(command_context)
+        self.district_manager = DistrictManager(command_context)
+        self.links_manager = LinkManager(command_context)
+        self.config_manager = ConfigManager(command_context)
+        self.general_manager = GeneralManager(command_context)
+        self.thematic_trimming_manager = ThematicTrimmingManager(command_context)
+        self.optimization_manager = OptimizationManager(command_context)
+        self.adequacy_patch_manager = AdequacyPatchManager(command_context)
+        self.advanced_parameters_manager = AdvancedParamsManager(command_context)
+        self.hydro_manager = HydroManager(command_context)
+        self.allocation_manager = AllocationManager(command_context)
+        self.properties_manager = PropertiesManager(command_context)
+        self.renewable_manager = RenewableManager(command_context)
+        self.thermal_manager = ThermalManager(command_context)
+        self.st_storage_manager = STStorageManager(command_context)
+        self.ts_config_manager = TimeSeriesConfigManager(command_context)
+        self.playlist_manager = PlaylistManager(command_context)
+        self.scenario_builder_manager = ScenarioBuilderManager(command_context)
+        self.xpansion_manager = XpansionManager(command_context)
+        self.matrix_manager = MatrixManager(command_context)
+        self.binding_constraint_manager = BindingConstraintManager(command_context)
+        self.correlation_manager = CorrelationManager(command_context)
         self.table_mode_manager = TableModeManager(
             self.area_manager,
             self.links_manager,
@@ -807,6 +938,26 @@ class StudyService:
         self._assert_study_unarchived(study)
         return study
 
+    def get_study_interface(self, study: Study) -> StudyInterface:
+        """
+        Creates the business interface to a particular study.
+        """
+        if isinstance(study, VariantStudy):
+            return VariantStudyInterface(
+                self.storage_service.variant_study_service,
+                self.storage_service.variant_study_service.patch_service,
+                study,
+            )
+        elif isinstance(study, RawStudy):
+            return RawStudyInterface(
+                self.storage_service.raw_study_service,
+                self.storage_service.variant_study_service,
+                self.storage_service.raw_study_service.patch_service,
+                study,
+            )
+        else:
+            raise ValueError(f"Unsupported study type '{study.type}'")
+
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """
         Retrieve study path
@@ -957,16 +1108,17 @@ class StudyService:
                 all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
             else:
                 all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
-        studies_by_path = {study.path: study for study in all_studies}
+        studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
-        paths = [str(f.path) for f in folders]
+        # key should be workspace, path to sync correctly studies with same path in different workspace
+        workspace_paths = [(f.workspace, str(f.path)) for f in folders]
 
         for study in all_studies:
             if (
                 isinstance(study, RawStudy)
                 and not study.archived
-                and (study.workspace != DEFAULT_WORKSPACE_NAME and study.path not in paths)
+                and (study.workspace != DEFAULT_WORKSPACE_NAME and (study.workspace, study.path) not in workspace_paths)
             ):
                 if not study.missing:
                     logger.info(
@@ -993,11 +1145,12 @@ class StudyService:
                     self.repository.delete(study.id)
 
         # Add new studies
-        study_paths = [study.path for study in all_studies if study.missing is None]
+        study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
         missing_studies = {study.path: study for study in all_studies if study.missing is not None}
         for folder in folders:
             study_path = str(folder.path)
-            if study_path not in study_paths:
+            workspace = folder.workspace
+            if (workspace, study_path) not in study_paths:
                 try:
                     if study_path not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[folder.workspace].path
@@ -1007,7 +1160,7 @@ class StudyService:
                             name=folder.path.name,
                             path=study_path,
                             folder=str(dir_name),
-                            workspace=folder.workspace,
+                            workspace=workspace,
                             owner=None,
                             groups=folder.groups,
                             public_mode=PublicMode.FULL if len(folder.groups) == 0 else PublicMode.NONE,
@@ -1042,8 +1195,8 @@ class StudyService:
                     )
                 except Exception as e:
                     logger.error(f"Failed to add study {folder.path}", exc_info=e)
-            elif directory and study_path in studies_by_path:
-                existing_study = studies_by_path[study_path]
+            elif directory and (workspace, study_path) in studies_by_path_workspace:
+                existing_study = studies_by_path_workspace[(workspace, study_path)]
                 if self.storage_service.raw_study_service.update_name_and_version_from_raw_meta(existing_study):
                     self.repository.save(existing_study)
 
@@ -1900,8 +2053,11 @@ class StudyService:
     ) -> List[AreaInfoDTO] | Dict[str, Any]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
         return (
-            self.area_manager.get_all_areas_ui_info(study) if ui else self.area_manager.get_all_areas(study, area_type)
+            self.area_manager.get_all_areas_ui_info(study_interface)
+            if ui
+            else self.area_manager.get_all_areas(study_interface, area_type)
         )
 
     def get_all_links(
@@ -1911,7 +2067,7 @@ class StudyService:
     ) -> List[LinkDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.links_manager.get_all_links(study)
+        return self.links_manager.get_all_links(self.get_study_interface(study))
 
     def create_area(
         self,
@@ -1922,7 +2078,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_area = self.area_manager.create_area(study, area_creation_dto)
+        new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -1941,7 +2097,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        new_link = self.links_manager.create_link(study, link_creation_dto)
+        new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -1962,7 +2118,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_link = self.links_manager.update_link(study, area_from, area_to, link_update_dto)
+        updated_link = self.links_manager.update_link(
+            self.get_study_interface(study), area_from, area_to, link_update_dto
+        )
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -1982,7 +2140,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        updated_area = self.area_manager.update_area_metadata(study, area_id, area_patch_dto)
+        updated_area = self.area_manager.update_area_metadata(self.get_study_interface(study), area_id, area_patch_dto)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2003,7 +2161,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.area_manager.update_area_ui(study, area_id, area_ui, layer)
+        return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
 
     def update_thermal_cluster_metadata(
         self,
@@ -2015,7 +2173,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.area_manager.update_thermal_cluster_metadata(study, area_id, clusters_metadata)
+        return self.area_manager.update_thermal_cluster_metadata(
+            self.get_study_interface(study), area_id, clusters_metadata
+        )
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
         """
@@ -2032,14 +2192,15 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
+        study_interface = self.get_study_interface(study)
         self._assert_study_unarchived(study)
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
-            study, ConstraintFilters(area_name=area_id)
+            study_interface, ConstraintFilters(area_name=area_id)
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
-        self.area_manager.delete_area(study, area_id)
+        self.area_manager.delete_area(study_interface, area_id)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2071,14 +2232,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        study_interface = self.get_study_interface(study)
         link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
-            study, ConstraintFilters(link_id=link_id)
+            study_interface, ConstraintFilters(link_id=link_id)
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
-        self.links_manager.delete_link(study, area_from, area_to)
+        self.links_manager.delete_link(study_interface, area_from, area_to)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2283,18 +2445,21 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.xpansion_manager.create_xpansion_configuration(study, zipped_config)
+        study_interface = self.get_study_interface(study)
+        self.xpansion_manager.create_xpansion_configuration(study_interface, zipped_config)
 
     def delete_xpansion_configuration(self, uuid: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        self.xpansion_manager.delete_xpansion_configuration(study)
+        study_interface = self.get_study_interface(study)
+        self.xpansion_manager.delete_xpansion_configuration(study_interface)
 
     def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_xpansion_settings(study)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.get_xpansion_settings(study_interface)
 
     def update_xpansion_settings(
         self,
@@ -2305,7 +2470,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.update_xpansion_settings(study, xpansion_settings_dto)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.update_xpansion_settings(study_interface, xpansion_settings_dto)
 
     def add_candidate(
         self,
@@ -2316,17 +2482,20 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.add_candidate(study, xpansion_candidate_dto)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate_dto)
 
     def get_candidate(self, uuid: str, candidate_name: str, params: RequestParameters) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_candidate(study, candidate_name)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.get_candidate(study_interface, candidate_name)
 
     def get_candidates(self, uuid: str, params: RequestParameters) -> List[XpansionCandidateDTO]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        return self.xpansion_manager.get_candidates(study)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.get_candidates(study_interface)
 
     def update_xpansion_candidate(
         self,
@@ -2338,13 +2507,15 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.update_candidate(study, candidate_name, xpansion_candidate_dto)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.update_candidate(study_interface, candidate_name, xpansion_candidate_dto)
 
     def delete_xpansion_candidate(self, uuid: str, candidate_name: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.delete_candidate(study, candidate_name)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.delete_candidate(study_interface, candidate_name)
 
     def update_xpansion_constraints_settings(
         self,
@@ -2355,7 +2526,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
-        return self.xpansion_manager.update_xpansion_constraints_settings(study, constraints_file_name)
+        study_interface = self.get_study_interface(study)
+        return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
 
     def update_matrix(
         self,
@@ -2382,8 +2554,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
+        study_interface = self.get_study_interface(study)
         try:
-            self.matrix_manager.update_matrix(study, path, matrix_edit_instruction)
+            self.matrix_manager.update_matrix(study_interface, path, matrix_edit_instruction)
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
 
@@ -2713,6 +2886,7 @@ class StudyService:
 
         matrix_path = Path(path)
         study = self.get_study(study_id)
+        study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
             all_areas = cast(
@@ -2720,9 +2894,9 @@ class StudyService:
                 self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
             )
             if matrix_path.parts[-1] == "allocation":
-                hydro_matrix = self.allocation_manager.get_allocation_matrix(study, all_areas)
+                hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
             else:
-                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study, [])  # type: ignore
+                hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study_interface, [])  # type: ignore
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         # Gets the data and checks given path existence
@@ -2769,9 +2943,10 @@ class StudyService:
             ReferencedObjectDeletionNotAllowed: if a cluster is referenced in a binding constraint
         """
 
+        study_interface = self.get_study_interface(study)
         for cluster_id in cluster_ids:
             ref_bcs = self.binding_constraint_manager.get_binding_constraints(
-                study, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
+                study_interface, ConstraintFilters(cluster_id=f"{area_id}.{cluster_id}")
             )
             if ref_bcs:
                 binding_ids = [bc.id for bc in ref_bcs]
@@ -2828,7 +3003,7 @@ class StudyService:
 
         args = {
             "data": command_data,
-            "study_version": StudyVersion.parse(study.version),
+            "study_version": study.version,
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
         command = command_class.model_validate(args)

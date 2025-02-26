@@ -53,7 +53,6 @@ def matrix_garbage_collector(tmp_path: Path):
     command_factory = CommandFactory(
         generator_matrix_constants=matrix_constant_generator,
         matrix_service=Mock(spec=MatrixService),
-        patch_service=Mock(spec=PatchService),
     )
     study_service = Mock()
     study_service.storage_service.variant_study_service.command_factory = command_factory

@@ -26,10 +26,10 @@ from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import Study
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import fix_study_root
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
 
@@ -301,12 +301,12 @@ class FileAlreadyExistsError(HTTPException):
 
 
 class XpansionManager:
-    def __init__(self, study_storage_service: StudyStorageService):
-        self.study_storage_service = study_storage_service
+    def __init__(self, command_context: CommandContext):
+        self._command_context = command_context
 
-    def create_xpansion_configuration(self, study: Study, zipped_config: Optional[UploadFile] = None) -> None:
+    def create_xpansion_configuration(self, study: StudyInterface, zipped_config: Optional[UploadFile] = None) -> None:
         logger.info(f"Initiating xpansion configuration for study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         try:
             file_study.tree.get(["user", "expansion"])
             logger.info(f"Using existing configuration for study '{study.id}'")
@@ -354,14 +354,14 @@ class XpansionManager:
 
             file_study.tree.save(xpansion_configuration_data)
 
-    def delete_xpansion_configuration(self, study: Study) -> None:
+    def delete_xpansion_configuration(self, study: StudyInterface) -> None:
         logger.info(f"Deleting xpansion configuration for study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         file_study.tree.delete(["user", "expansion"])
 
-    def get_xpansion_settings(self, study: Study) -> GetXpansionSettings:
+    def get_xpansion_settings(self, study: StudyInterface) -> GetXpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         config_obj = file_study.tree.get(["user", "expansion", "settings"])
         with contextlib.suppress(ChildNotFoundError):
             config_obj["sensitivity_config"] = file_study.tree.get(
@@ -370,7 +370,7 @@ class XpansionManager:
         return GetXpansionSettings.from_config(config_obj)
 
     def update_xpansion_settings(
-        self, study: Study, new_xpansion_settings: UpdateXpansionSettings
+        self, study: StudyInterface, new_xpansion_settings: UpdateXpansionSettings
     ) -> GetXpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
 
@@ -380,7 +380,7 @@ class XpansionManager:
         )
         updated_settings = actual_settings.model_copy(deep=True, update=settings_fields)
 
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
 
         # Specific handling for yearly_weights and additional_constraints:
         # - If the attributes are given, it means that the user wants to select a file.
@@ -538,8 +538,8 @@ class XpansionManager:
         )
         assert xpansion_candidate_dto.annual_cost_per_mw
 
-    def add_candidate(self, study: Study, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+    def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
+        file_study = study.get_files()
 
         candidates_obj = file_study.tree.get(["user", "expansion", "candidates"])
 
@@ -558,10 +558,10 @@ class XpansionManager:
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
         return self.get_candidate(study, xpansion_candidate.name)
 
-    def get_candidate(self, study: Study, candidate_name: str) -> XpansionCandidateDTO:
+    def get_candidate(self, study: StudyInterface, candidate_name: str) -> XpansionCandidateDTO:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
         # This takes the first candidate with the given name and not the id, because the name is the primary key.
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
         try:
             candidate = next(c for c in candidates.values() if c["name"] == candidate_name)
@@ -570,19 +570,19 @@ class XpansionManager:
         except StopIteration:
             raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
 
-    def get_candidates(self, study: Study) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, study: StudyInterface) -> List[XpansionCandidateDTO]:
         logger.info(f"Getting all candidates of study {study.id}")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
         return [XpansionCandidateDTO(**c) for c in candidates.values()]
 
     def update_candidate(
         self,
-        study: Study,
+        study: StudyInterface,
         candidate_name: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
 
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
 
@@ -600,8 +600,8 @@ class XpansionManager:
                 return
         raise CandidateNotFoundError(f"The candidate '{xpansion_candidate_dto.name}' does not exist")
 
-    def delete_candidate(self, study: Study, candidate_name: str) -> None:
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+    def delete_candidate(self, study: StudyInterface, candidate_name: str) -> None:
+        file_study = study.get_files()
 
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
         candidate_id = next(
@@ -611,7 +611,9 @@ class XpansionManager:
         logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")
         file_study.tree.delete(["user", "expansion", "candidates", candidate_id])
 
-    def update_xpansion_constraints_settings(self, study: Study, constraints_file_name: str) -> GetXpansionSettings:
+    def update_xpansion_constraints_settings(
+        self, study: StudyInterface, constraints_file_name: str
+    ) -> GetXpansionSettings:
         # Make sure filename is not `None`, because `None` values are ignored by the update.
         constraints_file_name = constraints_file_name or ""
         # noinspection PyArgumentList
@@ -664,21 +666,21 @@ class XpansionManager:
 
     def add_resource(
         self,
-        study: Study,
+        study: StudyInterface,
         resource_type: XpansionResourceFileType,
         files: List[UploadFile],
     ) -> None:
         logger.info(f"Adding xpansion {resource_type} resource file list to study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         self._add_raw_files(file_study, files, resource_type)
 
     def delete_resource(
         self,
-        study: Study,
+        study: StudyInterface,
         resource_type: XpansionResourceFileType,
         filename: str,
     ) -> None:
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         logger.info(
             f"Checking if xpansion {resource_type} resource file '{filename}' is not used in study '{study.id}'"
         )
@@ -700,17 +702,17 @@ class XpansionManager:
 
     def get_resource_content(
         self,
-        study: Study,
+        study: StudyInterface,
         resource_type: XpansionResourceFileType,
         filename: str,
     ) -> JSON | bytes:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         return file_study.tree.get(self._raw_file_dir(resource_type) + [filename])
 
-    def list_resources(self, study: Study, resource_type: XpansionResourceFileType) -> List[str]:
+    def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> List[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
-        file_study = self.study_storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         try:
             return [filename for filename in file_study.tree.get(self._raw_file_dir(resource_type)).keys()]
         except ChildNotFoundError:
