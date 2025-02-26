@@ -36,7 +36,6 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -893,9 +892,7 @@ class BindingConstraintManager:
             BindingConstraintNotFound: If any of the specified binding constraint IDs are not found.
         """
         study_version = StudyVersion.parse(study.version)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         bcs_json = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         bcs_json_by_id = {value["id"]: key for (key, value) in bcs_json.items()}
         bc_input_as_dict_by_id = {}
@@ -916,10 +913,10 @@ class BindingConstraintManager:
 
         command = UpdateBindingConstraints(
             bc_props_by_id=bc_input_as_dict_by_id,
-            command_context=command_context,
+            command_context=self._command_context,
             study_version=study_version,
         )
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
         return bcs_output
 
     def __convert_constraint_input_to_output(self, bc_json, bc_input_as_dict, study_version):
