@@ -18,7 +18,12 @@ from typing import List, Optional
 from fastapi import HTTPException, UploadFile
 from pydantic import Field
 
-from antarest.core.exceptions import ChildNotFoundError, LinkNotFound, MatrixImportFailed
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    LinkNotFound,
+    MatrixImportFailed,
+    XpansionFileAlreadyExistsError,
+)
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -105,11 +110,6 @@ class CandidateNotFoundError(HTTPException):
 
 
 class FileCurrentlyUsedInSettings(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.CONFLICT, message)
-
-
-class FileAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(http.HTTPStatus.CONFLICT, message)
 
@@ -413,7 +413,7 @@ class XpansionManager:
         keys = self._raw_file_dir(resource_type)
         file_study = study.get_files()
         if filename in file_study.tree.get(keys):
-            raise FileAlreadyExistsError(f"File '{filename}' already exists")
+            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
         # parses the content
         content = file.file.read()
