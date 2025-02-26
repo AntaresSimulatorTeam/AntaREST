@@ -400,40 +400,6 @@ class XpansionManager:
             return ["user", "expansion", "weights"]
         raise NotImplementedError(f"raw_file_type '{raw_file_type}' not implemented")
 
-    def _add_raw_files(
-        self,
-        file_study: FileStudy,
-        files: List[UploadFile],
-        raw_file_type: XpansionResourceFileType,
-    ) -> None:
-        keys = self._raw_file_dir(raw_file_type)
-        data: JSON = {}
-        buffer = data
-
-        list_names = [file.filename for file in files]
-        for name in list_names:
-            try:
-                if name in file_study.tree.get(keys):
-                    raise FileAlreadyExistsError(f"File '{name}' already exists")
-            except ChildNotFoundError:
-                logger.warning(f"Failed to list existing files for {keys}")
-
-        if len(list_names) != len(set(list_names)):
-            raise FileAlreadyExistsError(f"Some files have the same name: {list_names}")
-
-        for key in keys:
-            buffer[key] = {}
-            buffer = buffer[key]
-
-        for file in files:
-            content = file.file.read()
-            if isinstance(content, str):
-                content = content.encode(encoding="utf-8")
-            assert file.filename is not None
-            buffer[file.filename] = content
-
-        file_study.tree.save(data)
-
     def add_resource(
         self,
         study: StudyInterface,
@@ -443,10 +409,18 @@ class XpansionManager:
         filename = file.filename
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
+        # checks the file doesn't already exist
+        keys = self._raw_file_dir(resource_type)
+        file_study = study.get_files()
+        if filename in file_study.tree.get(keys):
+            raise FileAlreadyExistsError(f"File '{filename}' already exists")
+
+        # parses the content
         content = file.file.read()
         if isinstance(content, str):
             content = content.encode(encoding="utf-8")
 
+        # creates the command
         if resource_type == XpansionResourceFileType.CONSTRAINTS:
             command: ICommand = CreateXpansionConstraint(
                 filename=filename, data=content, command_context=self._command_context, study_version=study.version
