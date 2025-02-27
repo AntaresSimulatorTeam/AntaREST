@@ -108,6 +108,7 @@ class TestUpdateThermalCluster:
 
         thermal = empty_study.tree.get(["input", "thermal", "clusters", area_id, "list", thermal_cluster_id])
         assert thermal == expected
+        assert empty_study.config.areas[area_id].thermals[0].model_dump(exclude={"id"}, by_alias=True) == expected
 
     @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
     def test_update_thermal_cluster_does_not_exist(self, empty_study: FileStudy, command_context: CommandContext):
