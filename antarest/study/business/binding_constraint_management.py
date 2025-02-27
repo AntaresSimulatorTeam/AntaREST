@@ -919,7 +919,9 @@ class BindingConstraintManager:
         study.add_commands([command])
         return bcs_output
 
-    def __convert_constraint_input_to_output(self, bc_json, bc_input_as_dict, study_version):
+    def __convert_constraint_input_to_output(
+        self, bc_json: JSON, bc_input_as_dict: Dict[str, Any], study_version: StudyVersion
+    ) -> ConstraintOutput:
         """
 
         Args:

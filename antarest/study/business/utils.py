@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, Type, TypedDict
+from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, TypedDict
 
 from antares.study.version import StudyVersion
 
@@ -101,6 +101,6 @@ class FieldInfo(TypedDict, total=False):
     decode: Optional[Callable[[Any, Optional[Any]], Any]]
 
 
-def update_binding_constraint_from_props(bc: Dict, bc_props: Type[BindingConstraintProperties]):
+def update_binding_constraint_from_props(bc: Dict[str, Any], bc_props: BindingConstraintProperties) -> None:
     bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
     bc.update(bc_props_as_dict)

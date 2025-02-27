@@ -17,6 +17,7 @@ from abc import ABCMeta
 
 from antares.study.version import StudyVersion
 from pydantic import model_validator
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
@@ -42,11 +43,11 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
+from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     BindingConstraintProperties,
     create_binding_constraint_props,
-    remove_bc_from_scenario_builder,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import update_matrices_names
@@ -72,18 +73,20 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
 
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     bc_props_by_id: t.Mapping[str, BindingConstraintProperties]
+    study_version: StudyVersion
 
+    @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        for i, bc in enumerate(study_data):
-            bc_props = self.bc_props_by_id[bc.id]
-            existing_constraint = study_data.bindings[i]
+        for i, existing_constraint in enumerate(study_data.bindings):
+            bc_props = self.bc_props_by_id[existing_constraint.id]
+            bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             areas_set = existing_constraint.areas
             clusters_set = existing_constraint.clusters
-            group = bc_props.group or existing_constraint.group
-            operator = bc_props.operator or existing_constraint.operator
-            time_step = bc_props.time_step or existing_constraint.time_step
+            group = bc_props_as_dict.get("group") or existing_constraint.group
+            operator = bc_props_as_dict.get("operator") or existing_constraint.operator
+            time_step = bc_props_as_dict.get("time_step") or existing_constraint.time_step
             new_constraint = BindingConstraintDTO(
-                id=bc.id,
+                id=existing_constraint.id,
                 group=group,
                 areas=areas_set,
                 clusters=clusters_set,
@@ -100,7 +103,9 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         Retrieves the binding constraint configuration class based on the study version.
         """
         bc_by_id = values.get("bc_props_by_id")
+        bc_by_id = t.cast(t.Mapping[str, t.Mapping[str, t.Any]], bc_by_id)
         study_version = values.get("study_version")
+        study_version = t.cast(StudyVersion, study_version)
         # bcs_props =  bc_props_by_id.values()
         # required_bc_props_cls = get_binding_constraint_config_cls(study_version)
         # input_bc_props = create_binding_constraint_config(study_version, **bc_input_as_dict)
@@ -115,17 +120,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         values["bc_props_by_id"] = bc_props_by_id
         return values
 
-    def _find_binding_config(self, binding_constraints: t.Mapping[str, JSON]) -> t.Optional[t.Tuple[str, JSON]]:
-        """
-        Find the binding constraint with the given ID in the list of binding constraints,
-        and returns its index and configuration, or `None` if it does not exist.
-        """
-        for index, binding_config in binding_constraints.items():
-            if binding_config["id"] == self.id:
-                # convert to string because the index could be an integer
-                return str(index), binding_config
-        return None
-
+    @override
     def _apply(self, file_study: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         study_version = file_study.config.version
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
@@ -183,6 +178,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
 
         return CommandOutput(status=True, message="ok")
 
+    @override
     def to_dto(self) -> CommandDTO:
         excluded_fields = set(ICommand.model_fields)
         json_command = self.model_dump(mode="json", exclude=excluded_fields, exclude_unset=True)
@@ -194,7 +190,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         self,
         bc_id: str,
         study_version: StudyVersion,
-        value: t.Type[BindingConstraintProperties],
+        value: BindingConstraintProperties,
         operator: BindingConstraintOperator,
     ) -> t.Iterator[t.Tuple[str, t.Union[t.List[t.List[MatrixData]], str]]]:
         if study_version < STUDY_VERSION_8_7:
@@ -216,3 +212,10 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                 matrix_id = matrix_name.format(bc_id=bc_id)
                 target = f"input/bindingconstraints/{matrix_id}"
                 yield (target, matrix)
+
+    @override
+    def get_inner_matrices(self) -> t.List[str]:
+        """
+        Useless here but must implement this function.
+        """
+        return []
