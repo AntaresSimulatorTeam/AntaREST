@@ -925,9 +925,9 @@ class BindingConstraintManager:
         """
 
         Args:
-            bc_json (dict): The original binding constraint data in JSON format.
-            bc_input_as_dict (dict): extracted from user payload.
-            study_version (int): The version of the study to determine the properties.
+            bc_json: The original binding constraint data in JSON format.
+            bc_input_as_dict: extracted from user payload.
+            study_version: The version of the study to determine the properties.
         Returns:
             dict: The adapted binding constraint data in the output format.
 

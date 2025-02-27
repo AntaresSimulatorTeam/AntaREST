@@ -146,9 +146,9 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 10
+        assert len(json_result) == 1
         for cmd in json_result:
-            assert cmd["action"] == "update_binding_constraint"
+            assert cmd["action"] == "update_binding_constraints"
         # create another variant from the parent study
         study_id = preparer.create_variant(study_id, name="var_1")
         # update 50 BCs
