@@ -205,7 +205,4 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
 
     @override
     def get_inner_matrices(self) -> t.List[str]:
-        """
-        Useless here but must implement this function otherwise the class is considered abstract.
-        """
         return []
