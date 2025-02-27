@@ -9,181 +9,175 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-import datetime
 from pathlib import Path
-from typing import Tuple
 from unittest.mock import Mock
+
+import pytest
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.model import PublicMode
 from antarest.core.tasks.service import TaskJobService
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import User
 from antarest.login.service import LoginService
-from antarest.study.business.areas.hydro_management import ManagementOptionsFormFields
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
-from antarest.study.model import RawStudy
+from antarest.matrixstore.service import SimpleMatrixService
+from antarest.study.business.areas.hydro_management import FIELDS_INFO, ManagementOptionsFormFields
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_db_context
+
+hydro_ini_content = {
+    "input": {
+        "hydro": {
+            "hydro": {
+                "inter-daily-breakdown": {"AreaTest1": 2, "AREATEST2": 3, "area_test_3": 4},
+                "intra-daily-modulation": {"AreaTest1": 25, "AREATEST2": 26, "area_test_3": 27},
+                "inter-monthly-breakdown": {"AreaTest1": 1, "AREATEST2": 1, "area_test_3": 1},
+                "initialize reservoir date": {"AreaTest1": 0, "AREATEST2": 1, "area_test_3": 2},
+                "pumping efficiency": {"AreaTest1": 1, "AREATEST2": 1, "area_test_3": 1},
+                "use leeway": {
+                    "AreaTest1": True,
+                },
+                "leeway low": {
+                    "AreaTest1": 1,
+                },
+            }
+        }
+    }
+}
 
 
 class TestHydroManagement:
     @staticmethod
-    def setup(
+    def create_study_service(
         raw_study_service: RawStudyService,
-        variant_study_service: VariantStudyService,
-        tmp_path: Path,
-        task_service: TaskJobService,
-        core_cache: ICache,
-        event_bus: IEventBus,
-    ) -> Tuple[RawStudy, StudyService]:
-        """
-        Set up data for the next tests
-        - Create a raw study
-        - Initialize a study service
-        - Create an area in this study
-        """
-        # create a raw study
-        user = User(id=30, name="regular")
-        db.session.add(user)
-
-        path = tmp_path / "area_test_study"
-        raw_study = RawStudy(
-            id="my_raw_study",
-            name=path.name,
-            version="860",
-            author="John Smith",
-            public_mode=PublicMode.FULL,
-            owner=user,
-            path=str(path),
-            created_at=datetime.datetime.utcnow(),
-            updated_at=datetime.datetime.utcnow(),
-        )
-        db.session.add(raw_study)
-
-        db.session.commit()
-
-        raw_study = raw_study_service.create(raw_study)
-
+        generator_matrix_constants: GeneratorMatrixConstants,
+        simple_matrix_service: SimpleMatrixService,
+    ) -> StudyService:
         # Initialize a study service
-        repository = StudyMetadataRepository(core_cache)
         study_service = StudyService(
             raw_study_service=raw_study_service,
-            variant_study_service=variant_study_service,
-            command_context=Mock(),
+            variant_study_service=Mock(spec=VariantStudyService),
+            command_context=CommandContext(
+                generator_matrix_constants=generator_matrix_constants,
+                matrix_service=simple_matrix_service,
+            ),
             user_service=Mock(spec=LoginService),
-            repository=repository,
-            event_bus=event_bus,
-            task_service=task_service,
+            repository=Mock(StudyMetadataRepository),
+            event_bus=Mock(spec=IEventBus),
+            task_service=Mock(spec=TaskJobService),
             file_transfer_manager=Mock(spec=FileTransferManager),
-            cache_service=core_cache,
+            cache_service=Mock(spec=ICache),
             config=Mock(spec=Config),
         )
 
-        return raw_study, study_service
+        return study_service
 
-    @with_db_context
+    @staticmethod
+    def create_study_interface(tmp_path: Path) -> StudyInterface:
+        study_id = "study_test"
+        study_path = tmp_path.joinpath(f"tmp/{study_id}")
+        config = build(study_path, study_id)
+        tree = FileStudyTree(Mock(spec=ContextServer), config)
+        tree.save(hydro_ini_content)
+
+        file_study = Mock(spec=FileStudy, config=config, tree=FileStudyTree(Mock(spec=ContextServer), config))
+
+        study = Mock(spec=StudyInterface, version=860)
+        study.get_files.return_value = file_study
+        return study
+
+    @pytest.mark.unit_test
     def test_get_field_values(
         self,
         raw_study_service: RawStudyService,
-        variant_study_service: VariantStudyService,
         tmp_path: Path,
-        task_service: TaskJobService,
-        core_cache: ICache,
-        event_bus: IEventBus,
-    ):
+        generator_matrix_constants: GeneratorMatrixConstants,
+        simple_matrix_service: SimpleMatrixService,
+    ) -> None:
         """
-        Create an area, edit manually some fields with capital letters
-        Check if data retrieved match the original files
+        Set up:
+            Create a study service, a study and some areas with different letter cases.
+        Test:
+            Check if `get_field_values` returns the right values
         """
-        user = db.session.add(User(id=30, name="regular"))
-        print(f"hello, {user.name}")
-
         # retrieve setup data
-        raw_study, study_service = self.setup(
-            raw_study_service, variant_study_service, tmp_path, task_service, core_cache, event_bus
-        )
-        # create an area
-        area_creation_dto = AreaCreationDTO(name="AreaTestGet", type=AreaType.AREA)
-        area = study_service.area_manager.create_area(raw_study, area_creation_dto)
-        path = Path(raw_study.path)
+        study_service = self.create_study_service(raw_study_service, generator_matrix_constants, simple_matrix_service)
+
+        study = self.create_study_interface(tmp_path)
+
+        # add som areas
+        areas = ["AreaTest1", "AREATEST2", "area_test_3"]
 
         # gather initial data of the area
-        initial_data = study_service.hydro_manager.get_field_values(raw_study, area.id)
+        for area in areas:
+            # get actual value
+            data = study_service.hydro_manager.get_field_values(study, area).dict()
 
-        # change `area_id` case and edit one field (inter-daily-breakdown)
-        hydro_ini_path = path.joinpath("input/hydro/hydro.ini")
-        with open(hydro_ini_path) as f:
-            old_content = f.read()
-            new_content = old_content.replace("areatestget", "AreaTestGet").replace(
-                "[inter-daily-breakdown]\nAreaTestGet = 1",
-                "[inter-daily-breakdown]\nAreaTestGet = 2",
-            )
+            # set expected value based on defined fields dict
+            raw_data = hydro_ini_content["input"]["hydro"]["hydro"]
+            initial_data = dict.fromkeys(FIELDS_INFO.keys())
 
-        with open(hydro_ini_path, "w") as f:
-            f.write(new_content)
+            for key in initial_data:
+                initial_data[key] = FIELDS_INFO[key]["default_value"]
 
-        # retrieve new values
-        new_data = study_service.hydro_manager.get_field_values(raw_study, area.id)
+            for key in raw_data.keys():
+                reformatted_key = key.replace("-", "_").replace(" ", "_")
+                initial_data[reformatted_key] = raw_data[key].get(area, initial_data[reformatted_key])
 
-        # if `get_fields_values` returns correct values, it must differ from its previous version
-        assert new_data != initial_data
+            # check if the area is retrieved regardless of the letters case
+            assert data == initial_data
 
-    @with_db_context
+    @pytest.mark.unit_test
     def test_set_field_values(
         self,
         raw_study_service: RawStudyService,
-        variant_study_service: VariantStudyService,
         tmp_path: Path,
-        task_service: TaskJobService,
-        core_cache: ICache,
-        event_bus: IEventBus,
-    ):
+        generator_matrix_constants,
+        simple_matrix_service,
+    ) -> None:
         """
-        Test if set_field_values works as expected
-        Modify some fields
+        Set up:
+            Create a study service, study and some areas with different letter cases
+
+        Test:
+            Get initial data
+            Edit one field (intra_daily_modulation)
+            Check if the field was successfully edited for each area
         """
-        # retrieve setup data
-        raw_study, study_service = self.setup(
-            raw_study_service, variant_study_service, tmp_path, task_service, core_cache, event_bus
-        )
-        # create an area
-        area_creation_dto = AreaCreationDTO(name="AreaTestSet", type=AreaType.AREA)
-        area = study_service.area_manager.create_area(raw_study, area_creation_dto)
-        path = Path(raw_study.path)
+        # create a study service
+        study_service = self.create_study_service(raw_study_service, generator_matrix_constants, simple_matrix_service)
 
-        # gather initial data
-        initial_data = study_service.hydro_manager.get_field_values(raw_study, area.id).dict()
+        # create a study
+        study = self.create_study_interface(tmp_path)
 
-        # set area id with capital letters
-        hydro_ini_path = path.joinpath("input/hydro/hydro.ini")
-        with open(hydro_ini_path) as f:
-            old_content = f.read()
-            new_content = old_content.replace("areatestset", "AreaTestSet")
+        # store the area ids
+        areas = ["AreaTest1", "AREATEST2", "area_test_3"]
 
-        with open(hydro_ini_path, "w") as f:
-            f.write(new_content)
+        for area in areas:
+            # get initial values with get_field_values
+            initial_data = study_service.hydro_manager.get_field_values(study, area).dict()
 
-        # set multiple values with set_field_values
-        new_field_values = ManagementOptionsFormFields(**{"inter_daily_breakdown": 5, "reservoir": True})
-        study_service.hydro_manager.set_field_values(raw_study, new_field_values, area.id)
+            # set multiple values with set_field_values
+            initial_data["intra_daily_modulation"] = 5
+            new_field_values = ManagementOptionsFormFields(**initial_data)
+            study_service.hydro_manager.set_field_values(study, new_field_values, area)
 
-        # retrieve new values
-        new_data = study_service.hydro_manager.get_field_values(raw_study, area.id).dict()
+            # retrieve edited
+            new_data = study_service.hydro_manager.get_field_values(study, area).dict()
 
-        assert new_data != initial_data
-
-        for field_name, value in new_data.items():
-            # fields that were modified must retrieve different values
-            if field_name in ["inter_daily_breakdown", "reservoir"]:
-                assert value != initial_data[field_name]
-            # fields that were not must be the same
-            else:
-                assert value == initial_data[field_name]
+            # check if the intra daily modulation was modified
+            for field, value in new_data.items():
+                if field == "intra_daily_modulation":
+                    assert initial_data[field] != new_data[field]
+                    assert initial_data[field] == 5
+                else:
+                    assert initial_data[field] == new_data[field]
