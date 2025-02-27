@@ -16,17 +16,16 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
+from antarest.study.business.areas.thermal_management import ThermalClusterOutput, create_thermal_output
 from antarest.study.business.model.area_model import (
     AreaCreationDTO,
     AreaInfoDTO,
     AreaOutput,
     AreaType,
-    ClusterInfoDTO,
     LayerInfoDTO,
     UpdateAreaUi,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import Patch, PatchArea, PatchCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaFolder,
     ThermalAreasProperties,
@@ -239,8 +238,6 @@ class AreaManager:
             A list of area/district information.
         """
         file_study = study.get_files()
-        metadata = study.get_patch_data()
-        areas_metadata: Dict[str, PatchArea] = metadata.areas or {}
         cfg_areas: Dict[str, Area] = file_study.config.areas
         result: List[AreaInfoDTO] = []
 
@@ -250,8 +247,7 @@ class AreaManager:
                     id=area_id,
                     name=area.name,
                     type=AreaType.AREA,
-                    metadata=areas_metadata.get(area_id, PatchArea()),
-                    thermals=self._get_clusters(file_study, area_id, metadata),
+                    thermals=self._get_clusters(file_study, area_id),
                 )
                 for area_id, area in cfg_areas.items()
             )
@@ -264,7 +260,6 @@ class AreaManager:
                     name=district.name or set_id,
                     type=AreaType.DISTRICT,
                     set=district.get_areas(list(cfg_areas)),
-                    metadata=areas_metadata.get(set_id, PatchArea()),
                 )
                 for set_id, district in cfg_sets.items()
             )
@@ -453,42 +448,15 @@ class AreaManager:
         )
         study.add_commands([command])
 
-        # Update metadata
-        patch = study.get_patch_data()
-        patch.areas = patch.areas or {}
-        patch.areas[area_id] = area_creation_info.metadata or PatchArea()
-        study.update_patch_data(patch)
         return AreaInfoDTO(
             id=area_id,
             name=area_creation_info.name,
             type=AreaType.AREA,
             # this should always be empty since it's a new area
             thermals=[],
-            metadata=area_creation_info.metadata,
-        )
-
-    def update_area_metadata(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        area_metadata: PatchArea,
-    ) -> AreaInfoDTO:
-        file_study = study.get_files()
-        area_or_set = file_study.config.areas.get(area_id) or file_study.config.sets.get(area_id)
-        patch = study.get_patch_data()
-        patch.areas = patch.areas or {}
-        patch.areas[area_id] = area_metadata
-        study.update_patch_data(patch)
-        return AreaInfoDTO(
-            id=area_id,
-            name=area_or_set.name if area_or_set is not None else area_id,
-            type=AreaType.AREA if isinstance(area_or_set, Area) else AreaType.DISTRICT,
-            metadata=patch.areas.get(area_id),
-            set=area_or_set.get_areas(list(file_study.config.areas)) if isinstance(area_or_set, DistrictSet) else [],
         )
 
     def update_area_ui(self, study: StudyInterface, area_id: str, area_ui: UpdateAreaUi, layer: str) -> None:
-
         command = UpdateAreaUI(
             area_id=area_id,
             area_ui=area_ui,
@@ -499,27 +467,6 @@ class AreaManager:
 
         study.add_commands([command])
 
-    def update_thermal_cluster_metadata(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        clusters_metadata: Dict[str, PatchCluster],
-    ) -> AreaInfoDTO:
-        file_study = study.get_files()
-        patch = study.get_patch_data()
-        patch.areas = patch.areas or {}
-        patch.thermal_clusters = patch.thermal_clusters or {}
-        patch.thermal_clusters.update({f"{area_id}.{tid}": clusters_metadata[tid] for tid in clusters_metadata})
-        study.update_patch_data(patch)
-        return AreaInfoDTO(
-            id=area_id,
-            name=file_study.config.areas[area_id].name,
-            type=AreaType.AREA,
-            metadata=patch.areas.get(area_id, PatchArea()),
-            thermals=self._get_clusters(file_study, area_id, patch),
-            set=None,
-        )
-
     def delete_area(self, study: StudyInterface, area_id: str) -> None:
         command = RemoveArea(
             id=area_id,
@@ -529,22 +476,10 @@ class AreaManager:
         study.add_commands([command])
 
     @staticmethod
-    def _update_with_cluster_metadata(
-        area: str,
-        info: ClusterInfoDTO,
-        cluster_patch: Dict[str, PatchCluster],
-    ) -> ClusterInfoDTO:
-        patch = cluster_patch.get(f"{area}.{info.id}", PatchCluster())
-        info.code_oi = patch.code_oi
-        info.type = patch.type
-        return info
-
-    @staticmethod
-    def _get_clusters(file_study: FileStudy, area: str, metadata_patch: Patch) -> List[ClusterInfoDTO]:
+    def _get_clusters(file_study: FileStudy, area: str) -> List[ThermalClusterOutput]:
         thermal_clusters_data = file_study.tree.get(["input", "thermal", "clusters", area, "list"])
-        cluster_patch = metadata_patch.thermal_clusters or {}
-        result = [
-            AreaManager._update_with_cluster_metadata(area, ClusterInfoDTO(id=tid, **obj), cluster_patch)
-            for tid, obj in thermal_clusters_data.items()
-        ]
+        result = []
+        for tid, obj in thermal_clusters_data.items():
+            cluster_info = create_thermal_output(file_study.config.version, tid, obj)
+            result.append(cluster_info)
         return result

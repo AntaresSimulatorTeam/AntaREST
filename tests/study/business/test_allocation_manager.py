@@ -184,9 +184,7 @@ class TestAllocationMatrix:
 
 
 class TestAllocationManager:
-
     def test_get_allocation_matrix__nominal_case(self, manager):
-
         # Prepare the mocks
         allocation_cfg = {
             "n": {"[allocation]": {"n": 1}},
@@ -226,7 +224,6 @@ class TestAllocationManager:
         )
 
     def test_get_allocation_matrix__no_allocation(self, manager):
-
         # Prepare the mocks
         allocation_cfg = {}
         study = create_study_interface(
@@ -339,7 +336,6 @@ class TestAllocationManager:
         assert cmd.data == {"e": 0.5, "s": 0.25, "w": 0.25}
 
     def test_set_allocation_form_fields__no_allocation_data(self, manager):
-
         all_areas = [
             AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
             AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
@@ -374,7 +370,6 @@ class TestAllocationManager:
         assert "n" in ctx.value.detail
 
     def test_set_allocation_form_fields__invalid_area_ids(self, manager):
-
         all_areas = [
             AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
             AreaInfoDTO(id="e", name="East", type=AreaType.AREA),

@@ -106,7 +106,7 @@ class ScenarioBuilder(IniFileNode):
 
     def _populate_renewable_rules(self, rules: _Rules) -> None:
         for area_id in self.config.areas:
-            for cl_id in (re.lower() for re in self.config.get_renewable_ids(area_id)):
+            for cl_id in (renew.lower() for renew in self.config.get_renewable_ids(area_id)):
                 rules[f"r,{area_id},0,{cl_id}"] = _TSNumber
 
     def _populate_binding_constraints_rules(self, rules: _Rules) -> None:

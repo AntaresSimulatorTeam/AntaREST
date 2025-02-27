@@ -136,8 +136,8 @@ _GENERAL = "General"
 _SHORT_TERM_STORAGES = "Short-Term Storages"
 _SHORT_TERM_STORAGES_GROUP = "Short-Term Storages - Group"
 
+# fmt: off
 FIELDS_INFO: Mapping[str, Mapping[str, Any]] = {
-    # fmt: off
     "ov_cost": {"topic": _GENERAL, "path": "OV. COST", "default_value": True},
     "op_cost": {"topic": _GENERAL, "path": "OP. COST", "default_value": True},
     "mrg_price": {"topic": _GENERAL, "path": "MRG. PRICE", "default_value": True},
@@ -237,8 +237,8 @@ FIELDS_INFO: Mapping[str, Mapping[str, Any]] = {
     "other5_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
     "other5_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
     "other5_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    # fmt: on
 }
+# fmt: on
 
 
 def get_fields_info(study_version: StudyVersion) -> Mapping[str, Mapping[str, Any]]:

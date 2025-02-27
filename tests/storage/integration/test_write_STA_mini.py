@@ -89,24 +89,6 @@ def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
     "url, new",
     [
         (
-            f"/v1/studies/{UUID}/raw?path=layers/layers/activeLayer/showAllLayer",
-            False,
-        ),
-    ],
-)
-def test_sta_mini_layers_layers(storage_service, url: str, new: SUB_JSON):
-    assert_with_errors(
-        storage_service=storage_service,
-        url=url,
-        new=new,
-    )
-
-
-@pytest.mark.integration_test
-@pytest.mark.parametrize(
-    "url, new",
-    [
-        (
             f"/v1/studies/{UUID}/raw?path=Desktop/.shellclassinfo",
             {
                 "iconfile": "This is a test",

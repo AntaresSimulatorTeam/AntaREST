@@ -32,6 +32,6 @@ Each package/module is structured in the following way :
 ## Specific topics
 
 - [Database management](./1-database.md)
-- [Adding a new antares simulator version support](./2-add-new-antares-version.md)
+- [Adding a new antares simulator version support](./1-add-new-antares-version.md)
 
 

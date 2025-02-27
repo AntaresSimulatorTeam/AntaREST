@@ -439,19 +439,6 @@ def test_output_whole_download(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_sim_reference() -> None:
-    mock_service = Mock()
-    study_id = str(uuid.uuid4())
-    output_id = "my-output-id"
-
-    client = create_test_client(mock_service, raise_server_exceptions=False)
-    res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
-    mock_service.set_sim_reference.assert_called_once_with(study_id, output_id, True, PARAMS)
-    assert res.status_code == HTTPStatus.OK
-    assert res.json() == ""
-
-
-@pytest.mark.unit_test
 def test_sim_result() -> None:
     mock_service = Mock()
     study_id = str(uuid.uuid4())
@@ -470,8 +457,6 @@ def test_sim_result() -> None:
             type="economy",
             settings=settings,
             completionDate="",
-            referenceStatus=True,
-            synchronized=False,
             status="",
             archived=False,
         )
@@ -530,4 +515,4 @@ def test_get_study_versions(tmp_path: Path) -> None:
     client = create_test_client(Mock(), raise_server_exceptions=False)
 
     result = client.get("/v1/studies/_versions")
-    assert result.json() == [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
+    assert result.json() == sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])

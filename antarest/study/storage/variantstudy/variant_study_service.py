@@ -22,7 +22,6 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple, cast
 from uuid import uuid4
 
 import humanize
-from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from filelock import FileLock
 from typing_extensions import override
@@ -42,13 +41,13 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
+from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, NoopNotifier
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
@@ -56,7 +55,6 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -70,7 +68,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
-    CommandResultDTO,
     GenerationResultInfoDTO,
     VariantTreeDTO,
 )
@@ -92,7 +89,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
-        patch_service: PatchService,
         repository: VariantStudyRepository,
         event_bus: IEventBus,
         config: Config,
@@ -100,7 +96,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         super().__init__(
             config=config,
             study_factory=study_factory,
-            patch_service=patch_service,
             cache=cache,
         )
         self.task_service = task_service
@@ -612,8 +607,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         if not is_managed(study):
             raise VariantStudyParentNotValid(
-                f"The study {study.name} is not managed. Cannot create a variant from it."
-                f" It must be imported first."
+                f"The study {study.name} is not managed. Cannot create a variant from it. It must be imported first."
             )
 
         assert_permission(params.user, study, StudyPermissionType.READ)
@@ -694,7 +688,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                     raw_study_service=self.raw_study_service,
                     command_factory=self.command_factory,
                     study_factory=self.study_factory,
-                    patch_service=self.patch_service,
                     repository=self.repository,
                 )
                 generate_result = generator.generate_snapshot(
@@ -997,19 +990,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         """
         self._safe_generation(study, timeout=600)
         return super().get_study_sim_result(study=study)
-
-    @override
-    def set_reference_output(self, metadata: VariantStudy, output_id: str, status: bool) -> None:
-        """
-        Set an output to the reference output of a study
-        Args:
-            metadata: study.
-            output_id: the id of output to set the reference status.
-            status: true to set it as reference, false to unset it.
-        Returns:
-        """
-        self.patch_service.set_reference_output(metadata, output_id, status)
-        remove_from_cache(self.cache, metadata.id)
 
     @override
     def delete(self, metadata: VariantStudy) -> None:

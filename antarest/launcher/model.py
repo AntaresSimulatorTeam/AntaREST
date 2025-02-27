@@ -165,12 +165,7 @@ class JobLog(Base):  # type: ignore
 
     @override
     def __repr__(self) -> str:
-        return (
-            f"<JobLog(id={self.id!r},"
-            f" message={self.message!r},"
-            f" job_id={self.job_id!r},"
-            f" log_type={self.log_type!r})>"
-        )
+        return f"<JobLog(id={self.id!r}, message={self.message!r}, job_id={self.job_id!r}, log_type={self.log_type!r})>"
 
 
 class JobResult(Base):  # type: ignore

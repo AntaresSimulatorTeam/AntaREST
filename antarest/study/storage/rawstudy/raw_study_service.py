@@ -30,7 +30,6 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -57,17 +56,13 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         self,
         config: Config,
         study_factory: StudyFactory,
-        path_resources: Path,
-        patch_service: PatchService,
         cache: ICache,
     ):
         super().__init__(
             config=config,
             study_factory=study_factory,
-            patch_service=patch_service,
             cache=cache,
         )
-        self.path_resources: Path = path_resources
         self.cleanup_thread = Thread(
             target=RawStudyService.cleanup_lazynode_zipfilelist_cache,
             name=f"{self.__class__.__name__}-Cleaner",
@@ -206,13 +201,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             An updated `RawStudy` instance with the path to the newly created study.
         """
         path_study = Path(metadata.path)
-        path_study.mkdir()
 
-        create_new_empty_study(
-            version=StudyVersion.parse(metadata.version),
-            path_study=path_study,
-            path_resources=self.path_resources,
-        )
+        create_new_empty_study(version=StudyVersion.parse(metadata.version), path_study=path_study)
 
         study = self.study_factory.create_from_fs(path_study, metadata.id)
         update_antares_info(metadata, study.tree, update_author=True)
@@ -387,11 +377,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(path, metadata.id)
         return study.tree.check_errors(study.tree.get())
-
-    @override
-    def set_reference_output(self, study: RawStudy, output_id: str, status: bool) -> None:
-        self.patch_service.set_reference_output(study, output_id, status)
-        remove_from_cache(self.cache, study.id)
 
     def archive(self, study: RawStudy) -> Path:
         archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")

@@ -366,7 +366,7 @@ def _get_references_by_widths(
         )
         for matrix_name in matrices_name:
             matrix_id = matrix_name.format(bc_id=bc.id)
-            logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index+1}/{_total}]")
+            logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index + 1}/{_total}]")
             obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
             matrix = np.array(obj["data"], dtype=float)
             # We ignore empty matrices as there are default matrices for the simulator.
@@ -853,8 +853,9 @@ class BindingConstraintManager:
         updated_matrices = [term for term in [m.value for m in TermMatrices] if getattr(data, term)]
         if updated_matrices:
             time_step = data.time_step or existing_constraint.time_step
+            assert time_step is not None
             command.validates_and_fills_matrices(
-                time_step=time_step, specific_matrices=updated_matrices, version=study.version, create=False  # type: ignore
+                time_step=time_step, specific_matrices=updated_matrices, version=study.version, create=False
             )
 
         study.add_commands([command])

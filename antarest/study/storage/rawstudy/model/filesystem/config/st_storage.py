@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, Type
 
 from antares.study.version import StudyVersion
 from pydantic import Field

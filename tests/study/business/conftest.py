@@ -16,7 +16,6 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.xpansion_management import XpansionManager
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 

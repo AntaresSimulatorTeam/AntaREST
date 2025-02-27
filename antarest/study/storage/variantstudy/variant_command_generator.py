@@ -14,7 +14,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Callable, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig

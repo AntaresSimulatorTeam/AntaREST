@@ -41,12 +41,6 @@ from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
-try:
-    import tables  # type: ignore
-    import xlsxwriter  # type: ignore
-except ImportError:
-    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
-
 logger = logging.getLogger(__name__)
 
 

@@ -313,10 +313,7 @@ LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
 LOGGING_CONFIG["formatters"]["default"]["fmt"] = "[%(asctime)s] [%(process)s] %(levelprefix)s  %(message)s"
 # noinspection SpellCheckingInspection
 LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
-    "[%(asctime)s] [%(process)s] [%(name)s]"
-    " %(levelprefix)s"
-    ' %(client_addr)s - "%(request_line)s"'
-    " %(status_code)s"
+    '[%(asctime)s] [%(process)s] [%(name)s] %(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
 )
 
 
