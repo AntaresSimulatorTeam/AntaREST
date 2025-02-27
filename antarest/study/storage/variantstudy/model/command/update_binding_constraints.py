@@ -101,12 +101,13 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
     @classmethod
     def check_version_consistency(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         """
-        Retrieves the binding constraint configuration class based on the study version.
+        Make sure this object is buit with bc props that matches the study version.
         """
-        bc_by_id = values["bc_props_by_id"]
+        bc_props_by_id_as_dict = values["bc_props_by_id"]
         study_version = values["study_version"]
         bc_props_by_id = {
-            key: create_binding_constraint_props(study_version, **value) for key, value in bc_by_id.items()
+            bc_id: create_binding_constraint_props(study_version, **bc_dict)
+            for bc_id, bc_dict in bc_props_by_id_as_dict.items()
         }
         values["bc_props_by_id"] = bc_props_by_id
         return values
@@ -125,7 +126,8 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                     status=False,
                     message=f"Binding contraint '{bc_id}' not found.",
                 )
-            # it's important to use exclude_unset=True to avoid updating the bc with default values
+            # it's important to use exclude_unset=True. Otherwise we'd override
+            # existing values with the default bc_props values.
             bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             bc_json = bcs_json[bcs_json_by_id[bc_id]]
             bc_json_copy = copy.deepcopy(bc_json)

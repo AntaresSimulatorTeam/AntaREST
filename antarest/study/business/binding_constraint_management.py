@@ -899,11 +899,12 @@ class BindingConstraintManager:
         bc_input_as_dict_by_id = {}
         bcs_output = {}
         for bc_id, bc_input in bcs_by_ids.items():
-            # check binding constraint id sent by user exqists for this study
+            # check binding constraint id sent by user exist for this study
+            # Note that this check is both done here and when the commmand is applied as well
             if bc_id not in bcs_json_by_id:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-            # convert ConstraintInput to dict, UpdateBindingConstraints will except constraints as dict
+            # convert ConstraintInput to dict, UpdateBindingConstraints will expect a dict as input
             bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
             bc_input_as_dict_by_id[bc_id] = bc_input_as_dict
 
