@@ -19,7 +19,9 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
@@ -330,3 +332,62 @@ def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]
     expected_ruleset = {"key_float": 2.1, "key_int": 1, "key_str": "value1"}
     ruleset = node.get(url)
     assert ruleset == expected_ruleset
+
+
+def create_ini_node(study_path: Path, ini_path: Path) -> IniFileNode:
+    return IniFileNode(
+        context=Mock(),
+        config=FileStudyTreeConfig(
+            study_path=study_path,
+            path=ini_path,
+            version=-1,
+            study_id="id",
+            areas={},
+            outputs={},
+        ),
+        types={},
+    )
+
+
+def test_update_ignorecase(tmp_path: Path) -> None:
+    ini_path = tmp_path.joinpath("test.ini")
+    ini_content = textwrap.dedent(
+        """\
+        [sts_FR]
+        key = 1
+        """
+    )
+    ini_path.write_text(ini_content)
+    node = create_ini_node(
+        study_path=tmp_path,
+        ini_path=ini_path,
+    )
+    node.save(data={"new_key": 3}, url=["sts_fr"])
+    assert node.get() == {"sts_FR": {"new_key": 3}}
+
+    node.save(data=4, url=["sts_fr", "new_key"])
+    assert node.get() == {"sts_FR": {"new_key": 4}}
+
+    node.save(data=5, url=["sts_fr", "other_key"])
+    assert node.get() == {"sts_FR": {"new_key": 4, "other_key": 5}}
+
+
+def test_delete_ignorecase(tmp_path: Path) -> None:
+    ini_path = tmp_path.joinpath("test.ini")
+    ini_content = textwrap.dedent(
+        """\
+        [sts_FR]
+        Key = 1
+        key2 = 3
+        """
+    )
+    ini_path.write_text(ini_content)
+    node = create_ini_node(
+        study_path=tmp_path,
+        ini_path=ini_path,
+    )
+    node.delete(url=["sts_fr", "key"])
+    assert node.get() == {"sts_FR": {"key2": 3}}
+
+    node.delete(url=["sts_fr"])
+    assert node.get() == {}
