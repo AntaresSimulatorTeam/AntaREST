@@ -314,7 +314,6 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
         json={
             "name": "STA-mini-copy",
-            "status": "copied",
             "horizon": "2035",
             "author": "Luffy",
         },
@@ -324,9 +323,9 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
     )
     assert res.json() == new_meta.json()
-    assert new_meta.json()["status"] == "copied"
     assert new_meta.json()["name"] == "STA-mini-copy"
     assert new_meta.json()["horizon"] == "2035"
+    assert new_meta.json()["owner"]["name"] == "Luffy"
 
 
 def test_matrix(client: TestClient, admin_access_token: str) -> None:
@@ -389,7 +388,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "all areas",
-            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": [],
             "thermals": None,
@@ -399,11 +397,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        json={
-            "name": "area 1",
-            "type": "AREA",
-            "metadata": {"country": "FR", "tags": ["a"]},
-        },
+        json={"name": "area 1", "type": "AREA"},
     )
     assert res.status_code == 200, res.json()
 
@@ -413,7 +407,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         json={
             "name": "Area 1",  # Same name but with different case
             "type": "AREA",
-            "metadata": {"country": "FR"},
         },
     )
     assert res.status_code == 409, res.json()
@@ -424,11 +417,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/areas",
-        json={
-            "name": "area 2",
-            "type": "AREA",
-            "metadata": {"country": "DE"},
-        },
+        json={"name": "area 2", "type": "AREA"},
     )
 
     res = client.post(
@@ -526,64 +515,99 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "area 1",
-            "metadata": {"country": "FR", "tags": ["a"]},
             "name": "area 1",
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
+                    "co2": 0.0,
+                    "costGeneration": "SetManually",
+                    "efficiency": 100.0,
                     "enabled": True,
+                    "fixedCost": 0.0,
+                    "genTs": "use global",
                     "group": "other 1",
                     "id": "cluster 1",
-                    "marginal-cost": 0.0,
-                    "market-bid-cost": 0.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
+                    "lawForced": "uniform",
+                    "lawPlanned": "uniform",
+                    "marginalCost": 0.0,
+                    "marketBidCost": 0.0,
+                    "minDownTime": 1,
+                    "minStablePower": 0.0,
+                    "minUpTime": 1,
+                    "mustRun": False,
                     "name": "cluster 1",
-                    "nominalcapacity": 0.0,
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalCapacity": 0.0,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm25": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
                     "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "type": None,
-                    "unitcount": 1,
+                    "spreadCost": 0.0,
+                    "startupCost": 0.0,
+                    "unitCount": 1,
+                    "variableOMCost": 0.0,
+                    "volatilityForced": 0.0,
+                    "volatilityPlanned": 0.0,
                 }
             ],
             "type": "AREA",
         },
         {
             "id": "area 2",
-            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
+                    "co2": 0.0,
+                    "costGeneration": "SetManually",
+                    "efficiency": 100.0,
                     "enabled": True,
+                    "fixedCost": 0.0,
+                    "genTs": "use global",
                     "group": "other 1",
                     "id": "cluster 2",
-                    "marginal-cost": 0.0,
-                    "market-bid-cost": 0.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
+                    "lawForced": "uniform",
+                    "lawPlanned": "uniform",
+                    "marginalCost": 0.0,
+                    "marketBidCost": 0.0,
+                    "minDownTime": 1,
+                    "minStablePower": 0.0,
+                    "minUpTime": 1,
+                    "mustRun": False,
                     "name": "cluster 2",
-                    "nominalcapacity": 2.5,
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalCapacity": 2.5,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm25": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
                     "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "type": None,
-                    "unitcount": 1,
+                    "spreadCost": 0.0,
+                    "startupCost": 0.0,
+                    "unitCount": 1,
+                    "variableOMCost": 0.0,
+                    "volatilityForced": 0.0,
+                    "volatilityPlanned": 0.0,
                 }
             ],
             "type": "AREA",
         },
-        {
-            "id": "all areas",
-            "metadata": {"country": None, "tags": []},
-            "name": "All areas",
-            "set": ["area 1", "area 2"],
-            "thermals": None,
-            "type": "DISTRICT",
-        },
+        {"id": "all areas", "name": "All areas", "set": ["area 1", "area 2"], "thermals": None, "type": "DISTRICT"},
     ]
 
     res = client.post(
@@ -1383,33 +1407,53 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "area 2",
-            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
+                    "co2": 0.0,
+                    "costGeneration": "SetManually",
+                    "efficiency": 100.0,
                     "enabled": True,
+                    "fixedCost": 0.0,
+                    "genTs": "use global",
                     "group": "other 1",
                     "id": "cluster 2",
-                    "marginal-cost": 0.0,
-                    "market-bid-cost": 0.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
+                    "lawForced": "uniform",
+                    "lawPlanned": "uniform",
+                    "marginalCost": 0.0,
+                    "marketBidCost": 0.0,
+                    "minDownTime": 1,
+                    "minStablePower": 0.0,
+                    "minUpTime": 1,
+                    "mustRun": False,
                     "name": "cluster 2",
-                    "nominalcapacity": 2.5,
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalCapacity": 2.5,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm25": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
                     "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "type": None,
-                    "unitcount": 1,
+                    "spreadCost": 0.0,
+                    "startupCost": 0.0,
+                    "unitCount": 1,
+                    "variableOMCost": 0.0,
+                    "volatilityForced": 0.0,
+                    "volatilityPlanned": 0.0,
                 }
             ],
             "type": "AREA",
         },
         {
             "id": "all areas",
-            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": ["area 2"],
             "thermals": None,
