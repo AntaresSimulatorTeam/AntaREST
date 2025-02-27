@@ -104,9 +104,8 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         """
         Retrieves the binding constraint configuration class based on the study version.
         """
-        bc_by_id = values.get("bc_props_by_id")
-        bc_by_id = t.cast(t.Mapping[str, t.Mapping[str, t.Any]], bc_by_id)
-        study_version = StudyVersion.parse(values.get("study_version"))
+        bc_by_id = values["bc_props_by_id"]
+        study_version = values["study_version"]
         bc_props_by_id = {
             key: create_binding_constraint_props(study_version, **value) for key, value in bc_by_id.items()
         }

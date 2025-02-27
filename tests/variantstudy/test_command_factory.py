@@ -247,10 +247,13 @@ COMMANDS = [
             action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
             args=[
                 {
-                    "id": "id",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "equal",
+                    "bc_props_by_id": {
+                        "id": {
+                            "enabled": True,
+                            "time_step": "hourly",
+                            "operator": "equal",
+                        }
+                    }
                 }
             ],
             study_version=STUDY_VERSION_8_8,
