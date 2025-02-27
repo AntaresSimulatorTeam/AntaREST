@@ -33,8 +33,8 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_configura
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
     checks_resource_deletion_is_allowed,
-    get_resource_dir,
 )
+from antarest.study.storage.variantstudy.model.command.xpansion_common import get_resource_dir
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)

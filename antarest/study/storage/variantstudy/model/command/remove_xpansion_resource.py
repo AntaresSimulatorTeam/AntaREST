@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.xpansion_common import get_resource_dir
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -45,16 +46,6 @@ def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
     all_link_profiles = [candidate.get("link-profile", None) for candidate in candidates.values()]
     all_link_profiles += [candidate.get("already-installed-link-profile", None) for candidate in candidates.values()]
     return filename in all_link_profiles
-
-
-def get_resource_dir(resource_type: XpansionResourceFileType) -> List[str]:
-    if resource_type == XpansionResourceFileType.CONSTRAINTS:
-        return ["user", "expansion", "constraints"]
-    elif resource_type == XpansionResourceFileType.CAPACITIES:
-        return ["user", "expansion", "capa"]
-    elif resource_type == XpansionResourceFileType.WEIGHTS:
-        return ["user", "expansion", "weights"]
-    raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
 
 
 def checks_resource_deletion_is_allowed(
