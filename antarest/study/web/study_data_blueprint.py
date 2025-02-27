@@ -34,11 +34,8 @@ from antarest.study.business.areas.hydro_management import InflowStructure, Mana
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
-    STStorageCreation,
-    STStorageInput,
     STStorageManager,
     STStorageMatrix,
-    STStorageOutput,
     STStorageTimeSeries,
 )
 from antarest.study.business.areas.thermal_management import (
@@ -65,6 +62,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterOutput,
     RenewableClusterUpdate,
 )
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterOutput,
@@ -2547,7 +2545,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         storage_id: str,
-        form: STStorageInput,
+        form: STStorageUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> STStorageOutput:
         """

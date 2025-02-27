@@ -49,6 +49,7 @@ class CommandName(Enum):
     UPDATE_RENEWABLE_CLUSTER = "update_renewable_cluster"
     CREATE_ST_STORAGE = "create_st_storage"
     REMOVE_ST_STORAGE = "remove_st_storage"
+    UPDATE_ST_STORAGE = "update_st_storage"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"
@@ -60,6 +61,7 @@ class CommandName(Enum):
     CREATE_USER_RESOURCE = "create_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
     REMOVE_XPANSION_CONFIGURATION = "remove_xpansion_configuration"
+    CREATE_XPANSION_CONFIGURATION = "create_xpansion_configuration"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:
