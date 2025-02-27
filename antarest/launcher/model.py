@@ -15,6 +15,7 @@ import typing as t
 from datetime import datetime
 
 from pydantic import Field
+from pydantic.alias_generators import to_camel
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
@@ -22,7 +23,6 @@ from typing_extensions import override
 from antarest.core.persistence import Base
 from antarest.core.serialization import AntaresBaseModel, from_json
 from antarest.login.model import Identity, UserInfo
-from antarest.study.business.all_optional_meta import camel_case_model
 
 
 class XpansionParametersDTO(AntaresBaseModel):
@@ -245,8 +245,7 @@ class LauncherEnginesDTO(AntaresBaseModel):
     engines: t.List[str]
 
 
-@camel_case_model
-class LauncherLoadDTO(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
+class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):
     """
     DTO representing the load of the SLURM cluster or local machine.
 

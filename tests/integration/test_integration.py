@@ -282,11 +282,11 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get("/v1/launcher/load")
     assert res.status_code == 200, res.json()
-    launcher_load = LauncherLoadDTO(**res.json())
-    assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
-    assert launcher_load.cluster_load_rate == 100 / (os.cpu_count() or 1)
-    assert launcher_load.nb_queued_jobs == 0
-    assert launcher_load.launcher_status == "SUCCESS"
+    launcher_load = res.json()
+    assert launcher_load["allocatedCpuRate"] == 100 / (os.cpu_count() or 1)
+    assert launcher_load["clusterLoadRate"] == 100 / (os.cpu_count() or 1)
+    assert launcher_load["nbQueuedJobs"] == 0
+    assert launcher_load["launcherStatus"] == "SUCCESS"
 
     res = client.get(
         f"/v1/launcher/jobs?study_id={study_id}",
