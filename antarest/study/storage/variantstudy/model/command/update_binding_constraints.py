@@ -59,7 +59,9 @@ logger = logging.getLogger(__name__)
 
 class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
     """
-    Command used to update a binding constraint.
+    Command used to update several binding constraints.
+
+    Usually called through the table mode.
     """
 
     # Overloaded metadata
@@ -104,19 +106,10 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         """
         bc_by_id = values.get("bc_props_by_id")
         bc_by_id = t.cast(t.Mapping[str, t.Mapping[str, t.Any]], bc_by_id)
-        study_version = values.get("study_version")
-        study_version = t.cast(StudyVersion, study_version)
-        # bcs_props =  bc_props_by_id.values()
-        # required_bc_props_cls = get_binding_constraint_config_cls(study_version)
-        # input_bc_props = create_binding_constraint_config(study_version, **bc_input_as_dict)
-
+        study_version = StudyVersion.parse(values.get("study_version"))
         bc_props_by_id = {
             key: create_binding_constraint_props(study_version, **value) for key, value in bc_by_id.items()
         }
-
-        # for bc_prop in bcs_props:
-        #     if not isinstance(bc_prop, required_bc_props_cls):
-        #         raise ConstraintVersionDoesNotMatchBindingVersion()
         values["bc_props_by_id"] = bc_props_by_id
         return values
 
@@ -216,6 +209,6 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
     @override
     def get_inner_matrices(self) -> t.List[str]:
         """
-        Useless here but must implement this function.
+        Useless here but must implement this function otherwise the class is considered abstract.
         """
         return []
