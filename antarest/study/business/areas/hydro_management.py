@@ -40,21 +40,21 @@ class InflowStructure(FormFieldsBaseModel):
 
 @all_optional_model
 class HydroManagementOptions(FormFieldsBaseModel):
-    inter_daily_breakdown: float = Field(ge=0)
-    intra_daily_modulation: float = Field(ge=1)
-    inter_monthly_breakdown: float = Field(ge=0)
-    reservoir: bool
-    reservoir_capacity: float = Field(ge=0)
-    follow_load: bool
-    use_water: bool
-    hard_bounds: bool
-    initialize_reservoir_date: int = Field(ge=0, le=11)
-    use_heuristic: bool
-    power_to_level: bool
-    use_leeway: bool
-    leeway_low: float = Field(ge=0)
-    leeway_up: float = Field(ge=0)
-    pumping_efficiency: float = Field(ge=0)
+    inter_daily_breakdown: float = Field(default=1, ge=0)
+    intra_daily_modulation: float = Field(default=24, ge=1)
+    inter_monthly_breakdown: float = Field(default=1, ge=0)
+    reservoir: bool = False
+    reservoir_capacity: float = Field(default=0, ge=0)
+    follow_load: bool = True
+    use_water: bool = False
+    hard_bounds: bool = False
+    initialize_reservoir_date: int = Field(default=0, ge=0, le=11)
+    use_heuristic: bool = True
+    power_to_level: bool = False
+    use_leeway: bool = False
+    leeway_low: float = Field(default=1, ge=0)
+    leeway_up: float = Field(default=1, ge=0)
+    pumping_efficiency: float = Field(default=1, ge=0)
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
