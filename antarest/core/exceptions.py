@@ -510,11 +510,6 @@ class BindingConstraintNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class ConstraintVersionDoesNotMatchBindingVersion(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
-
-
 class NoConstraintError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

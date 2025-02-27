@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import re
+import time
 
 import numpy as np
 import pandas as pd
@@ -20,9 +21,6 @@ from starlette.testclient import TestClient
 
 from antarest.study.business.binding_constraint_management import ClusterTerm, ConstraintTerm, LinkTerm
 from tests.integration.prepare_proxy import PreparerProxy
-
-# import time
-
 
 MATRIX_SIZES = {"hourly": 8784, "daily": 366, "weekly": 366}
 
@@ -113,13 +111,13 @@ class TestBindingConstraints:
             )
             body[bc_id] = {"filterSynthesis": "hourly"}
         # Modify all of them with the table-mode endpoints
-        # start = time.time()
+        start = time.time()
         res = client.put(f"/v1/studies/{study_id}/table-mode/binding-constraints", json=body)
         assert res.status_code in {200, 201}
-        # end = time.time()
-        # duration = end - start
+        end = time.time()
+        duration = end - start
         # due to new code this should be extremely fast.
-        # assert duration < 0.2
+        assert duration < 0.2
         # asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         assert res.status_code == 200

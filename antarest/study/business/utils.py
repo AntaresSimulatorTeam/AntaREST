@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, TypedDict
+from typing import Any, Callable, MutableSequence, Optional, Sequence, TypedDict
 
 from antares.study.version import StudyVersion
 
@@ -24,7 +24,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.create_binding_constraint import BindingConstraintProperties
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
@@ -99,8 +98,3 @@ class FieldInfo(TypedDict, total=False):
     encode: Optional[Callable[[Any], Any]]
     # (encoded_value, current_value) -> decoded_value
     decode: Optional[Callable[[Any, Optional[Any]], Any]]
-
-
-def update_binding_constraint_from_props(bc: Dict[str, Any], bc_props: BindingConstraintProperties) -> None:
-    bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
-    bc.update(bc_props_as_dict)
