@@ -11,14 +11,15 @@
 # This file is part of the Antares project.
 
 import contextlib
-import functools
 import io
 import logging
 import os
 import tempfile
 import zipfile
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import py7zr
 import pydantic_core
@@ -27,12 +28,19 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
-from antarest.core.serde.ini_reader import IniReader, IReader
+from antarest.core.serde.ini_reader import (
+    IniReader,
+    IReader,
+)
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.serde.json import from_json
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+
+logger = logging.getLogger(__name__)
 
 
 class IniFileNodeWarning(UserWarning):
@@ -42,35 +50,179 @@ class IniFileNodeWarning(UserWarning):
     This warning class is designed to provide more informative warning messages for INI file errors.
 
     Args:
-        config: The configuration associated with the INI file.
         message: The specific warning message.
     """
 
-    def __init__(self, config: FileStudyTreeConfig, message: str) -> None:
-        relpath = config.path.relative_to(config.study_path).as_posix()
-        super().__init__(f"INI File error '{relpath}': {message}")
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
 
 
-def log_warning(f: Callable[..., Any]) -> Callable[..., Any]:
+@dataclass(frozen=True)
+class IniMatch(ABC):
     """
-    Decorator to suppress `UserWarning` exceptions by logging them as warnings.
-
-    Args:
-        f: The function or method to be decorated.
-
-    Returns:
-        Callable[..., Any]: The decorated function.
+    Represents a match of a sub-part of INI file content.
     """
 
-    @functools.wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return f(*args, **kwargs)
-        except UserWarning as w:
-            # noinspection PyUnresolvedReferences
-            logging.getLogger(f.__module__).warning(str(w))
+    def __bool__(self) -> bool:
+        """
+        True if a match has been found.
+        """
+        return True
 
-    return wrapper
+    @abstractmethod
+    def get_part(self) -> SUB_JSON:
+        """
+        The content of the matched sub-part.
+        """
+        pass
+
+    def replace_part(self, new_part: SUB_JSON) -> JSON:
+        """
+        Replaces the content of the matched sub-part,
+        and returns the whole updated content.
+        """
+        raise NotImplementedError()
+
+    def delete_part(self) -> JSON:
+        """
+        Removes the content of the matched sub-part,
+        and returns the whole updated content.
+        """
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True)
+class SectionMatch(IniMatch):
+    data: JSON
+    req_section: str
+    matched_section: str | None = None
+
+    @override
+    def __bool__(self) -> bool:
+        return bool(self.matched_section)
+
+    @override
+    def get_part(self) -> JSON:
+        if not self.matched_section:
+            raise KeyError(f"Could not match section {self.req_section}")
+        return cast(JSON, self.data[self.matched_section])
+
+    @override
+    def replace_part(self, new_part: SUB_JSON) -> JSON:
+        section = self.matched_section or self.req_section
+        self.data[section] = new_part
+        return self.data
+
+    @override
+    def delete_part(self) -> JSON:
+        if not self.matched_section:
+            raise IniFileNodeWarning(f"Cannot delete section: Section [{self.req_section}] not found")
+        del self.data[self.matched_section]
+        return self.data
+
+
+@dataclass(frozen=True)
+class OptionMatch(IniMatch):
+    data: JSON
+    req_section: str
+    req_option: str
+    matched_section: str | None = None
+    matched_option: str | None = None
+
+    @override
+    def __bool__(self) -> bool:
+        return bool(self.matched_section) and bool(self.matched_option)
+
+    @override
+    def get_part(self) -> SUB_JSON:
+        if not self.matched_section:
+            raise KeyError(f"Could not match section {self.req_section}")
+        if not self.matched_option:
+            raise KeyError(f"Could not match option {self.req_option}")
+        return cast(SUB_JSON, self.data[self.matched_section][self.matched_option])
+
+    @override
+    def replace_part(self, new_part: SUB_JSON) -> JSON:
+        section_data = self.data.setdefault(self.matched_section or self.req_section, {})
+        section_data[self.matched_option or self.req_option] = new_part
+        return self.data
+
+    @override
+    def delete_part(self) -> JSON:
+        if not self.matched_section:
+            raise IniFileNodeWarning(f"Cannot delete key: Section [{self.req_section}] not found")
+        if not self.matched_option:
+            raise IniFileNodeWarning(
+                f"Cannot delete key: Key '{self.req_option}' not found in section [{self.matched_section}]"
+            )
+        del self.data[self.matched_section][self.matched_option]
+        return self.data
+
+
+@dataclass(frozen=True)
+class OnlySections(IniMatch):
+    data: JSON
+
+    @override
+    def get_part(self) -> SUB_JSON:
+        return {k: {} for k in self.data}
+
+
+@dataclass(frozen=True)
+class WholeFile(IniMatch):
+    data: JSON
+
+    @override
+    def get_part(self) -> JSON:
+        return self.data
+
+    @override
+    def replace_part(self, new_part: Any) -> JSON:
+        return cast(JSON, new_part)
+
+
+def _match_exact_or_lower(data: JSON, key: str) -> str | None:
+    """
+    Tries to match one of the keys as-is, or in lowercase.
+    """
+    if key in data:
+        return key
+    lower = key.lower()
+    for k in data:
+        if k.lower() == lower:
+            return k
+    return None
+
+
+def _match_section(data: JSON, section: str) -> SectionMatch:
+    matched_section = _match_exact_or_lower(data, section)
+    return SectionMatch(data=data, req_section=section, matched_section=matched_section)
+
+
+def _match_option(data: JSON, section: str, option: str) -> OptionMatch:
+    section_match = _match_section(data, section)
+    if not section_match:
+        return OptionMatch(data=data, req_section=section, req_option=option)
+    section_data = section_match.get_part()
+    matched_option = _match_exact_or_lower(section_data, option)
+    return OptionMatch(
+        data=data,
+        req_section=section,
+        req_option=option,
+        matched_section=section_match.matched_section,
+        matched_option=matched_option,
+    )
+
+
+def _match_url(data: JSON, url: List[str], depth: int | None = None) -> IniMatch:
+    if len(url) == 2:
+        return _match_option(data, section=url[0], option=url[1])
+    elif len(url) == 1:
+        return _match_section(data, section=url[0])
+    else:
+        if depth == 1:
+            return OnlySections(data)
+        return WholeFile(data)
 
 
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
@@ -123,31 +275,10 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         else:
             data = self.reader.read(self.path, **kwargs)
 
-        data = self._handle_urls(data, depth, url)
-        return cast(SUB_JSON, data)
+        return _match_url(data, url, depth).get_part()
 
-    @staticmethod
-    def _handle_urls(data: Dict[str, Any], depth: int, url: List[str]) -> Dict[str, Any]:
-        if len(url) == 2:
-            if url[0] in data and url[1] in data[url[0]]:
-                data = data[url[0]][url[1]]
-            else:
-                # lower keys to find a match
-                data = {k.lower(): v for k, v in {k.lower(): v for k, v in data.items()}[url[0].lower()].items()}[
-                    url[1].lower()
-                ]
-        elif len(url) == 1:
-            if url[0] in data:
-                data = data[url[0]]
-            else:
-                # lower keys to find a match
-                data = {k.lower(): v for k, v in data.items()}[url[0].lower()]
+        # noinspection PyMethodMayBeStatic
 
-        else:
-            data = {k: {} for k in data} if depth == 1 else data
-        return data
-
-    # noinspection PyMethodMayBeStatic
     def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
         """
         Extracts the filtering arguments from the URL components.
@@ -200,22 +331,16 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 / f"{self.config.study_id}-{self.path.relative_to(self.config.study_path).name.replace(os.sep, '.')}.lock"
             )
         ):
-            info = self.reader.read(self.path) if self.path.exists() else {}
-            obj = data
-            if isinstance(data, str):
+            existing_data = self.reader.read(self.path) if self.path.exists() else {}
+            new_data = data
+            if isinstance(new_data, str):
                 with contextlib.suppress(pydantic_core.ValidationError):
-                    obj = from_json(data)
-            if len(url) == 2:
-                if url[0] not in info:
-                    info[url[0]] = {}
-                info[url[0]][url[1]] = obj
-            elif len(url) == 1:
-                info[url[0]] = obj
-            else:
-                info = cast(JSON, obj)
-            self.writer.write(info, self.path)
+                    new_data = from_json(new_data)
 
-    @log_warning
+            updated_data = _match_url(existing_data, url).replace_part(new_data)
+
+            self.writer.write(updated_data, self.path)
+
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
         """
@@ -230,54 +355,25 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
                 If the specified section or key cannot be deleted due to errors such as
                 missing configuration file, non-resolved URL, or non-existent section/key.
         """
-        if not self.path.exists():
-            raise IniFileNodeWarning(
-                self.config,
-                "fCannot delete item {url!r}: Config file not found",
-            )
+        try:
+            if not self.path.exists():
+                raise IniFileNodeWarning(f"Cannot delete item {url!r}: Config file not found")
 
-        if not url:
-            self.config.path.unlink()
-            return
+            if not url:
+                self.config.path.unlink()
+                return
 
-        url_len = len(url)
-        if url_len > 2:
-            raise IniFileNodeWarning(
-                self.config,
-                f"Cannot delete item {url!r}: URL should be fully resolved",
-            )
+            url_len = len(url)
+            if url_len > 2:
+                raise IniFileNodeWarning(f"Cannot delete item {url!r}: URL should be fully resolved")
 
-        data = self.reader.read(self.path)
+            data = self.reader.read(self.path)
+            data = _match_url(data, url).delete_part()
+            self.writer.write(data, self.path)
 
-        if url_len == 1:
-            section_name = url[0]
-            try:
-                del data[section_name]
-            except KeyError:
-                raise IniFileNodeWarning(
-                    self.config,
-                    f"Cannot delete section: Section [{section_name}] not found",
-                ) from None
-
-        elif url_len == 2:
-            section_name, key_name = url
-            try:
-                section = data[section_name]
-            except KeyError:
-                raise IniFileNodeWarning(
-                    self.config,
-                    f"Cannot delete key: Section [{section_name}] not found",
-                ) from None
-            else:
-                try:
-                    del section[key_name]
-                except KeyError:
-                    raise IniFileNodeWarning(
-                        self.config,
-                        f"Cannot delete key: Key '{key_name}' not found in section [{section_name}]",
-                    ) from None
-
-        self.writer.write(data, self.path)
+        except IniFileNodeWarning as w:
+            relpath = self.config.path.relative_to(self.config.study_path).as_posix()
+            logger.warning(f"INI File error '{relpath}': {w}")
 
     @override
     def check_errors(
