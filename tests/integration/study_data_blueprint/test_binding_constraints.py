@@ -671,7 +671,7 @@ class TestBindingConstraints:
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
         area3_id = preparer.create_area(study_id, name="Area 3")["id"]
         link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
-        preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)
+        link_2_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)["id"]
         cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
 
         # =============================
@@ -858,14 +858,14 @@ class TestBindingConstraints:
         res = client.put(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/term", json=body)
         assert res.status_code == 200, res.json()
 
-        # Asserts terms were updated
+        # Asserts the term was renamed
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
         assert res.status_code == 200, res.json()
         constraint_terms = res.json()["terms"]
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area3_id},
-                "id": link_id,
+                "id": link_2_id,
                 "offset": 1,
                 "weight": 4.4,
             },

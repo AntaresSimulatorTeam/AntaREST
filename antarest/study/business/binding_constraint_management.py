@@ -1107,7 +1107,6 @@ class BindingConstraintManager:
                 raise DuplicateConstraintTerm(binding_constraint_id, *duplicate_terms)
 
             existing_terms.update(new_terms)
-            self._update_constraint_with_terms(study, constraint, existing_terms)
 
         elif update_mode == "replace":
             ids_to_update = set()
@@ -1123,14 +1122,15 @@ class BindingConstraintManager:
             # We can either rename a term or just change its values
             for term in constraint_terms:
                 if term.generate_id() != term.id:
-                    existing_terms[term.generate_id()] = existing_terms.pop(term.id)
+                    existing_terms[term.generate_id()] = existing_terms.pop(term.id)  # type: ignore
                 else:
                     existing_terms[term.id] = term
 
-            self._update_constraint_with_terms(study, constraint, existing_terms)
-
         else:  # pragma: no cover
             raise NotImplementedError(f"Unsupported update mode: {update_mode}")
+
+        sorted_terms = dict(sorted(existing_terms.items()))
+        self._update_constraint_with_terms(study, constraint, sorted_terms)
 
     def create_constraint_terms(
         self, study: Study, binding_constraint_id: str, constraint_terms: t.Sequence[ConstraintTerm]
