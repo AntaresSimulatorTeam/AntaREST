@@ -1096,11 +1096,12 @@ class BindingConstraintManager:
         existing_terms = {term.generate_id(): term for term in constraint.terms}
 
         if update_mode == "add":
+            new_terms = {}
             for term in constraint_terms:
                 if term.data is None:
                     raise InvalidConstraintTerm(binding_constraint_id, term.model_dump_json())
+                new_terms[term.generate_id()] = term
 
-            new_terms = {term.generate_id(): term for term in constraint_terms}
             duplicate_terms = set(new_terms) & set(existing_terms)
             if duplicate_terms:
                 raise DuplicateConstraintTerm(binding_constraint_id, *duplicate_terms)
@@ -1109,22 +1110,23 @@ class BindingConstraintManager:
             self._update_constraint_with_terms(study, constraint, existing_terms)
 
         elif update_mode == "replace":
-            terms_to_update = {}
-            new_terms = {}
+            ids_to_update = set()
             for term in constraint_terms:
                 if not term.id:
                     raise InvalidConstraintTerm(binding_constraint_id, term.model_dump_json())
-                terms_to_update[term.id] = term
-                new_terms[term.generate_id()] = term
+                ids_to_update.add(term.id)
 
-            missing_terms = set(terms_to_update) - set(existing_terms)
+            missing_terms = ids_to_update - set(existing_terms)
             if missing_terms:
                 raise ConstraintTermNotFound(binding_constraint_id, *missing_terms)
 
-            for term in new_terms.values():
-                if term.id in existing_terms:
-                    del existing_terms[term.id]
-            existing_terms.update(new_terms)
+            # We can either rename a term or just change its values
+            for term in constraint_terms:
+                if term.generate_id() != term.id:
+                    existing_terms[term.generate_id()] = existing_terms.pop(term.id)
+                else:
+                    existing_terms[term.id] = term
+
             self._update_constraint_with_terms(study, constraint, existing_terms)
 
         else:  # pragma: no cover
