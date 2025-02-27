@@ -129,3 +129,7 @@ class TestUpdateThermalCluster:
 
         output = command.apply(study_data=empty_study)
         assert not output.status
+        assert (
+            output.message
+            == "Unexpected exception occurred when trying to apply command CommandName.UPDATE_THERMAL_CLUSTER: 'Could not match section no'"
+        )
