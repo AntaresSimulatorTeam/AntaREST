@@ -76,10 +76,10 @@ def test_xpansion_with_upgrade(client: TestClient, tmp_path: Path, user_access_t
     res = client.get(raw_url, params={"path": matrix_path})
     written_data = res.json()["data"]
     assert written_data == [[1.2], [3.4]]
-    file_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "capa" / matrix_name
+    file_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "capa" / f"{matrix_name}.link"
     assert file_path.exists()
 
-    # Upgrades it to version 870 (this will trigger the normalization of the capacity matrix)
+    # Upgrades it to version 870 or higher (this will trigger the normalization of the capacity matrix)
     res = client.put(f"/v1/studies/{study_id}/upgrade")
     assert res.status_code == 200
     task_id = res.json()
