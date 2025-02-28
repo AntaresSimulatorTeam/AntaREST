@@ -54,6 +54,8 @@ class InputSeriesMatrix(MatrixNode):
             # Clone the template value and make it writable
             self.default_empty = np.copy(default_empty)
             self.default_empty.flags.writeable = True
+        # Removes the .link suffix if the matrix is normalized
+        self.config.path = self.config.path.parent / self.config.path.name.removesuffix(".link")
 
     @override
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:

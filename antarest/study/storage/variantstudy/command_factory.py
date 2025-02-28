@@ -45,6 +45,7 @@ from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_area_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
@@ -57,6 +58,7 @@ from antarest.study.storage.variantstudy.model.command.update_playlist import Up
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
+from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -81,6 +83,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,
     CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
     CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
+    CommandName.UPDATE_ST_STORAGE.value: UpdateSTStorage,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
     CommandName.UPDATE_CONFIG.value: UpdateConfig,
     CommandName.UPDATE_COMMENTS.value: UpdateComments,
@@ -93,6 +96,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
     CommandName.REMOVE_XPANSION_CONFIGURATION.value: RemoveXpansionConfiguration,
     CommandName.CREATE_XPANSION_CONFIGURATION.value: CreateXpansionConfiguration,
+    CommandName.REMOVE_XPANSION_RESOURCE.value: RemoveXpansionResource,
 }
 
 
