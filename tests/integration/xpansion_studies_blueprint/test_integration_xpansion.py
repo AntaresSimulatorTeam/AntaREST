@@ -212,7 +212,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         err_obj["description"],
         flags=re.IGNORECASE,
     )
-    assert err_obj["exception"] == "FileAlreadyExistsError"
+    assert err_obj["exception"] == "XpansionFileAlreadyExistsError"
 
     files = {
         "file": (
@@ -332,7 +332,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         err_obj["description"],
         flags=re.IGNORECASE,
     )
-    assert err_obj["exception"] == "FileAlreadyExistsError"
+    assert err_obj["exception"] == "XpansionFileAlreadyExistsError"
 
     files = {
         "file": (
