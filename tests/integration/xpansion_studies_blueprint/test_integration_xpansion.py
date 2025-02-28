@@ -14,6 +14,7 @@ import io
 import re
 import typing as t
 from pathlib import Path
+from unittest.mock import ANY
 from urllib.parse import urljoin
 
 import pytest
@@ -306,12 +307,9 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     )
     assert err_obj["exception"] == "LinkNotFound"
 
+    # Creates a capacity file
     filename_capa1 = "filename_capa1.txt"
-    filename_capa2 = "filename_capa2.txt"
-    filename_capa3 = "filename_capa3.txt"
     content_capa1 = "0"
-    content_capa2 = "1"
-    content_capa3 = "2"
     files = {
         "file": (
             filename_capa1,
@@ -321,9 +319,17 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     }
     res = xp_client.post("resources/capacities", files=files)
     assert res.status_code in {200, 201}
-    actual_path = expansion_path / "capa" / filename_capa1
-    assert actual_path.read_text() == content_capa1
+    actual_path = expansion_path / "capa" / f"{filename_capa1}.link"
+    if study_type == "variant":
+        # Generate the fs to check the content
+        task_id = client.put(f"/v1/studies/{study_id}/generate").json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        assert res.status_code == 200
+    assert actual_path.exists()
 
+    # Creates another one
+    filename_capa2 = "filename_capa2.txt"
+    content_capa2 = "1"
     res = xp_client.post("resources/capacities", files=files)
     assert res.status_code == 409
     err_obj = res.json()
@@ -344,6 +350,9 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     res = xp_client.post("resources/capacities", files=files)
     assert res.status_code in {200, 201}
 
+    # Creates a 3rd one
+    filename_capa3 = "filename_capa3.txt"
+    content_capa3 = "2"
     files = {
         "file": (
             filename_capa3,
@@ -413,23 +422,42 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     assert res.status_code == 200
 
     if study_type == "variant":
-        # todo: make this test evolve for each new xpansion command created
-        res = client.get(f"/v1/studies/{study_id}/commands")
-        commands_list = res.json()
-        assert len(commands_list) == 4
-        assert commands_list[0]["action"] == "create_xpansion_configuration"
-
-        assert commands_list[1]["action"] == "remove_xpansion_resource"
-        assert commands_list[1]["args"] == {"filename": "filename_constraints1.txt", "resource_type": "constraints"}
-
-        assert commands_list[2]["action"] == "remove_xpansion_resource"
-        assert commands_list[2]["args"] == {"filename": "filename_capa1.txt", "resource_type": "capacities"}
-
-        assert commands_list[3]["action"] == "remove_xpansion_configuration"
-
-    if study_type == "variant":
         # Generate the fs
         task_id = client.put(f"/v1/studies/{study_id}/generate").json()
         res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
         assert res.status_code == 200
     assert not expansion_path.exists()
+
+    # Checks generated commands
+    if study_type == "variant":
+        # todo: make this test evolve for each new xpansion command created
+        res = client.get(f"/v1/studies/{study_id}/commands")
+        commands_list = res.json()
+        assert len(commands_list) == 10
+        assert commands_list[0]["action"] == "create_xpansion_configuration"
+
+        assert commands_list[1]["action"] == "create_xpansion_constraint"
+        assert commands_list[1]["args"] == {"data": "content_constraints1\n", "filename": "filename_constraints1.txt"}
+
+        assert commands_list[2]["action"] == "create_xpansion_constraint"
+        assert commands_list[2]["args"] == {"data": "content_constraints2\n", "filename": "filename_constraints2.txt"}
+
+        assert commands_list[3]["action"] == "create_xpansion_constraint"
+        assert commands_list[3]["args"] == {"data": "content_constraints3\n", "filename": "filename_constraints3.txt"}
+
+        assert commands_list[4]["action"] == "remove_xpansion_resource"
+        assert commands_list[4]["args"] == {"filename": "filename_constraints1.txt", "resource_type": "constraints"}
+
+        assert commands_list[5]["action"] == "create_xpansion_capacity"
+        assert commands_list[5]["args"] == {"filename": "filename_capa1.txt", "matrix": ANY}
+
+        assert commands_list[6]["action"] == "create_xpansion_capacity"
+        assert commands_list[6]["args"] == {"filename": "filename_capa2.txt", "matrix": ANY}
+
+        assert commands_list[7]["action"] == "create_xpansion_capacity"
+        assert commands_list[7]["args"] == {"filename": "filename_capa3.txt", "matrix": ANY}
+
+        assert commands_list[8]["action"] == "remove_xpansion_resource"
+        assert commands_list[8]["args"] == {"filename": "filename_capa1.txt", "resource_type": "capacities"}
+
+        assert commands_list[9]["action"] == "remove_xpansion_configuration"
