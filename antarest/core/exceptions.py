@@ -739,3 +739,9 @@ class FolderNotFoundInWorkspace(HTTPException):
 class XpansionConfigurationAlreadyExists(Exception):
     def __init__(self, study_id: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, f"Xpansion configuration already exists for study {study_id}")
+
+
+class FileCurrentlyUsedInSettings(HTTPException):
+    def __init__(self, resource_type: str, filename: str) -> None:
+        msg = f"The {resource_type} file '{filename}' is still used in the xpansion settings and cannot be deleted"
+        super().__init__(HTTPStatus.CONFLICT, msg)
