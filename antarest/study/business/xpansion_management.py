@@ -477,7 +477,7 @@ class XpansionManager:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         file_study = study.get_files()
         try:
-            return [filename for filename in file_study.tree.get(self._raw_file_dir(resource_type)).keys()]
+            return sorted([filename for filename in file_study.tree.get(self._raw_file_dir(resource_type)).keys()])
         except ChildNotFoundError:
             return []
 

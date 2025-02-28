@@ -19,7 +19,9 @@ from urllib.parse import urljoin
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.xpansion_management import XpansionCandidateDTO
+from tests.integration.utils import wait_task_completion
 
 
 def _create_area(
@@ -45,6 +47,50 @@ def _create_link(
 ) -> None:
     res = client.post(f"/v1/studies/{study_id}/links", json={"area1": src_area_id, "area2": dst_area_id})
     assert res.status_code in {200, 201}, res.json()
+
+
+def test_xpansion_with_upgrade(client: TestClient, tmp_path: Path, user_access_token: str) -> None:
+    headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = headers
+
+    # Create a Study in version 860
+    res = client.post("/v1/studies", params={"name": "foo", "version": "860"})
+    assert res.status_code == 201, res.json()
+    study_id = res.json()
+
+    # Create a xpansion configuration
+    res = client.post(f"/v1/studies/{study_id}/extensions/xpansion")
+    assert res.status_code in {200, 201}, res.json()
+
+    # Create a capacity matrix
+    raw_url = f"/v1/studies/{study_id}/raw"
+    matrix_name = "matrix_test"
+    matrix_path = f"user/expansion/capa/{matrix_name}"
+    content = b"1.20000\n3.400000\n"
+    res = client.post(
+        f"/v1/studies/{study_id}/extensions/xpansion/resources/capacities",
+        files={"file": (matrix_name, io.BytesIO(content))},
+    )
+    assert res.status_code == 200, res.json()
+    res = client.get(raw_url, params={"path": matrix_path})
+    written_data = res.json()["data"]
+    assert written_data == [[1.2], [3.4]]
+    file_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "capa" / matrix_name
+    assert file_path.exists()
+
+    # Upgrades it to version 870 (this will trigger the normalization of the capacity matrix)
+    res = client.put(f"/v1/studies/{study_id}/upgrade")
+    assert res.status_code == 200
+    task_id = res.json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+
+    # Checks that we can still access the capacity file even if it was normalized
+    file_path = tmp_path / "internal_workspace" / study_id / "user" / "expansion" / "capa" / f"{matrix_name}.link"
+    assert file_path.exists()
+    res = client.get(raw_url, params={"path": matrix_path})
+    written_data = res.json()["data"]
+    assert written_data == [[1.2], [3.4]]
 
 
 @pytest.mark.parametrize("study_type", ["raw", "variant"])
