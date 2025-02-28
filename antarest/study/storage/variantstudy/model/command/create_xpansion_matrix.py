@@ -17,11 +17,16 @@ from typing_extensions import override
 
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.xpansion_common import (
+    apply_config_create_resource_commands,
+    apply_create_resource_commands,
+)
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -53,20 +58,6 @@ class AbstractCreateXpansionMatrix(ICommand):
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]
 
-    def _apply_config_with_resource(self, resource_type: str) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Xpansion {resource_type} matrix '{self.filename}' has been successfully created.",
-            ),
-            {},
-        )
-
-    def _apply_with_url(self, study_data: FileStudy, url: list[str]) -> CommandOutput:
-        study_data.tree.save(data=self.matrix, url=url)
-        output, _ = self._apply_config(study_data.config)
-        return output
-
 
 class CreateXpansionWeight(AbstractCreateXpansionMatrix):
     """
@@ -77,11 +68,11 @@ class CreateXpansionWeight(AbstractCreateXpansionMatrix):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return super()._apply_config_with_resource("weight")
+        return apply_config_create_resource_commands(self.filename, XpansionResourceFileType.WEIGHTS)
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        return super()._apply_with_url(study_data, ["user", "expansion", "weights", self.filename])
+        return apply_create_resource_commands(self.filename, self.matrix, study_data, XpansionResourceFileType.WEIGHTS)
 
 
 class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
@@ -93,8 +84,10 @@ class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return super()._apply_config_with_resource("capacity")
+        return apply_config_create_resource_commands(self.filename, XpansionResourceFileType.CAPACITIES)
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        return super()._apply_with_url(study_data, ["user", "expansion", "capa", self.filename])
+        return apply_create_resource_commands(
+            self.filename, self.matrix, study_data, XpansionResourceFileType.CAPACITIES
+        )
