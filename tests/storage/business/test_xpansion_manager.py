@@ -649,15 +649,14 @@ def test_add_capa(
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
-    content1 = "0"
-    content2 = "1"
+    content1 = b"0"
+    content2 = b"1"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.BytesIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.BytesIO(content2))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
