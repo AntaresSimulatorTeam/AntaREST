@@ -34,7 +34,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import * as R from "ramda";
 import GroupIcon from "@mui/icons-material/Group";
 import { useSnackbar } from "notistack";
-import type { GroupDetailsDTO } from "../../../../common/types";
+import type { GroupDetailsDTO } from "../../../../types/types";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import { deleteGroup, getGroups } from "../../../../services/api/user";
 import { sortByName } from "../../../../services/utils";

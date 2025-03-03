@@ -49,7 +49,6 @@ function OutputFilters<T extends FilterFieldValues>(props: Props<T>) {
       multiple
       options={filterOptions}
       label={t(`study.outputFilters.${filterName}`)}
-      size="small"
       variant="outlined"
       control={control}
       rules={{

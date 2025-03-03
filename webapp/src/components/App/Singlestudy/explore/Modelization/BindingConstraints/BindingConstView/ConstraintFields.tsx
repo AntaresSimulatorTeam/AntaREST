@@ -17,7 +17,7 @@ import { type BindingConstraint, OPERATORS, OUTPUT_FILTERS, TIME_STEPS } from ".
 import Fieldset from "../../../../../../common/Fieldset";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import { useMemo, useState } from "react";
@@ -81,7 +81,6 @@ function Fields({ study, constraintId }: Props) {
           disabled
           name="name"
           label={t("global.name")}
-          size="small"
           control={control}
           rules={{ validate: (v) => validateString(v) }}
           sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
@@ -90,7 +89,6 @@ function Fields({ study, constraintId }: Props) {
           <StringFE
             name="group"
             label={t("global.group")}
-            size="small"
             control={control}
             rules={{
               validate: (v) =>
@@ -105,7 +103,6 @@ function Fields({ study, constraintId }: Props) {
         <SelectFE
           name="timeStep"
           label={t("study.modelization.bindingConst.type")}
-          size="small"
           variant="outlined"
           options={timeStepOptions}
           control={control}
@@ -114,7 +111,6 @@ function Fields({ study, constraintId }: Props) {
         <SelectFE
           name="operator"
           label={t("study.modelization.bindingConst.operator")}
-          size="small"
           variant="outlined"
           options={operatorOptions}
           control={control}
@@ -125,7 +121,6 @@ function Fields({ study, constraintId }: Props) {
             <SelectFE
               name="filterYearByYear"
               label={t("study.outputFilters.filterByYear")}
-              size="small"
               variant="outlined"
               options={outputFilterOptions}
               multiple
@@ -134,7 +129,6 @@ function Fields({ study, constraintId }: Props) {
             <SelectFE
               name="filterSynthesis"
               label={t("study.outputFilters.filterSynthesis")}
-              size="small"
               variant="outlined"
               options={outputFilterOptions}
               multiple
@@ -143,7 +137,6 @@ function Fields({ study, constraintId }: Props) {
             <StringFE
               name="comments"
               label={t("study.modelization.bindingConst.comments")}
-              size="small"
               control={control}
               required={false}
               sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
@@ -154,7 +147,6 @@ function Fields({ study, constraintId }: Props) {
       <Box>
         <Button
           variant="contained"
-          size="small"
           color="secondary"
           startIcon={<DatasetIcon />}
           onClick={() => setMatrixDialogOpen(true)}

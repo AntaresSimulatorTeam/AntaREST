@@ -22,7 +22,7 @@ import {
   StudyOutputDownloadLevelDTO,
   type MatrixEditDTO,
   type MatrixIndex,
-} from "@/common/types";
+} from "@/types/types";
 import type { GridUpdate, MatrixDataDTO } from "../../shared/types";
 import { GridCellKind } from "@glideapps/glide-data-grid";
 

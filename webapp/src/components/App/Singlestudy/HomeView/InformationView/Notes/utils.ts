@@ -18,7 +18,6 @@ import { convertToRaw, type ContentState, type EditorState } from "draft-js";
 import draftToHtml from "draftjs-to-html";
 import { convertFromHTML } from "draft-convert";
 import { js2xml, xml2json, type Element as XMLElement } from "xml-js";
-import theme from "../../../../../../theme";
 
 interface BlockMap {
   from: string;
@@ -526,8 +525,8 @@ const convertHTMLToXML = (data: string): string => {
 };
 
 export const addXMLHeader = (xmlData: string): string => {
-  let res = '<?xml version="1.0" encoding="UTF-8"?>';
-  res += '<richtext version="1.0.0.0" xmlns="http://www.wxwidgets.org">';
+  let res = '<?xml root="1.0" encoding="UTF-8"?>';
+  res += '<richtext root="1.0.0.0" xmlns="http://www.wxwidgets.org">';
   res +=
     '<paragraphlayout textcolor="#000000" fontpointsize="9" fontfamily="70" fontstyle="90" fontweight="90" fontunderlined="0" fontface="Segoe UI" alignment="1" parspacingafter="10" parspacingbefore="0" linespacing="10">';
   res += xmlData;
@@ -567,9 +566,9 @@ export const convertSize = (bytes: number): string => {
 
 const sizeRanges = [
   { limit: 0, color: "default" }, // Size is unknown or not calculated
-  { limit: 5 * BYTES_PER_GB, color: theme.palette.success.main }, // Size is 0 to 5 GB
-  { limit: 25 * BYTES_PER_GB, color: theme.palette.warning.main }, // Size is 5 GB to 25 GB
-  { limit: Infinity, color: theme.palette.error.main }, // Size is 25 GB and above
+  { limit: 5 * BYTES_PER_GB, color: "palette.success.main" }, // Size is 0 to 5 GB
+  { limit: 25 * BYTES_PER_GB, color: "palette.warning.main" }, // Size is 5 GB to 25 GB
+  { limit: Infinity, color: "palette.error.main" }, // Size is 25 GB and above
 ];
 
 export const getColorForSize = (bytes: number): string => {

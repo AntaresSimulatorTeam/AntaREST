@@ -19,7 +19,7 @@ import * as R from "ramda";
 import { Box, type SxProps, type Theme } from "@mui/material";
 import { useMemo } from "react";
 import type { DefaultValues } from "react-hook-form";
-import type { IdType } from "../../../common/types";
+import type { IdType } from "../../../types/types";
 import Form, { type FormProps } from "../Form";
 import Table, { type TableProps } from "./Table";
 import { getCellType } from "./utils";

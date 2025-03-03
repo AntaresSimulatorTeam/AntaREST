@@ -22,7 +22,7 @@ import type {
   LinkElement,
   StudyMetadata,
   UserDetailsDTO,
-} from "../common/types";
+} from "../types/types";
 import { filterStudies, sortStudies } from "../utils/studiesUtils";
 import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import type { AppState } from "./ducks";
@@ -40,6 +40,7 @@ import {
 } from "./ducks/studyMaps";
 import { makeLinkId } from "./utils";
 import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
+import { F } from "ts-toolbelt";
 
 // TODO resultEqualityCheck
 
@@ -141,12 +142,6 @@ export const getCurrentStudy = createSelector(
   (studies, current) => studies[current],
 );
 
-export const isCurrentStudyFavorite = createSelector(
-  getFavoriteStudyIds,
-  getCurrentStudyId,
-  (favorites, current) => favorites.includes(current),
-);
-
 ////////////////////////////////////////////////////////////////
 // Users
 ////////////////////////////////////////////////////////////////
@@ -159,7 +154,10 @@ export const getUsers = usersSelectors.selectAll;
 
 export const getUsersById = usersSelectors.selectEntities;
 
-export const getUserIds = usersSelectors.selectIds;
+export const getUserIds = usersSelectors.selectIds as F.Function<
+  Parameters<typeof usersSelectors.selectIds>,
+  Array<UserDetailsDTO["id"]>
+>;
 
 export const getUser = usersSelectors.selectById;
 
@@ -175,7 +173,10 @@ export const getGroups = groupsSelectors.selectAll;
 
 export const getGroupsById = groupsSelectors.selectEntities;
 
-export const getGroupIds = groupsSelectors.selectIds;
+export const getGroupIds = groupsSelectors.selectIds as F.Function<
+  Parameters<typeof groupsSelectors.selectIds>,
+  Array<GroupDetailsDTO["id"]>
+>;
 
 export const getGroup = groupsSelectors.selectById;
 
@@ -465,7 +466,7 @@ export const getStudyMapDistrictsById = (state: AppState): StudyMapsState["distr
 
 const getUIState = (state: AppState): AppState["ui"] => state.ui;
 
-export const getWebSocketConnected = (state: AppState): UIState["webSocketConnected"] => {
+export const isWebSocketConnected = (state: AppState): UIState["webSocketConnected"] => {
   return getUIState(state).webSocketConnected;
 };
 
@@ -481,6 +482,6 @@ export const getMessageInfo = (state: AppState): UIState["messageInfo"] => {
   return getUIState(state).messageInfo;
 };
 
-export const getMenuExtended = (state: AppState): UIState["menuCollapsed"] => {
-  return !getUIState(state).menuCollapsed;
+export const isMenuOpen = (state: AppState): UIState["menuOpen"] => {
+  return getUIState(state).menuOpen;
 };

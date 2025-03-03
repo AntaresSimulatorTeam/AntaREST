@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { createMRTColumnHelper } from "material-react-table";
 import { Box, Tooltip } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";

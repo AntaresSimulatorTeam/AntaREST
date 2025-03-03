@@ -166,13 +166,10 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
             setSelectedOption(value);
           }}
           autoHighlight
-          renderInput={(params) => (
-            <StringFE {...params} sx={{ m: 0 }} size="small" variant="outlined" />
-          )}
+          renderInput={(params) => <StringFE {...params} sx={{ m: 0 }} variant="outlined" />}
         />
         <Button
           variant="contained"
-          size="small"
           onClick={() => {
             setSelectedOption(null);
             if (selectedOption) {

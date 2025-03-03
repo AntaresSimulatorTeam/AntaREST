@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Paper, styled, Typography } from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AxiosError } from "axios";
 import HistoryIcon from "@mui/icons-material/History";
 import moment from "moment";
-import type { LaunchJob, LaunchJobsProgress, StudyMetadata } from "../../../../../../common/types";
+import type { LaunchJob, LaunchJobsProgress, StudyMetadata } from "../../../../../../types/types";
 import { getStudyJobs, mapLaunchJobDTO } from "../../../../../../services/api/study";
 import { addWsEventListener, subscribeWsChannels } from "../../../../../../services/webSocket/ws";
 import JobStepper from "./JobStepper";
@@ -26,14 +26,6 @@ import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnac
 import { getJobProgress } from "../../../../../../services/api/launcher";
 import type { WsEvent } from "@/services/webSocket/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
-
-const TitleHeader = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "flex-start",
-  alignItems: "center",
-  width: "100%",
-  height: "60px",
-}));
 
 interface Props {
   study: StudyMetadata | undefined;
@@ -143,23 +135,17 @@ function LauncherHistory(props: Props) {
   return (
     <Paper
       sx={{
-        width: 0,
-        flex: 1,
-        bgcolor: "rgba(36, 207, 157, 0.05)",
-        height: "100%",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "center",
-        boxSizing: "border-box",
-        mr: 1,
-        px: 2,
+        gap: 1,
+        p: 2,
+        flex: 1,
       }}
+      elevation={2}
     >
-      <TitleHeader>
-        <HistoryIcon sx={{ color: "text.secondary", mr: 1 }} />
-        <Typography color="text.secondary">{t("global.jobs")}</Typography>
-      </TitleHeader>
+      <Typography color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <HistoryIcon /> {t("global.jobs")}
+      </Typography>
       <JobStepper jobs={studyJobs} jobsProgress={studyJobsProgress} />
     </Paper>
   );

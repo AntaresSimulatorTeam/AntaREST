@@ -17,7 +17,7 @@ import * as R from "ramda";
 import type { AppState } from "./ducks";
 import type { AppDispatch, AppThunk } from "./store";
 import packages from "../../package.json";
-import type { LinkElement } from "../common/types";
+import type { LinkElement } from "../types/types";
 
 export enum FetchStatus {
   Idle = "idle",

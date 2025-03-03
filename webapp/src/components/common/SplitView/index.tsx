@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, Children } from "react";
 import Split, { type SplitProps } from "react-split";
 import { Box } from "@mui/material";
 import storage from "../../../services/utils/localStorage";
@@ -51,7 +51,7 @@ function SplitView({
   sizes,
   gutterSize = 3,
 }: SplitViewProps) {
-  const numberOfChildren = React.Children.count(children);
+  const numberOfChildren = Children.count(children);
   const defaultSizes = Array(numberOfChildren).fill(100 / numberOfChildren);
   const localStorageKey = `splitSizes.${id}.${direction}`;
 

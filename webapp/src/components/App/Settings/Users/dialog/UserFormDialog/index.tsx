@@ -14,7 +14,7 @@
 
 import { DialogContentText } from "@mui/material";
 import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
-import type { GroupDTO, RoleType } from "../../../../../../common/types";
+import type { GroupDTO, RoleType } from "../../../../../../types/types";
 import UserForm from "./UserForm";
 
 export interface UserFormDialogProps extends Omit<FormDialogProps, "children"> {

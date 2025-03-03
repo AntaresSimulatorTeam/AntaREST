@@ -23,7 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import type { Area, LinkElement, StudyMetadata } from "../../../../../../common/types";
+import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/types";
 import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks, getStudyOutput } from "../../../../../../redux/selectors";
@@ -35,26 +35,28 @@ import { createPath, DataType, MAX_YEAR, OutputItemType, SYNTHESIS_ITEMS, Timest
 import UsePromiseCond, { mergeResponses } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import ButtonBack from "../../../../../common/ButtonBack";
-import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index.tsx";
+import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index";
 import {
   generateCustomColumns,
   generateDateTime,
   generateResultColumns,
   groupResultColumns,
-} from "../../../../../common/Matrix/shared/utils.ts";
-import { Column } from "@/components/common/Matrix/shared/constants.ts";
-import SplitView from "../../../../../common/SplitView/index.tsx";
-import ResultFilters from "./ResultFilters.tsx";
-import { toError } from "../../../../../../utils/fnUtils.ts";
-import EmptyView from "../../../../../common/page/EmptyView.tsx";
-import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
-import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types.ts";
-import DataGridViewer from "@/components/common/DataGridViewer.tsx";
+} from "../../../../../common/Matrix/shared/utils";
+import { Column } from "@/components/common/Matrix/shared/constants";
+import SplitView from "../../../../../common/SplitView/index";
+import ResultFilters from "./ResultFilters";
+import { toError } from "../../../../../../utils/fnUtils";
+import EmptyView from "../../../../../common/page/EmptyView";
+import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
+import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import DataGridViewer from "@/components/common/DataGridViewer";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { isDarkMode } = useThemeColorScheme();
   const { outputId } = useParams();
 
   const outputRes = useStudySynthesis({
@@ -190,16 +192,19 @@ function ResultDetails() {
       return [];
     }
 
-    return groupResultColumns([
-      {
-        id: "date",
-        title: "Date",
-        type: Column.DateTime,
-        editable: false,
-      },
-      ...generateResultColumns({ titles: resultColHeaders }),
-    ]);
-  }, [matrixRes.data, resultColHeaders]);
+    return groupResultColumns(
+      [
+        {
+          id: "date",
+          title: "Date",
+          type: Column.DateTime,
+          editable: false,
+        },
+        ...generateResultColumns({ titles: resultColHeaders }),
+      ],
+      isDarkMode,
+    );
+  }, [matrixRes.data, isDarkMode, resultColHeaders]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -239,7 +244,6 @@ function ResultDetails() {
                 sx={{ p: 1 }}
                 value={itemType}
                 exclusive
-                size="small"
                 orientation="vertical"
                 fullWidth
                 onChange={handleItemTypeChange}

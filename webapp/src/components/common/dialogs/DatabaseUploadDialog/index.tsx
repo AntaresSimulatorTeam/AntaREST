@@ -16,7 +16,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { Box, Button } from "@mui/material";
-import type { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/types/types";
 import { CommandEnum } from "@/components/App/Singlestudy/Commands/Edition/commandTypes";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import DataPropsView from "@/components/App/Data/DataPropsView";

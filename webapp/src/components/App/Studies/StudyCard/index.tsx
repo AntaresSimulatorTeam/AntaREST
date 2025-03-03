@@ -27,20 +27,19 @@ import {
   Tooltip,
   Chip,
   Divider,
+  styled,
+  colors,
+  Checkbox,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { indigo } from "@mui/material/colors";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import debug from "debug";
 import { areEqual } from "react-window";
-import { StudyType, type StudyMetadata } from "../../../../common/types";
+import { StudyType, type StudyMetadata } from "../../../../types/types";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
@@ -48,16 +47,18 @@ import {
 } from "../../../../services/utils";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ExportModal from "../ExportModal";
-import StarToggle from "../../../common/StarToggle";
+import FavoriteStudyToggle from "../../../common/studies/FavoriteStudyToggle";
 import MoveStudyDialog from "../MoveStudyDialog";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { getStudy, isStudyFavorite } from "../../../../redux/selectors";
+import { getStudy } from "../../../../redux/selectors";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import { deleteStudy, toggleFavorite } from "../../../../redux/ducks/studies";
+import { deleteStudy } from "../../../../redux/ducks/studies";
 import PropertiesDialog from "../../Singlestudy/PropertiesDialog";
 import ActionsMenu from "./ActionsMenu";
 import type { DialogsType } from "./types";
+import CopyButton from "@/components/common/buttons/CopyButton";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 const logError = debug("antares:studieslist:error");
 
@@ -66,9 +67,9 @@ interface Props {
   setStudyToLaunch: (id: StudyMetadata["id"]) => void;
   width: number;
   height: number;
-  selectionMode?: boolean;
-  selected?: boolean;
-  toggleSelect: (sid: string) => void;
+  isSelected: boolean;
+  hasStudiesSelected: boolean;
+  toggleStudySelection: (id: StudyMetadata["id"]) => void;
 }
 
 const TinyText = styled(Typography)(({ theme }) => ({
@@ -82,19 +83,19 @@ const StudyCard = memo((props: Props) => {
     width,
     height,
     setStudyToLaunch,
-    selectionMode = true,
-    selected = false,
-    toggleSelect,
+    isSelected,
+    hasStudiesSelected,
+    toggleStudySelection,
   } = props;
-  const [t, i18n] = useTranslation();
+  const { t, i18n } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState<DialogsType | null>(null);
   const study = useAppSelector((state) => getStudy(state, id));
-  const isFavorite = useAppSelector((state) => isStudyFavorite(state, id));
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { isDarkMode } = useThemeColorScheme();
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -114,10 +115,6 @@ const StudyCard = memo((props: Props) => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const handleFavoriteToggle = () => {
-    dispatch(toggleFavorite(id));
   };
 
   const handleDelete = () => {
@@ -145,6 +142,10 @@ const StudyCard = memo((props: Props) => {
       });
   };
 
+  const handleSelectionChange = () => {
+    toggleStudySelection(id);
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -155,41 +156,18 @@ const StudyCard = memo((props: Props) => {
 
   return (
     <Card
-      variant="outlined"
+      className="StudyCard"
       sx={{
         width,
         height,
         display: "flex",
         flexDirection: "column",
         position: "relative",
+        outline: isSelected ? "1px solid" : "none",
+        outlineColor: "primary.main",
       }}
-      onClick={() => {
-        if (selectionMode) {
-          toggleSelect(study.id);
-        }
-      }}
+      elevation={3}
     >
-      {selectionMode && selected && (
-        <Box
-          sx={{
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            background: "rgba(0,0,0,0.3)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <CheckCircleIcon
-            sx={{
-              fontSize: "68px",
-              opacity: 0.7,
-            }}
-            color="primary"
-          />
-        </Box>
-      )}
       <CardContent
         sx={{
           flexGrow: 1,
@@ -207,7 +185,6 @@ const StudyCard = memo((props: Props) => {
             flexDirection: "row",
             justifyContent: "flex-start",
             px: 0.5,
-            paddingTop: 0.5,
           }}
         >
           <Tooltip title={study.name}>
@@ -217,7 +194,6 @@ const StudyCard = memo((props: Props) => {
               component="div"
               onClick={() => navigate(`/studies/${study.id}`)}
               sx={{
-                color: "white",
                 boxSizing: "border-box",
                 flexFlow: "nowrap",
                 width: "calc(100% - 64px)",
@@ -243,25 +219,19 @@ const StudyCard = memo((props: Props) => {
               p: 0,
             }}
           >
-            <StarToggle
-              isActive={isFavorite}
-              activeTitle={t("studies.removeFavorite")}
-              unactiveTitle={t("studies.addFavorite")}
-              onToggle={handleFavoriteToggle}
+            <Checkbox
+              checked={isSelected}
+              sx={[
+                !hasStudiesSelected && {
+                  ".StudyCard:not(:hover) &": {
+                    display: "none",
+                  },
+                },
+              ]}
+              onChange={handleSelectionChange}
             />
-            <Tooltip title={t("study.copyId")}>
-              <ContentCopyIcon
-                sx={{
-                  cursor: "pointer",
-                  width: "16px",
-                  height: "16px",
-                  mx: 1,
-                  color: "text.secondary",
-                  "&:hover": { color: "primary.main" },
-                }}
-                onClick={handleCopyId}
-              />
-            </Tooltip>
+            <FavoriteStudyToggle studyId={study.id} />
+            <CopyButton tooltip={t("study.copyId")} onClick={handleCopyId} />
           </Box>
         </Box>
         <Tooltip title={study.folder || ""}>
@@ -269,7 +239,6 @@ const StudyCard = memo((props: Props) => {
             variant="caption"
             component="div"
             sx={{
-              color: "white",
               boxSizing: "border-box",
               flexFlow: "nowrap",
               px: 0.5,
@@ -336,45 +305,31 @@ const StudyCard = memo((props: Props) => {
             flexWrap: "wrap",
             justifyContent: "flex-start",
             alignItems: "center",
-
             gap: 0.5,
-            ".MuiChip-root": {
-              color: "black",
-            },
           }}
         >
           {study.archived && (
-            <Chip icon={<ArchiveOutlinedIcon />} label="archive" color="warning" size="small" />
+            <Chip icon={<ArchiveOutlinedIcon />} label="archive" color="warning" />
           )}
           {study.type === StudyType.VARIANT && (
             <Chip
               icon={<AltRouteOutlinedIcon />}
               label={t("studies.variant").toLowerCase()}
-              color="primary"
-              size="small"
+              color={isDarkMode ? "primary" : "secondary"}
             />
           )}
-          <Chip
-            label={study.workspace}
-            size="small"
-            sx={{
-              bgcolor: study.managed ? "secondary.main" : "gray",
-            }}
-          />
+          <Chip label={study.workspace} color={study.managed ? "info" : "default"} />
           {study.tags?.map((tag) => (
-            <Chip key={tag} label={tag} size="small" sx={{ bgcolor: indigo[300] }} />
+            <Chip key={tag} label={tag} sx={{ bgcolor: colors.indigo[300] }} />
           ))}
         </Box>
       </CardContent>
       <CardActions>
         <NavLink to={`/studies/${study.id}`} style={{ textDecoration: "none" }}>
-          <Button size="small" color="primary">
-            {t("button.explore")}
-          </Button>
+          <Button color="primary">{t("button.explore")}</Button>
         </NavLink>
         <Tooltip title={t("studies.moreActions")}>
           <Button
-            size="small"
             id="menu"
             color="primary"
             sx={{ width: "auto", minWidth: 0, p: 0 }}

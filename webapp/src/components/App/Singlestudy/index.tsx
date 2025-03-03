@@ -12,14 +12,11 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Divider } from "@mui/material";
-import debug from "debug";
 import { useTranslation } from "react-i18next";
-import { usePromise as usePromiseWrapper } from "react-use";
-import type { StudyMetadata, VariantTree } from "../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../types/types";
 import { getStudyMetadata } from "../../../services/api/study";
 import NavHeader from "./NavHeader";
 import { getVariantChildren, getVariantParents } from "../../../services/api/variant";
@@ -35,8 +32,6 @@ import FreezeStudy from "./FreezeStudy";
 import type { WsEvent } from "@/services/webSocket/types";
 import { WsEventType } from "@/services/webSocket/constants";
 
-const logError = debug("antares:singlestudy:error");
-
 interface Props {
   isExplorer?: boolean;
 }
@@ -50,7 +45,6 @@ function SingleStudy(props: Props) {
   const [tree, setTree] = useState<VariantTree>();
   const [openCommands, setOpenCommands] = useState(false);
   const dispatch = useAppDispatch();
-  const mounted = usePromiseWrapper();
 
   const tabList = useMemo(
     () => [
@@ -84,20 +78,20 @@ function SingleStudy(props: Props) {
       return;
     }
     try {
-      const tmpStudy = await mounted(getStudyMetadata(studyId));
+      const tmpStudy = await getStudyMetadata(studyId);
       if (tmpStudy) {
-        const tmpParents = await mounted(getVariantParents(tmpStudy.id));
+        const tmpParents = await getVariantParents(tmpStudy.id);
         let root: StudyMetadata = tmpStudy;
         if (tmpParents.length > 0) {
           root = tmpParents[tmpParents.length - 1];
         }
-        const tmpTree = await mounted(getVariantChildren(root.id));
+        const tmpTree = await getVariantChildren(root.id);
         setParent(tmpParents.length > 0 ? tmpParents[0] : undefined);
         setStudy(tmpStudy);
         setTree(tmpTree);
       }
     } catch (e) {
-      logError("Failed to fetch study informations", study, e);
+      console.error("Failed to fetch study informations", studyId, e);
     }
   }, [studyId]);
 
@@ -114,19 +108,16 @@ function SingleStudy(props: Props) {
           break;
       }
     },
-    [studyId, t, updateStudyData],
+    [studyId, updateStudyData],
   );
 
   useEffect(() => {
-    const init = async () => {
-      if (studyId) {
-        dispatch(setCurrentStudy(studyId));
-        dispatch(fetchStudyVersions());
-        updateStudyData();
-      }
-    };
-    init();
-  }, [studyId]);
+    if (studyId) {
+      dispatch(setCurrentStudy(studyId));
+      dispatch(fetchStudyVersions());
+      updateStudyData();
+    }
+  }, [dispatch, studyId, updateStudyData]);
 
   useEffect(() => {
     const title = document.querySelector("title");
@@ -165,11 +156,9 @@ function SingleStudy(props: Props) {
         parent={parent}
         isExplorer={isExplorer}
         openCommands={() => setOpenCommands(true)}
-        childrenTree={
-          study !== undefined && tree !== undefined ? findNodeInTree(study.id, tree) : undefined
-        }
+        childrenTree={tree !== undefined ? findNodeInTree(study.id, tree) : undefined}
       />
-      {!isExplorer && <Divider sx={{ width: "98%" }} />}
+      {!isExplorer && <Divider flexItem />}
       <Box
         width="100%"
         flex={1}

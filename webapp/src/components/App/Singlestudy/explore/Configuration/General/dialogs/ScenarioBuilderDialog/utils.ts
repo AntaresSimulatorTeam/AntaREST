@@ -13,7 +13,7 @@
  */
 
 import type { AxiosResponse } from "axios";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import client from "../../../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////

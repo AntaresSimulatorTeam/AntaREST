@@ -29,7 +29,7 @@ import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import ConstraintFields from "./ConstraintFields";
 import Delete from "@mui/icons-material/Delete";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 import { appendCommands } from "../../../../../../../services/api/variant";
 import { getLinksAndClusters } from "../../../../../../../redux/selectors";
@@ -123,7 +123,6 @@ function BindingConstView({ constraintId }: Props) {
             <Box sx={{ alignSelf: "flex-end" }}>
               <Button
                 variant="outlined"
-                size="small"
                 startIcon={<Delete />}
                 color="error"
                 onClick={() => setDeleteConstraintDialogOpen(true)}
