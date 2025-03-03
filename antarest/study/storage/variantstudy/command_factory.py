@@ -29,6 +29,11 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
+from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
+    CreateXpansionCapacity,
+    CreateXpansionWeight,
+)
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -95,6 +100,9 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_XPANSION_CONFIGURATION.value: RemoveXpansionConfiguration,
     CommandName.CREATE_XPANSION_CONFIGURATION.value: CreateXpansionConfiguration,
     CommandName.REMOVE_XPANSION_RESOURCE.value: RemoveXpansionResource,
+    CommandName.CREATE_XPANSION_CAPACITY.value: CreateXpansionCapacity,
+    CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
+    CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
 }
 
 

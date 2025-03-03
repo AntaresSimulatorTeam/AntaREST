@@ -12,7 +12,6 @@
 
 import io
 import os
-import typing as t
 import uuid
 import zipfile
 from pathlib import Path
@@ -20,9 +19,8 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import UploadFile
-from pandas.errors import ParserError
 
-from antarest.core.exceptions import ChildNotFoundError, FileCurrentlyUsedInSettings
+from antarest.core.exceptions import ChildNotFoundError, FileCurrentlyUsedInSettings, MatrixImportFailed
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
@@ -527,44 +525,38 @@ def test_update_weights_via_the_front(
 @pytest.mark.unit_test
 def test_add_resources(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    study: StudyInterface,
 ) -> None:
-    study = empty_study_810
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
     filename2 = "constraints2.txt"
     filename3 = "weight.txt"
-    content1 = "0"
-    content2 = "1"
-    content3 = "2"
+    content1 = b"0"
+    content2 = b"1"
+    content3 = b"2"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.BytesIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.BytesIO(content2))
+    file_3 = UploadFile(filename=filename3, file=io.BytesIO(content3))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, upload_file_list)
-
-    xpansion_manager.add_resource(
-        study,
-        XpansionResourceFileType.WEIGHTS,
-        [UploadFile(filename=filename3, file=io.StringIO(content3))],
-    )
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, file_1)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, file_2)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.WEIGHTS, file_3)
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "constraints"])
     expected1 = study.get_files().tree.get(["user", "expansion", "constraints", filename1])
-    assert content1.encode() == t.cast(bytes, expected1)
+    assert content1 == expected1
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "constraints"])
     expected2 = study.get_files().tree.get(["user", "expansion", "constraints", filename2])
-    assert content2.encode() == t.cast(bytes, expected2)
+    assert content2 == expected2
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
     assert {
-        "columns": [0],
+        "columns": ["0"],
         "data": [[2.0]],
-        "index": [0],
+        "index": ["0"],
     } == study.get_files().tree.get(["user", "expansion", "weights", filename3])
 
     settings = xpansion_manager.get_xpansion_settings(study)
@@ -621,22 +613,20 @@ def test_get_settings_without_sensitivity(
 @pytest.mark.unit_test
 def test_get_all_constraints(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    study: StudyInterface,
 ) -> None:
-    study = empty_study_810
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
     filename2 = "constraints2.txt"
-    content1 = "0"
-    content2 = "1"
+    content1 = b"0"
+    content2 = b"1"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.BytesIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.BytesIO(content2))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, upload_file_list)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, file_1)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CONSTRAINTS, file_2)
 
     assert xpansion_manager.list_resources(study, XpansionResourceFileType.CONSTRAINTS) == [
         filename1,
@@ -647,57 +637,53 @@ def test_get_all_constraints(
 @pytest.mark.unit_test
 def test_add_capa(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    study: StudyInterface,
 ) -> None:
-    study = empty_study_810
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
-    content1 = "0"
-    content2 = "1"
+    content1 = b"0"
+    content2 = b"1"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.BytesIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.BytesIO(content2))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": [0],
+        "columns": ["0"],
         "data": [[0.0]],
-        "index": [0],
+        "index": ["0"],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename1])
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": [0],
+        "columns": ["0"],
         "data": [[1.0]],
-        "index": [0],
+        "index": ["0"],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename2])
 
 
 @pytest.mark.unit_test
 def test_delete_capa(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    study: StudyInterface,
 ) -> None:
-    study = empty_study_810
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
-    content1 = "0"
-    content2 = "1"
+    content1 = b"0"
+    content2 = b"1"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.BytesIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.BytesIO(content2))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     xpansion_manager.delete_resource(study, XpansionResourceFileType.CAPACITIES, filename1)
 
@@ -709,50 +695,45 @@ def test_delete_capa(
 @pytest.mark.unit_test
 def test_get_single_capa(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    study: StudyInterface,
 ) -> None:
-    study = empty_study_810
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
-    content1 = "0"
-    content2 = "3\nbc\td"
+    content1 = b"0"
+    content2 = b"3\nbc\td"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.BytesIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.BytesIO(content2))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
     assert xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1) == {
-        "columns": [0],
+        "columns": ["0"],
         "data": [[0.0]],
-        "index": [0],
+        "index": ["0"],
     }
-    with pytest.raises(ParserError):
-        xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename2)
+    with pytest.raises(MatrixImportFailed):
+        xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
 
 @pytest.mark.unit_test
 def test_get_all_capa(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    study: StudyInterface,
 ) -> None:
-    study = empty_study_810
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
     filename2 = "capa2.txt"
-    content1 = "0"
-    content2 = "1"
+    content1 = b"0"
+    content2 = b"1"
 
-    upload_file_list = [
-        UploadFile(filename=filename1, file=io.StringIO(content1)),
-        UploadFile(filename=filename2, file=io.StringIO(content2)),
-    ]
+    file_1 = UploadFile(filename=filename1, file=io.BytesIO(content1))
+    file_2 = UploadFile(filename=filename2, file=io.BytesIO(content2))
 
-    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, upload_file_list)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
+    xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     assert xpansion_manager.list_resources(study, XpansionResourceFileType.CAPACITIES) == [filename1, filename2]
