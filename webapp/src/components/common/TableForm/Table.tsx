@@ -15,7 +15,7 @@
 import type HT from "handsontable";
 import * as RA from "ramda-adjunct";
 import { useMemo } from "react";
-import type { IdType } from "../../../common/types";
+import type { IdType } from "../../../types/types";
 import { useFormContextPlus } from "../Form";
 import Handsontable, { type HandsontableProps, type HotTableClass } from "../Handsontable";
 

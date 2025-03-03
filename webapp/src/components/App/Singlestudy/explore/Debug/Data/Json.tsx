@@ -21,7 +21,7 @@ import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
-import { Filename, Flex, Menubar } from "./styles";
+import { Filename, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import { getRawFile } from "@/services/api/studies/raw";
 
@@ -65,7 +65,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
     <UsePromiseCond
       response={jsonRes}
       ifFulfilled={(json) => (
-        <Flex>
+        <>
           <Menubar>
             <Filename>{filename}</Filename>
             {canEdit && (
@@ -85,8 +85,9 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
             enableTransform={false}
             onSave={handleSave}
             onSaveSuccessful={handleSaveSuccessful}
+            sx={{ flex: 1 }}
           />
-        </Flex>
+        </>
       )}
     />
   );

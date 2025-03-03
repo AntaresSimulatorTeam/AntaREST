@@ -21,7 +21,7 @@ import type {
   GroupDTO,
   RoleDetailsDTO,
   UserDTO,
-} from "../../../../../common/types";
+} from "../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createGroup, createRole } from "../../../../../services/api/user";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";

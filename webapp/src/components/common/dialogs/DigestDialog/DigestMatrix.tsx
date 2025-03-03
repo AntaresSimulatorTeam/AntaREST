@@ -23,6 +23,7 @@ import { GridOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import EmptyView from "../../page/EmptyView";
 import DataGridViewer from "../../DataGridViewer";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 const isGroupedColumns = (columns: string[] | string[][]): columns is string[][] => {
   return Array.isArray(columns[0]);
@@ -34,6 +35,7 @@ interface DigestMatrixProps {
 
 function DigestMatrix({ matrix }: DigestMatrixProps) {
   const [t] = useTranslation();
+  const { isDarkMode } = useThemeColorScheme();
 
   const columns = matrix.groupedColumns
     ? groupResultColumns(
@@ -41,6 +43,7 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
           titles: isGroupedColumns(matrix.columns) ? matrix.columns : [],
           width: 130,
         }),
+        isDarkMode,
       )
     : generateDataColumns({
         timeSeriesColumns: false,

@@ -16,7 +16,7 @@ import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../types/types";
 import PropertiesView from "../../../../common/PropertiesView";
 import ListElement from "../common/ListElement";
 import AdequacyPatch from "./AdequacyPatch";

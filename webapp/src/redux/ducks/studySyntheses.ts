@@ -24,7 +24,7 @@ import type {
   LaunchJobDTO,
   Link,
   LinkElement,
-} from "../../common/types";
+} from "../../types/types";
 import * as api from "../../services/api/study";
 import { getStudyMapsIds, getStudySynthesis, getStudySynthesisIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";

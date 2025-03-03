@@ -13,7 +13,7 @@
  */
 
 import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
-import type { RoleType, UserDTO } from "../../../../../../common/types";
+import type { RoleType, UserDTO } from "../../../../../../types/types";
 import GroupForm from "./GroupForm";
 
 export interface GroupFormDialogProps extends Omit<FormDialogProps, "children"> {

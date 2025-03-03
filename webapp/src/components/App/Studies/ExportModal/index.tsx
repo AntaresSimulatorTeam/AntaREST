@@ -28,13 +28,13 @@ import {
   type StudyMetadata,
   type StudyOutput,
   type StudyOutputDownloadDTO,
-} from "../../../../common/types";
+} from "../../../../types/types";
 import BasicDialog, { type BasicDialogProps } from "../../../common/dialogs/BasicDialog";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import SelectSingle from "../../../common/SelectSingle";
 import {
   exportStudy,
-  exportOuput as callExportOutput,
+  exportOutput as callExportOutput,
   getStudyOutputs,
   getStudySynthesis,
   downloadOutput,

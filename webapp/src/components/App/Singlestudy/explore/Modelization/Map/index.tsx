@@ -20,7 +20,7 @@ import type { Graph, GraphLink, GraphNode } from "react-d3-graph";
 import type { AxiosError } from "axios";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { LinkProperties, StudyMetadata, UpdateAreaUi } from "../../../../../../common/types";
+import type { LinkProperties, StudyMetadata, UpdateAreaUi } from "../../../../../../types/types";
 import MapGraph from "./MapGraph";
 import Areas from "./Areas";
 import CreateAreaDialog from "./CreateAreaDialog";

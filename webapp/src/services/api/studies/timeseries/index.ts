@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/common/types.ts";
-import client from "../../client.ts";
+import type { StudyMetadata } from "@/types/types";
+import client from "../../client";
 import type {
   SetTimeSeriesConfigParams,
   TimeSeriesTypeConfig,
-} from "@/services/api/studies/timeseries/types.ts";
+} from "@/services/api/studies/timeseries/types";
 import * as R from "ramda";
 
 /**

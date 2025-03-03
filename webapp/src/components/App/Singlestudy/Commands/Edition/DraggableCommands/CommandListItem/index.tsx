@@ -30,7 +30,7 @@ import {
 } from "@mui/material";
 import type { CommandItem } from "../../commandTypes";
 import CommandImportButton from "../CommandImportButton";
-import type { CommandResultDTO } from "../../../../../../../common/types";
+import type { CommandResultDTO } from "../../../../../../../types/types";
 import LogModal from "../../../../../../common/LogModal";
 import {
   detailsStyle,

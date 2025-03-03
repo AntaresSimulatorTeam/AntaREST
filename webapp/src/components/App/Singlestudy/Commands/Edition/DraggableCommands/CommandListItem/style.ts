@@ -14,11 +14,10 @@
 
 import { Accordion, Box, styled } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/HighlightOff";
-import { PAPER_BACKGROUND_NO_TRANSPARENCY } from "../../../../../../../theme";
 
 export const ItemContainer = styled(Box, {
   shouldForwardProp: (prop) => prop !== "onTopVisible",
-})<{ onTopVisible?: boolean }>(({ theme, onTopVisible }) => ({
+})<{ onTopVisible?: boolean }>(({ onTopVisible }) => ({
   display: "flex",
   justifyContent: "center",
   zIndex: onTopVisible ? 10000 : 9999,
@@ -31,7 +30,6 @@ export const DraggableAccorderon = styled(Accordion, {
 })<{ isDragging?: boolean }>(({ theme, isDragging }) => ({
   flex: 1,
   boxSizing: "border-box",
-  backgroundColor: PAPER_BACKGROUND_NO_TRANSPARENCY,
   maxWidth: "800px",
   width: "100%",
   margin: "0 auto",

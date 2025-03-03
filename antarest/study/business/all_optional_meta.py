@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import copy
-from typing import Optional, Type, TypeVar
+from typing import Optional, Type, TypeVar, cast
 
 from pydantic import BaseModel, create_model
 
@@ -50,14 +50,22 @@ def camel_case_model(model: Type[BaseModel]) -> Type[BaseModel]:
     Returns:
         The modified model.
     """
-    model.model_config["alias_generator"] = to_camel_case
-
-    # Manually overriding already defined alias names (in base classes),
-    # otherwise they have precedence over generated ones.
-    # TODO There is probably a better way to handle those cases
+    new_fields = {}
     for field_name, field in model.model_fields.items():
+        new_field = copy.deepcopy(field)
+        new_field.default = None
         new_alias = to_camel_case(field_name)
-        field.alias = new_alias
-        field.validation_alias = new_alias
-        field.serialization_alias = new_alias
-    return model
+        new_field.alias = new_alias
+        new_field.validation_alias = new_alias
+        new_field.serialization_alias = new_alias
+        new_fields[field_name] = (field.annotation, new_field)
+
+    new_model = create_model(
+        model.__name__,
+        __base__=model,
+        **new_fields,
+    )  # type: ignore
+
+    new_model.model_config["alias_generator"] = to_camel_case
+
+    return cast(Type[BaseModel], new_model)

@@ -32,7 +32,7 @@ function Fields() {
 
   return (
     <TableContainer>
-      <Table size="small" sx={{ width: "auto" }}>
+      <Table sx={{ width: "auto" }}>
         <TableHead>
           <TableRow
             sx={{

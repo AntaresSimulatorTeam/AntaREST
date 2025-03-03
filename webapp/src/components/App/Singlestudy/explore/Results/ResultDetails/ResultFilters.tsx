@@ -188,80 +188,42 @@ function ResultFilters({
       label: "",
       field: (
         <Box sx={{ width: 200 }}>
-          <SearchFE
-            value={filters.search}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            size="small"
-          />
+          <SearchFE value={filters.search} onChange={(e) => handleSearchChange(e.target.value)} />
         </Box>
       ),
     },
     {
       id: "exp",
       label: "Exp",
-      field: (
-        <CheckBoxFE
-          value={filters.exp}
-          onChange={() => handleStatFilterChange("exp")}
-          size="small"
-        />
-      ),
+      field: <CheckBoxFE value={filters.exp} onChange={() => handleStatFilterChange("exp")} />,
     },
     {
       id: "min",
       label: "Min",
-      field: (
-        <CheckBoxFE
-          value={filters.min}
-          onChange={() => handleStatFilterChange("min")}
-          size="small"
-        />
-      ),
+      field: <CheckBoxFE value={filters.min} onChange={() => handleStatFilterChange("min")} />,
     },
     {
       id: "max",
       label: "Max",
-      field: (
-        <CheckBoxFE
-          value={filters.max}
-          onChange={() => handleStatFilterChange("max")}
-          size="small"
-        />
-      ),
+      field: <CheckBoxFE value={filters.max} onChange={() => handleStatFilterChange("max")} />,
     },
     {
       id: "std",
       label: "Std",
-      field: (
-        <CheckBoxFE
-          value={filters.std}
-          onChange={() => handleStatFilterChange("std")}
-          size="small"
-        />
-      ),
+      field: <CheckBoxFE value={filters.std} onChange={() => handleStatFilterChange("std")} />,
     },
     {
       id: "values",
       label: "Values",
       field: (
-        <CheckBoxFE
-          value={filters.values}
-          onChange={() => handleStatFilterChange("values")}
-          size="small"
-        />
+        <CheckBoxFE value={filters.values} onChange={() => handleStatFilterChange("values")} />
       ),
     },
     {
       id: "reset",
       label: "",
       field: (
-        <IconButton
-          color="primary"
-          size="small"
-          onClick={handleReset}
-          disabled={!filtersApplied}
-          sx={{ ml: 1 }}
-        >
+        <IconButton color="primary" onClick={handleReset} disabled={!filtersApplied} sx={{ ml: 1 }}>
           <FilterListOffIcon />
         </IconButton>
       ),
@@ -278,13 +240,11 @@ function ResultFilters({
             value={year <= 0}
             trueText="Synthesis"
             falseText="Year by year"
-            size="small"
             variant="outlined"
             onChange={(event) => setYear(event?.target.value ? -1 : 1)}
           />
           {localYear > 0 && (
             <NumberFE
-              size="small"
               variant="outlined"
               value={localYear}
               sx={{ m: 0, ml: 1, width: 80 }}
@@ -310,7 +270,6 @@ function ResultFilters({
             { value: DataType.Record, label: "RecordYears" },
             { value: DataType.STStorage, label: "ST Storages" },
           ]}
-          size="small"
           variant="outlined"
           onChange={(event) => setDataType(event?.target.value as DataType)}
         />
@@ -328,7 +287,6 @@ function ResultFilters({
             { value: Timestep.Monthly, label: "Monthly" },
             { value: Timestep.Annual, label: "Annual" },
           ]}
-          size="small"
           variant="outlined"
           onChange={(event) => setTimestep(event?.target.value as Timestep)}
         />

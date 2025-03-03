@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { O } from "ts-toolbelt";
+import type { L, O } from "ts-toolbelt";
 
 /**
  * Allow to use `any` with `Promise` type without disabling ESLint rule.
@@ -33,4 +33,16 @@ export type PartialExceptFor<T, K extends keyof T> = O.Required<Partial<T>, K>;
 
 export function tuple<T extends unknown[]>(...items: T): T {
   return items;
+}
+
+/**
+ * Check if a value is included in a list with type inference.
+ *
+ * @param value - The value to check.
+ * @param list - The list to check against.
+ * @returns `true` if the value is included in the list, `false` otherwise.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function includes<T, U extends any[]>(value: T, list: U): value is L.UnionOf<U> {
+  return list.includes(value);
 }

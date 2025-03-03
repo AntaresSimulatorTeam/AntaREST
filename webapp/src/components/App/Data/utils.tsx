@@ -17,7 +17,7 @@ import type {
   MatrixDataSetDTO,
   MatrixDataSetUpdateDTO,
   MatrixInfoDTO,
-} from "../../../common/types";
+} from "../../../types/types";
 import {
   createMatrixByImportation,
   updateDataSet,

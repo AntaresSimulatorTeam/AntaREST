@@ -18,7 +18,7 @@ import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Box } from "@mui/material";
 import Tree from "./Tree";
 import Data from "./Data";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../types/types";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import { getStudyData } from "../../../../../services/api/study";
@@ -101,8 +101,8 @@ function Debug() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView id="debug" sizes={[15, 85]}>
-      <Box sx={{ px: 1, overflow: "auto" }}>
+    <SplitView id="debug" sizes={[20, 80]}>
+      <Box sx={{ minWidth: 150, p: 1, overflow: "auto" }}>
         <UsePromiseCond
           response={res}
           ifFulfilled={(data) => (
