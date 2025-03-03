@@ -165,7 +165,7 @@ class TestBindingConstraints:
                 assert bc["comments"] == "New comment !"
             else:
                 assert bc["timeStep"] == "daily"
-        # asserts commands used are update_config and replace_matrix
+        # asserts commands used is update_binding_constraints
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()

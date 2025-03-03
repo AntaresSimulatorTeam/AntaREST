@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import collections
-import copy
 import logging
 from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Tuple
 
@@ -66,7 +65,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     CreateBindingConstraint,
     OptionalProperties,
     TermMatrices,
-    create_binding_constraint_props,
+    create_binding_constraint_properties,
 )
 from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
@@ -900,7 +899,7 @@ class BindingConstraintManager:
         bcs_output = {}
         for bc_id, bc_input in bcs_by_ids.items():
             # check binding constraint id sent by user exist for this study
-            # Note that this check is both done here and when the commmand is applied as well
+            # Note that this check is both done here and when the command is applied as well
             if bc_id not in bcs_json_by_id:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
@@ -908,7 +907,7 @@ class BindingConstraintManager:
             bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
             bc_input_as_dict_by_id[bc_id] = bc_input_as_dict
 
-            # convert payload sent by user (most likely from table mode) to a ConstraintOutput dict
+            # convert payload sent by user to a ConstraintOutput dict
             bc_json = bcs_json[bcs_json_by_id[bc_id]]
             bc_output = self.__convert_constraint_input_to_output(bc_json, bc_input_as_dict, study_version)
             bcs_output[bc_id] = bc_output
@@ -931,15 +930,13 @@ class BindingConstraintManager:
             bc_input_as_dict: extracted from user payload.
             study_version: The version of the study to determine the properties.
         Returns:
-            dict: The adapted binding constraint data in the output format.
+            ConstraintOutput: The adapted binding constraint data in the output format.
 
         """
-        bc_json_copy = copy.deepcopy(bc_json)
-        d = {**bc_json, **bc_input_as_dict}
-        bc_props = create_binding_constraint_props(study_version, **d)
+        bc_props = create_binding_constraint_properties(study_version, **bc_input_as_dict)
         bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
-        bc_json_copy.update(bc_props_as_dict)
-        return self.constraint_model_adapter(bc_json_copy, study_version)
+        bc_json_updated = {**bc_json, **bc_props_as_dict}
+        return self.constraint_model_adapter(bc_json_updated, study_version)
 
     def remove_binding_constraint(self, study: StudyInterface, binding_constraint_id: str) -> None:
         """

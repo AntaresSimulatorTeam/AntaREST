@@ -29,7 +29,7 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
     TermMatrices,
-    create_binding_constraint_props,
+    create_binding_constraint_properties,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -187,7 +187,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        props = create_binding_constraint_props(**self.model_dump())
+        props = create_binding_constraint_properties(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
         updated_cfg = binding_constraints[index]
