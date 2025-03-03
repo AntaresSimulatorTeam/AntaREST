@@ -22,7 +22,7 @@ import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErr
 import { isLinkTerm, type BindingConstraint, type ConstraintTerm } from "../utils";
 import AddConstraintTermForm from "./AddConstraintTermForm";
 import { createConstraintTerm } from "../../../../../../../../services/api/studydata";
-import type { AllClustersAndLinks } from "../../../../../../../../common/types";
+import type { AllClustersAndLinks } from "../../../../../../../../types/types";
 import useStudySynthesis from "../../../../../../../../redux/hooks/useStudySynthesis";
 import { getLinksAndClusters } from "../../../../../../../../redux/selectors";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";

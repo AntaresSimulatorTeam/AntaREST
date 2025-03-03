@@ -14,7 +14,7 @@
 
 import { useState } from "react";
 import { useAsync } from "react-use";
-import type { StudyMetadata } from "../../common/types";
+import type { StudyMetadata } from "../../types/types";
 import type { AppState } from "../ducks";
 import { createStudySynthesis } from "../ducks/studySyntheses";
 import useAppDispatch from "./useAppDispatch";

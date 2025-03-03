@@ -20,7 +20,7 @@ import { useMemo } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";

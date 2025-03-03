@@ -54,7 +54,6 @@ class STStorageCreation(STStorageUpdate):
         return create_st_storage_properties(study_version=version, data=self.model_dump(mode="json", exclude_none=True))
 
 
-@all_optional_model
 @camel_case_model
 class STStorageOutput(STStorage880Config):
     """

@@ -52,7 +52,6 @@ function MapConfig({ onClose }: Props) {
     >
       <Button
         color="secondary"
-        size="small"
         onClick={onClose}
         startIcon={<ArrowBackIcon color="secondary" />}
         sx={{ alignSelf: "flex-start" }}

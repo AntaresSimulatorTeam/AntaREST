@@ -22,7 +22,7 @@ import Fieldset from "../../../../../../common/Fieldset";
 import type { AutoSubmitHandler } from "../../../../../../common/Form/types";
 import { getLinkPath, type LinkFields } from "./utils";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import type { LinkElement, StudyMetadata } from "../../../../../../../common/types";
+import type { LinkElement, StudyMetadata } from "../../../../../../../types/types";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import LinkMatrixView from "./LinkMatrixView";
 import OutputFilters from "../../../common/OutputFilters";

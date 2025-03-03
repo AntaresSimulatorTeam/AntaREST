@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AxiosError } from "axios";
 import { enqueueSnackbar } from "notistack";
 import { t } from "i18next";
-import type { MatrixIndex } from "../../../../../common/types";
+import type { MatrixIndex } from "../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { getStudyMatrixIndex, updateMatrix } from "../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../services/api/study";
@@ -40,8 +40,9 @@ import { GridCellKind } from "@glideapps/glide-data-grid";
 import { uploadFile } from "../../../../../services/api/studies/raw";
 import type { fetchMatrixFn } from "../../../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { Aggregate, Column, Operation } from "../../shared/constants";
-import { aggregatesTheme } from "../../styles";
+import { aggregatesAvgTheme, aggregatesTheme, dateTimeTheme } from "../../styles";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 interface DataState {
   data: MatrixDataDTO["data"];
@@ -74,6 +75,8 @@ export function useMatrix(
     pendingUpdates: [],
     updateCount: 0,
   });
+
+  const { isDarkMode } = useThemeColorScheme();
 
   // Determine the aggregate types to display in the matrix
   const aggregateTypes = useMemo(
@@ -146,7 +149,7 @@ export function useMatrix(
         title: "Date",
         type: Column.DateTime,
         editable: false,
-        themeOverride: { bgCell: "#2D2E40" },
+        themeOverride: isDarkMode ? dateTimeTheme.dark : dateTimeTheme.light,
       });
     }
 
@@ -173,8 +176,12 @@ export function useMatrix(
       editable: false,
       themeOverride:
         aggregateType === Aggregate.Avg
-          ? aggregatesTheme
-          : { ...aggregatesTheme, bgCell: "#464770" },
+          ? isDarkMode
+            ? aggregatesAvgTheme.dark
+            : aggregatesAvgTheme.light
+          : isDarkMode
+            ? aggregatesTheme.dark
+            : aggregatesTheme.light,
     }));
 
     return [...baseColumns, ...dataColumns, ...aggregatesColumns];
@@ -187,6 +194,7 @@ export function useMatrix(
     customColumns,
     colWidth,
     aggregateTypes,
+    isDarkMode,
   ]);
 
   // Apply updates to the matrix data and store them in the pending updates list

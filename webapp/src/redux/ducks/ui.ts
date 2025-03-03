@@ -16,7 +16,7 @@ import { createAction, createReducer } from "@reduxjs/toolkit";
 import { makeActionName } from "../utils";
 
 export interface UIState {
-  menuCollapsed: boolean;
+  menuOpen: boolean;
   currentPage: string;
   webSocketConnected: boolean;
   maintenanceMode: boolean;
@@ -25,7 +25,7 @@ export interface UIState {
 }
 
 const initialState = {
-  menuCollapsed: false,
+  menuOpen: true,
   currentPage: "/",
   webSocketConnected: false,
   maintenanceMode: false,
@@ -39,7 +39,7 @@ const n = makeActionName("ui");
 // Action Creators
 ////////////////////////////////////////////////////////////////
 
-export const setMenuCollapse = createAction<UIState["menuCollapsed"]>(n("SET_MENU_COLLAPSE"));
+export const setMenuOpen = createAction<UIState["menuOpen"]>(n("SET_MENU_OPEN"));
 
 export const setCurrentPage = createAction<UIState["currentPage"]>(n("SET_CURRENT_PAGE"));
 
@@ -65,8 +65,8 @@ export const setMaintenanceMode = createAction<UIState["maintenanceMode"]>(
 
 export default createReducer(initialState, (builder) => {
   builder
-    .addCase(setMenuCollapse, (draftState, action) => {
-      draftState.menuCollapsed = action.payload;
+    .addCase(setMenuOpen, (draftState, action) => {
+      draftState.menuOpen = action.payload;
     })
     .addCase(setCurrentPage, (draftState, action) => {
       draftState.currentPage = action.payload;

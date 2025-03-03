@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////
 
 import type { DeepPartial } from "redux";
-import type { Area, StudyMetadata } from "../../../../../../../common/types";
+import type { Area, StudyMetadata } from "../../../../../../../types/types";
 import client from "../../../../../../../services/api/client";
 
 enum AdequacyPatchMode {

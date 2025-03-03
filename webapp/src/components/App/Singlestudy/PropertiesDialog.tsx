@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useMemo } from "react";
-import type { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../types/types";
 import {
   addStudyGroup,
   changePublicMode,

@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import { useTranslation } from "react-i18next";
-import type { AllClustersAndLinks } from "../../../../../../../../../common/types";
+import type { AllClustersAndLinks } from "../../../../../../../../../types/types";
 import OptionsList from "./OptionsList";
 import NumberFE from "../../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../../common/Form";
@@ -103,7 +103,6 @@ export default function AddConstraintTermForm({ options, constraintTerms }: Prop
       ) : (
         <Button
           variant="outlined"
-          size="small"
           color="secondary"
           startIcon={<AddCircleOutlineRoundedIcon />}
           sx={{ ml: 3.5 }}

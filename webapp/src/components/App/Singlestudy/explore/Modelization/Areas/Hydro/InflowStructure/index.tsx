@@ -13,17 +13,17 @@
  */
 
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import Form from "../../../../../../../common/Form";
+import type { StudyMetadata } from "@/types/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+import Form from "@/components/common/Form";
 import {
   type InflowStructureFields,
   getInflowStructureFields,
   updateInflowStructureFields,
 } from "./utils";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { useTranslation } from "react-i18next";
 
 function InflowStructure() {
@@ -51,9 +51,18 @@ function InflowStructure() {
       }}
       onSubmit={handleSubmit}
       miniSubmitButton
+      submitButtonText=""
       enableUndoRedo
       hideFooterDivider
-      sx={{ flexDirection: "row", alignItems: "center" }}
+      sx={{
+        flexDirection: "row",
+        alignItems: "center",
+        alignContent: "center",
+        gap: 1,
+        ".Form__Footer": {
+          mt: 0,
+        },
+      }}
     >
       {({ control }) => (
         <NumberFE
@@ -71,7 +80,6 @@ function InflowStructure() {
             },
           }}
           inputProps={{ step: 0.1 }}
-          size="small"
           sx={{ width: 180 }}
         />
       )}

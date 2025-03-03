@@ -28,7 +28,7 @@ import {
   getMatrixList,
   getExportMatrixUrl,
 } from "../../../services/api/matrix";
-import type { MatrixInfoDTO, MatrixDataSetDTO } from "../../../common/types";
+import type { MatrixInfoDTO, MatrixDataSetDTO } from "../../../types/types";
 import DatasetCreationDialog from "./DatasetCreationDialog";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import RootPage from "../../common/page/RootPage";

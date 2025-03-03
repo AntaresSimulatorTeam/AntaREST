@@ -56,6 +56,4 @@ export const getDownloadsList = async (): Promise<FileDownload[]> => {
 };
 
 export const getDownloadUrl = (did: string): string =>
-  `${
-    getConfig().downloadHostUrl || getConfig().baseUrl + getConfig().restEndpoint
-  }/v1/downloads/${did}`;
+  `${getConfig().downloadHostUrl}/v1/downloads/${did}`;

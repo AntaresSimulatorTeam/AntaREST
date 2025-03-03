@@ -69,11 +69,10 @@ class TestInputSeriesMatrix:
         # checks binary response
         # We cannot check the content as is as we're applying a transformation to the data
         df_binary = pd.DataFrame(data=expected["data"])
-        buffer = io.BytesIO()
-        np.savetxt(buffer, df_binary, delimiter="\t", fmt="%.6f")
-        expected_binary = buffer.getvalue()
+        buffer = io.StringIO()
+        df_binary.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
         actual_binary = node.load(formatted=False)
-        assert actual_binary == expected_binary
+        assert actual_binary == buffer.getvalue()
 
     @pytest.mark.parametrize("link", [True, False])
     def test_load_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
@@ -100,10 +99,9 @@ class TestInputSeriesMatrix:
 
         # checks binary response
         actual = node.load(formatted=False)
-        buffer = io.BytesIO()
-        np.savetxt(buffer, node.default_empty, delimiter="\t", fmt="%.6f")
-        expected = buffer.getvalue()
-        assert actual == expected
+        buffer = io.StringIO()
+        pd.DataFrame(default_matrix).to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        assert actual == buffer.getvalue()
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = InputSeriesMatrix(context=Mock(), config=my_study_config)

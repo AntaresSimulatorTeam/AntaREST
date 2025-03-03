@@ -74,11 +74,7 @@ function XpansionPropsView(props: PropsType) {
               color: "secondary.dark",
             }}
           >
-            <Button
-              sx={{ color: "error.light" }}
-              size="small"
-              onClick={() => setOpenConfirmationModal(true)}
-            >
+            <Button sx={{ color: "error.light" }} onClick={() => setOpenConfirmationModal(true)}>
               {t("global.delete")}
             </Button>
           </Box>

@@ -29,9 +29,20 @@ class OptionalModel(Model):
     pass
 
 
+@camel_case_model
+class CamelCaseModel(Model):
+    pass
+
+
 @all_optional_model
 @camel_case_model
 class OptionalCamelCaseModel(Model):
+    pass
+
+
+@camel_case_model
+@all_optional_model
+class ReversedOptionalCamelCaseModel(Model):
     pass
 
 
@@ -56,6 +67,16 @@ def test_model() -> None:
     assert optional_model.field_with_alias == "test"
 
     # build with camel_case should succeed
+    args = {"floatWithDefault": 1}
+    camel_case_model = CamelCaseModel(**args)
+    assert camel_case_model.float_with_default == 1
+
+    # build with optional_camel_case should succeed
     args = {"fieldWithAlias": "test"}
-    camel_case_model = OptionalCamelCaseModel(**args)
-    assert camel_case_model.field_with_alias == "test"
+    optional_camel_case_model = OptionalCamelCaseModel(**args)
+    assert optional_camel_case_model.field_with_alias == "test"
+
+    # build with reversed_optional_camel_case should succeed
+    args = {"fieldWithAlias": "test"}
+    optional_camel_case_model = ReversedOptionalCamelCaseModel(**args)
+    assert optional_camel_case_model.field_with_alias == "test"
