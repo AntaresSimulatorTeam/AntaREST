@@ -38,7 +38,6 @@ class ReplaceMatrix(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REPLACE_MATRIX
-    version: int = 1
 
     # Command parameters
     # ==================

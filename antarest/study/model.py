@@ -37,7 +37,7 @@ from typing_extensions import override
 from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 

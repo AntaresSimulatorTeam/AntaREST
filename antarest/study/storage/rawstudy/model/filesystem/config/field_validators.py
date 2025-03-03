@@ -9,13 +9,38 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import typing as t
+from typing import Annotated, Any, List
+
+from pydantic import BeforeValidator, Field
+
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 _ALL_FILTERING = ["hourly", "daily", "weekly", "monthly", "annual"]
 
 
-def extract_filtering(v: t.Any) -> t.List[str]:
+def _validate_item_name(name: Any) -> str:
+    if isinstance(name, int):
+        name = str(name)
+    if not isinstance(name, str):
+        raise ValueError(f"Invalid name '{name}'.")
+    if not transform_name_to_id(name):
+        raise ValueError(f"Invalid name '{name}'.")
+    return name
+
+
+# Type to be used for item names, will raise an error if name
+# does not comply with antares-simulator limitations.
+ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
+
+# Type to be used for area identifiers. An ID is valid if it contains
+# only lower case alphanumeric characters, parenthesis, comma,
+# ampersand, spaces, underscores, or dashes, as defined by
+# antares-simulator.
+AreaId = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
+
+
+def extract_filtering(v: Any) -> List[str]:
     """
     Extract filtering values from a comma-separated list of values.
     """

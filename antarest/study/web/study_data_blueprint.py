@@ -81,7 +81,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
 logger = logging.getLogger(__name__)

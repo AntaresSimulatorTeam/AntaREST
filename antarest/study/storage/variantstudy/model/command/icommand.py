@@ -17,8 +17,7 @@ from abc import ABC, abstractmethod
 
 import typing_extensions as te
 
-from antarest.core.serialization import AntaresBaseModel
-from antarest.core.utils.utils import assert_this
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -41,13 +40,11 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
     Attributes:
         command_id: The ID of the command extracted from the database, if any.
         command_name: The name of the command.
-        version: The version of the command (currently always equal to 1).
         command_context: The context of the command.
     """
 
     command_id: t.Optional[uuid.UUID] = None
     command_name: CommandName
-    version: int
     command_context: CommandContext
     study_version: StudyVersionStr
 

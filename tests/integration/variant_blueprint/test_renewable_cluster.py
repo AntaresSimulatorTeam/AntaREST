@@ -17,7 +17,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from tests.integration.utils import wait_task_completion
 
 
@@ -124,7 +124,7 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "Wind Offshore",
+            "group": "wind offshore",
             "id": "Oleron",
             "name": cluster_fr1,
             "nominalCapacity": 2500.0,
@@ -141,7 +141,7 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": False,
-            "group": "Solar PV",
+            "group": "solar pv",
             "id": "La_Rochelle",
             "name": cluster_fr2,
             "nominalCapacity": 3500.0,
@@ -204,7 +204,6 @@ class TestRenewableCluster:
         cluster_it1_id = transform_name_to_id(cluster_it1, lower=False)
         args = {
             "area_id": area_it_id,
-            "cluster_name": cluster_it1_id,
             "parameters": {
                 "group": "wind offshore",
                 "name": cluster_it1,
@@ -216,7 +215,7 @@ class TestRenewableCluster:
         res = client.post(
             f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            json=[{"action": "create_renewables_cluster", "args": args}],
+            json=[{"action": "create_renewables_cluster", "version": 2, "args": args}],
         )
         res.raise_for_status()
 
@@ -228,7 +227,7 @@ class TestRenewableCluster:
         properties = res.json()
         expected = {
             "enabled": True,
-            "group": "Wind Offshore",
+            "group": "wind offshore",
             "id": "Ol ron",
             "name": cluster_it1,
             "nominalCapacity": 1000.0,
@@ -272,20 +271,23 @@ class TestRenewableCluster:
             "es": {"list": {}},
             "fr": {
                 "list": {
-                    cluster_fr1_id: {
+                    "Oleron": {
+                        "enabled": True,
                         "group": "wind offshore",
-                        "name": cluster_fr1,
-                        "nominalcapacity": 2500,
+                        "name": "Oleron",
+                        "nominalcapacity": 2500.0,
                         "ts-interpretation": "power-generation",
-                    },
+                        "unitcount": 1,
+                    }
                 }
             },
             "it": {
                 "list": {
-                    cluster_it1_id: {
+                    "Ol ron": {
+                        "enabled": True,
                         "group": "wind offshore",
-                        "name": cluster_it1,
-                        "nominalcapacity": 1000,
+                        "name": "Oléron",
+                        "nominalcapacity": 1000.0,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
                     }
@@ -315,10 +317,11 @@ class TestRenewableCluster:
             "fr": {"list": {}},
             "it": {
                 "list": {
-                    cluster_it1_id: {
+                    "Ol ron": {
+                        "enabled": True,
                         "group": "wind offshore",
-                        "name": cluster_it1,
-                        "nominalcapacity": 1000,
+                        "name": "Oléron",
+                        "nominalcapacity": 1000.0,
                         "ts-interpretation": "production-factor",
                         "unitcount": 1,
                     }

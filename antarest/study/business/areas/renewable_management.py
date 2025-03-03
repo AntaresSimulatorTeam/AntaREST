@@ -14,7 +14,6 @@ import collections
 import typing as t
 
 from antares.study.version import StudyVersion
-from pydantic import field_validator
 
 from antarest.core.exceptions import DuplicateRenewableCluster, RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.core.model import JSON
@@ -22,12 +21,13 @@ from antarest.study.business.all_optional_meta import all_optional_model, camel_
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
-    RenewableConfigType,
     RenewableProperties,
+    RenewablePropertiesType,
     create_renewable_config,
+    create_renewable_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
@@ -73,19 +73,9 @@ class RenewableClusterCreation(RenewableClusterInput):
     Model representing the data structure required to create a new Renewable cluster within a study.
     """
 
-    # noinspection Pydantic
-    @field_validator("name", mode="before")
-    def validate_name(cls, name: t.Optional[str]) -> str:
-        """
-        Validator to check if the name is not empty.
-        """
-        if not name:
-            raise ValueError("name must not be empty")
-        return name
-
-    def to_config(self, study_version: StudyVersion) -> RenewableConfigType:
+    def to_properties(self, study_version: StudyVersion) -> RenewablePropertiesType:
         values = self.model_dump(by_alias=False, exclude_none=True)
-        return create_renewable_config(study_version=study_version, **values)
+        return create_renewable_properties(study_version=study_version, data=values)
 
 
 @all_optional_model
@@ -206,7 +196,7 @@ class RenewableManager:
             The newly created cluster.
         """
         file_study = self._get_file_study(study)
-        cluster = cluster_data.to_config(StudyVersion.parse(study.version))
+        cluster = cluster_data.to_properties(StudyVersion.parse(study.version))
         command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
         execute_or_add_commands(
             study,
@@ -214,16 +204,15 @@ class RenewableManager:
             [command],
             self.storage_service,
         )
-        output = self.get_cluster(study, area_id, cluster.id)
+        output = self.get_cluster(study, area_id, cluster.get_id())
         return output
 
     def _make_create_cluster_cmd(
-        self, area_id: str, cluster: RenewableConfigType, study_version: StudyVersion
+        self, area_id: str, cluster: RenewablePropertiesType, study_version: StudyVersion
     ) -> CreateRenewablesCluster:
         command = CreateRenewablesCluster(
             area_id=area_id,
-            cluster_name=cluster.id,
-            parameters=cluster.model_dump(mode="json", by_alias=True, exclude={"id"}),
+            parameters=cluster,
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
             study_version=study_version,
         )
@@ -367,7 +356,7 @@ class RenewableManager:
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
         creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_config(study_version)
+        new_config = creation_form.to_properties(study_version)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
 
         # Matrix edition

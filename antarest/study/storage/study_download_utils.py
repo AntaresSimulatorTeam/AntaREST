@@ -25,7 +25,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.core.serialization import to_json
+from antarest.core.serde.json import to_json
 from antarest.study.model import (
     STUDY_VERSION_8_1,
     ExportFormat,

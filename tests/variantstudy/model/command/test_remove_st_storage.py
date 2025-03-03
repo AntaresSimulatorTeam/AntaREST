@@ -16,7 +16,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -66,7 +66,6 @@ class TestRemoveSTStorage:
 
         # Check the attribues
         assert cmd.command_name == CommandName.REMOVE_ST_STORAGE
-        assert cmd.version == 1
         assert cmd.study_version == STUDY_VERSION_8_8
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"

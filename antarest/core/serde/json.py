@@ -32,18 +32,3 @@ def to_json(data: t.Any, indent: t.Optional[int] = None) -> bytes:
 
 def to_json_string(data: t.Any, indent: t.Optional[int] = None) -> str:
     return to_json(data, indent=indent).decode("utf-8")
-
-
-class AntaresBaseModel(pydantic.BaseModel):
-    """
-    Due to pydantic migration from v1 to v2, we can have this issue:
-
-    class A(BaseModel):
-        a: str
-
-    A(a=2) raises ValidationError as we give an int instead of a str
-
-    To avoid this issue we created our own BaseModel class that inherits from BaseModel and allows such object creation.
-    """
-
-    model_config = pydantic.config.ConfigDict(coerce_numbers_to_str=True)

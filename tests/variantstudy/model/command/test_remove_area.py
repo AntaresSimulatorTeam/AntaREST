@@ -13,12 +13,15 @@
 import pytest
 from checksumdir import dirhash
 
+from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup, RenewableProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalClusterGroup, ThermalProperties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -144,14 +147,14 @@ class TestRemoveArea:
         thermal_id = transform_name_to_id(thermal_name)
         output = CreateCluster(
             area_id=area_id2,
-            cluster_name=thermal_name,
-            parameters={
-                "group": "Other",
-                "unitcount": "1",
-                "nominalcapacity": "1000000",
-                "marginal-cost": "30",
-                "market-bid-cost": "30",
-            },
+            parameters=ThermalProperties(
+                name=thermal_name,
+                group=ThermalClusterGroup.OTHER1,
+                unit_count=1,
+                nominal_capacity=1000000,
+                marginal_cost=30,
+                market_bid_cost=30,
+            ),
             prepro=[[0]],
             modulation=[[0]],
             command_context=command_context,
@@ -165,14 +168,14 @@ class TestRemoveArea:
             renewable_id = transform_name_to_id(renewable_name)
             output = CreateRenewablesCluster(
                 area_id=area_id2,
-                cluster_name=renewable_name,
-                parameters={
-                    "enabled": "true",
-                    "group": "Solar Rooftop",
-                    "unitcount": "10",
-                    "nominalcapacity": "12000",
-                    "ts-interpretation": "power-generation",
-                },
+                parameters=RenewableProperties(
+                    name=renewable_name,
+                    enabled=True,
+                    group=RenewableClusterGroup.ROOFTOP_SOLAR,
+                    unit_count=10,
+                    nominal_capacity=12000,
+                    ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION,
+                ),
                 command_context=command_context,
                 study_version=study_version,
             ).apply(study_data=empty_study)

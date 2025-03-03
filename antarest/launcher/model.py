@@ -21,7 +21,8 @@ from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
 
 from antarest.core.persistence import Base
-from antarest.core.serialization import AntaresBaseModel, from_json
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.json import from_json
 from antarest.login.model import Identity, UserInfo
 
 

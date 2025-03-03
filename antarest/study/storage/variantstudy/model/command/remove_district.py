@@ -31,7 +31,6 @@ class RemoveDistrict(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_DISTRICT
-    version: int = 1
 
     # Command parameters
     # ==================

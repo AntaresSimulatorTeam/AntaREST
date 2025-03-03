@@ -30,9 +30,9 @@ from antarest.core.exceptions import (
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
-from antarest.core.model import JSON
+from antarest.core.model import JSON, LowerCaseStr
 from antarest.core.requests import CaseInsensitiveDict
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.business.utils import execute_or_add_commands
@@ -44,7 +44,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -343,7 +343,7 @@ class ConstraintOutput830(ConstraintOutputBase):
 
 
 class ConstraintOutput870(ConstraintOutput830):
-    group: str = DEFAULT_GROUP
+    group: LowerCaseStr = DEFAULT_GROUP
 
 
 # WARNING: Do not change the order of the following line, it is used to determine

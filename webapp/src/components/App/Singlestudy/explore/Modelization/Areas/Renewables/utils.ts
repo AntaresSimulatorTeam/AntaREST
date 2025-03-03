@@ -22,15 +22,15 @@ import type { ClusterWithCapacity } from "../common/clustersUtils";
 ////////////////////////////////////////////////////////////////
 
 export const RENEWABLE_GROUPS = [
-  "Wind Onshore",
-  "Wind Offshore",
-  "Solar Thermal",
-  "Solar PV",
-  "Solar Rooftop",
-  "Other RES 1",
-  "Other RES 2",
-  "Other RES 3",
-  "Other RES 4",
+  "wind onshore",
+  "wind offshore",
+  "solar thermal",
+  "solar pv",
+  "solar rooftop",
+  "other res 1",
+  "other res 2",
+  "other res 3",
+  "other res 4",
 ] as const;
 
 export const TS_INTERPRETATION_OPTIONS = ["power-generation", "production-factor"] as const;

@@ -12,18 +12,50 @@
 
 import ast
 import configparser
-import typing as t
 from pathlib import Path
+from typing import Callable, Dict, List, Optional
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
+
+# Value serializers may be used to customize the way INI options are serialized
+ValueSerializer = Callable[[str], PrimitiveType]
+
+
+def _lower_case(input: str) -> str:
+    return input.lower()
+
+
+LOWER_CASE_SERIALIZER: ValueSerializer = _lower_case
+
+
+class ValueSerializers:
+    def __init__(self, serializers: Dict[OptionMatcher, ValueSerializer]):
+        self._serializers = serializers
+
+    def find_serializer(self, section: str, key: str) -> Optional[ValueSerializer]:
+        if self._serializers:
+            possible_keys = [
+                OptionMatcher(section=section, key=key),
+                any_section_option_matcher(key=key),
+            ]
+            for k in possible_keys:
+                if parser := self._serializers.get(k, None):
+                    return parser
+        return None
 
 
 class IniConfigParser(configparser.RawConfigParser):
-    def __init__(self, special_keys: t.Optional[t.List[str]] = None) -> None:
+    def __init__(
+        self,
+        special_keys: Optional[List[str]] = None,
+        value_serializers: Optional[ValueSerializers] = None,
+    ) -> None:
         super().__init__()
         self.special_keys = special_keys
+        self._value_serializers = value_serializers or ValueSerializers({})
 
     # noinspection SpellCheckingInspection
     @override
@@ -41,6 +73,9 @@ class IniConfigParser(configparser.RawConfigParser):
         value = self._interpolation.before_write(  # type:ignore
             self, section_name, key, value
         )
+        if self._value_serializers:
+            if serializer := self._value_serializers.find_serializer(section_name, key):
+                value = serializer(value)
         if value is not None or not self._allow_no_value:  # type:ignore
             value = delimiter + str(value).replace("\n", "\n\t")
         else:
@@ -70,8 +105,13 @@ class IniWriter:
     Standard INI writer.
     """
 
-    def __init__(self, special_keys: t.Optional[t.List[str]] = None):
+    def __init__(
+        self,
+        special_keys: Optional[List[str]] = None,
+        value_serializers: Optional[Dict[OptionMatcher, ValueSerializer]] = None,
+    ):
         self.special_keys = special_keys
+        self._value_serializers = ValueSerializers(value_serializers or {})
 
     def write(self, data: JSON, path: Path) -> None:
         """
@@ -81,7 +121,7 @@ class IniWriter:
             data: JSON content.
             path: path to `.ini` file.
         """
-        config_parser = IniConfigParser(special_keys=self.special_keys)
+        config_parser = IniConfigParser(special_keys=self.special_keys, value_serializers=self._value_serializers)
         config_parser.read_dict(data)
         with path.open("w") as fp:
             config_parser.write(fp)

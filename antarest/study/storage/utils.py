@@ -40,6 +40,8 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
@@ -50,8 +52,6 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.ini_reader import IniReader
-from antarest.study.storage.rawstudy.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers

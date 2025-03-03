@@ -16,7 +16,7 @@ from unittest.mock import Mock
 from antares.study.version import StudyVersion
 
 from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
-from antarest.core.serialization import from_json
+from antarest.core.serde.json import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
 
 

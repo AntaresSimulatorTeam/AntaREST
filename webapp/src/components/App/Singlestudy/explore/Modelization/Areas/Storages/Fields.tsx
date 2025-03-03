@@ -44,6 +44,7 @@ function Fields() {
           name="group"
           control={control}
           options={STORAGE_GROUPS}
+          startCaseLabel={false}
           sx={{
             alignSelf: "center",
           }}

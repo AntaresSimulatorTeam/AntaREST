@@ -53,6 +53,7 @@ function Fields() {
           name="group"
           control={control}
           options={THERMAL_GROUPS}
+          startCaseLabel={false}
           sx={{
             alignSelf: "center",
           }}
