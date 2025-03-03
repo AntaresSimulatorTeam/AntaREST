@@ -18,7 +18,7 @@ import { useOutletContext } from "react-router";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getStudyMapLayersById } from "../../../../../../../../redux/selectors";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
@@ -115,7 +115,6 @@ function Layers() {
         <Button
           color="primary"
           variant="outlined"
-          size="small"
           startIcon={<AddIcon />}
           onClick={() => setCreateLayerDialogOpen(true)}
           sx={{ mr: 1 }}
@@ -125,7 +124,6 @@ function Layers() {
         <Button
           color="primary"
           variant="outlined"
-          size="small"
           startIcon={<EditIcon />}
           onClick={() => setUpdateLayerDialogOpen(true)}
         >

@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import axios, { type AxiosError } from "axios";
 import HelpIcon from "@mui/icons-material/Help";
 import { getGroups } from "../../../services/api/user";
-import type { GroupDTO, MatrixDataSetDTO } from "../../../common/types";
+import type { GroupDTO, MatrixDataSetDTO } from "../../../types/types";
 import { saveMatrix } from "./utils";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import SimpleLoader from "../../common/loaders/SimpleLoader";
@@ -168,7 +168,6 @@ function DatasetCreationDialog(props: PropTypes) {
               boxSizing: "border-box",
               m: 2,
             }}
-            size="small"
             value={name}
             onChange={(event) => setName(event.target.value as string)}
             label={t("data.matrixName")}

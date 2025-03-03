@@ -15,7 +15,7 @@
 import { memo } from "react";
 import { Box, Skeleton } from "@mui/material";
 import { areEqual, type GridChildComponentProps } from "react-window";
-import type { StudyMetadata } from "../../../../common/types";
+import type { StudyMetadata } from "../../../../types/types";
 import StudyCard from "../StudyCard";
 import type { StudiesListProps } from ".";
 
@@ -25,9 +25,8 @@ type Props = GridChildComponentProps<{
   columnWidth: number;
   rowHeight: number;
   studyIds: StudiesListProps["studyIds"];
-  selectedStudies: string[];
-  toggleSelect: (sid: string) => void;
-  selectionMode: boolean;
+  selectedStudyIds: Array<StudyMetadata["id"]>;
+  toggleStudySelection: (id: StudyMetadata["id"]) => void;
 }>;
 
 const StudyCardCell = memo<Props>(
@@ -39,9 +38,8 @@ const StudyCardCell = memo<Props>(
       columnWidth,
       rowHeight,
       studyIds,
-      selectedStudies,
-      toggleSelect,
-      selectionMode,
+      selectedStudyIds,
+      toggleStudySelection,
     } = data;
     const width = columnWidth - 10;
     const height = rowHeight - 10;
@@ -64,9 +62,9 @@ const StudyCardCell = memo<Props>(
             setStudyToLaunch={setStudyToLaunch}
             width={width}
             height={height}
-            selectionMode={selectionMode}
-            selected={selectedStudies.indexOf(studyId) !== -1}
-            toggleSelect={toggleSelect}
+            isSelected={selectedStudyIds.includes(studyId)}
+            hasStudiesSelected={selectedStudyIds.length > 0}
+            toggleStudySelection={toggleStudySelection}
           />
         )}
       </Box>

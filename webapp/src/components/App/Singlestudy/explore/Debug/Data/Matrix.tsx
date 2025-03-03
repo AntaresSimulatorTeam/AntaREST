@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import Matrix from "../../../../../common/Matrix";
+import MatrixComp from "../../../../../common/Matrix";
 import type { DataCompProps } from "../utils";
 
-function DebugMatrix({ filename, filePath, canEdit }: DataCompProps) {
-  return <Matrix title={filename} url={filePath} canImport={!canEdit} />;
+function Matrix({ filename, filePath, canEdit }: DataCompProps) {
+  return <MatrixComp title={filename} url={filePath} canImport={!canEdit} />;
 }
 
-export default DebugMatrix;
+export default Matrix;

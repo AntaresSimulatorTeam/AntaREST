@@ -18,7 +18,7 @@ import type { AxiosError } from "axios";
 import { useOutletContext } from "react-router-dom";
 import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../types/types";
 import {
   createXpansionConfiguration,
   xpansionConfigurationExist,
@@ -112,7 +112,6 @@ function Xpansion() {
             <Button
               color="primary"
               variant="contained"
-              size="small"
               startIcon={<AddIcon />}
               onClick={createXpansion}
             >

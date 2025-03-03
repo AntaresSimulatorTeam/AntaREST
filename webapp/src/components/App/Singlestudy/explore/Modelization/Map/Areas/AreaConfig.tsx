@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { MaterialPicker, type ColorResult } from "react-color";
 import { Box, TextField, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { LinkElement, UpdateAreaUi } from "../../../../../../../common/types";
+import type { LinkElement, UpdateAreaUi } from "../../../../../../../types/types";
 import AreaLinks from "./AreaLinks";
 
 import AreaLink from "./AreaLink";
@@ -100,7 +100,6 @@ function AreaConfig(props: Props) {
           <TextField
             sx={{ mt: 1 }}
             label={t("study.modelization.map.areaName")}
-            variant="filled"
             value={currentArea.name}
             disabled
           />

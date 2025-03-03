@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/types/types";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Playlist = {

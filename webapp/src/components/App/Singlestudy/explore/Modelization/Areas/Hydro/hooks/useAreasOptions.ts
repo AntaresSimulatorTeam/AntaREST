@@ -14,7 +14,7 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../../../redux/selectors";
 import type { DynamicListProps } from "../../../../../../../common/DynamicList";

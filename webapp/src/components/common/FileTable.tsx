@@ -35,7 +35,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
-import type { GenericInfo } from "../../common/types";
+import type { GenericInfo } from "../../types/types";
 import DownloadLink from "./DownloadLink";
 import UploadDialog from "./dialogs/UploadDialog";
 

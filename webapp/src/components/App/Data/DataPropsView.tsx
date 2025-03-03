@@ -13,7 +13,7 @@
  */
 
 import { useState } from "react";
-import type { MatrixDataSetDTO, MatrixInfoDTO } from "../../../common/types";
+import type { MatrixDataSetDTO, MatrixInfoDTO } from "../../../types/types";
 import PropertiesView from "../../common/PropertiesView";
 import DataListing from "./DataListing";
 import { StyledListingBox } from "./styles";

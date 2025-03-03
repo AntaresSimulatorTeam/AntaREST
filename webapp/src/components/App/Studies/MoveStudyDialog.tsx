@@ -15,7 +15,7 @@
 import type { DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../types/types";
 import { moveStudy } from "../../../services/api/study";
 import FormDialog from "../../common/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "../../common/Form/types";

@@ -25,19 +25,19 @@ export function DigestTabs({ matrices }: DigestTabsProps) {
   const tabItems = [
     {
       label: "Area",
-      content: matrices.area && <DigestMatrix matrix={matrices.area} />,
+      content: () => <DigestMatrix matrix={matrices.area} />,
     },
     {
       label: "Districts",
-      content: matrices.districts && <DigestMatrix matrix={matrices.districts} />,
+      content: () => <DigestMatrix matrix={matrices.districts} />,
     },
     {
       label: "Flow Linear",
-      content: matrices.flowLinear && <DigestMatrix matrix={matrices.flowLinear} />,
+      content: () => <DigestMatrix matrix={matrices.flowLinear} />,
     },
     {
       label: "Flow Quadratic",
-      content: matrices.flowQuadratic && <DigestMatrix matrix={matrices.flowQuadratic} />,
+      content: () => <DigestMatrix matrix={matrices.flowQuadratic} />,
     },
   ];
 

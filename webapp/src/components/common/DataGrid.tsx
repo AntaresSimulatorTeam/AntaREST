@@ -22,10 +22,11 @@ import {
   type GridCell,
 } from "@glideapps/glide-data-grid";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { voidFn } from "@/utils/fnUtils";
-import { darkTheme } from "./Matrix/styles";
+import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
 import { useUpdateEffect } from "react-use";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 interface StringRowMarkerOptions {
   kind: "string" | "clickable-string";
@@ -40,9 +41,11 @@ export type RowMarkers =
 
 type RowMarkersOptions = Exclude<RowMarkers, string>;
 
-export interface DataGridProps extends Omit<DataEditorProps, "rowMarkers" | "gridSelection"> {
+export interface DataGridProps
+  extends Omit<DataEditorProps, "rowMarkers" | "gridSelection" | "theme"> {
   rowMarkers?: RowMarkers;
   enableColumnResize?: boolean;
+  readOnly?: boolean;
 }
 
 const ROW_HEIGHT = 30;
@@ -64,6 +67,7 @@ function DataGrid({
   onColumnResizeEnd,
   onGridSelectionChange,
   enableColumnResize = true,
+  readOnly = false,
   freezeColumns,
   rows,
   ...rest
@@ -79,6 +83,21 @@ function DataGrid({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),
   });
+
+  const { isDarkMode } = useThemeColorScheme();
+
+  const theme = useMemo(() => {
+    const baseTheme = isDarkMode ? darkTheme : lightTheme;
+
+    if (readOnly) {
+      return {
+        ...baseTheme,
+        ...(isDarkMode ? readOnlyDarkTheme : readOnlyLightTheme),
+      };
+    }
+
+    return baseTheme;
+  }, [isDarkMode, readOnly]);
 
   useUpdateEffect(() => {
     setColumns(initColumns());
@@ -136,7 +155,7 @@ function DataGrid({
             allowOverlay: false,
             readonly: true,
             themeOverride: {
-              bgCell: darkTheme.bgHeader,
+              bgCell: isDarkMode ? darkTheme.bgHeader : "#efeff1",
             },
           } satisfies GridCell;
         },
@@ -145,7 +164,7 @@ function DataGrid({
         },
       );
     },
-    [getCellContent, isStringRowMarkers],
+    [getCellContent, isStringRowMarkers, isDarkMode],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -276,7 +295,7 @@ function DataGrid({
       smoothScrollX
       smoothScrollY
       width="100%"
-      theme={darkTheme}
+      theme={theme}
       rows={rows}
       columns={columns}
       rowMarkers={isStringRowMarkers ? "none" : rowMarkersOptions}

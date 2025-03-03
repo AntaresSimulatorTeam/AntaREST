@@ -17,7 +17,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as R from "ramda";
 import type * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import usePromise from "../../../../../../../hooks/usePromise";
 import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
 import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
@@ -127,11 +127,7 @@ function ScenarioPlaylistDialog(props: Props) {
         response={res}
         ifFulfilled={(defaultValues) => (
           <>
-            <ButtonGroup
-              size="small"
-              disabled={isSubmitting}
-              sx={{ justifyContent: "flex-end", mb: 1 }}
-            >
+            <ButtonGroup disabled={isSubmitting} sx={{ justifyContent: "flex-end", mb: 1 }}>
               <Button color="secondary" onClick={handleUpdateStatus(R.T)}>
                 {t("study.configuration.general.mcScenarioPlaylist.action.enableAll")}
               </Button>

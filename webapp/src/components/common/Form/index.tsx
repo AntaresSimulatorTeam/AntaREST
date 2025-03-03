@@ -36,12 +36,13 @@ import {
   Tooltip,
   type SxProps,
   type Theme,
+  type ButtonProps,
+  Button,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { useUpdateEffect } from "react-use";
 import * as R from "ramda";
 import clsx from "clsx";
-import { LoadingButton, type LoadingButtonProps } from "@mui/lab";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import axios from "axios";
@@ -80,7 +81,7 @@ export interface FormProps<
     | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
   submitButtonText?: string;
-  submitButtonIcon?: LoadingButtonProps["startIcon"];
+  submitButtonIcon?: ButtonProps["startIcon"];
   miniSubmitButton?: boolean;
   hideSubmitButton?: boolean;
   hideFooterDivider?: boolean;
@@ -90,36 +91,34 @@ export interface FormProps<
   enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
+  disableStickyFooter?: boolean;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
   return useFormContextOriginal() as UseFormReturnPlus<TFieldValues>;
 }
 
-function Form<TFieldValues extends FieldValues, TContext>(
-  props: FormProps<TFieldValues, TContext>,
-) {
-  const {
-    config,
-    onSubmit,
-    onSubmitSuccessful,
-    onInvalid,
-    children,
-    submitButtonText,
-    submitButtonIcon = <SaveIcon />,
-    miniSubmitButton,
-    hideSubmitButton,
-    hideFooterDivider,
-    onStateChange,
-    autoSubmit,
-    allowSubmitOnPristine,
-    enableUndoRedo,
-    className,
-    sx,
-    apiRef,
-    ...formProps
-  } = props;
-
+function Form<TFieldValues extends FieldValues, TContext>({
+  config,
+  onSubmit,
+  onSubmitSuccessful,
+  onInvalid,
+  children,
+  submitButtonText,
+  submitButtonIcon = <SaveIcon />,
+  miniSubmitButton,
+  hideSubmitButton,
+  hideFooterDivider,
+  onStateChange,
+  autoSubmit,
+  allowSubmitOnPristine,
+  enableUndoRedo,
+  className,
+  sx,
+  apiRef,
+  disableStickyFooter,
+  ...formProps
+}: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
@@ -316,7 +315,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
         {
           display: "flex",
           flexDirection: "column",
-          height: 1,
+          height: disableStickyFooter ? "auto" : 1,
           overflow: "auto",
         },
         sx,
@@ -355,7 +354,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
             display: "flex",
             flexDirection: "column",
             gap: 1.5,
-            mt: hideFooterDivider ? 0 : 1.5,
+            mt: 1.5,
           }}
         >
           {!hideFooterDivider && <Divider flexItem />}
@@ -367,9 +366,8 @@ function Form<TFieldValues extends FieldValues, TContext>(
           <Box className="Form__Footer__Actions" sx={{ display: "flex" }}>
             {showSubmitButton && (
               <>
-                <LoadingButton
+                <Button
                   type="submit"
-                  size="small"
                   disabled={!isSubmitAllowed}
                   loading={isSubmitting}
                   {...(miniSubmitButton
@@ -390,14 +388,14 @@ function Form<TFieldValues extends FieldValues, TContext>(
               <>
                 <Tooltip title={t("global.undo")}>
                   <span>
-                    <IconButton size="small" onClick={undo} disabled={!canUndo || isSubmitting}>
+                    <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>
                       <UndoIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
                 <Tooltip title={t("global.redo")}>
                   <span>
-                    <IconButton size="small" onClick={redo} disabled={!canRedo || isSubmitting}>
+                    <IconButton onClick={redo} disabled={!canRedo || isSubmitting}>
                       <RedoIcon />
                     </IconButton>
                   </span>

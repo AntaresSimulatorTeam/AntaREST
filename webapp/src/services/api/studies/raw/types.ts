@@ -13,7 +13,7 @@
  */
 
 import type { AxiosRequestConfig } from "axios";
-import type { StudyMetadata } from "@/common/types.ts";
+import type { StudyMetadata } from "@/types/types";
 import type { O } from "ts-toolbelt";
 import type { TableExportFormat } from "./constants";
 

@@ -14,7 +14,7 @@
 
 import { useFieldArray } from "react-hook-form";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreasById, getCurrentArea } from "../../../../../../../../redux/selectors";
 import DynamicList from "../../../../../../../common/DynamicList";

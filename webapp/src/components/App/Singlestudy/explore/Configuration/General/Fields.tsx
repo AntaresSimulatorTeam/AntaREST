@@ -136,7 +136,6 @@ function Fields(props: Props) {
         <NumberFE
           name="firstDay"
           label={t("study.configuration.general.firstDay")}
-          variant="filled"
           control={control}
           rules={{
             deps: "lastDay",
@@ -146,7 +145,6 @@ function Fields(props: Props) {
         <NumberFE
           name="lastDay"
           label={t("study.configuration.general.lastDay")}
-          variant="filled"
           control={control}
           rules={{
             deps: "firstDay",
@@ -155,7 +153,7 @@ function Fields(props: Props) {
         />
       </Fieldset>
       <Fieldset legend={t("study.configuration.general.legend.calendar")}>
-        <StringFE name="horizon" label="Horizon" variant="filled" control={control} />
+        <StringFE name="horizon" label="Horizon" control={control} />
         <SelectFE
           name="firstMonth"
           label={t("study.configuration.general.year")}
@@ -176,7 +174,6 @@ function Fields(props: Props) {
         />
         <SwitchFE
           name="leapYear"
-          sx={{ flexBasis: "100%" }}
           label={t("study.configuration.general.leapYear")}
           control={control}
           rules={{
@@ -197,7 +194,6 @@ function Fields(props: Props) {
           <NumberFE
             name="nbYears"
             label={t("study.configuration.general.nbYears")}
-            variant="filled"
             control={control}
             rules={{
               validate: handleNbYearsValidation,

@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
-import type { GroupDetailsDTO } from "../../../../../common/types";
+import type { GroupDetailsDTO } from "../../../../../types/types";
 import {
   createRole,
   deleteUserRole,

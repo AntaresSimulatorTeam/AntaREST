@@ -14,7 +14,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Box, styled } from "@mui/material";
-import type { StudyMetadata, VariantTree } from "../../../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../../../types/types";
 import { getTreeNodes, type StudyTree } from "./utils";
 import {
   CIRCLE_RADIUS,
@@ -37,6 +37,7 @@ import {
   ZOOM_OUT,
   CURVE_OFFSET,
 } from "./treeconfig";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 export const SVGCircle = styled("circle")({
   cursor: "pointer",
@@ -59,6 +60,7 @@ export default function CustomizedTreeView(props: Props) {
   const { study, tree, onClick } = props;
   const [studyTree, setStudyTree] = useState<StudyTree>();
   const [hoverId, setHoverId] = useState<string>("");
+  const { isDarkMode } = useThemeColorScheme();
 
   const rectWidth = useMemo(() => {
     if (studyTree === undefined) {
@@ -142,7 +144,7 @@ export default function CustomizedTreeView(props: Props) {
         key={`name-${i}-${j}`}
         x={rectWidth + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING}
         y={cy + RECT_Y_SPACING_2}
-        fill={hoverId === id || study?.id === id ? "black" : "white"}
+        fill={isDarkMode ? (hoverId === id || study?.id === id ? "black" : "white") : "black"}
         fontSize={TEXT_SIZE}
         onClick={() => onClick(id)}
         onMouseOver={(e) => onMouseOver(id)}

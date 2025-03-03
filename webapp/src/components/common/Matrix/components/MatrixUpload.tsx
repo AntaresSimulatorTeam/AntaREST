@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/types/types";
 import DatabaseUploadDialog from "@/components/common/dialogs/DatabaseUploadDialog";
 import { useTranslation } from "react-i18next";
 import UploadDialog from "../../dialogs/UploadDialog";

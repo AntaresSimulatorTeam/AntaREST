@@ -12,30 +12,23 @@
  * This file is part of the Antares project.
  */
 
+import { initConfig } from "./services/config";
 import { createRoot } from "react-dom/client";
-import { Provider } from "react-redux";
-import { StyledEngineProvider } from "@mui/material";
-import "./index.css";
 import App from "./components/App";
-import { initConfig, type Config } from "./services/config";
 import storage, { StorageKey } from "./services/utils/localStorage";
-import store from "./redux/store";
 
-initConfig((config: Config) => {
+initConfig().then((config) => {
   const versionInstalled = storage.getItem(StorageKey.Version);
-  storage.setItem(StorageKey.Version, config.version.gitcommit);
-  if (versionInstalled !== config.version.gitcommit) {
+  storage.setItem(StorageKey.Version, config.versionInfo.gitcommit);
+  if (versionInstalled !== config.versionInfo.gitcommit) {
     window.location.reload();
   }
 
-  const container = document.getElementById("root") as HTMLElement;
-  const root = createRoot(container);
+  const container = document.getElementById("root");
 
-  root.render(
-    <StyledEngineProvider injectFirst>
-      <Provider store={store}>
-        <App />
-      </Provider>
-    </StyledEngineProvider>,
-  );
+  if (!container) {
+    throw new Error("Root container not found");
+  }
+
+  createRoot(container).render(<App />);
 });

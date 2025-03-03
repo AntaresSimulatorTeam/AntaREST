@@ -40,7 +40,7 @@ import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
 import Header from "./Header";
 import { RESERVED_USER_NAMES } from "../utils";
-import type { UserDetailsDTO } from "../../../../common/types";
+import type { UserDetailsDTO } from "../../../../types/types";
 import UpdateUserDialog from "./dialog/UpdateUserDialog";
 import { sortByName } from "../../../../services/utils";
 import { isSearchMatching } from "../../../../utils/stringUtils";

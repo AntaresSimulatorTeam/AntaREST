@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { Backdrop, Box, CircularProgress } from "@mui/material";
 import { usePromise as usePromiseWrapper } from "react-use";
 import { useSnackbar } from "notistack";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import type { XpansionCandidate } from "../types";
 import {
   getAllCandidates,

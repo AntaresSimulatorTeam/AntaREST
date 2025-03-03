@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TextField } from "@mui/material";
-import { StudyOutputDownloadType, type Area, type Set } from "../../../../../../common/types";
+import { StudyOutputDownloadType, type Area, type Set } from "../../../../../../types/types";
 import SelectMulti from "../../../../../common/SelectMulti";
 import { Root } from "./style";
 import MultipleLinkElement from "./MultipleLinkElement";
@@ -71,7 +71,7 @@ function Filter(props: PropTypes) {
   return type !== StudyOutputDownloadType.LINKS ? (
     <Root>
       <SelectMulti
-        name={t("global.filter")}
+        name={t("global.filterAction")}
         list={areasOrDistrictsList.map((elm) => ({ id: elm, name: elm }))}
         data={filterValue}
         setValue={(elm: string[] | string) => setFilterValue(elm as string[])}
@@ -81,14 +81,12 @@ function Filter(props: PropTypes) {
       <TextField
         label={t("study.filterIn")}
         value={filterInValue}
-        variant="filled"
         onChange={(event) => setFilterInValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
       />
       <TextField
         label={t("study.filterOut")}
         value={filterOutValue}
-        variant="filled"
         onChange={(event) => setFilterOutValue(event.target.value)}
         sx={{ m: 0, mb: 2, width: "95%" }}
       />
@@ -96,7 +94,7 @@ function Filter(props: PropTypes) {
   ) : (
     <Root>
       <MultipleLinkElement
-        label={t("global.filter")}
+        label={t("global.filterAction")}
         areas={Object.keys(areas)}
         values={filterValue}
         onChange={setFilterValue}
