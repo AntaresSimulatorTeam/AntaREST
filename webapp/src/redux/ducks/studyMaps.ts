@@ -28,8 +28,7 @@ import type {
   StudyLayer,
   StudyMetadata,
   UpdateAreaUi,
-} from "../../common/types";
-
+} from "../../types/types";
 import type { AppAsyncThunkConfig, AppDispatch } from "../store";
 import { makeActionName, makeLinkId, parseLinkId } from "../utils";
 import * as studyApi from "../../services/api/study";

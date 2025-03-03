@@ -14,7 +14,7 @@
 
 import axios from "axios";
 import client from "./client";
-import type { RefreshDTO as UserTokensDTO } from "../../common/types";
+import type { RefreshDTO as UserTokensDTO } from "../../types/types";
 import type { Config } from "../config";
 
 // instance sans crédentials et hooks pour l'authent

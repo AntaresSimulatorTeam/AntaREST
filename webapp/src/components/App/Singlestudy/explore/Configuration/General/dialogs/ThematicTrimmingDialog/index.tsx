@@ -19,29 +19,29 @@ import {
   Button,
   Divider,
   Grid2 as Grid,
+  Stack,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import * as R from "ramda";
 import type * as RA from "ramda-adjunct";
 import { useState } from "react";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "@/types/types";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "../../../../../../../common/Form/types";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/common/Form/types";
 import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
-import { isSearchMatching } from "../../../../../../../../utils/stringUtils";
+import { isSearchMatching } from "@/utils/stringUtils";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import {
   THEMATIC_TRIMMING_GROUPS,
   getFieldLabelsForGroup,
   type ThematicTrimmingGroup,
 } from "./utils";
-import type { ThematicTrimmingConfig } from "../../../../../../../../services/api/studies/config/thematicTrimming/types";
+import type { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
 import {
   getThematicTrimmingConfig,
   setThematicTrimmingConfig,
-} from "../../../../../../../../services/api/studies/config/thematicTrimming";
+} from "@/services/api/studies/config/thematicTrimming";
 import { useTranslation } from "react-i18next";
-import Stack from "@mui/material/Stack";
 
 interface Props {
   study: StudyMetadata;
@@ -124,7 +124,6 @@ function ThematicTrimmingDialog(props: Props) {
               value={search}
               onSearchValueChange={setSearch}
               onClear={() => setSearch("")}
-              size="small"
             />
             <Stack direction="row" spacing={1}>
               <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.T)}>

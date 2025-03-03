@@ -33,14 +33,14 @@ import {
   FormControlLabel,
   Typography,
   Skeleton,
+  colors,
   type SelectChangeEvent,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import { grey } from "@mui/material/colors";
-import type { TaskView } from "../../../common/types";
+import type { TaskView } from "../../../types/types";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { getLauncherMetrics } from "../../../services/api/study";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
@@ -209,7 +209,7 @@ function JobTableView(props: PropType) {
                 "& td, & th": {
                   borderBottom: "1px solid",
                   borderColor: "divider",
-                  color: grey[500],
+                  color: colors.grey[500],
                 },
               }}
             >

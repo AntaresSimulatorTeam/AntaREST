@@ -46,7 +46,7 @@ import { deleteFile } from "../../../../../../services/api/studies/raw";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../../../../utils/fnUtils";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import { useSnackbar } from "notistack";
 
 function Folder(props: DataCompProps) {
@@ -115,7 +115,7 @@ function Folder(props: DataCompProps) {
     <>
       <List
         subheader={
-          <ListSubheader>
+          <ListSubheader sx={(theme) => ({ backgroundImage: theme.vars.overlays[1] })}>
             <Menubar>
               <Filename>{filename}</Filename>
               {canEdit && (
@@ -129,15 +129,14 @@ function Folder(props: DataCompProps) {
             </Menubar>
           </ListSubheader>
         }
-        sx={{
-          height: 1,
-          overflow: "auto",
+        sx={[
+          { overflow: "auto" },
           // Prevent scroll to display
-          ...(fileList.length === 0 && {
+          fileList.length === 0 && {
             display: "flex",
             flexDirection: "column",
-          }),
-        }}
+          },
+        ]}
         dense
       >
         {fileList.length > 0 ? (
@@ -154,7 +153,6 @@ function Folder(props: DataCompProps) {
                     canEditFile(study, path) && (
                       <IconButton
                         edge="end"
-                        size="small"
                         onClick={(event) => {
                           setMenuData({
                             anchorEl: event.currentTarget,
@@ -184,8 +182,10 @@ function Folder(props: DataCompProps) {
                     <ListItemText
                       title={filename}
                       primary={filename}
-                      primaryTypographyProps={{
-                        sx: { overflow: "hidden", textOverflow: "ellipsis" },
+                      slotProps={{
+                        primary: {
+                          sx: { overflow: "hidden", textOverflow: "ellipsis" },
+                        },
                       }}
                     />
                   </ListItemButton>

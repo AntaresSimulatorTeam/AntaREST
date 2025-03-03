@@ -20,7 +20,6 @@ import {
   type TextCell,
 } from "@glideapps/glide-data-grid";
 import { useMemo } from "react";
-import { darkTheme, readOnlyDarkTheme } from "./Matrix/styles";
 import { formatGridNumber } from "./Matrix/shared/utils";
 import DataGrid from "@/components/common/DataGrid";
 
@@ -32,14 +31,6 @@ interface DataGridViewerProps {
 }
 
 function DataGridViewer({ data, columns }: DataGridViewerProps) {
-  const theme = useMemo(
-    () => ({
-      ...darkTheme,
-      ...readOnlyDarkTheme,
-    }),
-    [],
-  );
-
   const getCellContent = useMemo(
     () => (cell: Item) => {
       const [col, row] = cell;
@@ -75,7 +66,7 @@ function DataGridViewer({ data, columns }: DataGridViewerProps) {
 
   return (
     <DataGrid
-      theme={theme}
+      readOnly
       width="100%"
       height="100%"
       rows={data.length}

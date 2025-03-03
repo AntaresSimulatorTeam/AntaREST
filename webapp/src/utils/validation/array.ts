@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { ValidationReturn } from "@/common/types";
+import type { ValidationReturn } from "@/types/types";
 import { t } from "i18next";
 import * as R from "ramda";
 

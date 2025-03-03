@@ -13,7 +13,7 @@
  */
 
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import Form from "../../../../../common/Form";
 import type { SubmitHandlerPlus, UseFormReturnPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";

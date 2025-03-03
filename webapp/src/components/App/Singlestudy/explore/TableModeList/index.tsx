@@ -24,7 +24,7 @@ import PropertiesView from "../../../../common/PropertiesView";
 import ListElement from "../common/ListElement";
 import type { TableTemplate } from "./utils";
 import storage, { StorageKey } from "../../../../../services/utils/localStorage";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../types/types";
 import CreateTemplateTableDialog from "./dialogs/CreateTemplateTableDialog";
 import UpdateTemplateTableDialog from "./dialogs/UpdateTemplateTableDialog";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
@@ -133,17 +133,11 @@ function TableModeList() {
               columns={selectedTemplate.columns}
               extraActions={
                 <>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<EditIcon />}
-                    onClick={handleEditClick}
-                  >
+                  <Button variant="outlined" startIcon={<EditIcon />} onClick={handleEditClick}>
                     {t("global.edit")}
                   </Button>
                   <Button
                     variant="outlined"
-                    size="small"
                     color="error"
                     startIcon={<DeleteIcon />}
                     onClick={handleDeleteClick}

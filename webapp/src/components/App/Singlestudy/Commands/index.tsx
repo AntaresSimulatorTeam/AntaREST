@@ -13,9 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import Toolbar from "@mui/material/Toolbar";
-import Divider from "@mui/material/Divider";
-import { Typography } from "@mui/material";
+import { Toolbar, Divider, Typography } from "@mui/material";
 import { CommandDrawer, TitleContainer } from "./style";
 import EditionView from "./Edition";
 

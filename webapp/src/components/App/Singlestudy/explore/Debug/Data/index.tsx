@@ -24,7 +24,7 @@ import {
   type DataCompProps,
 } from "../utils";
 import ViewWrapper from "../../../../../common/page/ViewWrapper";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import Json from "./Json";
 
 interface Props extends FileInfo {
@@ -46,7 +46,7 @@ function Data({ study, setSelectedFile, reloadTreeData, ...fileInfo }: Props) {
   const DataViewer = componentByFileType[fileType];
 
   return (
-    <ViewWrapper>
+    <ViewWrapper flex={{ gap: 1 }}>
       <DataViewer
         {...fileInfo}
         studyId={study.id}

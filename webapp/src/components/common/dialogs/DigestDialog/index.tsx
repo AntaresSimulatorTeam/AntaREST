@@ -15,7 +15,7 @@
 import { Skeleton } from "@mui/material";
 import OkDialog, { type OkDialogProps } from "../OkDialog";
 import UsePromiseCond from "../../utils/UsePromiseCond";
-import type { LaunchJob } from "../../../../common/types";
+import type { LaunchJob } from "../../../../types/types";
 import { useTranslation } from "react-i18next";
 import { DigestTabs } from "./DigestTabs";
 import client from "@/services/api/client";

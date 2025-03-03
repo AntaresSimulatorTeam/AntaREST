@@ -71,7 +71,6 @@ function DynamicList<T extends { id: string }>({
             options={options}
             value=""
             onChange={(e) => onAdd(e.target.value as string)}
-            size="small"
             variant="outlined"
             sx={{ width: 200, mb: 2 }}
           />

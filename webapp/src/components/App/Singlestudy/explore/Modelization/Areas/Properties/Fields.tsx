@@ -21,7 +21,7 @@ import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import { ADEQUACY_PATCH_OPTIONS, type PropertiesFormFields } from "./utils";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 
 function Fields() {
   const { t } = useTranslation();

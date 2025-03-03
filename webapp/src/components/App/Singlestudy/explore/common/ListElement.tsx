@@ -22,7 +22,7 @@ import {
   type Theme,
 } from "@mui/material";
 import ArrowRightOutlinedIcon from "@mui/icons-material/ArrowRightOutlined";
-import type { IdType } from "../../../../../common/types";
+import type { IdType } from "../../../../../types/types";
 import { mergeSxProp } from "../../../../../utils/muiUtils";
 
 interface Props<T> {

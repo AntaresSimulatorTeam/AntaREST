@@ -14,7 +14,7 @@
 
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
