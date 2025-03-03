@@ -433,7 +433,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         # todo: make this test evolve for each new xpansion command created
         res = client.get(f"/v1/studies/{study_id}/commands")
         commands_list = res.json()
-        assert len(commands_list) == 10
+        assert len(commands_list) == 13
         assert commands_list[0]["action"] == "create_xpansion_configuration"
 
         assert commands_list[1]["action"] == "create_xpansion_constraint"
@@ -448,16 +448,44 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         assert commands_list[4]["action"] == "remove_xpansion_resource"
         assert commands_list[4]["args"] == {"filename": "filename_constraints1.txt", "resource_type": "constraints"}
 
-        assert commands_list[5]["action"] == "create_xpansion_capacity"
-        assert commands_list[5]["args"] == {"filename": "filename_capa1.txt", "matrix": ANY}
+        candidate_args = {
+            "link": "area1 - area2",
+            "annual-cost-per-mw": 1.0,
+            "unit-size": None,
+            "max-units": None,
+            "max-investment": 1.0,
+            "already-installed-capacity": None,
+            "link-profile": None,
+            "already-installed-link-profile": None,
+            "direct-link-profile": None,
+            "indirect-link-profile": None,
+            "already-installed-direct-link-profile": None,
+            "already-installed-indirect-link-profile": None,
+        }
+        assert commands_list[5]["action"] == "create_xpansion_candidate"
+        assert commands_list[5]["args"] == {"candidate": {"name": "candidate1", **candidate_args}}
 
         assert commands_list[6]["action"] == "create_xpansion_capacity"
-        assert commands_list[6]["args"] == {"filename": "filename_capa2.txt", "matrix": ANY}
+        assert commands_list[6]["args"] == {"filename": "filename_capa1.txt", "matrix": ANY}
 
         assert commands_list[7]["action"] == "create_xpansion_capacity"
-        assert commands_list[7]["args"] == {"filename": "filename_capa3.txt", "matrix": ANY}
+        assert commands_list[7]["args"] == {"filename": "filename_capa2.txt", "matrix": ANY}
 
-        assert commands_list[8]["action"] == "remove_xpansion_resource"
-        assert commands_list[8]["args"] == {"filename": "filename_capa1.txt", "resource_type": "capacities"}
+        assert commands_list[8]["action"] == "create_xpansion_capacity"
+        assert commands_list[8]["args"] == {"filename": "filename_capa3.txt", "matrix": ANY}
 
-        assert commands_list[9]["action"] == "remove_xpansion_configuration"
+        assert commands_list[9]["action"] == "create_xpansion_candidate"
+        assert commands_list[9]["args"] == {
+            "candidate": {"name": "candidate4", **candidate_args, "link-profile": "filename_capa1.txt"}
+        }
+
+        assert commands_list[10]["action"] == "update_xpansion_candidate"
+        assert commands_list[10]["args"] == {
+            "candidate_name": "candidate4",
+            "new_properties": {"name": "candidate4", **candidate_args},
+        }
+
+        assert commands_list[11]["action"] == "remove_xpansion_resource"
+        assert commands_list[11]["args"] == {"filename": "filename_capa1.txt", "resource_type": "capacities"}
+
+        assert commands_list[12]["action"] == "remove_xpansion_configuration"
