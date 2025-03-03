@@ -103,8 +103,15 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         study_version = values["study_version"]
         bc_props_by_id_validated = {}
         for bc_id, bc_props in bc_props_by_id.items():
-            # bc_props_as_dict = bc_props.model_dump(mode="json", exclude_unset=True)
-            bc_props_validated = create_binding_constraint_properties(study_version, **bc_props)
+            # bc_props_by_id can be a dict or a mapping of BindingConstraintProperties object
+            # when the command is serialized to the database, the bc_props are serialized as a dict in to_dto
+            # at some point the app will create an instance of this object using the command dto
+            # so we need to handle both cases
+            if isinstance(bc_props, dict):
+                bc_props_as_dict = bc_props
+            else:
+                bc_props_as_dict = bc_props.model_dump(mode="json", exclude_unset=True)
+            bc_props_validated = create_binding_constraint_properties(study_version, **bc_props_as_dict)
             bc_props_by_id_validated[bc_id] = bc_props_validated
         values["bc_props_by_id"] = bc_props_by_id_validated
         return values
@@ -113,11 +120,11 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
     def _apply(self, file_study: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         bcs_url = ["input", "bindingconstraints", "bindingconstraints"]
         bcs_json = file_study.tree.get(bcs_url)
-        bcs_json_by_id = {value["id"]: key for (key, value) in bcs_json.items()}
+        bc_index_by_id = {value["id"]: key for (key, value) in bcs_json.items()}  # 'bc_0': '0', 'bc_1': '1', ...
         old_groups = set()
         new_groups = set()
         for bc_id, bc_props in self.bc_props_by_id.items():
-            if bc_id not in bcs_json_by_id:
+            if bc_id not in bc_index_by_id:
                 return CommandOutput(
                     status=False,
                     message=f"Binding contraint '{bc_id}' not found.",
@@ -125,7 +132,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
             # it's important to use exclude_unset=True. Otherwise we'd override
             # existing values with the default bc_props values.
             bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
-            bc_json = bcs_json[bcs_json_by_id[bc_id]]
+            bc_json = bcs_json[bc_index_by_id[bc_id]]
             bc_json_copy = copy.deepcopy(bc_json)
             bc_json.update(bc_props_as_dict)
             if "time_step" in bc_props_as_dict and bc_props.time_step != BindingConstraintFrequency(
@@ -137,12 +144,6 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                 ):
                     # prepare matrix as a dict to save it in the tree
                     matrix_url = target.split("/")
-                    # replace_matrix_data: JSON = {}
-                    # target_matrix = replace_matrix_data
-                    # for element in matrix_url[:-1]:
-                    #     target_matrix[element] = {}
-                    #     target_matrix = target_matrix[element]
-                    # target_matrix[matrix_url[-1]] = next_matrix
                     file_study.tree.save(data=next_matrix, url=matrix_url)
             if (
                 "operator" in bc_props_as_dict

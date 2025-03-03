@@ -913,7 +913,7 @@ class BindingConstraintManager:
             bcs_output[bc_id] = bc_output
 
         command = UpdateBindingConstraints(
-            bc_props_by_id=bc_input_as_dict_by_id,
+            bc_props_by_id=bcs_by_ids,
             command_context=self._command_context,
             study_version=study_version,
         )
