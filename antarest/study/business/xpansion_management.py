@@ -18,7 +18,13 @@ from typing import List, Optional
 from fastapi import HTTPException, UploadFile
 from pydantic import Field
 
-from antarest.core.exceptions import ChildNotFoundError, LinkNotFound
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    FileImportFailed,
+    LinkNotFound,
+    MatrixImportFailed,
+    XpansionFileAlreadyExistsError,
+)
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.xpansion_model import (
@@ -28,7 +34,14 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
+from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
+    CreateXpansionCapacity,
+    CreateXpansionWeight,
+)
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
@@ -97,11 +110,6 @@ class BadCandidateFormatError(HTTPException):
 class CandidateNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(http.HTTPStatus.NOT_FOUND, message)
-
-
-class FileAlreadyExistsError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.CONFLICT, message)
 
 
 class XpansionManager:
@@ -381,49 +389,58 @@ class XpansionManager:
         xpansion_settings = XpansionSettingsUpdate.model_validate(args)
         return self.update_xpansion_settings(study, xpansion_settings)
 
-    def _add_raw_files(
-        self,
-        file_study: FileStudy,
-        files: List[UploadFile],
-        resource_type: XpansionResourceFileType,
-    ) -> None:
-        keys = get_resource_dir(resource_type)
-        data: JSON = {}
-        buffer = data
+    def _create_add_resource_command(
+        self, study: StudyInterface, filename: str, content: bytes, resource_type: XpansionResourceFileType
+    ) -> ICommand:
+        if resource_type == XpansionResourceFileType.CONSTRAINTS:
+            command: ICommand = CreateXpansionConstraint(
+                filename=filename, data=content, command_context=self._command_context, study_version=study.version
+            )
+        else:
+            matrix = imports_matrix_from_bytes(content)
+            if matrix is None:
+                raise MatrixImportFailed(f"Could not parse the matrix corresponding to file {filename}")
+            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+            matrix = matrix.tolist()
 
-        list_names = [file.filename for file in files]
-        for name in list_names:
-            try:
-                if name in file_study.tree.get(keys):
-                    raise FileAlreadyExistsError(f"File '{name}' already exists")
-            except ChildNotFoundError:
-                logger.warning(f"Failed to list existing files for {keys}")
-
-        if len(list_names) != len(set(list_names)):
-            raise FileAlreadyExistsError(f"Some files have the same name: {list_names}")
-
-        for key in keys:
-            buffer[key] = {}
-            buffer = buffer[key]
-
-        for file in files:
-            content = file.file.read()
-            if isinstance(content, str):
-                content = content.encode(encoding="utf-8")
-            assert file.filename is not None
-            buffer[file.filename] = content
-
-        file_study.tree.save(data)
+            if resource_type == XpansionResourceFileType.WEIGHTS:
+                command = CreateXpansionWeight(
+                    filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+                )
+            elif resource_type == XpansionResourceFileType.CAPACITIES:
+                command = CreateXpansionCapacity(
+                    filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+                )
+            else:
+                raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
+        return command
 
     def add_resource(
         self,
         study: StudyInterface,
         resource_type: XpansionResourceFileType,
-        files: List[UploadFile],
+        file: UploadFile,
     ) -> None:
-        logger.info(f"Adding xpansion {resource_type} resource file list to study '{study.id}'")
+        filename = file.filename
+        if not filename:
+            raise FileImportFailed("A filename is required")
+        logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
+
+        # checks the file doesn't already exist
+        keys = get_resource_dir(resource_type)
         file_study = study.get_files()
-        self._add_raw_files(file_study, files, resource_type)
+        if filename in file_study.tree.get(keys):
+            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
+
+        # parses the content
+        content = file.file.read()
+        if isinstance(content, str):
+            content = content.encode(encoding="utf-8")
+
+        # creates the command
+        command = self._create_add_resource_command(study, filename, content, resource_type)
+
+        study.add_commands([command])
 
     def delete_resource(
         self,

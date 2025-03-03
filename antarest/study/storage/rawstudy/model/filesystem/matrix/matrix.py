@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import contextlib
 import io
 import logging
 from abc import ABC, abstractmethod
@@ -16,7 +17,9 @@ from enum import StrEnum
 from pathlib import Path
 from typing import List, Optional, cast
 
+import numpy as np
 import pandas as pd
+from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.model import JSON
@@ -54,6 +57,20 @@ def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO, float_forma
             index=False,
             float_format=float_format,
         )
+
+
+def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
+    """Tries to convert bytes to a numpy array when importing a matrix"""
+    str_data = data.decode("utf-8")
+    if not str_data:
+        return np.zeros(shape=(0, 0))
+    for delimiter in [",", ";", "\t"]:
+        with contextlib.suppress(Exception):
+            df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+            df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
+            matrix = df.to_numpy(dtype=np.float64)
+            return matrix
+    return None
 
 
 class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
