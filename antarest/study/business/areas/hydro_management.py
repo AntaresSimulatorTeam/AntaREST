@@ -17,6 +17,7 @@ from pydantic import Field, model_validator
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
 from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 
@@ -107,6 +108,20 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
 }
 
 
+def _get_area_config(area_id: str, hydro_config: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Transforms the structure option-name -> area-id -> value into option-name -> value,
+    for the specified area.
+    """
+    area_id = transform_name_to_id(area_id)
+    res = {}
+    for option_name, areas_values in hydro_config.items():
+        for area, value in areas_values.items():
+            if transform_name_to_id(area) == area_id:
+                res[option_name] = value
+    return res
+
+
 class HydroManager:
     def __init__(self, storage_service: StudyStorageService) -> None:
         self.storage_service = storage_service
@@ -117,13 +132,16 @@ class HydroManager:
         """
         file_study = self.storage_service.get_storage(study).get_raw(study)
         hydro_config = file_study.tree.get(HYDRO_PATH.split("/"))
+        area_config = _get_area_config(area_id, hydro_config)
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
             target_name = path.split("/")[-1]
-            return hydro_config.get(target_name, {}).get(area_id, field_info["default_value"])
+            return area_config.get(target_name, field_info["default_value"])
 
-        return ManagementOptionsFormFields.construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return ManagementOptionsFormFields.model_construct(
+            **{name: get_value(info) for name, info in FIELDS_INFO.items()}
+        )
 
     def set_field_values(
         self,
