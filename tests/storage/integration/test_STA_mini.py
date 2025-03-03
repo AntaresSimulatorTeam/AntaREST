@@ -172,7 +172,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
     )
 
 
-buffer = io.BytesIO()
+buffer = io.StringIO()
 df = pd.DataFrame(np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
 df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
 expected_min_gen_response = buffer.getvalue()

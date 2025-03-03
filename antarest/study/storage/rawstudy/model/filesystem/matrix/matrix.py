@@ -138,9 +138,9 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         # The R scripts use the flag formatted=False
         if df.empty:
             return b""
-        buffer = io.BytesIO()
+        buffer = io.StringIO()
         df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
-        return buffer.getvalue()
+        return buffer.getvalue()  # type: ignore
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
