@@ -19,7 +19,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import type { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "../../../../../common/types";
+import type { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createBot } from "../../../../../services/api/user";
 import OkDialog from "../../../../common/dialogs/OkDialog";

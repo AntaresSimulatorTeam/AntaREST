@@ -12,22 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import Stepper from "@mui/material/Stepper";
-import Step from "@mui/material/Step";
-import StepLabel from "@mui/material/StepLabel";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
-import { Tooltip, Typography, type StepIconProps } from "@mui/material";
+import { Tooltip, Typography, Stepper, Step, StepLabel, type StepIconProps } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import type { AxiosError } from "axios";
-import type { JobStatus, LaunchJob, LaunchJobsProgress } from "../../../../../../common/types";
-import { convertUTCToLocalTime } from "../../../../../../services/utils";
-import { killStudy } from "../../../../../../services/api/study";
+import type { JobStatus, LaunchJob, LaunchJobsProgress } from "@/types/types";
+import { convertUTCToLocalTime } from "@/services/utils";
+import { killStudy } from "@/services/api/study";
 import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
@@ -40,7 +37,7 @@ import {
 } from "./style";
 import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
 import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
-import type { EmptyObject } from "../../../../../../utils/tsUtils";
+import type { EmptyObject } from "@/utils/tsUtils";
 import DigestDialog from "@/components/common/dialogs/DigestDialog";
 
 export const ColorStatus = {

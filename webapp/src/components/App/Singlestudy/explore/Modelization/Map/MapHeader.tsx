@@ -14,7 +14,7 @@
 
 import { Box, Chip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { LinkProperties } from "../../../../../../common/types";
+import type { LinkProperties } from "../../../../../../types/types";
 import { setCurrentLayer, type StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
@@ -69,7 +69,6 @@ function MapHeader(props: Props) {
             label={name}
             color={currentLayerId === id ? "secondary" : "default"}
             clickable
-            size="small"
             sx={{ m: 1 }}
             onClick={() => handleLayerClick(id)}
           />

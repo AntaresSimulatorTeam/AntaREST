@@ -15,7 +15,7 @@
 import { useOutletContext } from "react-router";
 import * as R from "ramda";
 import { useState } from "react";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import Form from "../../../../../common/Form";
 import Fields from "./Fields";
 import ThematicTrimmingDialog from "./dialogs/ThematicTrimmingDialog";

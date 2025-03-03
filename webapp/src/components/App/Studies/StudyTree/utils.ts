@@ -13,7 +13,7 @@
  */
 
 import * as api from "../../../../services/api/study";
-import type { StudyMetadata } from "../../../../common/types";
+import type { StudyMetadata } from "../../../../types/types";
 import type { StudyTreeNode, NonStudyFolderDTO } from "./types";
 
 /**

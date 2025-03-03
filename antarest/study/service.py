@@ -14,7 +14,6 @@ import base64
 import collections
 import contextlib
 import http
-import io
 import logging
 import os
 import time
@@ -23,11 +22,9 @@ from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
 
-import numpy as np
-import numpy.typing as npt
 import pandas as pd
 from antares.study.version import StudyVersion
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
 from typing_extensions import override
@@ -95,7 +92,11 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
-from antarest.study.business.model.xpansion_model import XpansionCandidateDTO
+from antarest.study.business.model.xpansion_model import (
+    GetXpansionSettings,
+    XpansionCandidateDTO,
+    XpansionSettingsUpdate,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -105,8 +106,6 @@ from antarest.study.business.thematic_trimming_management import ThematicTrimmin
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
-    GetXpansionSettings,
-    UpdateXpansionSettings,
     XpansionManager,
 )
 from antarest.study.model import (
@@ -140,7 +139,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -203,20 +202,6 @@ def get_disk_usage(path: str | Path) -> int:
                     elif entry.is_dir():
                         total_size += get_disk_usage(path=str(entry.path))
     return total_size
-
-
-def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
-    """Tries to convert bytes to a numpy array when importing a matrix"""
-    str_data = data.decode("utf-8")
-    if not str_data:
-        return np.zeros(shape=(0, 0))
-    for delimiter in [",", ";", "\t"]:
-        with contextlib.suppress(Exception):
-            df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
-            df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
-            matrix = df.to_numpy(dtype=np.float64)
-            return matrix
-    raise MatrixImportFailed("Could not parse the given matrix")
 
 
 def _get_path_inside_user_folder(
@@ -1710,7 +1695,9 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                matrix = _imports_matrix_from_bytes(data)
+                matrix = imports_matrix_from_bytes(data)
+                if matrix is None:
+                    raise MatrixImportFailed("Could not parse the given matrix")
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
@@ -2353,14 +2340,13 @@ class StudyService:
     def create_xpansion_configuration(
         self,
         uuid: str,
-        zipped_config: Optional[UploadFile],
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        self.xpansion_manager.create_xpansion_configuration(study_interface, zipped_config)
+        self.xpansion_manager.create_xpansion_configuration(study_interface)
 
     def delete_xpansion_configuration(self, uuid: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
@@ -2378,7 +2364,7 @@ class StudyService:
     def update_xpansion_settings(
         self,
         uuid: str,
-        xpansion_settings_dto: UpdateXpansionSettings,
+        xpansion_settings_dto: XpansionSettingsUpdate,
         params: RequestParameters,
     ) -> GetXpansionSettings:
         study = self.get_study(uuid)

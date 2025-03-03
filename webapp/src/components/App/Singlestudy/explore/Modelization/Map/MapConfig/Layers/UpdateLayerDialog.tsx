@@ -21,7 +21,7 @@ import { useMemo, useState } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
@@ -107,7 +107,6 @@ function UpdateLayerDialog(props: Props) {
           <SelectFE
             name="layerId"
             label={t("Layers")}
-            variant="filled"
             options={layersOptions}
             control={control}
             onChange={({ target: { value } }) => {
@@ -136,7 +135,6 @@ function UpdateLayerDialog(props: Props) {
           <Button
             color="error"
             variant="outlined"
-            size="small"
             startIcon={<DeleteIcon />}
             disabled={getValues("layerId") === ""}
             onClick={() => setOpenConfirmationModal(true)}

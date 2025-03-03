@@ -14,7 +14,7 @@
 
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";

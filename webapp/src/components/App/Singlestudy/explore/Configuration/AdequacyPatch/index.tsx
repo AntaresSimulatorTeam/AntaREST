@@ -14,7 +14,7 @@
 
 import { useOutletContext } from "react-router";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "@/types/types";
 import Form from "../../../../../common/Form";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import Fields from "./Fields";
@@ -47,7 +47,7 @@ function AdequacyPatch() {
       items={[
         {
           label: t("study.configuration.adequacyPatch.tab.general"),
-          content: (
+          content: () => (
             <Form
               key={study.id}
               config={{
@@ -62,7 +62,9 @@ function AdequacyPatch() {
         },
         {
           label: t("study.configuration.adequacyPatch.tab.perimeter"),
-          content: <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />,
+          content: () => (
+            <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />
+          ),
         },
       ]}
     />

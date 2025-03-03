@@ -32,18 +32,10 @@ from antarest.study.business.advanced_parameters_management import AdvancedParam
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
-from antarest.study.business.areas.renewable_management import (
-    RenewableClusterCreation,
-    RenewableClusterInput,
-    RenewableClusterOutput,
-    RenewableManager,
-)
+from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
-    STStorageCreation,
-    STStorageInput,
     STStorageManager,
     STStorageMatrix,
-    STStorageOutput,
     STStorageTimeSeries,
 )
 from antarest.study.business.areas.thermal_management import (
@@ -68,6 +60,12 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.renewable_cluster_model import (
+    RenewableClusterCreation,
+    RenewableClusterOutput,
+    RenewableClusterUpdate,
+)
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -2014,7 +2012,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterInput,
+        cluster_data: RenewableClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
         logger.info(
@@ -2037,7 +2035,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterInput,
+        cluster_data: RenewableClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
@@ -2545,7 +2543,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         storage_id: str,
-        form: STStorageInput,
+        form: STStorageUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> STStorageOutput:
         """
