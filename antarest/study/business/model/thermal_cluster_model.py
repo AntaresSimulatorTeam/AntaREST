@@ -53,7 +53,6 @@ class ThermalClusterCreation(ThermalClusterUpdate):
         return create_thermal_properties(study_version=study_version, data=values)
 
 
-@all_optional_model
 @camel_case_model
 class ThermalClusterOutput(Thermal870Config):
     """
