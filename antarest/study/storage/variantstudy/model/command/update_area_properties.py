@@ -34,8 +34,8 @@ class UpdateAreasProperties(ICommand):
 
     # Command parameters
     # ==================
-    dict_area_folder: Dict[str, AreaFolder]
-    list_thermal_area_properties: List[ThermalAreasProperties]
+    areas: Dict[str, AreaFolder]
+    thermal_properties: List[ThermalAreasProperties]
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -45,7 +45,7 @@ class UpdateAreasProperties(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         self.update_thermal_properties(study_data)
 
-        for area_id, area_folder in self.dict_area_folder.items():
+        for area_id, area_folder in self.areas.items():
             self.update_area_optimization(area_id, study_data)
             self.update_adequacy_patch(area_id, study_data)
 
@@ -55,13 +55,13 @@ class UpdateAreasProperties(ICommand):
 
     def update_thermal_properties(self, study_data: FileStudy) -> None:
         thermal_properties = study_data.tree.get(["input", "thermal", "areas"])
-        for thermal_area_property in self.list_thermal_area_properties:
+        for thermal_area_property in self.thermal_properties:
             thermal_properties["spilledenergycost"].update(thermal_area_property.spilled_energy_cost)
             thermal_properties["unserverdenergycost"].update(thermal_area_property.unserverd_energy_cost)
         study_data.tree.save(thermal_properties, ["input", "thermal", "areas"])
 
     def update_adequacy_patch(self, area_id: str, study_data: FileStudy) -> None:
-        area_folder = self.dict_area_folder.get(area_id)
+        area_folder = self.areas.get(area_id)
 
         if area_folder and area_folder.adequacy_patch:
             new_config = area_folder.adequacy_patch.to_config()
@@ -72,7 +72,7 @@ class UpdateAreasProperties(ICommand):
                 study_data.tree.save(adequacy_patch_properties, ["input", "areas", area_id, "adequacy_patch"])
 
     def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
-        area_folder = self.dict_area_folder.get(area_id)
+        area_folder = self.areas.get(area_id)
         if area_folder is None:
             raise ValueError(f"No Area Folder found for area_id {area_id}")
 
@@ -86,17 +86,17 @@ class UpdateAreasProperties(ICommand):
     def to_dto(self) -> CommandDTO:
         area_folder_model = {
             key: area_folder.model_dump(mode="json", exclude_unset=True, exclude_none=True)
-            for key, area_folder in self.dict_area_folder.items()
+            for key, area_folder in self.areas.items()
         }
         thermal_area_properties = [
             thermal.model_dump(mode="json", exclude_unset=True, exclude_none=True)
-            for thermal in self.list_thermal_area_properties
+            for thermal in self.thermal_properties
         ]
         return CommandDTO(
             action=CommandName.UPDATE_AREAS_PROPERTIES.value,
             args={
-                "area_folder": area_folder_model,
-                "thermal_area_properties": thermal_area_properties,
+                "areas": area_folder_model,
+                "thermal_properties": thermal_area_properties,
             },
             study_version=self.study_version,
         )

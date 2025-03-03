@@ -195,23 +195,23 @@ class AreaManager:
         old_areas_by_ids = self.get_all_area_props(study)
         new_areas_by_ids = dict(old_areas_by_ids)
 
-        dict_areas_folder: Dict[str, AreaFolder] = {}
-        list_thermal_areas_properties: List[ThermalAreasProperties] = []
+        areas: Dict[str, AreaFolder] = {}
+        list_thermal_properties: List[ThermalAreasProperties] = []
 
         for area_id, update_area in update_areas_by_ids.items():
             old_area = old_areas_by_ids[area_id]
             new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
-            area_folder = update_area_folder_configuration(old_area, new_area)
-            thermal_area_properties = update_thermal_configuration(area_id, old_area, new_area)
+            area = update_area_folder_configuration(old_area, new_area)
+            thermal_properties = update_thermal_configuration(area_id, old_area, new_area)
 
-            dict_areas_folder[area_id] = area_folder
-            list_thermal_areas_properties.append(thermal_area_properties)
+            areas[area_id] = area
+            list_thermal_properties.append(thermal_properties)
 
         command = UpdateAreasProperties(
-            dict_area_folder=dict_areas_folder,
-            list_thermal_area_properties=list_thermal_areas_properties,
+            areas=areas,
+            thermal_properties=list_thermal_properties,
             command_context=self._command_context,
             study_version=study.version,
         )
