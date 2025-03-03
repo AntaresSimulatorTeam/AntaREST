@@ -22,7 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
     apply_config_create_resource_commands,
     apply_create_resource_commands,
@@ -57,6 +57,14 @@ class AbstractCreateXpansionMatrix(ICommand):
     def get_inner_matrices(self) -> List[str]:
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]
+
+    @override
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+        raise NotImplementedError()
+
+    @override
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        raise NotImplementedError()
 
 
 class CreateXpansionWeight(AbstractCreateXpansionMatrix):

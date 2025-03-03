@@ -20,6 +20,7 @@ from pydantic import Field
 
 from antarest.core.exceptions import (
     ChildNotFoundError,
+    FileImportFailed,
     LinkNotFound,
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
@@ -388,27 +389,9 @@ class XpansionManager:
         xpansion_settings = XpansionSettingsUpdate.model_validate(args)
         return self.update_xpansion_settings(study, xpansion_settings)
 
-    def add_resource(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        file: UploadFile,
-    ) -> None:
-        filename = file.filename
-        logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
-
-        # checks the file doesn't already exist
-        keys = get_resource_dir(resource_type)
-        file_study = study.get_files()
-        if filename in file_study.tree.get(keys):
-            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
-
-        # parses the content
-        content = file.file.read()
-        if isinstance(content, str):
-            content = content.encode(encoding="utf-8")
-
-        # creates the command
+    def _create_add_resource_command(
+        self, study: StudyInterface, filename: str, content: bytes, resource_type: XpansionResourceFileType
+    ) -> ICommand:
         if resource_type == XpansionResourceFileType.CONSTRAINTS:
             command: ICommand = CreateXpansionConstraint(
                 filename=filename, data=content, command_context=self._command_context, study_version=study.version
@@ -430,6 +413,32 @@ class XpansionManager:
                 )
             else:
                 raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
+        return command
+
+    def add_resource(
+        self,
+        study: StudyInterface,
+        resource_type: XpansionResourceFileType,
+        file: UploadFile,
+    ) -> None:
+        filename = file.filename
+        if not filename:
+            raise FileImportFailed("A filename is required")
+        logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
+
+        # checks the file doesn't already exist
+        keys = get_resource_dir(resource_type)
+        file_study = study.get_files()
+        if filename in file_study.tree.get(keys):
+            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
+
+        # parses the content
+        content = file.file.read()
+        if isinstance(content, str):
+            content = content.encode(encoding="utf-8")
+
+        # creates the command
+        command = self._create_add_resource_command(study, filename, content, resource_type)
 
         study.add_commands([command])
 

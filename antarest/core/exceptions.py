@@ -550,6 +550,11 @@ class MatrixImportFailed(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class FileImportFailed(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
 class ConstraintTermNotFound(HTTPException):
     """
     Exception raised when a constraint term is not found.

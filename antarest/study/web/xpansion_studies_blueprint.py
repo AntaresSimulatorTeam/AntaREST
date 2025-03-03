@@ -218,7 +218,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         resource_type: XpansionResourceFileType,
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             f"Add xpansion {resource_type} files in the study {uuid}",
             extra={"user": current_user.id},
