@@ -25,13 +25,12 @@ from starlette.testclient import TestClient
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
-from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.requests import RequestParameters
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.utils import export_study_flat
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from tests.helpers import with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
 from tests.storage.integration.conftest import UUID
 
@@ -95,12 +94,12 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         result = json.loads(data.getvalue())
 
     download_task = FileDownloadTaskDTO(**result)
-    parameters = RequestParameters(user=DEFAULT_ADMIN_USER)
-    download_filepath = ftm.fetch_download(download_task.file.id, parameters).path
+    download_filepath = ftm.fetch_download(download_task.file.id).path
     with open(download_filepath, "rb") as fh:
         return fh.read()
 
 
+@with_admin_user
 def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_zip_path: Path) -> None:
     # test with zip file
     data = assert_url_content(
@@ -115,6 +114,7 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_z
     assert data and b"<!DOCTYPE HTML PUBLIC" not in data
 
 
+@with_admin_user
 def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_zip_path: Path) -> None:
     # test with zip file
     data = assert_url_content(

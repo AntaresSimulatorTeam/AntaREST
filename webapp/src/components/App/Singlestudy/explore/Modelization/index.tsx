@@ -54,6 +54,8 @@ function Modelization() {
       }
     };
 
+    const areaPath = [basePath, "area", encodeURI(areaId || areas[0]?.id || "")].join("/");
+
     return [
       {
         label: t("study.modelization.map"),
@@ -61,7 +63,7 @@ function Modelization() {
       },
       {
         label: t("study.areas"),
-        path: `${basePath}/area/${encodeURI(areaId)}`,
+        path: areaPath,
         onClick: handleAreasClick,
         disabled: areas.length === 0,
       },

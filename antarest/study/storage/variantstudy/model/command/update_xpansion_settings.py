@@ -20,12 +20,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from typing_extensions import override
 
 from antarest.study.business.model.xpansion_model import XpansionSettingsUpdate
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -53,10 +52,6 @@ class UpdateXpansionSettings(ICommand):
     settings: XpansionSettingsUpdate
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="Xpansion settings updated successfully"), {}
-
-    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         # Checks settings are correct
         excludes = checks_settings_are_correct_and_returns_fields_to_exclude(self.settings, study_data)
@@ -73,7 +68,7 @@ class UpdateXpansionSettings(ICommand):
             sensitivity_obj = self.settings.sensitivity_config.model_dump(mode="json", by_alias=True)
             study_data.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
-        return self._apply_config(study_data.config)[0]
+        return CommandOutput(status=True, message="Xpansion settings updated successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

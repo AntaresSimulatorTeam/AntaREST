@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from enum import StrEnum
+from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, List, MutableSequence, Optional, Sequence
 
@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-MC_TEMPLATE_PARTS = "output/{sim_id}/economy/{mc_root}"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
@@ -62,7 +61,7 @@ DUMMY_COMPONENT = 2
 logger = logging.getLogger(__name__)
 
 
-class MCRoot(StrEnum):
+class MCRoot(Enum):
     MC_IND = "mc-ind"
     MC_ALL = "mc-all"
 
@@ -89,13 +88,6 @@ class MCIndLinksQueryFile(StrEnum):
 class MCAllLinksQueryFile(StrEnum):
     VALUES = "values"
     ID = "id"
-
-
-def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: int) -> None:
-    maximum_size = 100  # size in Mo that corresponds to a 15 seconds task.
-    estimated_df_size = nb_files * df_bytes_size // (nb_files_checked * 10**6)
-    if estimated_df_size > maximum_size:
-        raise FileTooLargeError(estimated_df_size, maximum_size)
 
 
 def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
@@ -144,32 +136,29 @@ def _filtered_files_listing(
 class AggregatorManager:
     def __init__(
         self,
-        study_path: Path,
-        output_id: str,
+        output_path: Path,
         query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
     ):
-        self.study_path = study_path
-        self.output_id = output_id
+        self.output_path = output_path
+        self.output_id = self.output_path.name
         self.query_file = query_file
         self.frequency = frequency
         self.mc_years = mc_years
         self.columns_names = columns_names
         self.ids_to_consider = ids_to_consider
+        self.aggregation_results_max_size = aggregation_results_max_size
         self.output_type = (
             "areas"
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
             else "links"
         )
-        self.mc_ind_path = self.study_path / MC_TEMPLATE_PARTS.format(
-            sim_id=self.output_id, mc_root=MCRoot.MC_IND.value
-        )
-        self.mc_all_path = self.study_path / MC_TEMPLATE_PARTS.format(
-            sim_id=self.output_id, mc_root=MCRoot.MC_ALL.value
-        )
+        self.mc_ind_path = self.output_path / "economy" / MCRoot.MC_IND.value
+        self.mc_all_path = self.output_path / "economy" / MCRoot.MC_ALL.value
         self.mc_root = (
             MCRoot.MC_IND
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
@@ -368,7 +357,7 @@ class AggregatorManager:
             MCAllAreasQueryFile.DETAILS_RES,
         ]
         final_df = pd.DataFrame()
-        nb_files = len(files)
+
         for k, file_path in enumerate(files):
             df = self._process_df(file_path, is_details)
 
@@ -380,12 +369,10 @@ class AggregatorManager:
             if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
                 return pd.DataFrame()
 
-            # checks if the estimated dataframe size does not exceed the limit
-            # This check is performed on 10 aggregated files to have a more accurate view of the final df.
-            if k == 10:
-                # The following formula is the more accurate one compared to the final csv file.
-                estimated_binary_size = final_df.memory_usage().sum()
-                _checks_estimated_size(nb_files, estimated_binary_size, k)
+            # The following formula is the more accurate one compared to the final csv file.
+            estimated_binary_size = final_df.memory_usage().sum()
+            if estimated_binary_size > self.aggregation_results_max_size * 10**6:
+                raise FileTooLargeError(round(estimated_binary_size / 10**6, 2), self.aggregation_results_max_size)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
@@ -442,7 +429,7 @@ class AggregatorManager:
 
         logger.info(
             f"Parsing {len(all_output_files)} {self.frequency.value} files"
-            f"to build the aggregated output for study `{self.study_path.name}`"
+            f"to build the aggregated output {self.output_id}"
         )
         # builds final dataframe
         final_df = self._build_dataframe(all_output_files)

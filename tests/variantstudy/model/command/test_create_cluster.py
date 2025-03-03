@@ -14,6 +14,7 @@ import configparser
 import re
 
 import numpy as np
+import pandas as pd
 import pytest
 from pydantic import ValidationError
 
@@ -50,8 +51,8 @@ class TestCreateCluster:
         assert cl.command_context is command_context
 
         # Check the command data
-        prepro_id = command_context.matrix_service.create(prepro)
-        modulation_id = command_context.matrix_service.create(modulation)
+        prepro_id = command_context.matrix_service.create(pd.DataFrame(prepro))
+        modulation_id = command_context.matrix_service.create(pd.DataFrame(modulation))
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
         assert cl.parameters == ThermalClusterCreation(
@@ -186,8 +187,8 @@ class TestCreateCluster:
         )
         dto = command.to_dto()
 
-        prepro_id = command_context.matrix_service.create(prepro)
-        modulation_id = command_context.matrix_service.create(modulation)
+        prepro_id = command_context.matrix_service.create(pd.DataFrame(prepro))
+        modulation_id = command_context.matrix_service.create(pd.DataFrame(modulation))
         assert dto.model_dump() == {
             "action": "create_cluster",
             "args": {

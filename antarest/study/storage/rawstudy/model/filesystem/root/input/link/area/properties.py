@@ -12,14 +12,12 @@
 
 from antarest.study.model import STUDY_VERSION_6_5
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
 class InputLinkAreaProperties(IniFileNode):
     def __init__(
         self,
-        context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
     ):
@@ -42,4 +40,4 @@ class InputLinkAreaProperties(IniFileNode):
             section["colorb"] = int
 
         types = {link: section for link in config.get_links(area)}
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(self, config, types)

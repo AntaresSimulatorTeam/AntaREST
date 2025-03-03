@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from typing import Dict, Union
 
 import pytest
 
@@ -17,7 +18,7 @@ from antarest.core.config import Config, InternalMatrixFormat, StorageConfig
 
 
 @pytest.fixture
-def storage_config_default():
+def storage_config_default() -> Dict[str, Union[str, int]]:
     return {
         "matrixstore": "./custom_matrixstore",
         "archive_dir": "./custom_archives",
@@ -37,7 +38,7 @@ def storage_config_default():
     }
 
 
-def test_storage_config_from_dict(storage_config_default):
+def test_storage_config_from_dict(storage_config_default: Dict[str, Union[str, int]]):
     data = {
         **storage_config_default,
         "workspaces": {
@@ -134,8 +135,31 @@ def test_storage_config_from_dict_validation_errors(storage_config_default, work
         "desktop_mode": desktop_mode,
     }
 
-    if should_raise:
-        with pytest.raises(ValueError):
-            Config.from_dict(config_data)
-    else:
-        Config.from_dict(config_data)
+    with pytest.raises(ValueError):
+        StorageConfig.from_dict(data)
+
+    data = {
+        **storage_config_default,
+        "workspaces": {
+            "workspace1": {"path": "./a/", "some_other_config": "value1"},
+            "workspace2": {"path": "./a/", "some_other_config": "value2"},
+        },
+    }
+
+    with pytest.raises(ValueError):
+        StorageConfig.from_dict(data)
+
+
+@pytest.mark.unit_test
+def test_storage_default_aggregation_results_max_size_value(storage_config_default: Dict[str, Union[str, int]]):
+    # test aggregation_results_max_size default value
+    data = {
+        **storage_config_default,
+    }
+    config = StorageConfig.from_dict(data)
+    assert config.aggregation_results_max_size == 200
+
+    # test a custom aggregation_results_max_size
+    data = {**storage_config_default, "aggregation_results_max_size": 100}
+    config = StorageConfig.from_dict(data)
+    assert config.aggregation_results_max_size == 100

@@ -13,7 +13,7 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Dict, List, NamedTuple, Optional
+from typing import Callable, Dict, List, NamedTuple, Optional, Protocol
 
 from antares.study.version import SolverVersion
 
@@ -43,6 +43,11 @@ class LauncherInitException(Exception):
         super().__init__(msg)
 
 
+class ImportCallBack(Protocol):
+    def __call__(self, job_id: str, output_path: Path, additional_logs: Dict[str, List[Path]]) -> Optional[str]:
+        pass
+
+
 class LauncherCallbacks(NamedTuple):
     # args: job_id, job status, message, output_id
     update_status: Callable[[str, JobStatus, Optional[str], Optional[str]], None]
@@ -51,7 +56,7 @@ class LauncherCallbacks(NamedTuple):
     append_before_log: Callable[[str, str], None]
     append_after_log: Callable[[str, str], None]
     # args: job_id, output_path, additional_logs
-    import_output: Callable[[str, Path, Dict[str, List[Path]]], Optional[str]]
+    import_output: ImportCallBack
 
 
 class AbstractLauncher(ABC):

@@ -17,6 +17,7 @@ import typing as t
 import uuid
 from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
@@ -30,15 +31,16 @@ from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunnin
 from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -61,6 +63,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
@@ -75,6 +78,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
@@ -87,7 +91,18 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import with_db_context
+from tests.helpers import with_admin_user, with_db_context
+
+JWT_USER = JWTUser(id=0, impersonator=0, type="users")
+
+
+def with_jwt_user(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    @wraps(f)
+    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        with current_user_context(JWT_USER):
+            return f(*args, **kwargs)
+
+    return wrapper
 
 
 def build_study_service(
@@ -196,7 +211,7 @@ def test_study_listing(db_session: Session) -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
     service = build_study_service(raw_study_service, repository, config, cache_service=cache)
-    params: RequestParameters = RequestParameters(user=JWTUser(id=2, impersonator=2, type="users"))
+    user = JWTUser(id=2, impersonator=2, type="users")
 
     # retrieve studies that are not managed
     # use the db recorder to check that:
@@ -204,7 +219,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(params)),
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -218,7 +233,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions.from_params(params)),
+            study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -232,7 +247,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.from_params(params)),
+            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -246,7 +261,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- the `put` method of `cache` was never used
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.from_params(params)),
+            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
     with contextlib.suppress(AssertionError):
@@ -261,45 +276,98 @@ def test_study_listing(db_session: Session) -> None:
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
     ma = RawStudy(id="a", path="a", workspace="workspace1")
-    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
         path="c",
         name="c",
         content_status=StudyContentStatus.WARNING,
-        workspace=DEFAULT_WORKSPACE_NAME,
+        workspace="workspace1",
         owner=User(id=0),
     )
     md = RawStudy(
         id="d",
         path="d",
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        workspace="workspace1",
     )
     me = RawStudy(
         id="e",
         path="e",
+        folder="e",
+        name="e",
         created_at=now,
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        workspace="workspace1",
     )
-    fc = StudyFolder(path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
+    fa2 = StudyFolder(path=Path("a"), workspace="workspace2", groups=[])
+    fc = StudyFolder(path=Path("c"), workspace="workspace1", groups=[])
     fe = StudyFolder(path=Path("e"), workspace="workspace1", groups=[])
-    ff = StudyFolder(path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    ff = StudyFolder(path=Path("f"), workspace="workspace1", groups=[])
+    ff2 = StudyFolder(path=Path("f"), workspace="workspace2", groups=[])
 
     repository = Mock()
+    # setup existing studies
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
     config = Config(
-        storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(), "workspace1": WorkspaceConfig()})
+        storage=StorageConfig(
+            workspaces={
+                "workspace1": WorkspaceConfig(),
+                "workspace2": WorkspaceConfig(),
+            }
+        )
     )
     service = build_study_service(Mock(), repository, config)
 
-    service.sync_studies_on_disk([fa, fc, fe, ff])
+    # call function with scanned folders
+    service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
 
+    # here d exists in DB but not on disc so it should be removed
+    # notice b also exists in DB but not on disk but it's not deleted yet,  rather it's marked for deletion by a save call
     repository.delete.assert_called_once_with(md.id)
+    # (f, workspace1) exist on disc but not in DB so it should be added
+    # The studies a and f exists in workspace 2, studies under the same path exists in workspace 1,
+    # we check that we indeed save them in DB
     repository.save.assert_has_calls(
         [
             call(RawStudy(id="b", path="b", missing=ANY)),
-            call(RawStudy(id="e", path="e", created_at=now, missing=None)),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="a",
+                    name="a",
+                    folder="a",
+                    workspace="workspace2",
+                    missing=None,
+                    public_mode=PublicMode.FULL,
+                )
+            ),
+            call(
+                RawStudy(id="e", path="e", name="e", folder="e", workspace="workspace1", missing=None, created_at=now)
+            ),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    name="f",
+                    folder="f",
+                    workspace="workspace1",
+                    missing=None,
+                    public_mode=PublicMode.FULL,
+                )
+            ),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    name="f",
+                    folder="f",
+                    workspace="workspace2",
+                    missing=None,
+                    public_mode=PublicMode.FULL,
+                )
+            ),
         ]
     )
 
@@ -424,27 +492,14 @@ def test_create_study() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config, user_service=user_service)
 
+    jwt_user = JWT_USER
     with pytest.raises(UserHasNotPermissionError):
-        service.create_study(
-            "new-study",
-            STUDY_VERSION_7_2,
-            ["my-group"],
-            RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
-        )
+        with current_user_context(jwt_user):
+            service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
 
-    service.create_study(
-        "new-study",
-        STUDY_VERSION_7_2,
-        ["my-group"],
-        RequestParameters(
-            JWTUser(
-                id=0,
-                impersonator=0,
-                type="users",
-                groups=[JWTGroup(id="my-group", name="group", role=RoleType.WRITER)],
-            )
-        ),
-    )
+    jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
+    with current_user_context(jwt_user):
+        service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
 
     study_service.create.assert_called()
     repository.save.assert_called_once_with(expected)
@@ -470,12 +525,8 @@ def test_save_metadata() -> None:
     }
 
     # Input
-    jwt = JWTUser(
-        id=0,
-        impersonator=0,
-        type="users",
-        groups=[JWTGroup(id="my-group", name="group", role=RoleType.ADMIN)],
-    )
+    jwt = JWT_USER
+    jwt.groups = [JWTGroup(id="my-group", name="group", role=RoleType.ADMIN)]
     user = User(id=0, name="user")
     group = Group(id="my-group", name="group")
 
@@ -491,11 +542,12 @@ def test_save_metadata() -> None:
     service = build_study_service(study_service, repository, config)
 
     service.user_service.get_user.return_value = user  # type: ignore
-    service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME), owner=jwt)
+    with current_user_context(jwt):
+        service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME))
     repository.save.assert_called_once_with(study)
 
 
-# noinspection PyArgumentList
+@with_jwt_user
 @pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
@@ -558,6 +610,16 @@ def test_download_output() -> None:
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config)
+    storage = OutputStorageDispatcher(
+        service.storage_service.raw_study_service, service.storage_service.variant_study_service
+    )
+    output_service = OutputService(
+        service,
+        storage,
+        service.task_service,
+        service.file_transfer_manager,
+        service.event_bus,
+    )
 
     res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
     res_study_details = {
@@ -610,13 +672,8 @@ def test_download_output() -> None:
     )
     res = t.cast(
         Response,
-        service.download_outputs(
-            "study-id",
-            "output-id",
-            input_data,
-            use_task=False,
-            filetype=ExportFormat.JSON,
-            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        output_service.download_outputs(
+            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
@@ -636,14 +693,7 @@ def test_download_output() -> None:
 
     result = t.cast(
         FileDownloadTaskDTO,
-        service.download_outputs(
-            "study-id",
-            "output-id",
-            input_data,
-            use_task=True,
-            filetype=ExportFormat.ZIP,
-            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
-        ),
+        output_service.download_outputs("study-id", "output-id", input_data, use_task=True, filetype=ExportFormat.ZIP),
     )
 
     res_file_download = FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
@@ -670,13 +720,8 @@ def test_download_output() -> None:
     )
     res = t.cast(
         Response,
-        service.download_outputs(
-            "study-id",
-            "output-id",
-            input_data,
-            use_task=False,
-            filetype=ExportFormat.JSON,
-            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        output_service.download_outputs(
+            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
@@ -708,13 +753,8 @@ def test_download_output() -> None:
     )
     res = t.cast(
         Response,
-        service.download_outputs(
-            "study-id",
-            "output-id",
-            input_data,
-            use_task=False,
-            filetype=ExportFormat.JSON,
-            params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
+        output_service.download_outputs(
+            "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
@@ -726,6 +766,7 @@ def test_change_owner() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=2)
     bob = User(id=3, name="Bob")
+    jwt_user = JWTUser(id=2, impersonator=2, type="users")
 
     file_study = Mock(spec=FileStudy, get_node=Mock(return_value=Mock(spec=IniFileNode)))
 
@@ -754,19 +795,17 @@ def test_change_owner() -> None:
     user_service.get_user.return_value = bob
     service._edit_study_using_command = Mock()
 
-    service.change_owner(study_id, 2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
+    with current_user_context(jwt_user):
+        service.change_owner(study_id, 2)
 
     service._edit_study_using_command.assert_called_once_with(study=study, url="study/antares/author", data="Bob")
-    user_service.get_user.assert_called_once_with(2, RequestParameters(JWTUser(id=2, impersonator=2, type="users")))
+    user_service.get_user.assert_called_once_with(2)
     repository.save.assert_called_with(RawStudy(id=study_id, owner=bob, last_access=ANY))
     repository.save.assert_called_with(RawStudy(id=study_id, owner=bob))
 
     with pytest.raises(UserHasNotPermissionError):
-        service.change_owner(
-            study_id,
-            1,
-            RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
-        )
+        with current_user_context(jwt_user):
+            service.change_owner(study_id, 1)
 
 
 # noinspection PyArgumentList
@@ -776,6 +815,7 @@ def test_manage_group() -> None:
     alice = User(id=1)
     group_a = Group(id="a", name="Group A")
     group_b = Group(id="b", name="Group B")
+    user = JWTUser(id=2, impersonator=2, type="users")
     group_a_admin = JWTGroup(id="a", name="Group A", role=RoleType.ADMIN)
 
     repository = Mock()
@@ -786,43 +826,26 @@ def test_manage_group() -> None:
     repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a])
 
     with pytest.raises(UserHasNotPermissionError):
-        service.add_group(
-            study_id,
-            "b",
-            RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
-        )
+        with current_user_context(user):
+            service.add_group(study_id, "b")
 
+    user.groups.append(group_a_admin)
     user_service.get_group.return_value = group_b
-    service.add_group(
-        study_id,
-        "b",
-        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
-    )
+    with current_user_context(user):
+        service.add_group(study_id, "b")
 
-    user_service.get_group.assert_called_once_with(
-        "b",
-        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
-    )
+    user_service.get_group.assert_called_once_with("b")
     repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
     repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
-    service.add_group(
-        study_id,
-        "b",
-        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
-    )
-    user_service.get_group.assert_called_with(
-        "b",
-        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
-    )
+    with current_user_context(user):
+        service.add_group(study_id, "b")
+        user_service.get_group.assert_called_with("b")
     repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
     repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
-    service.remove_group(
-        study_id,
-        "a",
-        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_a_admin])),
-    )
+    with current_user_context(user):
+        service.remove_group(study_id, "a")
     repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_b]))
 
 
@@ -831,6 +854,7 @@ def test_manage_group() -> None:
 def test_set_public_mode() -> None:
     study_id = str(uuid.uuid4())
     group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+    user = JWTUser(id=2, impersonator=2, type="users")
 
     repository = Mock()
     user_service = Mock()
@@ -840,17 +864,12 @@ def test_set_public_mode() -> None:
     repository.get.return_value = Study(id=study_id)
 
     with pytest.raises(UserHasNotPermissionError):
-        service.set_public_mode(
-            study_id,
-            PublicMode.FULL,
-            RequestParameters(JWTUser(id=2, impersonator=2, type="users")),
-        )
+        with current_user_context(user):
+            service.set_public_mode(study_id, PublicMode.FULL)
 
-    service.set_public_mode(
-        study_id,
-        PublicMode.FULL,
-        RequestParameters(JWTUser(id=2, impersonator=2, type="users", groups=[group_admin])),
-    )
+    user.groups.append(group_admin)
+    with current_user_context(user):
+        service.set_public_mode(study_id, PublicMode.FULL)
     repository.save.assert_called_with(Study(id=study_id, public_mode=PublicMode.FULL))
 
 
@@ -914,38 +933,46 @@ def test_assert_permission() -> None:
     repository.get.return_value = Study(id=study_id, owner=wrong)
     study = service.get_study(study_id)
     with pytest.raises(UserHasNotPermissionError):
-        assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
+        with current_user_context(jwt):
+            assert_permission(study, StudyPermissionType.READ)
 
     # good owner
     study = Study(id=study_id, owner=good)
-    assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(jwt):
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # wrong group
     study = Study(id=study_id, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
-        assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
+        with current_user_context(jwt):
+            assert_permission(study, StudyPermissionType.READ)
 
     # good group
     study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group")])
-    assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(jwt):
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # super admin can do whatever he wants..
     study = Study(id=study_id)
-    assert assert_permission(admin, study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(admin):
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # when study found in workspace without group
     study = Study(id=study_id, public_mode=PublicMode.FULL)
-    assert not assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False)
-    assert assert_permission(jwt, study, StudyPermissionType.READ)
-    assert assert_permission(jwt, study, StudyPermissionType.WRITE)
-    assert assert_permission(jwt, study, StudyPermissionType.RUN)
+    with pytest.raises(UserHasNotPermissionError):
+        with current_user_context(jwt):
+            assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(jwt):
+        assert_permission(study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.RUN)
 
     # some group roles
     study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group-2")])
-    assert not assert_permission(jwt_2, study, StudyPermissionType.WRITE, raising=False)
-    assert assert_permission(jwt_2, study, StudyPermissionType.READ)
+    with current_user_context(jwt_2):
+        with pytest.raises(UserHasNotPermissionError):
+            assert_permission(study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.READ)
 
 
 class UserGroups(t.TypedDict):
@@ -1021,8 +1048,12 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Other members of the group should have no access.
     for user_name, jwt_user in jwt_users.items():
         has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
-        actual = assert_permission_on_studies(jwt_user, studies, StudyPermissionType.WRITE, raising=False)
-        assert actual == has_access
+        with current_user_context(jwt_user):
+            if has_access:
+                assert_permission_on_studies(studies, StudyPermissionType.WRITE)
+            else:
+                with pytest.raises(UserHasNotPermissionError):
+                    assert_permission_on_studies(studies, StudyPermissionType.WRITE)
 
     # Jack creates a additional variant study and adds it to the readers and writers groups.
     readers = db_session.query(Group).filter(Group.name == "Readers").one()
@@ -1034,15 +1065,20 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Other members of the group should have no access, because they don't have access to the writers-only studies.
     for user_name, jwt_user in jwt_users.items():
         has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
-        actual = assert_permission_on_studies(jwt_user, studies, StudyPermissionType.READ, raising=False)
-        assert actual == has_access
+        with current_user_context(jwt_user):
+            if has_access:
+                assert_permission_on_studies(studies, StudyPermissionType.READ)
+            else:
+                with pytest.raises(UserHasNotPermissionError):
+                    assert_permission_on_studies(studies, StudyPermissionType.WRITE)
 
     # Everybody should have access to the last study, because it is in the readers and writers group.
     for user_name, jwt_user in jwt_users.items():
-        actual = assert_permission_on_studies(jwt_user, studies[-1:], StudyPermissionType.READ, raising=False)
-        assert actual
+        with current_user_context(jwt_user):
+            assert_permission_on_studies(studies[-1:], StudyPermissionType.READ)
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_delete_study_calls_callback(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
@@ -1065,15 +1101,12 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
     service.add_on_deletion_callback(callback)
     service.storage_service.variant_study_service.has_children.return_value = False  # type: ignore
 
-    service.delete_study(
-        study_uuid,
-        children=False,
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
-    )
+    service.delete_study(study_uuid, children=False)
 
     callback.assert_called_once_with(study_uuid)
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
@@ -1128,7 +1161,6 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     service.delete_study(
         study_uuid,
         children=False,
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
     # test for variant studies
@@ -1157,11 +1189,10 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     service.delete_study(
         study_uuid,
         children=False,
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
 
-# noinspection PyArgumentList
+@with_admin_user
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
     raw_study_service = RawStudyService(Config(), Mock(), Mock())
@@ -1275,7 +1306,6 @@ def test_delete_recursively(tmp_path: Path) -> None:
     service.delete_study(
         "my_study",
         children=True,
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
 
@@ -1346,6 +1376,7 @@ def test_create_command(
     assert command.command_name.value == expected_name
 
 
+@with_admin_user
 def test_unarchive_output(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1376,11 +1407,20 @@ def test_unarchive_output(tmp_path: Path) -> None:
     service.task_service.add_worker_task.return_value = None  # type: ignore
     service.task_service.list_tasks.return_value = []  # type: ignore
     (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
-    service.unarchive_output(
+    storage = OutputStorageDispatcher(
+        service.storage_service.raw_study_service, service.storage_service.variant_study_service
+    )
+    output_service = OutputService(
+        service,
+        storage,
+        service.task_service,
+        Mock(),
+        Mock(),
+    )
+    output_service.unarchive_output(
         study_id,
         output_id,
         keep_src_zip=True,
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
     service.task_service.add_worker_task.assert_called_once_with(
@@ -1393,7 +1433,6 @@ def test_unarchive_output(tmp_path: Path) -> None:
         ).model_dump(),
         name=f"Unarchive output {study_name}/{output_id} ({study_id})",
         ref_id=study_id,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.task_service.add_task.assert_called_once_with(
         ANY,
@@ -1402,10 +1441,10 @@ def test_unarchive_output(tmp_path: Path) -> None:
         ref_id=study_id,
         progress=None,
         custom_event_messages=None,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
 
+@with_admin_user
 def test_archive_output_locks(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1480,42 +1519,46 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         ],
         [],
     ]
-
+    storage = OutputStorageDispatcher(
+        service.storage_service.raw_study_service, service.storage_service.variant_study_service
+    )
+    output_service = OutputService(
+        service,
+        storage,
+        service.task_service,
+        Mock(),
+        Mock(),
+    )
     with pytest.raises(TaskAlreadyRunning):
-        service.unarchive_output(
+        output_service.unarchive_output(
             study_id,
             output_zipped,
             keep_src_zip=True,
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     with pytest.raises(TaskAlreadyRunning):
-        service.unarchive_output(
+        output_service.unarchive_output(
             study_id,
             output_zipped,
             keep_src_zip=True,
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     with pytest.raises(TaskAlreadyRunning):
-        service.archive_output(
+        output_service.archive_output(
             study_id,
             output_unzipped,
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     with pytest.raises(TaskAlreadyRunning):
-        service.archive_output(
+        output_service.archive_output(
             study_id,
             output_unzipped,
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
-    service.unarchive_output(
+    output_service.unarchive_output(
         study_id,
         output_zipped,
         keep_src_zip=True,
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
     service.task_service.add_worker_task.assert_called_once_with(
@@ -1528,7 +1571,6 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         ).model_dump(),
         name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         ref_id=study_id,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
     service.task_service.add_task.assert_called_once_with(
         ANY,
@@ -1537,10 +1579,10 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         ref_id=study_id,
         progress=None,
         custom_event_messages=None,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
 
+@with_admin_user
 def test_get_save_logs(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1571,7 +1613,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
     file_study_config.outputs = {"output_id": output_config}
 
     context = Mock()
-    context.resolver.resolve.return_value = None
+    context.resolver.get_matrix.return_value = None
     service.storage_service.raw_study_service.get_raw.return_value = FileStudy(  # type: ignore
         config=file_study_config,
         tree=FileStudyTree(context, file_study_config),
@@ -1597,7 +1639,6 @@ def test_get_save_logs(tmp_path: Path) -> None:
                 "output_id",
                 "job_id",
                 False,
-                RequestParameters(user=DEFAULT_ADMIN_USER),
             )
             == "some log 2"
         )
@@ -1610,7 +1651,6 @@ def test_get_save_logs(tmp_path: Path) -> None:
             "output_id",
             "job_id",
             False,
-            RequestParameters(user=DEFAULT_ADMIN_USER),
         )
         == "some log"
     )
@@ -1622,12 +1662,12 @@ def test_get_save_logs(tmp_path: Path) -> None:
             "output_id",
             "job_id",
             True,
-            RequestParameters(user=DEFAULT_ADMIN_USER),
         )
         == "some log 3"
     )
 
 
+@with_admin_user
 def test_task_upgrade_study(tmp_path: Path) -> None:
     service = build_study_service(
         raw_study_service=Mock(),
@@ -1672,13 +1712,11 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         service.upgrade_study(
             study_id,
             target_version="",
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     service.upgrade_study(
         study_id,
         target_version="",
-        params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
     service.task_service.add_task.assert_called_once_with(
@@ -1688,7 +1726,6 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         ref_id=study_id,
         progress=None,
         custom_event_messages=None,
-        request_params=RequestParameters(user=DEFAULT_ADMIN_USER),
     )
 
     # check that a variant study or a raw study with children cannot be upgraded
@@ -1713,7 +1750,6 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         service.upgrade_study(
             "parent_raw_study",
             target_version="",
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     variant_study = Mock(
@@ -1738,7 +1774,6 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         service.upgrade_study(
             "variant_study",
             target_version="",
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
 

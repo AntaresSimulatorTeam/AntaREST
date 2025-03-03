@@ -23,7 +23,6 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.exceptions import ScanDisabled
 from antarest.core.interfaces.service import IService
-from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -157,7 +156,6 @@ class Watcher(IService):
 
     def oneshot_scan(
         self,
-        params: RequestParameters,
         recursive: bool,
         workspace: Optional[str] = None,
         path: Optional[str] = None,
@@ -186,7 +184,6 @@ class Watcher(IService):
             ref_id=None,
             progress=None,
             custom_event_messages=None,
-            request_params=params,
         )
 
     def scan(

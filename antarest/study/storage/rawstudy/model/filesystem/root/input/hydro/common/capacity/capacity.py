@@ -93,7 +93,7 @@ class InputHydroCommonCapacity(FolderNode):
                 for area in self.config.area_names():
                     name = f"{info['name']}_{area}"
                     children[name] = InputSeriesMatrix(
-                        self.context,
+                        self.matrix_mapper,
                         self.config.next_file(f"{name}.txt"),
                         freq=info["freq"],
                         default_empty=info["default_empty"],

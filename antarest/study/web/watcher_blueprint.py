@@ -46,8 +46,8 @@ def create_watcher_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.post(
         "/watcher/_scan",
@@ -63,6 +63,7 @@ def create_watcher_routes(
         params = RequestParameters(user=current_user)
         if config.desktop_mode and recursive:
             raise ScanDisabled("Recursive scan disables when desktop mode is on")
+
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:
@@ -80,6 +81,6 @@ def create_watcher_routes(
             logger.info("Scanning all workspaces")
             relative_path = None
             workspace = None
-        return watcher.oneshot_scan(params=params, recursive=recursive, workspace=workspace, path=relative_path)
+        return watcher.oneshot_scan(recursive=recursive, workspace=workspace, path=relative_path)
 
     return bp
