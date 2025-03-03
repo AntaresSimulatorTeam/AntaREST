@@ -90,7 +90,7 @@ def study_interface_fixture(tmp_path: Path) -> StudyInterface:
 
     file_study = Mock(spec=FileStudy, config=config, tree=FileStudyTree(Mock(spec=ContextServer), config))
 
-    study = Mock(spec=StudyInterface, version=860)
+    study = Mock(spec=StudyInterface, version=860, path=study_path, id=study_id)
     study.get_files.return_value = file_study
     return study
 
@@ -128,16 +128,16 @@ class TestHydroManagement:
             assert data == initial_data
 
     @pytest.mark.unit_test
-    def test_set_field_values(self, study_service: StudyService, study: StudyInterface) -> None:
+    def test_set_field_values(self, tmp_path: Path, study_service: StudyService, study: StudyInterface) -> None:
         """
         Set up:
             Retrieve a study service and a study interface
             Create some areas with different letter cases
-
+            Simulate changes by an external tool
         Test:
-            Get initial data
-            Edit one field (intra_daily_modulation)
-            Check if the field was successfully edited for each area
+            Get data with changes on character cases
+            Simulate a regular change
+            Check if the field was successfully edited for each area without duplicates
         """
         # store the area ids
         areas = ["AreaTest1", "AREATEST2", "area_test_3"]
@@ -146,7 +146,20 @@ class TestHydroManagement:
             # get initial values with get_field_values
             initial_data = study_service.hydro_manager.get_field_values(study, area).model_dump()
 
-            # set multiple values with set_field_values
+            # simulate changes on area_id case with another tool
+            hydro_ini_path = tmp_path.joinpath(f"tmp/{study.id}/input/hydro/hydro.ini")
+            with open(hydro_ini_path) as f:
+                file_content = f.read()
+                file_content = file_content.replace(areas[2], areas[2].upper())
+
+            with open(hydro_ini_path, "w") as f:
+                f.write(file_content)
+
+            # make sure that `get_field_values` retrieve same data as before
+            new_data = study_service.hydro_manager.get_field_values(study, area).model_dump()
+            assert initial_data == new_data
+
+            # simulate regular usage by modifying some values
             initial_data["intra_daily_modulation"] = 5
             new_field_values = ManagementOptionsFormFields(**initial_data)
             study_service.hydro_manager.set_field_values(study, new_field_values, area)
