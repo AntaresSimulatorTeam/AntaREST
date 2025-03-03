@@ -279,11 +279,6 @@ class ThermalManager:
             update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
         )
 
-        thermal_cluster_properties = create_thermal_properties(
-            study_version=study.version,
-            data=updated_versioned_thermal.model_dump(mode="json"),
-        )
-
         command = UpdateThermalCluster(
             area_id=area_id,
             thermal_cluster_id=cluster_id,
@@ -294,7 +289,7 @@ class ThermalManager:
 
         study.add_commands([command])
 
-        return ThermalClusterOutput(**thermal_cluster_properties.model_dump(), id=cluster_id)
+        return ThermalClusterOutput(**updated_versioned_thermal.model_dump(), id=cluster_id)
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
