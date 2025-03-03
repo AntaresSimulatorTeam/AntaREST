@@ -47,7 +47,6 @@ class RenewableClusterCreation(RenewableProperties):
         return create_renewable_properties(study_version=study_version, data=values)
 
 
-@all_optional_model
 @camel_case_model
 class RenewableClusterOutput(RenewableConfig):
     """
