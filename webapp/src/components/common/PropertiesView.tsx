@@ -45,17 +45,19 @@ function PropertiesView({
           height: 1,
           display: "flex",
           flexDirection: "column",
+          pt: 1,
         },
         sx,
       )}
     >
-      {onSearchFilterChange && <SearchFE onSearchValueChange={onSearchFilterChange} />}
+      {onSearchFilterChange && (
+        <SearchFE onSearchValueChange={onSearchFilterChange} size="extra-small" sx={{ px: 1 }} />
+      )}
       {onAdd && (
         <Box sx={{ display: "flex", px: 1, my: 1 }}>
           <Button
             color="primary"
             variant="contained"
-            size="small"
             startIcon={<AddIcon />}
             onClick={onAdd}
             sx={{

@@ -15,7 +15,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, Union, cast
+from typing import List, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -73,7 +73,7 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
     return None
 
 
-class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
+class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     def __init__(
         self,
         context: ContextServer,
@@ -141,7 +141,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> Union[bytes, JSON]:
+    ) -> bytes | JSON:
         file_path, _ = self._get_real_file_path()
 
         df = self.parse_as_dataframe(file_path)
@@ -152,11 +152,12 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
             return data
 
+        # The R scripts use the flag formatted=False
         if df.empty:
             return b""
-        buffer = io.BytesIO()
-        np.savetxt(buffer, df, delimiter="\t", fmt="%.6f")
-        return buffer.getvalue()
+        buffer = io.StringIO()
+        df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        return buffer.getvalue()  # type: ignore
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
@@ -168,7 +169,7 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
     @override
     def dump(
         self,
-        data: Union[bytes, JSON],
+        data: bytes | JSON,
         url: Optional[List[str]] = None,
     ) -> None:
         """

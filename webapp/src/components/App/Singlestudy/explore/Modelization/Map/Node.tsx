@@ -32,7 +32,6 @@ function Node(props: PropType) {
     <NodeContainer>
       {node.highlighted ? (
         <NodeHighlighted
-          size="small"
           label={node.name}
           clickable
           nodecolor={node.color}
@@ -40,7 +39,6 @@ function Node(props: PropType) {
         />
       ) : (
         <NodeDefault
-          size="small"
           label={node.name}
           clickable
           nodecolor={node.color}

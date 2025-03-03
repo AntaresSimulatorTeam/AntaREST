@@ -12,12 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemAvatar from "@mui/material/ListItemAvatar";
-import Avatar from "@mui/material/Avatar";
-import { Icon } from "@mui/material";
+import { Icon, List, ListItem, ListItemText, ListItemAvatar, Avatar } from "@mui/material";
 import type { SvgIconComponent } from "@mui/icons-material";
 
 interface ListItem {
@@ -36,7 +31,6 @@ function DetailsList({ items }: Props) {
     <List
       sx={{
         width: 1,
-        backgroundColor: "#222333",
       }}
     >
       {items.map((item) => (

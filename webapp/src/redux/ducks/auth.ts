@@ -14,7 +14,7 @@
 
 import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
 import { jwtDecode, type JwtPayload } from "jwt-decode";
-import type { UserInfo } from "../../common/types";
+import type { UserInfo } from "../../types/types";
 import * as authApi from "../../services/api/auth";
 import * as clientApi from "../../services/api/client";
 import { isUserExpired } from "../../services/utils";

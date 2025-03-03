@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/common/types.ts";
+import type { StudyMetadata } from "@/types/types";
 import type { DeepPartial } from "react-hook-form";
 import type { O } from "ts-toolbelt";
 import { type TimeSeriesType } from "./constants";

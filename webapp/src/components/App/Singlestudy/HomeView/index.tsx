@@ -15,7 +15,7 @@
 import { useNavigate } from "react-router-dom";
 import { Box } from "@mui/material";
 import Split from "react-split";
-import type { StudyMetadata, VariantTree } from "../../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../../types/types";
 import "./Split.css";
 import StudyTreeView from "./StudyTreeView";
 import InformationView from "./InformationView";
@@ -41,6 +41,7 @@ function HomeView(props: Props) {
         flex: 1,
       }}
     >
+      {/* Left */}
       <Box
         height="100%"
         display="flex"
@@ -49,7 +50,7 @@ function HomeView(props: Props) {
         alignItems="flex-start"
         boxSizing="border-box"
         overflow="hidden"
-        px={2}
+        px={1}
       >
         <StudyTreeView
           study={study}
@@ -57,30 +58,8 @@ function HomeView(props: Props) {
           onClick={(studyId: string) => navigate(`/studies/${studyId}`)}
         />
       </Box>
-      <Box
-        height="100%"
-        display="flex"
-        flexDirection="row"
-        justifyContent="flex-start"
-        alignItems="flex-start"
-        boxSizing="border-box"
-        overflow="hidden"
-        sx={{ overflowX: "auto" }}
-      >
-        <Box
-          flex={1}
-          minWidth="700px"
-          height="100%"
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          alignItems="center"
-          boxSizing="border-box"
-          overflow="hidden"
-        >
-          <InformationView study={study} tree={tree} />
-        </Box>
-      </Box>
+      {/* Right */}
+      <InformationView study={study} tree={tree} />
     </Split>
   );
 }

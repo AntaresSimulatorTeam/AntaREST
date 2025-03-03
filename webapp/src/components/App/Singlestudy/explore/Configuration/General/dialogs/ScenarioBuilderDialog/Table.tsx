@@ -25,7 +25,7 @@ import EmptyView from "../../../../../../../common/page/EmptyView";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../../../../../../utils/fnUtils";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 
 interface Props {
   config: GenericScenarioConfig | ClustersHandlerReturn;

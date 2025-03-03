@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import type { StudyMetadata, UpdateAreaUi } from "../../../../../../../common/types";
+import type { StudyMetadata, UpdateAreaUi } from "../../../../../../../types/types";
 import PropertiesView from "../../../../../../common/PropertiesView";
 import ListElement from "../../../common/ListElement";
 import { AreasContainer } from "./style";

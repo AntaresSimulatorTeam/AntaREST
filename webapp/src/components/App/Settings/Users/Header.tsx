@@ -17,7 +17,7 @@ import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import CreateUserDialog from "./dialog/CreateUserDialog";
-import type { UserDetailsDTO } from "../../../../common/types";
+import type { UserDetailsDTO } from "../../../../types/types";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
 
 interface Props {

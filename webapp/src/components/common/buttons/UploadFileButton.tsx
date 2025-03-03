@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
 import { useDropzone, type Accept } from "react-dropzone";
-import type { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../types/types";
 import { useSnackbar } from "notistack";
 import { uploadFile } from "../../../services/api/studies/raw";
 
@@ -117,7 +117,6 @@ function UploadFileButton(props: UploadFileButtonProps) {
       <input {...getInputProps()} />
       <LoadingButton
         variant="outlined"
-        size="small"
         onClick={open}
         startIcon={<FileDownloadIcon />}
         loadingPosition="start"

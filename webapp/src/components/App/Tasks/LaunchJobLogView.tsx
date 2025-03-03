@@ -20,7 +20,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { getStudyJobLog } from "../../../services/api/study";
 import LogModal from "../../common/LogModal";
-import type { LaunchJob } from "../../../common/types";
+import type { LaunchJob } from "../../../types/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 
 interface PropsType {

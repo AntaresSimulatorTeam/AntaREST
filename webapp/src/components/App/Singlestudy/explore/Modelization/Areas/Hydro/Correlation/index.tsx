@@ -16,7 +16,7 @@ import { Grid } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useState } from "react";
 import Form from "../../../../../../../common/Form";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";

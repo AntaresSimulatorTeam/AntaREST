@@ -309,7 +309,6 @@ function DataGridForm<TData extends Data>({
         <Box sx={{ display: "flex" }}>
           <LoadingButton
             type="submit"
-            size="small"
             disabled={!isDirty}
             loading={isSubmitting}
             loadingPosition="start"
@@ -321,14 +320,14 @@ function DataGridForm<TData extends Data>({
           <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
           <Tooltip title={t("global.undo")}>
             <span>
-              <IconButton size="small" onClick={undo} disabled={!canUndo || isSubmitting}>
+              <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>
                 <UndoIcon />
               </IconButton>
             </span>
           </Tooltip>
           <Tooltip title={t("global.redo")}>
             <span>
-              <IconButton size="small" onClick={redo} disabled={!canRedo || isSubmitting}>
+              <IconButton onClick={redo} disabled={!canRedo || isSubmitting}>
                 <RedoIcon />
               </IconButton>
             </span>

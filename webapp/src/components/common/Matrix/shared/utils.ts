@@ -29,6 +29,7 @@ import { parseISO, type Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { getCurrentLanguage } from "@/utils/i18nUtils";
 import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
+import { groupHeaderTheme } from "../styles";
 
 /**
  * Formats a number for display in a grid cell by adding thousand separators and handling decimals.
@@ -323,6 +324,7 @@ export function calculateMatrixAggregates(
 
 export function groupResultColumns(
   columns: Array<EnhancedGridColumn | ResultColumn>,
+  isDarkMode: boolean,
 ): EnhancedGridColumn[] {
   return columns.map((column): EnhancedGridColumn => {
     const titles = Array.isArray(column.title) ? column.title : [String(column.title)];
@@ -352,9 +354,7 @@ export function groupResultColumns(
       group: title, // Group header title
       title: stat.toLowerCase(), // Sub columns title,
 
-      themeOverride: {
-        bgHeader: "#2D2E40", // Sub columns bg color
-      },
+      themeOverride: isDarkMode ? groupHeaderTheme.dark : groupHeaderTheme.light,
     };
   });
 }

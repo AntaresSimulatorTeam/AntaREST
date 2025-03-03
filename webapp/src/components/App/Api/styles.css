@@ -1,0 +1,60 @@
+.swagger-ui {
+    color: inherit;
+
+    .info .title,
+    .opblock-tag,
+    .opblock .opblock-summary-path,
+    .opblock .opblock-summary-path__deprecated,
+    .opblock .opblock-summary-description,
+    .opblock-description-wrapper p,
+    .opblock-description-wrapper,
+    table thead tr th,
+    .parameter__name,
+    .parameter__type,
+    .response-col_status,
+    .response-col_description,
+    .response-col_links,
+    .responses-inner h4,
+    .responses-inner h5,
+    .response-col_status .response-undocumented,
+    .tab li,
+    section.models h4 {
+        color: inherit;
+    }
+
+    .info {
+        margin: 0;
+    }
+
+    .opblock .opblock-section-header {
+        background: rgb(127 127 127 / 10%);
+
+        .opblock-title, h4 {
+            color: inherit;
+        }
+
+        .try-out__btn {
+            background: #fff;
+        }
+
+    }
+
+    .models article {
+        background-color: rgb(127 127 127 / 10%);
+
+        [class$="--description"],
+        [class$="__name--primary"],
+        [class$="__value--const"] {
+            color: inherit;
+        }
+
+        button {
+            background: inherit;
+            color: inherit;
+
+            [class$="__title"] {
+                color: inherit;
+            }
+        }
+    }
+}

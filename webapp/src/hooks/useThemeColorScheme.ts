@@ -1,0 +1,34 @@
+/**
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { useColorScheme } from "@mui/material";
+
+/**
+ * Gets the return value from `useColorScheme` hook with additional properties.
+ *
+ * @returns An object.
+ */
+function useThemeColorScheme() {
+  const colorScheme = useColorScheme();
+  const { mode, systemMode } = colorScheme;
+  const isDarkMode = mode === "dark" || systemMode === "dark";
+
+  return {
+    isDarkMode,
+    isLightMode: !isDarkMode,
+    ...colorScheme,
+  };
+}
+
+export default useThemeColorScheme;

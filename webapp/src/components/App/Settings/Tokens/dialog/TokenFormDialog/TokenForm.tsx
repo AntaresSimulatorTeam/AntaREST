@@ -38,7 +38,7 @@ import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
 import type { TokenFormDialogProps } from ".";
-import { RoleType, type GroupDTO } from "../../../../../../common/types";
+import { RoleType, type GroupDTO } from "../../../../../../types/types";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups } from "../../../../../../services/api/user";
 import { roleToString, sortByName } from "../../../../../../services/utils";
@@ -153,7 +153,7 @@ function TokenForm(props: Props) {
           <>
             {!readOnly && (
               <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-                <FormControl sx={{ mr: 2, flex: 1 }} size="small">
+                <FormControl sx={{ mr: 2, flex: 1 }}>
                   <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
                   <Select
                     labelId={groupLabelId}
@@ -170,7 +170,6 @@ function TokenForm(props: Props) {
                 </FormControl>
                 <Button
                   variant="contained"
-                  size="small"
                   disabled={!allowToAddPermission}
                   onClick={() => {
                     append({ group: selectedGroup, type: RoleType.READER });

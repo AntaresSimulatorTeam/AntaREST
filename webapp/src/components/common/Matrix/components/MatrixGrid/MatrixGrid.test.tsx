@@ -13,7 +13,7 @@
  */
 
 import { render } from "@testing-library/react";
-import Box from "@mui/material/Box";
+import { Box } from "@mui/material";
 import MatrixGrid, { type MatrixGridProps } from ".";
 import type { EnhancedGridColumn } from "../../shared/types";
 import { mockGetBoundingClientRect } from "../../../../../tests/mocks/mockGetBoundingClientRect";

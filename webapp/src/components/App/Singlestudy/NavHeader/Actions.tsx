@@ -19,12 +19,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { StudyType, type StudyMetadata } from "../../../../common/types";
-import { toggleFavorite } from "../../../../redux/ducks/studies";
-import StarToggle from "../../../common/StarToggle";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isCurrentStudyFavorite } from "../../../../redux/selectors";
+import { StudyType, type StudyMetadata } from "@/types/types";
+import FavoriteStudyToggle from "../../../common/studies/FavoriteStudyToggle";
 
 interface Props {
   study: StudyMetadata | undefined;
@@ -46,9 +42,7 @@ function Actions({
   onOpenMenu,
 }: Props) {
   const [t] = useTranslation();
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const isStudyFavorite = useAppSelector(isCurrentStudyFavorite);
   const isManaged = study?.managed;
   const isArchived = study?.archived;
 
@@ -85,7 +79,7 @@ function Actions({
       }}
     >
       <Box>
-        <Button variant="text" color="secondary" onClick={handleClickBack} sx={{ pl: 0 }}>
+        <Button variant="text" color="secondary" onClick={handleClickBack} sx={{ p: 0 }}>
           <ArrowBackIcon
             color="secondary"
             onClick={handleClickBack}
@@ -105,18 +99,12 @@ function Actions({
           noWrap
           sx={{
             flex: 1,
-            ml: 1,
           }}
         >
           {study.name}
         </Typography>
       </Tooltip>
-      <StarToggle
-        isActive={isStudyFavorite}
-        activeTitle={t("studies.removeFavorite")}
-        unactiveTitle={t("studies.addFavorite")}
-        onToggle={() => dispatch(toggleFavorite(study.id))}
-      />
+      <FavoriteStudyToggle studyId={study.id} />
       <Tooltip title={t("study.copyId")}>
         <ContentCopyIcon
           sx={{
@@ -130,35 +118,23 @@ function Actions({
         />
       </Tooltip>
       {isManaged ? (
-        <Chip label={t("study.managedStudy")} variant="filled" color="info" size="small" />
+        <Chip label={t("study.managedStudy")} color="info" />
       ) : (
-        <Chip label={study.workspace} variant="filled" size="small" />
+        <Chip label={study.workspace} />
       )}
-      {study.tags?.map((tag) => <Chip key={tag} label={tag} variant="filled" size="small" />)}
+      {study.tags?.map((tag) => <Chip key={tag} label={tag} />)}
       {isExplorer && (
-        <Button
-          size="small"
-          variant="contained"
-          color="primary"
-          onClick={isArchived ? onUnarchive : onLaunch}
-        >
+        <Button variant="contained" onClick={isArchived ? onUnarchive : onLaunch}>
           {isArchived ? t("global.unarchive") : t("global.launch")}
         </Button>
       )}
       <Divider flexItem orientation="vertical" />
       {study.type === StudyType.VARIANT && (
-        <Button
-          size="small"
-          variant="outlined"
-          color="primary"
-          onClick={onOpenCommands}
-          sx={{ minWidth: 0 }}
-        >
+        <Button variant="outlined" onClick={onOpenCommands} sx={{ minWidth: 0 }}>
           <HistoryOutlinedIcon />
         </Button>
       )}
       <Button
-        size="small"
         variant="outlined"
         color="primary"
         sx={{ width: "auto", minWidth: 0, px: 0 }}
