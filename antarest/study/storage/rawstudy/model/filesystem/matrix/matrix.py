@@ -124,7 +124,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> bytes | str | JSON:
+    ) -> bytes | JSON:
         file_path, _ = self._get_real_file_path()
 
         df = self.parse_as_dataframe(file_path)
@@ -135,16 +135,12 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
             return data
 
+        # The R scripts use the flag formatted=False
         if df.empty:
             return b""
-        csv = df.to_csv(
-            None,
-            sep="\t",
-            header=False,
-            index=False,
-            float_format="%.6f",
-        )
-        return csv or ""
+        buffer = io.BytesIO()
+        df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        return buffer.getvalue()
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
