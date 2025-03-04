@@ -19,7 +19,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 import py7zr
 import pydantic_core
@@ -37,6 +37,7 @@ from antarest.core.serde.json import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
+from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
 logger = logging.getLogger(__name__)

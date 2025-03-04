@@ -326,6 +326,7 @@ def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]
 
 def create_ini_node(study_path: Path, ini_path: Path) -> IniFileNode:
     return IniFileNode(
+        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=study_path,
             path=ini_path,
