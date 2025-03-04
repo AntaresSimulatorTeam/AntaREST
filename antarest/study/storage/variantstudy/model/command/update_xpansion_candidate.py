@@ -74,7 +74,7 @@ class UpdateXpansionCandidate(ICommand):
             action=self.command_name.value,
             args={
                 "candidate_name": self.candidate_name,
-                "new_properties": self.new_properties.model_dump(mode="json", by_alias=True),
+                "new_properties": self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True),
             },
             study_version=self.study_version,
         )

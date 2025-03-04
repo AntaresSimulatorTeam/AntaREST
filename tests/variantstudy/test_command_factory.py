@@ -814,6 +814,43 @@ COMMANDS = [
         None,
         id="remove_user_resource_list_file",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_XPANSION_CANDIDATE.value,
+            args=[{"candidate": {"name": "cdt_1", "link": "at - be", "annual-cost-per-mw": 12, "max-investment": 100}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="create_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_XPANSION_CANDIDATE.value,
+            args=[
+                {
+                    "candidate_name": "cdt_1",
+                    "new_properties": {
+                        "name": "cdt_1",
+                        "link": "at - be",
+                        "annual-cost-per-mw": 12,
+                        "max-investment": 100,
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_XPANSION_CANDIDATE.value,
+            args=[{"candidate_name": "cdt_1"}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="remove_xpansion_candidate",
+    ),
 ]
 
 
