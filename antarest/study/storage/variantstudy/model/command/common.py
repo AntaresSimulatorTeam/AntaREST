@@ -17,10 +17,18 @@ from typing import List
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommandOutput:
     status: bool
     message: str = ""
+
+
+def command_failed(message: str) -> CommandOutput:
+    return CommandOutput(False, message)
+
+
+def command_succeeded(message: str) -> CommandOutput:
+    return CommandOutput(True, message)
 
 
 class FilteringOptions:

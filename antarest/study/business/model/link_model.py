@@ -13,13 +13,20 @@ from dataclasses import field
 from typing import Annotated, List, Optional, Self, Type
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    model_validator,
+)
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case, to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
 
 
 class AssetType(EnumIgnoreCase):
@@ -185,6 +192,12 @@ class LinkDTO(Area, LinkBaseDTO):
 
         return LinkInternal(**data)
 
+    def to_config(self) -> Link:
+        return Link(
+            filters_year=self.filter_year_by_year,
+            filters_synthesis=self.filter_synthesis,
+        )
+
 
 class LinkInternal(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
@@ -209,3 +222,66 @@ class LinkInternal(AntaresBaseModel):
     def to_dto(self) -> LinkDTO:
         data = self.model_dump()
         return LinkDTO(**data)
+
+
+class LinkProperties(AntaresBaseModel):
+    """
+    Link properties for serialization in ini file.
+    """
+
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+
+    hurdles_cost: bool = False
+    loop_flow: bool = False
+    use_phase_shifter: bool = False
+    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
+    asset_type: AssetType = AssetType.AC
+    display_comments: bool = True
+    comments: str = ""
+    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    link_width: float = 1
+    link_style: LinkStyle = LinkStyle.PLAIN
+    filter_synthesis: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+
+    @classmethod
+    def from_link(cls, link: LinkDTO) -> "LinkProperties":
+        return LinkProperties(
+            hurdles_cost=link.hurdles_cost,
+            loop_flow=link.loop_flow,
+            use_phase_shifter=link.use_phase_shifter,
+            transmission_capacities=link.transmission_capacities,
+            asset_type=link.asset_type,
+            display_comments=link.display_comments,
+            comments=link.comments,
+            colorr=link.colorr,
+            colorb=link.colorb,
+            colorg=link.colorg,
+            link_width=link.link_width,
+            link_style=link.link_style,
+            filter_synthesis=link.filter_synthesis,
+            filter_year_by_year=link.filter_year_by_year,
+        )
+
+    def to_link(self, area1_id: str, area2_id: str) -> "LinkDTO":
+        area1_id, area2_id = sorted((area1_id, area2_id))
+        return LinkDTO(
+            area1=area1_id,
+            area2=area2_id,
+            hurdles_cost=self.hurdles_cost,
+            loop_flow=self.loop_flow,
+            use_phase_shifter=self.use_phase_shifter,
+            transmission_capacities=self.transmission_capacities,
+            asset_type=self.asset_type,
+            display_comments=self.display_comments,
+            comments=self.comments,
+            colorr=self.colorr,
+            colorb=self.colorb,
+            colorg=self.colorg,
+            link_width=self.link_width,
+            link_style=self.link_style,
+            filter_synthesis=self.filter_synthesis,
+            filter_year_by_year=self.filter_year_by_year,
+        )

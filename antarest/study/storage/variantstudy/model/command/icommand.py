@@ -18,12 +18,20 @@ from typing import Any, Dict, List, Optional, Tuple
 import typing_extensions as te
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.study.dao.study_dao import FileStudyTreeDao, StudyDao
 from antarest.study.model import StudyVersionStr
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
+    ICommandListener,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MATCH_SIGNATURE_SEPARATOR = "%"
@@ -48,7 +56,24 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
     command_context: CommandContext
     study_version: StudyVersionStr
 
-    @abstractmethod
+    def _apply_config_dao(self, study_dao: StudyDao) -> OutputTuple:
+        """
+        Applies configuration changes to the study data.
+
+        Returns:
+            A tuple containing the command output and a dictionary of extra data.
+        """
+        return self._apply_config(study_dao.as_file_study().config)
+
+    def _apply_dao(self, study_dao: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        """
+        Applies configuration changes to the study data.
+
+        Returns:
+            A tuple containing the command output and a dictionary of extra data.
+        """
+        return self._apply(study_dao.as_file_study(), listener)
+
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
         """
         Applies configuration changes to the study data.
@@ -74,7 +99,6 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         output, _ = self._apply_config(study_data)
         return output
 
-    @abstractmethod
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
@@ -87,7 +111,11 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def apply(
+        self,
+        study_data: StudyDao | FileStudy,
+        listener: Optional[ICommandListener] = None,
+    ) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -98,8 +126,10 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         Returns:
             The output of the command execution.
         """
+        if isinstance(study_data, FileStudy):
+            study_data = FileStudyTreeDao(study_data)
         try:
-            return self._apply(study_data, listener)
+            return self._apply_dao(study_data, listener)
         except Exception as e:
             logger.warning(
                 f"Failed to execute variant command {self.command_name}",

@@ -19,7 +19,18 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import (
+    Any,
+    BinaryIO,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    cast,
+)
 from uuid import uuid4
 
 import pandas as pd
@@ -55,7 +66,13 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
-from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import (
+    JSON,
+    SUB_JSON,
+    PermissionInfo,
+    PublicMode,
+    StudyPermissionType,
+)
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serde.json import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
@@ -83,25 +100,43 @@ from antarest.study.business.areas.properties_management import PropertiesManage
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters, LinkTerm
+from antarest.study.business.binding_constraint_management import (
+    BindingConstraintManager,
+    ConstraintFilters,
+    LinkTerm,
+)
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import (
+    AreaCreationDTO,
+    AreaInfoDTO,
+    AreaType,
+    UpdateAreaUi,
+)
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
-from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    GetXpansionSettings,
+    XpansionSettingsUpdate,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import (
+    StudyInterface,
+)
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.business.xpansion_management import XpansionCandidateDTO, XpansionManager
+from antarest.study.business.xpansion_management import (
+    XpansionCandidateDTO,
+    XpansionManager,
+)
+from antarest.study.dao.study_dao import FileStudyTreeDao, StudyDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -128,13 +163,22 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, imports_matrix_from_bytes
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import (
+    MatrixFrequency,
+    imports_matrix_from_bytes,
+)
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import (
+    OutputSeriesMatrix,
+)
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
@@ -142,8 +186,15 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
+from antarest.study.storage.study_download_utils import (
+    StudyDownloader,
+    get_output_variables_information,
+)
+from antarest.study.storage.study_upgrader import (
+    StudyUpgrader,
+    check_versions_coherence,
+    find_next_version,
+)
 from antarest.study.storage.utils import (
     assert_permission,
     get_start_date,
@@ -165,15 +216,25 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResource,
     RemoveUserResourceData,
 )
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
+from antarest.study.storage.variantstudy.model.command.replace_matrix import (
+    ReplaceMatrix,
+)
+from antarest.study.storage.variantstudy.model.command.update_comments import (
+    UpdateComments,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
+from antarest.study.storage.variantstudy.model.command.update_raw_file import (
+    UpdateRawFile,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
+    ICommandListener,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -199,7 +260,8 @@ def get_disk_usage(path: str | Path) -> int:
 
 
 def _get_path_inside_user_folder(
-    path: str, exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed]
+    path: str,
+    exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed],
 ) -> str:
     """
     Retrieves the path inside the `user` folder for a given user path
@@ -403,12 +465,16 @@ class RawStudyInterface(StudyInterface):
         return self._cached_file_study
 
     @override
+    def get_study_dao(self) -> StudyDao:
+        return FileStudyTreeDao(self.get_files())
+
+    @override
     def add_commands(self, commands: Sequence[ICommand]) -> None:
         study = self._study
         file_study = self.get_files()
 
         for command in commands:
-            result = command.apply(file_study)
+            result = command.apply(self.get_study_dao())
             if not result.status:
                 raise CommandApplicationError(result.message)
         self._variant_study_service.invalidate_cache(study)
@@ -459,6 +525,10 @@ class VariantStudyInterface(StudyInterface):
     @override
     def get_files(self) -> FileStudy:
         return self._variant_service.get_raw(self._study)
+
+    @override
+    def get_study_dao(self) -> StudyDao:
+        return FileStudyTreeDao(self.get_files())
 
     @override
     def add_commands(self, commands: Sequence[ICommand]) -> None:
@@ -590,7 +660,7 @@ class StudyService:
         self,
         uuid: str,
         output_id: str,
-        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        query_file: (MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile),
         frequency: MatrixFrequency,
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
@@ -617,7 +687,13 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         study_path = self.storage_service.raw_study_service.get_study_path(study)
         aggregator_manager = AggregatorManager(
-            study_path, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
+            study_path,
+            output_id,
+            query_file,
+            frequency,
+            ids_to_consider,
+            columns_names,
+            mc_years,
         )
         return aggregator_manager.aggregate_output_data()
 
@@ -820,7 +896,11 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        logger.info("Study metadata requested for study %s by user %s", uuid, params.get_user_id())
+        logger.info(
+            "Study metadata requested for study %s by user %s",
+            uuid,
+            params.get_user_id(),
+        )
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
         study.last_access = datetime.utcnow()
         self.repository.save(study)
@@ -1039,7 +1119,10 @@ class StudyService:
             self.repository.delete(*ids)
 
     def sync_studies_on_disk(
-        self, folders: List[StudyFolder], directory: Optional[Path] = None, recursive: bool = True
+        self,
+        folders: List[StudyFolder],
+        directory: Optional[Path] = None,
+        recursive: bool = True,
     ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
@@ -1116,7 +1199,7 @@ class StudyService:
                             workspace=workspace,
                             owner=None,
                             groups=folder.groups,
-                            public_mode=PublicMode.FULL if len(folder.groups) == 0 else PublicMode.NONE,
+                            public_mode=(PublicMode.FULL if len(folder.groups) == 0 else PublicMode.NONE),
                         )
                         logger.info(
                             "Study at %s appears on disk and will be added as %s",
@@ -1668,7 +1751,11 @@ class StudyService:
         return output_id
 
     def _create_edit_study_command(
-        self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
+        self,
+        tree_node: INode[JSON, SUB_JSON, JSON],
+        url: str,
+        data: SUB_JSON,
+        study_version: StudyVersion,
     ) -> ICommand:
         """
         Create correct command to edit study
@@ -1685,7 +1772,12 @@ class StudyService:
 
         if isinstance(tree_node, IniFileNode):
             assert not isinstance(data, (bytes, list))
-            return UpdateConfig(target=url, data=data, command_context=context, study_version=study_version)
+            return UpdateConfig(
+                target=url,
+                data=data,
+                command_context=context,
+                study_version=study_version,
+            )
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
@@ -1694,10 +1786,18 @@ class StudyService:
                     raise MatrixImportFailed("Could not parse the given matrix")
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
-                    target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
+                    target=url,
+                    matrix=matrix.tolist(),
+                    command_context=context,
+                    study_version=study_version,
                 )
             assert isinstance(data, (list, str))
-            return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
+            return ReplaceMatrix(
+                target=url,
+                matrix=data,
+                command_context=context,
+                study_version=study_version,
+            )
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 if isinstance(data, bytes):
@@ -1825,7 +1925,12 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new, create_missing=create_missing)
+        self._edit_study_using_command(
+            study=study,
+            url=url.strip().strip("/"),
+            data=new,
+            create_missing=create_missing,
+        )
 
         self.event_bus.push(
             Event(
@@ -2782,7 +2887,10 @@ class StudyService:
         study = self.get_study(study_id)
         study_interface = self.get_study_interface(study)
 
-        if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
+        if matrix_path.parts in [
+            ("input", "hydro", "allocation"),
+            ("input", "hydro", "correlation"),
+        ]:
             all_areas = cast(
                 List[AreaInfoDTO],
                 self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
@@ -2791,7 +2899,11 @@ class StudyService:
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
             else:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(all_areas, study_interface, [])  # type: ignore
-            return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
+            return pd.DataFrame(
+                data=hydro_matrix.data,
+                columns=hydro_matrix.columns,
+                index=hydro_matrix.index,
+            )
 
         # Gets the data and checks given path existence
         matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
@@ -2810,7 +2922,9 @@ class StudyService:
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
             time_column = pd.date_range(
-                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+                start=matrix_index.start_date,
+                periods=len(df_matrix),
+                freq=matrix_index.level.value[0],
             )
             df_matrix.index = time_column
 
@@ -2861,7 +2975,13 @@ class StudyService:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
         cmd_data = RemoveUserResourceData(**{"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)})
-        self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed, current_user)
+        self._alter_user_folder(
+            study_id,
+            cmd_data,
+            RemoveUserResource,
+            ResourceDeletionNotAllowed,
+            current_user,
+        )
 
     def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
         """
@@ -2882,7 +3002,13 @@ class StudyService:
             "resource_type": ResourceType.FOLDER,
         }
         command_data = CreateUserResourceData.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed, current_user)
+        self._alter_user_folder(
+            study_id,
+            command_data,
+            CreateUserResource,
+            FolderCreationNotAllowed,
+            current_user,
+        )
 
     def _alter_user_folder(
         self,
