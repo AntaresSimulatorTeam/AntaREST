@@ -12,7 +12,8 @@
 import itertools
 import logging
 import uuid
-from typing import Callable, List, Optional, Union, cast
+from pathlib import Path
+from typing import Callable, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -48,7 +49,7 @@ class VariantCommandGenerator:
         commands: List[List[ICommand]],
         data: Union[FileStudy, FileStudyTreeConfig],
         applier: APPLY_CALLBACK,
-        metadata: VariantStudy,
+        metadata: Optional[VariantStudy] = None,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
@@ -108,8 +109,9 @@ class VariantCommandGenerator:
     def generate(
         self,
         commands: List[List[ICommand]],
-        metadata: VariantStudy,
-        study: FileStudy,
+        dest_path: Path,
+        metadata: Optional[VariantStudy] = None,
+        delete_on_failure: bool = True,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # Build file study
@@ -121,5 +123,26 @@ class VariantCommandGenerator:
             study,
             lambda command, data, _listener: command.apply(cast(FileStudy, data), _listener),
             metadata,
-            listener,
         )
+
+        if not results.success and delete_on_failure:
+            shutil.rmtree(dest_path)
+        return results
+
+    def generate_config(
+        self,
+        commands: List[List[ICommand]],
+        config: FileStudyTreeConfig,
+        metadata: Optional[VariantStudy] = None,
+    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
+        logger.info("Building config (light generation)")
+        results = VariantCommandGenerator._generate(
+            commands,
+            config,
+            lambda command, data, listener: command.apply_config(cast(FileStudyTreeConfig, data)),
+            metadata,
+        )
+        # because the config has the parent id there
+        if metadata:
+            config.study_id = metadata.id
+        return results, config

@@ -181,7 +181,13 @@ class SnapshotGenerator:
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         generator = VariantCommandGenerator(self.study_factory)
-        results = generator.generate(commands, study=file_study, metadata=variant_study, listener=listener)
+        results = generator.generate(
+            commands,
+            snapshot_dir,
+            variant_study,
+            delete_on_failure=False,  # Not needed, because we are using a temporary directory
+            listener=listener,
+        )
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
             if results.details:
