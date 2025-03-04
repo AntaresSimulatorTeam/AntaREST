@@ -9,14 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
-from study.storage.variantstudy.model.command.create_area import CreateArea
-from study.storage.variantstudy.model.command.create_link import CreateLink
-from study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
+import re
 
+import pytest
+from pydantic import ValidationError
+
+from antarest.core.exceptions import BadCandidateFormatError
 from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
+from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -143,7 +147,17 @@ max-units = 7
     def test_error_cases(self, empty_study: FileStudy, command_context: CommandContext):
         self.set_up(empty_study, command_context)
 
-        # Creates wrongly formatted candidate
+        # Wrongly formatted candidates
+        with pytest.raises(ValidationError, match="Field required"):
+            XpansionCandidateInternal(name="cdt_1", link="at - be")
+
+        with pytest.raises(
+            BadCandidateFormatError,
+            match=re.escape(
+                "The candidate is not well formatted.\nIt should either contain max-investment or (max-units and unit-size)."
+            ),
+        ):
+            XpansionCandidateInternal(name="cdt_1", link="at - be", annual_cost_per_mw=12)
 
         # Create a candidate with an already taken name
 
@@ -152,7 +166,5 @@ max-units = 7
         # Create a candidate with a fake capa registered
 
         # Rename a candidate with an already taken name
-
-        # Update a candidate with wrongly formatted parameters
 
         # Removes a candidate that doesn't exist
