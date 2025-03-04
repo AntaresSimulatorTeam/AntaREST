@@ -13,6 +13,8 @@
 from builtins import sorted
 from typing import Any, Dict, Iterable, List, Optional, Set, cast
 
+from antares.study.version import StudyVersion
+
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.model.link_model import comma_separated_enum_list
@@ -56,10 +58,10 @@ class AreaProperties(FormFieldsBaseModel):
     filter_synthesis: comma_separated_enum_list
     filter_by_year: comma_separated_enum_list
     # version 830
-    adequacy_patch_mode: AdequacyPatchMode
+    adequacy_patch_mode: Optional[AdequacyPatchMode] = None
 
     @staticmethod
-    def from_files(values: dict[str, Any]) -> "AreaProperties":
+    def from_files(values: dict[str, Any], version: StudyVersion) -> "AreaProperties":
         optimization = values["optimization"]["nodal optimization"]
         filtering = values["optimization"]["filtering"]
         args = {
@@ -72,8 +74,9 @@ class AreaProperties(FormFieldsBaseModel):
             "spread_spilled_energy_cost": optimization["spread-spilled-energy-cost"],
             "filter_synthesis": filtering["filter-synthesis"],
             "filter_by_year": filtering["filter-year-by-year"],
-            "adequacy_patch_mode": values["adequacy_patch"]["adequacy-patch"]["adequacy-patch-mode"],
         }
+        if version >= STUDY_VERSION_8_3:
+            args["adequacy_patch_mode"] = values["adequacy_patch"]["adequacy-patch"]["adequacy-patch-mode"]
         return AreaProperties.model_validate(args)
 
     def optimization_dict(self) -> dict[str, Any]:

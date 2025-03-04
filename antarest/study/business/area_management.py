@@ -143,7 +143,7 @@ class AreaManager:
         for area_id, area_cfg in areas_cfg.items():
             area_cfg["average_unsupplied_energy_cost"] = thermal_areas.unserverd_energy_cost.get(area_id, 0.0)
             area_cfg["average_spilled_energy_cost"] = thermal_areas.spilled_energy_cost.get(area_id, 0.0)
-            properties = AreaProperties.from_files(area_cfg)
+            properties = AreaProperties.from_files(area_cfg, study.version)
             area_map[area_id] = properties
 
         return area_map
@@ -184,7 +184,7 @@ class AreaManager:
                         study_version=study.version,
                     )
                 )
-            if old_area.adequacy_patch_mode != new_area.adequacy_patch_mode:
+            if new_area.adequacy_patch_mode and old_area.adequacy_patch_mode != new_area.adequacy_patch_mode:
                 commands.append(
                     UpdateConfig(
                         target=f"input/areas/{area_id}/adequacy_patch/adequacy-patch",
