@@ -65,6 +65,7 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import Up
 from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
+from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
 from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import (
     UpdateXpansionCandidate,
 )
@@ -86,6 +87,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
+    CommandName.UPDATE_THERMAL_CLUSTER.value: UpdateThermalCluster,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
     CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,

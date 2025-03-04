@@ -74,6 +74,11 @@ def empty_study_810(tmp_path: Path) -> StudyInterface:
     return make_empty_study(tmp_path, 810)
 
 
+@pytest.fixture
+def empty_study_880(tmp_path: Path) -> StudyInterface:
+    return make_empty_study(tmp_path, 880)
+
+
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
     "version, expected_output",
