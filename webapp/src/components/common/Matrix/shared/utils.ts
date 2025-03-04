@@ -306,6 +306,7 @@ export function calculateMatrixAggregates({
  * This makes the solution fragile to API changes.
  *
  * @param columns - Array of EnhancedGridColumn objects to be processed
+ * @param isDarkMode - Boolean flag based on the theme to switch columns group headers color
  * @returns Array of EnhancedGridColumn objects with grouping applied
  *
  * @example
@@ -349,7 +350,6 @@ export function groupResultColumns(
       ...column,
       group: title, // Group header title
       title: stat.toLowerCase(), // Sub columns title,
-
       themeOverride: isDarkMode ? groupHeaderTheme.dark : groupHeaderTheme.light,
     };
   });
@@ -398,6 +398,7 @@ export function generateResultColumns({ titles, width }: ResultColumnsOptions): 
 export function resizeMatrix({ matrix, newColumnCount, fillValue = 0 }: ResizeMatrixParams) {
   return matrix.map((row) => {
     const currentColumnCount = row.length;
+
     // Add new columns
     if (newColumnCount > currentColumnCount) {
       return row.concat(Array(newColumnCount - currentColumnCount).fill(fillValue));

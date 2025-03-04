@@ -14,15 +14,16 @@
 
 import type { AxiosRequestConfig } from "axios";
 import client from "./client";
+
+import type { FileDownloadTask } from "./downloads";
+import { getConfig } from "../config";
 import type {
-  MatrixDTO,
   MatrixDataSetDTO,
+  MatrixDTO,
   MatrixInfoDTO,
   MatrixDataSetUpdateDTO,
   MatrixIndex,
-} from "../../common/types";
-import type { FileDownloadTask } from "./downloads";
-import { getConfig } from "../config";
+} from "@/types/types";
 
 export const getMatrixList = async (name = "", filterOwn = false): Promise<MatrixDataSetDTO[]> => {
   const res = await client.get(

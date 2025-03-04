@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Skeleton } from "@mui/material";
+import { Divider, Skeleton } from "@mui/material";
 import MatrixGrid from "./components/MatrixGrid";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

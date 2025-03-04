@@ -17,27 +17,12 @@ import type { Actions, State } from "use-undo";
 import type { DataState } from "../hooks/useMatrixData";
 
 export interface MatrixContextValue {
-  // Data
-  data: number[][];
-  //aggregates: Partial<MatrixAggregates>;
-  //columns: EnhancedGridColumn[];
-  //dateTime: string[];
-  //rowCount: number;
-
   // State
-  //error?: Error;
-  //isLoading: boolean;
+  currentState: State<DataState>["present"];
   isSubmitting: boolean;
   updateCount: number;
 
-  // Actions
-  //handleCellEdit: (update: GridUpdate) => void;
-  //handleMultipleCellsEdit: (updates: GridUpdate[]) => void;
-  //handleUpload: (file: File) => Promise<void>;
-  //handleSaveUpdates: () => Promise<void>;
-
   // History
-  currentState: State<DataState>["present"];
   setState: Actions<DataState>["set"];
   undo: Actions<DataState>["undo"];
   redo: Actions<DataState>["redo"];

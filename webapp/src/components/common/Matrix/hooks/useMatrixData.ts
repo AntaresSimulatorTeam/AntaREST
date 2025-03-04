@@ -14,7 +14,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { t } from "i18next";
-import type { MatrixIndex } from "@/common/types";
+import type { MatrixIndex } from "@/types/types";
 import { getStudyMatrixIndex } from "@/services/api/matrix";
 import { getStudyData } from "@/services/api/study";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";

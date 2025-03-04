@@ -24,7 +24,12 @@ import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useState } from "react";
 import DataGrid from "@/components/common/DataGrid";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
-import type { EnhancedGridColumn, MatrixAggregates, GridUpdate } from "../../shared/types";
+import type {
+  EnhancedGridColumn,
+  MatrixAggregates,
+  GridUpdate,
+  NonEmptyMatrix,
+} from "../../shared/types";
 import MatrixStats from "../MatrixStats";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 

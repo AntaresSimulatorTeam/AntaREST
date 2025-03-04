@@ -136,7 +136,7 @@ function DatabaseUploadDialog({ studyId, path, open, onClose }: DatabaseUploadDi
           <Box sx={{ width: 1, height: 1, px: 2 }}>
             {selectedItem &&
               (matrix ? (
-                <MatrixContent matrix={matrix} onBack={() => setMatrixId(undefined)} />
+                <MatrixContent matrixInfo={matrix} onBack={() => setMatrixId(undefined)} />
               ) : (
                 <FileTable
                   title=""

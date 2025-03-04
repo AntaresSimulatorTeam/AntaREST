@@ -12,10 +12,15 @@
  * This file is part of the Antares project.
  */
 
+/**
+ * Updated tests for MatrixActions after changes in the Matrix component.
+ */
 import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MatrixActions from ".";
+import { MatrixProvider } from "../../context/MatrixContext";
+import { vi } from "vitest";
 
 vi.mock("../buttons/SplitButton", () => ({
   default: ({
@@ -27,7 +32,7 @@ vi.mock("../buttons/SplitButton", () => ({
     onClick: () => void;
     disabled?: boolean;
   }) => (
-    <button onClick={onClick} disabled={disabled}>
+    <button type="submit" onClick={onClick} disabled={disabled}>
       {children}
     </button>
   ),
@@ -35,57 +40,85 @@ vi.mock("../buttons/SplitButton", () => ({
 
 vi.mock("../buttons/DownloadMatrixButton", () => ({
   default: ({ disabled, label }: { disabled: boolean; label?: string }) => (
-    <button disabled={disabled}>{label || "global.export"}</button>
+    <button type="submit" disabled={disabled}>
+      {label || "global.export"}
+    </button>
   ),
 }));
 
+// New default props for MatrixActions.
+const defaultProps = {
+  onImport: vi.fn(),
+  onSave: vi.fn(),
+  onMatrixUpdated: vi.fn(),
+  studyId: "study1",
+  path: "/path/to/matrix",
+  disabled: false,
+  isTimeSeries: true,
+  canImport: false,
+};
+
+type RenderOptions = Partial<typeof defaultProps>;
+type ContextOverrides = Partial<{
+  isSubmitting: boolean;
+  updateCount: number;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+}>;
+
+// Default context values.
+const defaultContext = {
+  currentState: { data: [[0]], aggregates: {}, updateCount: 0 },
+  isSubmitting: false,
+  updateCount: 0,
+  setState: vi.fn(),
+  undo: vi.fn(),
+  redo: vi.fn(),
+  canUndo: true,
+  canRedo: true,
+};
+
+const renderMatrixActions = (
+  props: RenderOptions = {},
+  contextOverrides: ContextOverrides = {},
+) => {
+  const contextValue = { ...defaultContext, ...contextOverrides };
+  return render(
+    <MatrixProvider {...contextValue}>
+      <MatrixActions {...defaultProps} {...props} />
+    </MatrixProvider>,
+  );
+};
+
+const getButton = (label: string) => {
+  const element = screen.getByText(label);
+  const button = element.closest("button");
+
+  if (!button) {
+    throw new Error(`Button with label "${label}" not found`);
+  }
+
+  return button;
+};
+
+const getActionButton = (label: string) => {
+  const element = screen.getByLabelText(label);
+  const button = element.querySelector("button");
+
+  if (!button) {
+    throw new Error(`Action button "${label}" not found`);
+  }
+
+  return button;
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("MatrixActions", () => {
-  const defaultProps = {
-    onImport: vi.fn(),
-    onSave: vi.fn(),
-    studyId: "study1",
-    path: "/path/to/matrix",
-    disabled: false,
-    pendingUpdatesCount: 0,
-    isSubmitting: false,
-    undo: vi.fn(),
-    redo: vi.fn(),
-    canUndo: true,
-    canRedo: true,
-  };
-
-  type RenderOptions = Partial<typeof defaultProps>;
-
-  const renderMatrixActions = (props: RenderOptions = {}) => {
-    return render(<MatrixActions {...defaultProps} {...props} />);
-  };
-
-  const getButton = (label: string) => {
-    const element = screen.getByText(label);
-    const button = element.closest("button");
-
-    if (!button) {
-      throw new Error(`Button with label "${label}" not found`);
-    }
-
-    return button;
-  };
-
-  const getActionButton = (label: string) => {
-    const element = screen.getByLabelText(label);
-    const button = element.querySelector("button");
-
-    if (!button) {
-      throw new Error(`Action button "${label}" not found`);
-    }
-
-    return button;
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe("rendering", () => {
     test("renders all buttons and controls", () => {
       renderMatrixActions();
@@ -100,55 +133,66 @@ describe("MatrixActions", () => {
 
   describe("undo/redo functionality", () => {
     test("manages undo button state correctly", () => {
-      const { rerender } = renderMatrixActions();
+      const { rerender } = renderMatrixActions({}, { canUndo: true });
       expect(getActionButton("global.undo")).not.toBeDisabled();
 
-      rerender(<MatrixActions {...defaultProps} canUndo={false} />);
+      rerender(
+        <MatrixProvider {...{ ...defaultContext, canUndo: false }}>
+          <MatrixActions {...defaultProps} />
+        </MatrixProvider>,
+      );
       expect(getActionButton("global.undo")).toBeDisabled();
     });
 
     test("manages redo button state correctly", () => {
-      const { rerender } = renderMatrixActions();
+      const { rerender } = renderMatrixActions({}, { canRedo: true });
       expect(getActionButton("global.redo")).not.toBeDisabled();
 
-      rerender(<MatrixActions {...defaultProps} canRedo={false} />);
+      rerender(
+        <MatrixProvider {...{ ...defaultContext, canRedo: false }}>
+          <MatrixActions {...defaultProps} />
+        </MatrixProvider>,
+      );
       expect(getActionButton("global.redo")).toBeDisabled();
     });
 
     test("handles undo/redo button clicks", async () => {
-      const user = userEvent.setup();
-      renderMatrixActions();
+      const undoMock = vi.fn();
+      const redoMock = vi.fn();
+      renderMatrixActions({}, { undo: undoMock, redo: redoMock });
 
+      const user = userEvent.setup();
       await user.click(getActionButton("global.undo"));
-      expect(defaultProps.undo).toHaveBeenCalledTimes(1);
+      expect(undoMock).toHaveBeenCalledTimes(1);
 
       await user.click(getActionButton("global.redo"));
-      expect(defaultProps.redo).toHaveBeenCalledTimes(1);
+      expect(redoMock).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("save functionality", () => {
-    test("manages save button state based on pending updates", () => {
-      const { rerender } = renderMatrixActions();
+    test("manages save button state based on update count", () => {
+      const { rerender } = renderMatrixActions({}, { updateCount: 0 });
       expect(getButton("(0)")).toBeDisabled();
 
-      rerender(<MatrixActions {...defaultProps} pendingUpdatesCount={1} />);
+      rerender(
+        <MatrixProvider {...{ ...defaultContext, updateCount: 1 }}>
+          <MatrixActions {...defaultProps} />
+        </MatrixProvider>,
+      );
       expect(getButton("(1)")).not.toBeDisabled();
     });
 
     test("handles save button click", async () => {
       const user = userEvent.setup();
-      renderMatrixActions({ pendingUpdatesCount: 1 });
+      renderMatrixActions({}, { updateCount: 1 });
 
       await user.click(getButton("(1)"));
       expect(defaultProps.onSave).toHaveBeenCalledTimes(1);
     });
 
     test("disables save button during submission", () => {
-      renderMatrixActions({
-        isSubmitting: true,
-        pendingUpdatesCount: 1,
-      });
+      renderMatrixActions({}, { isSubmitting: true, updateCount: 1 });
       expect(getButton("(1)")).toBeDisabled();
     });
   });
@@ -163,8 +207,7 @@ describe("MatrixActions", () => {
     });
 
     test("manages button states during submission", () => {
-      renderMatrixActions({ isSubmitting: true });
-
+      renderMatrixActions({}, { isSubmitting: true });
       expect(getButton("global.import")).toBeDisabled();
       expect(getButton("global.export")).toBeDisabled();
     });
@@ -173,7 +216,11 @@ describe("MatrixActions", () => {
       const { rerender } = renderMatrixActions();
       expect(getButton("global.export")).not.toBeDisabled();
 
-      rerender(<MatrixActions {...defaultProps} disabled={true} />);
+      rerender(
+        <MatrixProvider {...defaultContext}>
+          <MatrixActions {...defaultProps} disabled={true} />
+        </MatrixProvider>,
+      );
       expect(getButton("global.export")).toBeDisabled();
     });
   });

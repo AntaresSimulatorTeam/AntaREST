@@ -16,7 +16,8 @@ import { useMemo } from "react";
 import type { AggregateType, EnhancedGridColumn } from "../shared/types";
 import { Column, Aggregate } from "../shared/constants";
 import { generateDataColumns } from "../shared/utils";
-import { aggregatesTheme } from "../styles";
+import { aggregatesAvgTheme, aggregatesTheme, dateTimeTheme } from "../styles";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 interface UseMatrixColumnsProps {
   data: number[][];
@@ -37,6 +38,7 @@ export function useMatrixColumns({
   colWidth,
   aggregateTypes,
 }: UseMatrixColumnsProps) {
+  const { isDarkMode } = useThemeColorScheme();
   return useMemo(() => {
     if (!data || data.length === 0) {
       return [];
@@ -52,7 +54,7 @@ export function useMatrixColumns({
         title: "Date",
         type: Column.DateTime,
         editable: false,
-        themeOverride: { bgCell: "#2D2E40" },
+        themeOverride: isDarkMode ? dateTimeTheme.dark : dateTimeTheme.light,
       });
     }
 
@@ -79,8 +81,12 @@ export function useMatrixColumns({
       editable: false,
       themeOverride:
         aggregateType === Aggregate.Avg
-          ? aggregatesTheme
-          : { ...aggregatesTheme, bgCell: "#464770" },
+          ? isDarkMode
+            ? aggregatesAvgTheme.dark
+            : aggregatesAvgTheme.light
+          : isDarkMode
+            ? aggregatesTheme.dark
+            : aggregatesTheme.light,
     }));
 
     return [...baseColumns, ...dataColumns, ...aggregatesColumns];
@@ -92,5 +98,6 @@ export function useMatrixColumns({
     customColumns,
     colWidth,
     aggregateTypes,
+    isDarkMode,
   ]);
 }
