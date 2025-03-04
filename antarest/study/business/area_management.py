@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
+from antarest.study.business.areas.properties_management import AreaProperties
 from antarest.study.business.areas.thermal_management import create_thermal_output
 from antarest.study.business.model.area_model import (
     AreaCreationDTO,
@@ -28,7 +29,6 @@ from antarest.study.business.model.area_model import (
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AreaFolder,
     ThermalAreasProperties,
     UIProperties,
 )
@@ -105,7 +105,7 @@ class AreaManager:
         self._command_context = command_context
 
     # noinspection SpellCheckingInspection
-    def get_all_area_props(self, study: StudyInterface) -> Mapping[str, AreaOutput]:
+    def get_all_area_props(self, study: StudyInterface) -> Mapping[str, AreaProperties]:
         """
         Retrieves all areas of a study.
 
@@ -142,19 +142,17 @@ class AreaManager:
         # and the values are objects that can be converted to `AreaFolder`.
         area_map = {}
         for area_id, area_cfg in areas_cfg.items():
-            area_folder = AreaFolder(**area_cfg)
-            area_map[area_id] = AreaOutput.from_model(
-                area_folder,
-                average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
-                average_spilled_energy_cost=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
-            )
+            area_cfg["average_unsupplied_energy_cost"] = thermal_areas.unserverd_energy_cost.get(area_id, 0.0)
+            area_cfg["average_spilled_energy_cost"] = thermal_areas.spilled_energy_cost.get(area_id, 0.0)
+            properties = AreaProperties.from_files(area_cfg)
+            area_map[area_id] = properties
 
         return area_map
 
     # noinspection SpellCheckingInspection
     def update_areas_props(
-        self, study: StudyInterface, update_areas_by_ids: Mapping[str, AreaOutput]
-    ) -> Mapping[str, AreaOutput]:
+        self, study: StudyInterface, update_areas_by_ids: Mapping[str, AreaProperties]
+    ) -> Mapping[str, AreaProperties]:
         """
         Update the properties of ares.
 
@@ -178,42 +176,38 @@ class AreaManager:
             new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
-            # Convert the DTO to a configuration object and update the configuration file.
-            old_area_folder = old_area.area_folder
-            new_area_folder = new_area.area_folder
-
-            if old_area_folder.optimization != new_area_folder.optimization:
+            if old_area.optimization_dict() != new_area.optimization_dict():
                 commands.append(
                     UpdateConfig(
                         target=f"input/areas/{area_id}/optimization",
-                        data=new_area_folder.optimization.to_config(),
+                        data=new_area.optimization_dict(),
                         command_context=command_context,
                         study_version=study.version,
                     )
                 )
-            if old_area_folder.adequacy_patch != new_area_folder.adequacy_patch and new_area_folder.adequacy_patch:
+            if old_area.adequacy_patch_mode != new_area.adequacy_patch_mode:
                 commands.append(
                     UpdateConfig(
-                        target=f"input/areas/{area_id}/adequacy_patch",
-                        data=new_area_folder.adequacy_patch.to_config(),
+                        target=f"input/areas/{area_id}/adequacy_patch/adequacy-patch",
+                        data=new_area.adequacy_patch_mode.value,
                         command_context=command_context,
                         study_version=study.version,
                     )
                 )
-            if old_area.average_unsupplied_energy_cost != new_area.average_unsupplied_energy_cost:
+            if old_area.spread_unsupplied_energy_cost != new_area.spread_unsupplied_energy_cost:
                 commands.append(
                     UpdateConfig(
                         target=f"input/thermal/areas/unserverdenergycost/{area_id}",
-                        data=new_area.average_unsupplied_energy_cost,
+                        data=new_area.spread_unsupplied_energy_cost,
                         command_context=command_context,
                         study_version=study.version,
                     )
                 )
-            if old_area.average_spilled_energy_cost != new_area.average_spilled_energy_cost:
+            if old_area.spread_spilled_energy_cost != new_area.spread_spilled_energy_cost:
                 commands.append(
                     UpdateConfig(
                         target=f"input/thermal/areas/spilledenergycost/{area_id}",
-                        data=new_area.average_spilled_energy_cost,
+                        data=new_area.spread_spilled_energy_cost,
                         command_context=command_context,
                         study_version=study.version,
                     )

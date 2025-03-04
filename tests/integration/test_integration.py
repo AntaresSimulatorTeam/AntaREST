@@ -1169,10 +1169,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Properties form
 
     res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form")
-    res_properties_config_json = res_properties_config.json()
-    res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
-    res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
-    assert res_properties_config_json == {
+    assert res_properties_config.json() == {
         "energyCostUnsupplied": 0.0,
         "energyCostSpilled": 0.0,
         "nonDispatchPower": True,
@@ -1180,8 +1177,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "otherDispatchPower": True,
         "spreadUnsuppliedEnergyCost": 0.0,
         "spreadSpilledEnergyCost": 0.0,
-        "filterSynthesis": {"hourly", "daily", "weekly", "monthly", "annual"},
-        "filterByYear": {"hourly", "daily", "weekly", "monthly", "annual"},
+        "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+        "filterByYear": "hourly, daily, weekly, monthly, annual",
         "adequacyPatchMode": "outside",
     }
 
@@ -1195,16 +1192,13 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "otherDispatchPower": False,
             "spreadUnsuppliedEnergyCost": 10.0,
             "spreadSpilledEnergyCost": 10.0,
-            "filterSynthesis": ["monthly", "annual"],
-            "filterByYear": ["hourly", "daily", "annual"],
+            "filterSynthesis": "monthly, annual",
+            "filterByYear": "hourly, daily, annual",
             "adequacyPatchMode": "inside",
         },
     )
     res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form")
-    res_properties_config_json = res_properties_config.json()
-    res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
-    res_properties_config_json["filterByYear"] = set(res_properties_config_json["filterByYear"])
-    assert res_properties_config_json == {
+    assert res_properties_config.json() == {
         "energyCostUnsupplied": 2.0,
         "energyCostSpilled": 4.0,
         "nonDispatchPower": False,
@@ -1212,8 +1206,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "otherDispatchPower": False,
         "spreadUnsuppliedEnergyCost": 10.0,
         "spreadSpilledEnergyCost": 10.0,
-        "filterSynthesis": {"monthly", "annual"},
-        "filterByYear": {"hourly", "daily", "annual"},
+        "filterSynthesis": "monthly, annual",
+        "filterByYear": "hourly, daily, annual",
         "adequacyPatchMode": "inside",
     }
 

@@ -31,7 +31,7 @@ from antarest.study.business.adequacy_patch_management import AdequacyPatchFormF
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
-from antarest.study.business.areas.properties_management import PropertiesFormFields
+from antarest.study.business.areas.properties_management import AreaProperties
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
     STStorageManager,
@@ -1872,14 +1872,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/properties/form",
         tags=[APITag.study_data],
         summary="Get properties for a given area",
-        response_model=PropertiesFormFields,
+        response_model=AreaProperties,
         response_model_exclude_none=True,
     )
     def get_properties_form_values(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> PropertiesFormFields:
+    ) -> AreaProperties:
         logger.info(
             "Getting properties form values for study %s and area %s",
             uuid,
@@ -1899,7 +1899,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_properties_form_values(
         uuid: str,
         area_id: str,
-        form_fields: PropertiesFormFields,
+        form_fields: AreaProperties,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(

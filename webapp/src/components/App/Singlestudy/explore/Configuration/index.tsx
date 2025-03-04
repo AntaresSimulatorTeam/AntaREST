@@ -81,13 +81,13 @@ function Configuration() {
                 studyId={study.id}
                 type="areas"
                 columns={[
-                  "averageUnsuppliedEnergyCost",
+                  "energyCostUnsupplied",
+                  "energyCostSpilled",
                   "spreadUnsuppliedEnergyCost",
-                  "averageSpilledEnergyCost",
                   "spreadSpilledEnergyCost",
-                  "nonDispatchablePower",
-                  "dispatchableHydroPower",
-                  "otherDispatchablePower",
+                  "nonDispatchPower",
+                  "dispatchHydroPower",
+                  "otherDispatchPower",
                 ]}
               />
             ),

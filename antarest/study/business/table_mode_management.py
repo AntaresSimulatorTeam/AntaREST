@@ -20,13 +20,13 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
+from antarest.study.business.areas.properties_management import AreaProperties
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintInput
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.link_model import LinkBaseDTO
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
 from antarest.study.business.model.sts_model import STStorageUpdate
@@ -197,7 +197,7 @@ class TableModeManager:
         """
         if table_type == TableModeType.AREA:
             # Use AreaOutput to update properties of areas, which may include `None` values
-            area_props_by_ids = {key: AreaOutput(**values) for key, values in data.items()}
+            area_props_by_ids = {key: AreaProperties.model_validate(values) for key, values in data.items()}
             areas_map = self._area_manager.update_areas_props(study, area_props_by_ids)
             data = {area_id: area.model_dump(by_alias=True, exclude_none=True) for area_id, area in areas_map.items()}
             return data
