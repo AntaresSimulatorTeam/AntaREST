@@ -47,7 +47,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "energyCostSpilled",
     "spreadSpilledEnergyCost",
     "filterSynthesis",
-    "filterYearByYear",
+    "filterByYear",
     // Since v8.3
     "adequacyPatchMode",
   ],

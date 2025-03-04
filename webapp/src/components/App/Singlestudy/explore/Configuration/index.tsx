@@ -98,7 +98,7 @@ function Configuration() {
               <TableMode
                 studyId={study.id}
                 type="areas"
-                columns={["filterYearByYear", "filterSynthesis"]}
+                columns={["filterByYear", "filterSynthesis"]}
               />
             ),
           ],
