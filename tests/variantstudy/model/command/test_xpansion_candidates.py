@@ -14,7 +14,7 @@ import re
 import pytest
 from pydantic import ValidationError
 
-from antarest.core.exceptions import BadCandidateFormatError
+from antarest.core.exceptions import BadCandidateFormatError, WrongLinkFormatError
 from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -159,12 +159,62 @@ max-units = 7
         ):
             XpansionCandidateInternal(name="cdt_1", link="at - be", annual_cost_per_mw=12)
 
-        # Create a candidate with an already taken name
+        with pytest.raises(WrongLinkFormatError, match="The link must be in the format 'area1 - area2'"):
+            XpansionCandidateInternal(name="cdt_1", link="fake link")
+
+        # Create a candidate on a fake area
+        cdt = XpansionCandidateInternal(name="cdt_1", link="fake - link", annual_cost_per_mw=12, max_investment=100)
+        cmd = CreateXpansionCandidate(candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7)
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        assert "Area is not found: 'fake'" in output.message
 
         # Create a candidate on a fake link
+        cdt = XpansionCandidateInternal(name="cdt_1", link="at - fake", annual_cost_per_mw=12, max_investment=100)
+        cmd = CreateXpansionCandidate(candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7)
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        assert "The link from 'at' to 'fake' not found" in output.message
 
         # Create a candidate with a fake capa registered
+        cdt = XpansionCandidateInternal(
+            name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100, direct_link_profile="fake_capa"
+        )
+        cmd = CreateXpansionCandidate(candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7)
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        assert "The 'direct_link_profile' file 'fake_capa' does not exist" in output.message
+
+        # Create a candidate with an already taken name
+        cmd = CreateXpansionCandidate(
+            candidate=XpansionCandidateInternal(
+                name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100
+            ),
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status, output.message
+
+        cmd = CreateXpansionCandidate(
+            candidate=XpansionCandidateInternal(
+                name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100
+            ),
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        assert "The candidate 'cdt_1' already exists" in output.message
 
         # Rename a candidate with an already taken name
 
         # Removes a candidate that doesn't exist
+        cmd = RemoveXpansionCandidate(
+            candidate_name="fake_name",
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        assert "The candidate 'fake_name' does not exist" in output.message

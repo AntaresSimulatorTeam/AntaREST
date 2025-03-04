@@ -47,7 +47,7 @@ class RemoveXpansionCandidate(ICommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
-        candidate_id = next(cdt_id for cdt_id, cdt in candidates.items() if cdt["name"] == self.candidate_name)
+        candidate_id = next((cdt_id for cdt_id, cdt in candidates.items() if cdt["name"] == self.candidate_name), None)
 
         if not candidate_id:
             raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
