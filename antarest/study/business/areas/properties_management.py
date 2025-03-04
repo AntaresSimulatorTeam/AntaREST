@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from builtins import sorted
-from typing import Any, Dict, Iterable, List, Optional, Set, cast
+from typing import Any, Dict, List, Optional, cast
 
 from antares.study.version import StudyVersion
 
@@ -33,17 +32,6 @@ FILTERING_PATH = f"{OPTIMIZATION_PATH}/filtering"
 # Keep the order
 FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
 DEFAULT_FILTER_VALUE = FILTER_OPTIONS
-
-
-def sort_filter_options(options: Iterable[str]) -> List[str]:
-    return sorted(
-        options,
-        key=lambda x: FILTER_OPTIONS.index(x),
-    )
-
-
-def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None) -> str:
-    return ", ".join(sort_filter_options(encoded_value))
 
 
 @all_optional_model
@@ -127,12 +115,10 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     },
     "filter_synthesis": {
         "path": f"{FILTERING_PATH}/filter-synthesis",
-        "decode": decode_filter,
         "default_value": DEFAULT_FILTER_VALUE,
     },
     "filter_by_year": {
         "path": f"{FILTERING_PATH}/filter-year-by-year",
-        "decode": decode_filter,
         "default_value": DEFAULT_FILTER_VALUE,
     },
     "adequacy_patch_mode": {
