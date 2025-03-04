@@ -74,24 +74,27 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        for i, existing_constraint in enumerate(study_data.bindings):
-            bc_props = self.bc_props_by_id[existing_constraint.id]
-            bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
-            areas_set = existing_constraint.areas
-            clusters_set = existing_constraint.clusters
-            group = bc_props_as_dict.get("group") or existing_constraint.group
-            operator = bc_props_as_dict.get("operator") or existing_constraint.operator
-            time_step = bc_props_as_dict.get("time_step") or existing_constraint.time_step
-            new_constraint = BindingConstraintDTO(
-                id=existing_constraint.id,
-                group=group,
-                areas=areas_set,
-                clusters=clusters_set,
-                operator=operator,
-                time_step=time_step,
-            )
-            study_data.bindings[i] = new_constraint
-        return CommandOutput(status=True), {}
+        def update_binding_constraint_dto(existing_constraint: BindingConstraintDTO) -> BindingConstraintDTO:
+            if existing_constraint.id in self.bc_props_by_id:
+                bc_props = self.bc_props_by_id[existing_constraint.id]
+                bc_props_as_dict = bc_props.model_dump(mode="json", exclude_unset=True)
+                group = bc_props_as_dict.get("group") or existing_constraint.group
+                operator = bc_props_as_dict.get("operator") or existing_constraint.operator
+                time_step = bc_props_as_dict.get("time_step") or existing_constraint.time_step
+                areas = bc_props_as_dict.get("areas") or existing_constraint.areas
+                clusters = bc_props_as_dict.get("clusters") or existing_constraint.clusters
+                return BindingConstraintDTO(
+                    id=existing_constraint.id,
+                    group=group,
+                    areas=areas,
+                    clusters=clusters,
+                    operator=operator,
+                    time_step=time_step,
+                )
+            return existing_constraint
+
+        study_data.bindings = list(map(update_binding_constraint_dto, study_data.bindings))
+        return CommandOutput(status=True, message="_apply_config success !"), {}
 
     @model_validator(mode="before")
     @classmethod
@@ -131,15 +134,15 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                 )
             # it's important to use exclude_unset=True. Otherwise we'd override
             # existing values with the default bc_props values.
-            bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
+            bc_props_as_dict = bc_props.model_dump(mode="json", exclude_unset=True)
             bc_json = bcs_json[bc_index_by_id[bc_id]]
             bc_json_copy = copy.deepcopy(bc_json)
             bc_json.update(bc_props_as_dict)
             if "time_step" in bc_props_as_dict and bc_props.time_step != BindingConstraintFrequency(
-                bc_json_copy["type"]
+                bc_json_copy["time_step"]
             ):
                 # The user changed the time step, we need to update the matrix accordingly
-                for [target, next_matrix] in __generate_replacement_matrices(
+                for [target, next_matrix] in UpdateBindingConstraints.__generate_replacement_matrices(
                     bc_id, self.study_version, bc_props, bc_props.operator
                 ):
                     # prepare matrix as a dict to save it in the tree
@@ -174,32 +177,32 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
     def get_inner_matrices(self) -> t.List[str]:
         return []
 
-
-def __generate_replacement_matrices(
-    bc_id: str,
-    study_version: StudyVersion,
-    bc_props: BindingConstraintProperties,
-    operator: BindingConstraintOperator,
-) -> t.Iterator[t.Tuple[str, t.List[t.List[MatrixData]]]]:
-    """
-    Yield one or two (when operator is "BOTH") matrices intialized with default values.
-    """
-    if study_version < STUDY_VERSION_8_7:
-        target = f"input/bindingconstraints/{bc_id}"
-        matrix = {
-            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
-            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
-            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
-        }[bc_props.time_step].tolist()
-        yield (target, matrix)
-    else:
-        matrix = {
-            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
-            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
-            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
-        }[bc_props.time_step].tolist()
-        matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[operator]
-        for matrix_name in matrices_to_replace:
-            matrix_id = matrix_name.format(bc_id=bc_id)
-            target = f"input/bindingconstraints/{matrix_id}"
+    @staticmethod
+    def __generate_replacement_matrices(
+        bc_id: str,
+        study_version: StudyVersion,
+        bc_props: BindingConstraintProperties,
+        operator: BindingConstraintOperator,
+    ) -> t.Iterator[t.Tuple[str, t.List[t.List[MatrixData]]]]:
+        """
+        Yield one or two (when operator is "BOTH") matrices intialized with default values.
+        """
+        if study_version < STUDY_VERSION_8_7:
+            target = f"input/bindingconstraints/{bc_id}"
+            matrix = {
+                BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
+                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
+                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
+            }[bc_props.time_step].tolist()
             yield (target, matrix)
+        else:
+            matrix = {
+                BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
+                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
+                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
+            }[bc_props.time_step].tolist()
+            matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[operator]
+            for matrix_name in matrices_to_replace:
+                matrix_id = matrix_name.format(bc_id=bc_id)
+                target = f"input/bindingconstraints/{matrix_id}"
+                yield (target, matrix)
