@@ -861,3 +861,62 @@ class TestSTStorage:
             "replace_matrix",
             "remove_st_storage",
         ]
+
+    @pytest.mark.parametrize("base_study_id", [{"name": "Base Study", "version": 860}], indirect=True)
+    @pytest.mark.parametrize("variant_id", ["Variant Study"], indirect=True)
+    def test_uppercase_name_update(self, client: TestClient, user_access_token: str, variant_id: str) -> None:
+        """
+        In this test, we want to check that short-term storages are updated correctly
+        also when the identifier in the section name is in uppercase, which
+        happens when studies are created outside from antares-web.
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create an area
+        area_name = "France"
+        res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": area_name, "type": "AREA"})
+        assert res.status_code == 200, res.json()
+        area_cfg = res.json()
+        area_id = area_cfg["id"]
+
+        # Create a short-term storage
+        cluster_name = "Tesla1"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+            json={
+                "name": cluster_name,
+                "group": "Battery",
+                "injectionNominalCapacity": 4500,
+                "withdrawalNominalCapacity": 4230,
+                "reservoirCapacity": 5700,
+            },
+        )
+        assert res.status_code == 200, res.json()
+        assert res.json()["id"] == "tesla1"
+
+        # Perform raw call in order to change the section name to upper case "Tesla1"
+        res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
+        assert res.status_code == 200, res.json()
+        content = dict(res.json())
+        assert list(content.keys()) == ["tesla1"]
+        content["Tesla1"] = content.pop("tesla1")
+        res = client.post(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list", json=content)
+        assert res.status_code == 204, res.json()
+        res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
+        assert res.status_code == 200, res.json()
+        assert list(res.json().keys()) == ["Tesla1"]
+
+        # Now INI section has capitals, we update the short-term storage using its ID
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/tesla1", json={"reservoirCapacity": 5600}
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["reservoirCapacity"] == 5600
+
+        # Check that getting the list works and that is has correctly been updated
+        res = client.get(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+        )
+        assert res.status_code in {200, 201}, res.json()
+        assert res.json()[0]["reservoirCapacity"] == 5600
