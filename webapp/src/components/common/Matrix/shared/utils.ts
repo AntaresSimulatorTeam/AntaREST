@@ -86,6 +86,15 @@ export function formatGridNumber({ value, maxDecimals = 0 }: FormatGridNumberOpt
       return digit + acc;
     }, "");
 
+  // const options: Intl.NumberFormatOptions = {
+  //   maximumFractionDigits: maxDecimals,
+  //   useGrouping: true,
+  // };
+
+  // console.log("numValue", numValue);
+
+  // return numValue.toLocaleString("fr-FR", options).replace(",", ".");
+
   return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
 
@@ -252,12 +261,12 @@ export function calculateMatrixAggregates({
 
   for (const row of matrix) {
     if (types.includes(Aggregate.Min)) {
-      aggregates.min = aggregates.min || [];
+      aggregates.min ??= [];
       aggregates.min.push(Math.min(...row));
     }
 
     if (types.includes(Aggregate.Max)) {
-      aggregates.max = aggregates.max || [];
+      aggregates.max ??= [];
       aggregates.max.push(Math.max(...row));
     }
 
@@ -265,12 +274,12 @@ export function calculateMatrixAggregates({
       const sum = row.reduce((acc, num) => acc + num, 0);
 
       if (types.includes(Aggregate.Avg)) {
-        aggregates.avg = aggregates.avg || [];
+        aggregates.avg ??= [];
         aggregates.avg.push(Number((sum / row.length).toFixed()));
       }
 
       if (types.includes(Aggregate.Total)) {
-        aggregates.total = aggregates.total || [];
+        aggregates.total ??= [];
         aggregates.total.push(Number(sum.toFixed()));
       }
     }

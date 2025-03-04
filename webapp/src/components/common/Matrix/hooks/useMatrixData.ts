@@ -32,7 +32,6 @@ import useUndo from "use-undo";
 export interface DataState {
   data: MatrixDataDTO["data"];
   aggregates: Partial<MatrixAggregates>;
-  updateCount: number;
 }
 
 interface UseMatrixDataProps {
@@ -50,11 +49,14 @@ export function useMatrixData({
   fetchFn,
   rowCountSource = "matrixIndex",
 }: UseMatrixDataProps) {
-  const [{ present: currentState }, { set: setState, undo, redo, canRedo }] = useUndo<DataState>({
+  const [
+    { present: currentState, past },
+    { set: setMatrixData, reset, undo, redo, canUndo, canRedo },
+  ] = useUndo<DataState>({
     data: [],
     aggregates: { min: [], max: [], avg: [], total: [] },
-    updateCount: 0,
   });
+
   const [index, setIndex] = useState<MatrixIndex>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error>();
@@ -68,10 +70,9 @@ export function useMatrixData({
         getStudyMatrixIndex(studyId, path),
       ]);
 
-      setState({
+      reset({
         data: matrix.data,
         aggregates: calculateMatrixAggregates({ matrix: matrix.data, types: aggregateTypes }),
-        updateCount: 0,
       });
 
       setIndex(index);
@@ -82,7 +83,7 @@ export function useMatrixData({
     } finally {
       setIsLoading(false);
     }
-  }, [fetchFn, studyId, path, setState, aggregateTypes, enqueueErrorSnackbar]);
+  }, [fetchFn, studyId, path, reset, aggregateTypes, enqueueErrorSnackbar]);
 
   useEffect(() => {
     fetchMatrix();
@@ -96,7 +97,7 @@ export function useMatrixData({
     // Current state
     currentState,
     aggregates: currentState.aggregates,
-    updateCount: currentState.updateCount,
+    updateCount: past.length,
 
     // Metadata
     dateTime,
@@ -107,10 +108,11 @@ export function useMatrixData({
     error,
 
     // Actions
-    setState,
+    setMatrixData,
+    reset,
     undo,
     redo,
-    canUndo: currentState.updateCount > 0,
+    canUndo,
     canRedo,
     reload: fetchMatrix,
   };

@@ -27,7 +27,9 @@ interface UseMatrixMutationsProps {
   studyId: string;
   path: string;
   currentState: DataState;
-  setState: Actions<DataState>["set"];
+  setMatrixData: Actions<DataState>["set"];
+  reset: Actions<DataState>["reset"];
+  canUndo: Actions<DataState>["canUndo"];
   reload: VoidFunction; // check type
   aggregateTypes: AggregateType[];
 }
@@ -44,7 +46,9 @@ export function useMatrixMutations({
   studyId,
   path,
   currentState,
-  setState,
+  setMatrixData,
+  reset,
+  canUndo,
   reload,
   aggregateTypes,
 }: UseMatrixMutationsProps): MatrixMutationsResult {
@@ -69,13 +73,12 @@ export function useMatrixMutations({
         types: aggregateTypes,
       });
 
-      setState({
+      setMatrixData({
         data: updatedData,
         aggregates: newAggregates,
-        updateCount: (currentState.updateCount || 0) + 1,
       });
     },
-    [currentState, setState, aggregateTypes],
+    [currentState, setMatrixData, aggregateTypes],
   );
 
   const handleCellEdit = useCallback(
@@ -105,7 +108,7 @@ export function useMatrixMutations({
   );
 
   const handleSaveUpdates = useCallback(async () => {
-    if (!(currentState.updateCount > 0)) {
+    if (!canUndo) {
       return;
     }
 
@@ -113,17 +116,16 @@ export function useMatrixMutations({
     try {
       const updatedMatrix = await updateMatrix(studyId, path, currentState.data);
 
-      setState({
+      reset({
         ...currentState,
         data: updatedMatrix,
-        updateCount: 0,
       });
     } catch (error) {
       enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), toError(error));
     } finally {
       setIsSubmitting(false);
     }
-  }, [currentState, studyId, path, setState, enqueueErrorSnackbar]);
+  }, [canUndo, studyId, path, currentState, reset, enqueueErrorSnackbar]);
 
   return {
     isSubmitting,

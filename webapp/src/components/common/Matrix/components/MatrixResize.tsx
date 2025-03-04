@@ -13,7 +13,7 @@
  */
 
 import { useState } from "react";
-import { Box, Button, TextField } from "@mui/material";
+import { Box, Button, TextField, Tooltip } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import Transform from "@mui/icons-material/Transform";
 import { resizeMatrix } from "../shared/utils";
@@ -24,49 +24,43 @@ import { useMatrixContext } from "../context/MatrixContext";
 import { clamp } from "ramda";
 
 function MatrixResize() {
-  const { currentState, setState, isSubmitting: isMatrixSubmitting } = useMatrixContext();
+  const { currentState, setMatrixData, isSubmitting: isMatrixSubmitting } = useMatrixContext();
   const { t } = useTranslation();
   const errorSnackBar = useEnqueueErrorSnackbar();
-  const initialColumnCount = currentState.data[0].length;
-  const [columnCount, setColumnCount] = useState(initialColumnCount);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const currentColumnCount = currentState.data[0].length;
+  const [targetColumnCount, setTargetColumnCount] = useState(currentColumnCount);
 
   useUpdateEffect(() => {
-    setColumnCount(initialColumnCount);
-  }, [initialColumnCount]);
+    setTargetColumnCount(currentColumnCount);
+  }, [currentColumnCount]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleMatrixResize = () => {
-    if (columnCount === initialColumnCount) {
+    if (targetColumnCount === currentColumnCount) {
       return;
     }
-
-    setIsSubmitting(true);
 
     try {
       const updatedMatrix = resizeMatrix({
         matrix: currentState.data,
-        newColumnCount: columnCount,
+        newColumnCount: targetColumnCount,
       });
 
-      setState({
+      setMatrixData({
         ...currentState,
         data: updatedMatrix,
-        updateCount: currentState.updateCount + 1,
       });
     } catch (error) {
       errorSnackBar(t("matrix.error.matrixUpdate"), toError(error));
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    setColumnCount(clamp(1, 1000, value));
+    setTargetColumnCount(clamp(1, 1000, value));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -77,13 +71,13 @@ function MatrixResize() {
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <TextField
         type="number"
-        size="small"
-        value={columnCount}
+        size="extra-small"
+        value={targetColumnCount}
         onChange={handleChange}
         disabled={isMatrixSubmitting}
         variant="outlined"
         sx={{
-          width: 90,
+          width: 75,
           margin: 0,
         }}
         slotProps={{
@@ -95,17 +89,17 @@ function MatrixResize() {
           },
         }}
       />
-      <Button
-        onClick={handleMatrixResize}
-        loading={isSubmitting}
-        loadingPosition="start"
-        startIcon={<Transform />}
-        variant="contained"
-        size="small"
-        disabled={columnCount === initialColumnCount || isMatrixSubmitting}
-      >
-        {t("matrix.resize")}
-      </Button>
+      <Tooltip title={t("matrix.resize")}>
+        <span>
+          <Button
+            color="primary"
+            variant="contained"
+            startIcon={<Transform />}
+            onClick={handleMatrixResize}
+            disabled={targetColumnCount === currentColumnCount || isMatrixSubmitting}
+          />
+        </span>
+      </Tooltip>
     </Box>
   );
 }

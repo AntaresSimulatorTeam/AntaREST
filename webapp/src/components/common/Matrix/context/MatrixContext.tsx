@@ -23,7 +23,8 @@ export interface MatrixContextValue {
   updateCount: number;
 
   // History
-  setState: Actions<DataState>["set"];
+  setMatrixData: Actions<DataState>["set"];
+  reset: Actions<DataState>["reset"];
   undo: Actions<DataState>["undo"];
   redo: Actions<DataState>["redo"];
   canUndo: Actions<DataState>["canUndo"];

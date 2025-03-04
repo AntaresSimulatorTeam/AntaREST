@@ -54,14 +54,14 @@ function MatrixActions({
     <Box sx={{ display: "flex", alignItems: "center", gap: 1, overflowX: "auto" }}>
       <Tooltip title={t("global.undo")}>
         <span>
-          <IconButton onClick={undo} disabled={!canUndo}>
+          <IconButton onClick={undo} disabled={isSubmitting || !canUndo}>
             <UndoIcon fontSize="small" />
           </IconButton>
         </span>
       </Tooltip>
       <Tooltip title={t("global.redo")}>
         <span>
-          <IconButton onClick={redo} disabled={!canRedo}>
+          <IconButton onClick={redo} disabled={isSubmitting || !canRedo}>
             <RedoIcon fontSize="small" />
           </IconButton>
         </span>
@@ -73,7 +73,7 @@ function MatrixActions({
         startIcon={<SaveIcon />}
         variant="contained"
         size="small"
-        disabled={updateCount === 0}
+        disabled={!canUndo}
       >
         ({updateCount})
       </Button>

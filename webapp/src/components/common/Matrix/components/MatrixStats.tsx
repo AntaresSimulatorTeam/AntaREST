@@ -13,7 +13,7 @@
  */
 
 import { Box, Typography, Divider } from "@mui/material";
-import { formatGridNumber } from "../../shared/utils";
+import { formatGridNumber } from "../shared/utils";
 
 interface MatrixStatsProps {
   stats: {
@@ -66,7 +66,7 @@ function MatrixStats({ stats }: MatrixStatsProps) {
               display: "flex",
               p: 0.5,
               alignItems: "center",
-              color: "lightgray",
+              color: "text.secondary",
               fontSize: 10,
               fontWeight: 600,
               textTransform: "uppercase",

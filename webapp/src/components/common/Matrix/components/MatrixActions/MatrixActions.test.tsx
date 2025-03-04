@@ -46,7 +46,6 @@ vi.mock("../buttons/DownloadMatrixButton", () => ({
   ),
 }));
 
-// New default props for MatrixActions.
 const defaultProps = {
   onImport: vi.fn(),
   onSave: vi.fn(),
@@ -68,12 +67,12 @@ type ContextOverrides = Partial<{
   canRedo: boolean;
 }>;
 
-// Default context values.
 const defaultContext = {
   currentState: { data: [[0]], aggregates: {}, updateCount: 0 },
   isSubmitting: false,
   updateCount: 0,
-  setState: vi.fn(),
+  setMatrixData: vi.fn(),
+  reset: vi.fn(),
   undo: vi.fn(),
   redo: vi.fn(),
   canUndo: true,
