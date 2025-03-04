@@ -49,7 +49,16 @@ nav:
               - 'Miscellaneous Generators': 'user-guide/study/areas/10-misc-gen.md'
           - 'Links': 'user-guide/study/03-links.md'
           - 'Binding Constraints': 'user-guide/study/04-binding-constraints.md'
-      - 'Simulation Configuration': 'user-guide/simulation-configuration/all-configurations.md'
+      - 'Simulation Configuration':
+          'General Configuration': 'user-guide/simulation-configuration/all-configurations.md#general-configuration'
+          'TS management': 'user-guide/simulation-configuration/all-configurations.md#time-series-management'
+          'Optimization preferences': 'user-guide/simulation-configuration/all-configurations.md#optimization-preferences'
+          'Adequacy Patch': 'user-guide/simulation-configuration/all-configurations.md#adequacy-patch'
+          'Advanced parameters': 'user-guide/simulation-configuration/all-configurations.md#advanced-parameters'
+          'Economic Opt.': 'user-guide/simulation-configuration/all-configurations.md#economic-opt'
+          'Geographic Trimming (Areas)': 'user-guide/simulation-configuration/all-configurations.md#geographic-trimming(areas)'
+          'Geographic Trimming (Links)': 'user-guide/simulation-configuration/all-configurations.md#geographic-trimming(links)'
+          'Geographic Trimming (Binding Constraints)': 'user-guide/simulation-configuration/all-configurations.md#geographic-trimming(binding-constrainte)'
       - 'Table Mode': 'user-guide/study/06-table-mode.md'
       - 'Xpansion' : user-guide/study/07-xpansion.md
       - 'Results' : user-guide/study/08-results.md
