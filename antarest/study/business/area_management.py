@@ -190,7 +190,7 @@ class AreaManager:
             if new_area.adequacy_patch_mode and old_area.adequacy_patch_mode != new_area.adequacy_patch_mode:
                 commands.append(
                     UpdateConfig(
-                        target=f"input/areas/{area_id}/adequacy_patch/adequacy-patch",
+                        target=f"input/areas/{area_id}/adequacy_patch/adequacy-patch/adequacy-patch-mode",
                         data=new_area.adequacy_patch_mode.value,
                         command_context=command_context,
                         study_version=study.version,
