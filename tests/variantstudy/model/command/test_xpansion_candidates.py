@@ -17,6 +17,7 @@ from study.storage.variantstudy.model.command.create_xpansion_candidate import C
 from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -67,7 +68,18 @@ class TestXpansionCandidate:
         )
         output = cmd.apply(study_data=empty_study)
         assert output.status, output.message
+
         # Updates one
+        cmd = UpdateXpansionCandidate(
+            candidate_name="cdt_1",
+            new_properties=XpansionCandidateInternal(
+                name="cdt_1", link="at - be", annual_cost_per_mw=30, max_investment=100, direct_link_profile="capa1.txt"
+            ),
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status, output.message
 
         # Removes one and assert the other still exist
 

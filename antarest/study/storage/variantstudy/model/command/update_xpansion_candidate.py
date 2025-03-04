@@ -52,11 +52,9 @@ class UpdateXpansionCandidate(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        candidates = study_data.tree.get(["user", "expansion", "candidates"])
-
         # Checks candidate validity
-        assert_candidate_is_correct(candidates, study_data, self.new_properties)
-
+        assert_candidate_is_correct(study_data, self.new_properties)
+        candidates = study_data.tree.get(["user", "expansion", "candidates"])
         if self.new_properties.name != self.candidate_name:
             assert_xpansion_candidate_name_is_not_already_taken(candidates, self.new_properties.name)
 

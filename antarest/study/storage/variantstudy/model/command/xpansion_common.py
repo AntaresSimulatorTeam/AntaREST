@@ -88,9 +88,6 @@ def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCan
         raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 
 
-def assert_candidate_is_correct(
-    existing_candidates: dict[str, Any], file_study: FileStudy, candidate: XpansionCandidateInternal
-) -> None:
-    assert_xpansion_candidate_name_is_not_already_taken(existing_candidates, candidate.name)
+def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandidateInternal) -> None:
     assert_link_profile_are_files(file_study, candidate)
     assert_link_exist(file_study, candidate)
