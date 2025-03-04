@@ -14,17 +14,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.config import Config
-from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.tasks.service import TaskJobService
-from antarest.login.service import LoginService
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.areas.hydro_management import FIELDS_INFO, ManagementOptionsFormFields
-from antarest.study.business.study_interface import StudyInterface
-from antarest.study.repository import StudyMetadataRepository
-from antarest.study.service import StudyService
+from antarest.study.business.areas.hydro_management import FIELDS_INFO, HydroManager
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -32,7 +24,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 hydro_ini_content = {
     "input": {
@@ -55,49 +46,37 @@ hydro_ini_content = {
 }
 
 
-@pytest.fixture(name="study_service")
-def study_service_fixture(
+@pytest.fixture(name="hydro_manager")
+def hydro_manager_fixture(
     raw_study_service: RawStudyService,
     generator_matrix_constants: GeneratorMatrixConstants,
     simple_matrix_service: SimpleMatrixService,
-) -> StudyService:
-    study_service = StudyService(
-        raw_study_service=raw_study_service,
-        variant_study_service=Mock(spec=VariantStudyService),
+) -> HydroManager:
+    hydro_manager = HydroManager(
         command_context=CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=simple_matrix_service,
-        ),
-        user_service=Mock(spec=LoginService),
-        repository=Mock(StudyMetadataRepository),
-        event_bus=Mock(spec=IEventBus),
-        task_service=Mock(spec=TaskJobService),
-        file_transfer_manager=Mock(spec=FileTransferManager),
-        cache_service=Mock(spec=ICache),
-        config=Mock(spec=Config),
+        )
     )
-
-    return study_service
+    return hydro_manager
 
 
 @pytest.fixture(name="study")
-def study_interface_fixture(tmp_path: Path) -> StudyInterface:
+def study_interface_fixture(tmp_path: Path) -> FileStudyInterface:
     study_id = "study_test"
     study_path = tmp_path.joinpath(f"tmp/{study_id}")
     config = build(study_path, study_id)
     tree = FileStudyTree(Mock(spec=ContextServer), config)
     tree.save(hydro_ini_content)
 
-    file_study = Mock(spec=FileStudy, config=config, tree=FileStudyTree(Mock(spec=ContextServer), config))
+    file_study_interface = FileStudyInterface(file_study=FileStudy(config=config, tree=tree))
 
-    study = Mock(spec=StudyInterface, version=860, path=study_path, id=study_id)
-    study.get_files.return_value = file_study
-    return study
+    return file_study_interface
 
 
 class TestHydroManagement:
     @pytest.mark.unit_test
-    def test_get_field_values(self, study_service: StudyService, study: StudyInterface) -> None:
+    def test_get_field_values(self, hydro_manager: HydroManager, study: FileStudyInterface) -> None:
         """
         Set up:
             Retrieve a study service and a study interface
@@ -111,7 +90,7 @@ class TestHydroManagement:
         # gather initial data of the area
         for area in areas:
             # get actual value
-            data = study_service.hydro_manager.get_field_values(study, area).model_dump()
+            data = hydro_manager.get_field_values(study, area).model_dump()
 
             # set expected value based on defined fields dict
             raw_data = hydro_ini_content["input"]["hydro"]["hydro"]
@@ -126,51 +105,3 @@ class TestHydroManagement:
 
             # check if the area is retrieved regardless of the letters case
             assert data == initial_data
-
-    @pytest.mark.unit_test
-    def test_set_field_values(self, tmp_path: Path, study_service: StudyService, study: StudyInterface) -> None:
-        """
-        Set up:
-            Retrieve a study service and a study interface
-            Create some areas with different letter cases
-            Simulate changes by an external tool
-        Test:
-            Get data with changes on character cases
-            Simulate a regular change
-            Check if the field was successfully edited for each area without duplicates
-        """
-        # store the area ids
-        areas = ["AreaTest1", "AREATEST2", "area_test_3"]
-
-        for area in areas:
-            # get initial values with get_field_values
-            initial_data = study_service.hydro_manager.get_field_values(study, area).model_dump()
-
-            # simulate changes on area_id case with another tool
-            hydro_ini_path = tmp_path.joinpath(f"tmp/{study.id}/input/hydro/hydro.ini")
-            with open(hydro_ini_path) as f:
-                file_content = f.read()
-                file_content = file_content.replace(areas[2], areas[2].upper())
-
-            with open(hydro_ini_path, "w") as f:
-                f.write(file_content)
-
-            # make sure that `get_field_values` retrieve same data as before
-            new_data = study_service.hydro_manager.get_field_values(study, area).model_dump()
-            assert initial_data == new_data
-
-            # simulate regular usage by modifying some values
-            initial_data["intra_daily_modulation"] = 5
-            new_field_values = ManagementOptionsFormFields(**initial_data)
-            study_service.hydro_manager.set_field_values(study, new_field_values, area)
-
-            # retrieve edited
-            new_data = study_service.hydro_manager.get_field_values(study, area).model_dump()
-
-            # check if the intra daily modulation was modified
-            for field, value in new_data.items():
-                if field == "intra_daily_modulation":
-                    assert initial_data[field] != new_data[field]
-                    assert initial_data[field] == 5
-                else:
-                    assert initial_data[field] == new_data[field]

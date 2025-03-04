@@ -17,7 +17,6 @@ from pydantic import Field
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -111,10 +110,9 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
 class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
-        self.area_id = ""
 
     @staticmethod
-    def get_id(area_id: str, field_dict: Dict[str, FieldInfo]) -> str:
+    def _get_id(area_id: str, field_dict: Dict[str, FieldInfo]) -> str:
         """
         Try to match the current area_id with the one from the original file.
         These two ids could mismatch based on their character cases since the id from
@@ -123,13 +121,11 @@ class HydroManager:
 
         Returns the area id from the file if both values matched, the initial area id otherwise.
         """
-        for file_area_id in field_dict:
-            if LowerCaseIdentifier.generate_id(file_area_id) == area_id:
-                return file_area_id
+        next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id), area_id)
         return area_id
 
     @staticmethod
-    def get_hydro_config(study: StudyInterface) -> Dict[str, Dict[str, FieldInfo]]:
+    def _get_hydro_config(study: StudyInterface) -> Dict[str, Dict[str, FieldInfo]]:
         """
         Returns a dictionary of hydro configurations
         """
@@ -140,13 +136,13 @@ class HydroManager:
         """
         Get management options for a given area
         """
-        hydro_config = self.get_hydro_config(study)
+        hydro_config = self._get_hydro_config(study)
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
             target_name = path.split("/")[-1]
             field_dict = hydro_config.get(target_name, {})
-            return field_dict.get(self.get_id(area_id, field_dict), field_info["default_value"])
+            return field_dict.get(self._get_id(area_id, field_dict), field_info["default_value"])
 
         return ManagementOptionsFormFields.model_construct(
             **{name: get_value(info) for name, info in FIELDS_INFO.items()}
@@ -163,22 +159,13 @@ class HydroManager:
         """
         commands: List[UpdateConfig] = []
 
-        hydro_config = self.get_hydro_config(study)
-
-        # create a reformatted hydro config dictionary so the fields name can match `FIELDS_INFO` fields name
-        reformat_hydro_config = {}
-        for key, value in hydro_config.items():
-            reformat_hydro_config[key.replace("-", "_").replace(" ", "_")] = value
-
         for field_name, value in field_values.__iter__():
             if value is not None:
-                # retrieve the area id from the original file, including its capital letters
-                file_area_id = self.get_id(area_id, reformat_hydro_config.get(field_name, {}))
                 info = FIELDS_INFO[field_name]
 
                 commands.append(
                     UpdateConfig(
-                        target="/".join([info["path"], file_area_id]),  # update the right fields
+                        target="/".join([info["path"], area_id]),
                         data=value,
                         command_context=self._command_context,
                         study_version=study.version,
