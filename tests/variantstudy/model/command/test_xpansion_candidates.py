@@ -17,6 +17,7 @@ from study.storage.variantstudy.model.command.create_xpansion_candidate import C
 from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -69,6 +70,25 @@ class TestXpansionCandidate:
         output = cmd.apply(study_data=empty_study)
         assert output.status, output.message
 
+        candidates_path = empty_study.config.study_path / "user" / "expansion" / "candidates.ini"
+        assert (
+            candidates_path.read_text()
+            == """[1]
+name = cdt_1
+link = at - be
+annual-cost-per-mw = 12.0
+max-investment = 100.0
+
+[2]
+name = cdt_2
+link = at - be
+annual-cost-per-mw = 156.0
+unit-size = 19.0
+max-units = 7
+
+"""
+        )
+
         # Updates one
         cmd = UpdateXpansionCandidate(
             candidate_name="cdt_1",
@@ -80,8 +100,44 @@ class TestXpansionCandidate:
         )
         output = cmd.apply(study_data=empty_study)
         assert output.status, output.message
+        assert (
+            candidates_path.read_text()
+            == """[1]
+name = cdt_1
+link = at - be
+annual-cost-per-mw = 30.0
+max-investment = 100.0
+direct-link-profile = capa1.txt
+
+[2]
+name = cdt_2
+link = at - be
+annual-cost-per-mw = 156.0
+unit-size = 19.0
+max-units = 7
+
+"""
+        )
 
         # Removes one and assert the other still exist
+        cmd = RemoveXpansionCandidate(
+            candidate_name="cdt_1",
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status, output.message
+        assert (
+            candidates_path.read_text()
+            == """[1]
+name = cdt_2
+link = at - be
+annual-cost-per-mw = 156.0
+unit-size = 19.0
+max-units = 7
+
+"""
+        )
 
     @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
     def test_error_cases(self, empty_study: FileStudy, command_context: CommandContext):

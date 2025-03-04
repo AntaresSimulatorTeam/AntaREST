@@ -52,7 +52,11 @@ class RemoveXpansionCandidate(ICommand):
         if not candidate_id:
             raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
 
-        study_data.tree.delete(["user", "expansion", "candidates", candidate_id])
+        del candidates[candidate_id]
+        # Reorder keys of the dict
+        new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
+
+        study_data.tree.save(data=new_dict, url=["user", "expansion", "candidates"])
 
         return self._apply_config(study_data.config)[0]
 
