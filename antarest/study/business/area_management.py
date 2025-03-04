@@ -172,7 +172,10 @@ class AreaManager:
         for area_id, update_area in update_areas_by_ids.items():
             # Update the area properties.
             old_area = old_areas_by_ids[area_id]
-            new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
+            old_dict = old_area.model_dump(mode="json")
+            new_dict = update_area.model_dump(mode="json", exclude_none=True)
+            old_dict.update(new_dict)
+            new_area = AreaProperties.model_validate(old_dict)
             new_areas_by_ids[area_id] = new_area
 
             if old_area.optimization_dict() != new_area.optimization_dict():
