@@ -111,7 +111,7 @@ class TestTableMode:
                 "energyCostUnsupplied": 3456,
                 "dispatchHydroPower": False,
                 "filterSynthesis": "daily, monthly",
-                "filterByYear": "weekly, annual",
+                "filterByYear": "annual, weekly",
                 "nonDispatchPower": True,
                 "otherDispatchPower": True,
                 "spreadSpilledEnergyCost": 0,

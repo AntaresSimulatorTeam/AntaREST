@@ -196,20 +196,20 @@ class AreaManager:
                         study_version=study.version,
                     )
                 )
-            if old_area.spread_unsupplied_energy_cost != new_area.spread_unsupplied_energy_cost:
+            if old_area.energy_cost_unsupplied != new_area.energy_cost_unsupplied:
                 commands.append(
                     UpdateConfig(
                         target=f"input/thermal/areas/unserverdenergycost/{area_id}",
-                        data=new_area.spread_unsupplied_energy_cost,
+                        data=new_area.energy_cost_unsupplied,
                         command_context=command_context,
                         study_version=study.version,
                     )
                 )
-            if old_area.spread_spilled_energy_cost != new_area.spread_spilled_energy_cost:
+            if old_area.energy_cost_spilled != new_area.energy_cost_spilled:
                 commands.append(
                     UpdateConfig(
                         target=f"input/thermal/areas/spilledenergycost/{area_id}",
-                        data=new_area.spread_spilled_energy_cost,
+                        data=new_area.energy_cost_spilled,
                         command_context=command_context,
                         study_version=study.version,
                     )
