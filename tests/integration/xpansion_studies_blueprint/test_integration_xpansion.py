@@ -448,20 +448,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         assert commands_list[4]["action"] == "remove_xpansion_resource"
         assert commands_list[4]["args"] == {"filename": "filename_constraints1.txt", "resource_type": "constraints"}
 
-        candidate_args = {
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1.0,
-            "unit-size": None,
-            "max-units": None,
-            "max-investment": 1.0,
-            "already-installed-capacity": None,
-            "link-profile": None,
-            "already-installed-link-profile": None,
-            "direct-link-profile": None,
-            "indirect-link-profile": None,
-            "already-installed-direct-link-profile": None,
-            "already-installed-indirect-link-profile": None,
-        }
+        candidate_args = {"link": "area1 - area2", "annual-cost-per-mw": 1.0, "max-investment": 1.0}
         assert commands_list[5]["action"] == "create_xpansion_candidate"
         assert commands_list[5]["args"] == {"candidate": {"name": "candidate1", **candidate_args}}
 
