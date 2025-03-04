@@ -208,6 +208,27 @@ max-units = 7
         assert "The candidate 'cdt_1' already exists" in output.message
 
         # Rename a candidate with an already taken name
+        cmd = CreateXpansionCandidate(
+            candidate=XpansionCandidateInternal(
+                name="cdt_2", link="at - be", annual_cost_per_mw=12, max_investment=100
+            ),
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status, output.message
+
+        cmd = UpdateXpansionCandidate(
+            candidate_name="cdt_1",
+            new_properties=XpansionCandidateInternal(
+                name="cdt_2", link="at - be", annual_cost_per_mw=30, max_investment=100
+            ),
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        assert "The candidate 'cdt_2' already exists" in output.message
 
         # Removes a candidate that doesn't exist
         cmd = RemoveXpansionCandidate(
