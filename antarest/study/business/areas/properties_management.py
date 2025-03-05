@@ -12,7 +12,7 @@
 
 import re
 from builtins import sorted
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, NamedTuple
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Set
 
 from pydantic import model_validator
 
@@ -60,6 +60,7 @@ class AreaProperties(NamedTuple):
     filtering_props: Dict[str, Any]
     optim_properties: Dict[str, Any]
     adequacy_patch_property: Dict[str, Any]
+
 
 @all_optional_model
 class PropertiesFormFields(FormFieldsBaseModel):
