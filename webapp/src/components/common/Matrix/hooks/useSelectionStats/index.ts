@@ -35,8 +35,8 @@ export function useSelectionStats({ data, selection, gridToData }: UseSelectionS
 
   useUpdateEffect(() => {
     let sum = 0;
-    let min = Infinity;
-    let max = -Infinity;
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
     let count = 0;
     const numRows = data.length;
     const numCols = data[0]?.length ?? 0;
