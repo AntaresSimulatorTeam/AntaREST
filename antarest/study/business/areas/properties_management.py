@@ -12,17 +12,17 @@
 
 import re
 from builtins import sorted
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 from pydantic import model_validator
 
 from antarest.study.business.all_optional_meta import all_optional_model
+from antarest.study.business.model.area_model import AreaProperties, build_area_properties
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPatchMode,
     AdequacyPathProperties,
-    AreaFolder,
     OptimizationProperties,
     ThermalAreasProperties,
 )
@@ -53,13 +53,6 @@ def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None)
     return ", ".join(sort_filter_options(encoded_value))
 
 
-class AreaProperties(NamedTuple):
-    thermal_properties: Dict[str, Any]
-    filtering_props: Dict[str, Any]
-    optim_properties: Dict[str, Any]
-    adequacy_patch_property: Dict[str, Any]
-
-
 @all_optional_model
 class PropertiesFormFields(FormFieldsBaseModel):
     energy_cost_unsupplied: float = 0.0
@@ -87,46 +80,6 @@ class PropertiesFormFields(FormFieldsBaseModel):
                     raise ValueError(f"Invalid value in '{filter_name}'")
 
         return values
-
-    def to_properties(self) -> AreaProperties:
-        thermal_properties = {
-            k: v
-            for k, v in {
-                "unserverdenergycost": self.energy_cost_unsupplied,
-                "spilledenergycost": self.energy_cost_spilled,
-            }.items()
-            if v is not None
-        }
-        filtering_props = {
-            k: v
-            for k, v in {"filter-synthesis": self.filter_synthesis, "filter-year-by-year": self.filter_by_year}.items()
-            if v is not None
-        }
-        optim_properties = {
-            k: v
-            for k, v in {
-                "non-dispatchable-power": self.non_dispatch_power,
-                "dispatchable-hydro-power": self.dispatch_hydro_power,
-                "other-dispatchable-power": self.other_dispatch_power,
-                "spread-unsupplied-energy-cost": self.spread_unsupplied_energy_cost,
-                "spread-spilled-energy-cost": self.spread_spilled_energy_cost,
-            }.items()
-            if v is not None
-        }
-        adequacy_patch_property = {
-            k: v
-            for k, v in {
-                "adequacy-patch-mode": self.adequacy_patch_mode,
-            }.items()
-            if v is not None
-        }
-
-        return AreaProperties(
-            thermal_properties=thermal_properties,
-            filtering_props=filtering_props,
-            optim_properties=optim_properties,
-            adequacy_patch_property=adequacy_patch_property,
-        )
 
 
 def update_thermal_properties(
@@ -208,31 +161,10 @@ class PropertiesManager:
         area_id: str,
         field_values: PropertiesFormFields,
     ) -> None:
-        file_study = study.get_files()
-
-        properties = field_values.to_properties()
-        new_thermal_props = properties.thermal_properties
-        new_filtering_props = properties.filtering_props
-        new_nodal_props = properties.optim_properties
-        new_adequacy_patch_prop = properties.adequacy_patch_property
-
-        # Update thermal properties
-        current_thermal_props = file_study.tree.get(THERMAL_PATH.split("/"))
-        thermal_areas_properties = update_thermal_properties(area_id, current_thermal_props, new_thermal_props)
-
-        # Update optimization properties
-        current_optim_properties = file_study.tree.get(OPTIMIZATION_PATH.format(area=area_id).split("/"))
-        optimization_properties = update_optimization_properties(
-            current_optim_properties, new_filtering_props, new_nodal_props
-        )
-
-        # Update adequacy patch property
-        current_adequacy_patch = file_study.tree.get(ADEQUACY_PATCH_PATH.format(area=area_id).split("/"))
-        adequacy_patch_properties = update_adequacy_patch_properties(current_adequacy_patch, new_adequacy_patch_prop)
+        area_properties = build_area_properties(field_values.model_dump(exclude_none=True))
 
         command = UpdateAreasProperties(
-            areas={area_id: AreaFolder(optimization=optimization_properties, adequacy_patch=adequacy_patch_properties)},
-            thermal_properties=[thermal_areas_properties],
+            areas_properties={area_id: area_properties},
             command_context=self._command_context,
             study_version=study.version,
         )

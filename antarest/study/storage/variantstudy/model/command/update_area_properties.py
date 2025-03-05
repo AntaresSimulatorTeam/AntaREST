@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Dict, List, Optional
+from typing import List, Optional, Dict
 
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaFolder, ThermalAreasProperties
+from antarest.study.business.model.area_model import AreaProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -34,8 +34,7 @@ class UpdateAreasProperties(ICommand):
 
     # Command parameters
     # ==================
-    areas: Dict[str, AreaFolder]
-    thermal_properties: List[ThermalAreasProperties]
+    areas_properties: Dict[str, AreaProperties]
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -43,60 +42,52 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        self.update_thermal_properties(study_data)
 
-        for area_id, area_folder in self.areas.items():
-            self.update_area_optimization(area_id, study_data)
+        for area_id, properties in self.areas_properties.items():
+            self.update_thermal_properties(area_id, study_data)
             self.update_adequacy_patch(area_id, study_data)
+            self.update_area_optimization(area_id, study_data)
 
         output, _ = self._apply_config(study_data.config)
 
         return output
 
-    def update_thermal_properties(self, study_data: FileStudy) -> None:
-        thermal_properties = study_data.tree.get(["input", "thermal", "areas"])
-        for thermal_area_property in self.thermal_properties:
-            thermal_properties["spilledenergycost"].update(thermal_area_property.spilled_energy_cost)
-            thermal_properties["unserverdenergycost"].update(thermal_area_property.unserverd_energy_cost)
-        study_data.tree.save(thermal_properties, ["input", "thermal", "areas"])
+    def update_thermal_properties(self, area_id: str, study_data: FileStudy) -> None:
+        if (new_properties := self.areas_properties[area_id].thermal_properties) != {}:
+            thermal_properties = study_data.tree.get(["input", "thermal", "areas"])
+
+            for k, v in new_properties.items():
+                thermal_properties[k].update({area_id: v})
+
+            study_data.tree.save(thermal_properties, ["input", "thermal", "areas"])
 
     def update_adequacy_patch(self, area_id: str, study_data: FileStudy) -> None:
-        area_folder = self.areas.get(area_id)
-
-        if area_folder and area_folder.adequacy_patch:
-            new_config = area_folder.adequacy_patch.to_config()
+        if (new_properties := self.areas_properties[area_id].adequacy_patch_property) != {}:
             adequacy_patch_properties = study_data.tree.get(["input", "areas", area_id, "adequacy_patch"])
-
-            if adequacy_patch_properties != new_config:
-                adequacy_patch_properties.update(new_config)
-                study_data.tree.save(adequacy_patch_properties, ["input", "areas", area_id, "adequacy_patch"])
+            adequacy_patch_properties['adequacy-patch'].update(new_properties)
+            study_data.tree.save(adequacy_patch_properties, ["input", "areas", area_id, "adequacy_patch"])
 
     def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
-        area_folder = self.areas.get(area_id)
-        if area_folder is None:
-            raise ValueError(f"No Area Folder found for area_id {area_id}")
+        new_filtering = self.areas_properties[area_id].filtering_props
+        new_nodal = self.areas_properties[area_id].optim_properties
 
-        optimization_properties = study_data.tree.get(["input", "areas", area_id, "optimization"])
-        new_config = area_folder.optimization.to_config()
-        if optimization_properties != new_config:
-            optimization_properties.update(new_config)
+        if new_filtering or new_nodal:
+            optimization_properties = study_data.tree.get(["input", "areas", area_id, "optimization"])
+
+            if new_nodal:
+                optimization_properties.get("nodal optimization", {}).update(new_nodal)
+
+            if new_filtering:
+                optimization_properties.get("filtering", {}).update(new_filtering)
+
             study_data.tree.save(optimization_properties, ["input", "areas", area_id, "optimization"])
 
     @override
     def to_dto(self) -> CommandDTO:
-        area_folder_model = {
-            key: area_folder.model_dump(mode="json", exclude_unset=True, exclude_none=True)
-            for key, area_folder in self.areas.items()
-        }
-        thermal_area_properties = [
-            thermal.model_dump(mode="json", exclude_unset=True, exclude_none=True)
-            for thermal in self.thermal_properties
-        ]
         return CommandDTO(
             action=CommandName.UPDATE_AREAS_PROPERTIES.value,
             args={
-                "areas": area_folder_model,
-                "thermal_properties": thermal_area_properties,
+                "areas_properties": self.areas_properties,
             },
             study_version=self.study_version,
         )

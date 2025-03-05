@@ -23,7 +23,7 @@ from antarest.study.business.model.area_model import (
     AreaOutput,
     AreaType,
     LayerInfoDTO,
-    UpdateAreaUi,
+    UpdateAreaUi, AreaProperties, build_area_properties,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.business.study_interface import StudyInterface
@@ -196,23 +196,17 @@ class AreaManager:
         old_areas_by_ids = self.get_all_area_props(study)
         new_areas_by_ids = dict(old_areas_by_ids)
 
-        areas: Dict[str, AreaFolder] = {}
-        list_thermal_properties: List[ThermalAreasProperties] = []
+        areas_properties: Dict[str, AreaProperties] = {}
 
         for area_id, update_area in update_areas_by_ids.items():
-            old_area = old_areas_by_ids[area_id]
-            new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
-            new_areas_by_ids[area_id] = new_area
+            properties = update_area.model_dump(exclude_none=True, exclude_unset=True)
 
-            area = update_area_folder_configuration(old_area, new_area)
-            thermal_properties = update_thermal_configuration(area_id, old_area, new_area)
+            area_properties = build_area_properties(properties)
 
-            areas[area_id] = area
-            list_thermal_properties.append(thermal_properties)
+            areas_properties.update({area_id: area_properties})
 
         command = UpdateAreasProperties(
-            areas=areas,
-            thermal_properties=list_thermal_properties,
+            areas_properties=areas_properties,
             command_context=self._command_context,
             study_version=study.version,
         )
