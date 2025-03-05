@@ -16,7 +16,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import type { GenericInfo, VariantTree } from "../../../../../common/types";
+import type { GenericInfo, VariantTree } from "../../../../../types/types";
 import { createVariant } from "../../../../../services/api/variant";
 import { createListFromTree } from "../../../../../services/utils";
 import FormDialog from "../../../../common/dialogs/FormDialog";

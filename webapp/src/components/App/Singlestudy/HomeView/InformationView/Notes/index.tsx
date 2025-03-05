@@ -27,7 +27,7 @@ import { LoadingButton } from "@mui/lab";
 import EditIcon from "@mui/icons-material/Edit";
 import { editComments, getComments, getStudyDiskUsage } from "../../../../../../services/api/study";
 import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import NoteEditorModal from "./NodeEditorModal";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
@@ -180,7 +180,7 @@ function Notes({ study }: Props) {
           )}
         />
       </Note>
-      <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
+      <Divider flexItem variant="middle" />
       <Box
         sx={{
           display: "flex",

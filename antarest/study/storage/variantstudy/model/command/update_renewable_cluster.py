@@ -52,12 +52,17 @@ class UpdateRenewableCluster(ICommand):
                 values = renewable.model_dump()
                 values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
                 study_data.areas[self.area_id].renewables[index] = RenewableConfig.model_validate(values)
-                break
-
+                return (
+                    CommandOutput(
+                        status=True,
+                        message=f"The renewable cluster '{self.cluster_id}' in the area '{self.area_id}' has been updated.",
+                    ),
+                    {},
+                )
         return (
             CommandOutput(
-                status=True,
-                message=f"The renewable cluster '{self.cluster_id}' in the area '{self.area_id}' has been updated.",
+                status=False,
+                message=f"The renewable cluster '{self.cluster_id}' in the area '{self.area_id}' is not found.",
             ),
             {},
         )

@@ -44,6 +44,7 @@ class CommandName(Enum):
     REMOVE_MULTIPLE_BINDING_CONSTRAINTS = "remove_multiple_binding_constraints"
     CREATE_THERMAL_CLUSTER = "create_cluster"
     REMOVE_THERMAL_CLUSTER = "remove_cluster"
+    UPDATE_THERMAL_CLUSTER = "update_thermal_cluster"
     CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster"
     REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
     UPDATE_RENEWABLE_CLUSTER = "update_renewable_cluster"
@@ -61,7 +62,11 @@ class CommandName(Enum):
     CREATE_USER_RESOURCE = "create_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
     REMOVE_XPANSION_CONFIGURATION = "remove_xpansion_configuration"
+    REMOVE_XPANSION_RESOURCE = "remove_xpansion_resource"
     CREATE_XPANSION_CONFIGURATION = "create_xpansion_configuration"
+    CREATE_XPANSION_CAPACITY = "create_xpansion_capacity"
+    CREATE_XPANSION_WEIGHT = "create_xpansion_weight"
+    CREATE_XPANSION_CONSTRAINT = "create_xpansion_constraint"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:

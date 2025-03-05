@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { Graph, type GraphLink, type GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import type { LinkProperties, StudyMetadata } from "../../../../../../common/types";
+import type { LinkProperties, StudyMetadata } from "../../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { createStudyMapLink, type StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 import { setCurrentArea, setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";

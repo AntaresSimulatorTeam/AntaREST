@@ -21,7 +21,7 @@ import { useState } from "react";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getStudyMapDistrictsById } from "../../../../../../../../redux/selectors";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
@@ -104,7 +104,6 @@ function UpdateDistrictDialog(props: Props) {
           <SelectFE
             name="districtId"
             label={t("study.modelization.map.districts")}
-            variant="filled"
             options={districtsOptions}
             control={control}
             onChange={(e) => {
@@ -138,7 +137,6 @@ function UpdateDistrictDialog(props: Props) {
           <Button
             color="error"
             variant="outlined"
-            size="small"
             disabled={getValues("districtId") === ""}
             startIcon={<DeleteIcon />}
             onClick={() => setOpenConfirmationModal(true)}

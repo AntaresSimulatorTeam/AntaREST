@@ -50,7 +50,6 @@ function AllocationField({ field, index, label }: Props) {
           key={field.id}
           name={`allocation.${index}.coefficient` as const}
           control={control}
-          size="small"
           rules={{ validate: validateNumber({ min: 0 }) }}
         />
       </Grid>

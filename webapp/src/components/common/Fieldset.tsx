@@ -14,7 +14,7 @@
 
 import { Box, Divider, type BoxProps, type SxProps, type Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import { mergeSxProp } from "../../utils/muiUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 interface FieldsetProps {
   legend?: string | React.ReactNode;
@@ -26,7 +26,7 @@ interface FieldsetProps {
 }
 
 function Fieldset(props: FieldsetProps) {
-  const { legend, children, sx, contentProps, fullFieldWidth = false, fieldWidth = 220 } = props;
+  const { legend, children, sx, contentProps, fullFieldWidth = false, fieldWidth = 200 } = props;
 
   return (
     <Box
@@ -44,6 +44,13 @@ function Fieldset(props: FieldsetProps) {
             ".MuiFormControl-root": {
               width: fullFieldWidth ? 1 : fieldWidth,
               m: 0,
+              // SwitchFE
+              ".MuiFormControlLabel-root": {
+                pl: 1.5,
+              },
+            },
+            ".MuiAutocomplete-root": {
+              width: fullFieldWidth ? 1 : fieldWidth,
             },
           },
           // Increase padding from the last child
@@ -64,7 +71,7 @@ function Fieldset(props: FieldsetProps) {
           <Divider sx={{ mt: 1 }} />
         </>
       )}
-      <Box {...contentProps} sx={mergeSxProp({ pt: 3 }, contentProps?.sx)}>
+      <Box {...contentProps} sx={mergeSxProp({ pt: legend ? 3 : 1 }, contentProps?.sx)}>
         {children}
       </Box>
     </Box>

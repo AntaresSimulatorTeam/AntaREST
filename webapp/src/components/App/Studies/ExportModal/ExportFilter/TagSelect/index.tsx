@@ -39,7 +39,6 @@ function TagSelect(props: PropTypes) {
         <TextField
           label={label}
           value={value}
-          variant="filled"
           onChange={(event) => setValue(event.target.value)}
           sx={{ m: 0, mr: 1, flex: 1 }}
         />

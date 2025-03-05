@@ -21,7 +21,7 @@ import type { HydroMatrixType } from "./utils";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import type { AxiosError } from "axios";
@@ -76,7 +76,7 @@ function HydroMatrixDialog({ open, onClose, type }: Props) {
   const matrixModelAdapter = (apiData: MatrixDataDTO): AdaptedMatrixData => ({
     data: apiData.data,
     columns: apiData.columns.map(String),
-    index: apiData.index.map(String), // Will be renamed to rowHeaders in future API version
+    index: apiData.index.map(String), // Will be renamed to rowHeaders in future API root
   });
 
   useEffect(() => {

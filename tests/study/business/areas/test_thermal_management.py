@@ -19,7 +19,11 @@ import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.core.exceptions import CommandApplicationError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.business.areas.thermal_management import ThermalClusterCreation, ThermalClusterInput, ThermalManager
+from antarest.study.business.areas.thermal_management import (
+    ThermalClusterCreation,
+    ThermalClusterUpdate,
+    ThermalManager,
+)
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     LawOption,
@@ -363,7 +367,7 @@ class TestThermalManager:
         study_interface: StudyInterface,
     ):
         # When some properties of the cluster are updated
-        cluster_data = ThermalClusterInput(name="New name", nominalCapacity=2000)
+        cluster_data = ThermalClusterUpdate(name="New name", nominalCapacity=2000)
         manager.update_cluster(
             study_interface, area_id="north", cluster_id="2 avail and must 1", cluster_data=cluster_data
         )

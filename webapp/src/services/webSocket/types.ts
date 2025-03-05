@@ -18,7 +18,7 @@ import type {
   LaunchJobDTO,
   LaunchJobProgressDTO,
   StudyMetadata,
-} from "@/common/types";
+} from "@/types/types";
 import type { WsEventType } from "./constants";
 import type { O } from "ts-toolbelt";
 import type { FileDownloadDTO } from "../api/downloads";

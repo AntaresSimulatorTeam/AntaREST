@@ -14,7 +14,7 @@
 
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { AllClustersAndLinks } from "../../../../../../../../common/types";
+import type { AllClustersAndLinks } from "../../../../../../../../types/types";
 import SelectSingle from "../../../../../../../common/SelectSingle";
 import { generateTermId, isTermExist, type ConstraintTerm } from "../utils";
 import { Box } from "@mui/material";
@@ -110,7 +110,6 @@ export default function OptionsList({
     <Box sx={{ display: "flex", gap: 1 }}>
       <SelectSingle
         disabled
-        size="small"
         variant="outlined"
         name="selectedArea"
         label={t(`study.${isLink ? "area1" : "area"}`)}
@@ -122,7 +121,6 @@ export default function OptionsList({
         }}
       />
       <SelectSingle
-        size="small"
         variant="outlined"
         name="selectedClusterOrArea"
         label={t(`study.${isLink ? "area2" : "cluster"}`)}

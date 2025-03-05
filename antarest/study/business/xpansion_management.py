@@ -18,24 +18,39 @@ from typing import List, Optional
 from fastapi import HTTPException, UploadFile
 from pydantic import Field
 
-from antarest.core.exceptions import ChildNotFoundError, LinkNotFound
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    FileImportFailed,
+    LinkNotFound,
+    MatrixImportFailed,
+    XpansionFileAlreadyExistsError,
+)
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    GetXpansionSettings,
+    XpansionResourceFileType,
+    XpansionSettingsUpdate,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
+from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
+    CreateXpansionCapacity,
+    CreateXpansionWeight,
+)
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
+    RemoveXpansionResource,
+    checks_resource_deletion_is_allowed,
+)
+from antarest.study.storage.variantstudy.model.command.xpansion_common import get_resource_dir
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
-
-
-class XpansionResourceFileType(EnumIgnoreCase):
-    CAPACITIES = "capacities"
-    WEIGHTS = "weights"
-    CONSTRAINTS = "constraints"
 
 
 class XpansionCandidateDTO(AntaresBaseModel):
@@ -95,16 +110,6 @@ class BadCandidateFormatError(HTTPException):
 class CandidateNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(http.HTTPStatus.NOT_FOUND, message)
-
-
-class FileCurrentlyUsedInSettings(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.CONFLICT, message)
-
-
-class FileAlreadyExistsError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(http.HTTPStatus.CONFLICT, message)
 
 
 class XpansionManager:
@@ -384,58 +389,58 @@ class XpansionManager:
         xpansion_settings = XpansionSettingsUpdate.model_validate(args)
         return self.update_xpansion_settings(study, xpansion_settings)
 
-    def _raw_file_dir(self, raw_file_type: XpansionResourceFileType) -> List[str]:
-        if raw_file_type == XpansionResourceFileType.CONSTRAINTS:
-            return ["user", "expansion", "constraints"]
-        elif raw_file_type == XpansionResourceFileType.CAPACITIES:
-            return ["user", "expansion", "capa"]
-        elif raw_file_type == XpansionResourceFileType.WEIGHTS:
-            return ["user", "expansion", "weights"]
-        raise NotImplementedError(f"raw_file_type '{raw_file_type}' not implemented")
+    def _create_add_resource_command(
+        self, study: StudyInterface, filename: str, content: bytes, resource_type: XpansionResourceFileType
+    ) -> ICommand:
+        if resource_type == XpansionResourceFileType.CONSTRAINTS:
+            command: ICommand = CreateXpansionConstraint(
+                filename=filename, data=content, command_context=self._command_context, study_version=study.version
+            )
+        else:
+            matrix = imports_matrix_from_bytes(content)
+            if matrix is None:
+                raise MatrixImportFailed(f"Could not parse the matrix corresponding to file {filename}")
+            matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+            matrix = matrix.tolist()
 
-    def _add_raw_files(
-        self,
-        file_study: FileStudy,
-        files: List[UploadFile],
-        raw_file_type: XpansionResourceFileType,
-    ) -> None:
-        keys = self._raw_file_dir(raw_file_type)
-        data: JSON = {}
-        buffer = data
-
-        list_names = [file.filename for file in files]
-        for name in list_names:
-            try:
-                if name in file_study.tree.get(keys):
-                    raise FileAlreadyExistsError(f"File '{name}' already exists")
-            except ChildNotFoundError:
-                logger.warning(f"Failed to list existing files for {keys}")
-
-        if len(list_names) != len(set(list_names)):
-            raise FileAlreadyExistsError(f"Some files have the same name: {list_names}")
-
-        for key in keys:
-            buffer[key] = {}
-            buffer = buffer[key]
-
-        for file in files:
-            content = file.file.read()
-            if isinstance(content, str):
-                content = content.encode(encoding="utf-8")
-            assert file.filename is not None
-            buffer[file.filename] = content
-
-        file_study.tree.save(data)
+            if resource_type == XpansionResourceFileType.WEIGHTS:
+                command = CreateXpansionWeight(
+                    filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+                )
+            elif resource_type == XpansionResourceFileType.CAPACITIES:
+                command = CreateXpansionCapacity(
+                    filename=filename, matrix=matrix, command_context=self._command_context, study_version=study.version
+                )
+            else:
+                raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
+        return command
 
     def add_resource(
         self,
         study: StudyInterface,
         resource_type: XpansionResourceFileType,
-        files: List[UploadFile],
+        file: UploadFile,
     ) -> None:
-        logger.info(f"Adding xpansion {resource_type} resource file list to study '{study.id}'")
+        filename = file.filename
+        if not filename:
+            raise FileImportFailed("A filename is required")
+        logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
+
+        # checks the file doesn't already exist
+        keys = get_resource_dir(resource_type)
         file_study = study.get_files()
-        self._add_raw_files(file_study, files, resource_type)
+        if filename in file_study.tree.get(keys):
+            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
+
+        # parses the content
+        content = file.file.read()
+        if isinstance(content, str):
+            content = content.encode(encoding="utf-8")
+
+        # creates the command
+        command = self._create_add_resource_command(study, filename, content, resource_type)
+
+        study.add_commands([command])
 
     def delete_resource(
         self,
@@ -444,24 +449,16 @@ class XpansionManager:
         filename: str,
     ) -> None:
         file_study = study.get_files()
-        logger.info(
-            f"Checking if xpansion {resource_type} resource file '{filename}' is not used in study '{study.id}'"
+        logger.info(f"Checking xpansion file '{filename}' is not used in study '{file_study.config.study_id}'")
+        checks_resource_deletion_is_allowed(resource_type, filename, file_study)
+        logger.info(f"Deleting xpansion resource {filename} for study '{study.id}'")
+        command = RemoveXpansionResource(
+            resource_type=resource_type,
+            filename=filename,
+            command_context=self._command_context,
+            study_version=study.version,
         )
-        if resource_type == XpansionResourceFileType.CONSTRAINTS and self._is_constraints_file_used(
-            file_study, filename
-        ):
-            raise FileCurrentlyUsedInSettings(
-                f"The constraints file '{filename}' is still used in the xpansion settings and cannot be deleted"
-            )
-        elif resource_type == XpansionResourceFileType.CAPACITIES and self._is_capa_file_used(file_study, filename):
-            raise FileCurrentlyUsedInSettings(
-                f"The capacities file '{filename}' is still used in the xpansion settings and cannot be deleted"
-            )
-        elif resource_type == XpansionResourceFileType.WEIGHTS and self._is_weights_file_used(file_study, filename):
-            raise FileCurrentlyUsedInSettings(
-                f"The weight file '{filename}' is still used in the xpansion settings and cannot be deleted"
-            )
-        file_study.tree.delete(self._raw_file_dir(resource_type) + [filename])
+        study.add_commands([command])
 
     def get_resource_content(
         self,
@@ -471,37 +468,12 @@ class XpansionManager:
     ) -> JSON | bytes:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         file_study = study.get_files()
-        return file_study.tree.get(self._raw_file_dir(resource_type) + [filename])
+        return file_study.tree.get(get_resource_dir(resource_type) + [filename])
 
     def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> List[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         file_study = study.get_files()
         try:
-            return [filename for filename in file_study.tree.get(self._raw_file_dir(resource_type)).keys()]
+            return sorted([filename for filename in file_study.tree.get(get_resource_dir(resource_type)).keys()])
         except ChildNotFoundError:
             return []
-
-    @staticmethod
-    def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore
-        with contextlib.suppress(KeyError):
-            constraints = file_study.tree.get(["user", "expansion", "settings", "additional-constraints"])
-            return str(constraints) == filename
-
-    @staticmethod
-    def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:  # type: ignore
-        with contextlib.suppress(KeyError):
-            weights = file_study.tree.get(["user", "expansion", "settings", "yearly-weights"])
-            return str(weights) == filename
-
-    @staticmethod
-    def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
-        logger.info(
-            f"Checking xpansion capacities file '{filename}' is not used in study '{file_study.config.study_id}'"
-        )
-
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        all_link_profiles = [candidate.get("link-profile", None) for candidate in candidates.values()]
-        all_link_profiles += [
-            candidate.get("already-installed-link-profile", None) for candidate in candidates.values()
-        ]
-        return filename in all_link_profiles

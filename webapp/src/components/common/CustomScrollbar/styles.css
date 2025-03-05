@@ -1,0 +1,16 @@
+.os-scrollbar {
+    /* The size of the scrollbar */
+    --os-size: 5px;
+    /* The axis-perpendicular padding of the scrollbar (horizontal: padding-y, vertical: padding-x) */
+    --os-padding-perpendicular: 0px;
+    /* The axis padding of the scrollbar (horizontal: padding-x, vertical: padding-y) */
+    --os-padding-axis: 0;
+    /* Increases the interactive area of the scrollbar handle. */
+    --os-handle-interactive-area-offset: 0;
+    /*The background of the scrollbar handle*/
+    --os-handle-bg: rgba(0, 178, 255, 0.7);
+    /*The :hover background of the scrollbar handle*/
+    --os-handle-bg-hover: rgba(0, 178, 255, 0.8);
+    /*The :active background of the scrollbar handle*/
+    --os-handle-bg-active: rgba(0, 178, 255, 0.9);
+}

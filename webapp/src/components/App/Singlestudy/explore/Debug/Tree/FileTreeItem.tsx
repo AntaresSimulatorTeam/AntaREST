@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import { getFileType, getFileIcon, isFolder, type TreeData } from "../utils";
 import DebugContext from "../DebugContext";
 import { useContext } from "react";
@@ -46,10 +46,20 @@ function FileTreeItem({ name, treeData, path }: Props) {
     <TreeItemEnhanced
       itemId={filePath}
       label={
-        <Box sx={{ display: "flex" }}>
-          <FileIcon sx={{ width: 20, height: "auto", p: 0.2, mr: 0.5 }} />
-          {name}
-        </Box>
+        <Tooltip title={name}>
+          <Box sx={{ display: "flex" }}>
+            <FileIcon sx={{ width: 20, height: "auto", p: 0.2, mr: 0.5 }} />
+            <Box
+              sx={{
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {name}
+            </Box>
+          </Box>
+        </Tooltip>
       }
       onClick={handleClick}
     >

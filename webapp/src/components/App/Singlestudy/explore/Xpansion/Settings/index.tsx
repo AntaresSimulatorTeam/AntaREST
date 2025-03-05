@@ -17,7 +17,7 @@ import { useOutletContext } from "react-router-dom";
 import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import { XpansionResourceType, type XpansionSettings } from "../types";
 import {
   getXpansionSettings,

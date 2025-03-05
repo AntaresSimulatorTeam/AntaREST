@@ -13,7 +13,7 @@
  */
 
 import type { O } from "ts-toolbelt";
-import type { IdentityDTO, StudyMetadata } from "@/common/types.ts";
+import type { IdentityDTO, StudyMetadata } from "@/types/types";
 import type { TaskStatus, TaskType } from "./constants";
 
 export type TaskStatusValue = O.UnionOf<typeof TaskStatus>;

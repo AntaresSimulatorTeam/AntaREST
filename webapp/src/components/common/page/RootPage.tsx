@@ -13,71 +13,68 @@
  */
 
 import type { SvgIconComponent } from "@mui/icons-material";
-import { Box, Typography } from "@mui/material";
-import BasicPage from "./BasicPage";
+import { Box, Typography, Toolbar, Divider } from "@mui/material";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 interface Props {
   title: string;
   titleIcon?: SvgIconComponent;
-  headerTopRight?: React.ReactNode;
-  headerBottom?: React.ReactNode;
-  hideHeaderDivider?: boolean;
+  headerActions?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-function RootPage(props: Props) {
-  const { title, titleIcon, headerTopRight, headerBottom, children, hideHeaderDivider } = props;
-
-  const TitleIcon = titleIcon as SvgIconComponent;
-
+function RootPage({ title, titleIcon: TitleIcon, headerActions, children }: Props) {
   return (
-    <BasicPage
-      header={
-        <>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              mb: 1,
-            }}
-          >
+    <Box
+      sx={{ height: 1, flex: 1, display: "flex", flexDirection: "column", overflowX: "auto" }}
+      component="main"
+    >
+      {/* Header */}
+      <Toolbar
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            flex: 1,
+            gap: 1.5,
+          }}
+        >
+          {TitleIcon && (
+            <TitleIcon
+              sx={{
+                width: 32,
+                height: 32,
+              }}
+            />
+          )}
+          <Typography sx={{ fontSize: 28 }}>{title}</Typography>
+        </Box>
+        {headerActions && (
+          <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                flex: 1,
+                gap: 1,
               }}
             >
-              {TitleIcon && (
-                <TitleIcon
-                  sx={{
-                    color: "text.secondary",
-                    width: "42px",
-                    height: "42px",
-                  }}
-                />
-              )}
-              <Typography sx={{ ml: 2, fontSize: 34 }}>{title}</Typography>
+              {headerActions}
             </Box>
-            {headerTopRight && (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  flex: 1,
-                }}
-              >
-                {headerTopRight}
-              </Box>
-            )}
-          </Box>
-          {headerBottom && <Box sx={{ width: 1, mb: 1 }}>{headerBottom}</Box>}
-        </>
-      }
-      hideHeaderDivider={hideHeaderDivider}
-    >
-      {children}
-    </BasicPage>
+          </CustomScrollbar>
+        )}
+      </Toolbar>
+
+      <Divider />
+
+      {/* Content */}
+      <Box sx={{ flex: 1, overflow: "auto" }}>{children}</Box>
+    </Box>
   );
 }
 

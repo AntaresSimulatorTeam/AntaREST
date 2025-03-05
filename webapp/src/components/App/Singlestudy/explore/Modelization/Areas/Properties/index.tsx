@@ -12,9 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import Form from "../../../../../../common/Form";
@@ -44,18 +43,17 @@ function Properties() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
-      <Form
-        key={study.id + currentAreaId}
-        config={{
-          defaultValues: () => getPropertiesFormFields(study.id, currentAreaId),
-        }}
-        onSubmit={handleSubmit}
-        enableUndoRedo
-      >
-        <Fields />
-      </Form>
-    </Paper>
+    <Form
+      key={study.id + currentAreaId}
+      config={{
+        defaultValues: () => getPropertiesFormFields(study.id, currentAreaId),
+      }}
+      onSubmit={handleSubmit}
+      enableUndoRedo
+      sx={{ pt: 2 }}
+    >
+      <Fields />
+    </Form>
   );
 }
 

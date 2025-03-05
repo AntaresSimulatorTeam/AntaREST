@@ -15,7 +15,7 @@
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../types/types";
 import type { SubmitHandlerPlus } from "../../common/Form/types";
 import Fieldset from "../../common/Fieldset";
 import SelectFE from "../../common/fieldEditors/SelectFE";
@@ -71,13 +71,7 @@ function UpgradeDialog({ study, onClose, open }: Props) {
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
-          <SelectFE
-            name="version"
-            label="Version"
-            variant="filled"
-            options={versionOptions}
-            control={control}
-          />
+          <SelectFE name="version" label="Version" options={versionOptions} control={control} />
         </Fieldset>
       )}
     </FormDialog>

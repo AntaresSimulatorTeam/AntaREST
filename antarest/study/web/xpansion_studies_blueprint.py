@@ -23,10 +23,13 @@ from antarest.core.requests import RequestParameters
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.model.xpansion_model import GetXpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    GetXpansionSettings,
+    XpansionResourceFileType,
+    XpansionSettingsUpdate,
+)
 from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
-    XpansionResourceFileType,
 )
 from antarest.study.service import StudyService
 
@@ -215,7 +218,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         resource_type: XpansionResourceFileType,
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             f"Add xpansion {resource_type} files in the study {uuid}",
             extra={"user": current_user.id},
@@ -226,7 +229,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
             RequestParameters(user=current_user),
         )
         study_interface = study_service.get_study_interface(study)
-        return study_service.xpansion_manager.add_resource(study_interface, resource_type, [file])
+        return study_service.xpansion_manager.add_resource(study_interface, resource_type, file)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",

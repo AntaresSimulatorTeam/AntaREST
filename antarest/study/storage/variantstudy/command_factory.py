@@ -29,6 +29,11 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
+from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
+    CreateXpansionCapacity,
+    CreateXpansionWeight,
+)
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
@@ -45,6 +50,7 @@ from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
@@ -58,6 +64,7 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import Up
 from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
+from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -77,6 +84,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
+    CommandName.UPDATE_THERMAL_CLUSTER.value: UpdateThermalCluster,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
     CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,
@@ -95,6 +103,10 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
     CommandName.REMOVE_XPANSION_CONFIGURATION.value: RemoveXpansionConfiguration,
     CommandName.CREATE_XPANSION_CONFIGURATION.value: CreateXpansionConfiguration,
+    CommandName.REMOVE_XPANSION_RESOURCE.value: RemoveXpansionResource,
+    CommandName.CREATE_XPANSION_CAPACITY.value: CreateXpansionCapacity,
+    CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
+    CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
 }
 
 

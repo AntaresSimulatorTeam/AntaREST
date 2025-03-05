@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
-from antarest.study.business.areas.thermal_management import ThermalClusterOutput, create_thermal_output
+from antarest.study.business.areas.thermal_management import create_thermal_output
 from antarest.study.business.model.area_model import (
     AreaCreationDTO,
     AreaInfoDTO,
@@ -25,6 +25,7 @@ from antarest.study.business.model.area_model import (
     LayerInfoDTO,
     UpdateAreaUi,
 )
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaFolder,

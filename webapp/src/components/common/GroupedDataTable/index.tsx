@@ -12,12 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import Box from "@mui/material/Box";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Button, Skeleton } from "@mui/material";
+import { Box, Button, Skeleton } from "@mui/material";
 import {
   MaterialReactTable,
   MRT_ToggleFiltersButton,
@@ -84,7 +83,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  // Allow to use the last version of `onNameClick` in `tableColumns`
+  // Allow to use the last root of `onNameClick` in `tableColumns`
   const callbacksRef = useUpdatedRef({ onNameClick });
   const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
@@ -215,7 +214,6 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
           <Button
             startIcon={<AddCircleOutlineIcon />}
             variant="contained"
-            size="small"
             onClick={() => setOpenDialog("add")}
           >
             {t("button.add")}
@@ -225,7 +223,6 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
           <Button
             startIcon={<ContentCopyIcon />}
             variant="outlined"
-            size="small"
             onClick={() => setOpenDialog("duplicate")}
             disabled={table.getSelectedRowModel().rows.length !== 1}
           >
@@ -237,7 +234,6 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
             startIcon={<DeleteOutlineIcon />}
             color="error"
             variant="outlined"
-            size="small"
             onClick={() => setOpenDialog("delete")}
             disabled={table.getSelectedRowModel().rows.length === 0}
           >
