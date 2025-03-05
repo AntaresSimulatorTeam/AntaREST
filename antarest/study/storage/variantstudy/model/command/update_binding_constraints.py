@@ -132,23 +132,22 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                     status=False,
                     message=f"Binding contraint '{bc_id}' not found.",
                 )
-            # it's important to use exclude_unset=True. Otherwise we'd override
+            # It's important to use exclude_unset=True. Otherwise we'd override
             # existing values with the default bc_props values.
-            bc_props_as_dict = bc_props.model_dump(mode="json", exclude_unset=True)
+            # Also important to use by_alias=True, so time_step is renamed to type
+            bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             bc_json = bcs_json[bc_index_by_id[bc_id]]
             bc_json_copy = copy.deepcopy(bc_json)
             bc_json.update(bc_props_as_dict)
-            # note that time_step is named type in the json object because that's how it's named in the study ini file
             existing_time_step = BindingConstraintFrequency(bc_json_copy["type"])
-            if "time_step" in bc_props_as_dict and bc_props.time_step != existing_time_step:
+            if "type" in bc_props_as_dict and bc_props.time_step != existing_time_step:
                 # The user changed the time step, we need to update the matrix accordingly
                 for [target, next_matrix] in generate_replacement_matrices(
                     bc_id, self.study_version, bc_props, bc_props.operator
                 ):
                     # prepare matrix as a dict to save it in the tree
                     matrix_url = target.split("/")
-                    file_study.tree.save(data=next_matrix, url=matrix_url)
-                bc_json["type"] = bc_props_as_dict["time_step"]
+                    file_study.tree.save(data={"data": next_matrix}, url=matrix_url)
             if (
                 "operator" in bc_props_as_dict
                 and bc_props.operator != bc_json_copy["operator"]

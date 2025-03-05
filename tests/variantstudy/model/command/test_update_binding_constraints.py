@@ -155,7 +155,6 @@ def test_apply(binding_constraint_properties, file_study):
                 "areas": ["area1"],
                 "clusters": ["cluster1"],
                 "operator": "greater",
-                "time_step": "daily",
                 "type": "daily",
             },
             "2": {
@@ -164,7 +163,6 @@ def test_apply(binding_constraint_properties, file_study):
                 "areas": ["area2"],
                 "clusters": ["cluster2"],
                 "operator": "less",
-                "time_step": "hourly",
                 "type": "hourly",
             },
         },
