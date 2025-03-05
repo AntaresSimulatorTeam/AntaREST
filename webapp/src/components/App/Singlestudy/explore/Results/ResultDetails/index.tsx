@@ -48,7 +48,7 @@ import ResultFilters from "./ResultFilters";
 import { toError } from "../../../../../../utils/fnUtils";
 import EmptyView from "../../../../../common/page/EmptyView";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
-import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import { isNonEmptyMatrix, type ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
 import DataGridViewer from "@/components/common/DataGridViewer";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
@@ -305,22 +305,21 @@ function ResultDetails() {
               response={mergeResponses(outputRes, matrixRes)}
               ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
               ifFulfilled={([, matrix]) =>
-                matrix && (
-                  <>
-                    {resultColHeaders.length === 0 ? (
-                      <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
-                    ) : (
-                      <MatrixGrid
-                        key={`grid-${resultColHeaders.length}`}
-                        data={filteredData}
-                        rows={filteredData.length}
-                        columns={resultColumns}
-                        dateTime={dateTime}
-                        readOnly
-                      />
-                    )}
-                  </>
-                )
+                matrix &&
+                (resultColHeaders.length === 0 ? (
+                  <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
+                ) : (
+                  isNonEmptyMatrix(filteredData) && (
+                    <MatrixGrid
+                      key={`grid-${resultColHeaders.length}`}
+                      data={filteredData}
+                      rows={filteredData.length}
+                      columns={resultColumns}
+                      dateTime={dateTime}
+                      readOnly
+                    />
+                  )
+                ))
               }
               ifRejected={(err) => (
                 <EmptyView

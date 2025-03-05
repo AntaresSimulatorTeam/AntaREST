@@ -896,7 +896,7 @@ class TestSTStorage:
         assert list(content.keys()) == ["tesla1"]
         content["Tesla1"] = content.pop("tesla1")
         res = client.post(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list", json=content)
-        assert res.status_code == 204, res.json()
+        assert res.status_code == 200, res.json()
         res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
         assert res.status_code == 200, res.json()
         assert list(res.json().keys()) == ["Tesla1"]

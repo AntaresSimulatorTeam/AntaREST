@@ -126,7 +126,7 @@ function HydroMatrixDialog({ open, onClose, type }: Props) {
             fetchMatrixData={fetchFn}
             readOnly
             dateTimeColumn={false}
-            timeSeriesColumns={false}
+            isTimeSeries={false}
             canImport
           />
         ) : (
