@@ -13,7 +13,7 @@
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.dao.in_memory_study_dao import InMemoryStudyDao
+from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
     transform_name_to_id,

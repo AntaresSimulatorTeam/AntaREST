@@ -8,7 +8,7 @@ from antarest.core.exceptions import LinkNotFound
 from antarest.study.business.model.link_model import (
     LinkDTO,
 )
-from antarest.study.dao.study_dao import StudyDao
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 

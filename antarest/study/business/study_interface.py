@@ -16,9 +16,9 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import CommandApplicationError
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.in_memory_study_dao import InMemoryStudyDao
-from antarest.study.dao.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 

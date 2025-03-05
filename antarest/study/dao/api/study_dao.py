@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Sequence
 
 from antares.study.version import StudyVersion
@@ -18,21 +18,8 @@ from typing_extensions import override
 from antarest.study.business.model.link_model import (
     LinkDTO,
 )
+from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-
-
-class ReadOnlyLinkDao(ABC):
-    @abstractmethod
-    def get_links(self) -> Sequence[LinkDTO]:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def link_exists(self, area1_id: str, area2_id: str) -> bool:
-        raise NotImplementedError()
 
 
 class ReadOnlyStudyDao(ReadOnlyLinkDao):
@@ -41,29 +28,7 @@ class ReadOnlyStudyDao(ReadOnlyLinkDao):
         raise NotImplementedError()
 
 
-class LinkDao(ReadOnlyStudyDao):
-    @abstractmethod
-    def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_link_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-
-class StudyDao(LinkDao):
+class StudyDao(ReadOnlyStudyDao, LinkDao):
     """
     Abstraction for access to study data. Handles all reading
     and writing from underlying storage format.

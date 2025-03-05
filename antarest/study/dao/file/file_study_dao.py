@@ -13,8 +13,8 @@
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
-from antarest.study.dao.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 

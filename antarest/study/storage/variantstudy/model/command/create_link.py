@@ -20,7 +20,7 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.link_model import LinkInternal
-from antarest.study.dao.study_dao import StudyDao
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import (

@@ -23,7 +23,7 @@ from antarest.study.business.model.link_model import (
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.study_dao import LinkDao
+from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
 
 
