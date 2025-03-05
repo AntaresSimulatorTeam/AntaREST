@@ -14,8 +14,11 @@ from typing import Dict, List, Optional
 from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaPropertiesUpdate, decode_filter
-from antarest.study.storage.rawstudy.model.filesystem.config.area import ThermalAreasProperties, AdequacyPathProperties, \
-    OptimizationProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AdequacyPathProperties,
+    OptimizationProperties,
+    ThermalAreasProperties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
