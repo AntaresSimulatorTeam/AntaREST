@@ -150,7 +150,7 @@ class CreateLink(AbstractLinkCommand):
     @override
     def _apply_config_dao(self, study_data: StudyDao) -> Tuple[CommandOutput, Dict[str, Any]]:
         try:
-            link = LinkInternal.model_validate(self.parameters).to_dto()
+            link = LinkInternal.model_validate(self.parameters or {}).to_dto()
             study_data.update_link_config(self.area1, self.area2, link)
         except ValueError as ex:
             return command_failed(str(ex)), {}
@@ -165,7 +165,7 @@ class CreateLink(AbstractLinkCommand):
         if study_data.link_exists(self.area1, self.area2):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' already exists")
 
-        link = LinkInternal.model_validate(self.parameters).to_dto()
+        link = LinkInternal.model_validate(self.parameters or {}).to_dto()
         study_data.save_link(self.area1, self.area2, link)
 
         series = self.series or (

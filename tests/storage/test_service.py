@@ -18,6 +18,7 @@ import uuid
 from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
@@ -31,7 +32,13 @@ from antarest.core.filetransfer.model import FileDownload, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
-from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import (
+    JSON,
+    SUB_JSON,
+    PermissionInfo,
+    PublicMode,
+    StudyPermissionType,
+)
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
@@ -40,6 +47,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
+from antarest.study.dao.study_dao import FileStudyTreeDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     ExportFormat,
@@ -58,8 +66,16 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
+from antarest.study.repository import (
+    AccessPermissions,
+    StudyFilter,
+    StudyMetadataRepository,
+)
+from antarest.study.service import (
+    MAX_MISSING_STUDY_TIMEOUT,
+    StudyService,
+    StudyUpgraderTask,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
@@ -70,9 +86,13 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+)
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
+    FileStudyTree,
+)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
@@ -80,10 +100,14 @@ from antarest.study.storage.utils import (
     is_output_archived,
     study_matcher,
 )
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.study.storage.variantstudy.variant_study_service import (
+    VariantStudyService,
+)
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
@@ -1010,16 +1034,37 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
         for user in db_session.query(User):
             user_jwt_groups = jwt_users[user.name].groups
             for user_jwt_group in user_jwt_groups:
-                db_session.add(Role(type=user_jwt_group.role, identity_id=user.id, group_id=user_jwt_group.id))
+                db_session.add(
+                    Role(
+                        type=user_jwt_group.role,
+                        identity_id=user.id,
+                        group_id=user_jwt_group.id,
+                    )
+                )
         db_session.commit()
 
     # John creates a main study and Jane creates two variant studies.
     # They all belong to the same group.
     writers = db_session.query(Group).filter(Group.name == "Writers").one()
     studies = [
-        Study(id=uuid.uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
-        Study(id=uuid.uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
-        Study(id=uuid.uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        Study(
+            id=uuid.uuid4(),
+            name="Main Study",
+            owner_id=jwt_users["John"].id,
+            groups=[writers],
+        ),
+        Study(
+            id=uuid.uuid4(),
+            name="Variant Study 1",
+            owner_id=jwt_users["Jane"].id,
+            groups=[writers],
+        ),
+        Study(
+            id=uuid.uuid4(),
+            name="Variant Study 2",
+            owner_id=jwt_users["Jane"].id,
+            groups=[writers],
+        ),
     ]
 
     # All admin and writers should have WRITE access to the studies.
@@ -1032,7 +1077,12 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Jack creates a additional variant study and adds it to the readers and writers groups.
     readers = db_session.query(Group).filter(Group.name == "Readers").one()
     studies.append(
-        Study(id=uuid.uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers])
+        Study(
+            id=uuid.uuid4(),
+            name="Variant Study 3",
+            owner_id=jwt_users["Jack"].id,
+            groups=[readers, writers],
+        )
     )
 
     # All admin and writers should have READ access to the studies.
@@ -1283,6 +1333,14 @@ def test_delete_recursively(tmp_path: Path) -> None:
     )
 
 
+class StudyDaoMatcher:
+    def __init__(self, file_study: FileStudy):
+        self._file_study = file_study
+
+    def __eq__(self, other: Any):
+        return isinstance(other, FileStudyTreeDao) and other._file_study is self._file_study
+
+
 @pytest.mark.unit_test
 def test_edit_study_with_command() -> None:
     study_id = str(uuid.uuid4())
@@ -1301,7 +1359,7 @@ def test_edit_study_with_command() -> None:
     service.storage_service.get_storage = Mock(return_value=study_service)
 
     service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
-    command.apply.assert_called_with(file_study, None)
+    command.apply.assert_called_with(StudyDaoMatcher(file_study), None)
 
     study_service = Mock(spec=VariantStudyService)
     study_service.get_raw.return_value = file_study
@@ -1708,7 +1766,10 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         workspace="other_workspace",
     )
     study_mock.name = "parent_raw_study"
-    study_mock.to_json_summary.return_value = {"id": "parent_raw_study", "name": "parent_raw_study"}
+    study_mock.to_json_summary.return_value = {
+        "id": "parent_raw_study",
+        "name": "parent_raw_study",
+    }
     service.repository.has_children.return_value = True  # type: ignore
     service.repository.get.return_value = parent_raw_study  # type: ignore
 
@@ -1733,7 +1794,10 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
     )
 
     study_mock.name = "variant_study"
-    study_mock.to_json_summary.return_value = {"id": "variant_study", "name": "variant_study"}
+    study_mock.to_json_summary.return_value = {
+        "id": "variant_study",
+        "name": "variant_study",
+    }
     service.repository.has_children.return_value = True  # type: ignore
     service.repository.get.return_value = variant_study  # type: ignore
 
