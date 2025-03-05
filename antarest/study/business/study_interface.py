@@ -16,7 +16,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import CommandApplicationError
-from antarest.study.dao.study_dao import FileStudyTreeDao, StudyDao
+from antarest.study.dao.study_dao import FileStudyTreeDao, ReadOnlyStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 
@@ -61,7 +61,7 @@ class StudyInterface(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_study_dao(self) -> StudyDao:
+    def get_study_dao(self) -> ReadOnlyStudyDao:
         raise NotImplementedError()
 
 
@@ -91,10 +91,10 @@ class FileStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand]) -> None:
         for command in commands:
-            result = command.apply(self.get_study_dao())
+            result = command.apply(FileStudyTreeDao(self.file_study))
             if not result.status:
                 raise CommandApplicationError(result.message)
 
     @override
-    def get_study_dao(self) -> StudyDao:
-        return FileStudyTreeDao(self.file_study)
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.file_study).read_only()

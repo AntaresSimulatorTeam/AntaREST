@@ -136,7 +136,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.dao.study_dao import FileStudyTreeDao, StudyDao
+from antarest.study.dao.study_dao import FileStudyTreeDao, ReadOnlyStudyDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -465,8 +465,8 @@ class RawStudyInterface(StudyInterface):
         return self._cached_file_study
 
     @override
-    def get_study_dao(self) -> StudyDao:
-        return FileStudyTreeDao(self.get_files())
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand]) -> None:
@@ -474,7 +474,7 @@ class RawStudyInterface(StudyInterface):
         file_study = self.get_files()
 
         for command in commands:
-            result = command.apply(self.get_study_dao())
+            result = command.apply(FileStudyTreeDao(self.get_files()))
             if not result.status:
                 raise CommandApplicationError(result.message)
         self._variant_study_service.invalidate_cache(study)
@@ -527,8 +527,8 @@ class VariantStudyInterface(StudyInterface):
         return self._variant_service.get_raw(self._study)
 
     @override
-    def get_study_dao(self) -> StudyDao:
-        return FileStudyTreeDao(self.get_files())
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand]) -> None:

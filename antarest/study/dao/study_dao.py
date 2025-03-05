@@ -25,14 +25,7 @@ from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class StudyDao(ABC):
-    @abstractmethod
-    def as_file_study(self) -> FileStudy:
-        """
-        To ease transition, to be removed when all goes through other methods
-        """
-        raise NotImplementedError()
-
+class ReadOnlyStudyDao(ABC):
     @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
@@ -47,6 +40,18 @@ class StudyDao(ABC):
 
     @abstractmethod
     def link_exists(self, area1_id: str, area2_id: str) -> bool:
+        raise NotImplementedError()
+
+
+class StudyDao(ReadOnlyStudyDao):
+    def read_only(self) -> ReadOnlyStudyDao:
+        return ReadOnlyAdapter(self)
+
+    @abstractmethod
+    def as_file_study(self) -> FileStudy:
+        """
+        To ease transition, to be removed when all goes through other methods
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -68,6 +73,27 @@ class StudyDao(ABC):
     @abstractmethod
     def save_link_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
         raise NotImplementedError()
+
+
+class ReadOnlyAdapter(ReadOnlyStudyDao):
+    def __init__(self, adaptee: StudyDao):
+        self._adaptee = adaptee
+
+    @override
+    def get_version(self) -> StudyVersion:
+        return self._adaptee.get_version()
+
+    @override
+    def get_links(self) -> Sequence[LinkDTO]:
+        return self._adaptee.get_links()
+
+    @override
+    def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
+        return self._adaptee.get_link(area1_id, area2_id)
+
+    @override
+    def link_exists(self, area1_id: str, area2_id: str) -> bool:
+        return self._adaptee.link_exists(area1_id, area2_id)
 
 
 class FileStudyTreeDao(StudyDao):
