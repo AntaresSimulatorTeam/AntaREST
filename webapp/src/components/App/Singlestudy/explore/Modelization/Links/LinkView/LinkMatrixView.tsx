@@ -13,11 +13,9 @@
  */
 
 import { useMemo, useState } from "react";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
+import { Tabs, Tab, Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { MatrixItem, StudyMetadata } from "../../../../../../../common/types";
+import type { MatrixItem, StudyMetadata } from "../../../../../../../types/types";
 import SplitView from "../../../../../../common/SplitView";
 import Matrix from "../../../../../../common/Matrix";
 

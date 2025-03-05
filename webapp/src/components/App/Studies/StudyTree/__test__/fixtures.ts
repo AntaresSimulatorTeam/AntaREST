@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { StudyType, type StudyMetadata } from "@/common/types";
+import { StudyType, type StudyMetadata } from "@/types/types";
 
 function createStudyMetadata(folder: string, workspace: string): StudyMetadata {
   return {

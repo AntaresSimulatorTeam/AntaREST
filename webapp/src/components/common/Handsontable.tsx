@@ -17,32 +17,33 @@ import HotTable, { type HotTableProps } from "@handsontable/react";
 import { styled } from "@mui/material";
 import { forwardRef } from "react";
 import * as RA from "ramda-adjunct";
-import { SECONDARY_MAIN_COLOR } from "../../theme";
 import "handsontable/dist/handsontable.min.css";
 
 // Register Handsontable's modules
 registerAllModules();
 
-const StyledHotTable = styled(HotTable)(() => ({
-  "th, td, .handsontableInput": {
-    backgroundColor: "#222333 !important",
-  },
-  "th, td": {
-    borderColor: "rgba(255, 255, 255, 0.1) !important",
-  },
-  "th, td:not(.htDimmed), .handsontableInput": {
-    color: "#fff !important",
-  },
-  th: {
-    fontWeight: "bold !important",
-  },
-  "th.ht__highlight": {
-    backgroundColor: `${SECONDARY_MAIN_COLOR}8c !important`,
-  },
-  "th.ht__active_highlight": {
-    backgroundColor: `${SECONDARY_MAIN_COLOR} !important`,
-  },
-}));
+const StyledHotTable = styled(HotTable)(({ theme }) =>
+  theme.applyStyles("dark", {
+    "th, td, .handsontableInput": {
+      backgroundColor: `${theme.palette.background.paper} !important`,
+    },
+    "th, td": {
+      borderColor: `${theme.palette.divider} !important`,
+    },
+    "th, td:not(.htDimmed), .handsontableInput": {
+      color: `${theme.palette.text.primary} !important`,
+    },
+    th: {
+      fontWeight: "bold !important",
+    },
+    "th.ht__highlight": {
+      backgroundColor: `${theme.palette.secondary.light} !important`,
+    },
+    "th.ht__active_highlight": {
+      backgroundColor: `${theme.palette.secondary.main} !important`,
+    },
+  }),
+);
 
 export type HandsontableProps = Omit<HotTableProps, "licenseKey">;
 

@@ -125,7 +125,7 @@ function CreateCandidateDialog(props: PropType) {
                 : t("xpansion.maxInvestments")
             }
           >
-            <ButtonGroup disableElevation size="small" color="info" sx={{ py: 2 }}>
+            <ButtonGroup disableElevation color="info" sx={{ py: 2 }}>
               <Button onClick={handleToggle} variant={!isToggled ? "outlined" : "contained"}>
                 {`${t("xpansion.unitSize")} & ${t("xpansion.maxUnits")}`}
               </Button>

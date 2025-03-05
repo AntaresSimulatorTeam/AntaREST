@@ -14,7 +14,6 @@ import base64
 import collections
 import contextlib
 import http
-import io
 import logging
 import os
 import time
@@ -23,8 +22,6 @@ from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
 
-import numpy as np
-import numpy.typing as npt
 import pandas as pd
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
@@ -136,7 +133,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -199,20 +196,6 @@ def get_disk_usage(path: str | Path) -> int:
                     elif entry.is_dir():
                         total_size += get_disk_usage(path=str(entry.path))
     return total_size
-
-
-def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
-    """Tries to convert bytes to a numpy array when importing a matrix"""
-    str_data = data.decode("utf-8")
-    if not str_data:
-        return np.zeros(shape=(0, 0))
-    for delimiter in [",", ";", "\t"]:
-        with contextlib.suppress(Exception):
-            df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
-            df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
-            matrix = df.to_numpy(dtype=np.float64)
-            return matrix
-    raise MatrixImportFailed("Could not parse the given matrix")
 
 
 def _get_path_inside_user_folder(
@@ -1706,7 +1689,9 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                matrix = _imports_matrix_from_bytes(data)
+                matrix = imports_matrix_from_bytes(data)
+                if matrix is None:
+                    raise MatrixImportFailed("Could not parse the given matrix")
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version

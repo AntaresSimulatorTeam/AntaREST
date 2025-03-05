@@ -13,18 +13,17 @@
  */
 
 import { useEffect, useState } from "react";
-import { Box, Button, LinearProgress, Paper, Typography } from "@mui/material";
+import { Box, Button, LinearProgress, Paper, Typography, colors } from "@mui/material";
 import { useDropzone, type Accept, type FileRejection } from "react-dropzone";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
-import { blue, grey } from "@mui/material/colors";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
 import { enqueueSnackbar } from "notistack";
 import type { PromiseAny } from "../../../utils/tsUtils";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 
-interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
+export interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
   dropzoneText?: string;
   accept?: Accept;
   onCancel: VoidFunction;
@@ -107,7 +106,7 @@ function UploadDialog(props: UploadDialogProps) {
     <BasicDialog
       {...dialogProps}
       title={title || t("global.import")}
-      titleIcon={FileDownloadIcon}
+      titleIcon={FileUploadIcon}
       actions={
         <Button onClick={onCancel} disabled={isUploading}>
           {t("global.close")}
@@ -125,16 +124,16 @@ function UploadDialog(props: UploadDialogProps) {
           <>
             <Paper
               {...getRootProps()}
+              elevation={0}
               sx={{
                 borderWidth: 1,
                 borderStyle: "dashed",
-                borderColor: isDragActive ? blue[500] : grey[500],
+                borderColor: isDragActive ? colors.blue[500] : colors.grey[500],
                 transition: "border .24s ease-in-out",
                 p: 4,
-                backgroundColor: "#262733",
-                color: grey[400],
                 cursor: "pointer",
                 position: "relative",
+                background: "none",
               }}
             >
               <input {...getInputProps()} />

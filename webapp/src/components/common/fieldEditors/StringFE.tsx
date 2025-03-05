@@ -15,10 +15,10 @@
 import { TextField, type TextFieldProps } from "@mui/material";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
-export type StringFEProps = {
+export interface StringFEProps extends Omit<TextFieldProps, "type" | "value" | "defaultValue"> {
   value?: string;
   defaultValue?: string;
-} & Omit<TextFieldProps, "type" | "value" | "defaultValue">;
+}
 
 function StringFE(props: StringFEProps) {
   return <TextField {...props} type="text" />;

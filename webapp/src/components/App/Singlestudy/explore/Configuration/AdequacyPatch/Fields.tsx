@@ -21,7 +21,7 @@ import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import { PRICE_TAKING_ORDER_OPTIONS, type AdequacyPatchFormFields } from "./utils";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import { validateNumber } from "@/utils/validation/number";
 
 function Fields() {

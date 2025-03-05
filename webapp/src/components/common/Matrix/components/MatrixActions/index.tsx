@@ -17,7 +17,7 @@ import SplitButton, { type SplitButtonProps } from "@/components/common/buttons/
 import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import SaveIcon from "@mui/icons-material/Save";
 import { useTranslation } from "react-i18next";
 import { LoadingButton } from "@mui/lab";
@@ -58,17 +58,17 @@ function MatrixActions({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, overflowX: "auto" }}>
       <Tooltip title={t("global.undo")}>
         <span>
-          <IconButton onClick={undo} disabled={!canUndo} size="small" color="primary">
+          <IconButton onClick={undo} disabled={!canUndo}>
             <UndoIcon fontSize="small" />
           </IconButton>
         </span>
       </Tooltip>
       <Tooltip title={t("global.redo")}>
         <span>
-          <IconButton onClick={redo} disabled={!canRedo} size="small" color="primary">
+          <IconButton onClick={redo} disabled={!canRedo}>
             <RedoIcon fontSize="small" />
           </IconButton>
         </span>
@@ -79,18 +79,16 @@ function MatrixActions({
         loadingPosition="start"
         startIcon={<SaveIcon />}
         variant="contained"
-        size="small"
         disabled={pendingUpdatesCount === 0}
       >
         ({pendingUpdatesCount})
       </LoadingButton>
-      <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+      <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
       <SplitButton
         options={[t("global.import.fromFile"), t("global.import.fromDatabase")]}
         onClick={onImport}
-        size="small"
         ButtonProps={{
-          startIcon: <FileDownloadIcon />,
+          startIcon: <FileUploadIcon />,
         }}
         disabled={isSubmitting || canImport}
       >

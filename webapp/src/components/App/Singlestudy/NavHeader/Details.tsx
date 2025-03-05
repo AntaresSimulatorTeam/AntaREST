@@ -27,7 +27,7 @@ import {
   countDescendants,
   displayVersionName,
 } from "../../../../services/utils";
-import type { StudyMetadata, VariantTree } from "../../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../../types/types";
 import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
 
 const MAX_STUDY_TITLE_LENGTH = 45;
@@ -49,12 +49,9 @@ const StyledDivider = styled(Divider)(({ theme }) => ({
   backgroundColor: theme.palette.divider,
 }));
 
-const BoxContainer = styled(Box)(({ theme }) => ({
+const Item = styled(Box)(({ theme }) => ({
   display: "flex",
-  flexDirection: "row",
-  justifyContent: "flex-start",
-  alignItems: "center",
-  margin: theme.spacing(0, 3),
+  gap: theme.spacing(1),
 }));
 
 interface Props {
@@ -73,51 +70,50 @@ function Details({ study, parent, childrenTree }: Props) {
   }
 
   return (
-    <BoxContainer
+    <Box
       sx={{
-        my: 1,
-        width: 1,
-        boxSizing: "border-box",
+        display: "flex",
+        justifyContent: "flex-start",
+        alignItems: "center",
+        gap: 2,
       }}
     >
-      <BoxContainer sx={{ ml: 0 }}>
-        <ScheduleOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+      <Item>
+        <ScheduleOutlinedIcon sx={{ color: "text.secondary" }} />
         <TinyText>{convertUTCToLocalTime(study.creationDate)}</TinyText>
-      </BoxContainer>
-      <BoxContainer>
-        <UpdateOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+      </Item>
+      <Item>
+        <UpdateOutlinedIcon sx={{ color: "text.secondary" }} />
         <TinyText>{buildModificationDate(study.modificationDate, t, i18n.language)}</TinyText>
-      </BoxContainer>
+      </Item>
       <StyledDivider />
-      <BoxContainer>
-        <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
-      </BoxContainer>
+      <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
       {parent && (
-        <BoxContainer>
-          <AltRouteOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+        <Item>
+          <AltRouteOutlinedIcon sx={{ color: "text.secondary" }} />
           <Tooltip title={parent.name}>
             <LinkText to={`/studies/${parent.id}`}>
               {`${parent.name.substring(0, MAX_STUDY_TITLE_LENGTH)}...`}
             </LinkText>
           </Tooltip>
-        </BoxContainer>
+        </Item>
       )}
       {childrenTree && (
-        <BoxContainer>
-          <AccountTreeOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+        <Item>
+          <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
           <TinyText>{countDescendants(childrenTree)}</TinyText>
-        </BoxContainer>
+        </Item>
       )}
       <StyledDivider />
-      <BoxContainer>
-        <PersonOutlineOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+      <Item>
+        <PersonOutlineOutlinedIcon sx={{ color: "text.secondary" }} />
         <TinyText>{study.owner.name}</TinyText>
-      </BoxContainer>
-      <BoxContainer>
-        <SecurityOutlinedIcon sx={{ color: "text.secondary", mr: 1 }} />
+      </Item>
+      <Item>
+        <SecurityOutlinedIcon sx={{ color: "text.secondary" }} />
         <TinyText>{t(publicModeLabel)}</TinyText>
-      </BoxContainer>
-    </BoxContainer>
+      </Item>
+    </Box>
   );
 }
 

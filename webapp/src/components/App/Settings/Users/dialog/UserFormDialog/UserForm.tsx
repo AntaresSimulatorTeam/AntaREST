@@ -38,7 +38,7 @@ import { v4 as uuidv4 } from "uuid";
 import DeleteIcon from "@mui/icons-material/Delete";
 import GroupIcon from "@mui/icons-material/Group";
 import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import { RoleType, type GroupDTO } from "../../../../../../common/types";
+import { RoleType, type GroupDTO } from "../../../../../../types/types";
 import { roleToString, sortByName } from "../../../../../../services/utils";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups, getUsers } from "../../../../../../services/api/user";
@@ -152,7 +152,6 @@ function UserForm(props: Props) {
         sx={{
           p: 2,
           mt: 2,
-          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
         }}
       >
         <Typography>{t("global.permissions")}</Typography>
@@ -171,7 +170,7 @@ function UserForm(props: Props) {
         {filteredAndSortedGroups.length > 0 && (
           <>
             <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-              <FormControl sx={{ mr: 2, flex: 1 }} size="small">
+              <FormControl sx={{ mr: 2, flex: 1 }}>
                 <InputLabel id={groupLabelId}>{t("global.group")}</InputLabel>
                 <Select
                   labelId={groupLabelId}
@@ -188,7 +187,6 @@ function UserForm(props: Props) {
               </FormControl>
               <Button
                 variant="contained"
-                size="small"
                 disabled={!allowToAddPermission}
                 onClick={() => {
                   append({ group: selectedGroup, type: RoleType.READER });

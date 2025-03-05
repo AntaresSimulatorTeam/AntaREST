@@ -16,8 +16,6 @@
 import JSONEditorClass, { type JSONEditorOptions, type HistoryItem } from "jsoneditor";
 import { useMemo, useRef } from "react";
 import { useDeepCompareEffect, useMount } from "react-use";
-import "jsoneditor/dist/jsoneditor.min.css";
-import "./dark-theme.css";
 import type { PromiseAny } from "../../../utils/tsUtils";
 import useUpdatedRef from "../../../hooks/useUpdatedRef";
 import { createSaveButton } from "./utils";
@@ -25,16 +23,19 @@ import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
-import { Box } from "@mui/material";
+import { Box, type SxProps, type Theme } from "@mui/material";
+import "jsoneditor/dist/jsoneditor.min.css";
+import "./dark-theme.css";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 export interface JSONEditorProps extends JSONEditorOptions {
   json: any;
   onSave?: (json: any) => PromiseAny;
   onSaveSuccessful?: (json: any) => any;
+  sx?: SxProps<Theme>;
 }
 
-function JSONEditor(props: JSONEditorProps) {
-  const { json, onSave, onSaveSuccessful, ...options } = props;
+function JSONEditor({ json, onSave, onSaveSuccessful, sx, ...options }: JSONEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<JSONEditorClass>();
   const onSaveRef = useUpdatedRef(onSave);
@@ -179,10 +180,12 @@ function JSONEditor(props: JSONEditorProps) {
 
   return (
     <Box
-      sx={{
-        height: 1,
-        overflow: "auto", // Fix when parent use `flex-direction: "column"`
-      }}
+      sx={mergeSxProp(
+        {
+          overflow: "auto", // Fix when parent use `flex-direction: "column"`
+        },
+        sx,
+      )}
       ref={ref}
     />
   );
