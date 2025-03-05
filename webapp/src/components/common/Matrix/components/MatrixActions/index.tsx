@@ -44,7 +44,7 @@ function MatrixActions({
   canImport = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
-  const { isSubmitting, updateCount, undo, redo, canUndo, canRedo } = useMatrixContext();
+  const { isSubmitting, updateCount, undo, redo, canUndo, canRedo, isDirty } = useMatrixContext();
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -66,17 +66,20 @@ function MatrixActions({
           </IconButton>
         </span>
       </Tooltip>
-      <Button
-        onClick={onSave}
-        loading={isSubmitting}
-        loadingPosition="start"
-        startIcon={<SaveIcon />}
-        variant="contained"
-        size="small"
-        disabled={!canUndo}
-      >
-        ({updateCount})
-      </Button>
+      <Tooltip title={t("global.save")}>
+        <Button
+          role="button"
+          aria-label={t("global.save")}
+          onClick={onSave}
+          loading={isSubmitting}
+          loadingPosition="start"
+          startIcon={<SaveIcon />}
+          variant="contained"
+          disabled={!isDirty}
+        >
+          ({updateCount})
+        </Button>
+      </Tooltip>
       <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
       {isTimeSeries && (
         <>

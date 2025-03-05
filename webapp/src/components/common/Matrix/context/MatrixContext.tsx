@@ -14,7 +14,7 @@
 
 import { createContext, useContext } from "react";
 import type { Actions, State } from "use-undo";
-import type { DataState } from "../hooks/useMatrixData";
+import type { DataState, SetMatrixDataFunction } from "../hooks/useMatrixData";
 
 export interface MatrixContextValue {
   // State
@@ -23,12 +23,12 @@ export interface MatrixContextValue {
   updateCount: number;
 
   // History
-  setMatrixData: Actions<DataState>["set"];
-  reset: Actions<DataState>["reset"];
+  setMatrixData: SetMatrixDataFunction;
   undo: Actions<DataState>["undo"];
   redo: Actions<DataState>["redo"];
   canUndo: Actions<DataState>["canUndo"];
   canRedo: Actions<DataState>["canRedo"];
+  isDirty: boolean;
 }
 
 const MatrixContext = createContext<MatrixContextValue | undefined>(undefined);

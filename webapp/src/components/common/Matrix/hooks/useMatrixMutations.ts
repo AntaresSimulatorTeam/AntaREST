@@ -19,17 +19,15 @@ import { uploadFile } from "@/services/api/studies/raw";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import type { GridUpdate, AggregateType } from "../shared/types";
 import { calculateMatrixAggregates } from "../shared/utils";
-import type { Actions } from "use-undo";
 import { toError } from "@/utils/fnUtils";
-import type { DataState } from "./useMatrixData";
+import type { DataState, SetMatrixDataFunction } from "./useMatrixData";
 
 interface UseMatrixMutationsProps {
   studyId: string;
   path: string;
   currentState: DataState;
-  setMatrixData: Actions<DataState>["set"];
-  reset: Actions<DataState>["reset"];
-  canUndo: Actions<DataState>["canUndo"];
+  setMatrixData: SetMatrixDataFunction;
+  isDirty: boolean;
   reload: VoidFunction; // check type
   aggregateTypes: AggregateType[];
 }
@@ -47,8 +45,7 @@ export function useMatrixMutations({
   path,
   currentState,
   setMatrixData,
-  reset,
-  canUndo,
+  isDirty,
   reload,
   aggregateTypes,
 }: UseMatrixMutationsProps): MatrixMutationsResult {
@@ -108,7 +105,7 @@ export function useMatrixMutations({
   );
 
   const handleSaveUpdates = useCallback(async () => {
-    if (!canUndo) {
+    if (!isDirty) {
       return;
     }
 
@@ -116,16 +113,17 @@ export function useMatrixMutations({
     try {
       const updatedMatrix = await updateMatrix(studyId, path, currentState.data);
 
-      reset({
+      setMatrixData({
         ...currentState,
         data: updatedMatrix,
+        saved: true,
       });
     } catch (error) {
       enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), toError(error));
     } finally {
       setIsSubmitting(false);
     }
-  }, [canUndo, studyId, path, currentState, reset, enqueueErrorSnackbar]);
+  }, [isDirty, studyId, path, currentState, setMatrixData, enqueueErrorSnackbar]);
 
   return {
     isSubmitting,

@@ -60,15 +60,15 @@ const defaultProps = {
 type RenderOptions = Partial<typeof defaultProps>;
 type ContextOverrides = Partial<{
   isSubmitting: boolean;
-  updateCount: number;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  isDirty: boolean;
 }>;
 
 const defaultContext = {
-  currentState: { data: [[0]], aggregates: {}, updateCount: 0 },
+  currentState: { data: [[0]], aggregates: {} },
   isSubmitting: false,
   updateCount: 0,
   setMatrixData: vi.fn(),
@@ -77,6 +77,7 @@ const defaultContext = {
   redo: vi.fn(),
   canUndo: true,
   canRedo: true,
+  isDirty: false,
 };
 
 const renderMatrixActions = (
@@ -92,8 +93,8 @@ const renderMatrixActions = (
 };
 
 const getButton = (label: string) => {
-  const element = screen.getByText(label);
-  const button = element.closest("button");
+  const element = screen.queryByText(label) || screen.queryByRole("button", { name: label });
+  const button = element?.closest("button");
 
   if (!button) {
     throw new Error(`Button with label "${label}" not found`);
@@ -124,7 +125,7 @@ describe("MatrixActions", () => {
 
       expect(screen.getByLabelText("global.undo")).toBeInTheDocument();
       expect(screen.getByLabelText("global.redo")).toBeInTheDocument();
-      expect(screen.getByText("(0)")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "global.save" })).toBeInTheDocument();
       expect(screen.getByText("global.import")).toBeInTheDocument();
       expect(screen.getByText("global.export")).toBeInTheDocument();
     });
@@ -171,28 +172,28 @@ describe("MatrixActions", () => {
 
   describe("save functionality", () => {
     test("manages save button state based on update count", () => {
-      const { rerender } = renderMatrixActions({}, { updateCount: 0 });
-      expect(getButton("(0)")).toBeDisabled();
+      const { rerender } = renderMatrixActions({}, { isDirty: false });
+      expect(getButton("global.save")).toBeDisabled();
 
       rerender(
-        <MatrixProvider {...{ ...defaultContext, updateCount: 1 }}>
+        <MatrixProvider {...{ ...defaultContext, isDirty: true }}>
           <MatrixActions {...defaultProps} />
         </MatrixProvider>,
       );
-      expect(getButton("(1)")).not.toBeDisabled();
+      expect(getButton("global.save")).not.toBeDisabled();
     });
 
     test("handles save button click", async () => {
       const user = userEvent.setup();
-      renderMatrixActions({}, { updateCount: 1 });
+      renderMatrixActions({}, { isDirty: true });
 
-      await user.click(getButton("(1)"));
+      await user.click(getButton("global.save"));
       expect(defaultProps.onSave).toHaveBeenCalledTimes(1);
     });
 
     test("disables save button during submission", () => {
-      renderMatrixActions({}, { isSubmitting: true, updateCount: 1 });
-      expect(getButton("(1)")).toBeDisabled();
+      renderMatrixActions({}, { isSubmitting: true, isDirty: true });
+      expect(getButton("global.save")).toBeDisabled();
     });
   });
 

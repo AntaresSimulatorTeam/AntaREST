@@ -75,17 +75,17 @@ function Matrix({
 
   const {
     currentState,
+    updateCount,
     dateTime,
     aggregates,
     isLoading,
     error,
-    updateCount,
     setMatrixData,
-    reset,
     undo,
     redo,
     canUndo,
     canRedo,
+    isDirty,
     reload,
     rowCount,
   } = useMatrixData({
@@ -102,8 +102,7 @@ function Matrix({
       path: url,
       currentState,
       setMatrixData,
-      reset,
-      canUndo,
+      isDirty,
       reload,
       aggregateTypes,
     });
@@ -138,11 +137,11 @@ function Matrix({
         isSubmitting,
         updateCount,
         setMatrixData,
-        reset,
         undo,
         redo,
         canUndo,
         canRedo,
+        isDirty,
       }}
     >
       <MatrixContainer>

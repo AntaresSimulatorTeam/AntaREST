@@ -34,6 +34,8 @@ export interface DataState {
   aggregates: Partial<MatrixAggregates>;
 }
 
+export type SetMatrixDataFunction = (data: DataState & { saved?: boolean }) => void;
+
 interface UseMatrixDataProps {
   studyId: string;
   path: string;
@@ -49,18 +51,46 @@ export function useMatrixData({
   fetchFn,
   rowCountSource = "matrixIndex",
 }: UseMatrixDataProps) {
-  const [
-    { present: currentState, past },
-    { set: setMatrixData, reset, undo, redo, canUndo, canRedo },
-  ] = useUndo<DataState>({
-    data: [],
-    aggregates: { min: [], max: [], avg: [], total: [] },
-  });
+  const [{ present: currentState }, { set, reset, undo, redo, canUndo, canRedo }] =
+    useUndo<DataState>(
+      {
+        data: [],
+        aggregates: { min: [], max: [], avg: [], total: [] },
+      },
+      { useCheckpoints: true },
+    );
 
   const [index, setIndex] = useState<MatrixIndex>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [updateCount, setUpdateCount] = useState(0);
+
+  const undoWrapper = useCallback(() => {
+    undo();
+    setUpdateCount((count) => count - 1);
+  }, [undo]);
+
+  const redoWrapper = useCallback(() => {
+    redo();
+    setUpdateCount((count) => count + 1);
+  }, [redo]);
+
+  const setMatrixData = useCallback<SetMatrixDataFunction>(
+    ({ saved, ...data }) => {
+      if (saved) {
+        // When `saved` is true, it means the value is from the API. This is the return value after sending
+        // the current present data to the API. So we set checkpoint to false to not add a new undo but replace
+        // only the current present.
+        set(data, false);
+        setUpdateCount(0);
+      } else {
+        set(data, true);
+        setUpdateCount((count) => count + 1);
+      }
+    },
+    [set],
+  );
 
   const fetchMatrix = useCallback(async () => {
     try {
@@ -70,10 +100,13 @@ export function useMatrixData({
         getStudyMatrixIndex(studyId, path),
       ]);
 
-      reset({
+      const newState = {
         data: matrix.data,
         aggregates: calculateMatrixAggregates({ matrix: matrix.data, types: aggregateTypes }),
-      });
+      };
+
+      reset(newState);
+      setUpdateCount(0);
 
       setIndex(index);
       return { matrix, index };
@@ -97,21 +130,21 @@ export function useMatrixData({
     // Current state
     currentState,
     aggregates: currentState.aggregates,
-    updateCount: past.length,
+    updateCount: Math.abs(updateCount),
 
     // Metadata
     dateTime,
     rowCount: rowCountSource === "matrixIndex" ? index?.steps : currentState.data.length,
 
     // Status
+    isDirty: updateCount !== 0,
     isLoading,
     error,
 
     // Actions
     setMatrixData,
-    reset,
-    undo,
-    redo,
+    undo: undoWrapper,
+    redo: redoWrapper,
     canUndo,
     canRedo,
     reload: fetchMatrix,
