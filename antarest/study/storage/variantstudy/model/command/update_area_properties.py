@@ -74,7 +74,7 @@ class UpdateAreasProperties(ICommand):
             optimization_properties = study_data.tree.get(["input", "areas", area_id, "optimization"])
 
             if new_nodal:
-                optimization_properties.get("nodal optimization", {}).update(new_nodal)
+                optimization_properties["nodal optimization"].update(new_nodal)
 
             if new_filtering:
                 if synthesis := new_filtering.get("filter-synthesis"):
@@ -82,7 +82,7 @@ class UpdateAreasProperties(ICommand):
                 if by_year := new_filtering.get("filter-year-by-year"):
                     optimization_properties["filtering"]["filter-year-by-year"] = decode_filter(by_year)
 
-                study_data.tree.save(optimization_properties, ["input", "areas", area_id, "optimization"])
+            study_data.tree.save(optimization_properties, ["input", "areas", area_id, "optimization"])
 
     @override
     def to_dto(self) -> CommandDTO:

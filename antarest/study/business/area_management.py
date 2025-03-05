@@ -12,7 +12,7 @@
 
 import logging
 import re
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, TypeVar
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TypeVar
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
@@ -92,32 +92,6 @@ def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
     if area in area_uis and "ui" in area_uis[area] and "layers" in area_uis[area]["ui"]:
         return re.split(r"\s+", (str(area_uis[area]["ui"]["layers"]) or ""))
     return []
-
-
-def pick_value(
-    old: Optional[T], new: Optional[T], condition: Callable[[Optional[T]], bool] = lambda x: True
-) -> Optional[T]:
-    return new if (old != new and condition(new)) else old
-
-
-def update_area_folder_configuration(old_area: AreaOutput, new_area: AreaOutput) -> AreaFolder:
-    optimization = pick_value(old_area.area_folder.optimization, new_area.area_folder.optimization)
-    adequacy_patch = pick_value(
-        old_area.area_folder.adequacy_patch, new_area.area_folder.adequacy_patch, lambda x: bool(x)
-    )
-    return AreaFolder(adequacy_patch=adequacy_patch, optimization=optimization)
-
-
-def update_thermal_configuration(area_id: str, old_area: AreaOutput, new_area: AreaOutput) -> ThermalAreasProperties:
-    average_unsupplied_energy_cost = pick_value(
-        old_area.average_unsupplied_energy_cost, new_area.average_unsupplied_energy_cost
-    )
-    average_spilled_energy_cost = pick_value(old_area.average_spilled_energy_cost, new_area.average_spilled_energy_cost)
-    return ThermalAreasProperties(
-        # type: ignore[call-arg]
-        unserverdenergycost={area_id: average_unsupplied_energy_cost},
-        spilledenergycost={area_id: average_spilled_energy_cost},
-    )
 
 
 class AreaManager:

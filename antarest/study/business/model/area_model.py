@@ -61,16 +61,16 @@ def decode_filter(encoded_value: Set[str]) -> str:
 
 def build_area_properties(properties: Dict[str, Any]) -> AreaProperties:
     thermal_properties = {}
-    if "energy_cost_unsupplied" in properties:
-        thermal_properties.update({"unserverdenergycost": properties["energy_cost_unsupplied"]})
-    if "energy_cost_spilled" in properties:
-        thermal_properties.update({"spilledenergycost": properties["energy_cost_spilled"]})
+    if key := next((k for k in ["energy_cost_unsupplied", "average_unsupplied_energy_cost"] if k in properties), None):
+        thermal_properties.update({"unserverdenergycost": properties[key]})
+    if key := next((k for k in ["energy_cost_spilled", "average_spilled_energy_cost"] if k in properties), None):
+        thermal_properties.update({"spilledenergycost": properties[key]})
 
     filtering_props = {}
     if "filter_synthesis" in properties:
         filtering_props.update({"filter-synthesis": properties["filter_synthesis"]})
-    if "filter_by_year" in properties:
-        filtering_props.update({"filter-year-by-year": properties["filter_by_year"]})
+    if key := next((k for k in ["filter_year_by_year", "filter_by_year"] if k in properties), None):
+        filtering_props.update({"filter-year-by-year": properties[key]})
 
     optim_properties = {}
     if key := next((k for k in ["non_dispatch_power", "non_dispatchable_power"] if k in properties), None):
