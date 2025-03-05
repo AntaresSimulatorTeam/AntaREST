@@ -44,7 +44,16 @@ class ReadOnlyStudyDao(ABC):
 
 
 class StudyDao(ReadOnlyStudyDao):
+    """
+    Abstraction for access to study data. Handles all reading
+    and writing from underlying storage format.
+    """
+
     def read_only(self) -> ReadOnlyStudyDao:
+        """
+        Returns a read only version this this DAO,
+        to ensure it's not used for writing.
+        """
         return ReadOnlyAdapter(self)
 
     @abstractmethod
@@ -76,6 +85,10 @@ class StudyDao(ReadOnlyStudyDao):
 
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
+    """
+    Adapts a full DAO as a read only DAO without modificatin methods.
+    """
+
     def __init__(self, adaptee: StudyDao):
         self._adaptee = adaptee
 
@@ -97,6 +110,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
 
 class FileStudyTreeDao(StudyDao):
+    """
+    Implementation of study DAO over the simulator input format.
+    """
+
     def __init__(self, study: FileStudy) -> None:
         self._file_study = study
 
