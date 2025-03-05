@@ -86,15 +86,6 @@ export function formatGridNumber({ value, maxDecimals = 0 }: FormatGridNumberOpt
       return digit + acc;
     }, "");
 
-  // const options: Intl.NumberFormatOptions = {
-  //   maximumFractionDigits: maxDecimals,
-  //   useGrouping: true,
-  // };
-
-  // console.log("numValue", numValue);
-
-  // return numValue.toLocaleString("fr-FR", options).replace(",", ".");
-
   return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
 
@@ -180,7 +171,6 @@ export function generateTimeSeriesColumns({
  * @param customColumns - An array of strings representing the custom column titles.
  * @param customColumns.titles - The titles of the custom columns.
  * @param customColumns.width - The width of each column.
- 
  * @returns An array of EnhancedGridColumn objects representing the generated custom columns.
  */
 export function generateCustomColumns({
@@ -204,7 +194,6 @@ export function generateCustomColumns({
  * @param config.count - The number of columns to generate
  * @param config.customColumns - An optional array of custom column titles
  * @param config.width - The width of each column
- *
  * @returns An array of EnhancedGridColumn objects representing the generated data columns
  */
 export function generateDataColumns({
@@ -317,7 +306,6 @@ export function calculateMatrixAggregates({
  * @param columns - Array of EnhancedGridColumn objects to be processed
  * @param isDarkMode - Boolean flag based on the theme to switch columns group headers color
  * @returns Array of EnhancedGridColumn objects with grouping applied
- *
  * @example
  * ```typescript
  * // Input columns
@@ -377,7 +365,6 @@ export function groupResultColumns(
  *   - [2]: Statistic type (e.g., "MIN", "MAX", "STD")
  * @param width - The width of each column
  * @returns Array of ResultColumn objects ready for use in result matrices
- *
  * @see groupResultColumns - Use this function to apply grouping to the generated columns
  */
 

@@ -94,10 +94,11 @@ function MatrixResize() {
           <Button
             color="primary"
             variant="contained"
-            startIcon={<Transform />}
             onClick={handleMatrixResize}
             disabled={targetColumnCount === currentColumnCount || isMatrixSubmitting}
-          />
+          >
+            <Transform />
+          </Button>
         </span>
       </Tooltip>
     </Box>

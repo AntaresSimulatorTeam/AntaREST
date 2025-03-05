@@ -167,7 +167,6 @@
   "form.field.path.startWithSlashNotAllowed": "Le chemin ne doit pas commencer par un '/'",
   "form.field.path.endWithSlashNotAllowed": "Le chemin ne doit pas finir par un '/'",
   "form.field.path.invalid": "Chemin invalide",
-  "matrix.columns": "Colonnes",
   "matrix.resize": "Redimensionner",
   "matrix.message.importHint": "Cliquer ou glisser une matrice ici",
   "matrix.importNewMatrix": "Import d'une nouvelle matrice",
