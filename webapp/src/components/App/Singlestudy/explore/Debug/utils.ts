@@ -106,11 +106,13 @@ export function getFileType(treeData: TreeData): FileType {
   }
 
   if (typeof treeData === "string") {
-    if (URL_SCHEMES.MATRIX.some((scheme) => treeData.startsWith(scheme))) {
+    const filePath = treeData.toLowerCase();
+
+    if (URL_SCHEMES.MATRIX.some((scheme) => filePath.startsWith(scheme))) {
       return "matrix";
     }
 
-    if (treeData.startsWith(URL_SCHEMES.JSON)) {
+    if (filePath.startsWith(URL_SCHEMES.JSON)) {
       return "json";
     }
 
@@ -118,10 +120,18 @@ export function getFileType(treeData: TreeData): FileType {
     // All files except matrices and json-formatted content use this prefix
     // We filter to only allow extensions that can be properly displayed (.txt, .log, .csv, .tsv, .ini)
     // Other extensions (like .RDS or .xlsx) are marked as unsupported since they can't be shown in the UI
-    return treeData.startsWith(URL_SCHEMES.FILE) &&
-      SUPPORTED_EXTENSIONS.some((ext) => treeData.toLowerCase().endsWith(ext.toLowerCase()))
-      ? "text"
-      : "unsupported";
+    if (filePath.startsWith(URL_SCHEMES.FILE)) {
+      // !Special case: JSON files can come with either json:// or file:// prefix
+      // We need to check for .json extension to ensure proper rendering with the JSON component
+      if (filePath.endsWith(".json")) {
+        return "json";
+      }
+
+      // Check other supported text file extensions
+      return SUPPORTED_EXTENSIONS.some((ext) => filePath.endsWith(ext.toLowerCase()))
+        ? "text"
+        : "unsupported";
+    }
   }
 
   return "text";
