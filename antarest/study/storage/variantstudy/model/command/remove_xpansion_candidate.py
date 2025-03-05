@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import override
 
 from antarest.core.exceptions import CandidateNotFoundError
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -47,12 +48,16 @@ class RemoveXpansionCandidate(ICommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
-        candidate_id = next((cdt_id for cdt_id, cdt in candidates.items() if cdt["name"] == self.candidate_name), None)
+        candidate_number = None
+        for cdt_number, cdt in candidates.items():
+            candidate = XpansionCandidate.model_validate(cdt)
+            if candidate.name == self.candidate_name:
+                candidate_number = cdt_number
 
-        if not candidate_id:
+        if not candidate_number:
             raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
 
-        del candidates[candidate_id]
+        del candidates[candidate_number]
         # Reorder keys of the dict
         new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
 

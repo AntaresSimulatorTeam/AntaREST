@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
+from antarest.core.exceptions import CandidateAlreadyExistsError
 from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -23,7 +24,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
     assert_candidate_is_correct,
-    assert_xpansion_candidate_name_is_not_already_taken,
 )
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -50,15 +50,20 @@ class CreateXpansionCandidate(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        candidates_obj = study_data.tree.get(["user", "expansion", "candidates"])
+        candidates = study_data.tree.get(["user", "expansion", "candidates"])
+        candidates_dict = {}
+        for cdt in candidates.values():
+            candidate = XpansionCandidate.model_validate(cdt)
+            candidates_dict[candidate.name] = candidate
 
         # Checks candidate validity
-        assert_xpansion_candidate_name_is_not_already_taken(candidates_obj, self.candidate.name)
+        if self.candidate.name in candidates_dict:
+            raise CandidateAlreadyExistsError(f"The candidate '{self.candidate.name}' already exists")
         assert_candidate_is_correct(study_data, self.candidate)
 
-        new_id = str(len(candidates_obj) + 1)  # The first candidate key is 1
-        candidates_obj[new_id] = self.candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
-        candidates_data = {"user": {"expansion": {"candidates": candidates_obj}}}
+        new_id = str(len(candidates) + 1)  # The first candidate key is 1
+        candidates[new_id] = self.candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
+        candidates_data = {"user": {"expansion": {"candidates": candidates}}}
         study_data.tree.save(candidates_data)
 
         return self._apply_config(study_data.config)[0]

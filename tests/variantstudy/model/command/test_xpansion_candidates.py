@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
-from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import ReplaceXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 

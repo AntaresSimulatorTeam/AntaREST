@@ -47,7 +47,7 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
     RemoveXpansionResource,
     checks_resource_deletion_is_allowed,
 )
-from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import ReplaceXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.xpansion_common import assert_link_exist, get_resource_dir
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 

@@ -54,6 +54,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
+    ReplaceXpansionCandidate,
+)
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -66,9 +69,6 @@ from antarest.study.storage.variantstudy.model.command.update_renewable_cluster 
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
-from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import (
-    ReplaceXpansionCandidate,
-)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

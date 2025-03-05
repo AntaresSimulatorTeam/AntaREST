@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
-from antarest.core.exceptions import CandidateNotFoundError
+from antarest.core.exceptions import CandidateAlreadyExistsError, CandidateNotFoundError
 from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -24,7 +24,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
     assert_candidate_is_correct,
-    assert_xpansion_candidate_name_is_not_already_taken,
 )
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -55,18 +54,25 @@ class ReplaceXpansionCandidate(ICommand):
         # Checks candidate validity
         assert_candidate_is_correct(study_data, self.new_properties)
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
+        candidates_dict = {}
+        candidate_number = None
+        for cdt_number, cdt in candidates.items():
+            candidate = XpansionCandidate.model_validate(cdt)
+            if candidate.name == self.candidate_name:
+                candidate_number = cdt_number
+            candidates_dict[candidate.name] = candidate
+
+        if candidate_number is None:
+            raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
+
         if self.new_properties.name != self.candidate_name:
-            assert_xpansion_candidate_name_is_not_already_taken(candidates, self.new_properties.name)
+            if self.new_properties.name in candidates_dict:
+                raise CandidateAlreadyExistsError(f"The candidate '{self.new_properties.name}' already exists")
 
-        for candidate_id, candidate in candidates.items():
-            if candidate["name"] == self.candidate_name:
-                # NOTE: this behavior is weird, but we have to keep it as is to fit with the existing code
-                candidates[candidate_id] = self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True)
-                study_data.tree.save(candidates, ["user", "expansion", "candidates"])
+        candidates[candidate_number] = self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True)
+        study_data.tree.save(candidates, ["user", "expansion", "candidates"])
 
-                return self._apply_config(study_data.config)[0]
-
-        raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
+        return self._apply_config(study_data.config)[0]
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -13,7 +13,6 @@ from typing import Any, Tuple
 
 from antarest.core.exceptions import (
     AreaNotFound,
-    CandidateAlreadyExistsError,
     LinkNotFound,
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
@@ -56,12 +55,6 @@ def apply_create_resource_commands(
     study_data.tree.save(data=data, url=url + [filename])
     output, _ = apply_config_create_resource_commands(filename, resource_type)
     return output
-
-
-def assert_xpansion_candidate_name_is_not_already_taken(candidates: dict[str, Any], candidate_name: str) -> None:
-    for candidate in candidates.values():
-        if candidate["name"] == candidate_name:
-            raise CandidateAlreadyExistsError(f"The candidate '{candidate_name}' already exists")
 
 
 def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
