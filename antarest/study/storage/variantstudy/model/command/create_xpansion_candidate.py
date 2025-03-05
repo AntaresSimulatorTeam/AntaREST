@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
-from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -42,7 +42,7 @@ class CreateXpansionCandidate(ICommand):
     # Command parameters
     # ==================
 
-    candidate: XpansionCandidateInternal
+    candidate: XpansionCandidate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:

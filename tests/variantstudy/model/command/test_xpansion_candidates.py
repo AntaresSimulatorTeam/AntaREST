@@ -15,14 +15,14 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.core.exceptions import BadCandidateFormatError, WrongLinkFormatError
-from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
-from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -55,9 +55,7 @@ class TestXpansionCandidate:
 
         # Creates 2 candidates
         cmd = CreateXpansionCandidate(
-            candidate=XpansionCandidateInternal(
-                name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100
-            ),
+            candidate=XpansionCandidate(name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
@@ -65,7 +63,7 @@ class TestXpansionCandidate:
         assert output.status, output.message
 
         cmd = CreateXpansionCandidate(
-            candidate=XpansionCandidateInternal(
+            candidate=XpansionCandidate(
                 name="cdt_2", link="at - be", annual_cost_per_mw=156, max_units=7, unit_size=19
             ),
             command_context=command_context,
@@ -94,9 +92,9 @@ max-units = 7
         )
 
         # Updates one
-        cmd = UpdateXpansionCandidate(
+        cmd = ReplaceXpansionCandidate(
             candidate_name="cdt_1",
-            new_properties=XpansionCandidateInternal(
+            new_properties=XpansionCandidate(
                 name="cdt_1", link="at - be", annual_cost_per_mw=30, max_investment=100, direct_link_profile="capa1.txt"
             ),
             command_context=command_context,
@@ -149,7 +147,7 @@ max-units = 7
 
         # Wrongly formatted candidates
         with pytest.raises(ValidationError, match="Field required"):
-            XpansionCandidateInternal(name="cdt_1", link="at - be")
+            XpansionCandidate(name="cdt_1", link="at - be")
 
         with pytest.raises(
             BadCandidateFormatError,
@@ -157,27 +155,27 @@ max-units = 7
                 "The candidate is not well formatted.\nIt should either contain max-investment or (max-units and unit-size)."
             ),
         ):
-            XpansionCandidateInternal(name="cdt_1", link="at - be", annual_cost_per_mw=12)
+            XpansionCandidate(name="cdt_1", link="at - be", annual_cost_per_mw=12)
 
         with pytest.raises(WrongLinkFormatError, match="The link must be in the format 'area1 - area2'"):
-            XpansionCandidateInternal(name="cdt_1", link="fake link")
+            XpansionCandidate(name="cdt_1", link="fake link")
 
         # Create a candidate on a fake area
-        cdt = XpansionCandidateInternal(name="cdt_1", link="fake - link", annual_cost_per_mw=12, max_investment=100)
+        cdt = XpansionCandidate(name="cdt_1", link="fake - link", annual_cost_per_mw=12, max_investment=100)
         cmd = CreateXpansionCandidate(candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7)
         output = cmd.apply(study_data=empty_study)
         assert output.status is False
         assert "Area is not found: 'fake'" in output.message
 
         # Create a candidate on a fake link
-        cdt = XpansionCandidateInternal(name="cdt_1", link="at - fake", annual_cost_per_mw=12, max_investment=100)
+        cdt = XpansionCandidate(name="cdt_1", link="at - fake", annual_cost_per_mw=12, max_investment=100)
         cmd = CreateXpansionCandidate(candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7)
         output = cmd.apply(study_data=empty_study)
         assert output.status is False
         assert "The link from 'at' to 'fake' not found" in output.message
 
         # Create a candidate with a fake capa registered
-        cdt = XpansionCandidateInternal(
+        cdt = XpansionCandidate(
             name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100, direct_link_profile="fake_capa"
         )
         cmd = CreateXpansionCandidate(candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7)
@@ -187,9 +185,7 @@ max-units = 7
 
         # Create a candidate with an already taken name
         cmd = CreateXpansionCandidate(
-            candidate=XpansionCandidateInternal(
-                name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100
-            ),
+            candidate=XpansionCandidate(name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
@@ -197,9 +193,7 @@ max-units = 7
         assert output.status, output.message
 
         cmd = CreateXpansionCandidate(
-            candidate=XpansionCandidateInternal(
-                name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100
-            ),
+            candidate=XpansionCandidate(name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
@@ -209,20 +203,16 @@ max-units = 7
 
         # Rename a candidate with an already taken name
         cmd = CreateXpansionCandidate(
-            candidate=XpansionCandidateInternal(
-                name="cdt_2", link="at - be", annual_cost_per_mw=12, max_investment=100
-            ),
+            candidate=XpansionCandidate(name="cdt_2", link="at - be", annual_cost_per_mw=12, max_investment=100),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
         output = cmd.apply(study_data=empty_study)
         assert output.status, output.message
 
-        cmd = UpdateXpansionCandidate(
+        cmd = ReplaceXpansionCandidate(
             candidate_name="cdt_1",
-            new_properties=XpansionCandidateInternal(
-                name="cdt_2", link="at - be", annual_cost_per_mw=30, max_investment=100
-            ),
+            new_properties=XpansionCandidate(name="cdt_2", link="at - be", annual_cost_per_mw=30, max_investment=100),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )

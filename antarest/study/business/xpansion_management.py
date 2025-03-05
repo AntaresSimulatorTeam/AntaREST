@@ -47,7 +47,7 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
     RemoveXpansionResource,
     checks_resource_deletion_is_allowed,
 )
-from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import UpdateXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.xpansion_common import assert_link_exist, get_resource_dir
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -167,7 +167,7 @@ class XpansionManager:
         xpansion_candidate_dto: XpansionCandidateDTO,
     ) -> None:
         internal_candidate = xpansion_candidate_dto.to_internal_model()
-        command = UpdateXpansionCandidate(
+        command = ReplaceXpansionCandidate(
             candidate_name=candidate_name,
             new_properties=internal_candidate,
             command_context=self._command_context,

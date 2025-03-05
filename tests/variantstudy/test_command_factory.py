@@ -825,7 +825,7 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_XPANSION_CANDIDATE.value,
+            action=CommandName.REPLACE_XPANSION_CANDIDATE.value,
             args=[
                 {
                     "candidate_name": "cdt_1",

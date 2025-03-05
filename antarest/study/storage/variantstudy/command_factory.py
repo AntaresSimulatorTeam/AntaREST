@@ -67,7 +67,7 @@ from antarest.study.storage.variantstudy.model.command.update_scenario_builder i
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
 from antarest.study.storage.variantstudy.model.command.update_xpansion_candidate import (
-    UpdateXpansionCandidate,
+    ReplaceXpansionCandidate,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -105,7 +105,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_USER_RESOURCE.value: CreateUserResource,
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
     CommandName.CREATE_XPANSION_CANDIDATE.value: CreateXpansionCandidate,
-    CommandName.UPDATE_XPANSION_CANDIDATE.value: UpdateXpansionCandidate,
+    CommandName.REPLACE_XPANSION_CANDIDATE.value: ReplaceXpansionCandidate,
     CommandName.REMOVE_XPANSION_CANDIDATE.value: RemoveXpansionCandidate,
     CommandName.REMOVE_XPANSION_CONFIGURATION.value: RemoveXpansionConfiguration,
     CommandName.CREATE_XPANSION_CONFIGURATION.value: CreateXpansionConfiguration,

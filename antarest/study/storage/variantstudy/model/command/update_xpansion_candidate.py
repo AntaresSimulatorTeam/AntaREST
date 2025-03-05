@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import override
 
 from antarest.core.exceptions import CandidateNotFoundError
-from antarest.study.business.model.xpansion_model import XpansionCandidateInternal
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -30,21 +30,21 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateXpansionCandidate(ICommand):
+class ReplaceXpansionCandidate(ICommand):
     """
-    Command used to update a xpansion candidate
+    Command used to replace an existing xpansion candidate with a new one
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_XPANSION_CANDIDATE
+    command_name: CommandName = CommandName.REPLACE_XPANSION_CANDIDATE
 
     # Command parameters
     # ==================
 
     candidate_name: str
-    new_properties: XpansionCandidateInternal
+    new_properties: XpansionCandidate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:

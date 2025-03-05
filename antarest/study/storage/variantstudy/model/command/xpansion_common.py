@@ -18,7 +18,7 @@ from antarest.core.exceptions import (
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
-from antarest.study.business.model.xpansion_model import XpansionCandidateInternal, XpansionResourceFileType
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionResourceFileType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 
@@ -64,7 +64,7 @@ def assert_xpansion_candidate_name_is_not_already_taken(candidates: dict[str, An
             raise CandidateAlreadyExistsError(f"The candidate '{candidate_name}' already exists")
 
 
-def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidateInternal) -> None:
+def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
     existing_files = file_study.tree.get(["user", "expansion", "capa"])
     for attr in [
         "link_profile",
@@ -79,15 +79,15 @@ def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto:
                 raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
 
 
-def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidateInternal) -> None:
-    area1, area2 = xpansion_candidate_dto.link.split(" - ")
-    area_from, area_to = sorted([area1, area2])
+def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
+    area_from = xpansion_candidate_dto.link.area_from
+    area_to = xpansion_candidate_dto.link.area_to
     if area_from not in file_study.config.areas:
         raise AreaNotFound(area_from)
     if area_to not in file_study.config.get_links(area_from):
         raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 
 
-def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandidateInternal) -> None:
+def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandidate) -> None:
     assert_link_profile_are_files(file_study, candidate)
     assert_link_exist(file_study, candidate)
