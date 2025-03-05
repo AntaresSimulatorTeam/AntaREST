@@ -17,7 +17,7 @@ from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.areas.thermal_management import ThermalClusterOutput
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPathProperties,
     AreaFolder,
