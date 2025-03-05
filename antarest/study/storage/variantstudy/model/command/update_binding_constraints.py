@@ -19,7 +19,6 @@ from antares.study.version import StudyVersion
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -139,21 +138,17 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
             bc_json = bcs_json[bc_index_by_id[bc_id]]
             bc_json_copy = copy.deepcopy(bc_json)
             bc_json.update(bc_props_as_dict)
-            if "time_step" in bc_props_as_dict and bc_props.time_step != BindingConstraintFrequency(bc_json["type"]):
+            # note that time_step is named type in the json object because that's how it's named in the study ini file
+            existing_time_step = BindingConstraintFrequency(bc_json_copy["type"])
+            if "time_step" in bc_props_as_dict and bc_props.time_step != existing_time_step:
                 # The user changed the time step, we need to update the matrix accordingly
                 for [target, next_matrix] in generate_replacement_matrices(
                     bc_id, self.study_version, bc_props, bc_props.operator
                 ):
                     # prepare matrix as a dict to save it in the tree
                     matrix_url = target.split("/")
-                    replace_matrix_data: JSON = {}
-                    target_matrix = replace_matrix_data
-                    for element in matrix_url[:-1]:
-                        target_matrix[element] = {}
-                        target_matrix = target_matrix[element]
-                    target_matrix[matrix_url[-1]] = next_matrix
-                    file_study.tree.save(replace_matrix_data)
-                # bc_json["type"] = bc_props_as_dict["time_step"]
+                    file_study.tree.save(data=next_matrix, url=matrix_url)
+                bc_json["type"] = bc_props_as_dict["time_step"]
             if (
                 "operator" in bc_props_as_dict
                 and bc_props.operator != bc_json_copy["operator"]
