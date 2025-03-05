@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence
 
 from typing_extensions import override
 
@@ -20,7 +20,9 @@ from antarest.study.business.model.link_model import (
     LinkInternal,
     LinkProperties,
 )
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
 

@@ -102,36 +102,37 @@ class InMemoryStudyInterface(StudyInterface):
     def get_study_dao(self) -> ReadOnlyStudyDao:
         return self._study_dao.read_only()
 
-    class FileStudyInterface(StudyInterface):
-        """
-        Basic implementation of study interface.
-        Only used for test purposes, currently.
-        """
 
-        def __init__(self, file_study: FileStudy):
-            self.file_study = file_study
+class FileStudyInterface(StudyInterface):
+    """
+    Basic implementation of study interface.
+    Only used for test purposes, currently.
+    """
 
-        @override
-        @property
-        def id(self) -> str:
-            return self.file_study.config.study_id
+    def __init__(self, file_study: FileStudy):
+        self.file_study = file_study
 
-        @override
-        @property
-        def version(self) -> StudyVersion:
-            return self.file_study.config.version
+    @override
+    @property
+    def id(self) -> str:
+        return self.file_study.config.study_id
 
-        @override
-        def get_files(self) -> FileStudy:
-            return self.file_study
+    @override
+    @property
+    def version(self) -> StudyVersion:
+        return self.file_study.config.version
 
-        @override
-        def add_commands(self, commands: Sequence[ICommand]) -> None:
-            for command in commands:
-                result = command.apply(FileStudyTreeDao(self.file_study))
-                if not result.status:
-                    raise CommandApplicationError(result.message)
+    @override
+    def get_files(self) -> FileStudy:
+        return self.file_study
 
-        @override
-        def get_study_dao(self) -> ReadOnlyStudyDao:
-            return FileStudyTreeDao(self.file_study).read_only()
+    @override
+    def add_commands(self, commands: Sequence[ICommand]) -> None:
+        for command in commands:
+            result = command.apply(FileStudyTreeDao(self.file_study))
+            if not result.status:
+                raise CommandApplicationError(result.message)
+
+    @override
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.file_study).read_only()
