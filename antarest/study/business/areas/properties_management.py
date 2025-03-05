@@ -12,7 +12,7 @@
 
 import re
 from builtins import sorted
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, NamedTuple
 
 from pydantic import model_validator
 
@@ -55,6 +55,12 @@ def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None)
     return ", ".join(sort_filter_options(encoded_value))
 
 
+class AreaProperties(NamedTuple):
+    thermal_properties: Dict[str, Any]
+    filtering_props: Dict[str, Any]
+    optim_properties: Dict[str, Any]
+    adequacy_patch_property: Dict[str, Any]
+
 @all_optional_model
 class PropertiesFormFields(FormFieldsBaseModel):
     energy_cost_unsupplied: float = 0.0
@@ -83,44 +89,45 @@ class PropertiesFormFields(FormFieldsBaseModel):
 
         return values
 
-    def to_properties(self) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
-        thermal_properties = dict(
-            filter(
-                lambda item: item[1] is not None,
-                {
-                    "unserverdenergycost": self.energy_cost_unsupplied,
-                    "spilledenergycost": self.energy_cost_spilled,
-                }.items(),
-            )
-        )
-        filtering_props = dict(
-            filter(
-                lambda item: item[1] is not None,
-                {"filter-synthesis": self.filter_synthesis, "filter-year-by-year": self.filter_by_year}.items(),
-            )
-        )
-        optim_properties = dict(
-            filter(
-                lambda item: item[1] is not None,
-                {
-                    "non-dispatchable-power": self.non_dispatch_power,
-                    "dispatchable-hydro-power": self.dispatch_hydro_power,
-                    "other-dispatchable-power": self.other_dispatch_power,
-                    "spread-unsupplied-energy-cost": self.spread_unsupplied_energy_cost,
-                    "spread-spilled-energy-cost": self.spread_spilled_energy_cost,
-                }.items(),
-            )
-        )
-        adequacy_patch_property = dict(
-            filter(
-                lambda item: item[1] is not None,
-                {
-                    "adequacy-patch-mode": self.adequacy_patch_mode,
-                }.items(),
-            )
-        )
+    def to_properties(self) -> AreaProperties:
+        thermal_properties = {
+            k: v
+            for k, v in {
+                "unserverdenergycost": self.energy_cost_unsupplied,
+                "spilledenergycost": self.energy_cost_spilled,
+            }.items()
+            if v is not None
+        }
+        filtering_props = {
+            k: v
+            for k, v in {"filter-synthesis": self.filter_synthesis, "filter-year-by-year": self.filter_by_year}.items()
+            if v is not None
+        }
+        optim_properties = {
+            k: v
+            for k, v in {
+                "non-dispatchable-power": self.non_dispatch_power,
+                "dispatchable-hydro-power": self.dispatch_hydro_power,
+                "other-dispatchable-power": self.other_dispatch_power,
+                "spread-unsupplied-energy-cost": self.spread_unsupplied_energy_cost,
+                "spread-spilled-energy-cost": self.spread_spilled_energy_cost,
+            }.items()
+            if v is not None
+        }
+        adequacy_patch_property = {
+            k: v
+            for k, v in {
+                "adequacy-patch-mode": self.adequacy_patch_mode,
+            }.items()
+            if v is not None
+        }
 
-        return thermal_properties, filtering_props, optim_properties, adequacy_patch_property
+        return AreaProperties(
+            thermal_properties=thermal_properties,
+            filtering_props=filtering_props,
+            optim_properties=optim_properties,
+            adequacy_patch_property=adequacy_patch_property,
+        )
 
 
 def update_thermal_properties(
@@ -204,7 +211,11 @@ class PropertiesManager:
     ) -> None:
         file_study = study.get_files()
 
-        new_thermal_props, new_filtering_props, new_nodal_props, new_adequacy_patch_prop = field_values.to_properties()
+        properties = field_values.to_properties()
+        new_thermal_props = properties.thermal_properties
+        new_filtering_props = properties.filtering_props
+        new_nodal_props = properties.optim_properties
+        new_adequacy_patch_prop = properties.adequacy_patch_property
 
         # Update thermal properties
         current_thermal_props = file_study.tree.get(THERMAL_PATH.split("/"))
