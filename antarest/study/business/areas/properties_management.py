@@ -171,9 +171,15 @@ class PropertiesManager:
         current_optim_properties = file_study.tree.get(OPTIMIZATION_PATH.format(area=area_id).split("/"))
         current_adequacy_patch = file_study.tree.get(ADEQUACY_PATCH_PATH.format(area=area_id).split("/"))
 
+        unserved_energy_cost = current_thermal_props.get("unserverdenergycost", {})
+        energy_cost_unsupplied = unserved_energy_cost[area_id] if area_id in unserved_energy_cost else 0.0
+
+        spilled_energy_cost = current_thermal_props.get("spilledenergycost", {})
+        energy_cost_spilled = spilled_energy_cost[area_id] if area_id in spilled_energy_cost else 0.0
+
         args = {
-            "energy_cost_unsupplied": current_thermal_props.get("unserverdenergycost")[area_id],
-            "energy_cost_spilled": current_thermal_props.get("spilledenergycost")[area_id],
+            "energy_cost_unsupplied": energy_cost_unsupplied,
+            "energy_cost_spilled": energy_cost_spilled,
             "non_dispatch_power": current_optim_properties["nodal optimization"].get("non-dispatchable-power"),
             "dispatch_hydro_power": current_optim_properties["nodal optimization"].get("dispatchable-hydro-power"),
             "other_dispatch_power": current_optim_properties["nodal optimization"].get("other-dispatchable-power"),
