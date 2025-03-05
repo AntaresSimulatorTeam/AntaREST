@@ -10,14 +10,17 @@
 #
 # This file is part of the Antares project.
 
-import re
-from builtins import sorted
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Any, Dict, Set
 
 from pydantic import model_validator
 
 from antarest.study.business.all_optional_meta import all_optional_model
-from antarest.study.business.model.area_model import AreaProperties, build_area_properties
+from antarest.study.business.model.area_model import (
+    FILTER_OPTIONS,
+    build_area_properties,
+    decode_filter,
+    encode_filter,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
@@ -33,24 +36,6 @@ AREA_PATH = "input/areas/{area}"
 THERMAL_PATH = "input/thermal/areas"
 OPTIMIZATION_PATH = f"{AREA_PATH}/optimization"
 ADEQUACY_PATCH_PATH = f"{AREA_PATH}/adequacy_patch"
-# Keep the order
-FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
-
-
-def sort_filter_options(options: Iterable[str]) -> List[str]:
-    return sorted(
-        options,
-        key=lambda x: FILTER_OPTIONS.index(x),
-    )
-
-
-def encode_filter(value: str) -> Set[str]:
-    stripped = value.strip()
-    return set(re.split(r"\s*,\s*", stripped) if stripped else [])
-
-
-def decode_filter(encoded_value: Set[str], current_filter: Optional[str] = None) -> str:
-    return ", ".join(sort_filter_options(encoded_value))
 
 
 @all_optional_model

@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaProperties
+from antarest.study.business.model.area_model import AreaProperties, decode_filter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -42,7 +42,6 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-
         for area_id, properties in self.areas_properties.items():
             self.update_thermal_properties(area_id, study_data)
             self.update_adequacy_patch(area_id, study_data)
@@ -64,7 +63,7 @@ class UpdateAreasProperties(ICommand):
     def update_adequacy_patch(self, area_id: str, study_data: FileStudy) -> None:
         if (new_properties := self.areas_properties[area_id].adequacy_patch_property) != {}:
             adequacy_patch_properties = study_data.tree.get(["input", "areas", area_id, "adequacy_patch"])
-            adequacy_patch_properties['adequacy-patch'].update(new_properties)
+            adequacy_patch_properties["adequacy-patch"].update(new_properties)
             study_data.tree.save(adequacy_patch_properties, ["input", "areas", area_id, "adequacy_patch"])
 
     def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
@@ -78,9 +77,12 @@ class UpdateAreasProperties(ICommand):
                 optimization_properties.get("nodal optimization", {}).update(new_nodal)
 
             if new_filtering:
-                optimization_properties.get("filtering", {}).update(new_filtering)
+                if synthesis := new_filtering.get("filter-synthesis"):
+                    optimization_properties["filtering"]["filter-synthesis"] = decode_filter(synthesis)
+                if by_year := new_filtering.get("filter-year-by-year"):
+                    optimization_properties["filtering"]["filter-year-by-year"] = decode_filter(by_year)
 
-            study_data.tree.save(optimization_properties, ["input", "areas", area_id, "optimization"])
+                study_data.tree.save(optimization_properties, ["input", "areas", area_id, "optimization"])
 
     @override
     def to_dto(self) -> CommandDTO:

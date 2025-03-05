@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Self
+import re
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set
 
 from pydantic import Field
 
@@ -36,6 +37,28 @@ class AreaProperties(AntaresBaseModel):
     optim_properties: Dict[str, Any]
     adequacy_patch_property: Dict[str, Any]
 
+
+FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+
+def sort_filter_options(options: Iterable[str]) -> List[str]:
+    return sorted(
+        options,
+        key=lambda x: FILTER_OPTIONS.index(x),
+    )
+
+
+def encode_filter(value: str) -> Set[str]:
+    stripped = value.strip()
+    return set(re.split(r"\s*,\s*", stripped) if stripped else [])
+
+
+def decode_filter(encoded_value: Set[str]) -> str:
+    if isinstance(encoded_value, str):
+        return encoded_value
+    return ", ".join(sort_filter_options(encoded_value))
+
+
 def build_area_properties(properties: Dict[str, Any]) -> AreaProperties:
     thermal_properties = {}
     if "energy_cost_unsupplied" in properties:
@@ -50,12 +73,12 @@ def build_area_properties(properties: Dict[str, Any]) -> AreaProperties:
         filtering_props.update({"filter-year-by-year": properties["filter_by_year"]})
 
     optim_properties = {}
-    if "non_dispatch_power" in properties:
-        optim_properties.update({"non-dispatchable-power": properties["non_dispatch_power"]})
-    if "dispatch_hydro_power" in properties:
-        optim_properties.update({"dispatchable-hydro-power": properties["dispatch_hydro_power"]})
-    if "other_dispatch_power" in properties:
-        optim_properties.update({"other-dispatchable-power": properties["other_dispatch_power"]})
+    if key := next((k for k in ["non_dispatch_power", "non_dispatchable_power"] if k in properties), None):
+        optim_properties.update({"non-dispatchable-power": properties[key]})
+    if key := next((k for k in ["dispatch_hydro_power", "dispatchable_hydro_power"] if k in properties), None):
+        optim_properties.update({"dispatchable-hydro-power": properties[key]})
+    if key := next((k for k in ["other_dispatch_power", "other_dispatchable_power"] if k in properties), None):
+        optim_properties.update({"other-dispatchable-power": properties[key]})
     if "spread_unsupplied_energy_cost" in properties:
         optim_properties.update({"spread-unsupplied-energy-cost": properties["spread_unsupplied_energy_cost"]})
     if "spread_spilled_energy_cost" in properties:
