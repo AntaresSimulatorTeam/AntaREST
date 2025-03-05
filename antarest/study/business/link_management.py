@@ -98,11 +98,35 @@ class LinkManager:
         self,
         study: StudyInterface,
         update_links_by_ids: Mapping[Tuple[str, str], LinkBaseDTO],
-    ) -> Mapping[Tuple[str, str], LinkBaseDTO]:
-        new_links_by_ids = {}
+    ) -> Mapping[Tuple[str, str], LinkDTO]:
+        # Build all commands
+        commands = []
         for (area1, area2), update_link_dto in update_links_by_ids.items():
-            updated_link = self.update_link(study, area1, area2, update_link_dto)
-            new_links_by_ids[(area1, area2)] = updated_link
+            link_dto = LinkDTO(area1=area1, area2=area2, **update_link_dto.model_dump(exclude_unset=True))
+
+            file_study = study.get_files()
+            link = link_dto.to_internal(study.version)
+
+            self._get_link_if_exists(file_study, link)
+
+            command = UpdateLink(
+                area1=link.area1,
+                area2=link.area2,
+                parameters=link.model_dump(
+                    include=update_link_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
+                ),
+                command_context=self._command_context,
+                study_version=study.version,
+            )
+            commands.append(command)
+
+        study.add_commands(commands)
+
+        # Builds return
+        all_links = self.get_all_links(study)
+        new_links_by_ids = {}
+        for updated_link in all_links:
+            new_links_by_ids[(updated_link.area1, updated_link.area2)] = updated_link
 
         return new_links_by_ids
 
