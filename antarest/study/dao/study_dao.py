@@ -21,11 +21,7 @@ from antarest.study.business.model.link_model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class ReadOnlyStudyDao(ABC):
-    @abstractmethod
-    def get_version(self) -> StudyVersion:
-        raise NotImplementedError()
-
+class ReadOnlyLinkDao(ABC):
     @abstractmethod
     def get_links(self) -> Sequence[LinkDTO]:
         raise NotImplementedError()
@@ -39,26 +35,13 @@ class ReadOnlyStudyDao(ABC):
         raise NotImplementedError()
 
 
-class StudyDao(ReadOnlyStudyDao):
-    """
-    Abstraction for access to study data. Handles all reading
-    and writing from underlying storage format.
-    """
-
-    def read_only(self) -> ReadOnlyStudyDao:
-        """
-        Returns a read only version this this DAO,
-        to ensure it's not used for writing.
-        """
-        return ReadOnlyAdapter(self)
-
+class ReadOnlyStudyDao(ReadOnlyLinkDao):
     @abstractmethod
-    def as_file_study(self) -> FileStudy:
-        """
-        To ease transition, to be removed when all goes through other methods
-        """
+    def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
+
+class LinkDao(ReadOnlyStudyDao):
     @abstractmethod
     def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
         raise NotImplementedError()
@@ -77,6 +60,27 @@ class StudyDao(ReadOnlyStudyDao):
 
     @abstractmethod
     def save_link_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+
+class StudyDao(LinkDao):
+    """
+    Abstraction for access to study data. Handles all reading
+    and writing from underlying storage format.
+    """
+
+    def read_only(self) -> ReadOnlyStudyDao:
+        """
+        Returns a read only version this this DAO,
+        to ensure it's not used for writing.
+        """
+        return ReadOnlyAdapter(self)
+
+    @abstractmethod
+    def as_file_study(self) -> FileStudy:
+        """
+        To ease transition, to be removed when all goes through other methods
+        """
         raise NotImplementedError()
 
 

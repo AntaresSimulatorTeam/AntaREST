@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.dao.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
     transform_name_to_id,

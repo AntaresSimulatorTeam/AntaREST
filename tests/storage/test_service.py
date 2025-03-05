@@ -47,7 +47,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
-from antarest.study.dao.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     ExportFormat,

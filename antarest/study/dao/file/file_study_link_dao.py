@@ -1,37 +1,39 @@
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Sequence
 
-from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
-from antarest.study.business.model.link_model import LinkDTO, LinkInternal, LinkProperties
-from antarest.study.dao.study_dao import StudyDao
+from antarest.study.business.model.link_model import (
+    LinkDTO,
+    LinkInternal,
+    LinkProperties,
+)
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.study_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class FileStudyTreeDao(StudyDao):
-    """
-    Implementation of study DAO over the simulator input format.
-    """
-
-    def __init__(self, study: FileStudy) -> None:
-        self._file_study = study
-
-    @override
-    def as_file_study(self) -> FileStudy:
-        """
-        To ease transition, to be removed when all goes through other methods
-        """
-        return self._file_study
-
-    @override
-    def get_version(self) -> StudyVersion:
-        return self._file_study.config.version
+class FileStudyLinkDao(LinkDao, ABC):
+    @property
+    @abstractmethod
+    def impl(self) -> "FileStudyTreeDao":
+        pass
 
     @override
     def get_links(self) -> Sequence[LinkDTO]:
-        file_study = self._file_study
+        file_study = self.impl._file_study
         result: List[LinkDTO] = []
 
         for area_id, area in file_study.config.areas.items():
@@ -46,7 +48,7 @@ class FileStudyTreeDao(StudyDao):
 
     @override
     def link_exists(self, area1_id: str, area2_id: str) -> bool:
-        file_study = self._file_study
+        file_study = self.impl._file_study
         try:
             area1_id, area2_id = sorted((area1_id, area2_id))
             file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
@@ -56,7 +58,7 @@ class FileStudyTreeDao(StudyDao):
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
-        file_study = self._file_study
+        file_study = self.impl._file_study
         try:
             props = file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
         except KeyError:
@@ -66,7 +68,7 @@ class FileStudyTreeDao(StudyDao):
 
     @override
     def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        study_data = self._file_study
+        study_data = self.impl._file_study
         version = study_data.config.version
         area1_id, area2_id = sorted((area1_id, area2_id))
         self.update_link_config(area1_id, area2_id, link)
@@ -83,7 +85,7 @@ class FileStudyTreeDao(StudyDao):
 
     @override
     def update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        study_data = self._file_study.config
+        study_data = self.impl._file_study.config
         if area1_id not in study_data.areas:
             raise ValueError(f"The area '{area1_id}' does not exist")
         if area2_id not in study_data.areas:
@@ -94,7 +96,7 @@ class FileStudyTreeDao(StudyDao):
 
     @override
     def save_link_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self._file_study
+        study_data = self.impl._file_study
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version < STUDY_VERSION_8_2:
@@ -107,7 +109,7 @@ class FileStudyTreeDao(StudyDao):
 
     @override
     def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self._file_study
+        study_data = self.impl._file_study
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version >= STUDY_VERSION_8_2:
@@ -124,7 +126,7 @@ class FileStudyTreeDao(StudyDao):
 
     @override
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self._file_study
+        study_data = self.impl._file_study
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version >= STUDY_VERSION_8_2:

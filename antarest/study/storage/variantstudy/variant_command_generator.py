@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
-from antarest.study.dao.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
