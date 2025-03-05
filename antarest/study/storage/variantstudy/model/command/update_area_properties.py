@@ -14,6 +14,8 @@ from typing import Dict, List, Optional
 from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaProperties, decode_filter
+from antarest.study.storage.rawstudy.model.filesystem.config.area import ThermalAreasProperties, AdequacyPathProperties, \
+    OptimizationProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -58,12 +60,17 @@ class UpdateAreasProperties(ICommand):
             for k, v in new_properties.items():
                 thermal_properties[k].update({area_id: v})
 
+            ThermalAreasProperties.model_validate(thermal_properties)
+
             study_data.tree.save(thermal_properties, ["input", "thermal", "areas"])
 
     def update_adequacy_patch(self, area_id: str, study_data: FileStudy) -> None:
         if (new_properties := self.areas_properties[area_id].adequacy_patch_property) != {}:
             adequacy_patch_properties = study_data.tree.get(["input", "areas", area_id, "adequacy_patch"])
             adequacy_patch_properties["adequacy-patch"].update(new_properties)
+
+            AdequacyPathProperties.model_validate(adequacy_patch_properties)
+
             study_data.tree.save(adequacy_patch_properties, ["input", "areas", area_id, "adequacy_patch"])
 
     def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
@@ -81,6 +88,8 @@ class UpdateAreasProperties(ICommand):
                     optimization_properties["filtering"]["filter-synthesis"] = decode_filter(synthesis)
                 if by_year := new_filtering.get("filter-year-by-year"):
                     optimization_properties["filtering"]["filter-year-by-year"] = decode_filter(by_year)
+
+            OptimizationProperties.model_validate(optimization_properties)
 
             study_data.tree.save(optimization_properties, ["input", "areas", area_id, "optimization"])
 
