@@ -48,8 +48,6 @@ export interface DataGridProps
   readOnly?: boolean;
 }
 
-const ROW_HEIGHT = 30;
-
 function isStringRowMarkerOptions(
   rowMarkerOptions: RowMarkersOptions,
 ): rowMarkerOptions is StringRowMarkerOptions {
@@ -242,45 +240,43 @@ function DataGrid({
   ////////////////////////////////////////////////////////////////
 
   const handleGridSelectionChange = (newSelection: GridSelection) => {
-    {
-      if (isStringRowMarkers) {
-        if (newSelection.current) {
-          // Select the whole row when clicking on a row marker cell
-          if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
-            setGridSelection({
-              ...newSelection,
-              current: undefined,
-              rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
-            });
-
-            return;
-          }
-
-          // Prevent selecting a row marker cell
-          if (newSelection.current.range.x === 0) {
-            return;
-          }
-        }
-
-        // Select/Deselect all the rows like others row markers when selecting the column
-        if (newSelection.columns.hasIndex(0)) {
-          const isSelectedAll = gridSelection.rows.length === rows;
-
+    if (isStringRowMarkers) {
+      if (newSelection.current) {
+        // Select the whole row when clicking on a row marker cell
+        if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
           setGridSelection({
             ...newSelection,
-            columns: CompactSelection.empty(),
-            rows: isSelectedAll
-              ? CompactSelection.empty()
-              : CompactSelection.fromSingleSelection([0, rows]),
+            current: undefined,
+            rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
           });
 
           return;
         }
+
+        // Prevent selecting a row marker cell
+        if (newSelection.current.range.x === 0) {
+          return;
+        }
       }
 
-      setGridSelection(newSelection);
-      onGridSelectionChange?.(newSelection);
+      // Select/Deselect all the rows like others row markers when selecting the column
+      if (newSelection.columns.hasIndex(0)) {
+        const isSelectedAll = gridSelection.rows.length === rows;
+
+        setGridSelection({
+          ...newSelection,
+          columns: CompactSelection.empty(),
+          rows: isSelectedAll
+            ? CompactSelection.empty()
+            : CompactSelection.fromSingleSelection([0, rows]),
+        });
+
+        return;
+      }
     }
+
+    setGridSelection(newSelection);
+    onGridSelectionChange?.(newSelection);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -289,9 +285,9 @@ function DataGrid({
 
   return (
     <DataEditor
-      groupHeaderHeight={ROW_HEIGHT}
-      headerHeight={ROW_HEIGHT}
-      rowHeight={ROW_HEIGHT}
+      groupHeaderHeight={35}
+      headerHeight={25}
+      rowHeight={30}
       smoothScrollX
       smoothScrollY
       width="100%"

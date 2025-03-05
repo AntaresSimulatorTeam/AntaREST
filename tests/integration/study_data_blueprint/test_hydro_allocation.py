@@ -234,7 +234,7 @@ class TestHydroAllocation:
                 params={"path": f"input/hydro/allocation/{prod_area}"},
                 json=allocation_cfg,
             )
-            assert res.status_code == http.HTTPStatus.NO_CONTENT, res.json()
+            assert res.status_code == http.HTTPStatus.OK, res.json()
 
         # Then we remove the "fr" zone.
         # The deletion should update the allocation matrix of all other zones.

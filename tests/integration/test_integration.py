@@ -116,7 +116,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         json=active_ruleset_name.title(),  # ruleset names are case-insensitive
     )
-    assert res.status_code == 204
+    assert res.status_code == 200
 
     # scenario builder
     res = client.put(
