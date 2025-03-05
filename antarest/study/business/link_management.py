@@ -117,7 +117,11 @@ class LinkManager:
         all_links = self.get_all_links(study)
         new_links_by_ids = {}
         for updated_link in all_links:
-            new_links_by_ids[(updated_link.area1, updated_link.area2)] = updated_link
+            # We only return links that were updated
+            area_1 = updated_link.area1
+            area_2 = updated_link.area2
+            if (area_1, area_2) in update_links_by_ids or (area_2, area_1) in update_links_by_ids:
+                new_links_by_ids[(area_1, area_2)] = updated_link
 
         return new_links_by_ids
 
