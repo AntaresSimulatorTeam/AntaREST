@@ -33,8 +33,6 @@ AREA_PATH = "input/areas/{area}"
 THERMAL_PATH = "input/thermal/areas"
 OPTIMIZATION_PATH = f"{AREA_PATH}/optimization"
 ADEQUACY_PATCH_PATH = f"{AREA_PATH}/adequacy_patch"
-NODAL_OPTIMIZATION_PATH = f"{OPTIMIZATION_PATH}/nodal optimization"
-FILTERING_PATH = f"{OPTIMIZATION_PATH}/filtering"
 # Keep the order
 FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
 
