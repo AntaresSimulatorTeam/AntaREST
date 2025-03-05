@@ -4,8 +4,22 @@ import pytest
 from antares.study.version import StudyVersion
 
 from antarest.study.business.binding_constraint_management import ConstraintInput
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
-from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_weekly_daily as default_bc_weekly_daily_87,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
+    default_bc_hourly as default_bc_hourly_86,
+)
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import BindingConstraintProperties
+from antarest.study.storage.variantstudy.model.command.update_binding_constraints import (
+    UpdateBindingConstraints,
+    generate_replacement_matrices,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -27,7 +41,7 @@ def file_study():
             "areas": ["area1"],
             "clusters": ["cluster1"],
             "operator": "greater",
-            "time_step": "hourly",
+            "type": "hourly",
         },
         "2": {
             "id": "bc_2",
@@ -35,7 +49,7 @@ def file_study():
             "areas": ["area2"],
             "clusters": ["cluster2"],
             "operator": "less",
-            "time_step": "daily",
+            "type": "daily",
         },
     }
     return fs
@@ -130,6 +144,7 @@ def test_apply(binding_constraint_properties, file_study):
                 "clusters": ["cluster1"],
                 "operator": "greater",
                 "time_step": "daily",
+                "type": "daily",
             },
             "2": {
                 "id": "bc_2",
@@ -138,6 +153,7 @@ def test_apply(binding_constraint_properties, file_study):
                 "clusters": ["cluster2"],
                 "operator": "less",
                 "time_step": "hourly",
+                "type": "hourly",
             },
         },
         ["input", "bindingconstraints", "bindingconstraints"],
@@ -154,3 +170,45 @@ def test_to_dto(binding_constraint_properties):
     assert dto.action == "update_binding_constraints"
     assert dto.version == 1
     assert dto.study_version == StudyVersion(870)
+
+
+def test_generate_replacement_matrices_before_v87():
+    bc_id = "bc_1"
+
+    # 8,6,0 HOURLY GREATER
+    study_version = StudyVersion(8, 6)
+    bc_props = Mock(spec=BindingConstraintProperties)
+    bc_props.time_step = BindingConstraintFrequency.HOURLY.value
+    operator = BindingConstraintOperator.GREATER
+
+    matrices = list(generate_replacement_matrices(bc_id, study_version, bc_props, operator))
+    assert len(matrices) == 1
+    assert matrices[0][0] == f"input/bindingconstraints/{bc_id}"
+    assert matrices[0][1] == default_bc_hourly_86.tolist()
+
+    # 8,7,0 DAILY BOTH
+    bc_id = "bc_1"
+    study_version = StudyVersion(8, 7)
+    bc_props = Mock(spec=BindingConstraintProperties)
+    bc_props.time_step = BindingConstraintFrequency.DAILY.value
+    operator = BindingConstraintOperator.BOTH
+
+    matrices = list(generate_replacement_matrices(bc_id, study_version, bc_props, operator))
+    assert len(matrices) == 2
+    assert matrices[0][0] == f"input/bindingconstraints/{bc_id}_lt"
+    assert matrices[0][1] == default_bc_weekly_daily_87.tolist()
+    assert matrices[1][0] == f"input/bindingconstraints/{bc_id}_gt"
+    assert matrices[1][1] == default_bc_weekly_daily_87.tolist()
+
+    # 8,7,0 WEEKLY LESS
+    bc_id = "bc_1"
+    study_version = StudyVersion(8, 7)
+    bc_props = Mock(spec=BindingConstraintProperties)
+    bc_props.time_step = BindingConstraintFrequency.WEEKLY.value
+    operator = BindingConstraintOperator.LESS
+
+    matrices = list(generate_replacement_matrices(bc_id, study_version, bc_props, operator))
+    assert len(matrices) == 1
+    target = f"input/bindingconstraints/{bc_id}_lt"
+    assert matrices[0][0] == target
+    assert matrices[0][1] == default_bc_weekly_daily_87.tolist()
