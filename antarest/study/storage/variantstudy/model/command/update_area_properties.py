@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaProperties, decode_filter
+from antarest.study.business.model.area_model import AreaPropertiesUpdate, decode_filter
 from antarest.study.storage.rawstudy.model.filesystem.config.area import ThermalAreasProperties, AdequacyPathProperties, \
     OptimizationProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -36,7 +36,7 @@ class UpdateAreasProperties(ICommand):
 
     # Command parameters
     # ==================
-    areas_properties: Dict[str, AreaProperties]
+    areas_properties: Dict[str, AreaPropertiesUpdate]
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:

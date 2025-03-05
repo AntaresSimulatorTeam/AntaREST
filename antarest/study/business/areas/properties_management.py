@@ -17,7 +17,7 @@ from pydantic import model_validator
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.model.area_model import (
     FILTER_OPTIONS,
-    build_area_properties,
+    build_area_properties_update,
     decode_filter,
     encode_filter,
 )
@@ -146,7 +146,7 @@ class PropertiesManager:
         area_id: str,
         field_values: PropertiesFormFields,
     ) -> None:
-        area_properties = build_area_properties(field_values.model_dump(exclude_none=True))
+        area_properties = build_area_properties_update(field_values.model_dump(exclude_none=True))
 
         command = UpdateAreasProperties(
             areas_properties={area_id: area_properties},

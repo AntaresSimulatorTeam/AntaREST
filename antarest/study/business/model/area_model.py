@@ -31,7 +31,7 @@ class AreaType(enum.Enum):
     DISTRICT = "DISTRICT"
 
 
-class AreaProperties(AntaresBaseModel):
+class AreaPropertiesUpdate(AntaresBaseModel):
     thermal_properties: Dict[str, Any]
     filtering_props: Dict[str, Any]
     optim_properties: Dict[str, Any]
@@ -59,7 +59,7 @@ def decode_filter(encoded_value: Set[str]) -> str:
     return ", ".join(sort_filter_options(encoded_value))
 
 
-def build_area_properties(properties: Dict[str, Any]) -> AreaProperties:
+def build_area_properties_update(properties: Dict[str, Any]) -> AreaPropertiesUpdate:
     thermal_properties = {}
     if key := next((k for k in ["energy_cost_unsupplied", "average_unsupplied_energy_cost"] if k in properties), None):
         thermal_properties.update({"unserverdenergycost": properties[key]})
@@ -88,7 +88,7 @@ def build_area_properties(properties: Dict[str, Any]) -> AreaProperties:
     if "adequacy_patch_mode" in properties:
         adequacy_patch_property.update({"adequacy-patch-mode": properties["adequacy_patch_mode"]})
 
-    return AreaProperties(
+    return AreaPropertiesUpdate(
         thermal_properties=thermal_properties,
         filtering_props=filtering_props,
         optim_properties=optim_properties,
