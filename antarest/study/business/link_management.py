@@ -71,12 +71,14 @@ class LinkManager:
         return link_creation_dto
 
     def _create_update_link_command(
-        self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO
+        self, study: Study, area_from: str, area_to: str, link_update_dto: LinkBaseDTO
     ) -> tuple[UpdateLink, LinkInternal]:
-        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
 
-        file_study = study.get_files()
-        link = link_dto.to_internal(study.version)
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        study_version = file_study.config.version
+
+        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
+        link = link_dto.to_internal(study_version)
 
         self._get_link_if_exists(file_study, link)
 
@@ -86,15 +88,16 @@ class LinkManager:
             parameters=link.model_dump(
                 include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
             ),
-            command_context=self._command_context,
-            study_version=study.version,
+            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            study_version=study_version,
         )
         return command, link
 
-    def update_link(self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
+    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
         command, link = self._create_update_link_command(study, area_from, area_to, link_update_dto)
 
-        study.add_commands([command])
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         updated_link = self.get_link(study, link)
 
@@ -102,16 +105,18 @@ class LinkManager:
 
     def update_links(
         self,
-        study: StudyInterface,
-        update_links_by_ids: Mapping[Tuple[str, str], LinkBaseDTO],
-    ) -> Mapping[Tuple[str, str], LinkDTO]:
+        study: RawStudy,
+        update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkBaseDTO],
+    ) -> t.Mapping[t.Tuple[str, str], LinkBaseDTO]:
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
         # Build all commands
         commands = []
         for (area1, area2), update_link_dto in update_links_by_ids.items():
             command = self._create_update_link_command(study, area1, area2, update_link_dto)[0]
             commands.append(command)
 
-        study.add_commands(commands)
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
 
         # Builds return
         all_links = self.get_all_links(study)
