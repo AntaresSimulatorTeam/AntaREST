@@ -22,9 +22,9 @@ from typing import List, NamedTuple, Optional, Sequence, Tuple
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
-    CacheConstants,
     ICache,
     study_config_cache_key,
+    study_raw_cache_key,
 )
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
@@ -38,7 +38,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import (
     StudyFactory,
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat
+from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat, remove_from_cache
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
     ICommandListener,
@@ -226,11 +226,11 @@ class SnapshotGenerator:
         return study_additional_data
 
     def _invalidate_cache(self, study_id: str) -> None:
-        self.cache.invalidate(study_config_cache_key(study_id))
+        remove_from_cache(self.cache, study_id)
 
     def _update_cache(self, file_study: FileStudy) -> None:
         # The study configuration is changed, so we update the cache.
-        self.cache.invalidate(f"{CacheConstants.RAW_STUDY}/{file_study.config.study_id}")
+        self.cache.invalidate(study_raw_cache_key(file_study.config.study_id))
         self.cache.put(
             study_config_cache_key(file_study.config.study_id),
             FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump(),
