@@ -14,8 +14,8 @@
 
 import { render } from "@testing-library/react";
 import { Box } from "@mui/material";
-import MatrixGrid, { type MatrixGridProps } from ".";
-import type { EnhancedGridColumn } from "../../shared/types";
+import MatrixGrid from ".";
+import { isNonEmptyMatrix, type EnhancedGridColumn, type NonEmptyMatrix } from "../../shared/types";
 import { mockGetBoundingClientRect } from "../../../../../tests/mocks/mockGetBoundingClientRect";
 import { mockHTMLCanvasElement } from "../../../../../tests/mocks/mockHTMLCanvasElement";
 import { Column } from "../../shared/constants";
@@ -23,9 +23,9 @@ import { Column } from "../../shared/constants";
 interface RenderMatrixOptions {
   width?: string;
   height?: string;
-  data?: MatrixGridProps["data"];
-  columns?: EnhancedGridColumn[];
-  rows?: number;
+  data: NonEmptyMatrix;
+  columns: EnhancedGridColumn[];
+  rows: number;
 }
 
 const setupMocks = () => {
@@ -58,7 +58,7 @@ const COLUMNS: EnhancedGridColumn[] = [
   },
 ];
 
-const DATA = [
+const DATA: NonEmptyMatrix = [
   [1, 2, 3],
   [4, 5, 6],
 ];
@@ -69,7 +69,11 @@ const renderMatrixGrid = ({
   data = DATA,
   columns = COLUMNS,
   rows = 2,
-}: RenderMatrixOptions = {}) => {
+}: Partial<RenderMatrixOptions> = {}) => {
+  if (!isNonEmptyMatrix(data)) {
+    throw new Error("Matrix data must be non-empty");
+  }
+
   return render(
     <Box style={{ width, height }}>
       <MatrixGrid data={data} rows={rows} columns={columns} width="100%" height="100%" />
@@ -99,14 +103,6 @@ describe("MatrixGrid", () => {
   describe("rendering", () => {
     test("should match container dimensions", () => {
       const { container } = renderMatrixGrid();
-      const matrix = getMatrixElement(container);
-
-      expect(matrix).toBeInTheDocument();
-      assertDimensions(matrix, 450, 500);
-    });
-
-    test("should render with empty data", () => {
-      const { container } = renderMatrixGrid({ data: [], rows: 0 });
       const matrix = getMatrixElement(container);
 
       expect(matrix).toBeInTheDocument();

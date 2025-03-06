@@ -181,7 +181,7 @@ function DataGridForm<TData extends Data>({
       const dataRow = data[rowName];
       const cellData = dataRow?.[columnName];
 
-      if (typeof cellData == "string") {
+      if (typeof cellData === "string") {
         return {
           kind: GridCellKind.Text,
           data: cellData,
@@ -190,7 +190,7 @@ function DataGridForm<TData extends Data>({
         };
       }
 
-      if (typeof cellData == "number") {
+      if (typeof cellData === "number") {
         return {
           kind: GridCellKind.Number,
           data: cellData,
@@ -201,7 +201,7 @@ function DataGridForm<TData extends Data>({
         };
       }
 
-      if (typeof cellData == "boolean") {
+      if (typeof cellData === "boolean") {
         return {
           kind: GridCellKind.Boolean,
           data: cellData,

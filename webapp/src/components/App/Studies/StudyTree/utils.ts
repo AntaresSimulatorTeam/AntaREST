@@ -95,7 +95,7 @@ function insertFolderIfNotExist(
   }
 
   // direct child case
-  if (folder.parentPath == currentNodePath) {
+  if (folder.parentPath === currentNodePath) {
     const folderExists = studiesTree.children.find((child) => child.name === folder.name);
     if (folderExists) {
       return {
