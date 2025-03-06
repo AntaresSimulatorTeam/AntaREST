@@ -59,6 +59,9 @@ def decode_filter(encoded_value: Set[str]) -> str:
     return ", ".join(sort_filter_options(encoded_value))
 
 
+# This method is called from the properties_management with somes values,
+# and from area_management with the same values but with differents names
+# That's why we cover both cases in the key retrieval
 def build_area_properties_update(properties: Dict[str, Any]) -> AreaPropertiesUpdate:
     thermal_properties = {}
     if key := next((k for k in ["energy_cost_unsupplied", "average_unsupplied_energy_cost"] if k in properties), None):
