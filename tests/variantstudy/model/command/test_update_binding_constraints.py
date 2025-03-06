@@ -13,9 +13,9 @@
 from unittest.mock import Mock
 
 import pytest
-from antares.study.version import StudyVersion
 
 from antarest.study.business.binding_constraint_management import ConstraintInput
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -36,11 +36,20 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 @pytest.fixture
-def binding_constraint_properties():
+def bc_props_by_id():
     return {
         "bc_1": ConstraintInput(group="new_group1", operator="greater", time_step="daily"),
         "bc_2": ConstraintInput(group="new_group2", operator="less", time_step="hourly"),
     }
+
+
+@pytest.fixture
+def update_binding_constraints_command(bc_props_by_id):
+    return UpdateBindingConstraints(
+        study_version=STUDY_VERSION_8_7,
+        bc_props_by_id=bc_props_by_id,
+        command_context=Mock(spec=CommandContext),
+    )
 
 
 @pytest.fixture
@@ -109,13 +118,8 @@ def file_study_tree_config():
     return file_study_tree_config
 
 
-def test_apply_config(file_study_tree_config, binding_constraint_properties):
-    command = UpdateBindingConstraints(
-        study_version=StudyVersion(870),
-        bc_props_by_id=binding_constraint_properties,
-        command_context=Mock(spec=CommandContext),
-    )
-    output, _ = command._apply_config(file_study_tree_config)
+def test_apply_config(file_study_tree_config, update_binding_constraints_command):
+    output, _ = update_binding_constraints_command._apply_config(file_study_tree_config)
     assert output.status is True
     # bc_0 is not in bc_props_by_id, so it should not be updated
     assert file_study_tree_config.bindings[0].group == "old_group1"
@@ -131,23 +135,18 @@ def test_apply_config(file_study_tree_config, binding_constraint_properties):
     assert file_study_tree_config.bindings[3].group == "old_group2"
 
 
-def test_check_version_consistency(binding_constraint_properties):
+def test_check_version_consistency(bc_props_by_id):
     values = {
-        "bc_props_by_id": binding_constraint_properties,
-        "study_version": StudyVersion(870),
+        "bc_props_by_id": bc_props_by_id,
+        "study_version": STUDY_VERSION_8_7,
     }
     validated_values = UpdateBindingConstraints.check_version_consistency(values)
     assert validated_values["bc_props_by_id"]["bc_1"].group == "new_group1"
     assert validated_values["bc_props_by_id"]["bc_2"].group == "new_group2"
 
 
-def test_apply(binding_constraint_properties, study_data):
-    command = UpdateBindingConstraints(
-        study_version=StudyVersion(870),
-        bc_props_by_id=binding_constraint_properties,
-        command_context=Mock(spec=CommandContext),
-    )
-    output = command._apply(study_data)
+def test_apply(update_binding_constraints_command, study_data):
+    output = update_binding_constraints_command._apply(study_data)
     assert output.status is True
     study_data.tree.save.assert_called_with(
         {
@@ -172,25 +171,20 @@ def test_apply(binding_constraint_properties, study_data):
     )
 
 
-def test_to_dto(binding_constraint_properties):
-    command = UpdateBindingConstraints(
-        study_version=StudyVersion(870),
-        bc_props_by_id=binding_constraint_properties,
-        command_context=Mock(spec=CommandContext),
-    )
-    dto = command.to_dto()
+def test_to_dto(update_binding_constraints_command):
+    dto = update_binding_constraints_command.to_dto()
     assert dto.action == "update_binding_constraints"
     assert dto.version == 1
-    assert dto.study_version == StudyVersion(870)
+    assert dto.study_version == STUDY_VERSION_8_7
 
 
 def test_generate_replacement_matrices_before_v87():
     bc_id = "bc_1"
 
     # 8,6,0 HOURLY GREATER
-    study_version = StudyVersion(8, 6)
+    study_version = STUDY_VERSION_8_6
     bc_props = Mock(spec=BindingConstraintProperties)
-    bc_props.time_step = BindingConstraintFrequency.HOURLY.value
+    bc_props.time_step = BindingConstraintFrequency.HOURLY
     operator = BindingConstraintOperator.GREATER
 
     matrices = list(generate_replacement_matrices(bc_id, study_version, bc_props, operator))
@@ -200,9 +194,9 @@ def test_generate_replacement_matrices_before_v87():
 
     # 8,7,0 DAILY BOTH
     bc_id = "bc_1"
-    study_version = StudyVersion(8, 7)
+    study_version = STUDY_VERSION_8_7
     bc_props = Mock(spec=BindingConstraintProperties)
-    bc_props.time_step = BindingConstraintFrequency.DAILY.value
+    bc_props.time_step = BindingConstraintFrequency.DAILY
     operator = BindingConstraintOperator.BOTH
 
     matrices = list(generate_replacement_matrices(bc_id, study_version, bc_props, operator))
@@ -213,10 +207,7 @@ def test_generate_replacement_matrices_before_v87():
     assert matrices[1][1] == default_bc_weekly_daily_87.tolist()
 
     # 8,7,0 WEEKLY LESS
-    bc_id = "bc_1"
-    study_version = StudyVersion(8, 7)
-    bc_props = Mock(spec=BindingConstraintProperties)
-    bc_props.time_step = BindingConstraintFrequency.WEEKLY.value
+    bc_props.time_step = BindingConstraintFrequency.WEEKLY
     operator = BindingConstraintOperator.LESS
 
     matrices = list(generate_replacement_matrices(bc_id, study_version, bc_props, operator))
