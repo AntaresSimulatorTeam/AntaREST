@@ -21,21 +21,38 @@ from pathlib import Path
 from typing import List, NamedTuple, Optional, Sequence, Tuple
 
 from antarest.core.exceptions import VariantGenerationError
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import (
+    CacheConstants,
+    ICache,
+    study_config_cache_key,
+)
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.model import RawStudy, StudyAdditionalData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+)
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    FileStudy,
+    StudyFactory,
+)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
+    ICommandListener,
+)
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    VariantStudy,
+    VariantStudySnapshot,
+)
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
+from antarest.study.storage.variantstudy.variant_command_generator import (
+    VariantCommandGenerator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +112,7 @@ class SnapshotGenerator:
 
         try:
             if search_result.force_regenerate or not snapshot_dir.exists():
+                self._invalidate_cache(variant_study_id)
                 logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
                 shutil.rmtree(snapshot_dir, ignore_errors=True)
                 self._export_ref_study(snapshot_dir, ref_study)
@@ -107,7 +125,7 @@ class SnapshotGenerator:
                 snapshot_dir,
                 study_id=variant_study_id,
                 output_path=snapshot_dir / OUTPUT_RELATIVE_PATH,
-                use_cache=False,  # Avoid saving the study config in the cache
+                use_cache=True,
             )
             if denormalize:
                 logger.info(f"Denormalizing variant study {variant_study_id}")
@@ -118,7 +136,7 @@ class SnapshotGenerator:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
                 created_at=datetime.datetime.utcnow(),
-                last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
+                last_executed_command=(variant_study.commands[-1].id if variant_study.commands else None),
             )
 
             logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
@@ -208,11 +226,14 @@ class SnapshotGenerator:
         study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
 
+    def _invalidate_cache(self, study_id: str) -> None:
+        self.cache.invalidate(study_config_cache_key(study_id))
+
     def _update_cache(self, file_study: FileStudy) -> None:
         # The study configuration is changed, so we update the cache.
         self.cache.invalidate(f"{CacheConstants.RAW_STUDY}/{file_study.config.study_id}")
         self.cache.put(
-            f"{CacheConstants.STUDY_FACTORY}/{file_study.config.study_id}",
+            study_config_cache_key(file_study.config.study_id),
             FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump(),
         )
 

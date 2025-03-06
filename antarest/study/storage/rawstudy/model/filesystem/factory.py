@@ -19,13 +19,24 @@ from typing import NamedTuple, Optional
 
 import filelock
 
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import (
+    ICache,
+    study_config_cache_key,
+)
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    build,
+    parse_outputs,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
+)
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
+    FileStudyTree,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +110,7 @@ class StudyFactory:
         output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> FileStudy:
-        cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
+        cache_id = study_config_cache_key(study_id)
         if study_id and use_cache:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:

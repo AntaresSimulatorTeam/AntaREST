@@ -46,24 +46,52 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
-from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService
+from antarest.core.tasks.model import (
+    CustomTaskEventMessages,
+    TaskDTO,
+    TaskResult,
+    TaskType,
+)
+from antarest.core.tasks.service import (
+    DEFAULT_AWAIT_MAX_TIMEOUT,
+    ITaskNotifier,
+    ITaskService,
+)
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
-from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.model import (
+    RawStudy,
+    Study,
+    StudyAdditionalData,
+    StudyMetadataDTO,
+    StudySimResultDTO,
+)
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
+)
+from antarest.study.storage.rawstudy.model.filesystem.factory import (
+    FileStudy,
+    StudyFactory,
+)
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission,
+    export_study_flat,
+    is_managed,
+    remove_from_cache,
+)
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
+    ICommandListener,
+)
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -73,7 +101,9 @@ from antarest.study.storage.variantstudy.model.model import (
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
-from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
+from antarest.study.storage.variantstudy.variant_command_generator import (
+    VariantCommandGenerator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +186,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return command_list
 
     def convert_commands(
-        self, study_id: str, api_commands: List[CommandDTOAPI], params: RequestParameters
+        self,
+        study_id: str,
+        api_commands: List[CommandDTOAPI],
+        params: RequestParameters,
     ) -> List[CommandDTO]:
         study = self._get_variant_study(study_id, params, raw_study_accepted=True)
         return [
@@ -793,15 +826,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         commands = self._to_commands(variant_study)
         return self.generator.generate_config(commands, config, variant_study)
-
-    def _generate_snapshot(
-        self,
-        variant_study: VariantStudy,
-        dst_path: Path,
-        from_command_index: int = 0,
-    ) -> GenerationResultInfoDTO:
-        commands = self._to_commands(variant_study, from_command_index)
-        return self.generator.generate(commands, dst_path, variant_study)
 
     def get_study_task(self, study_id: str, params: RequestParameters) -> TaskDTO:
         """
