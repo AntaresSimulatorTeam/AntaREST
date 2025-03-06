@@ -75,7 +75,7 @@ class UpdateHydroManagement(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_HYDRO_MANAGEMENT.value,
-            args={"area_id": self.area_id, "properties": self.properties},
+            args={"area_id": self.area_id, "properties": self.properties.model_dump(mode="json")},
             study_version=self.study_version,
         )
 
