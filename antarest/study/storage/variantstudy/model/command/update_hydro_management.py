@@ -71,8 +71,6 @@ class UpdateHydroManagement(ICommand):
 
         updated_current = update_current_for_area(self.area_id, current_hydro, new_hydro)
 
-        validate_new_area(updated_current)
-
         study_data.tree.save(updated_current, HYDRO_PATH)
 
         output, _ = self._apply_config(study_data.config)
