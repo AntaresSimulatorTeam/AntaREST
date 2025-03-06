@@ -123,16 +123,21 @@ class VariantCommandGenerator:
     def generate(
         self,
         commands: List[List[ICommand]],
-        dest_path: Path,
+        dest_path: Optional[Path] = None,
         metadata: Optional[VariantStudy] = None,
         delete_on_failure: bool = True,
-        listener: Optional[ICommandListener] = None,
+        study: Optional[FileStudy] = None,
     ) -> GenerationResultInfoDTO:
         # Build file study
         logger.info("Building study tree")
-        study = self.study_factory.create_from_fs(
-            dest_path, metadata.id if metadata else "", use_cache=metadata is not None
-        )
+        if not study:
+            if not dest_path:
+                raise AssertionError("Variant generation error: either dest_path or study must be provided.")
+            study = self.study_factory.create_from_fs(
+                dest_path,
+                metadata.id if metadata else "",
+                use_cache=metadata is not None,
+            )
         if metadata:
             update_antares_info(metadata, study.tree, update_author=True)
 
@@ -144,7 +149,7 @@ class VariantCommandGenerator:
         )
 
         if not results.success and delete_on_failure:
-            shutil.rmtree(dest_path)
+            shutil.rmtree(study.config.study_path)
         return results
 
     def generate_config(

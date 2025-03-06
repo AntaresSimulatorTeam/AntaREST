@@ -117,9 +117,6 @@ class SnapshotGenerator:
                 shutil.rmtree(snapshot_dir, ignore_errors=True)
                 self._export_ref_study(snapshot_dir, ref_study)
 
-            logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(snapshot_dir, variant_study, cmd_blocks, listener)
-
             # The snapshot is generated, we also need to de-normalize the matrices.
             file_study = self.study_factory.create_from_fs(
                 snapshot_dir,
@@ -127,6 +124,8 @@ class SnapshotGenerator:
                 output_path=snapshot_dir / OUTPUT_RELATIVE_PATH,
                 use_cache=True,
             )
+            logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
+            results = self._apply_commands(file_study, variant_study, cmd_blocks, listener)
             if denormalize:
                 logger.info(f"Denormalizing variant study {variant_study_id}")
                 file_study.tree.denormalize()
@@ -189,7 +188,7 @@ class SnapshotGenerator:
 
     def _apply_commands(
         self,
-        snapshot_dir: Path,
+        file_study: FileStudy,
         variant_study: VariantStudy,
         cmd_blocks: Sequence[CommandBlock],
         listener: Optional[ICommandListener] = None,
@@ -198,10 +197,9 @@ class SnapshotGenerator:
         generator = VariantCommandGenerator(self.study_factory)
         results = generator.generate(
             commands,
-            snapshot_dir,
-            variant_study,
-            delete_on_failure=False,  # Not needed, because we are using a temporary directory
-            listener=listener,
+            study=file_study,
+            metadata=variant_study,
+            delete_on_failure=False,
         )
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
