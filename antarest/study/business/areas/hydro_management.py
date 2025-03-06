@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import re
+from typing import Dict
 
 from antarest.study.business.model.hydro_management_model import (
     HYDRO_PATH,
@@ -18,6 +19,7 @@ from antarest.study.business.model.hydro_management_model import (
     InflowStructure,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.utils import FieldInfo
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -43,26 +45,16 @@ class HydroManager:
         """
         return next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id.lower()), area_id)
 
-    @staticmethod
-    def _get_hydro_config(study: StudyInterface) -> Dict[str, Dict[str, FieldInfo]]:
-        """
-        Returns a dictionary of hydro configurations
-        """
-        file_study = study.get_files()
-        return file_study.tree.get(HYDRO_PATH.split("/"))
-
-
     def get_hydro_management_options(self, study: StudyInterface, area_id: str) -> HydroManagementOptions:
         """
         Get management options for a given area
         """
-        hydro_config = self._get_hydro_config(study)
+        file_study = study.get_files()
+        hydro_config = file_study.tree.get(HYDRO_PATH)
 
-        args = {normalize_key(k): v[area_id] for k, v in hydro_config.items() if area_id in v}
-        path = field_info["path"]
-        target_name = path.split("/")[-1]
-        field_dict = hydro_config.get(target_name, {})
-        return field_dict.get(self._get_id(area_id, field_dict), field_info["default_value"])
+        args = {
+            normalize_key(k): v[self._get_id(area_id, hydro_config)] for k, v in hydro_config.items() if area_id in v
+        }
 
         return HydroManagementOptions.model_validate(args)
 
