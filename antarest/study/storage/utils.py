@@ -57,13 +57,8 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
-    StudyFactory,
-)
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
@@ -200,12 +195,7 @@ def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
         msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    app = CreateApp(
-        study_dir=path_study,
-        caption="To be replaced",
-        version=version,
-        author="Unknown",
-    )
+    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
     app()
 
 
@@ -307,15 +297,7 @@ MONTHS = {
     "December": 12,
 }
 
-DAY_NAMES = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-]
+DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
 def get_start_date(
@@ -354,10 +336,7 @@ def get_start_date(
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
 
     def _get_steps(
-        daily_steps: int,
-        temporality: StudyDownloadLevelDTO,
-        begin_date: datetime,
-        is_output: Optional[str] = None,
+        daily_steps: int, temporality: StudyDownloadLevelDTO, begin_date: datetime, is_output: Optional[str] = None
     ) -> int:
         temporality_mapping = {
             StudyDownloadLevelDTO.DAILY: daily_steps,

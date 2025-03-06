@@ -30,29 +30,16 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.model import RawStudy, StudyAdditionalData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfigDTO,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat, remove_from_cache
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
-    ICommandListener,
-)
-from antarest.study.storage.variantstudy.model.dbmodel import (
-    CommandBlock,
-    VariantStudy,
-    VariantStudySnapshot,
-)
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.variant_command_generator import (
-    VariantCommandGenerator,
-)
+from antarest.study.storage.variantstudy.variant_command_generator import VariantCommandGenerator
 
 logger = logging.getLogger(__name__)
 

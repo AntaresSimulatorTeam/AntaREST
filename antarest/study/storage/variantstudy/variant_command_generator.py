@@ -17,31 +17,18 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
-from antarest.study.storage.rawstudy.model.filesystem.factory import (
-    FileStudy,
-    StudyFactory,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
-    ICommandListener,
-)
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.model.model import (
-    GenerationResultInfoDTO,
-    NewDetailsDTO,
-)
+from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO, NewDetailsDTO
 
 logger = logging.getLogger(__name__)
 
-APPLY_CALLBACK = Callable[
-    [ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]],
-    CommandOutput,
-]
+APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]], CommandOutput]
 
 
 class CmdNotifier:
@@ -134,9 +121,7 @@ class VariantCommandGenerator:
             if not dest_path:
                 raise AssertionError("Variant generation error: either dest_path or study must be provided.")
             study = self.study_factory.create_from_fs(
-                dest_path,
-                metadata.id if metadata else "",
-                use_cache=metadata is not None,
+                dest_path, metadata.id if metadata else "", use_cache=metadata is not None
             )
         if metadata:
             update_antares_info(metadata, study.tree, update_author=True)

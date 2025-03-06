@@ -19,24 +19,13 @@ from typing import NamedTuple, Optional
 
 import filelock
 
-from antarest.core.interfaces.cache import (
-    ICache,
-    study_config_cache_key,
-)
+from antarest.core.interfaces.cache import ICache, study_config_cache_key
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    build,
-    parse_outputs,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-    FileStudyTreeConfigDTO,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 logger = logging.getLogger(__name__)
 
