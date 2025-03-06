@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from typing import Any, Dict, List
+import re
+from typing import Dict, List, Optional
 
 from pydantic import Field
 
@@ -38,23 +38,22 @@ class InflowStructure(FormFieldsBaseModel):
     )
 
 
-@all_optional_model
 class HydroManagementOptions(FormFieldsBaseModel):
-    inter_daily_breakdown: float = Field(default=1, ge=0)
-    intra_daily_modulation: float = Field(default=24, ge=1)
-    inter_monthly_breakdown: float = Field(default=1, ge=0)
-    reservoir: bool = False
-    reservoir_capacity: float = Field(default=0, ge=0)
-    follow_load: bool = True
-    use_water: bool = False
-    hard_bounds: bool = False
-    initialize_reservoir_date: int = Field(default=0, ge=0, le=11)
-    use_heuristic: bool = True
-    power_to_level: bool = False
-    use_leeway: bool = False
-    leeway_low: float = Field(default=1, ge=0)
-    leeway_up: float = Field(default=1, ge=0)
-    pumping_efficiency: float = Field(default=1, ge=0)
+    inter_daily_breakdown: Optional[float] = Field(default=1, ge=0)
+    intra_daily_modulation: Optional[float] = Field(default=24, ge=1)
+    inter_monthly_breakdown: Optional[float] = Field(default=1, ge=0)
+    reservoir: Optional[bool] = False
+    reservoir_capacity: Optional[float] = Field(default=0, ge=0)
+    follow_load: Optional[bool] = True
+    use_water: Optional[bool] = False
+    hard_bounds: Optional[bool] = False
+    initialize_reservoir_date: Optional[int] = Field(default=0, ge=0, le=11)
+    use_heuristic: Optional[bool] = True
+    power_to_level: Optional[bool] = False
+    use_leeway: Optional[bool] = False
+    leeway_low: Optional[float] = Field(default=1, ge=0)
+    leeway_up: Optional[float] = Field(default=1, ge=0)
+    pumping_efficiency: Optional[float] = Field(default=1, ge=0)
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {
@@ -106,6 +105,10 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
 }
 
 
+def normalize_key(key: str) -> str:
+    return re.sub(r"[\s-]+", "_", key).lower()
+
+
 class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
@@ -117,12 +120,9 @@ class HydroManager:
         file_study = study.get_files()
         hydro_config = file_study.tree.get(HYDRO_PATH.split("/"))
 
-        def get_value(field_info: FieldInfo) -> Any:
-            path = field_info["path"]
-            target_name = path.split("/")[-1]
-            return hydro_config.get(target_name, {}).get(area_id, field_info["default_value"])
+        args = {normalize_key(k): v[area_id] for k, v in hydro_config.items() if area_id in v}
 
-        return HydroManagementOptions.model_construct(**{name: get_value(info) for name, info in FIELDS_INFO.items()})
+        return HydroManagementOptions.model_validate(args)
 
     def update_hydro_management_options(
         self,
