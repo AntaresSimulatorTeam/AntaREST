@@ -121,8 +121,7 @@ class HydroManager:
 
         Returns the area id from the file if both values matched, the initial area id otherwise.
         """
-        next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id), area_id)
-        return area_id
+        return next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id.lower()), area_id)
 
     @staticmethod
     def _get_hydro_config(study: StudyInterface) -> Dict[str, Dict[str, FieldInfo]]:

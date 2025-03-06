@@ -15,7 +15,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.areas.hydro_management import FIELDS_INFO, HydroManager
+from antarest.study.business.areas.hydro_management import HydroManager, ManagementOptionsFormFields
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -90,18 +90,61 @@ class TestHydroManagement:
         # gather initial data of the area
         for area in areas:
             # get actual value
-            data = hydro_manager.get_field_values(study, area).model_dump()
+            data_area_raw = hydro_manager.get_field_values(study, area).model_dump()
 
-            # set expected value based on defined fields dict
-            raw_data = hydro_ini_content["input"]["hydro"]["hydro"]
-            initial_data = dict.fromkeys(FIELDS_INFO.keys())
+            # get values if area_id is in lower case
+            data_area_lower = hydro_manager.get_field_values(study, area.lower()).model_dump()
 
-            for key in initial_data:
-                initial_data[key] = FIELDS_INFO[key]["default_value"]
-
-            for key in raw_data.keys():
-                reformatted_key = key.replace("-", "_").replace(" ", "_")
-                initial_data[reformatted_key] = raw_data[key].get(area, initial_data[reformatted_key])
+            # get values if area_id is in upper case
+            data_area_upper = hydro_manager.get_field_values(study, area.upper()).model_dump()
 
             # check if the area is retrieved regardless of the letters case
-            assert data == initial_data
+            assert data_area_raw == data_area_lower
+            assert data_area_raw == data_area_upper
+
+    @pytest.mark.unit_test
+    def test_set_field_values(self, tmp_path: Path, hydro_manager: HydroManager, study: FileStudyInterface) -> None:
+        """
+        Set up:
+            Retrieve a study service and a study interface
+            Create some areas with different letter cases
+            Simulate changes by an external tool
+        Test:
+            Get data with changes on character cases
+            Simulate a regular change
+            Check if the field was successfully edited for each area without duplicates
+        """
+        # store the area ids
+        areas = ["AreaTest1", "AREATEST2", "area_test_3"]
+
+        for area in areas:
+            # get initial values with get_field_values
+            initial_data = hydro_manager.get_field_values(study, area).model_dump()
+
+            # simulate changes on area_id case with another tool
+            hydro_ini_path = tmp_path.joinpath(f"tmp/{study.id}/input/hydro/hydro.ini")
+            with open(hydro_ini_path) as f:
+                file_content = f.read()
+                file_content = file_content.replace(area, area.lower())
+
+            with open(hydro_ini_path, "w") as f:
+                f.write(file_content)
+
+            # make sure that `get_field_values` retrieve same data as before
+            new_data = hydro_manager.get_field_values(study, area).model_dump()
+            assert initial_data == new_data
+
+            # simulate regular usage by modifying some values
+            modified_data = dict(initial_data)
+            modified_data["intra_daily_modulation"] = 5.0
+            hydro_manager.set_field_values(study, ManagementOptionsFormFields(**modified_data), area)
+
+            # retrieve edited
+            new_data = hydro_manager.get_field_values(study, area).model_dump()
+
+            # check if the intra daily modulation was modified
+            for field, value in new_data.items():
+                if field == "intra_daily_modulation":
+                    assert initial_data[field] != new_data[field]
+                else:
+                    assert initial_data[field] == new_data[field]
