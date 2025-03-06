@@ -14,7 +14,6 @@ from typing import Dict, List, Optional
 
 from pydantic import Field
 
-from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
