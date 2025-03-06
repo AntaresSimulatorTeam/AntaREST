@@ -32,14 +32,8 @@ def update_current_for_area(area: str, current: dict[str, Any], new: dict[str, A
 
     for new_key, new_value in new.items():
         norm_new_key = normalize_key(new_key)
-        if norm_new_key in normalized_current:
-            current_key = normalized_current[norm_new_key]
-            if area in current[current_key]:
-                current[current_key][area] = new_value
-            else:
-                current[current_key][area] = new_value
-        else:
-            current[new_key] = {area: new_value}
+        current_key = normalized_current.get(norm_new_key, new_key)
+        current.setdefault(current_key, {})[area] = new_value
 
     return current
 
