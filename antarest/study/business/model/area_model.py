@@ -49,8 +49,8 @@ def sort_filter_options(options: Iterable[str]) -> List[str]:
 
 
 def encode_filter(value: str) -> Set[str]:
-    stripped = value.strip()
-    return set(re.split(r"\s*,+\s*", stripped) if stripped else [])
+    stripped = value.replace(" ", "")
+    return set(re.split(r",", stripped) if stripped else [])
 
 
 def decode_filter(encoded_value: Set[str]) -> str:
