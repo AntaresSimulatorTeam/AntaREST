@@ -50,6 +50,7 @@ class CommandName(Enum):
     CREATE_ST_STORAGE = "create_st_storage"
     REMOVE_ST_STORAGE = "remove_st_storage"
     UPDATE_ST_STORAGE = "update_st_storage"
+    UPDATE_HYDRO_MANAGEMENT = "update_hydro_management"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"
