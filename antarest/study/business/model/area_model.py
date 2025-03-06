@@ -63,39 +63,39 @@ def decode_filter(encoded_value: Set[str]) -> str:
 # and from area_management with the same values but with differents names
 # That's why we cover both cases in the key retrieval
 def build_area_properties_update(properties: Dict[str, Any]) -> AreaPropertiesUpdate:
-    thermal_properties = {}
-    if key := next((k for k in ["energy_cost_unsupplied", "average_unsupplied_energy_cost"] if k in properties), None):
-        thermal_properties.update({"unserverdenergycost": properties[key]})
-    if key := next((k for k in ["energy_cost_spilled", "average_spilled_energy_cost"] if k in properties), None):
-        thermal_properties.update({"spilledenergycost": properties[key]})
+    mappings = {
+        "thermal_properties": {
+            "unserverdenergycost": ["energy_cost_unsupplied", "average_unsupplied_energy_cost"],
+            "spilledenergycost": ["energy_cost_spilled", "average_spilled_energy_cost"],
+        },
+        "filtering_props": {
+            "filter-synthesis": ["filter_synthesis"],
+            "filter-year-by-year": ["filter_year_by_year", "filter_by_year"],
+        },
+        "optim_properties": {
+            "non-dispatchable-power": ["non_dispatch_power", "non_dispatchable_power"],
+            "dispatchable-hydro-power": ["dispatch_hydro_power", "dispatchable_hydro_power"],
+            "other-dispatchable-power": ["other_dispatch_power", "other_dispatchable_power"],
+            "spread-unsupplied-energy-cost": ["spread_unsupplied_energy_cost"],
+            "spread-spilled-energy-cost": ["spread_spilled_energy_cost"],
+        },
+        "adequacy_patch_property": {
+            "adequacy-patch-mode": ["adequacy_patch_mode"],
+        },
+    }
 
-    filtering_props = {}
-    if "filter_synthesis" in properties:
-        filtering_props.update({"filter-synthesis": properties["filter_synthesis"]})
-    if key := next((k for k in ["filter_year_by_year", "filter_by_year"] if k in properties), None):
-        filtering_props.update({"filter-year-by-year": properties[key]})
-
-    optim_properties = {}
-    if key := next((k for k in ["non_dispatch_power", "non_dispatchable_power"] if k in properties), None):
-        optim_properties.update({"non-dispatchable-power": properties[key]})
-    if key := next((k for k in ["dispatch_hydro_power", "dispatchable_hydro_power"] if k in properties), None):
-        optim_properties.update({"dispatchable-hydro-power": properties[key]})
-    if key := next((k for k in ["other_dispatch_power", "other_dispatchable_power"] if k in properties), None):
-        optim_properties.update({"other-dispatchable-power": properties[key]})
-    if "spread_unsupplied_energy_cost" in properties:
-        optim_properties.update({"spread-unsupplied-energy-cost": properties["spread_unsupplied_energy_cost"]})
-    if "spread_spilled_energy_cost" in properties:
-        optim_properties.update({"spread-spilled-energy-cost": properties["spread_spilled_energy_cost"]})
-
-    adequacy_patch_property = {}
-    if "adequacy_patch_mode" in properties:
-        adequacy_patch_property.update({"adequacy-patch-mode": properties["adequacy_patch_mode"]})
+    def extract(mapping: Dict[str, List[str]]) -> Dict[str, Any]:
+        return {
+            new_key: properties[key]
+            for new_key, possible_keys in mapping.items()
+            if (key := next((k for k in possible_keys if k in properties), None)) is not None
+        }
 
     return AreaPropertiesUpdate(
-        thermal_properties=thermal_properties,
-        filtering_props=filtering_props,
-        optim_properties=optim_properties,
-        adequacy_patch_property=adequacy_patch_property,
+        thermal_properties=extract(mappings["thermal_properties"]),
+        filtering_props=extract(mappings["filtering_props"]),
+        optim_properties=extract(mappings["optim_properties"]),
+        adequacy_patch_property=extract(mappings["adequacy_patch_property"]),
     )
 
 
