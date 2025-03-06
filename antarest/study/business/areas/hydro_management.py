@@ -10,47 +10,139 @@
 #
 # This file is part of the Antares project.
 
-from antarest.study.business.model.hydro_model import (
-    HYDRO_PATH,
-    HydroManagement,
-    HydroManagementFileData,
-    HydroManagementUpdate,
-    HydroProperties,
-    InflowStructure,
-    InflowStructureUpdate,
-    get_inflow_path,
-)
-from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
-from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import Field, model_validator
+
+from antarest.study.business.all_optional_meta import all_optional_model
+from antarest.study.business.utils import FieldInfo, FormFieldsBaseModel, execute_or_add_commands
+from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+
+INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
+
+
+class InflowStructure(FormFieldsBaseModel):
+    """Represents the inflow structure values in the hydraulic configuration."""
+
+    # NOTE: Currently, there is only one field for the inflow structure model
+    # due to the scope of hydro config requirements, it may change.
+    inter_monthly_correlation: float = Field(
+        default=0.5,
+        ge=0,
+        le=1,
+        description="Average correlation between the energy of a month and that of the next month",
+        title="Inter-monthly correlation",
+    )
+
+
+@all_optional_model
+class ManagementOptionsFormFields(FormFieldsBaseModel):
+    inter_daily_breakdown: float = Field(ge=0)
+    intra_daily_modulation: float = Field(ge=1)
+    inter_monthly_breakdown: float = Field(ge=0)
+    reservoir: bool
+    reservoir_capacity: float = Field(ge=0)
+    follow_load: bool
+    use_water: bool
+    hard_bounds: bool
+    initialize_reservoir_date: int = Field(ge=0, le=11)
+    use_heuristic: bool
+    power_to_level: bool
+    use_leeway: bool
+    leeway_low: float = Field(ge=0)
+    leeway_up: float = Field(ge=0)
+    pumping_efficiency: float = Field(ge=0)
+
+
+HYDRO_PATH = "input/hydro/hydro"
+
+FIELDS_INFO: Dict[str, FieldInfo] = {
+    "inter_daily_breakdown": {
+        "path": f"{HYDRO_PATH}/inter-daily-breakdown",
+        "default_value": 1,
+    },
+    "intra_daily_modulation": {
+        "path": f"{HYDRO_PATH}/intra-daily-modulation",
+        "default_value": 24,
+    },
+    "inter_monthly_breakdown": {
+        "path": f"{HYDRO_PATH}/inter-monthly-breakdown",
+        "default_value": 1,
+    },
+    "reservoir": {"path": f"{HYDRO_PATH}/reservoir", "default_value": False},
+    "reservoir_capacity": {
+        "path": f"{HYDRO_PATH}/reservoir capacity",
+        "default_value": 0,
+    },
+    "follow_load": {
+        "path": f"{HYDRO_PATH}/follow load",
+        "default_value": True,
+    },
+    "use_water": {"path": f"{HYDRO_PATH}/use water", "default_value": False},
+    "hard_bounds": {
+        "path": f"{HYDRO_PATH}/hard bounds",
+        "default_value": False,
+    },
+    "initialize_reservoir_date": {
+        "path": f"{HYDRO_PATH}/initialize reservoir date",
+        "default_value": 0,
+    },
+    "use_heuristic": {
+        "path": f"{HYDRO_PATH}/use heuristic",
+        "default_value": True,
+    },
+    "power_to_level": {
+        "path": f"{HYDRO_PATH}/power to level",
+        "default_value": False,
+    },
+    "use_leeway": {"path": f"{HYDRO_PATH}/use leeway", "default_value": False},
+    "leeway_low": {"path": f"{HYDRO_PATH}/leeway low", "default_value": 1},
+    "leeway_up": {"path": f"{HYDRO_PATH}/leeway up", "default_value": 1},
+    "pumping_efficiency": {
+        "path": f"{HYDRO_PATH}/pumping efficiency",
+        "default_value": 1,
+    },
+}
 
 
 class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_hydro_properties(self, study: StudyInterface) -> dict[str, HydroProperties]:
-        all_hydro_properties = {}
+    @staticmethod
+    def _get_id(area_id: str, field_dict: Dict[str, FieldInfo]) -> str:
+        """
+        Try to match the current area_id with the one from the original file.
+        These two ids could mismatch based on their character cases since the id from
+        the filesystem could have been modified with capital letters.
+        We first convert it into lower case in order to compare both ids.
 
-        file_study = study.get_files()
-        hydro_management_file_data = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
+        Returns the area id from the file if both values matched, the initial area id otherwise.
+        """
+        return next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id.lower()), area_id)
 
-        for area_id in file_study.config.areas:
-            hydro_management = hydro_management_file_data.get_hydro_management(area_id)
-            inflow_structure = self.get_inflow_structure(study, area_id)
-            hydro_properties = HydroProperties(management_options=hydro_management, inflow_structure=inflow_structure)
-            all_hydro_properties[area_id] = hydro_properties
+    @staticmethod
+    def _get_hydro_config(study: FileStudy) -> Dict[str, Dict[str, FieldInfo]]:
+        """
+        Returns a dictionary of hydro configurations
+        """
+        return study.tree.get(HYDRO_PATH.split("/"))
 
-        return all_hydro_properties
-
-    def get_hydro_management(self, study: StudyInterface, area_id: str) -> HydroManagement:
+    def get_field_values(self, study: Study, area_id: str) -> ManagementOptionsFormFields:
         """
         Get management options for a given area
         """
-        file_study = study.get_files()
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+        hydro_config = self._get_hydro_config(file_study)
 
-        hydro_properties = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
+        def get_value(field_info: FieldInfo) -> Any:
+            path = field_info["path"]
+            target_name = path.split("/")[-1]
+            field_dict = hydro_config.get(target_name, {})
+            return field_dict.get(self._get_id(area_id, field_dict), field_info["default_value"])
 
         return hydro_properties.get_hydro_management(area_id)
 
