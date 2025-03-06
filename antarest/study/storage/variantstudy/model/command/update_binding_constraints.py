@@ -95,7 +95,10 @@ class UpdateBindingConstraints(ICommand):
                     message=f"Binding contraint '{bc_id}' not found in study config id : {study_data.study_id}.",
                 ), {}
         study_data.bindings = list(map(update_binding_constraint_dto, study_data.bindings))
-        return CommandOutput(status=True, message=f"binnding of study {study_data.study_id} updated successfully!"), {}
+        return CommandOutput(
+            status=True,
+            message=f"UpdatedBindingConstraints command applied successfully on study {study_data.study_id}.",
+        ), {}
 
     @model_validator(mode="before")
     @classmethod
@@ -163,8 +166,8 @@ class UpdateBindingConstraints(ICommand):
         removed_groups = old_groups - new_groups
         remove_bc_from_scenario_builder(file_study, removed_groups)
         file_study.tree.save(bcs_json, bcs_url)
-        self._apply_config(file_study.config)
-        return CommandOutput(status=True, message="UpdatedBindingConstraints command created successfully.")
+        output, _ = self._apply_config(file_study.config)
+        return output
 
     @override
     def to_dto(self) -> CommandDTO:
