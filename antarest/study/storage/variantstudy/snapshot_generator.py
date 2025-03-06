@@ -145,6 +145,7 @@ class SnapshotGenerator:
             self._update_cache(file_study)
 
         except Exception:
+            self._invalidate_cache(variant_study_id)
             shutil.rmtree(snapshot_dir, ignore_errors=True)
             raise
 
