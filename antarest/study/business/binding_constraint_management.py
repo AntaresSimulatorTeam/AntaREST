@@ -891,7 +891,6 @@ class BindingConstraintManager:
         Raises:
             BindingConstraintNotFound: If any of the specified binding constraint IDs are not found.
         """
-        study_version = StudyVersion.parse(study.version)
         file_study = study.get_files()
         bcs_json = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         bcs_json_by_id = {value["id"]: key for (key, value) in bcs_json.items()}
@@ -909,19 +908,19 @@ class BindingConstraintManager:
 
             # convert payload sent by user to a ConstraintOutput dict
             bc_json = bcs_json[bcs_json_by_id[bc_id]]
-            bc_output = self.__convert_constraint_input_to_output(bc_json, bc_input_as_dict, study_version)
+            bc_output = self.__convert_constraint_input_to_output(bc_json, bc_input_as_dict, study.version)
             bcs_output[bc_id] = bc_output
 
         command = UpdateBindingConstraints(
             bc_props_by_id=bcs_by_ids,
             command_context=self._command_context,
-            study_version=study_version,
+            study_version=study.version,
         )
         study.add_commands([command])
         return bcs_output
 
     def __convert_constraint_input_to_output(
-        self, bc_json: JSON, bc_input_as_dict: Dict[str, Any], study_version: StudyVersion
+        self, bc_json: Dict[str, Any], bc_input_as_dict: Dict[str, Any], study_version: StudyVersion
     ) -> ConstraintOutput:
         """
 

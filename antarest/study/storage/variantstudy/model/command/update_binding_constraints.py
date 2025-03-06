@@ -11,9 +11,7 @@
 # This file is part of the Antares project.
 
 import copy
-import logging
 import typing as t
-from abc import ABCMeta
 
 from antares.study.version import StudyVersion
 from pydantic import model_validator
@@ -52,10 +50,8 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-logger = logging.getLogger(__name__)
 
-
-class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
+class UpdateBindingConstraints(ICommand):
     """
     Command used to update several binding constraints.
     """
@@ -81,20 +77,25 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
                 group = bc_props_as_dict.get("group") or existing_constraint.group
                 operator = bc_props_as_dict.get("operator") or existing_constraint.operator
                 time_step = bc_props_as_dict.get("time_step") or existing_constraint.time_step
-                areas = bc_props_as_dict.get("areas") or existing_constraint.areas
-                clusters = bc_props_as_dict.get("clusters") or existing_constraint.clusters
                 return BindingConstraintDTO(
                     id=existing_constraint.id,
                     group=group,
-                    areas=areas,
-                    clusters=clusters,
+                    areas=existing_constraint.areas,
+                    clusters=existing_constraint.clusters,
                     operator=operator,
                     time_step=time_step,
                 )
             return existing_constraint
 
+        existing_ids = {b.id for b in study_data.bindings}
+        for bc_id, _ in self.bc_props_by_id.items():
+            if bc_id not in existing_ids:
+                return CommandOutput(
+                    status=False,
+                    message=f"Binding contraint '{bc_id}' not found in study config id : {study_data.study_id}.",
+                ), {}
         study_data.bindings = list(map(update_binding_constraint_dto, study_data.bindings))
-        return CommandOutput(status=True, message="_apply_config success !"), {}
+        return CommandOutput(status=True, message=f"binnding of study {study_data.study_id} updated successfully!"), {}
 
     @model_validator(mode="before")
     @classmethod
@@ -130,11 +131,10 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
             if bc_id not in bc_index_by_id:
                 return CommandOutput(
                     status=False,
-                    message=f"Binding contraint '{bc_id}' not found.",
+                    message=f"Binding contraint '{bc_id}' not found in study.",
                 )
             # It's important to use exclude_unset=True. Otherwise we'd override
             # existing values with the default bc_props values.
-            # Also important to use by_alias=True, so time_step is renamed to type
             bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
             bc_json = bcs_json[bc_index_by_id[bc_id]]
             bc_json_copy = copy.deepcopy(bc_json)
@@ -163,6 +163,7 @@ class UpdateBindingConstraints(ICommand, metaclass=ABCMeta):
         removed_groups = old_groups - new_groups
         remove_bc_from_scenario_builder(file_study, removed_groups)
         file_study.tree.save(bcs_json, bcs_url)
+        self._apply_config(file_study.config)
         return CommandOutput(status=True, message="UpdatedBindingConstraints command created successfully.")
 
     @override
@@ -185,7 +186,7 @@ def generate_replacement_matrices(
     operator: BindingConstraintOperator,
 ) -> t.Iterator[t.Tuple[str, t.List[t.List[MatrixData]]]]:
     """
-    Yield one or two (when operator is "BOTH") matrices intialized with default values.
+    Yield one (or two when operator is "BOTH") matrices initialized with default values.
     """
     if study_version < STUDY_VERSION_8_7:
         target = f"input/bindingconstraints/{bc_id}"
@@ -194,7 +195,7 @@ def generate_replacement_matrices(
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
         }[bc_props.time_step].tolist()
-        yield (target, matrix)
+        yield target, matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
@@ -205,4 +206,4 @@ def generate_replacement_matrices(
         for matrix_name in matrices_to_replace:
             matrix_id = matrix_name.format(bc_id=bc_id)
             target = f"input/bindingconstraints/{matrix_id}"
-            yield (target, matrix)
+            yield target, matrix

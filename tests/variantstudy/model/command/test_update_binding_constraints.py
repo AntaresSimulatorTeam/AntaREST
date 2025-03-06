@@ -44,7 +44,7 @@ def binding_constraint_properties():
 
 
 @pytest.fixture
-def file_study():
+def study_data(file_study_tree_config):
     fs = Mock()
     fs.tree.get.return_value = {
         "1": {
@@ -64,6 +64,7 @@ def file_study():
             "type": "daily",
         },
     }
+    fs.config = file_study_tree_config
     return fs
 
 
@@ -104,6 +105,7 @@ def file_study_tree_config():
             time_step="hourly",
         ),
     ]
+    file_study_tree_config.study_id = "1"
     return file_study_tree_config
 
 
@@ -139,15 +141,15 @@ def test_check_version_consistency(binding_constraint_properties):
     assert validated_values["bc_props_by_id"]["bc_2"].group == "new_group2"
 
 
-def test_apply(binding_constraint_properties, file_study):
+def test_apply(binding_constraint_properties, study_data):
     command = UpdateBindingConstraints(
         study_version=StudyVersion(870),
         bc_props_by_id=binding_constraint_properties,
         command_context=Mock(spec=CommandContext),
     )
-    output = command._apply(file_study)
+    output = command._apply(study_data)
     assert output.status is True
-    file_study.tree.save.assert_called_with(
+    study_data.tree.save.assert_called_with(
         {
             "1": {
                 "id": "bc_1",
