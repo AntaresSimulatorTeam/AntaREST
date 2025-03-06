@@ -43,7 +43,8 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message="Areas properties updated"), {}
+        updated_areas = ", ".join(self.areas_properties.keys())
+        return CommandOutput(status=True, message=f"Areas properties updated: {updated_areas}"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
