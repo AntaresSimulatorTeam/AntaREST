@@ -16,22 +16,7 @@ from pydantic import Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 
-INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
 HYDRO_PATH = ["input", "hydro", "hydro"]
-
-
-class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
-    """Represents the inflow structure values in the hydraulic configuration."""
-
-    # NOTE: Currently, there is only one field for the inflow structure model
-    # due to the scope of hydro config requirements, it may change.
-    inter_monthly_correlation: float = Field(
-        default=0.5,
-        ge=0,
-        le=1,
-        description="Average correlation between the energy of a month and that of the next month",
-        title="Inter-monthly correlation",
-    )
 
 
 class HydroProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):

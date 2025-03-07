@@ -12,15 +12,14 @@
 
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
-    INFLOW_PATH,
     HydroProperties,
     HydroPropertiesInternal,
-    InflowStructure,
     get_hydro_id,
 )
+from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowProperties
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroProperties
+from antarest.study.storage.variantstudy.model.command.update_inflow_properties import UpdateInflowProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -59,37 +58,36 @@ class HydroManager:
         study.add_commands([command])
 
     # noinspection SpellCheckingInspection
-    def get_inflow_structure(self, study: StudyInterface, area_id: str) -> InflowStructure:
+    def get_inflow_properties(self, study: StudyInterface, area_id: str) -> InflowProperties:
         """
         Retrieves inflow structure values for a specific area within a study.
 
         Returns:
             InflowStructure: The inflow structure values.
         """
-        # NOTE: Focusing on the single field "intermonthly-correlation" due to current model scope.
-        path = INFLOW_PATH.format(area_id=area_id)
+
+        path = [s.format(area_id=area_id) for s in INFLOW_PATH]
         file_study = study.get_files()
-        inter_monthly_correlation = file_study.tree.get(path.split("/")).get("intermonthly-correlation", 0.5)
-        return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
+        inter_monthly_correlation = file_study.tree.get(path).get("intermonthly-correlation", 0.5)
+        return InflowProperties(inter_monthly_correlation=inter_monthly_correlation)
 
     # noinspection SpellCheckingInspection
-    def update_inflow_structure(self, study: StudyInterface, area_id: str, values: InflowStructure) -> None:
+    def update_inflow_properties(self, study: StudyInterface, area_id: str, properties: InflowProperties) -> None:
         """
         Updates inflow structure values for a specific area within a study.
 
         Args:
             study: The study instance to update the inflow data for.
             area_id: The area identifier to update data for.
-            values: The new inflow structure values to be updated.
+            properties: The new inflow structure values to be updated.
 
         Raises:
             ValidationError: If the provided `values` parameter is None or invalid.
         """
-        # NOTE: Updates only "intermonthly-correlation" due to current model scope.
-        path = INFLOW_PATH.format(area_id=area_id)
-        command = UpdateConfig(
-            target=path,
-            data={"intermonthly-correlation": values.inter_monthly_correlation},
+
+        command = UpdateInflowProperties(
+            area_id=area_id,
+            properties=properties,
             command_context=self._command_context,
             study_version=study.version,
         )

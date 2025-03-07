@@ -51,6 +51,7 @@ class CommandName(Enum):
     REMOVE_ST_STORAGE = "remove_st_storage"
     UPDATE_ST_STORAGE = "update_st_storage"
     UPDATE_HYDRO_PROPERTIES = "update_hydro_properties"
+    UPDATE_INFLOW_PROPERTIES = "update_inflow_properties"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"
