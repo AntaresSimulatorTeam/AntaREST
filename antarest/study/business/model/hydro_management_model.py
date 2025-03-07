@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Optional
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
@@ -39,18 +39,32 @@ class InflowStructure(
 class HydroManagementOptions(
     AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True, alias_generator=to_camel_case
 ):
-    inter_daily_breakdown: Optional[float] = Field(default=1, ge=0)
-    intra_daily_modulation: Optional[float] = Field(default=24, ge=1)
-    inter_monthly_breakdown: Optional[float] = Field(default=1, ge=0)
+    inter_daily_breakdown: Optional[float] = Field(
+        default=1, ge=0, validation_alias=AliasChoices("interDailyBreakdown", "inter-daily-breakdown")
+    )
+    intra_daily_modulation: Optional[float] = Field(
+        default=24, ge=1, validation_alias=AliasChoices("intraDailyModulation", "intra-daily-modulation")
+    )
+    inter_monthly_breakdown: Optional[float] = Field(
+        default=1, ge=0, validation_alias=AliasChoices("interMonthlyBreakdown", "inter-monthly-breakdown")
+    )
     reservoir: Optional[bool] = False
-    reservoir_capacity: Optional[float] = Field(default=0, ge=0)
-    follow_load: Optional[bool] = True
-    use_water: Optional[bool] = False
-    hard_bounds: Optional[bool] = False
-    initialize_reservoir_date: Optional[int] = Field(default=0, ge=0, le=11)
-    use_heuristic: Optional[bool] = True
-    power_to_level: Optional[bool] = False
-    use_leeway: Optional[bool] = False
-    leeway_low: Optional[float] = Field(default=1, ge=0)
-    leeway_up: Optional[float] = Field(default=1, ge=0)
-    pumping_efficiency: Optional[float] = Field(default=1, ge=0)
+    reservoir_capacity: Optional[float] = Field(
+        default=0, ge=0, validation_alias=AliasChoices("reservoirCapacity", "reservoir capacity")
+    )
+    follow_load: Optional[bool] = Field(default=True, validation_alias=AliasChoices("followLoad", "follow load"))
+    use_water: Optional[bool] = Field(default=False, validation_alias=AliasChoices("useWater", "use water"))
+    hard_bounds: Optional[bool] = Field(default=False, validation_alias=AliasChoices("hardBounds", "hard bounds"))
+    initialize_reservoir_date: Optional[int] = Field(
+        default=0, ge=0, le=11, validation_alias=AliasChoices("initializeReservoirDate", "initialize reservoir date")
+    )
+    use_heuristic: Optional[bool] = Field(default=True, validation_alias=AliasChoices("useHeuristic", "use heuristic"))
+    power_to_level: Optional[bool] = Field(
+        default=False, validation_alias=AliasChoices("powerToLevel", "power to level")
+    )
+    use_leeway: Optional[bool] = Field(default=False, validation_alias=AliasChoices("useLeeway", "use leeway"))
+    leeway_low: Optional[float] = Field(default=1, ge=0, validation_alias=AliasChoices("leewayLow", "leeway low"))
+    leeway_up: Optional[float] = Field(default=1, ge=0, validation_alias=AliasChoices("leewayUp", "leeway up"))
+    pumping_efficiency: Optional[float] = Field(
+        default=1, ge=0, validation_alias=AliasChoices("pumpingEfficiency", "pumping efficiency")
+    )

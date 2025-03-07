@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import re
 from typing import Dict
 
 from antarest.study.business.model.hydro_management_model import (
@@ -23,10 +22,6 @@ from antarest.study.business.utils import FieldInfo
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-def normalize_key(key: str) -> str:
-    return re.sub(r"[\s-]+", "_", key).lower()
 
 
 class HydroManager:
@@ -43,7 +38,13 @@ class HydroManager:
 
         Returns the area id from the file if both values matched, the initial area id otherwise.
         """
-        return next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id.lower()), area_id)
+        result = area_id
+        for file_area_id in field_dict:
+            if file_area_id.lower() == area_id.lower():
+                result = file_area_id
+                break
+        return result
+        #return next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id.lower()), area_id)
 
     def get_hydro_management_options(self, study: StudyInterface, area_id: str) -> HydroManagementOptions:
         """
@@ -52,9 +53,8 @@ class HydroManager:
         file_study = study.get_files()
         hydro_config = file_study.tree.get(HYDRO_PATH)
 
-        args = {
-            normalize_key(k): v[self._get_id(area_id, hydro_config)] for k, v in hydro_config.items() if area_id in v
-        }
+        new_area_id = self._get_id(area_id, hydro_config)
+        args = {k: v[new_area_id] for k, v in hydro_config.items() if new_area_id in v}
 
         return HydroManagementOptions.model_validate(args)
 
@@ -68,8 +68,9 @@ class HydroManager:
         update hydro management options for a given area
         """
 
+        new_area_id = self._get_id(area_id, field_values.model_dump())
         command = UpdateHydroManagement(
-            area_id=area_id, properties=field_values, command_context=self._command_context, study_version=study.version
+            area_id=new_area_id, properties=field_values, command_context=self._command_context, study_version=study.version
         )
 
         study.add_commands([command])

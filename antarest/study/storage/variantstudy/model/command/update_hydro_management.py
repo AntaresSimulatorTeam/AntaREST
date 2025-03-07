@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -22,20 +22,23 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand,
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-
-def normalize_key(key: str) -> str:
-    return key.replace(" ", "").replace("-", "").replace("_", "").lower()
-
-
-def update_current_for_area(area: str, current: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
-    normalized_current = {normalize_key(key): key for key in current}
-
-    for new_key, new_value in new.items():
-        norm_new_key = normalize_key(new_key)
-        current_key = normalized_current.get(norm_new_key, new_key)
-        current.setdefault(current_key, {})[area] = new_value
-
-    return current
+mapping = {
+    "inter_daily_breakdown": "inter-daily-breakdown",
+    "intra_daily_modulation": "intra-daily-modulation",
+    "inter_monthly_breakdown": "inter-monthly-breakdown",
+    "reservoir": "reservoir",
+    "reservoir_capacity": "reservoir capacity",
+    "follow_load": "follow load",
+    "use_water": "use water",
+    "hard_bounds": "hard bounds",
+    "initialize_reservoir_date": "initialize reservoir date",
+    "use_heuristic": "use heuristic",
+    "power_to_level": "power to level",
+    "use_leeway": "use leeway",
+    "leeway_low": "leeway low",
+    "leeway_up": "leeway up",
+    "pumping_efficiency": "pumping efficiency",
+}
 
 
 class UpdateHydroManagement(ICommand):
@@ -63,9 +66,11 @@ class UpdateHydroManagement(ICommand):
         current_hydro = study_data.tree.get(HYDRO_PATH)
         new_hydro = self.properties.model_dump(exclude_unset=True)
 
-        updated_current = update_current_for_area(self.area_id, current_hydro, new_hydro)
+        for k, v in new_hydro.items():
+            if key := mapping.get(k, None):
+                current_hydro.setdefault(key, {}).update({self.area_id: v})
 
-        study_data.tree.save(updated_current, HYDRO_PATH)
+        study_data.tree.save(current_hydro, HYDRO_PATH)
 
         output, _ = self._apply_config(study_data.config)
 
