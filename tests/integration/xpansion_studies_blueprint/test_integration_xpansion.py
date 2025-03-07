@@ -469,7 +469,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         assert commands_list[10]["action"] == "replace_xpansion_candidate"
         assert commands_list[10]["args"] == {
             "candidate_name": "candidate4",
-            "new_properties": {"name": "candidate4", **candidate_args},
+            "properties": {"name": "candidate4", **candidate_args},
         }
 
         assert commands_list[11]["action"] == "remove_xpansion_resource"

@@ -169,7 +169,7 @@ class XpansionManager:
         internal_candidate = xpansion_candidate_dto.to_internal_model()
         command = ReplaceXpansionCandidate(
             candidate_name=candidate_name,
-            new_properties=internal_candidate,
+            properties=internal_candidate,
             command_context=self._command_context,
             study_version=study.version,
         )

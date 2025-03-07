@@ -829,7 +829,7 @@ COMMANDS = [
             args=[
                 {
                     "candidate_name": "cdt_1",
-                    "new_properties": {
+                    "properties": {
                         "name": "cdt_1",
                         "link": "at - be",
                         "annual-cost-per-mw": 12,

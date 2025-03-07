@@ -94,7 +94,7 @@ max-units = 7
         # Updates one
         cmd = ReplaceXpansionCandidate(
             candidate_name="cdt_1",
-            new_properties=XpansionCandidate(
+            properties=XpansionCandidate(
                 name="cdt_1", link="at - be", annual_cost_per_mw=30, max_investment=100, direct_link_profile="capa1.txt"
             ),
             command_context=command_context,
@@ -212,7 +212,7 @@ max-units = 7
 
         cmd = ReplaceXpansionCandidate(
             candidate_name="cdt_1",
-            new_properties=XpansionCandidate(name="cdt_2", link="at - be", annual_cost_per_mw=30, max_investment=100),
+            properties=XpansionCandidate(name="cdt_2", link="at - be", annual_cost_per_mw=30, max_investment=100),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )

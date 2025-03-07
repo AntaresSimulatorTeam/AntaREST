@@ -231,6 +231,8 @@ class XpansionLink(AntaresBaseModel):
 
 
 def split_areas(x: str) -> dict[str, str]:
+    if " - " not in x:
+        raise WrongLinkFormatError(f"The link must be in the format 'area1 - area2'. Currently: {x}")
     area_list = sorted(x.split(" - "))
     return {"area_from": area_list[0], "area_to": area_list[1]}
 
@@ -284,12 +286,6 @@ class XpansionCandidateBase(AntaresBaseModel, populate_by_name=True):
                 raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
 
         return name
-
-    @field_validator("link", mode="before")
-    def validate_link(cls, link: str) -> str:
-        if " - " not in link:
-            raise WrongLinkFormatError(f"The link must be in the format 'area1 - area2'. Currently: {link}")
-        return link
 
 
 class XpansionCandidate(XpansionCandidateBase, alias_generator=to_kebab_case):

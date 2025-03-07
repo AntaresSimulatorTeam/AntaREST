@@ -43,7 +43,7 @@ class ReplaceXpansionCandidate(ICommand):
     # ==================
 
     candidate_name: str
-    new_properties: XpansionCandidate
+    properties: XpansionCandidate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
@@ -52,7 +52,7 @@ class ReplaceXpansionCandidate(ICommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         # Checks candidate validity
-        assert_candidate_is_correct(study_data, self.new_properties)
+        assert_candidate_is_correct(study_data, self.properties)
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
         candidates_dict = {}
         candidate_number = None
@@ -65,11 +65,11 @@ class ReplaceXpansionCandidate(ICommand):
         if candidate_number is None:
             raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
 
-        if self.new_properties.name != self.candidate_name:
-            if self.new_properties.name in candidates_dict:
-                raise CandidateAlreadyExistsError(f"The candidate '{self.new_properties.name}' already exists")
+        if self.properties.name != self.candidate_name:
+            if self.properties.name in candidates_dict:
+                raise CandidateAlreadyExistsError(f"The candidate '{self.properties.name}' already exists")
 
-        candidates[candidate_number] = self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True)
+        candidates[candidate_number] = self.properties.model_dump(mode="json", by_alias=True, exclude_none=True)
         study_data.tree.save(candidates, ["user", "expansion", "candidates"])
 
         return self._apply_config(study_data.config)[0]
@@ -80,7 +80,7 @@ class ReplaceXpansionCandidate(ICommand):
             action=self.command_name.value,
             args={
                 "candidate_name": self.candidate_name,
-                "new_properties": self.new_properties.model_dump(mode="json", by_alias=True, exclude_none=True),
+                "properties": self.properties.model_dump(mode="json", by_alias=True, exclude_none=True),
             },
             study_version=self.study_version,
         )
