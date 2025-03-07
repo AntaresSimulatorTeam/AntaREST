@@ -16,7 +16,6 @@ from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
-    HydroManagement,
     HydroManagementProperties,
     HydroManagementUpdate,
 )
@@ -52,9 +51,11 @@ class UpdateHydroProperties(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_hydro = HydroManagementProperties(**study_data.tree.get(HYDRO_PATH))
 
-        hydro = HydroManagement(**self.properties.model_dump(exclude_none=True))
+        new_hydro = current_hydro.get_hydro_management(area_id=self.area_id).model_copy(
+            update=self.properties.model_dump(exclude_none=True)
+        )
 
-        current_hydro.set_hydro_management(self.area_id, hydro)
+        current_hydro.set_hydro_management(self.area_id, new_hydro)
 
         study_data.tree.save(current_hydro.model_dump(by_alias=True), HYDRO_PATH)
 

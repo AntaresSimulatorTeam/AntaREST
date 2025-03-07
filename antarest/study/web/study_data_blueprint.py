@@ -56,7 +56,7 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.hydro_model import HydroManagement, HydroManagementUpdate
-from antarest.study.business.model.inflow_model import InflowProperties
+from antarest.study.business.model.inflow_model import InflowStructure, InflowStructureUpdate
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
@@ -484,13 +484,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
         summary="Get inflow properties",
-        response_model=InflowProperties,
+        response_model=InflowStructure,
     )
     def get_inflow_structure(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> InflowProperties:
+    ) -> InflowStructure:
         """Get the configuration for the hydraulic inflow structure of the given area."""
         logger.info(
             msg=f"Getting inflow structure values for area {area_id} of study {uuid}",
@@ -509,7 +509,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_inflow_structure(
         uuid: str,
         area_id: str,
-        values: InflowProperties,
+        values: InflowStructureUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """Update the configuration for the hydraulic inflow properties of the given area."""

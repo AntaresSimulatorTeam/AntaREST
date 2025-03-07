@@ -16,7 +16,7 @@ from antarest.study.business.model.hydro_model import (
     HydroManagementProperties,
     HydroManagementUpdate,
 )
-from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowProperties
+from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowStructure, InflowStructureUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroProperties
 from antarest.study.storage.variantstudy.model.command.update_inflow_properties import UpdateInflowProperties
@@ -54,7 +54,7 @@ class HydroManager:
         study.add_commands([command])
 
     # noinspection SpellCheckingInspection
-    def get_inflow_properties(self, study: StudyInterface, area_id: str) -> InflowProperties:
+    def get_inflow_properties(self, study: StudyInterface, area_id: str) -> InflowStructure:
         """
         Retrieves inflow structure values for a specific area within a study.
 
@@ -65,10 +65,10 @@ class HydroManager:
         path = [s.format(area_id=area_id) for s in INFLOW_PATH]
         file_study = study.get_files()
         inter_monthly_correlation = file_study.tree.get(path).get("intermonthly-correlation", 0.5)
-        return InflowProperties(inter_monthly_correlation=inter_monthly_correlation)
+        return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
 
     # noinspection SpellCheckingInspection
-    def update_inflow_properties(self, study: StudyInterface, area_id: str, properties: InflowProperties) -> None:
+    def update_inflow_properties(self, study: StudyInterface, area_id: str, properties: InflowStructureUpdate) -> None:
         """
         Updates inflow structure values for a specific area within a study.
 

@@ -13,11 +13,12 @@ from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 
 INFLOW_PATH = ["input", "hydro", "prepro", "{area_id}", "prepro", "prepro"]
 
 
-class InflowProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
+class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
     """Represents the inflow properties in the hydraulic configuration."""
 
     inter_monthly_correlation: float = Field(
@@ -29,12 +30,21 @@ class InflowProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, 
     )
 
 
-class InflowPropertiesInternal(AntaresBaseModel, extra="forbid", populate_by_name=True):
+@all_optional_model
+@camel_case_model
+class InflowStructureUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True):
     inter_monthly_correlation: float = Field(
-        default=0.5,
         ge=0,
         le=1,
         description="Average correlation between the energy of a month and that of the next month",
         title="Inter-monthly correlation",
+    )
+
+
+@all_optional_model
+class InflowStructureProperties(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    inter_monthly_correlation: float = Field(
+        ge=0,
+        le=1,
         alias="intermonthly-correlation",
     )

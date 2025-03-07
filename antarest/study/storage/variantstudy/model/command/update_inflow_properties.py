@@ -14,7 +14,11 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowProperties, InflowPropertiesInternal
+from antarest.study.business.model.inflow_model import (
+    INFLOW_PATH,
+    InflowStructureProperties,
+    InflowStructureUpdate,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -37,7 +41,7 @@ class UpdateInflowProperties(ICommand):
     # ==================
 
     area_id: str
-    properties: InflowProperties
+    properties: InflowStructureUpdate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -47,14 +51,11 @@ class UpdateInflowProperties(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         path = [s.format(area_id=self.area_id) for s in INFLOW_PATH]
 
-        new_inflow = self.properties.model_dump(exclude_unset=True)
-        current_inflow = study_data.tree.get(path)
+        current_inflow = InflowStructureProperties(**study_data.tree.get(path))
 
-        new_inflow = InflowPropertiesInternal(**new_inflow).model_dump(by_alias=True, exclude_unset=True)
+        updated_inflow = current_inflow.model_copy(update=self.properties.model_dump()).model_dump(by_alias=True)
 
-        current_inflow.update(new_inflow)
-
-        study_data.tree.save(current_inflow, path)
+        study_data.tree.save(updated_inflow, path)
 
         output, _ = self._apply_config(study_data.config)
 
