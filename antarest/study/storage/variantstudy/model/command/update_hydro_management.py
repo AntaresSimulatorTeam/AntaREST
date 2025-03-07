@@ -17,6 +17,7 @@ from typing_extensions import override
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
     HydroProperties,
+    HydroPropertiesInternal,
     get_hydro_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -25,24 +26,6 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-mapping = {
-    "inter_daily_breakdown": "inter-daily-breakdown",
-    "intra_daily_modulation": "intra-daily-modulation",
-    "inter_monthly_breakdown": "inter-monthly-breakdown",
-    "reservoir": "reservoir",
-    "reservoir_capacity": "reservoir capacity",
-    "follow_load": "follow load",
-    "use_water": "use water",
-    "hard_bounds": "hard bounds",
-    "initialize_reservoir_date": "initialize reservoir date",
-    "use_heuristic": "use heuristic",
-    "power_to_level": "power to level",
-    "use_leeway": "use leeway",
-    "leeway_low": "leeway low",
-    "leeway_up": "leeway up",
-    "pumping_efficiency": "pumping efficiency",
-}
 
 
 class UpdateHydroProperties(ICommand):
@@ -72,9 +55,10 @@ class UpdateHydroProperties(ICommand):
 
         area_id = get_hydro_id(area_id=self.area_id, field_dict=current_hydro)
 
-        for k, v in new_hydro.items():
-            if key := mapping.get(k, None):
-                current_hydro.setdefault(key, {}).update({area_id: v})
+        new = HydroPropertiesInternal.model_validate(new_hydro).model_dump(by_alias=True, exclude_unset=True)
+
+        for k, v in new.items():
+            current_hydro.setdefault(k, {}).update({area_id: v})
 
         study_data.tree.save(current_hydro, HYDRO_PATH)
 

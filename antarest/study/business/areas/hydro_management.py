@@ -14,6 +14,7 @@ from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
     INFLOW_PATH,
     HydroProperties,
+    HydroPropertiesInternal,
     InflowStructure,
     get_hydro_id,
 )
@@ -37,7 +38,9 @@ class HydroManager:
         new_area_id = get_hydro_id(area_id, hydro_config)
         args = {k: v[new_area_id] for k, v in hydro_config.items() if new_area_id in v}
 
-        return HydroProperties.model_validate(args)
+        validated_args = HydroPropertiesInternal.model_validate(args).model_dump()
+
+        return HydroProperties(**validated_args)
 
     def update_hydro_properties(
         self,
