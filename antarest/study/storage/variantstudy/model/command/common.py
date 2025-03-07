@@ -68,6 +68,9 @@ class CommandName(Enum):
     CREATE_XPANSION_CAPACITY = "create_xpansion_capacity"
     CREATE_XPANSION_WEIGHT = "create_xpansion_weight"
     CREATE_XPANSION_CONSTRAINT = "create_xpansion_constraint"
+    CREATE_XPANSION_CANDIDATE = "create_xpansion_candidate"
+    REMOVE_XPANSION_CANDIDATE = "remove_xpansion_candidate"
+    REPLACE_XPANSION_CANDIDATE = "replace_xpansion_candidate"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:
