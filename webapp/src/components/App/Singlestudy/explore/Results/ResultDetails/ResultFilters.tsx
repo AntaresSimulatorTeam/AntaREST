@@ -187,9 +187,12 @@ function ResultFilters({
       id: "search",
       label: "",
       field: (
-        <Box sx={{ width: 200 }}>
-          <SearchFE value={filters.search} onChange={(e) => handleSearchChange(e.target.value)} />
-        </Box>
+        <SearchFE
+          value={filters.search}
+          size="extra-small"
+          onChange={(e) => handleSearchChange(e.target.value)}
+          sx={{ width: 150, mr: 1 }}
+        />
       ),
     },
     {
@@ -241,11 +244,13 @@ function ResultFilters({
             trueText="Synthesis"
             falseText="Year by year"
             variant="outlined"
+            size="extra-small"
             onChange={(event) => setYear(event?.target.value ? -1 : 1)}
           />
           {localYear > 0 && (
             <NumberFE
               variant="outlined"
+              size="extra-small"
               value={localYear}
               sx={{ m: 0, ml: 1, width: 80 }}
               inputProps={{
@@ -271,6 +276,7 @@ function ResultFilters({
             { value: DataType.STStorage, label: "ST Storages" },
           ]}
           variant="outlined"
+          size="extra-small"
           onChange={(event) => setDataType(event?.target.value as DataType)}
         />
       ),
@@ -288,6 +294,7 @@ function ResultFilters({
             { value: Timestep.Annual, label: "Annual" },
           ]}
           variant="outlined"
+          size="extra-small"
           onChange={(event) => setTimestep(event?.target.value as Timestep)}
         />
       ),

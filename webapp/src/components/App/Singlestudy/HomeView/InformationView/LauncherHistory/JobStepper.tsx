@@ -16,7 +16,7 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
-import { Tooltip, Typography, Stepper, Step, StepLabel, type StepIconProps } from "@mui/material";
+import { Tooltip, Typography, Stepper, Step, StepLabel } from "@mui/material";
 import moment from "moment";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -85,7 +85,7 @@ interface Props {
   jobsProgress: LaunchJobsProgress;
 }
 
-export default function VerticalLinearStepper({ studyId, jobs, jobsProgress }: Props) {
+function JobStepper({ studyId, jobs, jobsProgress }: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -102,6 +102,15 @@ export default function VerticalLinearStepper({ studyId, jobs, jobsProgress }: P
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
+
+  const canDisplayDigest = (job: LaunchJob) => {
+    if (job.status !== "success") {
+      return false;
+    }
+
+    const output = outputs?.find((output) => output.name === job.outputId);
+    return !!output?.settings?.output?.synthesis;
+  };
 
   const closeDialog = () => setDialogState({});
 
@@ -143,12 +152,10 @@ export default function VerticalLinearStepper({ studyId, jobs, jobsProgress }: P
         connector={<QontoConnector />}
         sx={{ width: "100%", px: 2, boxSizing: "border-box" }}
       >
-        {jobs.map((job, index) => (
+        {jobs.map((job) => (
           <Step key={job.id}>
             <StepLabel
-              StepIconComponent={({ className }: StepIconProps) =>
-                QontoStepIcon({ className, status: job.status })
-              }
+              icon={<QontoStepIcon className={undefined} status={job.status} />}
               sx={{
                 display: "flex",
                 justifyContent: "flex-start",
@@ -176,29 +183,26 @@ export default function VerticalLinearStepper({ studyId, jobs, jobsProgress }: P
                 </StepLabelRow>
                 <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>
                 <StepLabelRow py={1}>
-                  <Tooltip title={t("study.copyJobId") as string}>
+                  <Tooltip title={t("study.copyJobId")}>
                     <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
-                  {job.status === "success" &&
-                    !outputsLoading &&
-                    outputs?.find((output) => output.name === job.outputId)?.settings?.output
-                      ?.synthesis && (
-                      <Tooltip title="Digest">
-                        <EqualizerIcon
-                          onClick={() => setDialogState({ type: "digest", job })}
-                          sx={iconStyle}
-                        />
-                      </Tooltip>
-                    )}
+                  {!outputsLoading && canDisplayDigest(job) && (
+                    <Tooltip title="Digest">
+                      <EqualizerIcon
+                        onClick={() => setDialogState({ type: "digest", job })}
+                        sx={iconStyle}
+                      />
+                    </Tooltip>
+                  )}
                   {job.status === "running" && (
                     <CancelContainer>
                       <LinearProgressWithLabel
-                        value={jobsProgress[job.id] as number}
+                        value={jobsProgress[job.id]}
                         tooltip="Progression"
                         sx={{ width: "30%" }}
                       />
-                      <Tooltip title={t("study.killStudy") as string}>
+                      <Tooltip title={t("study.killStudy")}>
                         <BlockIcon
                           onClick={() => setDialogState({ type: "killJob", job })}
                           sx={{
@@ -237,3 +241,5 @@ export default function VerticalLinearStepper({ studyId, jobs, jobsProgress }: P
     </JobRoot>
   );
 }
+
+export default JobStepper;
