@@ -55,7 +55,7 @@ class UpdateHydroProperties(ICommand):
 
         area_id = get_hydro_id(area_id=self.area_id, field_dict=current_hydro)
 
-        new = HydroPropertiesInternal.model_validate(new_hydro).model_dump(by_alias=True, exclude_unset=True)
+        new = HydroPropertiesInternal(**new_hydro).model_dump(by_alias=True, exclude_unset=True)
 
         for k, v in new.items():
             current_hydro.setdefault(k, {}).update({area_id: v})
