@@ -55,6 +55,7 @@ export default {
     styleOverrides: {
       root: {
         flexShrink: 0,
+        minWidth: "auto",
       },
     },
   },

@@ -23,35 +23,36 @@ import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
 import EmptyView from "@/components/common/page/EmptyView";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import { isNonEmptyMatrix } from "@/components/common/Matrix/shared/types";
 
 interface MatrixContentProps {
-  matrix: MatrixInfoDTO;
+  matrixInfo: MatrixInfoDTO;
   onBack: () => void;
 }
 
-function MatrixContent({ matrix, onBack }: MatrixContentProps) {
+function MatrixContent({ matrixInfo, onBack }: MatrixContentProps) {
   const { t } = useTranslation();
 
-  const { data: matrixData } = usePromiseWithSnackbarError<MatrixDTO>(() => getMatrix(matrix.id), {
+  const { data: matrix } = usePromiseWithSnackbarError<MatrixDTO>(() => getMatrix(matrixInfo.id), {
     errorMessage: t("data.error.matrix"),
   });
 
   const matrixColumns = useMemo(
     () =>
-      matrixData
+      matrix
         ? generateDataColumns({
-            timeSeriesColumns: true,
-            count: matrixData.columns.length,
+            isTimeSeries: true,
+            count: matrix.columns.length,
           })
         : [],
-    [matrixData],
+    [matrix],
   );
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (!matrixData) {
+  if (!matrix) {
     return null;
   }
 
@@ -59,18 +60,13 @@ function MatrixContent({ matrix, onBack }: MatrixContentProps) {
     <>
       <Box sx={{ display: "flex" }}>
         <ButtonBack onClick={onBack} />
-        <Typography>{matrix.name}</Typography>
+        <Typography>{matrixInfo.name}</Typography>
       </Box>
       <Divider sx={{ mt: 1, mb: 2 }} />
-      {!matrixData.data[0]?.length ? (
-        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
+      {isNonEmptyMatrix(matrix.data) ? (
+        <MatrixGrid data={matrix.data} columns={matrixColumns} rows={matrix.data.length} readOnly />
       ) : (
-        <MatrixGrid
-          data={matrixData.data}
-          columns={matrixColumns}
-          rows={matrixData.data.length}
-          readOnly
-        />
+        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
       )}
     </>
   );

@@ -58,6 +58,7 @@ export interface HydroMatrixProps {
   readOnly?: boolean;
   showPercent?: boolean;
   rowCountSource?: RowCountSource;
+  isTimeSeries?: boolean;
 }
 
 type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
@@ -135,6 +136,7 @@ export const MATRICES: Matrices = {
     rowHeaders: ["Generating Power", "Pumping Power"],
     rowCountSource: "dataLength",
     dateTimeColumn: false,
+    isTimeSeries: false,
   },
   [HydroMatrix.EnergyCredits]: {
     title: "Standard Credits",
@@ -146,11 +148,13 @@ export const MATRICES: Matrices = {
       "Pumping Max Energy (Hours at Pmax)",
     ],
     rowCountSource: "dataLength",
+    isTimeSeries: false,
   },
   [HydroMatrix.ReservoirLevels]: {
     title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     columns: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
+    isTimeSeries: false,
   },
   [HydroMatrix.WaterValues]: {
     title: "Water Values",
@@ -175,6 +179,7 @@ export const MATRICES: Matrices = {
     title: "Inflow Pattern",
     url: "input/hydro/common/capacity/inflowPattern_{areaId}",
     columns: ["Inflow Pattern (X)"],
+    isTimeSeries: false,
   },
   [HydroMatrix.OverallMonthlyHydro]: {
     title: "Overall Monthly Hydro",
@@ -196,6 +201,7 @@ export const MATRICES: Matrices = {
     ],
     rowCountSource: "dataLength",
     dateTimeColumn: false,
+    isTimeSeries: false,
   },
   [HydroMatrix.Allocation]: {
     title: "Allocation",

@@ -46,7 +46,7 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
         isDarkMode,
       )
     : generateDataColumns({
-        timeSeriesColumns: false,
+        isTimeSeries: false,
         count: matrix.columns.length,
         customColumns: !isGroupedColumns(matrix.columns) ? matrix.columns : undefined,
       });
