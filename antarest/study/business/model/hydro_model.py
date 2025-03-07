@@ -20,9 +20,7 @@ INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
 HYDRO_PATH = ["input", "hydro", "hydro"]
 
 
-class InflowStructure(
-    AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True, alias_generator=to_camel_case
-):
+class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
     """Represents the inflow structure values in the hydraulic configuration."""
 
     # NOTE: Currently, there is only one field for the inflow structure model
@@ -36,9 +34,7 @@ class InflowStructure(
     )
 
 
-class HydroManagementOptions(
-    AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True, alias_generator=to_camel_case
-):
+class HydroProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
     inter_daily_breakdown: Optional[float] = Field(
         default=1, ge=0, validation_alias=AliasChoices("interDailyBreakdown", "inter-daily-breakdown")
     )

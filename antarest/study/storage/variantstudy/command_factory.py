@@ -57,7 +57,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
-from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
+from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroProperties
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
@@ -90,7 +90,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
     CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
     CommandName.UPDATE_ST_STORAGE.value: UpdateSTStorage,
-    CommandName.UPDATE_HYDRO_MANAGEMENT.value: UpdateHydroManagement,
+    CommandName.UPDATE_HYDRO_PROPERTIES.value: UpdateHydroProperties,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
     CommandName.UPDATE_CONFIG.value: UpdateConfig,
     CommandName.UPDATE_COMMENTS.value: UpdateComments,

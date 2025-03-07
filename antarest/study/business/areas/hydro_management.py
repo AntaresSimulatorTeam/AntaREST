@@ -10,16 +10,16 @@
 #
 # This file is part of the Antares project.
 
-from antarest.study.business.model.hydro_management_model import (
+from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
     INFLOW_PATH,
-    HydroManagementOptions,
+    HydroProperties,
     InflowStructure,
     get_hydro_id,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
+from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -27,7 +27,7 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_hydro_management_options(self, study: StudyInterface, area_id: str) -> HydroManagementOptions:
+    def get_hydro_properties(self, study: StudyInterface, area_id: str) -> HydroProperties:
         """
         Get management options for a given area
         """
@@ -37,20 +37,20 @@ class HydroManager:
         new_area_id = get_hydro_id(area_id, hydro_config)
         args = {k: v[new_area_id] for k, v in hydro_config.items() if new_area_id in v}
 
-        return HydroManagementOptions.model_validate(args)
+        return HydroProperties.model_validate(args)
 
-    def update_hydro_management_options(
+    def update_hydro_properties(
         self,
         study: StudyInterface,
-        field_values: HydroManagementOptions,
+        properties: HydroProperties,
         area_id: str,
     ) -> None:
         """
         update hydro management options for a given area
         """
 
-        command = UpdateHydroManagement(
-            area_id=area_id, properties=field_values, command_context=self._command_context, study_version=study.version
+        command = UpdateHydroProperties(
+            area_id=area_id, properties=properties, command_context=self._command_context, study_version=study.version
         )
 
         study.add_commands([command])
@@ -90,4 +90,5 @@ class HydroManager:
             command_context=self._command_context,
             study_version=study.version,
         )
+
         study.add_commands([command])

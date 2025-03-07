@@ -14,9 +14,9 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.hydro_management_model import (
+from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
-    HydroManagementOptions,
+    HydroProperties,
     get_hydro_id,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -45,25 +45,25 @@ mapping = {
 }
 
 
-class UpdateHydroManagement(ICommand):
+class UpdateHydroProperties(ICommand):
     """
-    Command used to update a hydro management options in an area.
+    Command used to update hydro properties in an area.
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_HYDRO_MANAGEMENT
+    command_name: CommandName = CommandName.UPDATE_HYDRO_PROPERTIES
 
     # Command parameters
     # ==================
 
     area_id: str
-    properties: HydroManagementOptions
+    properties: HydroProperties
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message=f"Hydro management '{self.area_id}' updated."), {}
+        return CommandOutput(status=True, message=f"Hydro properties in '{self.area_id}' updated."), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -85,7 +85,7 @@ class UpdateHydroManagement(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.UPDATE_HYDRO_MANAGEMENT.value,
+            action=CommandName.UPDATE_HYDRO_PROPERTIES.value,
             args={"area_id": self.area_id, "properties": self.properties.model_dump(mode="json")},
             study_version=self.study_version,
         )
