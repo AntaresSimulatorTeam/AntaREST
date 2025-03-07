@@ -411,7 +411,8 @@ class RawStudyInterface(StudyInterface):
             result = command.apply(file_study)
             if not result.status:
                 raise CommandApplicationError(result.message)
-        self._variant_study_service.invalidate_cache(study)
+        remove_from_cache(self._raw_study_service.cache, study.id)
+        self._variant_study_service.invalidate_children(study.id)
 
         if not is_managed(study):
             # In a previous version, de-normalization was performed asynchronously.

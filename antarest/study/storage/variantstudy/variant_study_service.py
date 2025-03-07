@@ -240,7 +240,11 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             for i, command in enumerate(validated_commands)
         ]
         study.commands.extend(new_commands)
-        self.invalidate_cache(study)
+        self.repository.save(
+            metadata=study,
+            update_modification_date=True,
+        )
+        self.invalidate_children(study.id)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -281,7 +285,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             for i, command in enumerate(validated_commands)
         ]
-        self.invalidate_cache(study, invalidate_self_snapshot=True)
+        self._invalidate_snapshot(study)
+        self.invalidate_children(study.id)
         return str(study.id)
 
     def move_command(
@@ -310,7 +315,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
-            self.invalidate_cache(study, invalidate_self_snapshot=True)
+            self._invalidate_snapshot(study)
+            self.invalidate_children(study.id)
 
     def remove_command(self, study_id: str, command_id: str, params: RequestParameters) -> None:
         """
@@ -329,7 +335,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.pop(index)
             for idx, command in enumerate(study.commands):
                 command.index = idx
-            self.invalidate_cache(study, invalidate_self_snapshot=True)
+            self._invalidate_snapshot(study)
+            self.invalidate_children(study.id)
 
     def remove_all_commands(self, study_id: str, params: RequestParameters) -> None:
         """
@@ -343,7 +350,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._check_update_authorization(study)
 
         study.commands = []
-        self.invalidate_cache(study, invalidate_self_snapshot=True)
+        self._invalidate_snapshot(study)
+        self.invalidate_children(study.id)
 
     def update_command(
         self,
@@ -370,7 +378,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = to_json_string(validated_commands[0].args)
-            self.invalidate_cache(study, invalidate_self_snapshot=True)
+            self._invalidate_snapshot(study)
+            self.invalidate_children(study.id)
 
     def export_commands_matrices(self, study_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
         study = self._get_variant_study(study_id, params)
@@ -423,24 +432,32 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
 
-    def invalidate_cache(
+    def invalidate_children(self, study_id: str) -> None:
+        # TODO: optimize to not perform one request per child
+        for child in self.repository.get_children(parent_id=study_id):
+            self._invalidate_snapshot(child)
+            self.invalidate_children(child.id)
+
+    def _invalidate_snapshot(
         self,
-        variant_study: Study,
-        invalidate_self_snapshot: bool = False,
+        variant_study: VariantStudy,
     ) -> None:
-        remove_from_cache(self.cache, variant_study.id)
-        if isinstance(variant_study, VariantStudy) and variant_study.snapshot and invalidate_self_snapshot:
+        """
+        Invalidates snapshot so that it is regenerated next time the study
+        is accessed.
+        Note that we keep current snapshot data and "config",
+        because it may be used as basis for the next snapshot generation.
+        """
+        if variant_study.snapshot:
             variant_study.snapshot.last_executed_command = None
         self.repository.save(
             metadata=variant_study,
             update_modification_date=True,
         )
-        for child in self.repository.get_children(parent_id=variant_study.id):
-            self.invalidate_cache(child, invalidate_self_snapshot=True)
 
     def clear_snapshot(self, variant_study: Study) -> None:
         logger.info(f"Clearing snapshot for study {variant_study.id}")
-        self.invalidate_cache(variant_study, invalidate_self_snapshot=True)
+        self._invalidate_snapshot(variant_study)
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
     def has_children(self, study: VariantStudy) -> bool:

@@ -22,7 +22,7 @@ from antarest.study.business.all_optional_meta import camel_case_model
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.utils import is_managed
+from antarest.study.storage.utils import is_managed, remove_from_cache
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -48,7 +48,8 @@ def execute_or_add_commands(
             if not result.status:
                 raise CommandApplicationError(result.message)
             executed_commands.append(command)
-        storage_service.variant_study_service.invalidate_cache(study)
+        remove_from_cache(storage_service.raw_study_service.cache, study.id)
+        storage_service.variant_study_service.invalidate_children(study.id)
         if not is_managed(study):
             # In a previous version, de-normalization was performed asynchronously.
             # However, this cause problems with concurrent file access,
