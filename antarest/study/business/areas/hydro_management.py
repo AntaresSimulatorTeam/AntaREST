@@ -12,9 +12,9 @@
 
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
-    HydroProperties,
-    HydroPropertiesInternal,
-    get_hydro_id,
+    HydroManagement,
+    HydroManagementProperties,
+    HydroManagementUpdate,
 )
 from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowProperties
 from antarest.study.business.study_interface import StudyInterface
@@ -27,24 +27,20 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_hydro_properties(self, study: StudyInterface, area_id: str) -> HydroProperties:
+    def get_hydro_properties(self, study: StudyInterface, area_id: str) -> HydroManagement:
         """
         Get management options for a given area
         """
         file_study = study.get_files()
-        hydro_config = file_study.tree.get(HYDRO_PATH)
 
-        new_area_id = get_hydro_id(area_id, hydro_config)
-        args = {k: v[new_area_id] for k, v in hydro_config.items() if new_area_id in v}
+        hydro_properties = HydroManagementProperties(**file_study.tree.get(HYDRO_PATH))
 
-        validated_args = HydroPropertiesInternal.model_validate(args).model_dump()
-
-        return HydroProperties(**validated_args)
+        return hydro_properties.get_hydro_management(area_id)
 
     def update_hydro_properties(
         self,
         study: StudyInterface,
-        properties: HydroProperties,
+        properties: HydroManagementUpdate,
         area_id: str,
     ) -> None:
         """

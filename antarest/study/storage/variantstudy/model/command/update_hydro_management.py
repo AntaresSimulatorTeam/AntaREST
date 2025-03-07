@@ -16,9 +16,9 @@ from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
-    HydroProperties,
-    HydroPropertiesInternal,
-    get_hydro_id,
+    HydroManagement,
+    HydroManagementProperties,
+    HydroManagementUpdate,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -42,7 +42,7 @@ class UpdateHydroProperties(ICommand):
     # ==================
 
     area_id: str
-    properties: HydroProperties
+    properties: HydroManagementUpdate
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -50,17 +50,13 @@ class UpdateHydroProperties(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_hydro = study_data.tree.get(HYDRO_PATH)
-        new_hydro = self.properties.model_dump(exclude_unset=True)
+        current_hydro = HydroManagementProperties(**study_data.tree.get(HYDRO_PATH))
 
-        area_id = get_hydro_id(area_id=self.area_id, field_dict=current_hydro)
+        hydro = HydroManagement(**self.properties.model_dump(exclude_none=True))
 
-        new = HydroPropertiesInternal(**new_hydro).model_dump(by_alias=True, exclude_unset=True)
+        current_hydro.set_hydro_management(self.area_id, hydro)
 
-        for k, v in new.items():
-            current_hydro.setdefault(k, {}).update({area_id: v})
-
-        study_data.tree.save(current_hydro, HYDRO_PATH)
+        study_data.tree.save(current_hydro.model_dump(by_alias=True), HYDRO_PATH)
 
         output, _ = self._apply_config(study_data.config)
 

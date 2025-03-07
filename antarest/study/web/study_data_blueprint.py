@@ -55,7 +55,7 @@ from antarest.study.business.correlation_management import (
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
-from antarest.study.business.model.hydro_model import HydroProperties
+from antarest.study.business.model.hydro_model import HydroManagement, HydroManagementUpdate
 from antarest.study.business.model.inflow_model import InflowProperties
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
@@ -442,14 +442,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/form",
         tags=[APITag.study_data],
         summary="Get Hydro config values for form",
-        response_model=HydroProperties,
+        response_model=HydroManagement,
         response_model_exclude_none=True,
     )
     def get_hydro_form_values(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> HydroProperties:
+    ) -> HydroManagement:
         logger.info(
             msg=f"Getting Hydro management config for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
@@ -467,9 +467,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_hydro_form_values(
         uuid: str,
         area_id: str,
-        data: HydroProperties,
+        data: HydroManagementUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             msg=f"Updating Hydro management config for area {area_id} of study {uuid}",
             extra={"user": current_user.id},

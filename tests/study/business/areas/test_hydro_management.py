@@ -16,7 +16,7 @@ import pytest
 
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.model.hydro_model import HydroProperties
+from antarest.study.business.model.hydro_model import HydroManagementUpdate
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -138,7 +138,7 @@ class TestHydroManagement:
             # simulate regular usage by modifying some values
             modified_data = dict(initial_data)
             modified_data["intra_daily_modulation"] = 5.0
-            hydro_manager.update_hydro_properties(study, HydroProperties(**modified_data), area)
+            hydro_manager.update_hydro_properties(study, HydroManagementUpdate(**modified_data), area)
 
             # retrieve edited
             new_data = hydro_manager.get_hydro_properties(study, area).model_dump()
