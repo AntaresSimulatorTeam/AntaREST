@@ -146,7 +146,7 @@ function LauncherHistory(props: Props) {
       <Typography color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <HistoryIcon /> {t("global.jobs")}
       </Typography>
-      <JobStepper jobs={studyJobs} jobsProgress={studyJobsProgress} />
+      {study && <JobStepper studyId={study.id} jobs={studyJobs} jobsProgress={studyJobsProgress} />}
     </Paper>
   );
 }

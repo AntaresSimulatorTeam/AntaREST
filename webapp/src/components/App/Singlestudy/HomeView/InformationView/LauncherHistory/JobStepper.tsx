@@ -24,7 +24,7 @@ import { useSnackbar } from "notistack";
 import type { AxiosError } from "axios";
 import type { JobStatus, LaunchJob, LaunchJobsProgress } from "@/types/types";
 import { convertUTCToLocalTime } from "@/services/utils";
-import { killStudy } from "@/services/api/study";
+import { getStudyOutputs, killStudy } from "@/services/api/study";
 import LaunchJobLogView from "../../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
@@ -39,13 +39,14 @@ import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog
 import LinearProgressWithLabel from "../../../../../common/LinearProgressWithLabel";
 import type { EmptyObject } from "@/utils/tsUtils";
 import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 
 export const ColorStatus = {
   running: "warning.main",
   pending: "grey.400",
   success: "success.main",
   failed: "error.main",
-};
+} as const;
 
 const iconStyle = {
   m: 0.5,
@@ -79,16 +80,24 @@ type DialogState =
   | EmptyObject;
 
 interface Props {
+  studyId: string;
   jobs: LaunchJob[];
   jobsProgress: LaunchJobsProgress;
 }
 
-export default function VerticalLinearStepper(props: Props) {
-  const { jobs, jobsProgress } = props;
+export default function VerticalLinearStepper({ studyId, jobs, jobsProgress }: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
+
+  const { data: outputs, isLoading: outputsLoading } = usePromiseWithSnackbarError(
+    () => getStudyOutputs(studyId),
+    {
+      errorMessage: t("results.error.outputs"),
+      deps: [studyId],
+    },
+  );
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -171,14 +180,17 @@ export default function VerticalLinearStepper(props: Props) {
                     <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
                   </Tooltip>
                   <LaunchJobLogView job={job} logButton logErrorButton />
-                  {job.status === "success" && (
-                    <Tooltip title="Digest">
-                      <EqualizerIcon
-                        onClick={() => setDialogState({ type: "digest", job })}
-                        sx={iconStyle}
-                      />
-                    </Tooltip>
-                  )}
+                  {job.status === "success" &&
+                    !outputsLoading &&
+                    outputs?.find((output) => output.name === job.outputId)?.settings?.output
+                      ?.synthesis && (
+                      <Tooltip title="Digest">
+                        <EqualizerIcon
+                          onClick={() => setDialogState({ type: "digest", job })}
+                          sx={iconStyle}
+                        />
+                      </Tooltip>
+                    )}
                   {job.status === "running" && (
                     <CancelContainer>
                       <LinearProgressWithLabel
