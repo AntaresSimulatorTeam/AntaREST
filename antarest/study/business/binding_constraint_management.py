@@ -894,7 +894,6 @@ class BindingConstraintManager:
         file_study = study.get_files()
         bcs_json = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         bcs_json_by_id = {value["id"]: key for (key, value) in bcs_json.items()}
-        bc_input_as_dict_by_id = {}
         bcs_output = {}
         for bc_id, bc_input in bcs_by_ids.items():
             # check binding constraint id sent by user exist for this study
@@ -902,11 +901,8 @@ class BindingConstraintManager:
             if bc_id not in bcs_json_by_id:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-            # convert ConstraintInput to dict, UpdateBindingConstraints will expect a dict as input
-            bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
-            bc_input_as_dict_by_id[bc_id] = bc_input_as_dict
-
             # convert payload sent by user to a ConstraintOutput dict
+            bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
             bc_json = bcs_json[bcs_json_by_id[bc_id]]
             bc_output = self.__convert_constraint_input_to_output(bc_json, bc_input_as_dict, study.version)
             bcs_output[bc_id] = bc_output
