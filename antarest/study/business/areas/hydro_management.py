@@ -9,16 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Dict
 
 from antarest.study.business.model.hydro_management_model import (
     HYDRO_PATH,
     INFLOW_PATH,
     HydroManagementOptions,
     InflowStructure,
+    get_hydro_id,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import FieldInfo
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -28,24 +27,6 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    @staticmethod
-    def _get_id(area_id: str, field_dict: Dict[str, FieldInfo]) -> str:
-        """
-        Try to match the current area_id with the one from the original file.
-        These two ids could mismatch based on their character cases since the id from
-        the filesystem could have been modified with capital letters.
-        We first convert it into lower case in order to compare both ids.
-
-        Returns the area id from the file if both values matched, the initial area id otherwise.
-        """
-        result = area_id
-        for file_area_id in field_dict:
-            if file_area_id.lower() == area_id.lower():
-                result = file_area_id
-                break
-        return result
-        #return next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id.lower()), area_id)
-
     def get_hydro_management_options(self, study: StudyInterface, area_id: str) -> HydroManagementOptions:
         """
         Get management options for a given area
@@ -53,7 +34,7 @@ class HydroManager:
         file_study = study.get_files()
         hydro_config = file_study.tree.get(HYDRO_PATH)
 
-        new_area_id = self._get_id(area_id, hydro_config)
+        new_area_id = get_hydro_id(area_id, hydro_config)
         args = {k: v[new_area_id] for k, v in hydro_config.items() if new_area_id in v}
 
         return HydroManagementOptions.model_validate(args)
@@ -68,9 +49,8 @@ class HydroManager:
         update hydro management options for a given area
         """
 
-        new_area_id = self._get_id(area_id, field_values.model_dump())
         command = UpdateHydroManagement(
-            area_id=new_area_id, properties=field_values, command_context=self._command_context, study_version=study.version
+            area_id=area_id, properties=field_values, command_context=self._command_context, study_version=study.version
         )
 
         study.add_commands([command])

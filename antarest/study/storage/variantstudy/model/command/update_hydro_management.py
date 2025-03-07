@@ -14,7 +14,11 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.hydro_management_model import HYDRO_PATH, HydroManagementOptions
+from antarest.study.business.model.hydro_management_model import (
+    HYDRO_PATH,
+    HydroManagementOptions,
+    get_hydro_id,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -66,9 +70,11 @@ class UpdateHydroManagement(ICommand):
         current_hydro = study_data.tree.get(HYDRO_PATH)
         new_hydro = self.properties.model_dump(exclude_unset=True)
 
+        area_id = get_hydro_id(area_id=self.area_id, field_dict=current_hydro)
+
         for k, v in new_hydro.items():
             if key := mapping.get(k, None):
-                current_hydro.setdefault(key, {}).update({self.area_id: v})
+                current_hydro.setdefault(key, {}).update({area_id: v})
 
         study_data.tree.save(current_hydro, HYDRO_PATH)
 

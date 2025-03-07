@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import AliasChoices, Field
 
@@ -67,4 +67,18 @@ class HydroManagementOptions(
     leeway_up: Optional[float] = Field(default=1, ge=0, validation_alias=AliasChoices("leewayUp", "leeway up"))
     pumping_efficiency: Optional[float] = Field(
         default=1, ge=0, validation_alias=AliasChoices("pumpingEfficiency", "pumping efficiency")
+    )
+
+
+def get_hydro_id(area_id: str, field_dict: Dict[str, Any]) -> str:
+    """
+    Try to match the current area_id with the one from the original file.
+    These two ids could mismatch based on their character cases since the id from
+    the filesystem could have been modified with capital letters.
+    We first convert it into lower case in order to compare both ids.
+
+    Returns the area id from the file if both values matched, the initial area id otherwise.
+    """
+    return next(
+        (key for sub_dict in field_dict.values() for key in sub_dict if key.lower() == area_id.lower()), area_id
     )
