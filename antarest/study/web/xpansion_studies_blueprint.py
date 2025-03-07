@@ -25,11 +25,9 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
+    XpansionCandidateDTO,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
-)
-from antarest.study.business.xpansion_management import (
-    XpansionCandidateDTO,
 )
 from antarest.study.service import StudyService
 
