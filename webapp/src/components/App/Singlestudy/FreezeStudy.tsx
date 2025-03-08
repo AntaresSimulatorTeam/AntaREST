@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/types/types";
+import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
 import type { TaskDTO, TaskTypeValue } from "@/services/api/tasks/types";
@@ -24,11 +25,10 @@ import {
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
+import type { StudyMetadata } from "@/types/types";
 import { Backdrop, Button, List, ListItem, ListItemText, Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
 import { useTranslation } from "react-i18next";
-import useUpdatedRef from "@/hooks/useUpdatedRef";
 
 interface BlockingTask {
   id: TaskDTO["id"];
@@ -64,14 +64,14 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
 
   // Fetch blocking tasks and subscribe to their WebSocket channels
   useEffect(() => {
-    let ignore = false; // Prevent race condition
+    let active = true; // Prevent race condition
 
     getTasks({
       studyId,
       type: [TaskType.UpgradeStudy, TaskType.ThermalClusterSeriesGeneration],
       status: [TaskStatus.Pending, TaskStatus.Running],
     }).then((tasks) => {
-      if (!ignore) {
+      if (active) {
         setBlockingTasks(
           tasks.map((task) => ({
             id: task.id,
@@ -84,7 +84,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
     });
 
     return () => {
-      ignore = true;
+      active = false;
       unsubscribeWsChannels();
     };
   }, [studyId]);

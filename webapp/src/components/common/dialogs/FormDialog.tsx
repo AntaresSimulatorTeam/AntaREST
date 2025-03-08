@@ -17,7 +17,6 @@ import { Button } from "@mui/material";
 import { useId, useState } from "react";
 import type { FieldValues, FormState } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { LoadingButton } from "@mui/lab";
 import * as RA from "ramda-adjunct";
 import SaveIcon from "@mui/icons-material/Save";
 import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
@@ -113,7 +112,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
             {cancelButtonText || t("global.close")}
           </Button>
           {!autoSubmit && (
-            <LoadingButton
+            <Button
               type="submit"
               form={formId}
               variant="contained"
@@ -123,7 +122,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
               startIcon={RA.isNotUndefined(submitButtonIcon) ? submitButtonIcon : <SaveIcon />}
             >
               {submitButtonText || t("global.save")}
-            </LoadingButton>
+            </Button>
           )}
         </>
       }
