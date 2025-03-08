@@ -21,12 +21,11 @@ from antarest.study.business.model.area_model import (
     AreaCreationDTO,
     AreaInfoDTO,
     AreaOutput,
-    AreaPropertiesUpdate,
     AreaType,
     LayerInfoDTO,
     UpdateAreaUi,
-    build_area_properties_update,
 )
+from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
@@ -180,7 +179,7 @@ class AreaManager:
             new_areas_by_ids[area_id] = new_area
 
             properties = update_area.model_dump(exclude_none=True, exclude_unset=True)
-            area_properties = build_area_properties_update(properties)
+            area_properties = {}
             areas_properties.update({area_id: area_properties})
 
         command = UpdateAreasProperties(

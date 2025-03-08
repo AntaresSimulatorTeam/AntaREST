@@ -13,12 +13,7 @@ from typing import Dict, List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaPropertiesUpdate, decode_filter
-from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPathProperties,
-    OptimizationProperties,
-    ThermalAreasProperties,
-)
+from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate, AreaPropertiesProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -26,6 +21,10 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand,
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+
+THERMAL_PATH = ["input", "thermal", "areas"]
+OPTIMIZATION_PATH = ["input", "areas", "{area_id}", "optimization"]
+ADEQUACY_PATCH_PATH = ["input", "areas", "{area_id}", "adequacy_patch", "adequacy-patch"]
 
 class UpdateAreasProperties(ICommand):
     """
@@ -48,54 +47,29 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        for area_id, properties in self.areas_properties.items():
-            self.update_thermal_properties(area_id, study_data)
-            self.update_adequacy_patch(area_id, study_data)
-            self.update_area_optimization(area_id, study_data)
+        for area_id, area_properties in self.areas_properties.items():
+            current_thermal_props = study_data.tree.get(THERMAL_PATH)
+            current_optim_properties = study_data.tree.get([s.format(area_id=area_id) for s in OPTIMIZATION_PATH])
+            current_adequacy_patch = study_data.tree.get([s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH])
+
+            properties = {
+                **current_thermal_props,
+                **current_optim_properties.get("nodal optimization", {}),
+                **current_optim_properties.get("filtering", {}),
+                **current_adequacy_patch
+            }
+
+            current_properties = AreaPropertiesProperties(**properties)
+
+            new_properties = current_properties.get_area_properties(area_id=self.area_id).model_copy(
+                update=self.properties.model_dump(exclude_none=True)
+            )
+
+            current_properties.set_area_properties(self.area_id, new_properties)
 
         output, _ = self._apply_config(study_data.config)
 
         return output
-
-    def update_thermal_properties(self, area_id: str, study_data: FileStudy) -> None:
-        if (new_properties := self.areas_properties[area_id].thermal_properties) != {}:
-            thermal_properties = study_data.tree.get(["input", "thermal", "areas"])
-
-            for k, v in new_properties.items():
-                thermal_properties[k].update({area_id: v})
-
-            ThermalAreasProperties.model_validate(thermal_properties)
-
-            study_data.tree.save(thermal_properties, ["input", "thermal", "areas"])
-
-    def update_adequacy_patch(self, area_id: str, study_data: FileStudy) -> None:
-        if (new_properties := self.areas_properties[area_id].adequacy_patch_property) != {}:
-            adequacy_patch_properties = study_data.tree.get(["input", "areas", area_id, "adequacy_patch"])
-            adequacy_patch_properties["adequacy-patch"].update(new_properties)
-
-            AdequacyPathProperties.model_validate(adequacy_patch_properties)
-
-            study_data.tree.save(adequacy_patch_properties, ["input", "areas", area_id, "adequacy_patch"])
-
-    def update_area_optimization(self, area_id: str, study_data: FileStudy) -> None:
-        new_filtering = self.areas_properties[area_id].filtering_props
-        new_nodal = self.areas_properties[area_id].optim_properties
-
-        if new_filtering or new_nodal:
-            optimization_properties = study_data.tree.get(["input", "areas", area_id, "optimization"])
-
-            if new_nodal:
-                optimization_properties["nodal optimization"].update(new_nodal)
-
-            if new_filtering:
-                if synthesis := new_filtering.get("filter-synthesis"):
-                    optimization_properties["filtering"]["filter-synthesis"] = decode_filter(synthesis)
-                if by_year := new_filtering.get("filter-year-by-year"):
-                    optimization_properties["filtering"]["filter-year-by-year"] = decode_filter(by_year)
-
-            OptimizationProperties.model_validate(optimization_properties)
-
-            study_data.tree.save(optimization_properties, ["input", "areas", area_id, "optimization"])
 
     @override
     def to_dto(self) -> CommandDTO:
