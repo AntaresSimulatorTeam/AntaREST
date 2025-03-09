@@ -54,10 +54,10 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_area_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
     ReplaceXpansionCandidate,
 )
+from antarest.study.storage.variantstudy.model.command.update_area_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments

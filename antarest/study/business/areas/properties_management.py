@@ -10,20 +10,23 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Set
 
-from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesProperties, decode_filter, \
-    AreaPropertiesUpdate
+from antarest.study.business.model.area_properties_model import (
+    ADEQUACY_PATCH_PATH,
+    OPTIMIZATION_PATH,
+    THERMAL_PATH,
+    AreaProperties,
+    AreaPropertiesProperties,
+    AreaPropertiesUpdate,
+)
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.area import ThermalAreasProperties, AreaFolder, \
-    OptimizationProperties, AdequacyPathProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AdequacyPathProperties,
+    OptimizationProperties,
+    ThermalAreasProperties,
+)
 from antarest.study.storage.variantstudy.model.command.update_area_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-THERMAL_PATH = ["input", "thermal", "areas"]
-OPTIMIZATION_PATH = ["input", "areas", "{area_id}", "optimization"]
-ADEQUACY_PATCH_PATH = ["input", "areas", "{area_id}", "adequacy_patch"]
 
 
 class AreaPropertiesManager:
@@ -41,18 +44,11 @@ class AreaPropertiesManager:
         current_optim_properties = file_study.tree.get([s.format(area_id=area_id) for s in OPTIMIZATION_PATH])
         current_adequacy_patch = file_study.tree.get([s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH])
 
-        properties = {
-            **current_thermal_props,
-            **current_optim_properties.get("nodal optimization", {}),
-            **current_optim_properties.get("filtering", {}),
-            **current_adequacy_patch
-        }
-
-        ThermalAreasProperties(**current_thermal_props)
-        OptimizationProperties(**current_optim_properties)
-        AdequacyPathProperties(**current_adequacy_patch)
-
-        area_properties = AreaPropertiesProperties.model_validate(properties)
+        area_properties = AreaPropertiesProperties(
+            thermal_properties=ThermalAreasProperties(**current_thermal_props),
+            optimization_properties=OptimizationProperties(**current_optim_properties),
+            adequacy_properties=AdequacyPathProperties(**current_adequacy_patch),
+        )
 
         return AreaProperties.model_validate(area_properties.get_area_properties(area_id))
 
@@ -62,9 +58,8 @@ class AreaPropertiesManager:
         area_id: str,
         area_properties: AreaPropertiesUpdate,
     ) -> None:
-
         command = UpdateAreasProperties(
-            areas_properties={area_id: area_properties},
+            properties={area_id: area_properties},
             command_context=self._command_context,
             study_version=study.version,
         )

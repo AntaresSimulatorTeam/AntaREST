@@ -11,8 +11,7 @@
 # This file is part of the Antares project.
 
 import enum
-import re
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set
+from typing import List, Mapping, Optional, Sequence
 
 from pydantic import Field
 

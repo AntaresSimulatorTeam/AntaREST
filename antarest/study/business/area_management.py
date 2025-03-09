@@ -25,7 +25,9 @@ from antarest.study.business.model.area_model import (
     LayerInfoDTO,
     UpdateAreaUi,
 )
-from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate
+from antarest.study.business.model.area_properties_model import (
+    AreaPropertiesUpdate,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
@@ -156,14 +158,14 @@ class AreaManager:
 
     # noinspection SpellCheckingInspection
     def update_areas_props(
-        self, study: StudyInterface, update_areas_by_ids: Mapping[str, AreaOutput]
+        self, study: StudyInterface, properties: Mapping[str, AreaOutput]
     ) -> Mapping[str, AreaOutput]:
         """
         Update the properties of ares.
 
         Args:
             study: The raw study object.
-            update_areas_by_ids: A mapping of area IDs to area properties.
+            properties: A mapping of area IDs to area properties.
 
         Returns:
             A mapping of ALL area IDs to area properties.
@@ -173,17 +175,17 @@ class AreaManager:
 
         areas_properties: Dict[str, AreaPropertiesUpdate] = {}
 
-        for area_id, update_area in update_areas_by_ids.items():
+        for area_id, update_area in properties.items():
             old_area = old_areas_by_ids[area_id]
-            new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
+            new_area = old_area.model_copy(update=update_area.model_dump(exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
-            properties = update_area.model_dump(exclude_none=True, exclude_unset=True)
-            area_properties = {}
+            properties = update_area.model_dump(exclude_none=True, exclude_unset=True, by_alias=True)
+            area_properties = AreaPropertiesUpdate(**properties)
             areas_properties.update({area_id: area_properties})
 
         command = UpdateAreasProperties(
-            areas_properties=areas_properties,
+            properties=areas_properties,
             command_context=self._command_context,
             study_version=study.version,
         )

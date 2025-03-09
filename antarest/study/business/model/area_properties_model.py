@@ -10,17 +10,24 @@
 #
 # This file is part of the Antares project.
 import re
-from typing import Set, Dict, Any, List, Iterable
+from typing import Any, Dict, Iterable, List, Set
 
-from pydantic import model_validator, Field
+from pydantic import AliasChoices, Field, model_validator
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AdequacyPatchMode
-
+from antarest.study.business.all_optional_meta import all_optional_model
+from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AdequacyPatchMode,
+    AdequacyPathProperties,
+    OptimizationProperties,
+    ThermalAreasProperties,
+)
 
 FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
+THERMAL_PATH = ["input", "thermal", "areas"]
+OPTIMIZATION_PATH = ["input", "areas", "{area_id}", "optimization"]
+ADEQUACY_PATCH_PATH = ["input", "areas", "{area_id}", "adequacy_patch"]
 
 
 def sort_filter_options(options: Iterable[str]) -> List[str]:
@@ -70,55 +77,68 @@ class AreaProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, al
 
 
 @all_optional_model
-@camel_case_model
 class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    energy_cost_unsupplied: float
-    energy_cost_spilled: float
-    non_dispatch_power: bool
-    dispatch_hydro_power: bool
-    other_dispatch_power: bool
-    spread_unsupplied_energy_cost: float
-    spread_spilled_energy_cost: float
-    filter_synthesis: Set[str]
-    filter_by_year: Set[str]
-    adequacy_patch_mode: AdequacyPatchMode
+    energy_cost_unsupplied: float = Field(
+        validation_alias=AliasChoices("averageUnsuppliedEnergyCost", "energyCostUnsupplied")
+    )
+    energy_cost_spilled: float = Field(validation_alias=AliasChoices("averageSpilledEnergyCost", "energyCostSpilled"))
+    non_dispatch_power: bool = Field(validation_alias=AliasChoices("nonDispatchablePower", "nonDispatchPower"))
+    dispatch_hydro_power: bool = Field(validation_alias=AliasChoices("dispatchableHydroPower", "dispatchHydroPower"))
+    other_dispatch_power: bool = Field(validation_alias=AliasChoices("otherDispatchablePower", "otherDispatchPower"))
+    spread_unsupplied_energy_cost: float = Field(alias="spreadUnsuppliedEnergyCost")
+    spread_spilled_energy_cost: float = Field(alias="spreadSpilledEnergyCost")
+    filter_synthesis: Set[str] = Field(alias="filterSynthesis")
+    filter_by_year: Set[str] = Field(validation_alias=AliasChoices("filterYearByYear", "filterByYear"))
+    adequacy_patch_mode: AdequacyPatchMode = Field(alias="adequacyPatchMode")
 
     @model_validator(mode="before")
     def validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         filters = {
-            "filter_synthesis": values.get("filter_synthesis"),
-            "filter_by_year": values.get("filter_by_year"),
+            "filterSynthesis": values.get("filterSynthesis"),
+            "filterYearByYear": values.get("filterYearByYear"),
         }
         for filter_name, val in filters.items():
             if val is not None:
                 options = encode_filter(decode_filter(val))
                 if any(opt not in FILTER_OPTIONS for opt in options):
                     raise ValueError(f"Invalid value in '{filter_name}'")
-
+                if isinstance(val, str):
+                    values[filter_name] = encode_filter(val)
         return values
 
 
 @all_optional_model
 class AreaPropertiesProperties(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    energy_cost_unsupplied: Dict[str, float] = Field(alias="unserverdenergycost")
-    energy_cost_spilled: Dict[str, float] = Field(alias="spilledenergycost")
-    non_dispatch_power: bool = Field(alias="non-dispatchable-power")
-    dispatch_hydro_power: bool = Field(alias="dispatchable-hydro-power")
-    other_dispatch_power: bool = Field(alias="other-dispatchable-power")
-    spread_unsupplied_energy_cost: float = Field(alias="spread-unsupplied-energy-cost")
-    spread_spilled_energy_cost: float = Field(alias="spread-spilled-energy-cost")
-    filter_synthesis: str = Field(alias="filter-synthesis")
-    filter_by_year: str = Field(alias="filter-year-by-year")
-    adequacy_patch_mode: AdequacyPatchMode = Field(alias="adequacy-patch-mode")
+    thermal_properties: ThermalAreasProperties
+    optimization_properties: OptimizationProperties
+    adequacy_properties: AdequacyPathProperties
 
     def get_area_properties(self, area_id: str) -> AreaProperties:
         return AreaProperties(
-            energy_cost_unsupplied=self.energy_cost_unsupplied.get(area_id, 0.0),
-            energy_cost_spilled=self.energy_cost_spilled.get(area_id, 0.0),
-            filter_synthesis=encode_filter(self.filter_synthesis),
-            filter_by_year=encode_filter(self.filter_by_year),
-            **self.model_dump(exclude={"energy_cost_unsupplied", "energy_cost_spilled", "filter_synthesis", "filter_by_year"}),
+            energy_cost_unsupplied=self.thermal_properties.unserverd_energy_cost.get(area_id, 0.0),
+            energy_cost_spilled=self.thermal_properties.spilled_energy_cost.get(area_id, 0.0),
+            non_dispatch_power=self.optimization_properties.nodal_optimization.non_dispatchable_power,
+            dispatch_hydro_power=self.optimization_properties.nodal_optimization.dispatchable_hydro_power,
+            other_dispatch_power=self.optimization_properties.nodal_optimization.other_dispatchable_power,
+            spread_unsupplied_energy_cost=self.optimization_properties.nodal_optimization.spread_unsupplied_energy_cost,
+            spread_spilled_energy_cost=self.optimization_properties.nodal_optimization.spread_spilled_energy_cost,
+            filter_synthesis=encode_filter(self.optimization_properties.filtering.filter_synthesis),
+            filter_by_year=encode_filter(self.optimization_properties.filtering.filter_year_by_year),
+            adequacy_patch_mode=self.adequacy_properties.adequacy_patch.adequacy_patch_mode,
         )
 
     def set_area_properties(self, area_id: str, properties: AreaProperties) -> None:
-        pass
+        self.thermal_properties.unserverd_energy_cost[area_id] = properties.energy_cost_unsupplied
+        self.thermal_properties.spilled_energy_cost[area_id] = properties.energy_cost_spilled
+        self.optimization_properties.nodal_optimization.non_dispatchable_power = properties.non_dispatch_power
+        self.optimization_properties.nodal_optimization.dispatchable_hydro_power = properties.dispatch_hydro_power
+        self.optimization_properties.nodal_optimization.other_dispatchable_power = properties.other_dispatch_power
+        self.optimization_properties.nodal_optimization.spread_unsupplied_energy_cost = (
+            properties.spread_unsupplied_energy_cost
+        )
+        self.optimization_properties.nodal_optimization.spread_spilled_energy_cost = (
+            properties.spread_spilled_energy_cost
+        )
+        self.optimization_properties.filtering.filter_synthesis = decode_filter(properties.filter_synthesis)
+        self.optimization_properties.filtering.filter_year_by_year = decode_filter(properties.filter_by_year)
+        self.adequacy_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode
