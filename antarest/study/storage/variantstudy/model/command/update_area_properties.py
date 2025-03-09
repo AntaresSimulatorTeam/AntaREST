@@ -81,9 +81,9 @@ class UpdateAreasProperties(ICommand):
     def save_area_properties(
         self, study_data: FileStudy, area_id: str, current_properties: AreaPropertiesProperties
     ) -> None:
-        study_data.tree.save(current_properties.thermal_properties.model_dump(), THERMAL_PATH)
+        study_data.tree.save(current_properties.thermal_properties.model_dump(by_alias=True), THERMAL_PATH)
         study_data.tree.save(
-            current_properties.optimization_properties.model_dump(),
+            current_properties.optimization_properties.model_dump(by_alias=True),
             [s.format(area_id=area_id) for s in OPTIMIZATION_PATH],
         )
         if self.study_version >= STUDY_VERSION_8_3:
@@ -97,10 +97,12 @@ class UpdateAreasProperties(ICommand):
     ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         current_thermal_props = study_data.tree.get(THERMAL_PATH)
         current_optim_properties = study_data.tree.get([s.format(area_id=area_id) for s in OPTIMIZATION_PATH])
-        if self.study_version >= STUDY_VERSION_8_3:
-            current_adequacy_patch = study_data.tree.get([s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH])
-        else:
-            current_adequacy_patch = {}
+        current_adequacy_patch = (
+            study_data.tree.get([s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH])
+            if self.study_version >= STUDY_VERSION_8_3
+            else {}
+        )
+
         return current_thermal_props, current_optim_properties, current_adequacy_patch
 
     @override

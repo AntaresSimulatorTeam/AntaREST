@@ -20,6 +20,7 @@ from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPathProperties,
     OptimizationProperties,
@@ -42,7 +43,11 @@ class AreaPropertiesManager:
 
         current_thermal_props = file_study.tree.get(THERMAL_PATH)
         current_optim_properties = file_study.tree.get([s.format(area_id=area_id) for s in OPTIMIZATION_PATH])
-        current_adequacy_patch = file_study.tree.get([s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH])
+        current_adequacy_patch = (
+            file_study.tree.get([s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH])
+            if study.version >= STUDY_VERSION_8_3
+            else {}
+        )
 
         area_properties = AreaPropertiesProperties(
             thermal_properties=ThermalAreasProperties(**current_thermal_props),
