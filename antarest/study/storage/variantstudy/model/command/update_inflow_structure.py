@@ -27,15 +27,15 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateInflowProperties(ICommand):
+class UpdateInflowStructure(ICommand):
     """
-    Command used to update hydro properties in an area.
+    Command used to update inflow structure in an area.
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_INFLOW_PROPERTIES
+    command_name: CommandName = CommandName.UPDATE_INFLOW_STRUCTURE
 
     # Command parameters
     # ==================
@@ -64,7 +64,7 @@ class UpdateInflowProperties(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.UPDATE_INFLOW_PROPERTIES.value,
+            action=CommandName.UPDATE_INFLOW_STRUCTURE.value,
             args={"area_id": self.area_id, "properties": self.properties.model_dump(mode="json")},
             study_version=self.study_version,
         )

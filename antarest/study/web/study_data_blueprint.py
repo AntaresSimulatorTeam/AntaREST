@@ -499,7 +499,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.hydro_manager.get_inflow_properties(study_interface, area_id)
+        return study_service.hydro_manager.get_inflow_structure(study_interface, area_id)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
@@ -520,7 +520,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
-        study_service.hydro_manager.update_inflow_properties(study_interface, area_id, values)
+        study_service.hydro_manager.update_inflow_structure(study_interface, area_id, values)
 
     @bp.put(
         "/studies/{uuid}/matrix",

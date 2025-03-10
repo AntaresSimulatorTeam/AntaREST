@@ -19,7 +19,7 @@ INFLOW_PATH = ["input", "hydro", "prepro", "{area_id}", "prepro", "prepro"]
 
 
 class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
-    """Represents the inflow properties in the hydraulic configuration."""
+    """Represents the inflow structure in the hydraulic configuration."""
 
     inter_monthly_correlation: float = Field(
         default=0.5,

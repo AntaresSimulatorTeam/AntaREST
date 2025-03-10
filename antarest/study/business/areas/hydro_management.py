@@ -19,7 +19,7 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowStructure, InflowStructureUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroProperties
-from antarest.study.storage.variantstudy.model.command.update_inflow_properties import UpdateInflowProperties
+from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -54,7 +54,7 @@ class HydroManager:
         study.add_commands([command])
 
     # noinspection SpellCheckingInspection
-    def get_inflow_properties(self, study: StudyInterface, area_id: str) -> InflowStructure:
+    def get_inflow_structure(self, study: StudyInterface, area_id: str) -> InflowStructure:
         """
         Retrieves inflow structure values for a specific area within a study.
 
@@ -68,7 +68,7 @@ class HydroManager:
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
 
     # noinspection SpellCheckingInspection
-    def update_inflow_properties(self, study: StudyInterface, area_id: str, properties: InflowStructureUpdate) -> None:
+    def update_inflow_structure(self, study: StudyInterface, area_id: str, properties: InflowStructureUpdate) -> None:
         """
         Updates inflow structure values for a specific area within a study.
 
@@ -81,7 +81,7 @@ class HydroManager:
             ValidationError: If the provided `values` parameter is None or invalid.
         """
 
-        command = UpdateInflowProperties(
+        command = UpdateInflowStructure(
             area_id=area_id,
             properties=properties,
             command_context=self._command_context,
