@@ -870,6 +870,28 @@ COMMANDS = [
         None,
         id="remove_xpansion_candidate",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_HYDRO_PROPERTIES.value,
+            args={
+                "area_id": "area_name", "properties": {"reservoir_capacity": 0.5}
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_hydro_properties",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_INFLOW_STRUCTURE.value,
+            args={
+                "area_id": "area_name", "properties": {"inter_monthly_correlation": 0.5}
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_inflow_structure",
+    ),
 ]
 
 
