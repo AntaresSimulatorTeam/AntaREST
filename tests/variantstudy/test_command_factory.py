@@ -514,6 +514,15 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_RENEWABLE_CLUSTER.value,
+            args=[{"area_id": "area_name", "cluster_id": "cluster_name", "properties": {"unit_count": 10}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_renewable_cluster",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
             args={"target": "target_element", "matrix": "matrix"},
             study_version=STUDY_VERSION_8_8,
@@ -796,6 +805,22 @@ COMMANDS = [
         ),
         None,
         id="remove_st_storage_list",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ST_STORAGE.value,
+            args=
+                {
+                    "area_id": "area 1",
+                    "st_storage_id": "storage 1",
+                    "properties": {
+                        "enabled": False,
+                    }
+                },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_st_storage",
     ),
     pytest.param(
         CommandDTO(
