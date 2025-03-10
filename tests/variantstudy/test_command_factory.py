@@ -809,14 +809,13 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_ST_STORAGE.value,
-            args=
-                {
-                    "area_id": "area 1",
-                    "st_storage_id": "storage 1",
-                    "properties": {
-                        "enabled": False,
-                    }
+            args={
+                "area_id": "area 1",
+                "st_storage_id": "storage 1",
+                "properties": {
+                    "enabled": False,
                 },
+            },
             study_version=STUDY_VERSION_8_8,
         ),
         None,
