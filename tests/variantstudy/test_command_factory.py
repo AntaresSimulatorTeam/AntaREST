@@ -271,6 +271,25 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
+            args=[
+                {
+                    "bc_props_by_id": {
+                        "id": {
+                            "enabled": True,
+                            "time_step": "hourly",
+                            "operator": "equal",
+                        }
+                    }
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="udpate_binding_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
             args={"id": "id"},
             study_version=STUDY_VERSION_8_8,
