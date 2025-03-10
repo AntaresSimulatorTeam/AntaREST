@@ -130,7 +130,7 @@ class TestHydroInflowProperties:
         assert len(actual) == 2
         expected = {
             "id": ANY,
-            "action": "update_inflow_properties",
+            "action": "update_inflow_structure",
             "args": {"area_id": "fr", "properties": {"inter_monthly_correlation": 0.9}},
             "version": 1,
             "updated_at": ANY,
