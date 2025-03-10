@@ -50,9 +50,7 @@ import {
   type TreeFolder,
 } from "../../utils";
 import { Filename, Menubar } from "../styles";
-import CreateFoldersDialog from "./CreateFoldersDialog";
-
-const FolderIcon = getFileIcon("folder");
+import CreateFolderDialog from "./CreateFolderDialog";
 
 function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProps) {
   const { setSelectedFile, reloadTree } = useContext(DebugContext);
@@ -208,7 +206,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
             );
           })
         ) : (
-          <EmptyView title={t("study.debug.folder.empty")} icon={FolderIcon} />
+          <EmptyView title={t("study.debug.folder.empty")} icon={getFileIcon("folder")} />
         )}
       </List>
       {/* Items menu */}
@@ -218,8 +216,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
           {t("global.delete")}
         </MenuItem>
       </Menu>
-      {/* Create folder dialog */}
-      <CreateFoldersDialog
+      <CreateFolderDialog
         open={openCreateFolderDialog}
         onCancel={() => setOpenCreateFolderDialog(false)}
         studyId={studyId}

@@ -33,36 +33,42 @@ interface Props {
   parentPath: string;
 }
 
-const defaultValues = { path: "", openDirectory: false };
+const defaultValues = { folder: "", openFolder: false };
 
 type DefaultValues = typeof defaultValues;
 
-function CreateFoldersDialog({ open, onCancel, studyId, parentPath }: Props) {
+function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
   const { reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
-  const [, setSearchParams] = useSearchParams();
+  const setSearchParams = useSearchParams()[1];
 
-  ////////////////////////////////////////////////////////////////",
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const toPath = (directory: string) => `${parentPath}/${directory}`;
+
+  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values: { path } }: SubmitHandlerPlus<DefaultValues>) => {
-    return createFolder({ studyId, path: `${parentPath}/${path}` });
+  const handleSubmit = ({ values: { folder } }: SubmitHandlerPlus<DefaultValues>) => {
+    return createFolder({ studyId, path: toPath(folder) });
   };
 
   const handleSubmitSuccessful = async ({
-    values: { path, openDirectory },
+    values: { folder, openFolder },
   }: SubmitHandlerPlus<DefaultValues>) => {
     onCancel();
 
     await reloadTree();
 
-    if (openDirectory) {
-      setSearchParams({ path: `${parentPath}/${path}` });
+    if (openFolder) {
+      setSearchParams({ path: toPath(folder) });
     }
   };
 
-  ////////////////////////////////////////////////////////////////",
+  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -75,7 +81,7 @@ function CreateFoldersDialog({ open, onCancel, studyId, parentPath }: Props) {
       onCancel={onCancel}
       submitButtonText={t("global.create")}
       submitButtonIcon={null}
-      cancelButtonText="Cancel"
+      cancelButtonText={t("global.cancel")}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
     >
@@ -84,15 +90,15 @@ function CreateFoldersDialog({ open, onCancel, studyId, parentPath }: Props) {
           <StringFE
             label={t("global.name")}
             helperText={t("study.debug.folder.new.name.helper")}
-            name="path"
+            name="folder"
             control={control}
             rules={{
               validate: validatePath({ allowToStartWithSlash: false, allowToEndWithSlash: false }),
             }}
           />
           <CheckBoxFE
-            label={t("study.debug.folder.new.openFolder")}
-            name="openDirectory"
+            label={t("study.debug.folder.new.openDirectory")}
+            name="openFolder"
             control={control}
           />
         </Fieldset>
@@ -101,4 +107,4 @@ function CreateFoldersDialog({ open, onCancel, studyId, parentPath }: Props) {
   );
 }
 
-export default CreateFoldersDialog;
+export default CreateFolderDialog;

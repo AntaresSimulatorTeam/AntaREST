@@ -270,7 +270,7 @@
   "study.debug.file.deleteConfirm.message": "Êtes-vous sûr de vouloir supprimer le fichier ?",
   "study.debug.folder.new": "Nouveau dossier",
   "study.debug.folder.new.name.helper": "Spécifiez un chemin pour créer une structure de dossiers",
-  "study.debug.folder.new.openFolder": "Ouvrir le dossier après la création",
+  "study.debug.folder.new.openDirectory": "Ouvrir le répertoire après la création",
   "study.debug.folder.empty": "Le dossier est vide",
   "study.debug.folder.upload.replaceFileConfirm.title": "Remplacer le fichier ?",
   "study.debug.folder.upload.replaceFileConfirm.message": "Un autre fichier du même nom existe déjà. Le remplacer écrasera son contenu.",

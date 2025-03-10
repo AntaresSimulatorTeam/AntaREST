@@ -270,7 +270,7 @@
   "study.debug.file.deleteConfirm.message": "Are you sure you want to delete the file?",
   "study.debug.folder.new": "New Folder",
   "study.debug.folder.new.name.helper": "Specify a path to create a folder structure",
-  "study.debug.folder.new.openFolder": "Open folder after creation",
+  "study.debug.folder.new.openDirectory": "Open directory after creation",
   "study.debug.folder.empty": "Folder is empty",
   "study.debug.folder.upload.replaceFileConfirm.title": "Replace file?",
   "study.debug.folder.upload.replaceFileConfirm.message": "Another file with the same name already exists. Replacing it will overwrite its content.",

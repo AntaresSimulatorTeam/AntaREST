@@ -19,6 +19,8 @@ function errorFunction() {
   throw new Error("Promise is not pending.");
 }
 
+type ShowConfirmParams<TData> = TData extends undefined ? void : { data: TData };
+
 /**
  * Hook that allows to wait for a confirmation from the user with a `Promise`.
  * It is intended to be used in conjunction with a confirm view (like `ConfirmationDialog`).
@@ -69,7 +71,7 @@ function useConfirm<TData = undefined>() {
   const cancelRef = useRef<VoidFunction>(errorFunction);
 
   const showConfirm = useCallback(
-    (params: TData extends undefined ? void : { data: TData }) => {
+    (params: ShowConfirmParams<TData>) => {
       if (isPendingRef.current) {
         throw new Error("A promise is already pending");
       }

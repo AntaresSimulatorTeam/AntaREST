@@ -52,12 +52,11 @@ function Debug() {
 
   // Update the selected file
   useUpdateEffect(() => {
-    // Select the file corresponding to the `path` URL parameter
-
     const pathSegments = path?.split("/");
     const filename = pathSegments ? R.last(pathSegments) : null;
     const treeData = pathSegments ? R.path<TreeData>(pathSegments, treeDataResponse.data) : null;
 
+    // Select the file corresponding to the `path` URL parameter
     if (path && filename && treeData) {
       setSelectedFile({
         fileType: getFileType(treeData),
@@ -69,11 +68,10 @@ function Debug() {
       return;
     }
 
-    // Select the first child of the tree data
-
     const firstChildName = Object.keys(treeDataResponse.data ?? {})[0];
     const firstChildTreeData = R.path<TreeData>([firstChildName], treeDataResponse.data);
 
+    // Select the first child of the tree data
     if (firstChildTreeData) {
       setSelectedFile({
         fileType: getFileType(firstChildTreeData),
