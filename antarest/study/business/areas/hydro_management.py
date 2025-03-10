@@ -111,17 +111,37 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
+    @staticmethod
+    def _get_id(area_id: str, field_dict: Dict[str, FieldInfo]) -> str:
+        """
+        Try to match the current area_id with the one from the original file.
+        These two ids could mismatch based on their character cases since the id from
+        the filesystem could have been modified with capital letters.
+        We first convert it into lower case in order to compare both ids.
+
+        Returns the area id from the file if both values matched, the initial area id otherwise.
+        """
+        return next((file_area_id for file_area_id in field_dict if file_area_id.lower() == area_id.lower()), area_id)
+
+    @staticmethod
+    def _get_hydro_config(study: StudyInterface) -> Dict[str, Dict[str, FieldInfo]]:
+        """
+        Returns a dictionary of hydro configurations
+        """
+        file_study = study.get_files()
+        return file_study.tree.get(HYDRO_PATH.split("/"))
+
     def get_field_values(self, study: StudyInterface, area_id: str) -> ManagementOptionsFormFields:
         """
         Get management options for a given area
         """
-        file_study = study.get_files()
-        hydro_config = file_study.tree.get(HYDRO_PATH.split("/"))
+        hydro_config = self._get_hydro_config(study)
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
             target_name = path.split("/")[-1]
-            return hydro_config.get(target_name, {}).get(area_id, field_info["default_value"])
+            field_dict = hydro_config.get(target_name, {})
+            return field_dict.get(self._get_id(area_id, field_dict), field_info["default_value"])
 
         return ManagementOptionsFormFields.model_construct(
             **{name: get_value(info) for name, info in FIELDS_INFO.items()}

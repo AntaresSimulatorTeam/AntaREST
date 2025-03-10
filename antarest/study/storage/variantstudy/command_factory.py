@@ -28,6 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_link import Create
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
+from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
 from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
@@ -49,9 +50,13 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
+    ReplaceXpansionCandidate,
+)
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
@@ -101,6 +106,9 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenerateThermalClusterTimeSeries,
     CommandName.CREATE_USER_RESOURCE.value: CreateUserResource,
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
+    CommandName.CREATE_XPANSION_CANDIDATE.value: CreateXpansionCandidate,
+    CommandName.REPLACE_XPANSION_CANDIDATE.value: ReplaceXpansionCandidate,
+    CommandName.REMOVE_XPANSION_CANDIDATE.value: RemoveXpansionCandidate,
     CommandName.REMOVE_XPANSION_CONFIGURATION.value: RemoveXpansionConfiguration,
     CommandName.CREATE_XPANSION_CONFIGURATION.value: CreateXpansionConfiguration,
     CommandName.REMOVE_XPANSION_RESOURCE.value: RemoveXpansionResource,

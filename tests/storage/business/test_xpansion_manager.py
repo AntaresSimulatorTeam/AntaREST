@@ -20,7 +20,13 @@ from unittest.mock import Mock
 import pytest
 from fastapi import UploadFile
 
-from antarest.core.exceptions import ChildNotFoundError, FileCurrentlyUsedInSettings, MatrixImportFailed
+from antarest.core.exceptions import (
+    AreaNotFound,
+    ChildNotFoundError,
+    FileCurrentlyUsedInSettings,
+    LinkNotFound,
+    MatrixImportFailed,
+)
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
@@ -35,7 +41,6 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.business.xpansion_management import (
-    LinkNotFound,
     XpansionCandidateDTO,
     XpansionFileNotFoundError,
     XpansionManager,
@@ -258,12 +263,12 @@ def test_add_candidate(
         }
     )
 
-    with pytest.raises(KeyError):
+    with pytest.raises(AreaNotFound, match="Area is not found: 'area1'"):
         xpansion_manager.add_candidate(study, new_candidate)
 
     make_areas(area_manager, study)
 
-    with pytest.raises(LinkNotFound):
+    with pytest.raises(LinkNotFound, match="The link from 'area1' to 'area2' not found"):
         xpansion_manager.add_candidate(study, new_candidate)
 
     make_link(link_manager, study)
