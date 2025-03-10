@@ -873,9 +873,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_HYDRO_PROPERTIES.value,
-            args={
-                "area_id": "area_name", "properties": {"reservoir_capacity": 0.5}
-            },
+            args={"area_id": "area_name", "properties": {"reservoir_capacity": 0.5}},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -884,9 +882,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_INFLOW_STRUCTURE.value,
-            args={
-                "area_id": "area_name", "properties": {"inter_monthly_correlation": 0.5}
-            },
+            args={"area_id": "area_name", "properties": {"inter_monthly_correlation": 0.5}},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
