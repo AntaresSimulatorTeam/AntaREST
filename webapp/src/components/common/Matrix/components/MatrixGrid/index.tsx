@@ -157,7 +157,7 @@ function MatrixGrid({
         onCellsEdited={handleCellsEdited}
         keybindings={{ paste: false, copy: false }}
         getCellsForSelection // TODO handle large copy/paste using this
-        fillHandle
+        fillHandle={!readOnly}
         allowedFillDirections="any"
         rowMarkers="both"
         freezeColumns={1} // Make the first column sticky
