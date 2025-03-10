@@ -58,6 +58,12 @@ OPERATOR_MATRICES_MAP: Dict[BindingConstraintOperator, List[str]] = {
     BindingConstraintOperator.BOTH: ["lt", "gt"],
 }
 
+OPERATOR_MATRIX_FILE_MAP = {
+    BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
+    BindingConstraintOperator.GREATER: ["{bc_id}_gt"],
+    BindingConstraintOperator.LESS: ["{bc_id}_lt"],
+    BindingConstraintOperator.BOTH: ["{bc_id}_lt", "{bc_id}_gt"],
+}
 
 DEFAULT_GROUP = "default"
 """Default group for binding constraints (since v8.7)."""
