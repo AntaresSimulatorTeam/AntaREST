@@ -49,7 +49,7 @@ def execute_or_add_commands(
                 raise CommandApplicationError(result.message)
             executed_commands.append(command)
         remove_from_cache(storage_service.raw_study_service.cache, study.id)
-        storage_service.variant_study_service.invalidate_children(study.id)
+        storage_service.variant_study_service.rebase_children(study.id)
         if not is_managed(study):
             # In a previous version, de-normalization was performed asynchronously.
             # However, this cause problems with concurrent file access,

@@ -240,11 +240,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             for i, command in enumerate(validated_commands)
         ]
         study.commands.extend(new_commands)
-        self.repository.save(
-            metadata=study,
-            update_modification_date=True,
-        )
-        self.invalidate_children(study.id)
+        self.advance_variant(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -285,8 +281,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             for i, command in enumerate(validated_commands)
         ]
-        self._invalidate_snapshot(study)
-        self.invalidate_children(study.id)
+        self.rebase_variant(study)
         return str(study.id)
 
     def move_command(
@@ -315,8 +310,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
-            self._invalidate_snapshot(study)
-            self.invalidate_children(study.id)
+            self.rebase_variant(study)
 
     def remove_command(self, study_id: str, command_id: str, params: RequestParameters) -> None:
         """
@@ -335,8 +329,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.pop(index)
             for idx, command in enumerate(study.commands):
                 command.index = idx
-            self._invalidate_snapshot(study)
-            self.invalidate_children(study.id)
+            self.rebase_variant(study)
 
     def remove_all_commands(self, study_id: str, params: RequestParameters) -> None:
         """
@@ -350,8 +343,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._check_update_authorization(study)
 
         study.commands = []
-        self._invalidate_snapshot(study)
-        self.invalidate_children(study.id)
+        self.rebase_variant(study)
 
     def update_command(
         self,
@@ -378,8 +370,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = to_json_string(validated_commands[0].args)
-            self._invalidate_snapshot(study)
-            self.invalidate_children(study.id)
+            self.rebase_variant(study)
 
     def export_commands_matrices(self, study_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
         study = self._get_variant_study(study_id, params)
@@ -432,21 +423,39 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
 
-    def invalidate_children(self, study_id: str) -> None:
+    def advance_variant(self, study: VariantStudy) -> None:
+        """
+        Some study commands have been appended to this study,
+        it will need a snapshot generation (NOT from scratch),
+        and children need to be rebased.
+        """
+        self.repository.save(
+            metadata=study,
+            update_modification_date=True,
+        )
+        self.rebase_children(study.id)
+
+    def rebase_variant(self, study: VariantStudy) -> None:
+        """
+        This variant has been "rebased" in the sense of git (history changed):
+        it will need a generation from scratch, and children need
+        to be rebased too.
+        """
+        self._invalidate_snapshot(study)
+        self.rebase_children(study.id)
+
+    def rebase_children(self, study_id: str) -> None:
         # TODO: optimize to not perform one request per child
         for child in self.repository.get_children(parent_id=study_id):
-            self._invalidate_snapshot(child)
-            self.invalidate_children(child.id)
+            self.rebase_variant(child)
 
     def _invalidate_snapshot(
         self,
         variant_study: VariantStudy,
     ) -> None:
         """
-        Invalidates snapshot so that it is regenerated next time the study
-        is accessed.
-        Note that we keep current snapshot data and "config",
-        because it may be used as basis for the next snapshot generation.
+        Invalidates snapshot so that it is regenerated from scratch
+        next time the study is accessed.
         """
         if variant_study.snapshot:
             variant_study.snapshot.last_executed_command = None
