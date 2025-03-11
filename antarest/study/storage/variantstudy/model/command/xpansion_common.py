@@ -23,6 +23,7 @@ from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidate,
     XpansionResourceFileType,
+    XpansionSettingsUpdate,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
@@ -97,3 +98,32 @@ def get_xpansion_settings(file_study: FileStudy) -> GetXpansionSettings:
     with contextlib.suppress(ChildNotFoundError):
         config_obj["sensitivity_config"] = file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
     return GetXpansionSettings.from_config(config_obj)
+
+
+def checks_settings_are_correct(settings: XpansionSettingsUpdate, file_study: FileStudy) -> set[str]:
+    # Specific handling for yearly_weights and additional_constraints:
+    # - If the attributes are given, it means that the user wants to select a file.
+    #   It is therefore necessary to check that the file exists.
+    # - Else, it means the user want to deselect the additional constraints file,
+    #  but he does not want to delete it from the expansion configuration folder.
+    excludes = {"sensitivity_config"}
+    if constraints_file := settings.additional_constraints:
+        try:
+            constraints_url = ["user", "expansion", "constraints", constraints_file]
+            file_study.tree.get(constraints_url)
+        except ChildNotFoundError:
+            msg = f"Additional constraints file '{constraints_file}' does not exist"
+            raise XpansionFileNotFoundError(msg) from None
+    else:
+        excludes.add("additional_constraints")
+
+    if weights_file := settings.yearly_weights:
+        try:
+            weights_url = ["user", "expansion", "weights", weights_file]
+            file_study.tree.get(weights_url)
+        except ChildNotFoundError:
+            msg = f"Additional weights file '{weights_file}' does not exist"
+            raise XpansionFileNotFoundError(msg) from None
+    else:
+        excludes.add("yearly_weights")
+    return excludes

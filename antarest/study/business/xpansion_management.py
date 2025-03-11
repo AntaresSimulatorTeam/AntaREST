@@ -49,6 +49,7 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidat
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
     assert_link_exist,
+    checks_settings_are_correct,
     get_resource_dir,
     get_xpansion_settings,
 )
@@ -81,6 +82,9 @@ class XpansionManager:
         self, study: StudyInterface, new_xpansion_settings: XpansionSettingsUpdate
     ) -> GetXpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
+        # Checks settings are correct
+        file_study = study.get_files()
+        checks_settings_are_correct(new_xpansion_settings, file_study)
         command = UpdateXpansionSettings(
             settings=new_xpansion_settings, command_context=self._command_context, study_version=study.version
         )
