@@ -18,7 +18,7 @@ from antarest.study.business.model.hydro_model import (
 )
 from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowStructure, InflowStructureUpdate
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroProperties
+from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -27,7 +27,7 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_hydro_properties(self, study: StudyInterface, area_id: str) -> HydroManagement:
+    def get_hydro_management(self, study: StudyInterface, area_id: str) -> HydroManagement:
         """
         Get management options for a given area
         """
@@ -37,7 +37,7 @@ class HydroManager:
 
         return hydro_properties.get_hydro_management(area_id)
 
-    def update_hydro_properties(
+    def update_hydro_management(
         self,
         study: StudyInterface,
         properties: HydroManagementUpdate,
@@ -47,7 +47,7 @@ class HydroManager:
         update hydro management options for a given area
         """
 
-        command = UpdateHydroProperties(
+        command = UpdateHydroManagement(
             area_id=area_id, properties=properties, command_context=self._command_context, study_version=study.version
         )
 

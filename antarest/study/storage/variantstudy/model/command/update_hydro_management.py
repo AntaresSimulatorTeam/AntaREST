@@ -27,7 +27,7 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateHydroProperties(ICommand):
+class UpdateHydroManagement(ICommand):
     """
     Command used to update hydro properties in an area.
     """

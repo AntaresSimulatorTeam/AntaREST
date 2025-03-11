@@ -457,7 +457,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.hydro_manager.get_hydro_properties(study_interface, area_id)
+        return study_service.hydro_manager.get_hydro_management(study_interface, area_id)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -477,7 +477,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
-        study_service.hydro_manager.update_hydro_properties(study_interface, data, area_id)
+        study_service.hydro_manager.update_hydro_management(study_interface, data, area_id)
 
     # noinspection SpellCheckingInspection
     @bp.get(

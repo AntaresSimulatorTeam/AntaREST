@@ -91,13 +91,13 @@ class TestHydroManagement:
         # gather initial data of the area
         for area in areas:
             # get actual value
-            data_area_raw = hydro_manager.get_hydro_properties(study, area).model_dump()
+            data_area_raw = hydro_manager.get_hydro_management(study, area).model_dump()
 
             # get values if area_id is in lower case
-            data_area_lower = hydro_manager.get_hydro_properties(study, area.lower()).model_dump()
+            data_area_lower = hydro_manager.get_hydro_management(study, area.lower()).model_dump()
 
             # get values if area_id is in upper case
-            data_area_upper = hydro_manager.get_hydro_properties(study, area.upper()).model_dump()
+            data_area_upper = hydro_manager.get_hydro_management(study, area.upper()).model_dump()
 
             # check if the area is retrieved regardless of the letters case
             assert data_area_raw == data_area_lower
@@ -120,7 +120,7 @@ class TestHydroManagement:
 
         for area in areas:
             # get initial values with get_hydro_management_options
-            initial_data = hydro_manager.get_hydro_properties(study, area).model_dump()
+            initial_data = hydro_manager.get_hydro_management(study, area).model_dump()
 
             # simulate changes on area_id case with another tool
             hydro_ini_path = tmp_path.joinpath(f"tmp/{study.id}/input/hydro/hydro.ini")
@@ -132,16 +132,16 @@ class TestHydroManagement:
                 f.write(file_content)
 
             # make sure that `get_hydro_management_options` retrieve same data as before
-            new_data = hydro_manager.get_hydro_properties(study, area).model_dump()
+            new_data = hydro_manager.get_hydro_management(study, area).model_dump()
             assert initial_data == new_data
 
             # simulate regular usage by modifying some values
             modified_data = dict(initial_data)
             modified_data["intra_daily_modulation"] = 5.0
-            hydro_manager.update_hydro_properties(study, HydroManagementUpdate(**modified_data), area)
+            hydro_manager.update_hydro_management(study, HydroManagementUpdate(**modified_data), area)
 
             # retrieve edited
-            new_data = hydro_manager.get_hydro_properties(study, area).model_dump()
+            new_data = hydro_manager.get_hydro_management(study, area).model_dump()
 
             # check if the intra daily modulation was modified
             for field, value in new_data.items():
