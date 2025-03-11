@@ -755,3 +755,43 @@ class FileCurrentlyUsedInSettings(HTTPException):
     def __init__(self, resource_type: str, filename: str) -> None:
         msg = f"The {resource_type} file '{filename}' is still used in the xpansion settings and cannot be deleted"
         super().__init__(HTTPStatus.CONFLICT, msg)
+
+
+class XpansionFileNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class IllegalCharacterInNameError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateNameIsEmpty(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST)
+
+
+class WrongLinkFormatError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateAlreadyExistsError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class BadCandidateFormatError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class CandidateNotFoundError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class FileAlreadyExistsError(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)

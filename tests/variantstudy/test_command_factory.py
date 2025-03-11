@@ -271,6 +271,25 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
+            args=[
+                {
+                    "bc_props_by_id": {
+                        "id": {
+                            "enabled": True,
+                            "time_step": "hourly",
+                            "operator": "equal",
+                        }
+                    }
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="udpate_binding_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
             args={"id": "id"},
             study_version=STUDY_VERSION_8_8,
@@ -813,6 +832,43 @@ COMMANDS = [
         ),
         None,
         id="remove_user_resource_list_file",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_XPANSION_CANDIDATE.value,
+            args=[{"candidate": {"name": "cdt_1", "link": "at - be", "annual-cost-per-mw": 12, "max-investment": 100}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="create_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_XPANSION_CANDIDATE.value,
+            args=[
+                {
+                    "candidate_name": "cdt_1",
+                    "properties": {
+                        "name": "cdt_1",
+                        "link": "at - be",
+                        "annual-cost-per-mw": 12,
+                        "max-investment": 100,
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_XPANSION_CANDIDATE.value,
+            args=[{"candidate_name": "cdt_1"}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="remove_xpansion_candidate",
     ),
 ]
 
