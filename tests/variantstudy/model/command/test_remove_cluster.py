@@ -23,13 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalClusterGroup,
     ThermalProperties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorage880Properties
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal870Properties,
-    ThermalClusterGroup,
-    ThermalProperties,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint

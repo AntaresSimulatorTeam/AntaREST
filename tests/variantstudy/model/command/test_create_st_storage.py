@@ -23,13 +23,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageGroup,
     STStorageProperties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Properties,
-    STStorageConfig,
-    STStorageGroup,
-    STStorageProperties,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol

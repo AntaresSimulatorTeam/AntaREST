@@ -33,12 +33,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageGroup,
     STStorageProperties,
 )
-from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
-    STStorageProperties,
-)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants

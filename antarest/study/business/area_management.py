@@ -27,12 +27,6 @@ from antarest.study.business.model.area_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.business.study_interface import StudyInterface
-from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Patch, PatchArea, PatchCluster, RawStudy, Study
-from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaFolder,
     ThermalAreasProperties,

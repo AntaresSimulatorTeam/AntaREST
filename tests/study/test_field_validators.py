@@ -10,13 +10,9 @@
 #
 # This file is part of the Antares project.
 
-import pytest
-from pydantic import TypeAdapter, ValidationError
-from typing import Annotated
 
 import pytest
-from mypy.exprtotype import ANNOTATED_TYPE_NAMES
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId, ItemName
 

@@ -32,11 +32,7 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewablePropertiesType,
-    RenewableConfig,
-    RenewableProperties,
-    RenewablePropertiesType,
     create_renewable_config,
-    create_renewable_properties,
 )
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster

@@ -282,11 +282,11 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get("/v1/launcher/load")
     assert res.status_code == 200, res.json()
-    launcher_load = res.json()
-    assert launcher_load["allocatedCpuRate"] == 100 / (os.cpu_count() or 1)
-    assert launcher_load["clusterLoadRate"] == 100 / (os.cpu_count() or 1)
-    assert launcher_load["nbQueuedJobs"] == 0
-    assert launcher_load["launcherStatus"] == "SUCCESS"
+    launcher_load = LauncherLoadDTO(**res.json())
+    assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
+    assert launcher_load.cluster_load_rate == 100 / (os.cpu_count() or 1)
+    assert launcher_load.nb_queued_jobs == 0
+    assert launcher_load.launcher_status == "SUCCESS"
 
     res = client.get(
         f"/v1/launcher/jobs?study_id={study_id}",
@@ -523,21 +523,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "costGeneration": "SetManually",
                     "efficiency": 100.0,
                     "enabled": True,
-<<<<<<< HEAD
-                    "group": "other 1",
-                    "id": "cluster 1",
-                    "marginal-cost": 0.0,
-                    "market-bid-cost": 0.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
-                    "name": "cluster 1",
-                    "nominalcapacity": 0.0,
-                    "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "type": None,
-                    "unitcount": 1,
-=======
                     "fixedCost": 0.0,
                     "genTs": "use global",
                     "group": "other 1",
@@ -571,7 +556,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "variableOMCost": 0.0,
                     "volatilityForced": 0.0,
                     "volatilityPlanned": 0.0,
->>>>>>> dev
                 }
             ],
             "type": "AREA",
@@ -586,21 +570,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "costGeneration": "SetManually",
                     "efficiency": 100.0,
                     "enabled": True,
-<<<<<<< HEAD
-                    "group": "other 1",
-                    "id": "cluster 2",
-                    "marginal-cost": 0.0,
-                    "market-bid-cost": 0.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
-                    "name": "cluster 2",
-                    "nominalcapacity": 2.5,
-                    "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "type": None,
-                    "unitcount": 1,
-=======
                     "fixedCost": 0.0,
                     "genTs": "use global",
                     "group": "other 1",
@@ -634,23 +603,11 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "variableOMCost": 0.0,
                     "volatilityForced": 0.0,
                     "volatilityPlanned": 0.0,
->>>>>>> dev
                 }
             ],
             "type": "AREA",
         },
-<<<<<<< HEAD
-        {
-            "id": "all areas",
-            "metadata": {"country": None, "tags": []},
-            "name": "All areas",
-            "set": ["area 1", "area 2"],
-            "thermals": None,
-            "type": "DISTRICT",
-        },
-=======
         {"id": "all areas", "name": "All areas", "set": ["area 1", "area 2"], "thermals": None, "type": "DISTRICT"},
->>>>>>> dev
     ]
 
     res = client.post(
@@ -1458,21 +1415,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "costGeneration": "SetManually",
                     "efficiency": 100.0,
                     "enabled": True,
-<<<<<<< HEAD
-                    "group": "other 1",
-                    "id": "cluster 2",
-                    "marginal-cost": 0.0,
-                    "market-bid-cost": 0.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
-                    "name": "cluster 2",
-                    "nominalcapacity": 2.5,
-                    "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "type": None,
-                    "unitcount": 1,
-=======
                     "fixedCost": 0.0,
                     "genTs": "use global",
                     "group": "other 1",
@@ -1506,7 +1448,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "variableOMCost": 0.0,
                     "volatilityForced": 0.0,
                     "volatilityPlanned": 0.0,
->>>>>>> dev
                 }
             ],
             "type": "AREA",
