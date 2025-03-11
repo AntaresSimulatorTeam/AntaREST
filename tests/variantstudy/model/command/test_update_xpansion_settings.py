@@ -11,11 +11,11 @@
 # This file is part of the Antares project.
 
 import pytest
-from study.business.model.xpansion_model import XpansionSettingsUpdate
-from study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 
+from antarest.study.business.model.xpansion_model import XpansionSettingsUpdate
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
