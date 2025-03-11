@@ -10,22 +10,22 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.model import Study, StudyMetadataDTO, StudyMetadataPatchDTO, StudySimResultDTO
+from antarest.study.model import Study, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
-T = t.TypeVar("T", bound=Study)
+T = TypeVar("T", bound=Study)
 
 
-class IStudyStorageService(ABC, t.Generic[T]):
+class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def create(self, metadata: T) -> T:
         """
@@ -86,7 +86,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: t.Sequence[str], with_outputs: bool = False) -> T:
+    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
         """
         Create a new study by copying a reference study.
 
@@ -101,24 +101,12 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """
 
     @abstractmethod
-    def patch_update_study_metadata(self, study: T, metadata: StudyMetadataPatchDTO) -> StudyMetadataDTO:
-        """
-        Update patch study metadata
-        Args:
-            study: study
-            metadata: patch
-
-        Returns: study metadata
-
-        """
-
-    @abstractmethod
     def import_output(
         self,
         study: T,
-        output: t.Union[t.BinaryIO, Path],
-        output_name: t.Optional[str] = None,
-    ) -> t.Optional[str]:
+        output: BinaryIO | Path,
+        output_name: Optional[str] = None,
+    ) -> Optional[str]:
         """
         Import an output
         Args:
@@ -137,7 +125,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         self,
         metadata: T,
         use_cache: bool = True,
-        output_dir: t.Optional[Path] = None,
+        output_dir: Optional[Path] = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -150,7 +138,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: T) -> t.List[StudySimResultDTO]:
+    def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
         """
         Get global result information
 
@@ -159,17 +147,6 @@ class IStudyStorageService(ABC, t.Generic[T]):
 
         Returns:
             study output data
-        """
-
-    @abstractmethod
-    def set_reference_output(self, metadata: T, output_id: str, status: bool) -> None:
-        """
-        Set an output to the reference output of a study
-
-        Args:
-            metadata: study
-            output_id: the id of output to set the reference status.
-            status: true to set it as reference, false to unset it.
         """
 
     @abstractmethod
@@ -252,7 +229,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         metadata: T,
         dst_path: Path,
         outputs: bool = True,
-        output_list_filter: t.Optional[t.List[str]] = None,
+        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         """
@@ -267,7 +244,7 @@ class IStudyStorageService(ABC, t.Generic[T]):
         """
 
     @abstractmethod
-    def get_synthesis(self, metadata: T, params: t.Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:

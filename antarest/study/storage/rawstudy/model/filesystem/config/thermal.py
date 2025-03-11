@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Type, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -82,7 +81,7 @@ class ThermalClusterGroup(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> t.Optional["ThermalClusterGroup"]:
+    def _missing_(cls, value: object) -> Optional["ThermalClusterGroup"]:
         """
         Retrieves the default group or the matched group when an unknown value is encountered.
         """
@@ -90,9 +89,9 @@ class ThermalClusterGroup(EnumIgnoreCase):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
             if any(value.lower() == group.value for group in cls):
-                return t.cast(ThermalClusterGroup, super()._missing_(value))
+                return cast(ThermalClusterGroup, super()._missing_(value))
             return cls.OTHER1
-        return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
+        return cast(Optional["ThermalClusterGroup"], super()._missing_(value))
 
 
 class ThermalCostGeneration(EnumIgnoreCase):
@@ -417,7 +416,7 @@ ThermalConfigType = Thermal870Config | Thermal860Config | ThermalConfig
 ThermalPropertiesType = Thermal870Properties | Thermal860Properties | ThermalProperties
 
 
-def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
+def get_thermal_config_cls(study_version: StudyVersion) -> Type[ThermalConfigType]:
     """
     Retrieves the thermal configuration class based on the study version.
 

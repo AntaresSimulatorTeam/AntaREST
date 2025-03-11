@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import datetime
-import typing as t
 import uuid
+from typing import Any, List
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -48,7 +48,7 @@ class Matrix(Base):  # type: ignore
         return f"Matrix(id={self.id}, shape={(self.height, self.width)}, created_at={self.created_at})"
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Matrix):
             return False
 
@@ -69,9 +69,9 @@ class MatrixInfoDTO(AntaresBaseModel):
 class MatrixDataSetDTO(AntaresBaseModel):
     id: str
     name: str
-    matrices: t.List[MatrixInfoDTO]
+    matrices: List[MatrixInfoDTO]
     owner: UserInfo
-    groups: t.List[GroupDTO]
+    groups: List[GroupDTO]
     public: bool
     created_at: str
     updated_at: str
@@ -110,7 +110,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
         return f"MatrixDataSetRelation(dataset_id={self.dataset_id}, matrix_id={self.matrix_id}, name={self.name})"
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, MatrixDataSetRelation):
             return False
 
@@ -190,7 +190,7 @@ class MatrixDataSet(Base):  # type: ignore
         )
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, MatrixDataSet):
             return False
 
@@ -219,9 +219,9 @@ MatrixData = float
 class MatrixDTO(AntaresBaseModel):
     width: int
     height: int
-    index: t.List[str]
-    columns: t.List[str]
-    data: t.List[t.List[MatrixData]]
+    index: List[int | str]
+    columns: List[int | str]
+    data: List[List[MatrixData]]
     created_at: int = 0
     id: str = ""
 
@@ -236,12 +236,12 @@ class MatrixContent(AntaresBaseModel):
         columns: A list of columns indexes or names.
     """
 
-    data: t.List[t.List[MatrixData]]
-    index: t.List[t.Union[int, str]]
-    columns: t.List[t.Union[int, str]]
+    data: List[List[MatrixData]]
+    index: List[int | str]
+    columns: List[int | str]
 
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):
     name: str
-    groups: t.List[str]
+    groups: List[str]
     public: bool

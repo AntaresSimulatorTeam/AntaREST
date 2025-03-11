@@ -11,14 +11,18 @@
 # This file is part of the Antares project.
 
 import datetime
+import shutil
 import typing as t
+from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from numpy import typing as npt
 from sqlalchemy.orm import Session  # type: ignore
 
+from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
 from antarest.matrixstore.model import Matrix, MatrixContent, MatrixDataSet, MatrixDataSetRelation
@@ -40,7 +44,7 @@ class TestMatrixRepository:
             assert repo.get(m.id) is None
 
     def test_bucket_lifecycle(self, tmp_path: Path) -> None:
-        repo = MatrixContentRepository(tmp_path)
+        repo = MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV)
 
         a: ArrayData = [[1, 2], [3, 4]]
         b: ArrayData = [[5, 6], [7, 8]]
@@ -169,132 +173,155 @@ class TestMatrixRepository:
             assert repo.get(m1.id) is not None
             assert (
                 # fmt: off
-                db_session
-                .query(MatrixDataSetRelation)
-                .filter(MatrixDataSetRelation.dataset_id == dataset.id)
-                .count()
+                db_session.query(MatrixDataSetRelation).filter(MatrixDataSetRelation.dataset_id == dataset.id).count()
                 # fmt: on
                 == 0
             )
 
 
+@contextmanager
+def matrix_repository(temp_path: Path, matrix_format: InternalMatrixFormat):
+    try:
+        yield MatrixContentRepository(bucket_dir=temp_path.joinpath("matrix-store"), format=matrix_format)
+    finally:
+        shutil.rmtree(temp_path / "matrix-store")
+
+
 class TestMatrixContentRepository:
-    def test_save(self, matrix_content_repo: MatrixContentRepository) -> None:
+    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    def test_save(self, tmp_path: str, matrix_format: str) -> None:
         """
-        Saves the content of a matrix as a TSV file in the directory
-        and returns its SHA256 hash.
+        Saves the content of a matrix as a file in the directory and returns its SHA256 hash.
         """
-        # sourcery skip: extract-duplicate-method
-        bucket_dir = matrix_content_repo.bucket_dir
+        matrix_format = InternalMatrixFormat(matrix_format)
+        with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
+            bucket_dir = matrix_content_repo.bucket_dir
 
-        # when the data is saved in the repo
-        data: ArrayData
-        data = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_content_repo.save(data)
-        # then a TSV file is created in the repo directory
-        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        array = np.loadtxt(matrix_file, delimiter="\t", dtype=np.float64, ndmin=2)
-        assert array.tolist() == data
-        modif_time = matrix_file.stat().st_mtime
+            # when the data is saved in the repo
+            data: ArrayData
+            data = [[1, 2, 3], [4, 5, 6]]
+            matrix_hash = matrix_content_repo.save(data)
+            # then a file is created in the repo directory
+            matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
+            assert matrix_file.exists()
+            array = matrix_format.load_matrix(matrix_file)
+            assert array.tolist() == data
+            modif_time = matrix_file.stat().st_mtime
 
-        # when the data is saved again with same float values
-        data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        matrix_content_repo.save(data)
-        # then no new TSV file is created
-        matrix_files = list(bucket_dir.glob("*.tsv"))
-        assert matrix_files == [matrix_file]
-        assert matrix_file.stat().st_mtime == modif_time, "date changed!"
+            # when the data is saved again with same float values
+            data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+            matrix_content_repo.save(data)
+            # then no new file is created
+            matrix_files = list(bucket_dir.glob(f"*.{matrix_format}"))
+            assert matrix_files == [matrix_file]
+            assert matrix_file.stat().st_mtime == modif_time, "date changed!"
 
-        # when the data is saved again as NumPy array
-        data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
-        matrix_content_repo.save(data)
-        # then no new TSV file is created
-        matrix_files = list(bucket_dir.glob("*.tsv"))
-        assert matrix_files == [matrix_file]
-        assert matrix_file.stat().st_mtime == modif_time, "date changed!"
+            # when the data is saved again as NumPy array
+            data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
+            matrix_content_repo.save(data)
+            # then no new file is created
+            matrix_files = list(bucket_dir.glob(f"*.{matrix_format}"))
+            assert matrix_files == [matrix_file]
+            assert matrix_file.stat().st_mtime == modif_time, "date changed!"
 
-        # when other data is saved with different values
-        other_data = [[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]]
-        other_matrix_hash = matrix_content_repo.save(other_data)
-        # then a new TSV file is created
-        matrix_files = list(bucket_dir.glob("*.tsv"))
-        other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.tsv")
-        assert set(matrix_files) == {matrix_file, other_matrix_file}
+            # when other data is saved with different values
+            other_data = [[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]]
+            other_matrix_hash = matrix_content_repo.save(other_data)
+            # then a new file is created
+            matrix_files = list(bucket_dir.glob(f"*.{matrix_format}"))
+            other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.{matrix_format}")
+            assert set(matrix_files) == {matrix_file, other_matrix_file}
 
-    def test_save_and_retrieve_empty_matrix(self, matrix_content_repo: MatrixContentRepository) -> None:
-        """
-        Test saving and retrieving empty matrices as TSV files.
-        Il all cases the file must be empty.
-        """
-        bucket_dir = matrix_content_repo.bucket_dir
+            # Test with an empty matrix
+            empty_array: ArrayData = []
+            matrix_hash = matrix_content_repo.save(empty_array)
+            matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
+            retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
-        # Test with an empty matrix
-        empty_array: ArrayData = []
-        matrix_hash = matrix_content_repo.save(empty_array)
-        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        retrieved_matrix = matrix_content_repo.get(matrix_hash)
+            assert not matrix_file.read_bytes()
+            assert retrieved_matrix.data == [[]]
 
-        assert not matrix_file.read_bytes()
-        assert retrieved_matrix.data == [[]]
+            # Test with an empty 2D array
+            empty_2d_array: ArrayData = [[]]
+            matrix_hash = matrix_content_repo.save(empty_2d_array)
+            matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
+            retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
-        # Test with an empty 2D array
-        empty_2d_array: ArrayData = [[]]
-        matrix_hash = matrix_content_repo.save(empty_2d_array)
-        matrix_file = bucket_dir.joinpath(f"{matrix_hash}.tsv")
-        retrieved_matrix = matrix_content_repo.get(matrix_hash)
+            assert not matrix_file.read_bytes()
+            assert retrieved_matrix.data == [[]]
 
-        assert not matrix_file.read_bytes()
-        assert retrieved_matrix.data == [[]]
-
-    def test_get(self, matrix_content_repo: MatrixContentRepository) -> None:
+    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    def test_get_exists_and_delete(self, tmp_path: str, matrix_format: str) -> None:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
         """
-        # when the data is saved in the repo
-        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_content_repo.save(data)
-        # then the saved matrix object can be retrieved
-        content = matrix_content_repo.get(matrix_hash)
-        assert content.index == list(range(len(data)))
-        assert content.columns == list(range(len(data[0])))
-        assert content.data == data
+        matrix_format = InternalMatrixFormat(matrix_format)
+        with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
+            # when the data is saved in the repo
+            data: ArrayData = [[1, 2, 3], [4, 5, 6]]
+            matrix_hash = matrix_content_repo.save(data)
+            # then the saved matrix object exists
+            assert matrix_content_repo.exists(matrix_hash)
+            # and it can be retrieved
+            content = matrix_content_repo.get(matrix_hash)
+            assert content.index == list(range(len(data)))
+            assert content.columns == list(range(len(data[0])))
+            assert content.data == data
 
-        # when the data is missing (wrong SHA256)
-        # then a `FileNotFoundError` is raised
-        with pytest.raises(FileNotFoundError):
+            # we can delete the data that was previously saved
+            matrix_content_repo.delete(matrix_hash)
+            # and the file doesn't exist anymore
+            matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{matrix_format}"))
+            assert not matrix_files
+
+            # when the data is missing (wrong SHA256)
+            # then the saved matrix object doesn't exist and a `FileNotFoundError` is raised
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
-            matrix_content_repo.get(missing_hash)
+            assert not matrix_content_repo.exists(missing_hash)
+            with pytest.raises(FileNotFoundError):
+                matrix_content_repo.get(missing_hash)
+            # it cannot be deleted
+            with pytest.raises(FileNotFoundError):
+                matrix_content_repo.delete(missing_hash)
 
-    def test_exists(self, matrix_content_repo: MatrixContentRepository) -> None:
+    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    def test_mixed_formats(self, tmp_path: str, matrix_format: str) -> None:
         """
-        Checks if a matrix with a given SHA256 hash exists in the directory.
+        Tests that mixed formats are well handled.
         """
-        # when the data is saved in the repo
-        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_content_repo.save(data)
-        # then the saved matrix object exists
-        assert matrix_content_repo.exists(matrix_hash)
+        saved_format = InternalMatrixFormat(matrix_format)
+        for repository_format in InternalMatrixFormat:
+            if repository_format != saved_format:
+                # MatrixContentRepository differs from the one where file were created.
+                # This situation will occur if we change the default format inside the app config.
+                with matrix_repository(Path(tmp_path), repository_format) as matrix_content_repo:
+                    data: ArrayData = [[1, 2, 3], [4, 5, 6]]
+                    df = pd.DataFrame(data)
+                    associated_hash = "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
+                    matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.{saved_format}")
+                    saved_format.save_matrix(df, matrix_path)
 
-        # when the data is missing (wrong SHA256)
-        # then the saved matrix object doesn't exist
-        missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
-        assert not matrix_content_repo.exists(missing_hash)
+                    # asserts the saved matrix object exists
+                    assert matrix_content_repo.exists(associated_hash)
+                    # and it can be retrieved
+                    content = matrix_content_repo.get(associated_hash)
+                    assert content.index == list(range(len(data)))
+                    assert content.columns == list(range(len(data[0])))
+                    assert content.data == data
 
-    def test_delete(self, matrix_content_repo: MatrixContentRepository) -> None:
-        """
-        Deletes the tsv file containing the content of a matrix with a given SHA256 hash.
-        """
-        # when the data is saved in the repo
-        data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-        matrix_hash = matrix_content_repo.save(data)
-        # then the saved matrix object can be deleted
-        matrix_content_repo.delete(matrix_hash)
-        # and the file doesn't exist anymore
-        matrix_files = list(matrix_content_repo.bucket_dir.glob("*.tsv"))
-        assert not matrix_files
+                    # we can delete the data that was previously saved
+                    matrix_content_repo.delete(associated_hash)
+                    # and the file doesn't exist anymore
+                    matrix_files = list(matrix_content_repo.bucket_dir.glob("*"))
+                    assert not matrix_files
 
-        # when the data is missing (wrong SHA256)
-        # then a `FileNotFoundError` is raised
-        with pytest.raises(FileNotFoundError):
-            missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
-            matrix_content_repo.delete(missing_hash)
+                    # Recreates the matrix
+                    saved_format.save_matrix(df, matrix_path)
+                    # saving the same matrix will migrate its format to the repository one.
+                    matrix_content_repo.save(data)
+                    saved_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{matrix_format}"))
+                    assert not saved_matrix_files
+                    repo_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{repository_format}"))
+                    assert len(repo_matrix_files) == 1
+                    new_matrix_path = matrix_path.with_suffix(f".{repository_format}")
+                    assert repo_matrix_files[0] == new_matrix_path

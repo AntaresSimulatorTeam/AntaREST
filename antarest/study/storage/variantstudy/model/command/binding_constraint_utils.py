@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import typing as t
+from typing import Set
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: t.Set[str]) -> None:
+def remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: Set[str]) -> None:
     """
     Update the scenario builder by removing the rows that correspond to the BC groups to remove.
 

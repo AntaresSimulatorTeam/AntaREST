@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 import logging
-import typing as t
 import uuid
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Tuple
 
 import typing_extensions as te
 
@@ -30,7 +30,7 @@ MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
 
 # note: we ought to use a named tuple here ;-)
-OutputTuple: te.TypeAlias = t.Tuple[CommandOutput, t.Dict[str, t.Any]]
+OutputTuple: te.TypeAlias = Tuple[CommandOutput, Dict[str, Any]]
 
 
 class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
@@ -43,7 +43,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         command_context: The context of the command.
     """
 
-    command_id: t.Optional[uuid.UUID] = None
+    command_id: Optional[uuid.UUID] = None
     command_name: CommandName
     command_context: CommandContext
     study_version: StudyVersionStr
@@ -75,7 +75,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         return output
 
     @abstractmethod
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -87,7 +87,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -120,7 +120,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         raise NotImplementedError()
 
     @abstractmethod
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         """
         Retrieves the list of matrix IDs.
         """

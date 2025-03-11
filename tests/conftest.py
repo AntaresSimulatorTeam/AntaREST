@@ -15,14 +15,11 @@ from typing import Callable
 
 import pytest
 
-# noinspection PyUnresolvedReferences
-from tests.conftest_db import *
+from tests.conftest_db import db_engine_fixture, db_middleware_fixture, db_session_fixture  # noqa: F401
+from tests.conftest_instances import admin_user  # noqa: F401
 
 # noinspection PyUnresolvedReferences
-from tests.conftest_instances import *
-
-# noinspection PyUnresolvedReferences
-from tests.conftest_services import *
+from tests.conftest_services import *  # noqa: F403
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))

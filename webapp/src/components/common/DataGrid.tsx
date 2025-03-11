@@ -22,10 +22,11 @@ import {
   type GridCell,
 } from "@glideapps/glide-data-grid";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { voidFn } from "@/utils/fnUtils";
-import { darkTheme } from "./Matrix/styles";
+import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
 import { useUpdateEffect } from "react-use";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
 interface StringRowMarkerOptions {
   kind: "string" | "clickable-string";
@@ -40,12 +41,12 @@ export type RowMarkers =
 
 type RowMarkersOptions = Exclude<RowMarkers, string>;
 
-export interface DataGridProps extends Omit<DataEditorProps, "rowMarkers" | "gridSelection"> {
+export interface DataGridProps
+  extends Omit<DataEditorProps, "rowMarkers" | "gridSelection" | "theme"> {
   rowMarkers?: RowMarkers;
   enableColumnResize?: boolean;
+  readOnly?: boolean;
 }
-
-const ROW_HEIGHT = 30;
 
 function isStringRowMarkerOptions(
   rowMarkerOptions: RowMarkersOptions,
@@ -64,6 +65,7 @@ function DataGrid({
   onColumnResizeEnd,
   onGridSelectionChange,
   enableColumnResize = true,
+  readOnly = false,
   freezeColumns,
   rows,
   ...rest
@@ -79,6 +81,21 @@ function DataGrid({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),
   });
+
+  const { isDarkMode } = useThemeColorScheme();
+
+  const theme = useMemo(() => {
+    const baseTheme = isDarkMode ? darkTheme : lightTheme;
+
+    if (readOnly) {
+      return {
+        ...baseTheme,
+        ...(isDarkMode ? readOnlyDarkTheme : readOnlyLightTheme),
+      };
+    }
+
+    return baseTheme;
+  }, [isDarkMode, readOnly]);
 
   useUpdateEffect(() => {
     setColumns(initColumns());
@@ -136,7 +153,7 @@ function DataGrid({
             allowOverlay: false,
             readonly: true,
             themeOverride: {
-              bgCell: darkTheme.bgHeader,
+              bgCell: isDarkMode ? darkTheme.bgHeader : "#efeff1",
             },
           } satisfies GridCell;
         },
@@ -145,7 +162,7 @@ function DataGrid({
         },
       );
     },
-    [getCellContent, isStringRowMarkers],
+    [getCellContent, isStringRowMarkers, isDarkMode],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -223,45 +240,43 @@ function DataGrid({
   ////////////////////////////////////////////////////////////////
 
   const handleGridSelectionChange = (newSelection: GridSelection) => {
-    {
-      if (isStringRowMarkers) {
-        if (newSelection.current) {
-          // Select the whole row when clicking on a row marker cell
-          if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
-            setGridSelection({
-              ...newSelection,
-              current: undefined,
-              rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
-            });
-
-            return;
-          }
-
-          // Prevent selecting a row marker cell
-          if (newSelection.current.range.x === 0) {
-            return;
-          }
-        }
-
-        // Select/Deselect all the rows like others row markers when selecting the column
-        if (newSelection.columns.hasIndex(0)) {
-          const isSelectedAll = gridSelection.rows.length === rows;
-
+    if (isStringRowMarkers) {
+      if (newSelection.current) {
+        // Select the whole row when clicking on a row marker cell
+        if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
           setGridSelection({
             ...newSelection,
-            columns: CompactSelection.empty(),
-            rows: isSelectedAll
-              ? CompactSelection.empty()
-              : CompactSelection.fromSingleSelection([0, rows]),
+            current: undefined,
+            rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
           });
 
           return;
         }
+
+        // Prevent selecting a row marker cell
+        if (newSelection.current.range.x === 0) {
+          return;
+        }
       }
 
-      setGridSelection(newSelection);
-      onGridSelectionChange?.(newSelection);
+      // Select/Deselect all the rows like others row markers when selecting the column
+      if (newSelection.columns.hasIndex(0)) {
+        const isSelectedAll = gridSelection.rows.length === rows;
+
+        setGridSelection({
+          ...newSelection,
+          columns: CompactSelection.empty(),
+          rows: isSelectedAll
+            ? CompactSelection.empty()
+            : CompactSelection.fromSingleSelection([0, rows]),
+        });
+
+        return;
+      }
     }
+
+    setGridSelection(newSelection);
+    onGridSelectionChange?.(newSelection);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -270,13 +285,13 @@ function DataGrid({
 
   return (
     <DataEditor
-      groupHeaderHeight={ROW_HEIGHT}
-      headerHeight={ROW_HEIGHT}
-      rowHeight={ROW_HEIGHT}
+      groupHeaderHeight={35}
+      headerHeight={25}
+      rowHeight={30}
       smoothScrollX
       smoothScrollY
       width="100%"
-      theme={darkTheme}
+      theme={theme}
       rows={rows}
       columns={columns}
       rowMarkers={isStringRowMarkers ? "none" : rowMarkersOptions}

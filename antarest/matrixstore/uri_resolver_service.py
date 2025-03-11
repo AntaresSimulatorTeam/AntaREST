@@ -15,7 +15,7 @@ from typing import Optional, Tuple
 
 import pandas as pd
 
-from antarest.core.model import SUB_JSON
+from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -23,7 +23,7 @@ class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str, formatted: bool = True) -> SUB_JSON:
+    def resolve(self, uri: str, formatted: bool = True) -> JSON | str | None:
         res = UriResolverService._extract_uri_components(uri)
         if res:
             protocol, uuid = res
@@ -49,7 +49,7 @@ class UriResolverService:
         res = UriResolverService._extract_uri_components(uri)
         return res[1] if res else None
 
-    def _resolve_matrix(self, id: str, formatted: bool = True) -> SUB_JSON:
+    def _resolve_matrix(self, id: str, formatted: bool = True) -> JSON | str:
         data = self.matrix_service.get(id)
         if not data:
             raise ValueError(f"id matrix {id} not found")

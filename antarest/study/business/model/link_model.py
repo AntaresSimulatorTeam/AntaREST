@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import typing as t
+from dataclasses import field
+from typing import Annotated, List, Optional, Self, Type
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
@@ -96,41 +97,40 @@ class FilterOption(EnumIgnoreCase):
     ANNUAL = "annual"
 
 
-def validate_filters(
-    filter_value: t.Union[t.List[FilterOption], str], enum_cls: t.Type[FilterOption]
-) -> t.List[FilterOption]:
+def validate_filters(filter_value: List[FilterOption] | str, enum_cls: Type[FilterOption]) -> List[FilterOption]:
     if isinstance(filter_value, str):
-        if not filter_value.strip():
+        filter_value = filter_value.strip()
+        if not filter_value:
             return []
 
-        filter_accepted_values = [e for e in enum_cls]
+        valid_values = {str(e.value) for e in enum_cls}
 
         options = filter_value.replace(" ", "").split(",")
 
-        invalid_options = [opt for opt in options if opt not in filter_accepted_values]
+        invalid_options = [opt for opt in options if opt not in valid_values]
         if invalid_options:
             raise LinkValidationError(
                 f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
-                f"Allowed values are: {', '.join(filter_accepted_values)}."
+                f"Allowed values are: {', '.join(valid_values)}."
             )
-        options_enum: t.List[FilterOption] = list(dict.fromkeys(enum_cls(opt) for opt in options))
+        options_enum: List[FilterOption] = list(dict.fromkeys(enum_cls(opt) for opt in options))
         return options_enum
 
     return filter_value
 
 
-def join_with_comma(values: t.List[FilterOption]) -> str:
+def join_with_comma(values: List[FilterOption]) -> str:
     return ", ".join(value.name.lower() for value in values)
 
 
-comma_separated_enum_list = t.Annotated[
-    t.List[FilterOption],
+comma_separated_enum_list = Annotated[
+    List[FilterOption],
     BeforeValidator(lambda x: validate_filters(x, FilterOption)),
     PlainSerializer(lambda x: join_with_comma(x)),
 ]
 
 DEFAULT_COLOR = 112
-FILTER_VALUES: t.List[FilterOption] = [
+FILTER_VALUES: List[FilterOption] = [
     FilterOption.HOURLY,
     FilterOption.DAILY,
     FilterOption.WEEKLY,
@@ -154,8 +154,8 @@ class LinkBaseDTO(AntaresBaseModel):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
-    filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+    filter_synthesis: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
 
 
 class Area(AntaresBaseModel):
@@ -163,7 +163,7 @@ class Area(AntaresBaseModel):
     area2: str
 
     @model_validator(mode="after")
-    def validate_areas(self) -> t.Self:
+    def validate_areas(self) -> Self:
         if self.area1 == self.area2:
             raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
         area_from, area_to = sorted([self.area1, self.area2])
@@ -203,8 +203,8 @@ class LinkInternal(AntaresBaseModel):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: t.Optional[comma_separated_enum_list] = FILTER_VALUES
-    filter_year_by_year: t.Optional[comma_separated_enum_list] = FILTER_VALUES
+    filter_synthesis: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
 
     def to_dto(self) -> LinkDTO:
         data = self.model_dump()

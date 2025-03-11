@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import contextlib
-import typing as t
 import uuid
+from typing import TYPE_CHECKING, List, Mapping, Optional
 
 import bcrypt
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
@@ -26,7 +26,7 @@ from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
 from antarest.core.serde import AntaresBaseModel
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     # avoid circular import
     from antarest.core.tasks.model import TaskJob
     from antarest.launcher.model import JobResult
@@ -57,7 +57,7 @@ class BotRoleCreateDTO(AntaresBaseModel):
 
 class BotCreateDTO(AntaresBaseModel):
     name: str
-    roles: t.List[BotRoleCreateDTO]
+    roles: List[BotRoleCreateDTO]
     is_author: bool = True
 
 
@@ -67,7 +67,7 @@ class UserCreateDTO(AntaresBaseModel):
 
 
 class GroupDTO(AntaresBaseModel):
-    id: t.Optional[str] = None
+    id: Optional[str] = None
     name: str
 
 
@@ -78,7 +78,7 @@ class RoleCreationDTO(AntaresBaseModel):
 
 
 class RoleDTO(AntaresBaseModel):
-    group_id: t.Optional[str]
+    group_id: Optional[str]
     group_name: str
     identity_id: int
     type: RoleType
@@ -87,7 +87,7 @@ class RoleDTO(AntaresBaseModel):
 class IdentityDTO(AntaresBaseModel):
     id: int
     name: str
-    roles: t.List[RoleDTO]
+    roles: List[RoleDTO]
 
 
 class RoleDetailDTO(AntaresBaseModel):
@@ -100,7 +100,7 @@ class BotIdentityDTO(AntaresBaseModel):
     id: int
     name: str
     isAuthor: bool
-    roles: t.List[RoleDTO]
+    roles: List[RoleDTO]
 
 
 class BotDTO(UserInfo):
@@ -115,7 +115,7 @@ class UserRoleDTO(AntaresBaseModel):
 
 
 class GroupDetailDTO(GroupDTO):
-    users: t.List[UserRoleDTO]
+    users: List[UserRoleDTO]
 
 
 class Password:
@@ -154,11 +154,11 @@ class Identity(Base):  # type: ignore
 
     # Define a one-to-many relationship with `JobResult`.
     # If an identity is deleted, all the associated job results are detached from the identity.
-    job_results: t.List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
+    job_results: List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
 
     # Define a one-to-many relationship with `TaskJob`.
     # If an identity is deleted, all the associated task jobs are detached from the identity.
-    owned_jobs: t.List["TaskJob"] = relationship("TaskJob", back_populates="owner", cascade="save-update, merge")
+    owned_jobs: List["TaskJob"] = relationship("TaskJob", back_populates="owner", cascade="save-update, merge")
 
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)
@@ -323,7 +323,7 @@ class CredentialsDTO(AntaresBaseModel):
     refresh_token: str
 
 
-def init_admin_user(engine: Engine, session_args: t.Mapping[str, bool], admin_password: str) -> None:
+def init_admin_user(engine: Engine, session_args: Mapping[str, bool], admin_password: str) -> None:
     """
     Create the default admin user, group and role if they do not already exist in the database.
 

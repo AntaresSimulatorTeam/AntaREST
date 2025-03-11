@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Tuple, cast
 
 import numpy as np
 import pandas as pd
@@ -31,15 +31,15 @@ SCENARIO_TYPES = {
     "hgp": "hydro-generation-power",
 }
 
-_Value: te.TypeAlias = t.Union[int, float]
+_Value: te.TypeAlias = int | float
 _SimpleScenario: te.TypeAlias = pd.DataFrame
-_ClusterScenario: te.TypeAlias = t.MutableMapping[str, pd.DataFrame]
-_Scenario: te.TypeAlias = t.Union[_SimpleScenario, _ClusterScenario]
-_ScenarioMapping: te.TypeAlias = t.MutableMapping[str, _Scenario]
+_ClusterScenario: te.TypeAlias = MutableMapping[str, pd.DataFrame]
+_Scenario: te.TypeAlias = _SimpleScenario | _ClusterScenario
+_ScenarioMapping: te.TypeAlias = MutableMapping[str, _Scenario]
 
-SimpleTableForm: te.TypeAlias = t.Dict[str, t.Dict[str, t.Union[int, float, str, None]]]
-ClusterTableForm: te.TypeAlias = t.Dict[str, SimpleTableForm]
-TableForm: te.TypeAlias = t.Union[SimpleTableForm, ClusterTableForm]
+SimpleTableForm: te.TypeAlias = Dict[str, Dict[str, int | float | str | None]]
+ClusterTableForm: te.TypeAlias = Dict[str, SimpleTableForm]
+TableForm: te.TypeAlias = SimpleTableForm | ClusterTableForm
 
 _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "hgp"
 _BINDING_CONSTRAINTS_RELATED_SYMBOLS = ("bc",)
@@ -86,12 +86,12 @@ class RulesetMatrices:
         self,
         *,
         nb_years: int,
-        areas: t.Iterable[str],
-        links: t.Iterable[t.Tuple[str, str]],
-        thermals: t.Mapping[str, t.Iterable[str]],
-        renewables: t.Mapping[str, t.Iterable[str]],
-        groups: t.Iterable[str],
-        scenario_types: t.Optional[t.Mapping[str, str]] = None,
+        areas: Iterable[str],
+        links: Iterable[Tuple[str, str]],
+        thermals: Mapping[str, Iterable[str]],
+        renewables: Mapping[str, Iterable[str]],
+        groups: Iterable[str],
+        scenario_types: Optional[Mapping[str, str]] = None,
     ):
         # List of Monte Carlo years
         self.columns = [str(i) for i in range(nb_years)]
@@ -124,17 +124,17 @@ class RulesetMatrices:
                     lines.append("")
         return "\n".join(lines)
 
-    def get_area_index(self) -> t.List[str]:
+    def get_area_index(self) -> List[str]:
         return [idx_area(area) for area in self.areas.values()]
 
-    def get_link_index(self) -> t.List[str]:
+    def get_link_index(self) -> List[str]:
         return [idx_link(a1, a2) for a1, a2 in self.links.values()]
 
-    def get_cluster_index(self, symbol: str, area: str) -> t.List[str]:
+    def get_cluster_index(self, symbol: str, area: str) -> List[str]:
         clusters = self.clusters_by_symbols[symbol][area.lower()]
         return [idx_cluster(area, cluster) for cluster in clusters.values()]
 
-    def get_group_index(self) -> t.List[str]:
+    def get_group_index(self) -> List[str]:
         return [idx_group(group) for group in self.groups.values()]
 
     def _setup(self) -> None:
@@ -179,7 +179,7 @@ class RulesetMatrices:
                 scenario = {area: df.sort_index(key=lambda x: x.str.lower()) for area, df in scenario.items()}
             self.scenarios[scenario_type] = scenario
 
-    def update_rules(self, rules: t.Mapping[str, _Value]) -> None:
+    def update_rules(self, rules: Mapping[str, _Value]) -> None:
         """
         Update the scenario matrices with the given rules read from an INI file.
 
@@ -203,31 +203,31 @@ class RulesetMatrices:
             year = parts[2] if symbol in _LINK_RELATED_SYMBOLS else parts[1]
             if symbol in _AREA_RELATED_SYMBOLS:
                 area = self.areas[area_id]
-                scenario = t.cast(pd.DataFrame, self.scenarios[scenario_type])
+                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
                 scenario.at[idx_area(area), str(year)] = value
             elif symbol in _LINK_RELATED_SYMBOLS:
                 area1 = self.areas[area_id]
                 area2 = self.areas[parts[1].lower()]
-                scenario = t.cast(pd.DataFrame, self.scenarios[scenario_type])
+                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
                 scenario.at[idx_link(area1, area2), str(year)] = value
             elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
                 area = self.areas[area_id]
-                scenario = t.cast(pd.DataFrame, self.scenarios[scenario_type])
+                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
                 scenario.at[idx_area(area), str(year)] = value * 100
             elif symbol in _CLUSTER_RELATED_SYMBOLS:
                 area = self.areas[area_id]
                 clusters = self.clusters_by_symbols[symbol][area_id]
                 cluster = clusters[parts[2].lower()]
-                scenario = t.cast(pd.DataFrame, self.scenarios[scenario_type][area])
+                scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
                 scenario.at[idx_cluster(area, cluster), str(year)] = value
             elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
                 group = self.groups[area_id]
-                scenario = t.cast(pd.DataFrame, self.scenarios[scenario_type])
+                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
                 scenario.at[idx_group(group), str(year)] = value
             else:
                 raise NotImplementedError(f"Unknown symbol {symbol}")
 
-    def get_rules(self, *, allow_nan: bool = False) -> t.Dict[str, _Value]:
+    def get_rules(self, *, allow_nan: bool = False) -> Dict[str, _Value]:
         """
         Get the rules from the scenario matrices in INI format.
 
@@ -246,14 +246,14 @@ class RulesetMatrices:
                     "symbol,group_id,year": value,  # binding constraints
                 }
         """
-        rules: t.Dict[str, _Value] = {}
+        rules: Dict[str, _Value] = {}
         for symbol, scenario_type in self.scenario_types.items():
             scenario = self.scenarios[scenario_type]
             scenario_rules = self.get_scenario_rules(scenario, symbol, allow_nan=allow_nan)
             rules.update(scenario_rules)
         return rules
 
-    def get_scenario_rules(self, scenario: _Scenario, symbol: str, *, allow_nan: bool = False) -> t.Dict[str, _Value]:
+    def get_scenario_rules(self, scenario: _Scenario, symbol: str, *, allow_nan: bool = False) -> Dict[str, _Value]:
         """
         Get the rules for a specific scenario matrix and symbol.
 
@@ -266,11 +266,11 @@ class RulesetMatrices:
             Dictionary of rules.
         """
 
-        def to_ts_number(v: t.Any) -> _Value:
+        def to_ts_number(v: Any) -> _Value:
             """Convert value to TimeSeries number."""
             return np.nan if pd.isna(v) else int(v)
 
-        def to_percent(v: t.Any) -> _Value:
+        def to_percent(v: Any) -> _Value:
             """Convert value to percentage in range [0, 100]."""
             return np.nan if pd.isna(v) else float(v) / 100
 
@@ -315,7 +315,7 @@ class RulesetMatrices:
             raise NotImplementedError(f"Unknown symbol {symbol}")
         return scenario_rules
 
-    def get_table_form(self, scenario_type: str, *, nan_value: t.Union[str, None] = "") -> TableForm:
+    def get_table_form(self, scenario_type: str, *, nan_value: str | None = "") -> TableForm:
         """
         Get the scenario matrices in table form for the frontend.
 
@@ -355,18 +355,18 @@ class RulesetMatrices:
         if isinstance(scenario, pd.DataFrame):
             simple_scenario: _SimpleScenario = scenario.fillna(nan_value)
             simple_table_form = simple_scenario.to_dict(orient="index")
-            return t.cast(SimpleTableForm, simple_table_form)
+            return cast(SimpleTableForm, simple_table_form)
         else:
             cluster_scenario: _ClusterScenario = {area: df.fillna(nan_value) for area, df in scenario.items()}
             cluster_table_form = {area: df.to_dict(orient="index") for area, df in cluster_scenario.items()}
-            return t.cast(ClusterTableForm, cluster_table_form)
+            return cast(ClusterTableForm, cluster_table_form)
 
     def set_table_form(
         self,
         table_form: TableForm,
         scenario_type: str,
         *,
-        nan_value: t.Union[str, None] = "",
+        nan_value: str | None = "",
     ) -> None:
         """
         Set the scenario matrix from table form data, for a specific scenario type.
@@ -398,12 +398,12 @@ class RulesetMatrices:
         """
         scenario = self.scenarios[scenario_type]
         if isinstance(scenario, pd.DataFrame):
-            simple_table_form = t.cast(SimpleTableForm, table_form)
+            simple_table_form = cast(SimpleTableForm, table_form)
             df = pd.DataFrame.from_dict(simple_table_form, orient="index").replace({None: np.nan, nan_value: np.nan})
             scenario.loc[df.index, df.columns] = df
         else:
-            cluster_table_form = t.cast(ClusterTableForm, table_form)
+            cluster_table_form = cast(ClusterTableForm, table_form)
             for area, simple_table_form in cluster_table_form.items():
-                scenario = t.cast(pd.DataFrame, self.scenarios[scenario_type][area])
+                scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
                 df = pd.DataFrame(simple_table_form).transpose().replace({None: np.nan, nan_value: np.nan})
                 scenario.loc[df.index, df.columns] = df

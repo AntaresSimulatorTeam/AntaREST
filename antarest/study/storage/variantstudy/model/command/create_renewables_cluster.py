@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
-from typing import Any, Dict, Final
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
@@ -66,7 +65,7 @@ class CreateRenewablesCluster(ICommand):
         return values
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:
             # Since version 8.1 of the solver, we can use renewable clusters
             # instead of "Load", "Wind" and "Solar" objects for modelling.
@@ -114,7 +113,7 @@ class CreateRenewablesCluster(ICommand):
         )
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         output, data = self._apply_config(study_data.config)
         if not output.status:
             return output
@@ -154,5 +153,5 @@ class CreateRenewablesCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

@@ -144,9 +144,8 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 10
-        for cmd in json_result:
-            assert cmd["action"] == "update_binding_constraint"
+        assert len(json_result) == 1
+        assert json_result[0]["action"] == "update_binding_constraints"
         # create another variant from the parent study
         study_id = preparer.create_variant(study_id, name="var_1")
         # update 50 BCs
@@ -165,13 +164,12 @@ class TestBindingConstraints:
                 assert bc["comments"] == "New comment !"
             else:
                 assert bc["timeStep"] == "daily"
-        # asserts commands used are update_config and replace_matrix
+        # asserts commands used is update_binding_constraints
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 2
-        assert json_result[0]["action"] == "replace_matrix"
-        assert json_result[1]["action"] == "update_config"
+        assert len(json_result) == 1
+        assert json_result[0]["action"] == "update_binding_constraints"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
@@ -1016,7 +1014,7 @@ class TestBindingConstraints:
         # Asserts that the deletion worked
         binding_constraints_list = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"input/bindingconstraints/bindingconstraints"},  # type: ignore
+            params={"path": "input/bindingconstraints/bindingconstraints"},  # type: ignore
         ).json()
         assert len(binding_constraints_list) == 2
         actual_ids = [constraint["id"] for constraint in binding_constraints_list.values()]

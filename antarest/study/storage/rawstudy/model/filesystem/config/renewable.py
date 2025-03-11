@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Optional, Type, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -64,7 +64,7 @@ class RenewableClusterGroup(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> t.Optional["RenewableClusterGroup"]:
+    def _missing_(cls, value: object) -> Optional["RenewableClusterGroup"]:
         """
         Retrieves the default group or the matched group when an unknown value is encountered.
         """
@@ -72,10 +72,10 @@ class RenewableClusterGroup(EnumIgnoreCase):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
             if any(value.lower() == group.value for group in cls):
-                return t.cast(RenewableClusterGroup, super()._missing_(value))
+                return cast(RenewableClusterGroup, super()._missing_(value))
             # If a group is not found, return the default group ('OTHER1' by default).
             return cls.OTHER1
-        return t.cast(t.Optional["RenewableClusterGroup"], super()._missing_(value))
+        return cast(Optional["RenewableClusterGroup"], super()._missing_(value))
 
 
 class RenewableProperties(ClusterProperties):
@@ -124,7 +124,7 @@ RenewableConfigType = RenewableConfig
 RenewablePropertiesType = RenewableProperties
 
 
-def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableConfig]:
+def get_renewable_config_cls(study_version: StudyVersion) -> Type[RenewableConfig]:
     """
     Retrieves the renewable configuration class based on the study version.
 
@@ -139,7 +139,7 @@ def get_renewable_config_cls(study_version: StudyVersion) -> t.Type[RenewableCon
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 
 
-def create_renewable_properties(study_version: StudyVersion, data: t.Any) -> RenewablePropertiesType:
+def create_renewable_properties(study_version: StudyVersion, data: Any) -> RenewablePropertiesType:
     """
     Factory method to create renewable properties.
 
@@ -158,7 +158,7 @@ def create_renewable_properties(study_version: StudyVersion, data: t.Any) -> Ren
     raise ValueError(f"Unsupported study version {study_version}, required 810 or above.")
 
 
-def create_renewable_config(study_version: StudyVersion, **kwargs: t.Any) -> RenewableConfigType:
+def create_renewable_config(study_version: StudyVersion, **kwargs: Any) -> RenewableConfigType:
     """
     Factory method to create a renewable configuration model.
 

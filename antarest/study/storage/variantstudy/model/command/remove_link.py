@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional
 
 from pydantic import field_validator, model_validator
 from typing_extensions import override
@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -77,7 +77,7 @@ class RemoveLink(ICommand):
         """
 
         # Data is empty in case of error
-        data: t.Dict[str, t.Any] = {}
+        data: Dict[str, Any] = {}
 
         if self.area1 not in study_cfg.areas:
             message = f"The source area '{self.area1}' does not exist."
@@ -128,7 +128,7 @@ class RemoveLink(ICommand):
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Update the configuration and the study data by removing the link between the source and target areas.
 
@@ -163,5 +163,5 @@ class RemoveLink(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

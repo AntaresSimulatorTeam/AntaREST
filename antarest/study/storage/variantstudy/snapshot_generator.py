@@ -13,11 +13,12 @@
 """
 This module dedicated to variant snapshot generation.
 """
+
 import datetime
 import logging
 import shutil
-import typing as t
 from pathlib import Path
+from typing import List, NamedTuple, Optional, Sequence, Tuple
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -25,7 +26,6 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.model import RawStudy, StudyAdditionalData
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -54,14 +54,12 @@ class SnapshotGenerator:
         raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
-        patch_service: PatchService,
         repository: VariantStudyRepository,
     ):
         self.cache = cache
         self.raw_study_service = raw_study_service
         self.command_factory = command_factory
         self.study_factory = study_factory
-        self.patch_service = patch_service
         self.repository = repository
 
     def generate_snapshot(
@@ -72,7 +70,7 @@ class SnapshotGenerator:
         denormalize: bool = True,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
-        listener: t.Optional[ICommandListener] = None,
+        listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -142,7 +140,7 @@ class SnapshotGenerator:
 
         return results
 
-    def _retrieve_descendants(self, variant_study_id: str) -> t.Tuple[RawStudy, t.Sequence[VariantStudy]]:
+    def _retrieve_descendants(self, variant_study_id: str) -> Tuple[RawStudy, Sequence[VariantStudy]]:
         # Get all ancestors of the current study from bottom to top
         # The first IDs are variant IDs, the last is the root study ID.
         ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
@@ -151,7 +149,7 @@ class SnapshotGenerator:
         root_study = self.repository.one(descendant_ids[0])
         return root_study, descendants
 
-    def _export_ref_study(self, snapshot_dir: Path, ref_study: t.Union[RawStudy, VariantStudy]) -> None:
+    def _export_ref_study(self, snapshot_dir: Path, ref_study: RawStudy | VariantStudy) -> None:
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
             export_study_flat(
@@ -175,8 +173,8 @@ class SnapshotGenerator:
         self,
         snapshot_dir: Path,
         variant_study: VariantStudy,
-        cmd_blocks: t.Sequence[CommandBlock],
-        listener: t.Optional[ICommandListener] = None,
+        cmd_blocks: Sequence[CommandBlock],
+        listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         generator = VariantCommandGenerator(self.study_factory)
@@ -205,8 +203,9 @@ class SnapshotGenerator:
     def _read_additional_data(self, file_study: FileStudy) -> StudyAdditionalData:
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
-        patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
+        assert isinstance(author, str)
+        assert isinstance(horizon, (str, int))
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
 
     def _update_cache(self, file_study: FileStudy) -> None:
@@ -218,19 +217,19 @@ class SnapshotGenerator:
         )
 
 
-class RefStudySearchResult(t.NamedTuple):
+class RefStudySearchResult(NamedTuple):
     """
     Result of the search for the reference study.
     """
 
-    ref_study: t.Union[RawStudy, VariantStudy]
-    cmd_blocks: t.Sequence[CommandBlock]
+    ref_study: RawStudy | VariantStudy
+    cmd_blocks: Sequence[CommandBlock]
     force_regenerate: bool = False
 
 
 def search_ref_study(
-    root_study: t.Union[RawStudy, VariantStudy],
-    descendants: t.Sequence[VariantStudy],
+    root_study: RawStudy | VariantStudy,
+    descendants: Sequence[VariantStudy],
     *,
     from_scratch: bool = False,
 ) -> RefStudySearchResult:
@@ -250,10 +249,10 @@ def search_ref_study(
         return RefStudySearchResult(ref_study=root_study, cmd_blocks=[], force_regenerate=True)
 
     # The reference study is the root study or a variant study with a valid snapshot
-    ref_study: t.Union[RawStudy, VariantStudy]
+    ref_study: RawStudy | VariantStudy
 
     # The commands to apply on the reference study to generate the current variant
-    cmd_blocks: t.List[CommandBlock]
+    cmd_blocks: List[CommandBlock]
 
     if from_scratch:
         # In the case of a from scratch generation, the root study will be used as the reference study.

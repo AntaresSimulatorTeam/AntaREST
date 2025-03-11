@@ -14,11 +14,11 @@ import contextlib
 import io
 import logging
 import tempfile
-import typing as t
 import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
+from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 import py7zr
@@ -72,11 +72,11 @@ class ISimpleMatrixService(ABC):
         self.matrix_content_repository = matrix_content_repository
 
     @abstractmethod
-    def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, matrix_id: str) -> t.Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -87,7 +87,7 @@ class ISimpleMatrixService(ABC):
     def delete(self, matrix_id: str) -> None:
         raise NotImplementedError()
 
-    def get_matrix_id(self, matrix: t.Union[t.List[t.List[float]], str]) -> str:
+    def get_matrix_id(self, matrix: List[List[float]] | str) -> str:
         """
         Get the matrix ID from a matrix or a matrix link.
 
@@ -114,13 +114,13 @@ class SimpleMatrixService(ISimpleMatrixService):
         super().__init__(matrix_content_repository=matrix_content_repository)
 
     @override
-    def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
         return self.matrix_content_repository.save(data)
 
     @override
     def get(self, matrix_id: str) -> MatrixDTO:
         data = self.matrix_content_repository.get(matrix_id)
-        return MatrixDTO.construct(
+        return MatrixDTO.model_construct(
             id=matrix_id,
             width=len(data.columns),
             height=len(data.index),
@@ -158,7 +158,7 @@ class MatrixService(ISimpleMatrixService):
         self.config = config
 
     @staticmethod
-    def _from_dto(dto: MatrixDTO) -> t.Tuple[Matrix, MatrixContent]:
+    def _from_dto(dto: MatrixDTO) -> Tuple[Matrix, MatrixContent]:
         matrix = Matrix(
             id=dto.id,
             width=dto.width,
@@ -171,7 +171,7 @@ class MatrixService(ISimpleMatrixService):
         return matrix, content
 
     @override
-    def create(self, data: t.Union[t.List[t.List[MatrixData]], npt.NDArray[np.float64]]) -> str:
+    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
         """
         Creates a new matrix object with the specified data.
 
@@ -208,7 +208,7 @@ class MatrixService(ISimpleMatrixService):
             self.repo.save(matrix)
         return matrix_id
 
-    def create_by_importation(self, file: UploadFile, is_json: bool = False) -> t.List[MatrixInfoDTO]:
+    def create_by_importation(self, file: UploadFile, is_json: bool = False) -> List[MatrixInfoDTO]:
         """
         Imports a matrix from a TSV or JSON file or a collection of matrices from a ZIP file.
 
@@ -232,7 +232,7 @@ class MatrixService(ISimpleMatrixService):
             if file.content_type == "application/zip":
                 with contextlib.closing(f):
                     buffer = io.BytesIO(f.read())
-                matrix_info: t.List[MatrixInfoDTO] = []
+                matrix_info: List[MatrixInfoDTO] = []
                 if file.filename.endswith("zip"):
                     with zipfile.ZipFile(buffer) as zf:
                         for info in zf.infolist():
@@ -278,7 +278,7 @@ class MatrixService(ISimpleMatrixService):
         self,
         id: str,
         params: RequestParameters,
-    ) -> t.Optional[MatrixDataSet]:
+    ) -> Optional[MatrixDataSet]:
         if not params.user:
             raise UserHasNotPermissionError()
         dataset = self.repo_dataset.get(id)
@@ -291,7 +291,7 @@ class MatrixService(ISimpleMatrixService):
     def create_dataset(
         self,
         dataset_info: MatrixDataSetUpdateDTO,
-        matrices: t.List[MatrixInfoDTO],
+        matrices: List[MatrixInfoDTO],
         params: RequestParameters,
     ) -> MatrixDataSet:
         if not params.user:
@@ -337,10 +337,10 @@ class MatrixService(ISimpleMatrixService):
 
     def list(
         self,
-        dataset_name: t.Optional[str],
+        dataset_name: Optional[str],
         filter_own: bool,
         params: RequestParameters,
-    ) -> t.List[MatrixDataSetDTO]:
+    ) -> List[MatrixDataSetDTO]:
         """
         List matrix user metadata
 
@@ -379,7 +379,7 @@ class MatrixService(ISimpleMatrixService):
         return id
 
     @override
-    def get(self, matrix_id: str) -> t.Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
         """
         Get a matrix object from the database and the matrix content repository.
 
@@ -394,7 +394,7 @@ class MatrixService(ISimpleMatrixService):
         if matrix is None:
             return None
         content = self.matrix_content_repository.get(matrix_id)
-        return MatrixDTO.construct(
+        return MatrixDTO.model_construct(
             id=matrix.id,
             width=matrix.width,
             height=matrix.height,
@@ -458,7 +458,7 @@ class MatrixService(ISimpleMatrixService):
             raise UserHasNotPermissionError()
         return access
 
-    def create_matrix_files(self, matrix_ids: t.Sequence[str], export_path: Path) -> str:
+    def create_matrix_files(self, matrix_ids: Sequence[str], export_path: Path) -> str:
         with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
             stopwatch = StopWatch()
             for mid in matrix_ids:
@@ -505,7 +505,7 @@ class MatrixService(ISimpleMatrixService):
 
     def download_matrix_list(
         self,
-        matrix_list: t.Sequence[str],
+        matrix_list: Sequence[str],
         dataset_name: str,
         params: RequestParameters,
     ) -> FileDownloadTaskDTO:

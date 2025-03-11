@@ -13,15 +13,21 @@
 import importlib
 import itertools
 import pkgutil
+<<<<<<< HEAD
 from typing import Any, Dict, List, Optional, Set
+=======
+from typing import Any, Dict, Optional, Set
+>>>>>>> dev
 from unittest.mock import Mock
 
 import pytest
 
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.patch_service import PatchService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
+    GeneratorMatrixConstants,
+)
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -32,18 +38,73 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 COMMANDS = [
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
             action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8
+=======
+            action=CommandName.CREATE_AREA.value,
+            args={"area_name": "area_name"},
+            study_version=STUDY_VERSION_8_8,
+>>>>>>> dev
         ),
         None,
         id="create_area",
     ),
     pytest.param(
+<<<<<<< HEAD
         CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
         None,
         id="remove_area",
     ),
     pytest.param(
         CommandDTO(action=CommandName.REMOVE_AREA.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
+=======
+        CommandDTO(
+            action=CommandName.CREATE_AREA.value,
+            args=[
+                {"area_name": "area_name"},
+                {"area_name": "area2"},
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="create_area2",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_AREA_UI.value,
+            args={
+                "area_id": "id",
+                "area_ui": UpdateAreaUi(
+                    x=100,
+                    y=100,
+                    color_rgb=(100, 100, 100),
+                    layer_x={},
+                    layer_y={},
+                    layer_color={},
+                ),
+                "layer": "0",
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_area_ui",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_AREA.value,
+            args={"id": "id"},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="remove_area",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_AREA.value,
+            args=[{"id": "id"}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+>>>>>>> dev
         None,
         id="remove_area2",
     ),
@@ -78,12 +139,28 @@ COMMANDS = [
         id="create_district_list",
     ),
     pytest.param(
+<<<<<<< HEAD
         CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
+=======
+        CommandDTO(
+            action=CommandName.REMOVE_DISTRICT.value,
+            args={"id": "id"},
+            study_version=STUDY_VERSION_8_8,
+        ),
+>>>>>>> dev
         None,
         id="remove_district",
     ),
     pytest.param(
+<<<<<<< HEAD
         CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
+=======
+        CommandDTO(
+            action=CommandName.REMOVE_DISTRICT.value,
+            args=[{"id": "id"}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+>>>>>>> dev
         None,
         id="remove_district_list",
     ),
@@ -161,7 +238,13 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
             action=CommandName.CREATE_BINDING_CONSTRAINT.value, args={"name": "name"}, study_version=STUDY_VERSION_8_8
+=======
+            action=CommandName.CREATE_BINDING_CONSTRAINT.value,
+            args={"name": "name"},
+            study_version=STUDY_VERSION_8_8,
+>>>>>>> dev
         ),
         None,
         id="create_binding_constraint",
@@ -217,14 +300,45 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
             action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8
+=======
+            action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
+            args=[
+                {
+                    "bc_props_by_id": {
+                        "id": {
+                            "enabled": True,
+                            "time_step": "hourly",
+                            "operator": "equal",
+                        }
+                    }
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="udpate_binding_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
+            args={"id": "id"},
+            study_version=STUDY_VERSION_8_8,
+>>>>>>> dev
         ),
         None,
         id="remove_binding_constraint",
     ),
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
             action=CommandName.REMOVE_BINDING_CONSTRAINT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8
+=======
+            action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
+            args=[{"id": "id"}],
+            study_version=STUDY_VERSION_8_8,
+>>>>>>> dev
         ),
         None,
         id="remove_binding_constraint_list",
@@ -317,6 +431,37 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
+=======
+            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            args={
+                "area_id": "area_name",
+                "thermal_cluster_id": "cluster_name",
+                "properties": {"efficiency": 90},
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_thermal_cluster",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            args=[
+                {
+                    "area_id": "area_name",
+                    "thermal_cluster_id": "cluster_name",
+                    "properties": {"efficiency": 90},
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_thermal_cluster_list",
+    ),
+    pytest.param(
+        CommandDTO(
+>>>>>>> dev
             action=CommandName.REMOVE_THERMAL_CLUSTER.value,
             args={"area_id": "area_name", "cluster_id": "cluster_name"},
             study_version=STUDY_VERSION_8_8,
@@ -445,14 +590,26 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
             action=CommandName.UPDATE_COMMENTS.value, args={"comments": "comments"}, study_version=STUDY_VERSION_8_8
+=======
+            action=CommandName.UPDATE_COMMENTS.value,
+            args={"comments": "comments"},
+            study_version=STUDY_VERSION_8_8,
+>>>>>>> dev
         ),
         None,
         id="update_comments",
     ),
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
             action=CommandName.UPDATE_COMMENTS.value, args=[{"comments": "comments"}], study_version=STUDY_VERSION_8_8
+=======
+            action=CommandName.UPDATE_COMMENTS.value,
+            args=[{"comments": "comments"}],
+            study_version=STUDY_VERSION_8_8,
+>>>>>>> dev
         ),
         None,
         id="update_comments_list",
@@ -690,7 +847,13 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+<<<<<<< HEAD
             action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value, args=[{}], study_version=STUDY_VERSION_8_8
+=======
+            action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
+            args=[{}],
+            study_version=STUDY_VERSION_8_8,
+>>>>>>> dev
         ),
         None,
         id="generate_thermal_cluster_timeseries_list",
@@ -721,6 +884,46 @@ COMMANDS = [
         ),
         None,
         id="remove_user_resource_list_file",
+<<<<<<< HEAD
+=======
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_XPANSION_CANDIDATE.value,
+            args=[{"candidate": {"name": "cdt_1", "link": "at - be", "annual-cost-per-mw": 12, "max-investment": 100}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="create_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_XPANSION_CANDIDATE.value,
+            args=[
+                {
+                    "candidate_name": "cdt_1",
+                    "properties": {
+                        "name": "cdt_1",
+                        "link": "at - be",
+                        "annual-cost-per-mw": 12,
+                        "max-investment": 100,
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_XPANSION_CANDIDATE.value,
+            args=[{"candidate_name": "cdt_1"}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="remove_xpansion_candidate",
+>>>>>>> dev
     ),
 ]
 
@@ -733,7 +936,6 @@ def command_factory() -> CommandFactory:
     return CommandFactory(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService, get_matrix_id=get_matrix_id),
-        patch_service=Mock(spec=PatchService),
     )
 
 
@@ -759,7 +961,14 @@ class TestCommandFactory:
     )
     @pytest.mark.unit_test
     def test_command_factory(
+<<<<<<< HEAD
         self, command_dto: CommandDTO, expected_args: Optional[Dict[str, Any]], command_factory: CommandFactory
+=======
+        self,
+        command_dto: CommandDTO,
+        expected_args: Optional[Dict[str, Any]],
+        command_factory: CommandFactory,
+>>>>>>> dev
     ):
         commands = command_factory.to_command(command_dto=command_dto)
 
@@ -788,7 +997,6 @@ def test_unknown_command():
         command_factory = CommandFactory(
             generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
             matrix_service=Mock(spec=MatrixService),
-            patch_service=Mock(spec=PatchService),
         )
         command_factory.to_command(
             command_dto=CommandDTO(action="unknown_command", args={}, study_version=STUDY_VERSION_8_8)

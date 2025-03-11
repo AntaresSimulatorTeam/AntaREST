@@ -56,7 +56,6 @@ function CorrelationField({ field, index, label }: Props) {
           key={field.id}
           label={t("study.modelization.hydro.correlation.coefficient")}
           name={`correlation.${index}.coefficient` as const}
-          size="small"
           control={control}
           rules={{ validate: validateNumber({ min: -100, max: 100 }) }}
           disabled={field.areaId === currentArea?.id}

@@ -64,9 +64,9 @@ class PreparerProxy(Proxy):
         # noinspection SpellCheckingInspection
         res = self.client.put(
             f"/v1/studies/{internal_study_id}/raw",
-            params={"path": matrix_path, "create_missing": True},
+            params={"path": matrix_path},
             headers=self.headers,
-            files={"file": tsv, "create_missing": "true"},
+            files={"file": tsv},
         )
         res.raise_for_status()
 
@@ -113,9 +113,6 @@ class PreparerProxy(Proxy):
         res.raise_for_status()
 
 
-from tests.integration.prepare_proxy import PreparerProxy
-
-
 @pytest.mark.integration_test
 class TestDownloadMatrices:
     """
@@ -132,13 +129,13 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_study_and_upgrade(internal_study_id, target_version=820)
+        study_820_id = preparer.copy_upgrade_study(internal_study_id, target_version=820)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
 
         # Create a new area to implicitly create normalized matrices
-        area_id = preparer.create_area(variant_id, name="Mayenne", country="France")["id"]
+        area_id = preparer.create_area(variant_id, name="Mayenne", country="France")
 
         # Change study start_date
         preparer.update_general_data(variant_id, firstMonth="July")
@@ -147,7 +144,7 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_study_and_upgrade(internal_study_id, target_version=860)
+        study_860_id = preparer.copy_upgrade_study(internal_study_id, target_version=860)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
         generator = np.random.default_rng(11)
@@ -275,7 +272,7 @@ class TestDownloadMatrices:
             assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
             assert all(np.isclose(dataframe.iloc[i, i], 1.0) for i in range(len(dataframe)))
 
-        # test for empty matrix
+        # checks default value for an empty water_values matrix
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
@@ -283,7 +280,7 @@ class TestDownloadMatrices:
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.empty
+        assert dataframe.to_numpy().tolist() == 365 * [101 * [0.0]]
 
         # modulation matrix
         res = client.get(
@@ -328,7 +325,7 @@ class TestDownloadMatrices:
             "('HURDLE COST', 'Euro', '')",
         ]
 
-        # test energy matrix to test the regex
+        # checks default value for an empty energy matrix
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw/download",
             params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
@@ -336,7 +333,7 @@ class TestDownloadMatrices:
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.empty
+        assert dataframe.to_numpy().tolist() == 12 * [5 * [0.0]]
 
         # test the Min Gen of the 8.6 study
         for export_format in ["tsv", "xlsx"]:

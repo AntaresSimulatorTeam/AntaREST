@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Callable, MutableSequence, Optional, Sequence, TypedDict
 
 from antares.study.version import StudyVersion
 
@@ -34,15 +34,15 @@ GENERAL_DATA_PATH = "settings/generaldata"
 def execute_or_add_commands(
     study: Study,
     file_study: FileStudy,
-    commands: t.Sequence[ICommand],
+    commands: Sequence[ICommand],
     storage_service: StudyStorageService,
-    listener: t.Optional[ICommandListener] = None,
+    listener: Optional[ICommandListener] = None,
 ) -> None:
     # get current user if not in session, otherwise get session user
     current_user = get_current_user()
 
     if isinstance(study, RawStudy):
-        executed_commands: t.MutableSequence[ICommand] = []
+        executed_commands: MutableSequence[ICommand] = []
         for command in commands:
             result = command.apply(file_study, listener)
             if not result.status:
@@ -87,14 +87,14 @@ class FormFieldsBaseModel(
     """
 
 
-class FieldInfo(t.TypedDict, total=False):
+class FieldInfo(TypedDict, total=False):
     path: str
-    default_value: t.Any
-    start_version: t.Optional[StudyVersion]
-    end_version: t.Optional[StudyVersion]
+    default_value: Any
+    start_version: Optional[StudyVersion]
+    end_version: Optional[StudyVersion]
     # Workaround to replace Pydantic computed values which are ignored by FastAPI.
     # TODO: check @computed_field available in Pydantic v2 to remove it
     # (value) -> encoded_value
-    encode: t.Optional[t.Callable[[t.Any], t.Any]]
+    encode: Optional[Callable[[Any], Any]]
     # (encoded_value, current_value) -> decoded_value
-    decode: t.Optional[t.Callable[[t.Any, t.Optional[t.Any]], t.Any]]
+    decode: Optional[Callable[[Any, Optional[Any]], Any]]

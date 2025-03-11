@@ -14,8 +14,8 @@ import collections
 import http
 import io
 import logging
-import typing as t
 from pathlib import Path, PurePosixPath
+from typing import Annotated, Any, List, Sequence
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Query
@@ -40,12 +40,6 @@ from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
-
-try:
-    import tables  # type: ignore
-    import xlsxwriter  # type: ignore
-except ImportError:
-    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
 
 logger = logging.getLogger(__name__)
 
@@ -82,10 +76,10 @@ CONTENT_TYPES = {
 }
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-PATH_TYPE = t.Annotated[str, Query(openapi_examples=get_path_examples())]
+PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
 
 
-def _split_comma_separated_values(value: str, *, default: t.Sequence[str] = ()) -> t.Sequence[str]:
+def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
     """Split a comma-separated list of values into an ordered set of strings."""
     values = value.split(",") if value else default
     # drop whitespace around values
@@ -121,7 +115,7 @@ def create_raw_study_routes(
         depth: int = 3,
         formatted: bool = True,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Any:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -200,7 +194,7 @@ def create_raw_study_routes(
         uuid: str,
         path: PATH_TYPE = "/",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Any:
         """
         Fetches for a file in its original format from a study folder
 
@@ -236,7 +230,7 @@ def create_raw_study_routes(
     )
     def delete_file(
         uuid: str,
-        path: t.Annotated[
+        path: Annotated[
             str,
             Query(
                 openapi_examples={
@@ -245,7 +239,7 @@ def create_raw_study_routes(
             ),
         ] = "/",
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.Any:
+    ) -> Any:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}", extra={"user": current_user.id})
         study_service.delete_user_file_or_folder(uuid, path, current_user)
@@ -524,7 +518,7 @@ def create_raw_study_routes(
 
     @bp.post(
         "/studies/{uuid}/raw",
-        status_code=http.HTTPStatus.NO_CONTENT,
+        status_code=http.HTTPStatus.OK,
         tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
@@ -533,7 +527,7 @@ def create_raw_study_routes(
         path: PATH_TYPE = "/",
         data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> Any:
         """
         Updates raw data for a study by posting formatted data.
 
@@ -549,7 +543,7 @@ def create_raw_study_routes(
         logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, data, params)
+        return study_service.edit_study(uuid, path, data, params)
 
     @bp.put(
         "/studies/{uuid}/raw",
@@ -598,12 +592,12 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/validate",
         summary="Launch test validation on study",
         tags=[APITag.study_raw_data],
-        response_model=t.List[str],
+        response_model=List[str],
     )
     def validate(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> t.List[str]:
+    ) -> List[str]:
         """
         Launches test validation on the raw data of a study.
         The validation is done recursively on all the files in the study

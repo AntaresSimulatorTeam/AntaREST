@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import io
 import itertools
 import shutil
 import textwrap
@@ -17,6 +17,8 @@ import typing as t
 from pathlib import Path
 from unittest.mock import Mock
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -51,7 +53,9 @@ class TestInputSeriesMatrix:
         file.write_text(content)
 
         node = InputSeriesMatrix(context=Mock(), config=my_study_config, nb_columns=8)
-        actual = node.load()
+
+        # checks formatted response
+        actual = node.load(formatted=True)
         expected = {
             "columns": [0, 1, 2, 3, 4, 5, 6, 7],
             "data": [
@@ -61,6 +65,43 @@ class TestInputSeriesMatrix:
             "index": [0, 1],
         }
         assert actual == expected
+
+        # checks binary response
+        # We cannot check the content as is as we're applying a transformation to the data
+        df_binary = pd.DataFrame(data=expected["data"])
+        buffer = io.StringIO()
+        df_binary.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        actual_binary = node.load(formatted=False)
+        assert actual_binary == buffer.getvalue()
+
+    @pytest.mark.parametrize("link", [True, False])
+    def test_load_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
+        file_path = my_study_config.path
+        default_matrix = np.array([[1, 2], [3, 4]])
+        if not link:
+            file_path.touch()
+            node = InputSeriesMatrix(context=Mock(), config=my_study_config, default_empty=default_matrix)
+        else:
+            link_path = file_path.parent / f"{file_path.name}.link"
+            link_path.touch()
+            resolver = Mock()
+            resolver.resolve.return_value = {}
+            resolver.build_matrix_uri.return_value = "matrix://my-id"
+            matrix_service = Mock()
+            matrix_service.create.return_value = "my-id"
+            context = ContextServer(matrix=matrix_service, resolver=resolver)
+            node = InputSeriesMatrix(context=context, config=my_study_config, default_empty=default_matrix)
+
+        # checks formatted response
+        actual = node.load(formatted=True)
+        expected = {"index": [0, 1], "columns": [0, 1], "data": node.default_empty.tolist()}
+        assert actual == expected
+
+        # checks binary response
+        actual = node.load(formatted=False)
+        buffer = io.StringIO()
+        pd.DataFrame(default_matrix).to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        assert actual == buffer.getvalue()
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = InputSeriesMatrix(context=Mock(), config=my_study_config)

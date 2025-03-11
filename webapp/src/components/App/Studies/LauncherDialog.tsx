@@ -31,7 +31,7 @@ import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { useMountedState } from "react-use";
 import { shallowEqual } from "react-redux";
-import type { LaunchOptions, StudyMetadata, StudyOutput } from "../../../common/types";
+import type { LaunchOptions, StudyMetadata, StudyOutput } from "../../../types/types";
 import {
   getLauncherCores,
   getLauncherTimeLimit,

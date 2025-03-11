@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import type { AxiosError } from "axios";
 import { usePromise } from "react-use";
 import * as R from "ramda";
-import type { StudyPublicMode } from "../../../common/types";
+import type { StudyPublicMode } from "../../../types/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { createStudy } from "../../../redux/ducks/studies";
 import { getStudyVersionsFormatted, getGroups } from "../../../redux/selectors";

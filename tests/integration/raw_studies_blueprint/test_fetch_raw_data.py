@@ -27,6 +27,9 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
+    default_data_matrix,
+)
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
 
@@ -229,7 +232,7 @@ class TestFetchRawData:
             written_data = res.json()["data"]
             if not content.decode("utf-8"):
                 # The `GET` returns the default matrix when it's empty
-                expected = 8760 * [[0]] if study_type == "raw" else [[]]
+                expected = 8760 * [[0]]
             else:
                 df = pd.read_csv(io.BytesIO(content), delimiter=delimiter, header=None).replace(",", ".", regex=True)
                 df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
@@ -267,20 +270,17 @@ class TestFetchRawData:
         # If we ask for a matrix, we should have a CSV content if formatted is False
         res = client.get(raw_url, params={"path": rel_path, "formatted": False})
         assert res.status_code == 200, res.json()
-        actual = res.text
+        actual = res.json()
         actual_lines = actual.splitlines()
         first_row = [float(x) for x in actual_lines[0].split("\t")]
         assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
 
-        # If ask for an empty matrix, we should have an empty binary content
-        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": False})
-        assert res.status_code == 200, res.json()
-        assert res.content == b""
-
-        # But, if we use formatted = True, we should have a JSON objet representing and empty matrix
+        # If ask for an empty matrix, we should return its default value
         res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
         assert res.status_code == 200, res.json()
-        assert res.json() == {"index": [], "columns": [], "data": []}
+        assert res.json()["index"] == list(range(365))
+        assert res.json()["columns"] == list(range(6))
+        assert res.json()["data"] == default_data_matrix.tolist()
 
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:

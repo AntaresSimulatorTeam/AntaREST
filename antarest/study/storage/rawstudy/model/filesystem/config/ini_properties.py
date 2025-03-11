@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, Optional, Set
 
 from typing_extensions import override
 
@@ -33,7 +33,7 @@ class IniProperties(
     Base class for configuration sections.
     """
 
-    def to_config(self) -> t.Dict[str, t.Any]:
+    def to_config(self) -> Dict[str, Any]:
         """
         Convert the object to a dictionary for writing to a configuration file (`*.ini`).
 
@@ -56,7 +56,7 @@ class IniProperties(
 
     @classmethod
     @override
-    def construct(cls, _fields_set: t.Optional[t.Set[str]] = None, **values: t.Any) -> "IniProperties":
+    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> "IniProperties":
         """
         Construct a new model instance from a dict of values, replacing aliases with real field names.
         """
@@ -65,5 +65,4 @@ class IniProperties(
         renamed_values = {aliases.get(k, k): v for k, v in values.items()}
         if _fields_set is not None:
             _fields_set = {aliases.get(f, f) for f in _fields_set}
-        # noinspection PyTypeChecker
-        return super().construct(_fields_set, **renamed_values)
+        return IniProperties.model_construct(_fields_set, **renamed_values)

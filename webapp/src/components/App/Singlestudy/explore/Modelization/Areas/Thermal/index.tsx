@@ -17,7 +17,7 @@ import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import {
   getThermalClusters,
   createThermalCluster,

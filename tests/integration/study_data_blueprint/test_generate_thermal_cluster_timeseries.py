@@ -67,7 +67,7 @@ class TestGenerateThermalClusterTimeseries:
             params={"path": f"input/thermal/prepro/{area2_id}/{cluster_2.lower()}/modulation"},
             json=matrix,
         )
-        assert res.status_code == 204
+        assert res.status_code == 200
 
         # Timeseries generation should succeed
         task = self._generate_timeseries(client, user_access_token, study_id)
@@ -97,7 +97,7 @@ class TestGenerateThermalClusterTimeseries:
         )
         assert res.status_code == 200
         data = res.json()["data"]
-        assert data == [[]]  # no generation c.f. gen-ts parameter
+        assert data == 8760 * [[0]]  # no generation c.f. gen-ts parameter -> empty file -> default simulator value
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str, study_type: str) -> None:
@@ -134,7 +134,7 @@ class TestGenerateThermalClusterTimeseries:
             params={"path": f"input/thermal/prepro/{area1_id}/{cluster_name.lower()}/data"},
             json=modulation_matrix,
         )
-        assert res.status_code == 204
+        assert res.status_code == 200
         # Timeseries generation should succeed
         task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.COMPLETED
@@ -211,7 +211,7 @@ class TestGenerateThermalClusterTimeseries:
                 params={"path": f"/input/thermal/prepro/{area_id}/{cluster_id}/modulation"},
                 json=modulation_matrix.tolist(),
             )
-            assert res.status_code == 204
+            assert res.status_code == 200
 
             # Replace gen_ts matrix
             input_gen_ts = np.loadtxt(TIMESERIES_ASSETS_DIR.joinpath("input_gen_ts.txt"), delimiter="\t")
@@ -227,7 +227,7 @@ class TestGenerateThermalClusterTimeseries:
                 params={"path": f"/input/thermal/prepro/{area_id}/{cluster_id}/data"},
                 json=input_gen_ts.tolist(),
             )
-            assert res.status_code == 204
+            assert res.status_code == 200
 
             # Get expected matrix
             expected_matrix = np.loadtxt(TIMESERIES_ASSETS_DIR.joinpath(f"{test_case}.txt"), delimiter="\t").tolist()

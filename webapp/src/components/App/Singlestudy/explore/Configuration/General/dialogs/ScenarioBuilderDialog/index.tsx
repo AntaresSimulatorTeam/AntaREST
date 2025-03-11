@@ -16,7 +16,7 @@ import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Button, Tab, Skeleton } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import Table from "./Table";
 import { getScenarioConfigByType, SCENARIOS, type ScenarioType } from "./utils";

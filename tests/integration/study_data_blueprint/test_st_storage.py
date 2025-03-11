@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import re
 import typing as t
 from unittest.mock import ANY
@@ -682,10 +681,11 @@ class TestSTStorage:
         actual = commands[1]
         expected = {
             "id": ANY,
-            "action": "update_config",
+            "action": "update_st_storage",
             "args": {
-                "data": 0.5,
-                "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
+                "area_id": "fr",
+                "properties": {"initial_level": 0.5},
+                "st_storage_id": "siemens battery",
             },
             "version": 1,
             "updated_at": ANY,
@@ -708,17 +708,12 @@ class TestSTStorage:
         actual = commands[2]
         expected = {
             "id": ANY,
-            "action": "update_config",
-            "args": [
-                {
-                    "data": 1600.0,
-                    "target": "input/st-storage/clusters/fr/list/siemens battery/injectionnominalcapacity",
-                },
-                {
-                    "data": 0.0,
-                    "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
-                },
-            ],
+            "action": "update_st_storage",
+            "args": {
+                "area_id": "fr",
+                "properties": {"initial_level": 0.0, "injection_nominal_capacity": 1600.0},
+                "st_storage_id": "siemens battery",
+            },
             "version": 1,
             "updated_at": ANY,
             "user_name": ANY,
@@ -855,7 +850,7 @@ class TestSTStorage:
         assert actions == [
             "create_area",
             "create_st_storage",
-            "update_config",
+            "update_st_storage",
             "replace_matrix",
             "create_st_storage",
             "replace_matrix",
@@ -901,7 +896,11 @@ class TestSTStorage:
         assert list(content.keys()) == ["tesla1"]
         content["Tesla1"] = content.pop("tesla1")
         res = client.post(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list", json=content)
+<<<<<<< HEAD
         assert res.status_code == 204, res.json()
+=======
+        assert res.status_code == 200, res.json()
+>>>>>>> dev
         res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
         assert res.status_code == 200, res.json()
         assert list(res.json().keys()) == ["Tesla1"]

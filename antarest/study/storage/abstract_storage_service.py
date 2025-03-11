@@ -13,9 +13,9 @@
 import logging
 import shutil
 import tempfile
-import typing as t
 from abc import ABC
 from pathlib import Path
+from typing import BinaryIO, List, Optional
 from uuid import uuid4
 
 from typing_extensions import override
@@ -33,15 +33,12 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
     Patch,
-    PatchOutputs,
     PatchStudy,
     StudyAdditionalData,
     StudyMetadataDTO,
-    StudyMetadataPatchDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -57,33 +54,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         config: Config,
         study_factory: StudyFactory,
-        patch_service: PatchService,
         cache: ICache,
     ):
         self.config: Config = config
         self.study_factory: StudyFactory = study_factory
-        self.patch_service = patch_service
         self.cache = cache
-
-    @override
-    def patch_update_study_metadata(
-        self,
-        study: T,
-        metadata: StudyMetadataPatchDTO,
-    ) -> StudyMetadataDTO:
-        old_patch = self.patch_service.get(study)
-        old_patch.study = PatchStudy(
-            scenario=metadata.scenario,
-            doc=metadata.doc,
-            status=metadata.status,
-            tags=metadata.tags,
-        )
-        self.patch_service.save(
-            study,
-            old_patch,
-        )
-        remove_from_cache(self.cache, study.id)
-        return self.get_study_information(study)
 
     @override
     def get_study_information(
@@ -102,7 +77,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         patch_metadata = patch.study or PatchStudy()
 
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        folder: t.Optional[str] = None
+        folder: Optional[str] = None
         if hasattr(study, "folder"):
             folder = study.folder
 
@@ -160,7 +135,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
 
         if url == "" and depth == -1:
             cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
-            from_cache: t.Optional[JSON] = None
+            from_cache: Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
             if from_cache is not None:
@@ -204,7 +179,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def get_study_sim_result(
         self,
         study: T,
-    ) -> t.List[StudySimResultDTO]:
+    ) -> List[StudySimResultDTO]:
         """
         Get global result information
         Args:
@@ -212,10 +187,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         Returns: study output data
         """
         study_data = self.get_raw(study)
-        patch_metadata = self.patch_service.get(study)
-        results: t.List[StudySimResultDTO] = []
+        results: List[StudySimResultDTO] = []
         if study_data.config.outputs is not None:
-            reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
                 output_data: Simulation = study_data.config.outputs[output]
                 try:
@@ -237,8 +210,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                             type=output_data.mode,
                             settings=settings,
                             completionDate="",
-                            referenceStatus=(reference == output),
-                            synchronized=False,
                             status="",
                             archived=output_data.archived,
                         )
@@ -254,9 +225,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
     def import_output(
         self,
         metadata: T,
-        output: t.Union[t.BinaryIO, Path],
-        output_name: t.Optional[str] = None,
-    ) -> t.Optional[str]:
+        output: BinaryIO | Path,
+        output_name: Optional[str] = None,
+    ) -> Optional[str]:
         """
         Import additional output in an existing study.
 
@@ -274,7 +245,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         path_output = Path(metadata.path) / "output" / f"imported_output_{str(uuid4())}"
         study_id = metadata.id
         path_output.mkdir(parents=True)
-        output_full_name: t.Optional[str]
+        output_full_name: Optional[str]
         is_zipped = False
         stopwatch = StopWatch()
         try:
@@ -364,8 +335,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
-        patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
+        assert isinstance(author, str)
+        assert isinstance(horizon, (str, int))
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
 
     @override

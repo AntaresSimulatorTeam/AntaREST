@@ -125,14 +125,7 @@ function StudyTree() {
     <SimpleTreeView
       defaultExpandedItems={[...getParentPaths(folder), folder]}
       defaultSelectedItems={folder}
-      sx={{
-        flexGrow: 1,
-        height: 0,
-        width: 1,
-        py: 1,
-        overflowY: "auto",
-        overflowX: "hidden",
-      }}
+      sx={{ p: 2, pt: 0 }}
     >
       <StudyTreeNodeComponent
         studyTreeNode={studiesTree}

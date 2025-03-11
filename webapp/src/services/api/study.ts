@@ -29,8 +29,7 @@ import type {
   StudyMetadataPatchDTO,
   LaunchOptions,
   StudyLayer,
-} from "../../common/types";
-import { getConfig } from "../config";
+} from "../../types/types";
 import { convertStudyDtoToMetadata } from "../utils";
 import type { FileDownloadTask } from "./downloads";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
@@ -41,7 +40,7 @@ interface Workspace {
 }
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
-  const res = await client.get(`/v1/studies`);
+  const res = await client.get(`/v1/studies?exists=True`);
   return res.data;
 };
 
@@ -208,12 +207,7 @@ export const exportStudy = async (sid: string, skipOutputs: boolean): Promise<Fi
   return res.data;
 };
 
-export const getExportUrl = (sid: string, skipOutputs = false): string =>
-  `${
-    getConfig().downloadHostUrl || getConfig().baseUrl + getConfig().restEndpoint
-  }/v1/studies/${sid}/export?no_output=${skipOutputs}`;
-
-export const exportOuput = async (sid: string, output: string): Promise<FileDownloadTask> => {
+export const exportOutput = async (sid: string, output: string): Promise<FileDownloadTask> => {
   const res = await client.get(`/v1/studies/${sid}/outputs/${output}/export`);
   return res.data;
 };

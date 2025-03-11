@@ -10,10 +10,9 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from abc import ABCMeta
 from enum import Enum
-from typing import Dict, Final, List, Optional
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -37,7 +36,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.business.utils import validate_matrix
+from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     parse_bindings_coeffs_and_save_into_config,
 )
@@ -47,7 +46,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType = t.List[t.List[MatrixData]]
+MatrixType = List[List[MatrixData]]
 
 EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.HOURLY: (8784, 3),
@@ -106,7 +105,7 @@ class BindingConstraintPropertiesBase(AntaresBaseModel, extra="forbid", populate
     comments: str = ""
 
     @model_validator(mode="before")
-    def replace_with_alias(cls, values: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def replace_with_alias(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if "type" in values:
             values["time_step"] = values.pop("type")
         return values
@@ -117,7 +116,7 @@ class BindingConstraintProperties830(BindingConstraintPropertiesBase):
     filter_synthesis: str = Field("", alias="filter-synthesis")
 
     @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
-    def _validate_filtering(cls, v: t.Any) -> str:
+    def _validate_filtering(cls, v: Any) -> str:
         return validate_filtering(v)
 
 
@@ -125,14 +124,12 @@ class BindingConstraintProperties870(BindingConstraintProperties830):
     group: LowerCaseStr = DEFAULT_GROUP
 
 
-BindingConstraintProperties = t.Union[
-    BindingConstraintPropertiesBase,
-    BindingConstraintProperties830,
-    BindingConstraintProperties870,
-]
+BindingConstraintProperties = (
+    BindingConstraintPropertiesBase | BindingConstraintProperties830 | BindingConstraintProperties870
+)
 
 
-def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[BindingConstraintProperties]:
+def get_binding_constraint_config_cls(study_version: StudyVersion) -> Type[BindingConstraintProperties]:
     """
     Retrieves the binding constraint configuration class based on the study version.
     """
@@ -144,7 +141,7 @@ def get_binding_constraint_config_cls(study_version: StudyVersion) -> t.Type[Bin
         return BindingConstraintPropertiesBase
 
 
-def create_binding_constraint_config(study_version: StudyVersion, **kwargs: t.Any) -> BindingConstraintProperties:
+def create_binding_constraint_properties(study_version: StudyVersion, **kwargs: Any) -> BindingConstraintProperties:
     """
     Factory method to create a binding constraint configuration model.
 
@@ -176,27 +173,25 @@ class BindingConstraintMatrices(AntaresBaseModel, extra="forbid", populate_by_na
     Class used to store the matrices of a binding constraint.
     """
 
-    values: t.Optional[t.Union[MatrixType, str]] = Field(
+    values: Optional[MatrixType | str] = Field(
         default=None,
         description="2nd member matrix for studies before v8.7",
     )
-    less_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    less_term_matrix: Optional[MatrixType | str] = Field(
         default=None,
         description="less term matrix for v8.7+ studies",
     )
-    greater_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    greater_term_matrix: Optional[MatrixType | str] = Field(
         default=None,
         description="greater term matrix for v8.7+ studies",
     )
-    equal_term_matrix: t.Optional[t.Union[MatrixType, str]] = Field(
+    equal_term_matrix: Optional[MatrixType | str] = Field(
         default=None,
         description="equal term matrix for v8.7+ studies",
     )
 
     @model_validator(mode="before")
-    def check_matrices(
-        cls, values: t.Dict[str, t.Optional[t.Union[MatrixType, str]]]
-    ) -> t.Dict[str, t.Optional[t.Union[MatrixType, str]]]:
+    def check_matrices(cls, values: Dict[str, Optional[MatrixType | str]]) -> Dict[str, Optional[MatrixType | str]]:
         values_matrix = values.get("values") or None
         less_term_matrix = values.get("less_term_matrix") or None
         greater_term_matrix = values.get("greater_term_matrix") or None
@@ -256,7 +251,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         matrix_service = self.command_context.matrix_service
         return [
             matrix_service.get_matrix_id(matrix)
@@ -271,11 +266,11 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
 
     def get_corresponding_matrices(
         self,
-        v: t.Optional[t.Union[MatrixType, str]],
+        v: Optional[MatrixType | str],
         time_step: BindingConstraintFrequency,
         version: StudyVersion,
         create: bool,
-    ) -> t.Optional[str]:
+    ) -> Optional[str]:
         constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
 
         if v is None:
@@ -298,7 +293,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
             return methods["before_v87"][time_step]() if version < 870 else methods["after_v87"][time_step]()
         if isinstance(v, str):
             # Check the matrix link
-            return validate_matrix(v, {"command_context": self.command_context})
+            return validate_matrix(strip_matrix_protocol(v), {"command_context": self.command_context})
         if isinstance(v, list):
             check_matrix_values(time_step, v, version)
             return validate_matrix(v, {"command_context": self.command_context})
@@ -310,7 +305,7 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         self,
         *,
         time_step: BindingConstraintFrequency,
-        specific_matrices: t.Optional[t.List[str]],
+        specific_matrices: Optional[List[str]],
         version: StudyVersion,
         create: bool,
     ) -> None:
@@ -331,11 +326,11 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
     def apply_binding_constraint(
         self,
         study_data: FileStudy,
-        binding_constraints: t.Dict[str, t.Any],
+        binding_constraints: Dict[str, Any],
         new_key: str,
         bd_id: str,
         *,
-        old_groups: t.Optional[t.Set[str]] = None,
+        old_groups: Optional[Set[str]] = None,
     ) -> CommandOutput:
         version = study_data.config.version
 
@@ -425,7 +420,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     name: str
 
     @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         bd_id = transform_name_to_id(self.name)
         group = self.group or DEFAULT_GROUP
         operator = self.operator or DEFAULT_OPERATOR
@@ -441,13 +436,13 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         return CommandOutput(status=True), {}
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
         new_key = str(len(binding_constraints))
         bd_id = transform_name_to_id(self.name)
 
         study_version = study_data.config.version
-        props = create_binding_constraint_config(**self.model_dump())
+        props = create_binding_constraint_properties(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True)
 
         new_binding = {"id": bd_id, "name": self.name, **obj}

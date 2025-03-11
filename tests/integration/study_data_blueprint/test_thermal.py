@@ -39,6 +39,7 @@ We should test the following end poins:
 * delete a cluster (or several clusters)
 * validate the consistency of the matrices (and properties)
 """
+
 import io
 import re
 import typing as t
@@ -776,7 +777,7 @@ class TestThermal:
         obj = res.json()
         description = obj["description"]
         assert bad_area_id in description
-        assert re.search(r"not a child of ", description, flags=re.IGNORECASE)
+        assert re.search(r"is not found", description, flags=re.IGNORECASE)
 
         # Check PATCH with the wrong `cluster_id`
         bad_cluster_id = "bad_cluster"
@@ -952,7 +953,7 @@ class TestThermal:
         assert actions == [
             "create_area",
             "create_cluster",
-            "update_config",
+            "update_thermal_cluster",
             "replace_matrix",
             "create_cluster",
             "replace_matrix",

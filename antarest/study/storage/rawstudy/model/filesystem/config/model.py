@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from pathlib import Path
+from typing import Any, Dict, List, MutableMapping, Optional, Set
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -65,11 +65,11 @@ class Link(AntaresBaseModel, extra="ignore"):
         Ignore extra fields, because we only need `filter-synthesis` and `filter-year-by-year`.
     """
 
-    filters_synthesis: t.List[str] = Field(default_factory=list)
-    filters_year: t.List[str] = Field(default_factory=list)
+    filters_synthesis: List[str] = Field(default_factory=list)
+    filters_year: List[str] = Field(default_factory=list)
 
     @model_validator(mode="before")
-    def validation(cls, values: t.MutableMapping[str, t.Any]) -> t.MutableMapping[str, t.Any]:
+    def validation(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
         # note: field names are in kebab-case in the INI file
         filters_synthesis = values.pop("filter-synthesis", values.pop("filters_synthesis", ""))
         filters_year = values.pop("filter-year-by-year", values.pop("filters_year", ""))
@@ -84,13 +84,13 @@ class Area(AntaresBaseModel, extra="forbid"):
     """
 
     name: str
-    links: t.Dict[str, Link]
-    thermals: t.List[ThermalConfigType]
-    renewables: t.List[RenewableConfigType]
-    filters_synthesis: t.List[str]
-    filters_year: t.List[str]
+    links: Dict[str, Link]
+    thermals: List[ThermalConfigType]
+    renewables: List[RenewableConfigType]
+    filters_synthesis: List[str]
+    filters_year: List[str]
     # since v8.6
-    st_storages: t.List[STStorageConfigType] = []
+    st_storages: List[STStorageConfigType] = []
 
 
 class DistrictSet(AntaresBaseModel):
@@ -98,15 +98,15 @@ class DistrictSet(AntaresBaseModel):
     Object linked to /inputs/sets.ini information
     """
 
-    ALL: t.List[str] = ["hourly", "daily", "weekly", "monthly", "annual"]
-    name: t.Optional[str] = None
+    ALL: List[str] = ["hourly", "daily", "weekly", "monthly", "annual"]
+    name: Optional[str] = None
     inverted_set: bool = False
-    areas: t.Optional[t.List[str]] = None
+    areas: Optional[List[str]] = None
     output: bool = True
-    filters_synthesis: t.List[str] = ALL
-    filters_year: t.List[str] = ALL
+    filters_synthesis: List[str] = ALL
+    filters_year: List[str] = ALL
 
-    def get_areas(self, all_areas: t.List[str]) -> t.List[str]:
+    def get_areas(self, all_areas: List[str]) -> List[str]:
         areas = self.areas or []
         if self.inverted_set:
             areas = list(set(all_areas).difference(set(areas)))
@@ -125,7 +125,7 @@ class Simulation(AntaresBaseModel):
     synthesis: bool
     by_year: bool
     error: bool
-    playlist: t.Optional[t.List[int]]
+    playlist: Optional[List[int]]
     archived: bool = False
     xpansion: str
 
@@ -149,8 +149,8 @@ class BindingConstraintDTO(AntaresBaseModel):
     """
 
     id: str
-    areas: t.Set[str]
-    clusters: t.Set[str]
+    areas: Set[str]
+    clusters: Set[str]
     time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
     operator: BindingConstraintOperator = DEFAULT_OPERATOR
     # since v8.7
@@ -168,16 +168,16 @@ class FileStudyTreeConfig(DTO):
         path: Path,
         study_id: str,
         version: StudyVersion,
-        output_path: t.Optional[Path] = None,
-        areas: t.Optional[t.Dict[str, Area]] = None,
-        sets: t.Optional[t.Dict[str, DistrictSet]] = None,
-        outputs: t.Optional[t.Dict[str, Simulation]] = None,
-        bindings: t.Optional[t.List[BindingConstraintDTO]] = None,
+        output_path: Optional[Path] = None,
+        areas: Optional[Dict[str, Area]] = None,
+        sets: Optional[Dict[str, DistrictSet]] = None,
+        outputs: Optional[Dict[str, Simulation]] = None,
+        bindings: Optional[List[BindingConstraintDTO]] = None,
         store_new_set: bool = False,
-        archive_input_series: t.Optional[t.List[str]] = None,
+        archive_input_series: Optional[List[str]] = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
-        cache: t.Optional[t.Dict[str, t.List[str]]] = None,
-        archive_path: t.Optional[Path] = None,
+        cache: Optional[Dict[str, List[str]]] = None,
+        archive_path: Optional[Path] = None,
     ):
         self.study_path = study_path
         self.path = path
@@ -196,7 +196,7 @@ class FileStudyTreeConfig(DTO):
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
-            archive_path: t.Optional[Path] = self.path / f"{name}.zip"
+            archive_path: Optional[Path] = self.path / f"{name}.zip"
         else:
             archive_path = self.archive_path
 
@@ -234,36 +234,36 @@ class FileStudyTreeConfig(DTO):
             cache=self.cache,
         )
 
-    def area_names(self) -> t.List[str]:
+    def area_names(self) -> List[str]:
         return self.cache.get("%areas", list(self.areas))
 
-    def set_names(self, only_output: bool = True) -> t.List[str]:
+    def set_names(self, only_output: bool = True) -> List[str]:
         return self.cache.get(
             f"%districts%{only_output}",
             [k for k, v in self.sets.items() if v.output or not only_output],
         )
 
-    def get_thermal_ids(self, area: str) -> t.List[str]:
+    def get_thermal_ids(self, area: str) -> List[str]:
         """
         Returns a list of thermal cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
         return self.cache.get(f"%thermal%{area}%{area}", [th.id for th in self.areas[area].thermals])
 
-    def get_renewable_ids(self, area: str) -> t.List[str]:
+    def get_renewable_ids(self, area: str) -> List[str]:
         """
         Returns a list of renewable cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
         return self.cache.get(f"%renewable%{area}", [r.id for r in self.areas[area].renewables])
 
-    def get_st_storage_ids(self, area: str) -> t.List[str]:
+    def get_st_storage_ids(self, area: str) -> List[str]:
         return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
 
-    def get_links(self, area: str) -> t.List[str]:
+    def get_links(self, area: str) -> List[str]:
         return self.cache.get(f"%links%{area}", list(self.areas[area].links))
 
-    def get_binding_constraint_groups(self) -> t.List[str]:
+    def get_binding_constraint_groups(self) -> List[str]:
         """
         Returns the list of binding constraint groups, without duplicates and
         sorted alphabetically (case-insensitive).
@@ -272,14 +272,14 @@ class FileStudyTreeConfig(DTO):
         lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
         return self.cache.get("%binding-constraints", [grp for _, grp in sorted(lower_groups.items())])
 
-    def get_filters_synthesis(self, area: str, link: t.Optional[str] = None) -> t.List[str]:
+    def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_synthesis
         if area in self.sets and self.sets[area].output:
             return self.sets[area].filters_synthesis
         return self.areas[area].filters_synthesis
 
-    def get_filters_year(self, area: str, link: t.Optional[str] = None) -> t.List[str]:
+    def get_filters_year(self, area: str, link: Optional[str] = None) -> List[str]:
         if link:
             return self.areas[area].links[link].filters_year
         if area in self.sets and self.sets[area].output:
@@ -292,21 +292,21 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     path: Path
     study_id: str
     version: StudyVersionInt
-    output_path: t.Optional[Path] = None
-    areas: t.Dict[str, Area] = dict()
-    sets: t.Dict[str, DistrictSet] = dict()
-    outputs: t.Dict[str, Simulation] = dict()
-    bindings: t.List[BindingConstraintDTO] = list()
+    output_path: Optional[Path] = None
+    areas: Dict[str, Area] = dict()
+    sets: Dict[str, DistrictSet] = dict()
+    outputs: Dict[str, Simulation] = dict()
+    bindings: List[BindingConstraintDTO] = list()
     store_new_set: bool = False
-    archive_input_series: t.List[str] = list()
+    archive_input_series: List[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)
-    archive_path: t.Optional[Path] = None
+    archive_path: Optional[Path] = None
 
     @staticmethod
     def from_build_config(
         config: FileStudyTreeConfig,
     ) -> "FileStudyTreeConfigDTO":
-        return FileStudyTreeConfigDTO.construct(
+        return FileStudyTreeConfigDTO.model_construct(
             study_path=config.study_path,
             path=config.path,
             study_id=config.study_id,

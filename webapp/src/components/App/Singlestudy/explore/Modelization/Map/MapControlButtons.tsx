@@ -12,12 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
+import { Box, Button, ButtonGroup } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { Box } from "@mui/material";
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from "./utils";
 
 interface Props {
@@ -38,13 +36,7 @@ function MapControlButtons({ onZoomIn, onZoomOut, onOpenConfig, zoomLevel }: Pro
         right: 15,
       }}
     >
-      <ButtonGroup
-        color="primary"
-        orientation="vertical"
-        variant="outlined"
-        size="small"
-        sx={{ mb: 2 }}
-      >
+      <ButtonGroup color="primary" orientation="vertical" variant="outlined" sx={{ mb: 2 }}>
         <Button onClick={onZoomIn} disabled={zoomLevel >= MAX_ZOOM_LEVEL}>
           <AddIcon />
         </Button>
@@ -52,13 +44,7 @@ function MapControlButtons({ onZoomIn, onZoomOut, onOpenConfig, zoomLevel }: Pro
           <RemoveIcon />
         </Button>
       </ButtonGroup>
-      <Button
-        onClick={onOpenConfig}
-        variant="outlined"
-        size="small"
-        color="primary"
-        sx={{ minWidth: 40 }}
-      >
+      <Button onClick={onOpenConfig} variant="outlined" color="primary" sx={{ minWidth: 40 }}>
         <SettingsIcon />
       </Button>
     </Box>

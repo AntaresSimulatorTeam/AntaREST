@@ -16,6 +16,7 @@ This module provides various pytest fixtures for unit testing the AntaREST appli
 Fixtures in this module are used to set up and provide instances of different classes
 and services required during testing.
 """
+
 import datetime
 import typing as t
 import uuid
@@ -24,7 +25,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.requests import RequestParameters
@@ -36,7 +37,6 @@ from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
@@ -53,7 +53,6 @@ __all__ = (
     "core_cache_fixture",
     "study_factory_fixture",
     "core_config_fixture",
-    "patch_service_fixture",
     "task_service_fixture",
     "event_bus_fixture",
     "command_factory_fixture",
@@ -145,9 +144,7 @@ def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
     Returns:
         An instance of the SimpleMatrixService class representing the matrix service.
     """
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=bucket_dir,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=bucket_dir, format=InternalMatrixFormat.TSV)
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
@@ -261,17 +258,6 @@ def core_config_fixture(
     )
 
 
-@pytest.fixture(name="patch_service", scope="session")
-def patch_service_fixture() -> PatchService:
-    """
-    Fixture that creates a PatchService instance with a session-level scope.
-
-    Returns:
-        An instance of the PatchService class with the default repository setting as None.
-    """
-    return PatchService(repository=None)
-
-
 @pytest.fixture(name="task_service", scope="session")
 def task_service_fixture() -> ITaskService:
     """
@@ -298,7 +284,6 @@ def event_bus_fixture() -> IEventBus:
 def command_factory_fixture(
     generator_matrix_constants: GeneratorMatrixConstants,
     simple_matrix_service: SimpleMatrixService,
-    patch_service: PatchService,
 ) -> CommandFactory:
     """
     Fixture that creates a CommandFactory instance with a session-level scope.
@@ -306,7 +291,6 @@ def command_factory_fixture(
     Args:
         generator_matrix_constants: An instance of the GeneratorMatrixConstants class.
         simple_matrix_service: An instance of the SimpleMatrixService class.
-        patch_service: An instance of the PatchService class.
 
     Returns:
         An instance of the CommandFactory class with the provided dependencies.
@@ -314,7 +298,6 @@ def command_factory_fixture(
     return CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=simple_matrix_service,
-        patch_service=patch_service,
     )
 
 
@@ -341,7 +324,6 @@ def variant_study_repository_fixture(
 def raw_study_service_fixture(
     core_config: Config,
     study_factory: StudyFactory,
-    patch_service: PatchService,
     core_cache: ICache,
 ) -> RawStudyService:
     """
@@ -350,7 +332,6 @@ def raw_study_service_fixture(
     Args:
         core_config: An instance of the Config class representing the core application configuration.
         study_factory: An instance of the StudyFactory class.
-        patch_service: An instance of the PatchService class.
         core_cache: An instance of the ICache class.
 
     Returns:
@@ -359,8 +340,6 @@ def raw_study_service_fixture(
     return RawStudyService(
         config=core_config,
         study_factory=study_factory,
-        path_resources=core_config.resources_path,
-        patch_service=patch_service,
         cache=core_cache,
     )
 
@@ -372,7 +351,6 @@ def variant_study_service_fixture(
     raw_study_service: RawStudyService,
     command_factory: CommandFactory,
     study_factory: StudyFactory,
-    patch_service: PatchService,
     variant_study_repository: VariantStudyRepository,
     event_bus: IEventBus,
     core_config: Config,
@@ -386,7 +364,6 @@ def variant_study_service_fixture(
         raw_study_service: An instance of the RawStudyService class.
         command_factory: An instance of the CommandFactory class.
         study_factory: An instance of the StudyFactory class.
-        patch_service: An instance of the PatchService class.
         variant_study_repository: An instance of the VariantStudyRepository class.
         event_bus: An instance of the IEventBus class.
         core_config: An instance of the Config class representing the core application configuration.
@@ -400,7 +377,6 @@ def variant_study_service_fixture(
         raw_study_service=raw_study_service,
         command_factory=command_factory,
         study_factory=study_factory,
-        patch_service=patch_service,
         repository=variant_study_repository,
         event_bus=event_bus,
         config=core_config,

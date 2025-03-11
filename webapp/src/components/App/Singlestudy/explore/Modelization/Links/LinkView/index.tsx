@@ -13,7 +13,7 @@
  */
 
 import { useOutletContext } from "react-router";
-import type { LinkElement, StudyMetadata } from "../../../../../../../common/types";
+import type { LinkElement, StudyMetadata } from "../../../../../../../types/types";
 import usePromise from "../../../../../../../hooks/usePromise";
 import Form from "../../../../../../common/Form";
 import LinkForm from "./LinkForm";

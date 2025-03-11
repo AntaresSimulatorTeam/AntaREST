@@ -17,7 +17,7 @@ import { useOutletContext } from "react-router-dom";
 import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { Box, Paper } from "@mui/material";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../common/FileTable";

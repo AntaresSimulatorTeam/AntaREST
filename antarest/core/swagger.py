@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Dict, List, Tuple
 
 from fastapi import FastAPI
 from fastapi.openapi.models import Example
@@ -22,7 +22,7 @@ link = "{link} = link name to select <br/>"
 attachment = "User-defined file attachment <br/>"
 
 # noinspection SpellCheckingInspection
-urls: t.List[t.Tuple[str, str]] = [
+urls: List[Tuple[str, str]] = [
     ("layers/layers", ""),
     ("settings/generaldata", ""),
     ("output/{sim}/about-the-study/parameters", sim),
@@ -42,7 +42,7 @@ urls: t.List[t.Tuple[str, str]] = [
 ]
 
 
-def get_path_examples() -> t.Dict[str, Example]:
+def get_path_examples() -> Dict[str, Example]:
     return {url: {"value": url, "description": des} for url, des in urls}
 
 

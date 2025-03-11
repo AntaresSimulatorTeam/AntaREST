@@ -241,7 +241,7 @@ class TestHydroCorrelation:
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            data=area_info.json(),
+            data=area_info.model_dump_json(),
         )
         assert res.status_code == HTTPStatus.OK, res.json()
 
@@ -286,7 +286,7 @@ class TestHydroCorrelation:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=correlation_cfg,
         )
-        assert res.status_code == HTTPStatus.NO_CONTENT, res.json()
+        assert res.status_code == HTTPStatus.OK, res.json()
 
         # Then we remove the "fr" zone.
         # The deletion should update the correlation matrix of all other zones.

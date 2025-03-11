@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Literal, Mapping, Sequence
 
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -22,7 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Bindin
 def parse_bindings_coeffs_and_save_into_config(
     bd_id: str,
     study_data_config: FileStudyTreeConfig,
-    coeffs: t.Mapping[str, t.Union[t.Literal["hourly", "daily", "weekly"], t.Sequence[float]]],
+    coeffs: Mapping[str, Literal["hourly", "daily", "weekly"] | Sequence[float]],
     operator: BindingConstraintOperator,
     time_step: BindingConstraintFrequency,
     group: str,

@@ -16,7 +16,7 @@ import { Box, Button } from "@mui/material";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import type { GroupDetailsDTO } from "../../../../common/types";
+import type { GroupDetailsDTO } from "../../../../types/types";
 import CreateGroupDialog from "./dialog/CreateGroupDialog";
 import { isAuthUserAdmin } from "../../../../redux/selectors";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";

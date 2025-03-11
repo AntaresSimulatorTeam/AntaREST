@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import re
-import typing as t
+from typing import Any, Mapping, MutableMapping
 
 from pydantic import Field, model_validator
 
@@ -50,7 +50,7 @@ class IgnoreCaseIdentifier(
         return transform_name_to_id(name, lower=False)
 
     @model_validator(mode="before")
-    def validate_id(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    def validate_id(cls, values: MutableMapping[str, Any]) -> Mapping[str, Any]:
         """
         Calculate an ID based on the name, if not provided.
 

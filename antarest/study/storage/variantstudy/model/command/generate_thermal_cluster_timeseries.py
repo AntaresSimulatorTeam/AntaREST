@@ -13,8 +13,8 @@
 import logging
 import shutil
 import tempfile
-import typing as t
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -52,7 +52,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
         return CommandOutput(status=True, message="Nothing to do"), {}
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_path = study_data.config.study_path
         with tempfile.TemporaryDirectory(suffix=TS_GEN_SUFFIX, prefix=TS_GEN_PREFIX, dir=study_path.parent) as path:
             tmp_dir = Path(path)
@@ -67,7 +67,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 return CommandOutput(status=True, message="All time series were generated successfully")
 
     def _build_timeseries(
-        self, study_data: FileStudy, tmp_path: Path, listener: t.Optional[ICommandListener] = None
+        self, study_data: FileStudy, tmp_path: Path, listener: Optional[ICommandListener] = None
     ) -> None:
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
@@ -80,7 +80,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
         # 3- Do a first loop to know how many operations will be performed
         total_generations = sum(len(area.thermals) for area in study_data.config.areas.values())
         # 4- Loop through areas in alphabetical order
-        areas: t.Dict[str, Area] = study_data.config.areas
+        areas: Dict[str, Area] = study_data.config.areas
         sorted_areas = {k: areas[k] for k in sorted(areas)}
         generation_performed = 0
         for area_id, area in sorted_areas.items():
@@ -148,7 +148,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
         return CommandDTO(action=self.command_name.value, args={}, study_version=self.study_version)
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         # This is used to get used matrices and not remove them inside the garbage collector loop.
         return []
 

@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
 from dataclasses import dataclass
 from enum import Enum
+from typing import List
 
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
@@ -30,6 +30,7 @@ class FilteringOptions:
 
 class CommandName(Enum):
     CREATE_AREA = "create_area"
+    UPDATE_AREA_UI = "update_area_ui"
     REMOVE_AREA = "remove_area"
     CREATE_DISTRICT = "create_district"
     REMOVE_DISTRICT = "remove_district"
@@ -39,13 +40,17 @@ class CommandName(Enum):
     CREATE_BINDING_CONSTRAINT = "create_binding_constraint"
     UPDATE_BINDING_CONSTRAINT = "update_binding_constraint"
     REMOVE_BINDING_CONSTRAINT = "remove_binding_constraint"
+    UPDATE_BINDING_CONSTRAINTS = "update_binding_constraints"
     REMOVE_MULTIPLE_BINDING_CONSTRAINTS = "remove_multiple_binding_constraints"
     CREATE_THERMAL_CLUSTER = "create_cluster"
     REMOVE_THERMAL_CLUSTER = "remove_cluster"
+    UPDATE_THERMAL_CLUSTER = "update_thermal_cluster"
     CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster"
     REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
+    UPDATE_RENEWABLE_CLUSTER = "update_renewable_cluster"
     CREATE_ST_STORAGE = "create_st_storage"
     REMOVE_ST_STORAGE = "remove_st_storage"
+    UPDATE_ST_STORAGE = "update_st_storage"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"
@@ -56,7 +61,16 @@ class CommandName(Enum):
     GENERATE_THERMAL_CLUSTER_TIMESERIES = "generate_thermal_cluster_timeseries"
     CREATE_USER_RESOURCE = "create_user_resource"
     REMOVE_USER_RESOURCE = "remove_user_resource"
+    REMOVE_XPANSION_CONFIGURATION = "remove_xpansion_configuration"
+    REMOVE_XPANSION_RESOURCE = "remove_xpansion_resource"
+    CREATE_XPANSION_CONFIGURATION = "create_xpansion_configuration"
+    CREATE_XPANSION_CAPACITY = "create_xpansion_capacity"
+    CREATE_XPANSION_WEIGHT = "create_xpansion_weight"
+    CREATE_XPANSION_CONSTRAINT = "create_xpansion_constraint"
+    CREATE_XPANSION_CANDIDATE = "create_xpansion_candidate"
+    REMOVE_XPANSION_CANDIDATE = "remove_xpansion_candidate"
+    REPLACE_XPANSION_CANDIDATE = "replace_xpansion_candidate"
 
 
-def is_url_writeable(user_node: User, url: t.List[str]) -> bool:
+def is_url_writeable(user_node: User, url: List[str]) -> bool:
     return url[0] not in [file.filename for file in user_node.registered_files]

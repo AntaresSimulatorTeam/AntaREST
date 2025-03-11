@@ -16,8 +16,8 @@ import http
 import logging
 import re
 import time
-import typing as t
 from pathlib import Path
+from typing import Any, Callable, List, Optional, TypeVar
 
 from fastapi import HTTPException
 from typing_extensions import override
@@ -39,7 +39,7 @@ class DTO:
         return hash(tuple(sorted(self.__dict__.items())))
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, type(self)) and self.__dict__ == other.__dict__
 
     @override
@@ -65,7 +65,7 @@ def sanitize_string(string: str) -> str:
     return str(glob.escape(string))
 
 
-def get_default_config_path() -> t.Optional[Path]:
+def get_default_config_path() -> Optional[Path]:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -94,17 +94,17 @@ class StopWatch:
     def reset_current(self) -> None:
         self.current_time = time.time()
 
-    def log_elapsed(self, logger_: t.Callable[[float], None], since_start: bool = False) -> None:
+    def log_elapsed(self, logger_: Callable[[float], None], since_start: bool = False) -> None:
         logger_(time.time() - (self.start_time if since_start else self.current_time))
         self.current_time = time.time()
 
 
-T = t.TypeVar("T")
+T = TypeVar("T")
 
 
-def retry(func: t.Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
+def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
     attempt = 0
-    caught_exception: t.Optional[Exception] = None
+    caught_exception: Optional[Exception] = None
     while attempt < attempts:
         try:
             attempt += 1
@@ -116,12 +116,12 @@ def retry(func: t.Callable[[], T], attempts: int = 10, interval: float = 0.5) ->
     raise caught_exception or ShouldNotHappenException()
 
 
-def assert_this(b: t.Any) -> None:
+def assert_this(b: Any) -> None:
     if not b:
         raise AssertionError
 
 
-def concat_files(files: t.List[Path], target: Path) -> None:
+def concat_files(files: List[Path], target: Path) -> None:
     with open(target, "w") as fh:
         for item in files:
             with open(item, "r") as infile:
@@ -129,7 +129,7 @@ def concat_files(files: t.List[Path], target: Path) -> None:
                     fh.write(line)
 
 
-def concat_files_to_str(files: t.List[Path]) -> str:
+def concat_files_to_str(files: List[Path]) -> str:
     concat_str = ""
     for item in files:
         with open(item, "r") as infile:
@@ -139,9 +139,9 @@ def concat_files_to_str(files: t.List[Path]) -> str:
 
 
 def suppress_exception(
-    callback: t.Callable[[], T],
-    logger_: t.Callable[[Exception], None],
-) -> t.Optional[T]:
+    callback: Callable[[], T],
+    logger_: Callable[[Exception], None],
+) -> Optional[T]:
     try:
         return callback()
     except Exception as e:

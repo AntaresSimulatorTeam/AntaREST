@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import enum
-import typing as t
 from datetime import datetime
+from typing import Any, Dict, List, MutableMapping, Optional
 
 from pydantic import Field
 from pydantic.alias_generators import to_camel
@@ -27,7 +27,7 @@ from antarest.login.model import Identity, UserInfo
 
 
 class XpansionParametersDTO(AntaresBaseModel):
-    output_id: t.Optional[str] = None
+    output_id: Optional[str] = None
     sensitivity_mode: bool = False
     enabled: bool = True
 
@@ -36,21 +36,21 @@ class LauncherParametersDTO(AntaresBaseModel):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
-    adequacy_patch: t.Optional[t.Dict[str, t.Any]] = None
-    nb_cpu: t.Optional[int] = None
+    adequacy_patch: Optional[Dict[str, Any]] = None
+    nb_cpu: Optional[int] = None
     post_processing: bool = False
     time_limit: int = 240 * 3600  # Default value set to 240 hours (in seconds)
-    xpansion: t.Union[XpansionParametersDTO, bool, None] = None
+    xpansion: XpansionParametersDTO | bool | None = None
     xpansion_r_version: bool = False
     archive_output: bool = True
     auto_unzip: bool = True
-    output_suffix: t.Optional[str] = None
-    other_options: t.Optional[str] = None
+    output_suffix: Optional[str] = None
+    other_options: Optional[str] = None
 
     # add extensions field here
 
     @classmethod
-    def from_launcher_params(cls, params: t.Optional[str]) -> "LauncherParametersDTO":
+    def from_launcher_params(cls, params: Optional[str]) -> "LauncherParametersDTO":
         """
         Convert the launcher parameters from a string to a `LauncherParametersDTO` object.
         """
@@ -64,7 +64,7 @@ class LogType(enum.StrEnum):
     STDERR = "STDERR"
 
     @staticmethod
-    def from_filename(filename: str) -> t.Optional["LogType"]:
+    def from_filename(filename: str) -> Optional["LogType"]:
         if filename == "antares-err.log":
             return LogType.STDERR
         elif filename == "antares-out.log":
@@ -114,20 +114,20 @@ class JobResultDTO(AntaresBaseModel):
 
     id: str
     study_id: str
-    launcher: t.Optional[str]
-    launcher_params: t.Optional[str]
+    launcher: Optional[str]
+    launcher_params: Optional[str]
     status: JobStatus
     creation_date: str
-    completion_date: t.Optional[str]
-    msg: t.Optional[str]
-    output_id: t.Optional[str]
-    exit_code: t.Optional[int]
-    solver_stats: t.Optional[str]
-    owner: t.Optional[UserInfo]
+    completion_date: Optional[str]
+    msg: Optional[str]
+    output_id: Optional[str]
+    exit_code: Optional[int]
+    solver_stats: Optional[str]
+    owner: Optional[UserInfo]
 
     class Config:
         @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = JobResultDTO(
                 id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
                 study_id="b2a9f6a7-7f8f-4f7a-9a8b-1f9b4c5d6e7f",
@@ -165,12 +165,7 @@ class JobLog(Base):  # type: ignore
 
     @override
     def __repr__(self) -> str:
-        return (
-            f"<JobLog(id={self.id!r},"
-            f" message={self.message!r},"
-            f" job_id={self.job_id!r},"
-            f" log_type={self.log_type!r})>"
-        )
+        return f"<JobLog(id={self.id!r}, message={self.message!r}, job_id={self.job_id!r}, log_type={self.log_type!r})>"
 
 
 class JobResult(Base):  # type: ignore
@@ -178,21 +173,21 @@ class JobResult(Base):  # type: ignore
 
     id: str = Column(String(36), primary_key=True)
     study_id: str = Column(String(36))
-    launcher: t.Optional[str] = Column(String)
-    launcher_params: t.Optional[str] = Column(String, nullable=True)
+    launcher: Optional[str] = Column(String)
+    launcher_params: Optional[str] = Column(String, nullable=True)
     job_status: JobStatus = Column(Enum(JobStatus))
     creation_date = Column(DateTime, default=datetime.utcnow)
     completion_date = Column(DateTime)
-    msg: t.Optional[str] = Column(String())
-    output_id: t.Optional[str] = Column(String())
-    exit_code: t.Optional[int] = Column(Integer)
-    solver_stats: t.Optional[str] = Column(String(), nullable=True)
-    owner_id: t.Optional[int] = Column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
+    msg: Optional[str] = Column(String())
+    output_id: Optional[str] = Column(String())
+    exit_code: Optional[int] = Column(Integer)
+    solver_stats: Optional[str] = Column(String(), nullable=True)
+    owner_id: Optional[int] = Column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
 
     # Define a many-to-one relationship between `JobResult` and `Identity`.
     # This relationship is required to display the owner of a job result in the UI.
     # If the owner is deleted, the job result is detached from the owner (but not deleted).
-    owner: t.Optional[Identity] = relationship(Identity, back_populates="job_results", uselist=False)
+    owner: Optional[Identity] = relationship(Identity, back_populates="job_results", uselist=False)
 
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
 
@@ -243,7 +238,7 @@ class JobCreationDTO(AntaresBaseModel):
 
 
 class LauncherEnginesDTO(AntaresBaseModel):
-    engines: t.List[str]
+    engines: List[str]
 
 
 class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):

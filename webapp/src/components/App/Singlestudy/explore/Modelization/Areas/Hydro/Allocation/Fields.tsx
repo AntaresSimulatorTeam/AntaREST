@@ -20,7 +20,7 @@ import AllocationField from "./AllocationField";
 import DynamicList from "../../../../../../../common/DynamicList";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getAreasById } from "../../../../../../../../redux/selectors";
-import type { StudyMetadata } from "../../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import { useAreasOptions } from "../hooks/useAreasOptions";
 
 function Fields() {

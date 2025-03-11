@@ -14,7 +14,7 @@
 
 import type { O } from "ts-toolbelt";
 import type { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
-import type { StudyMetadata } from "@/common/types";
+import type { StudyMetadata } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
 
 export type TransmissionCapacityValue = O.UnionOf<typeof TransmissionCapacity>;

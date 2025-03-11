@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from typing_extensions import override
 
@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, is_url_writeable
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -45,14 +45,14 @@ class RemoveUserResource(ICommand):
     data: RemoveUserResourceData
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True, message="ok"), {}
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         url = [item for item in self.data.path.split("/") if item]
         study_tree = study_data.tree
-        user_node = t.cast(User, study_tree.get_node(["user"]))
+        user_node = cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
             return CommandOutput(
                 status=False, message=f"you are not allowed to delete this resource : {self.data.path}"
@@ -74,5 +74,5 @@ class RemoveUserResource(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

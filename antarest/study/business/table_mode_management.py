@@ -11,29 +11,33 @@
 # This file is part of the Antares project.
 
 import collections
-import typing as t
+from typing import Any, Mapping, MutableMapping, Optional, Sequence, cast
 
 import numpy as np
 import pandas as pd
-from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
-from antarest.study.business.area_management import AreaManager, AreaOutput
-from antarest.study.business.areas.renewable_management import RenewableClusterInput, RenewableManager
-from antarest.study.business.areas.st_storage_management import STStorageInput, STStorageManager
-from antarest.study.business.areas.thermal_management import ThermalClusterInput, ThermalManager
+from antarest.study.business.area_management import AreaManager
+from antarest.study.business.areas.renewable_management import RenewableManager
+from antarest.study.business.areas.st_storage_management import STStorageManager
+from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintInput
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
+from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.link_model import LinkBaseDTO
-from antarest.study.model import STUDY_VERSION_8_2, RawStudy
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
+from antarest.study.business.model.sts_model import STStorageUpdate
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_2
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
-_CellValue = t.Any  # cell value (str, int, float, bool, enum, etc.)
-TableDataDTO = t.Mapping[_TableIndex, t.Mapping[_TableColumn, _CellValue]]
+_CellValue = Any  # cell value (str, int, float, bool, enum, etc.)
+TableDataDTO = Mapping[_TableIndex, Mapping[_TableColumn, _CellValue]]
 
 
 class TableModeType(EnumIgnoreCase):
@@ -63,7 +67,7 @@ class TableModeType(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> t.Optional["EnumIgnoreCase"]:
+    def _missing_(cls, value: object) -> Optional["EnumIgnoreCase"]:
         if isinstance(value, str):
             # handle aliases of old table types
             value = value.upper()
@@ -96,17 +100,13 @@ class TableModeManager:
         self._st_storage_manager = st_storage_manager
         self._binding_constraint_manager = binding_constraint_manager
 
-    def _get_table_data_unsafe(self, study: RawStudy, table_type: TableModeType) -> TableDataDTO:
+    def _get_table_data_unsafe(self, study: StudyInterface, table_type: TableModeType) -> TableDataDTO:
         if table_type == TableModeType.AREA:
             areas_map = self._area_manager.get_all_area_props(study)
             data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links(study)
-            excludes = (
-                set()
-                if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
-                else {"filter_synthesis", "filter_year_by_year"}
-            )
+            excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
             data = {
                 f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True, exclude=excludes)
                 for link in links_map
@@ -141,9 +141,9 @@ class TableModeManager:
 
     def get_table_data(
         self,
-        study: RawStudy,
+        study: StudyInterface,
         table_type: TableModeType,
-        columns: t.Sequence[_TableColumn],
+        columns: Sequence[_TableColumn],
     ) -> TableDataDTO:
         """
         Get the table data of the specified type for the given study.
@@ -175,11 +175,11 @@ class TableModeManager:
         # Convert NaN to `None` because it is not JSON-serializable
         df.replace(np.nan, None, inplace=True)
 
-        return t.cast(TableDataDTO, df.to_dict(orient="index"))
+        return cast(TableDataDTO, df.to_dict(orient="index"))
 
     def update_table_data(
         self,
-        study: RawStudy,
+        study: StudyInterface,
         table_type: TableModeType,
         data: TableDataDTO,
     ) -> TableDataDTO:
@@ -204,22 +204,18 @@ class TableModeManager:
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkBaseDTO(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links(study, links_map)  # type: ignore
-            excludes = (
-                set()
-                if StudyVersion.parse(study.version) >= STUDY_VERSION_8_2
-                else {"filter_synthesis", "filter_year_by_year"}
-            )
+            excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
             data = {
                 f"{area1_id} / {area2_id}": link.model_dump(by_alias=True, exclude=excludes)
                 for (area1_id, area2_id), link in updated_map.items()
             }
             return data
         elif table_type == TableModeType.THERMAL:
-            thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterInput]]
+            thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalClusterUpdate]]
             thermals_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                thermals_by_areas[area_id][cluster_id] = ThermalClusterInput(**values)
+                thermals_by_areas[area_id][cluster_id] = ThermalClusterUpdate(**values)
             thermals_map = self._thermal_manager.update_thermals_props(study, thermals_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
@@ -228,11 +224,11 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.RENEWABLE:
-            renewables_by_areas: t.MutableMapping[str, t.MutableMapping[str, RenewableClusterInput]]
+            renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterUpdate]]
             renewables_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                renewables_by_areas[area_id][cluster_id] = RenewableClusterInput(**values)
+                renewables_by_areas[area_id][cluster_id] = RenewableClusterUpdate(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
@@ -241,11 +237,11 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.ST_STORAGE:
-            storages_by_areas: t.MutableMapping[str, t.MutableMapping[str, STStorageInput]]
+            storages_by_areas: MutableMapping[str, MutableMapping[str, STStorageUpdate]]
             storages_by_areas = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, cluster_id = key.split(" / ")
-                storages_by_areas[area_id][cluster_id] = STStorageInput(**values)
+                storages_by_areas[area_id][cluster_id] = STStorageUpdate(**values)
             storages_map = self._st_storage_manager.update_storages_props(study, storages_by_areas)
             data = {
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})

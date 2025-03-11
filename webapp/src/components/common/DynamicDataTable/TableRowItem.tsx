@@ -55,7 +55,7 @@ const TableRowItem = memo(function TableRowItem({ item, columns, selected, onCli
             align={typeof cellValue === "number" ? "center" : "left"}
           >
             {column.chipColorMap && typeof cellValue === "string" ? (
-              <Chip label={cellValue} size="small" color={column.chipColorMap[cellValue]} />
+              <Chip label={cellValue} color={column.chipColorMap[cellValue]} />
             ) : (
               cellValue
             )}

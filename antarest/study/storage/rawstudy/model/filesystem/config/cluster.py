@@ -16,10 +16,6 @@ Common properties related to thermal and renewable clusters, and short-term stor
 In the near future, this set of classes may be used for solar, wind and hydro clusters.
 """
 
-import functools
-import typing as t
-from typing import Any
-
 from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel

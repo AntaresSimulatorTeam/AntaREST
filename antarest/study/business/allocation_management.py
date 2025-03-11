@@ -19,11 +19,11 @@ from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import Annotated
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
-from antarest.study.business.area_management import AreaInfoDTO
-from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import Study
-from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.business.model.area_model import AreaInfoDTO
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class AllocationField(FormFieldsBaseModel):
@@ -114,10 +114,10 @@ class AllocationManager:
     Manage hydraulic allocation coefficients.
     """
 
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
-    def get_allocation_data(self, study: Study, area_id: str) -> Dict[str, List[AllocationField]]:
+    def get_allocation_data(self, study: StudyInterface, area_id: str) -> Dict[str, float]:
         """
         Get hydraulic allocation data.
 
@@ -133,7 +133,7 @@ class AllocationManager:
         """
         # sourcery skip: reintroduce-else, swap-if-else-branches, use-named-expression
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         allocation_data = file_study.tree.get(f"input/hydro/allocation/{area_id}".split("/"), depth=2)
 
         if not allocation_data:
@@ -142,7 +142,7 @@ class AllocationManager:
         return allocation_data.get("[allocation]", {})  # type: ignore
 
     def get_allocation_form_fields(
-        self, all_areas: List[AreaInfoDTO], study: Study, area_id: str
+        self, all_areas: List[AreaInfoDTO], study: StudyInterface, area_id: str
     ) -> AllocationFormFields:
         """
         Get hydraulic allocation coefficients.
@@ -160,18 +160,19 @@ class AllocationManager:
         """
 
         areas_ids = {area.id for area in all_areas}
-        allocations = self.get_allocation_data(study, area_id)
+        allocations: Dict[str, float] = self.get_allocation_data(study, area_id)
 
         filtered_allocations = {area: value for area, value in allocations.items() if area in areas_ids}
         final_allocations = [
-            AllocationField.construct(area_id=area, coefficient=value) for area, value in filtered_allocations.items()
+            AllocationField.model_construct(area_id=area, coefficient=value)
+            for area, value in filtered_allocations.items()
         ]
         return AllocationFormFields.model_validate({"allocation": final_allocations})
 
     def set_allocation_form_fields(
         self,
         all_areas: List[AreaInfoDTO],
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         data: AllocationFormFields,
     ) -> AllocationFormFields:
@@ -197,27 +198,25 @@ class AllocationManager:
 
         filtered_allocations = [f for f in data.allocation if f.coefficient > 0 and f.area_id in areas_ids]
 
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study = self.storage_service.get_storage(study).get_raw(study)
         command = UpdateConfig(
             target=f"input/hydro/allocation/{area_id}/[allocation]",
             data={f.area_id: f.coefficient for f in filtered_allocations},
-            command_context=command_context,
-            study_version=file_study.config.version,
+            command_context=self._command_context,
+            study_version=study.version,
         )
 
-        execute_or_add_commands(study, file_study, [command], self.storage_service)
+        study.add_commands([command])
 
         updated_allocations = self.get_allocation_data(study, area_id)
 
-        return AllocationFormFields.construct(
+        return AllocationFormFields.model_construct(
             allocation=[
-                AllocationField.construct(area_id=area, coefficient=value)
+                AllocationField.model_construct(area_id=area, coefficient=value)
                 for area, value in updated_allocations.items()
             ]
         )
 
-    def get_allocation_matrix(self, study: Study, all_areas: List[AreaInfoDTO]) -> AllocationMatrix:
+    def get_allocation_matrix(self, study: StudyInterface, all_areas: List[AreaInfoDTO]) -> AllocationMatrix:
         """
         Get the hydraulic allocation matrix for all areas in the study.
 
@@ -232,7 +231,7 @@ class AllocationManager:
             AllocationDataNotFound: if the allocation data is not found.
         """
 
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         allocation_cfg = file_study.tree.get(["input", "hydro", "allocation"], depth=3)
 
         if not allocation_cfg:
@@ -250,4 +249,4 @@ class AllocationManager:
                 col_idx = columns.index(prod_area)
                 array[row_idx][col_idx] = coefficient
 
-        return AllocationMatrix.construct(index=rows, columns=columns, data=array.tolist())
+        return AllocationMatrix.model_construct(index=rows, columns=columns, data=array.tolist())

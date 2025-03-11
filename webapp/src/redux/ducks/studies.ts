@@ -20,7 +20,7 @@ import {
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
 import type { O } from "ts-toolbelt";
-import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../common/types";
+import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../types/types";
 import * as api from "../../services/api/study";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";

@@ -1,7 +1,7 @@
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type, Union
 
-from sqlalchemy import create_engine, event  # type: ignore
+from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine import Engine  # type: ignore
 from sqlalchemy.engine.url import URL  # type: ignore
 from sqlalchemy.event import listen  # type: ignore

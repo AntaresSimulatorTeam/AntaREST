@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import typing_extensions as te
 from typing_extensions import override
@@ -20,16 +20,16 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 _ENR_MODELLING_KEY = "settings/generaldata/other preferences/renewable-generation-modelling"
 
-_Data: te.TypeAlias = t.Union[str, int, float, bool, JSON, None]
+_Data: te.TypeAlias = str | int | float | bool | JSON | None
 
 
-def _iter_dict(data: _Data, root_key: str = "") -> t.Generator[t.Tuple[str, t.Any], None, None]:
+def _iter_dict(data: _Data, root_key: str = "") -> Generator[Tuple[str, Any], None, None]:
     if isinstance(data, dict):
         for key, value in data.items():
             sub_key = f"{root_key}/{key}" if root_key else key
@@ -55,7 +55,7 @@ class UpdateConfig(ICommand):
     data: _Data
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         # The renewable-generation-modelling parameter must be reflected in the config
         if self.target.startswith("settings"):
             for key, value in _iter_dict(self.data, root_key=self.target):
@@ -66,7 +66,7 @@ class UpdateConfig(ICommand):
         return CommandOutput(status=True, message="ok"), {}
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, IniFileNode):
@@ -92,5 +92,5 @@ class UpdateConfig(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

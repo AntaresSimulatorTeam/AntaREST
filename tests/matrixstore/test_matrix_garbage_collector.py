@@ -23,7 +23,6 @@ from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -53,7 +52,6 @@ def matrix_garbage_collector(tmp_path: Path):
     command_factory = CommandFactory(
         generator_matrix_constants=matrix_constant_generator,
         matrix_service=Mock(spec=MatrixService),
-        patch_service=Mock(spec=PatchService),
     )
     study_service = Mock()
     study_service.storage_service.variant_study_service.command_factory = command_factory
@@ -182,7 +180,7 @@ def test_get_matrices_used_in_dataset(
     with db():
         matrix1_id = matrix_service.create(np.ones((1, 1)))
         matrix2_id = matrix_service.create(np.ones((2, 1)))
-        dataset = matrix_service.create_dataset(
+        matrix_service.create_dataset(
             dataset_info=MatrixDataSetUpdateDTO(name="name", groups=[], public=True),
             matrices=[MatrixInfoDTO(id=matrix1_id, name="matrix_1"), MatrixInfoDTO(id=matrix2_id, name="matrix_2")],
             params=RequestParameters(admin_user),

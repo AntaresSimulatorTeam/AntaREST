@@ -13,7 +13,7 @@
  */
 
 import * as api from "../../../../services/api/study";
-import type { StudyMetadata } from "../../../../common/types";
+import type { StudyMetadata } from "../../../../types/types";
 import type { StudyTreeNode, NonStudyFolderDTO } from "./types";
 
 /**
@@ -95,7 +95,7 @@ function insertFolderIfNotExist(
   }
 
   // direct child case
-  if (folder.parentPath == currentNodePath) {
+  if (folder.parentPath === currentNodePath) {
     const folderExists = studiesTree.children.find((child) => child.name === folder.name);
     if (folderExists) {
       return {

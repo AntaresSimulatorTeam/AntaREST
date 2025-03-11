@@ -46,7 +46,7 @@ function TableRowGroup({ itemsByGroup: { group, items }, columns, selected, onCl
            * does not contain an operation so no value will be displayed on the TableRowGroup header. */}
           <TableCell colSpan={2} sx={{ py: 0 }}>
             <Box sx={{ display: "flex", alignItems: "center", my: 1 }}>
-              <IconButton size="small" onClick={() => setOpenRow(!openRow)}>
+              <IconButton onClick={() => setOpenRow(!openRow)}>
                 {openRow ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
               </IconButton>
               <Typography sx={{ ml: 2 }}>{group}</Typography>

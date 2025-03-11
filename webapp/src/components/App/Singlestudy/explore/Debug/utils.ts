@@ -19,7 +19,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import type { SvgIconComponent } from "@mui/icons-material";
 import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../common/types";
+import type { StudyMetadata } from "../../../../../types/types";
 import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 ////////////////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ const URL_SCHEMES = {
   FILE: "file://",
 } as const;
 
-const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini", ".yml"] as const;
+const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini", ".yml", ".json"] as const;
 
 // Maps file types to their corresponding icon components.
 const iconByFileType: Record<FileType, SvgIconComponent> = {

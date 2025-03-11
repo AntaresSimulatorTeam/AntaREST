@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional, cast
 
 import pandas as pd
 from typing_extensions import override
@@ -22,6 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.context import ContextServ
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestSynthesis
 
 
 class OutputSimulationModeMcAllGrid(FolderNode):
@@ -42,7 +43,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     @override
     def get_lazy_content(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
@@ -51,7 +52,7 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     @override
     def load(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -61,14 +62,14 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
         df.fillna("", inplace=True)  # replace NaN values for the front-end
         output = df.to_dict(orient="split")
         del output["index"]
-        return t.cast(JSON, output)
+        return cast(JSON, output)
 
     @override
-    def dump(self, data: bytes, url: t.Optional[t.List[str]] = None) -> None:
+    def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
     @override
-    def check_errors(self, data: str, url: t.Optional[t.List[str]] = None, raising: bool = False) -> t.List[str]:
+    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         if not self.config.path.exists():
             msg = f"{self.config.path} not exist"
             if raising:
@@ -83,47 +84,3 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     @override
     def denormalize(self) -> None:
         pass  # shouldn't be denormalized as it's an output file
-
-
-class DigestSynthesis(OutputSynthesis):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        super().__init__(context, config)
-
-    @override
-    def load(
-        self,
-        url: t.Optional[t.List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> JSON:
-        file_path = self.config.path
-        with open(file_path, "r") as f:
-            df = _parse_digest_file(f)
-
-        df.fillna("", inplace=True)  # replace NaN values for the front-end
-        output = df.to_dict(orient="split")
-        del output["index"]
-        return t.cast(JSON, output)
-
-
-def _parse_digest_file(digest_file: t.TextIO) -> pd.DataFrame:
-    """
-    Parse a digest file as a whole and return a single DataFrame.
-
-    The `digest.txt` file is a TSV file containing synthetic results of the simulation.
-    This file contains several data tables, each being separated by empty lines
-    and preceded by a header describing the nature and dimensions of the table.
-
-    Note that rows in the file may have different number of columns.
-    """
-
-    # Reads the file and find the maximum number of columns in any row
-    data = [row.split("\t") for row in digest_file.read().splitlines()]
-    max_cols = max(len(row) for row in data)
-
-    # Adjust the number of columns in each row
-    data = [row + [""] * (max_cols - len(row)) for row in data]
-
-    # Returns a DataFrame from the data (do not convert values to float)
-    return pd.DataFrame(data=data, columns=[str(i) for i in range(max_cols)], dtype=object)

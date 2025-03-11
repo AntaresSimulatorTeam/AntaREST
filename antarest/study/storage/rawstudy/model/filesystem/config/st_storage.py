@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -189,7 +188,7 @@ def create_st_storage_properties(study_version: StudyVersion, data: Dict[str, An
     raise ValueError(f"Unsupported study version: {study_version}")
 
 
-def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageConfigType]:
+def get_st_storage_config_cls(study_version: StudyVersion) -> Type[STStorageConfigType]:
     """
     Retrieves the short-term storage configuration class based on the study version.
 
@@ -206,7 +205,7 @@ def get_st_storage_config_cls(study_version: StudyVersion) -> t.Type[STStorageCo
     raise ValueError(f"Unsupported study version: {study_version}")
 
 
-def create_st_storage_config(study_version: StudyVersion, **kwargs: t.Any) -> STStorageConfigType:
+def create_st_storage_config(study_version: StudyVersion, **kwargs: Any) -> STStorageConfigType:
     """
     Factory method to create a short-term storage configuration model.
 

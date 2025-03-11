@@ -25,7 +25,7 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
-import type { GenericInfo } from "../../common/types";
+import type { GenericInfo } from "../../types/types";
 import { mergeSxProp } from "../../utils/muiUtils";
 
 interface Props {
@@ -80,7 +80,6 @@ function SelectMulti(props: Props) {
         id={`multiple-checkbox-${name}`}
         multiple
         value={data}
-        variant="filled"
         onChange={handleChange}
         renderValue={tagsMode === true ? chipRender : checkboxRender}
       >

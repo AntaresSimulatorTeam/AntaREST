@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Tuple, cast
 
 import numpy as np
 from typing_extensions import override
@@ -34,7 +34,7 @@ def _get_active_ruleset(study_data: FileStudy) -> str:
     """
     url = ["settings", "generaldata", "general", "active-rules-scenario"]
     try:
-        return t.cast(str, study_data.tree.get(url))
+        return cast(str, study_data.tree.get(url))
     except KeyError:
         return ""
 
@@ -52,10 +52,10 @@ class UpdateScenarioBuilder(ICommand):
     # Command parameters
     # ==================
 
-    data: t.Union[t.Dict[str, t.Any], t.Mapping[str, t.Any], t.MutableMapping[str, t.Any]]
+    data: Dict[str, Any] | Mapping[str, Any] | MutableMapping[str, Any]
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Apply the command to the study data.
 
@@ -97,7 +97,7 @@ class UpdateScenarioBuilder(ICommand):
         return CommandOutput(status=True)
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         return CommandOutput(status=True), {}
 
     @override
@@ -107,5 +107,5 @@ class UpdateScenarioBuilder(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

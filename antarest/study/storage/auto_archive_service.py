@@ -13,7 +13,7 @@
 import datetime
 import logging
 import time
-import typing as t
+from typing import Sequence
 
 from typing_extensions import override
 
@@ -47,7 +47,7 @@ class AutoArchiveService(IService):
         old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
             # in this part full `Read` rights over studies are granted to this function
-            studies: t.Sequence[Study] = self.study_service.repository.get_all(
+            studies: Sequence[Study] = self.study_service.repository.get_all(
                 study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions(is_admin=True))
             )
             # list of study IDs and boolean indicating if it's a raw study (True) or a variant (False)

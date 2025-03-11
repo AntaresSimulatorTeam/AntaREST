@@ -75,7 +75,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # reject user creation from non admin
     res = client.post(
         "/v1/users",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         json={"name": "Fred", "password": "mypass"},
     )
     assert res.status_code == 403
@@ -83,21 +83,21 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # check study listing
     res = client.get(
         "/v1/studies",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 1
     study_id = next(iter(res.json()))
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     res_output = res.json()
     assert len(res_output) == 6
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco/variables",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 417
     assert res.json()["description"] == "Not a year by year simulation"
@@ -105,7 +105,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # study synthesis
     res = client.get(
         f"/v1/studies/{study_id}/synthesis",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200, res.json()
 
@@ -113,15 +113,15 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     active_ruleset_name = "ruleset test"
     res = client.post(
         f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/active-rules-scenario",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         json=active_ruleset_name.title(),  # ruleset names are case-insensitive
     )
-    assert res.status_code == 204
+    assert res.status_code == 200
 
     # scenario builder
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         json={
             active_ruleset_name: {
                 "l": {"area1": {"0": 1}},
@@ -136,7 +136,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get(
         f"/v1/studies/{study_id}/config/scenariobuilder",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200
     assert res.json() == {
@@ -154,57 +154,57 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # config / thematic trimming
     res = client.get(
         f"/v1/studies/{study_id}/config/thematictrimming/form",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200
 
     res = client.delete(
         f"/v1/studies/{study_id}/outputs/20201014-1427eco",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200
 
     res = client.get(
         f"/v1/studies/{study_id}/outputs",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 5
 
     # study creation
     created = client.post(
         "/v1/studies?name=foo",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert created.status_code == 201
 
     res = client.get(
         f"/v1/studies/{created.json()}/raw?path=study&depth=3&formatted=true",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.json()["antares"]["author"] == "George"
 
     res = client.get(
         "/v1/studies",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 2
 
     # Study copy
     copied = client.post(
         f"/v1/studies/{created.json()}/copy?dest=copied&use_task=false",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert copied.status_code == 201
 
     updated = client.put(
         f"/v1/studies/{copied.json()}/move?folder_dest=foo/bar",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert updated.status_code == 200
 
     res = client.get(
         "/v1/studies",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 3
     moved_study = filter(lambda s: s["id"] == copied.json(), res.json().values()).__next__()
@@ -213,19 +213,19 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # Study delete
     client.delete(
         f"/v1/studies/{copied.json()}",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
 
     res = client.get(
         "/v1/studies",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 2
 
     # check study permission
     res = client.get(
         "/v1/studies",
-        headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
     )
     assert len(res.json()) == 1
 
@@ -247,26 +247,26 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # reset login to update credentials
     res = client.post(
         "/v1/refresh",
-        headers={"Authorization": f'Bearer {george_credentials["refresh_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['refresh_token']}"},
     )
     george_credentials = res.json()
     res = client.post(
         "/v1/refresh",
-        headers={"Authorization": f'Bearer {fred_credentials["refresh_token"]}'},
+        headers={"Authorization": f"Bearer {fred_credentials['refresh_token']}"},
     )
     fred_credentials = res.json()
     client.post(
         f"/v1/studies?name=bar&groups={group_id}",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     res = client.get(
         "/v1/studies",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 3
     res = client.get(
         "/v1/studies",
-        headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
     )
     assert len(res.json()) == 2
 
@@ -276,7 +276,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     study_id = studies[0]
     res = client.post(
         f"/v1/launcher/run/{study_id}",
-        headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
     )
     job_id = res.json()["job_id"]
 
@@ -290,7 +290,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get(
         f"/v1/launcher/jobs?study_id={study_id}",
-        headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
     )
     job_info = res.json()[0]
     assert job_info == {
@@ -311,22 +311,21 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # update metadata
     res = client.put(
         f"/v1/studies/{study_id}",
-        headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
         json={
             "name": "STA-mini-copy",
-            "status": "copied",
             "horizon": "2035",
             "author": "Luffy",
         },
     )
     new_meta = client.get(
         f"/v1/studies/{study_id}",
-        headers={"Authorization": f'Bearer {fred_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {fred_credentials['access_token']}"},
     )
     assert res.json() == new_meta.json()
-    assert new_meta.json()["status"] == "copied"
     assert new_meta.json()["name"] == "STA-mini-copy"
     assert new_meta.json()["horizon"] == "2035"
+    assert new_meta.json()["owner"]["name"] == "Luffy"
 
 
 def test_matrix(client: TestClient, admin_access_token: str) -> None:
@@ -389,7 +388,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "all areas",
-            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": [],
             "thermals": None,
@@ -399,11 +397,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.post(
         f"/v1/studies/{study_id}/areas",
-        json={
-            "name": "area 1",
-            "type": "AREA",
-            "metadata": {"country": "FR", "tags": ["a"]},
-        },
+        json={"name": "area 1", "type": "AREA"},
     )
     assert res.status_code == 200, res.json()
 
@@ -413,7 +407,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         json={
             "name": "Area 1",  # Same name but with different case
             "type": "AREA",
-            "metadata": {"country": "FR"},
         },
     )
     assert res.status_code == 409, res.json()
@@ -424,11 +417,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     client.post(
         f"/v1/studies/{study_id}/areas",
-        json={
-            "name": "area 2",
-            "type": "AREA",
-            "metadata": {"country": "DE"},
-        },
+        json={"name": "area 2", "type": "AREA"},
     )
 
     res = client.post(
@@ -526,13 +515,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "area 1",
-            "metadata": {"country": "FR", "tags": ["a"]},
             "name": "area 1",
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
+                    "co2": 0.0,
+                    "costGeneration": "SetManually",
+                    "efficiency": 100.0,
                     "enabled": True,
+<<<<<<< HEAD
                     "group": "other 1",
                     "id": "cluster 1",
                     "marginal-cost": 0.0,
@@ -546,19 +537,56 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "spread-cost": 0.0,
                     "type": None,
                     "unitcount": 1,
+=======
+                    "fixedCost": 0.0,
+                    "genTs": "use global",
+                    "group": "other 1",
+                    "id": "cluster 1",
+                    "lawForced": "uniform",
+                    "lawPlanned": "uniform",
+                    "marginalCost": 0.0,
+                    "marketBidCost": 0.0,
+                    "minDownTime": 1,
+                    "minStablePower": 0.0,
+                    "minUpTime": 1,
+                    "mustRun": False,
+                    "name": "cluster 1",
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalCapacity": 0.0,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm25": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
+                    "spinning": 0.0,
+                    "spreadCost": 0.0,
+                    "startupCost": 0.0,
+                    "unitCount": 1,
+                    "variableOMCost": 0.0,
+                    "volatilityForced": 0.0,
+                    "volatilityPlanned": 0.0,
+>>>>>>> dev
                 }
             ],
             "type": "AREA",
         },
         {
             "id": "area 2",
-            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
+                    "co2": 0.0,
+                    "costGeneration": "SetManually",
+                    "efficiency": 100.0,
                     "enabled": True,
+<<<<<<< HEAD
                     "group": "other 1",
                     "id": "cluster 2",
                     "marginal-cost": 0.0,
@@ -572,10 +600,46 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "spread-cost": 0.0,
                     "type": None,
                     "unitcount": 1,
+=======
+                    "fixedCost": 0.0,
+                    "genTs": "use global",
+                    "group": "other 1",
+                    "id": "cluster 2",
+                    "lawForced": "uniform",
+                    "lawPlanned": "uniform",
+                    "marginalCost": 0.0,
+                    "marketBidCost": 0.0,
+                    "minDownTime": 1,
+                    "minStablePower": 0.0,
+                    "minUpTime": 1,
+                    "mustRun": False,
+                    "name": "cluster 2",
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalCapacity": 2.5,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm25": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
+                    "spinning": 0.0,
+                    "spreadCost": 0.0,
+                    "startupCost": 0.0,
+                    "unitCount": 1,
+                    "variableOMCost": 0.0,
+                    "volatilityForced": 0.0,
+                    "volatilityPlanned": 0.0,
+>>>>>>> dev
                 }
             ],
             "type": "AREA",
         },
+<<<<<<< HEAD
         {
             "id": "all areas",
             "metadata": {"country": None, "tags": []},
@@ -584,6 +648,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "thermals": None,
             "type": "DISTRICT",
         },
+=======
+        {"id": "all areas", "name": "All areas", "set": ["area 1", "area 2"], "thermals": None, "type": "DISTRICT"},
+>>>>>>> dev
     ]
 
     res = client.post(
@@ -1154,6 +1221,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "nonDispatchPower": True,
         "dispatchHydroPower": True,
         "otherDispatchPower": True,
+        "spreadUnsuppliedEnergyCost": 0.0,
+        "spreadSpilledEnergyCost": 0.0,
         "filterSynthesis": {"hourly", "daily", "weekly", "monthly", "annual"},
         "filterByYear": {"hourly", "daily", "weekly", "monthly", "annual"},
         "adequacyPatchMode": "outside",
@@ -1167,6 +1236,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "nonDispatchPower": False,
             "dispatchHydroPower": False,
             "otherDispatchPower": False,
+            "spreadUnsuppliedEnergyCost": 10.0,
+            "spreadSpilledEnergyCost": 10.0,
             "filterSynthesis": ["monthly", "annual"],
             "filterByYear": ["hourly", "daily", "annual"],
             "adequacyPatchMode": "inside",
@@ -1182,6 +1253,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "nonDispatchPower": False,
         "dispatchHydroPower": False,
         "otherDispatchPower": False,
+        "spreadUnsuppliedEnergyCost": 10.0,
+        "spreadSpilledEnergyCost": 10.0,
         "filterSynthesis": {"monthly", "annual"},
         "filterByYear": {"hourly", "daily", "annual"},
         "adequacyPatchMode": "inside",
@@ -1377,13 +1450,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res_areas.json() == [
         {
             "id": "area 2",
-            "metadata": {"country": "DE", "tags": []},
             "name": "area 2",
             "set": None,
             "thermals": [
                 {
-                    "code-oi": None,
+                    "co2": 0.0,
+                    "costGeneration": "SetManually",
+                    "efficiency": 100.0,
                     "enabled": True,
+<<<<<<< HEAD
                     "group": "other 1",
                     "id": "cluster 2",
                     "marginal-cost": 0.0,
@@ -1397,13 +1472,47 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "spread-cost": 0.0,
                     "type": None,
                     "unitcount": 1,
+=======
+                    "fixedCost": 0.0,
+                    "genTs": "use global",
+                    "group": "other 1",
+                    "id": "cluster 2",
+                    "lawForced": "uniform",
+                    "lawPlanned": "uniform",
+                    "marginalCost": 0.0,
+                    "marketBidCost": 0.0,
+                    "minDownTime": 1,
+                    "minStablePower": 0.0,
+                    "minUpTime": 1,
+                    "mustRun": False,
+                    "name": "cluster 2",
+                    "nh3": 0.0,
+                    "nmvoc": 0.0,
+                    "nominalCapacity": 2.5,
+                    "nox": 0.0,
+                    "op1": 0.0,
+                    "op2": 0.0,
+                    "op3": 0.0,
+                    "op4": 0.0,
+                    "op5": 0.0,
+                    "pm10": 0.0,
+                    "pm25": 0.0,
+                    "pm5": 0.0,
+                    "so2": 0.0,
+                    "spinning": 0.0,
+                    "spreadCost": 0.0,
+                    "startupCost": 0.0,
+                    "unitCount": 1,
+                    "variableOMCost": 0.0,
+                    "volatilityForced": 0.0,
+                    "volatilityPlanned": 0.0,
+>>>>>>> dev
                 }
             ],
             "type": "AREA",
         },
         {
             "id": "all areas",
-            "metadata": {"country": None, "tags": []},
             "name": "All areas",
             "set": ["area 2"],
             "thermals": None,
@@ -1530,7 +1639,7 @@ def test_maintenance(client: TestClient, admin_access_token: str) -> None:
     # Set maintenance mode when not admin
     res = client.post(
         "/v1/core/maintenance?maintenance=true",
-        headers={"Authorization": f'Bearer {non_admin_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {non_admin_credentials['access_token']}"},
     )
     assert res.status_code == 403
 
@@ -1572,7 +1681,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     george_credentials = res.json()
 
     # George imports a study
-    georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
+    georges_headers = {"Authorization": f"Bearer {george_credentials['access_token']}"}
     uuid = client.post(
         "/v1/studies/_import",
         files={"study": io.BytesIO(zip_path.read_bytes())},
@@ -1597,12 +1706,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     # reset login to update credentials
     res = client.post(
         "/v1/refresh",
-        headers={"Authorization": f'Bearer {george_credentials["refresh_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['refresh_token']}"},
     )
     george_credentials = res.json()
 
     # George imports a study, and it should succeed even if he has only "READER" access in the group
-    georges_headers = {"Authorization": f'Bearer {george_credentials["access_token"]}'}
+    georges_headers = {"Authorization": f"Bearer {george_credentials['access_token']}"}
     res = client.post(
         "/v1/studies/_import",
         files={"study": io.BytesIO(zip_path.read_bytes())},
@@ -1625,12 +1734,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     output_path_zip = ASSETS_DIR / "output_adq.zip"
     client.post(
         f"/v1/studies/{internal_study_id}/output",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={"output": io.BytesIO(output_path_zip.read_bytes())},
     )
     res = client.get(
         f"/v1/studies/{internal_study_id}/outputs",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 7
 
@@ -1638,12 +1747,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
     client.post(
         f"/v1/studies/{internal_study_id}/output",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={"output": io.BytesIO(output_path_seven_zip.read_bytes())},
     )
     res = client.get(
         f"/v1/studies/{internal_study_id}/outputs",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 8
 
@@ -1651,13 +1760,13 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     matrices_zip_path = ASSETS_DIR / "matrices.zip"
     res_zip = client.post(
         "/v1/matrix/_import",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={"file": (matrices_zip_path.name, io.BytesIO(matrices_zip_path.read_bytes()), "application/zip")},
     )
     matrices_seven_zip_path = ASSETS_DIR / "matrices.7z"
     res_seven_zip = client.post(
         "/v1/matrix/_import",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={
             "file": (matrices_seven_zip_path.name, io.BytesIO(matrices_seven_zip_path.read_bytes()), "application/zip")
         },
@@ -1688,7 +1797,7 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
     # George copies a study
     copied = client.post(
         f"/v1/studies/{internal_study_id}/copy?dest=copied&use_task=false",
-        headers={"Authorization": f'Bearer {george_credentials["access_token"]}'},
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert copied.status_code == 201
     # asserts that it has no groups and PublicMode to READ

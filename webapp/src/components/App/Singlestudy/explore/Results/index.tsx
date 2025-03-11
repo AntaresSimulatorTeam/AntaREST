@@ -25,6 +25,7 @@ import {
   TableRow,
   Tooltip,
   Typography,
+  colors,
 } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -37,7 +38,6 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 import * as R from "ramda";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { grey } from "@mui/material/colors";
 import moment from "moment";
 import type { AxiosError } from "axios";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
@@ -49,13 +49,13 @@ import {
   getStudyOutputs,
   unarchiveOutput,
 } from "../../../../../services/api/study";
-import type { LaunchJob, StudyMetadata, StudyOutput } from "../../../../../common/types";
+import type { LaunchJob, StudyMetadata, StudyOutput } from "../../../../../types/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import type { EmptyObject } from "../../../../../utils/tsUtils";
-import DigestDialog from "../../../../common/dialogs/DigestDialog";
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
 
 interface OutputDetail {
   name: string;
@@ -229,7 +229,7 @@ function Results() {
                 "& td, & th": {
                   borderBottom: "1px solid",
                   borderColor: "divider",
-                  color: grey[500],
+                  color: colors.grey[500],
                 },
               }}
             >
@@ -315,7 +315,7 @@ function Results() {
                               alignItems: "flex-end",
                               justifyContent: "center",
                               flexDirection: "column",
-                              color: grey[500],
+                              color: colors.grey[500],
                               fontSize: "0.85rem",
                             }}
                           >

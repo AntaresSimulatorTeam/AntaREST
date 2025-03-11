@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import type { MatrixInfoDTO } from "../../../common/types";
+import type { MatrixInfoDTO } from "../../../types/types";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import MatrixContent from "@/components/common/dialogs/DatabaseUploadDialog/components/MatrixContent";
 import { Button } from "@mui/material";
@@ -39,7 +39,7 @@ function MatrixDialog({ matrix, open, onClose }: PropTypes) {
         sx: { p: 1, height: "95vh", width: 1 },
       }}
     >
-      <MatrixContent matrix={matrix} onBack={onClose} />
+      <MatrixContent matrixInfo={matrix} onBack={onClose} />
     </BasicDialog>
   );
 }

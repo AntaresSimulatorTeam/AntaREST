@@ -20,6 +20,12 @@ from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Properties,
+    STStorageGroup,
+    STStorageProperties,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    STStorage880Properties,
     STStorageConfig,
     STStorageGroup,
     STStorageProperties,
