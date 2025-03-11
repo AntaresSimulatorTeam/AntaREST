@@ -100,30 +100,30 @@ def get_xpansion_settings(file_study: FileStudy) -> GetXpansionSettings:
     return GetXpansionSettings.from_config(config_obj)
 
 
-def checks_settings_are_correct(settings: XpansionSettingsUpdate, file_study: FileStudy) -> set[str]:
-    # Specific handling for yearly_weights and additional_constraints:
-    # - If the attributes are given, it means that the user wants to select a file.
-    #   It is therefore necessary to check that the file exists.
-    # - Else, it means the user want to deselect the additional constraints file,
-    #  but he does not want to delete it from the expansion configuration folder.
-    excludes = {"sensitivity_config"}
-    if constraints_file := settings.additional_constraints:
-        try:
-            constraints_url = ["user", "expansion", "constraints", constraints_file]
-            file_study.tree.get(constraints_url)
-        except ChildNotFoundError:
-            msg = f"Additional constraints file '{constraints_file}' does not exist"
-            raise XpansionFileNotFoundError(msg) from None
-    else:
-        excludes.add("additional_constraints")
+def checks_settings_are_correct_and_returns_fields_to_exclude(
+    settings: XpansionSettingsUpdate, file_study: FileStudy
+) -> set[str]:
+    """
+    Checks yearly_weights and additional_constraints fields.
+    - If the attributes are given, it means that the user wants to select a file.
+      It is therefore necessary to check that the file exists.
+    - Else, it means the user want to deselect the additional constraints file,
+     but he does not want to delete it from the expansion configuration folder.
 
-    if weights_file := settings.yearly_weights:
-        try:
-            weights_url = ["user", "expansion", "weights", weights_file]
-            file_study.tree.get(weights_url)
-        except ChildNotFoundError:
-            msg = f"Additional weights file '{weights_file}' does not exist"
-            raise XpansionFileNotFoundError(msg) from None
-    else:
-        excludes.add("yearly_weights")
+    Returns:
+        set[str] -- The fields to not save inside the ini.file
+    """
+    excludes = {"sensitivity_config"}
+    for field in ["additional_constraints", "yearly_weights"]:
+        if file := settings.__getattribute__(field):
+            file_type = field.split("_")[1]
+            try:
+                constraints_url = ["user", "expansion", file_type, file]
+                file_study.tree.get(constraints_url)
+            except ChildNotFoundError:
+                msg = f"Additional {file_type} file '{file}' does not exist"
+                raise XpansionFileNotFoundError(msg) from None
+        else:
+            excludes.add(field)
+
     return excludes

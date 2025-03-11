@@ -30,7 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    checks_settings_are_correct,
+    checks_settings_are_correct_and_returns_fields_to_exclude,
     get_xpansion_settings,
 )
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -59,12 +59,12 @@ class UpdateXpansionSettings(ICommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         # Checks settings are correct
-        excludes = checks_settings_are_correct(self.settings, study_data)
+        excludes = checks_settings_are_correct_and_returns_fields_to_exclude(self.settings, study_data)
 
         # Updates settings
         current_settings = get_xpansion_settings(study_data)
         new_settings = self.settings.model_dump(mode="json", exclude_none=True, exclude={"sensitivity_config"})
-        updated_settings = current_settings.model_copy(deep=True, update=new_settings)
+        updated_settings = current_settings.model_copy(update=new_settings)
         config_obj = updated_settings.model_dump(mode="json", by_alias=True, exclude=excludes)
         study_data.tree.save(config_obj, ["user", "expansion", "settings"])
 
