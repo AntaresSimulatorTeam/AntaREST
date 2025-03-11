@@ -107,10 +107,6 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        args = {}
-        for area_id, area_properties in self.properties.items():
-            args[area_id] = area_properties.model_dump(mode="json", exclude_none=True)
-
         return CommandDTO(
             action=CommandName.UPDATE_AREAS_PROPERTIES.value,
             args={
