@@ -45,5 +45,6 @@ class TestVersionInfo:
             "version": RegEx(r"\d+(?:\.\d+)+"),
             "gitcommit": RegEx(r"^[0-9a-fA-F]{40}$"),
             "dependencies": mock.ANY,
+            "desktop_mode": False,
         }
         assert actual == expected
