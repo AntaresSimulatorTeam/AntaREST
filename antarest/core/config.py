@@ -226,7 +226,7 @@ class StorageConfig:
         )
 
     @classmethod
-    def _validate_workspaces(cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
+    def validate_workspaces(cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
         """
         Validate that no two workspaces have overlapping paths.
         """
@@ -666,7 +666,7 @@ class Config:
         defaults = cls()
         desktop_mode = data.get("desktop_mode", defaults.desktop_mode)
         storage_config = StorageConfig.from_dict(data["storage"]) if "storage" in data else defaults.storage
-        StorageConfig._validate_workspaces(storage_config.workspaces, desktop_mode)
+        StorageConfig.validate_workspaces(storage_config.workspaces, desktop_mode)
         return cls(
             server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
             security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
