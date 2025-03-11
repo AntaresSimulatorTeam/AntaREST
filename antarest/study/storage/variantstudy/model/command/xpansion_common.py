@@ -9,15 +9,21 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import contextlib
 from typing import Any, Tuple
 
 from antarest.core.exceptions import (
     AreaNotFound,
+    ChildNotFoundError,
     LinkNotFound,
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionResourceFileType
+from antarest.study.business.model.xpansion_model import (
+    GetXpansionSettings,
+    XpansionCandidate,
+    XpansionResourceFileType,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 
@@ -84,3 +90,10 @@ def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCan
 def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandidate) -> None:
     assert_link_profile_are_files(file_study, candidate)
     assert_link_exist(file_study, candidate)
+
+
+def get_xpansion_settings(file_study: FileStudy) -> GetXpansionSettings:
+    config_obj = file_study.tree.get(["user", "expansion", "settings"])
+    with contextlib.suppress(ChildNotFoundError):
+        config_obj["sensitivity_config"] = file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
+    return GetXpansionSettings.from_config(config_obj)
