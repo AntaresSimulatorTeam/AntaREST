@@ -31,7 +31,6 @@ class RemoveRenewablesCluster(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.REMOVE_RENEWABLES_CLUSTER
-    version: int = 1
 
     # Command parameters
     # ==================

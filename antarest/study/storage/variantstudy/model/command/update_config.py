@@ -47,7 +47,6 @@ class UpdateConfig(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_CONFIG
-    version: int = 1
 
     # Command parameters
     # ==================

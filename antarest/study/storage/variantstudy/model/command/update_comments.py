@@ -32,7 +32,6 @@ class UpdateComments(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_COMMENTS
-    version: int = 1
 
     # Command parameters
     # ==================

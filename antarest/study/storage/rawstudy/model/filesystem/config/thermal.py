@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any, Dict
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -18,7 +19,10 @@ from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ClusterProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import IgnoreCaseIdentifier
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
+    IgnoreCaseIdentifier,
+    transform_name_to_id,
+)
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
@@ -61,16 +65,16 @@ class ThermalClusterGroup(EnumIgnoreCase):
     The group `OTHER1` is used by default.
     """
 
-    NUCLEAR = "Nuclear"
-    LIGNITE = "Lignite"
-    HARD_COAL = "Hard Coal"
-    GAS = "Gas"
-    OIL = "Oil"
-    MIXED_FUEL = "Mixed Fuel"
-    OTHER1 = "Other 1"
-    OTHER2 = "Other 2"
-    OTHER3 = "Other 3"
-    OTHER4 = "Other 4"
+    NUCLEAR = "nuclear"
+    LIGNITE = "lignite"
+    HARD_COAL = "hard coal"
+    GAS = "gas"
+    OIL = "oil"
+    MIXED_FUEL = "mixed fuel"
+    OTHER1 = "other 1"
+    OTHER2 = "other 2"
+    OTHER3 = "other 3"
+    OTHER4 = "other 4"
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -85,10 +89,8 @@ class ThermalClusterGroup(EnumIgnoreCase):
         if isinstance(value, str):
             # Check if any group value matches the input value ignoring case sensitivity.
             # noinspection PyUnresolvedReferences
-            if any(value.upper() == group.value.upper() for group in cls):
+            if any(value.lower() == group.value for group in cls):
                 return t.cast(ThermalClusterGroup, super()._missing_(value))
-            # If a group is not found, return the default group ('OTHER1' by default).
-            # Note that 'OTHER' is an alias for 'OTHER1'.
             return cls.OTHER1
         return t.cast(t.Optional["ThermalClusterGroup"], super()._missing_(value))
 
@@ -108,6 +110,9 @@ class ThermalProperties(ClusterProperties):
     Thermal cluster configuration model.
     This model describes the configuration parameters for a thermal cluster.
     """
+
+    def get_id(self) -> str:
+        return transform_name_to_id(self.name, lower=False)
 
     group: ThermalClusterGroup = Field(
         default=ThermalClusterGroup.OTHER1,
@@ -408,7 +413,8 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
 
 # NOTE: In the following Union, it is important to place the most specific type first,
 # because the type matching generally occurs sequentially from left to right within the union.
-ThermalConfigType = t.Union[Thermal870Config, Thermal860Config, ThermalConfig]
+ThermalConfigType = Thermal870Config | Thermal860Config | ThermalConfig
+ThermalPropertiesType = Thermal870Properties | Thermal860Properties | ThermalProperties
 
 
 def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigType]:
@@ -429,7 +435,29 @@ def get_thermal_config_cls(study_version: StudyVersion) -> t.Type[ThermalConfigT
         return ThermalConfig
 
 
-def create_thermal_config(study_version: StudyVersion, **kwargs: t.Any) -> ThermalConfigType:
+def create_thermal_properties(study_version: StudyVersion, data: Dict[str, Any]) -> ThermalPropertiesType:
+    """
+    Factory method to create thermal properties.
+
+    Args:
+        study_version: The version of the study.
+        data: The properties to be used to initialize the model.
+
+    Returns:
+        The thermal properties.
+
+    Raises:
+        ValueError: If the study version is not supported.
+    """
+    if study_version >= 870:
+        return Thermal870Properties.model_validate(data)
+    elif study_version == 860:
+        return Thermal860Properties.model_validate(data)
+    else:
+        return ThermalProperties.model_validate(data)
+
+
+def create_thermal_config(study_version: StudyVersion, **kwargs: Any) -> ThermalConfigType:
     """
     Factory method to create a thermal configuration model.
 

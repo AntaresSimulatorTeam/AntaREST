@@ -417,7 +417,7 @@ class TestTableMode:
                 "enabled": True,
                 "fixedCost": 0,
                 "genTs": "use global",
-                "group": "Other 2",
+                "group": "other 2",
                 "lawForced": "uniform",
                 "lawPlanned": "uniform",
                 "marginalCost": 10,
@@ -444,7 +444,7 @@ class TestTableMode:
                 "enabled": True,
                 "fixedCost": 0,
                 "genTs": "use global",
-                "group": "Nuclear",
+                "group": "nuclear",
                 "lawForced": "uniform",
                 "lawPlanned": "uniform",
                 "marginalCost": 20,
@@ -489,42 +489,42 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         expected: t.Dict[str, t.Dict[str, t.Any]]
         expected = {
-            "de / 01_solar": {"group": "Other 2", "nominalCapacity": 500000, "unitCount": 17},
-            "de / 02_wind_on": {"group": "Nuclear", "nominalCapacity": 314159, "unitCount": 15},
-            "de / 03_wind_off": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "de / 04_res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "de / 05_nuclear": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "de / 06_coal": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "de / 07_gas": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "de / 08_non-res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "de / 09_hydro_pump": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 01_solar": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 02_wind_on": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 03_wind_off": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 04_res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 05_nuclear": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 06_coal": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 07_gas": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 08_non-res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "es / 09_hydro_pump": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 01_solar": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 02_wind_on": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 03_wind_off": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 04_res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 05_nuclear": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 06_coal": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 07_gas": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 08_non-res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "fr / 09_hydro_pump": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 01_solar": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 02_wind_on": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 03_wind_off": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 04_res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 05_nuclear": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 06_coal": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 07_gas": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 08_non-res": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
-            "it / 09_hydro_pump": {"group": "Other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "de / 01_solar": {"group": "other 2", "nominalCapacity": 500000, "unitCount": 17},
+            "de / 02_wind_on": {"group": "nuclear", "nominalCapacity": 314159, "unitCount": 15},
+            "de / 03_wind_off": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "de / 04_res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "de / 05_nuclear": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "de / 06_coal": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "de / 07_gas": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "de / 08_non-res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "de / 09_hydro_pump": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 01_solar": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 02_wind_on": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 03_wind_off": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 04_res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 05_nuclear": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 06_coal": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 07_gas": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 08_non-res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "es / 09_hydro_pump": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 01_solar": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 02_wind_on": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 03_wind_off": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 04_res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 05_nuclear": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 06_coal": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 07_gas": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 08_non-res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "fr / 09_hydro_pump": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 01_solar": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 02_wind_on": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 03_wind_off": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 04_res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 05_nuclear": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 06_coal": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 07_gas": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 08_non-res": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
+            "it / 09_hydro_pump": {"group": "other 1", "nominalCapacity": 1000000, "unitCount": 1},
         }
         if study_version >= 860:
             for key in expected:
@@ -634,7 +634,7 @@ class TestTableMode:
                 json={
                     "fr / Dieppe": {"enabled": False},
                     "fr / La Rochelle": {"enabled": True, "nominalCapacity": 3.1, "unitCount": 2},
-                    "it / Pouilles": {"group": "Wind Onshore"},
+                    "it / Pouilles": {"group": "wind onshore"},
                 },
             )
             assert res.status_code == 200, res.json()
@@ -645,12 +645,12 @@ class TestTableMode:
             )
             assert res.status_code == 200, res.json()
             expected = {
-                "fr / Dieppe": {"enabled": False, "group": "Wind Offshore", "nominalCapacity": 8, "unitCount": 62},
-                "fr / La Rochelle": {"enabled": True, "group": "Solar PV", "nominalCapacity": 3.1, "unitCount": 2},
-                "fr / Oleron": {"enabled": True, "group": "Wind Offshore", "nominalCapacity": 15, "unitCount": 70},
-                "it / Pouilles": {"enabled": False, "group": "Wind Onshore", "nominalCapacity": 11, "unitCount": 40},
-                "it / Sardaigne": {"enabled": True, "group": "Wind Offshore", "nominalCapacity": 12, "unitCount": 86},
-                "it / Sicile": {"enabled": True, "group": "Solar PV", "nominalCapacity": 1.8, "unitCount": 1},
+                "fr / Dieppe": {"enabled": False, "group": "wind offshore", "nominalCapacity": 8, "unitCount": 62},
+                "fr / La Rochelle": {"enabled": True, "group": "solar pv", "nominalCapacity": 3.1, "unitCount": 2},
+                "fr / Oleron": {"enabled": True, "group": "wind offshore", "nominalCapacity": 15, "unitCount": 70},
+                "it / Pouilles": {"enabled": False, "group": "wind onshore", "nominalCapacity": 11, "unitCount": 40},
+                "it / Sardaigne": {"enabled": True, "group": "wind offshore", "nominalCapacity": 12, "unitCount": 86},
+                "it / Sicile": {"enabled": True, "group": "solar pv", "nominalCapacity": 1.8, "unitCount": 1},
             }
             actual = res.json()
             assert actual == expected
@@ -753,7 +753,7 @@ class TestTableMode:
                     # "name": "Siemens",
                     "efficiency": 1,
                     "enabled": None,
-                    "group": "Battery",
+                    "group": "battery",
                     "initialLevel": 0.5,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1550,
@@ -765,7 +765,7 @@ class TestTableMode:
                     # "name": "Tesla",
                     "efficiency": 0.75,
                     "enabled": None,
-                    "group": "Battery",
+                    "group": "battery",
                     "initialLevel": 0.89,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1200,
@@ -777,7 +777,7 @@ class TestTableMode:
                     # "name": "storage3",
                     "efficiency": 1,
                     "enabled": None,
-                    "group": "Pondage",
+                    "group": "pondage",
                     "initialLevel": 1,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1234,
@@ -789,7 +789,7 @@ class TestTableMode:
                     # "name": "storage4",
                     "efficiency": 1,
                     "enabled": None,
-                    "group": "PSP_open",
+                    "group": "psp_open",
                     "initialLevel": 0.5,
                     "initialLevelOptim": True,
                     "injectionNominalCapacity": 567,
@@ -822,25 +822,25 @@ class TestTableMode:
             assert res.status_code == 200, res.json()
             expected = {
                 "fr / siemens": {
-                    "group": "Battery",
+                    "group": "battery",
                     "injectionNominalCapacity": 1550,
                     "reservoirCapacity": 1500,
                     "withdrawalNominalCapacity": 1550,
                 },
                 "fr / tesla": {
-                    "group": "Battery",
+                    "group": "battery",
                     "injectionNominalCapacity": 1200,
                     "reservoirCapacity": 1200,
                     "withdrawalNominalCapacity": 1200,
                 },
                 "it / storage3": {
-                    "group": "Pondage",
+                    "group": "pondage",
                     "injectionNominalCapacity": 1234,
                     "reservoirCapacity": 1357,
                     "withdrawalNominalCapacity": 1020,
                 },
                 "it / storage4": {
-                    "group": "PSP_open",
+                    "group": "psp_open",
                     "injectionNominalCapacity": 567,
                     "reservoirCapacity": 500,
                     "withdrawalNominalCapacity": 456,
@@ -859,7 +859,7 @@ class TestTableMode:
             f"/v1/studies/{internal_study_id}/areas/{fr_id}/clusters/thermal",
             json={
                 "name": "Cluster 1",
-                "group": "Nuclear",
+                "group": "nuclear",
             },
         )
         assert res.status_code == 200, res.json()
@@ -950,7 +950,7 @@ class TestTableMode:
 
         if study_version >= 870:
             expected_binding["binding constraint 1"]["group"] = "default"
-            expected_binding["binding constraint 2"]["group"] = "My BC Group"
+            expected_binding["binding constraint 2"]["group"] = "my bc group"
 
         assert actual == expected_binding
 

@@ -17,7 +17,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import StopWatch

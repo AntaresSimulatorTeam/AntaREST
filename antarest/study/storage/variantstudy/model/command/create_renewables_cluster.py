@@ -11,21 +11,22 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Any, Dict, Final
 
-from pydantic import field_validator
+from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    EnrModelling,
-    FileStudyTreeConfig,
-    transform_name_to_id,
+from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
+    RenewableProperties,
+    create_renewable_config,
+    create_renewable_properties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import create_renewable_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -39,21 +40,30 @@ class CreateRenewablesCluster(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.CREATE_RENEWABLES_CLUSTER
-    version: int = 1
+
+    # version 2: remove cluster_name and type parameters as RenewableProperties
+    _SERIALIZATION_VERSION: Final[int] = 2
 
     # Command parameters
     # ==================
 
-    area_id: str
-    cluster_name: str
-    parameters: t.Dict[str, t.Any]
+    area_id: AreaId
+    parameters: RenewableProperties
 
-    @field_validator("cluster_name")
-    def validate_cluster_name(cls, val: str) -> str:
-        valid_name = transform_name_to_id(val, lower=False)
-        if valid_name != val:
-            raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
-        return val
+    @property
+    def cluster_name(self) -> str:
+        return self.parameters.name
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        # Validate parameters
+        if isinstance(values["parameters"], dict):
+            parameters = values["parameters"]
+            if info.context and info.context.version == 1:
+                parameters["name"] = values.pop("cluster_name")
+            values["parameters"] = create_renewable_properties(values["study_version"], parameters)
+        return values
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
@@ -109,14 +119,9 @@ class CreateRenewablesCluster(ICommand):
         if not output.status:
             return output
 
-        # default values
-        if "ts-interpretation" not in self.parameters:
-            self.parameters["ts-interpretation"] = "power-generation"
-        self.parameters.setdefault("name", self.cluster_name)
-
         cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
-        config[cluster_id] = self.parameters
+        config[cluster_id] = self.parameters.model_dump(mode="json", by_alias=True)
 
         # Series identifiers are in lower case.
         series_id = cluster_id.lower()
@@ -140,10 +145,10 @@ class CreateRenewablesCluster(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
+            version=self._SERIALIZATION_VERSION,
             args={
                 "area_id": self.area_id,
-                "cluster_name": self.cluster_name,
-                "parameters": self.parameters,
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
             },
             study_version=self.study_version,
         )

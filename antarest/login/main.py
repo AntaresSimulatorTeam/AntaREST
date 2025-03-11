@@ -19,7 +19,7 @@ from starlette.responses import JSONResponse
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
-from antarest.core.serialization import from_json
+from antarest.core.serde.json import from_json
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException

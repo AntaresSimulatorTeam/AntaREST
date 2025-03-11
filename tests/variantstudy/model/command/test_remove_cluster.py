@@ -18,7 +18,13 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorage880Properties
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    Thermal870Properties,
+    ThermalClusterGroup,
+    ThermalProperties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -50,21 +56,22 @@ class TestRemoveCluster:
         reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
         hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
-        CreateCluster(
+        output = CreateCluster(
             area_id=area_id,
-            cluster_name=cluster_name,
-            parameters={
-                "group": "group",
-                "unitcount": "unitcount",
-                "nominalcapacity": "nominalcapacity",
-                "marginal-cost": "marginal-cost",
-                "market-bid-cost": "market-bid-cost",
-            },
+            parameters=ThermalProperties(
+                name=cluster_name,
+                group=ThermalClusterGroup.NUCLEAR,
+                unit_count=1,
+                nominal_capacity=100,
+                marginal_cost=40,
+                market_bid_cost=40,
+            ),
             command_context=command_context,
             prepro=[[0]],
             modulation=[[0]],
             study_version=study_version,
         ).apply(empty_study)
+        assert output.status, output.message
 
         # Binding constraint 2nd member: array of shape (8784, 3)
         array = np.random.rand(8784, 3) * 1000

@@ -20,7 +20,7 @@ from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
 
 from antarest.core.persistence import Base
-from antarest.core.serialization import from_json
+from antarest.core.serde.json import from_json
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

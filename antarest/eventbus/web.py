@@ -25,7 +25,8 @@ from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
-from antarest.core.serialization import AntaresBaseModel, to_json_string
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.json import to_json_string
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import Auth
 

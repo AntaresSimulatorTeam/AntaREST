@@ -77,11 +77,15 @@ class LinkManager:
 
         return link_creation_dto
 
-    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
-        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
+    def _create_update_link_command(
+        self, study: Study, area_from: str, area_to: str, link_update_dto: LinkBaseDTO
+    ) -> tuple[UpdateLink, LinkInternal]:
 
-        link = link_dto.to_internal(StudyVersion.parse(study.version))
         file_study = self.storage_service.get_storage(study).get_raw(study)
+        study_version = file_study.config.version
+
+        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
+        link = link_dto.to_internal(study_version)
 
         self._get_link_if_exists(file_study, link)
 
@@ -92,9 +96,14 @@ class LinkManager:
                 include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
             ),
             command_context=self.storage_service.variant_study_service.command_factory.command_context,
-            study_version=file_study.config.version,
+            study_version=study_version,
         )
+        return command, link
 
+    def update_link(self, study: RawStudy, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
+        command, link = self._create_update_link_command(study, area_from, area_to, link_update_dto)
+
+        file_study = self.storage_service.get_storage(study).get_raw(study)
         execute_or_add_commands(study, file_study, [command], self.storage_service)
 
         updated_link = self.get_link(study, link)
@@ -106,10 +115,25 @@ class LinkManager:
         study: RawStudy,
         update_links_by_ids: t.Mapping[t.Tuple[str, str], LinkBaseDTO],
     ) -> t.Mapping[t.Tuple[str, str], LinkBaseDTO]:
-        new_links_by_ids = {}
+        file_study = self.storage_service.get_storage(study).get_raw(study)
+
+        # Build all commands
+        commands = []
         for (area1, area2), update_link_dto in update_links_by_ids.items():
-            updated_link = self.update_link(study, area1, area2, update_link_dto)
-            new_links_by_ids[(area1, area2)] = updated_link
+            command = self._create_update_link_command(study, area1, area2, update_link_dto)[0]
+            commands.append(command)
+
+        execute_or_add_commands(study, file_study, commands, self.storage_service)
+
+        # Builds return
+        all_links = self.get_all_links(study)
+        new_links_by_ids = {}
+        for updated_link in all_links:
+            # We only return links that were updated
+            area_1 = updated_link.area1
+            area_2 = updated_link.area2
+            if (area_1, area_2) in update_links_by_ids or (area_2, area_1) in update_links_by_ids:
+                new_links_by_ids[(area_1, area_2)] = updated_link
 
         return new_links_by_ids
 

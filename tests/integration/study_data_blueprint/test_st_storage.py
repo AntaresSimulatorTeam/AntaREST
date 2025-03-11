@@ -21,7 +21,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.areas.st_storage_management import create_storage_output
-from antarest.study.storage.rawstudy.model.filesystem.config.model import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from tests.integration.utils import wait_task_completion
 
@@ -149,7 +149,7 @@ class TestSTStorage:
         # Unfilled properties will be set to their default values.
         siemens_properties = {
             "name": siemens_battery,
-            "group": "Battery",
+            "group": "battery",
             "injectionNominalCapacity": 1450,
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
@@ -341,7 +341,7 @@ class TestSTStorage:
         # In the following example, we will create two short-term storages:
         siemens_properties = {
             "name": siemens_battery,
-            "group": "Battery",
+            "group": "battery",
             "injectionNominalCapacity": 1450,
             "withdrawalNominalCapacity": 1350,
             "reservoirCapacity": 1500,
@@ -361,7 +361,7 @@ class TestSTStorage:
         grand_maison = "Grand'Maison"
         grand_maison_properties = {
             "name": grand_maison,
-            "group": "PSP_closed",
+            "group": "PSP_Closed",
             "injectionNominalCapacity": 1500,
             "withdrawalNominalCapacity": 1800,
             "reservoirCapacity": 20000,
@@ -385,6 +385,7 @@ class TestSTStorage:
         assert res.status_code == 200, res.json()
         siemens_output = {**default_output, **siemens_properties, "id": siemens_battery_id}
         grand_maison_output = {**default_output, **grand_maison_properties, "id": grand_maison_id}
+        grand_maison_output["group"] = "psp_closed"
         assert res.json() == [duplicated_output, siemens_output, grand_maison_output]
 
         # We can delete the three short-term storages at once.
@@ -612,7 +613,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         tesla_battery_id = res.json()["id"]
-        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery, "group": "Battery"}
+        tesla_output = {**default_output, "id": tesla_battery_id, "name": tesla_battery, "group": "battery"}
         assert res.json() == tesla_output
 
         # Use the Debug mode to make sure that the initialLevel and initialLevelOptim properties
@@ -623,7 +624,7 @@ class TestSTStorage:
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
-        expected = {**default_config, "name": tesla_battery, "group": "Battery"}
+        expected = {**default_config, "name": tesla_battery, "group": "battery"}
         assert actual == expected
 
         # We want to make sure that the default properties are applied to a study variant.
@@ -653,14 +654,14 @@ class TestSTStorage:
             "action": "create_st_storage",
             "args": {
                 "area_id": "fr",
-                "parameters": {**default_config, "name": siemens_battery, "group": "Battery"},
+                "parameters": {**default_config, "name": siemens_battery, "group": "battery"},
                 "pmax_injection": ANY,
                 "pmax_withdrawal": ANY,
                 "lower_rule_curve": ANY,
                 "upper_rule_curve": ANY,
                 "inflows": ANY,
             },
-            "version": 1,
+            "version": 2,
             "updated_at": ANY,
             "user_name": ANY,
         }
@@ -735,7 +736,7 @@ class TestSTStorage:
         expected = {
             **default_config,
             "name": siemens_battery,
-            "group": "Battery",
+            "group": "battery",
             "injectionnominalcapacity": 1600,
             "initiallevel": 0.0,
         }
@@ -827,7 +828,7 @@ class TestSTStorage:
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/storages/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "Battery"
+        assert cluster_cfg["group"] == "battery"
         assert cluster_cfg["injectionNominalCapacity"] == 4500
         assert cluster_cfg["withdrawalNominalCapacity"] == 4230
         assert cluster_cfg["reservoirCapacity"] == 5600
@@ -860,3 +861,62 @@ class TestSTStorage:
             "replace_matrix",
             "remove_st_storage",
         ]
+
+    @pytest.mark.parametrize("base_study_id", [{"name": "Base Study", "version": 860}], indirect=True)
+    @pytest.mark.parametrize("variant_id", ["Variant Study"], indirect=True)
+    def test_uppercase_name_update(self, client: TestClient, user_access_token: str, variant_id: str) -> None:
+        """
+        In this test, we want to check that short-term storages are updated correctly
+        also when the identifier in the section name is in uppercase, which
+        happens when studies are created outside from antares-web.
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create an area
+        area_name = "France"
+        res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": area_name, "type": "AREA"})
+        assert res.status_code == 200, res.json()
+        area_cfg = res.json()
+        area_id = area_cfg["id"]
+
+        # Create a short-term storage
+        cluster_name = "Tesla1"
+        res = client.post(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+            json={
+                "name": cluster_name,
+                "group": "Battery",
+                "injectionNominalCapacity": 4500,
+                "withdrawalNominalCapacity": 4230,
+                "reservoirCapacity": 5700,
+            },
+        )
+        assert res.status_code == 200, res.json()
+        assert res.json()["id"] == "tesla1"
+
+        # Perform raw call in order to change the section name to upper case "Tesla1"
+        res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
+        assert res.status_code == 200, res.json()
+        content = dict(res.json())
+        assert list(content.keys()) == ["tesla1"]
+        content["Tesla1"] = content.pop("tesla1")
+        res = client.post(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list", json=content)
+        assert res.status_code == 204, res.json()
+        res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
+        assert res.status_code == 200, res.json()
+        assert list(res.json().keys()) == ["Tesla1"]
+
+        # Now INI section has capitals, we update the short-term storage using its ID
+        res = client.patch(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages/tesla1", json={"reservoirCapacity": 5600}
+        )
+        assert res.status_code == 200, res.json()
+        cluster_cfg = res.json()
+        assert cluster_cfg["reservoirCapacity"] == 5600
+
+        # Check that getting the list works and that is has correctly been updated
+        res = client.get(
+            f"/v1/studies/{variant_id}/areas/{area_id}/storages",
+        )
+        assert res.status_code in {200, 201}, res.json()
+        assert res.json()[0]["reservoirCapacity"] == 5600

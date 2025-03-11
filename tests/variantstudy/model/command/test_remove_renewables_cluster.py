@@ -12,7 +12,12 @@
 from antares.study.version import StudyVersion
 from checksumdir import dirhash
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
+    RenewableProperties,
+    TimeSeriesInterpretation,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
@@ -45,11 +50,9 @@ class TestRemoveRenewablesCluster:
 
         CreateRenewablesCluster(
             area_id=area_id,
-            cluster_name=cluster_id,
-            parameters={
-                "name": cluster_name,
-                "ts-interpretation": "power-generation",
-            },
+            parameters=RenewableProperties(
+                name=cluster_name, ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION
+            ),
             command_context=command_context,
             study_version=study_version,
         ).apply(empty_study)

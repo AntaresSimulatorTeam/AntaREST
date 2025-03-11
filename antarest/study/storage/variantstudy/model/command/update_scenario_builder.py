@@ -48,7 +48,6 @@ class UpdateScenarioBuilder(ICommand):
     # ===================
 
     command_name: CommandName = CommandName.UPDATE_SCENARIO_BUILDER
-    version: int = 1
 
     # Command parameters
     # ==================

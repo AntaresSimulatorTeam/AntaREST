@@ -14,7 +14,7 @@ import functools
 import re
 import typing as t
 
-from antarest.core.serialization import AntaresBaseModel
+from antarest.core.serde import AntaresBaseModel
 
 _SearchFunc = t.Callable[[str], t.Optional[t.Match[str]]]
 
