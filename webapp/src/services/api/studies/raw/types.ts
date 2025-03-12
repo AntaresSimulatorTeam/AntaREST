@@ -32,8 +32,7 @@ export interface UploadFileParams {
   studyId: StudyMetadata["id"];
   path: string;
   file: File;
-  // Flag to indicate whether to create file and directories if missing
-  createMissing?: boolean;
+  createMissing?: boolean; // Indicate whether to create file and directories if missing
   onUploadProgress?: AxiosRequestConfig["onUploadProgress"];
 }
 
@@ -43,6 +42,11 @@ export interface DeleteFileParams {
 }
 
 export interface GetRawFileParams {
+  studyId: string;
+  path: string;
+}
+
+export interface CreateFolderParams {
   studyId: string;
   path: string;
 }

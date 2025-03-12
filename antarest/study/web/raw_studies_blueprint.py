@@ -549,7 +549,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
-        summary="Update data by posting a Raw file",
+        summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
         uuid: str,
@@ -563,7 +563,7 @@ def create_raw_study_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
-        Update raw data for a study by posting a raw file.
+        Update raw data for a study by posting a raw file or by creating folder(s).
 
         Parameters:
 
