@@ -143,9 +143,6 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
 
     @model_validator(mode="before")
     def validate_float_values(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if isinstance(values, AntaresBaseModel):
-            values = values.model_dump(mode="json", exclude_none=True)
-
         if "relaxed-optimality-gap" in values:
             values["relaxed_optimality_gap"] = values.pop("relaxed-optimality-gap")
 
