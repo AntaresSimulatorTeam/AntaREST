@@ -86,11 +86,34 @@ export interface StudyMetadataPatchDTO {
 export interface StudyOutput {
   name: string;
   type: string;
+  settings: {
+    general: {
+      mode: string;
+      horizon: number;
+      nbyears: number;
+      simulation: {
+        start: number;
+        end: number;
+      };
+    };
+    input: {
+      import: string;
+    };
+    output: {
+      synthesis: boolean;
+      storenewset: boolean;
+      archives: string;
+    };
+    optimization: object;
+    otherPreferences: object;
+    advancedParameters: object;
+    seedsMersenneTwister: object;
+    playlist: unknown[];
+  };
   completionDate: string;
   status: string;
   archived: boolean;
 }
-
 export interface StudyLayer {
   areas: string[];
   id: string;
