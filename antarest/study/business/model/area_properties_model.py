@@ -95,6 +95,7 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
     in the user interface and ensuring that updates remain consistent across both
     tabs.
     """
+
     energy_cost_unsupplied: float = Field(
         validation_alias=AliasChoices("averageUnsuppliedEnergyCost", "energyCostUnsupplied")
     )
