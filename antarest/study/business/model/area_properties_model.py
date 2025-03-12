@@ -65,8 +65,8 @@ class AreaProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, al
     other_dispatch_power: bool = True
     spread_unsupplied_energy_cost: float = 0.0
     spread_spilled_energy_cost: float = 0.0
-    filter_synthesis: Set[str] = set(FILTER_OPTIONS)
-    filter_by_year: Set[str] = set(FILTER_OPTIONS)
+    filter_synthesis: Set[str] = Field(default_factory=lambda: set(FILTER_OPTIONS))
+    filter_by_year: Set[str] = Field(default_factory=lambda: set(FILTER_OPTIONS))
     # version 830
     adequacy_patch_mode: AdequacyPatchMode = AdequacyPatchMode.OUTSIDE
 
