@@ -55,7 +55,7 @@ from antarest.launcher.model import (
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.auth import Auth
 from antarest.login.model import Identity
-from antarest.study.model import OwnerInfo, PublicMode, Study, StudyMetadataDTO
+from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 
@@ -76,7 +76,7 @@ class TestLauncherService:
             owner=OwnerInfo(id=0, name="author"),
             groups=[],
             public_mode=PublicMode.NONE,
-            version=42,
+            version=STUDY_VERSION_8_8,
             workspace="default",
             managed=True,
             archived=False,

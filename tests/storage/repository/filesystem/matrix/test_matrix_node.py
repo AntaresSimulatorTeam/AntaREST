@@ -16,6 +16,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
@@ -57,7 +58,7 @@ class TestMatrixNode:
 
         node = MockMatrixNode(
             context=ContextServer(matrix=matrix_service, resolver=resolver),
-            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=-1),
+            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 
         node.normalize()
@@ -79,7 +80,7 @@ class TestMatrixNode:
 
         node = MockMatrixNode(
             context=ContextServer(matrix=Mock(), resolver=resolver),
-            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=-1),
+            config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 
         node.denormalize()
