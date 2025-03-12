@@ -232,12 +232,13 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
             return service.get_load()
         except SlurmError as e:
             logger.warning(e, exc_info=e)
-            return LauncherLoadDTO(
-                allocated_cpu_rate=0.0,
-                cluster_load_rate=0.0,
-                nb_queued_jobs=0,
-                launcher_status=f"FAILED: {e}",
-            )
+            args = {
+                "allocatedCpuRate": 0.0,
+                "clusterLoadRate": 0.0,
+                "nbQueuedJobs": 0,
+                "launcherStatus": f"FAILED: {e}",
+            }
+            return LauncherLoadDTO(**args)
 
     @bp.get(
         "/versions",

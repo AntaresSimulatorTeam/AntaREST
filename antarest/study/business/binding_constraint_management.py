@@ -1002,28 +1002,46 @@ class BindingConstraintManager:
             constraint_terms: The constraint terms to update.
             update_mode: The update mode, either "replace" or "add".
         """
+
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        existing_terms = {term.generate_id(): term for term in constraint.terms}
+
         if update_mode == "add":
+            new_terms = {}
             for term in constraint_terms:
                 if term.data is None:
                     raise InvalidConstraintTerm(binding_constraint_id, term.model_dump_json())
+                new_terms[term.generate_id()] = term
 
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
-        existing_terms = collections.OrderedDict((term.generate_id(), term) for term in constraint.terms)
-        updated_terms = collections.OrderedDict((term.generate_id(), term) for term in constraint_terms)
-
-        if update_mode == "replace":
-            missing_terms = set(updated_terms) - set(existing_terms)
-            if missing_terms:
-                raise ConstraintTermNotFound(binding_constraint_id, *missing_terms)
-        elif update_mode == "add":
-            duplicate_terms = set(updated_terms) & set(existing_terms)
+            duplicate_terms = set(new_terms) & set(existing_terms)
             if duplicate_terms:
                 raise DuplicateConstraintTerm(binding_constraint_id, *duplicate_terms)
+
+            existing_terms.update(new_terms)
+
+        elif update_mode == "replace":
+            ids_to_update = set()
+            for term in constraint_terms:
+                if not term.id:
+                    raise InvalidConstraintTerm(binding_constraint_id, term.model_dump_json())
+                ids_to_update.add(term.id)
+
+            missing_terms = ids_to_update - set(existing_terms)
+            if missing_terms:
+                raise ConstraintTermNotFound(binding_constraint_id, *missing_terms)
+
+            # We can either rename a term or just change its values
+            for term in constraint_terms:
+                if term.generate_id() != term.id:
+                    existing_terms[term.generate_id()] = existing_terms.pop(term.id)  # type: ignore
+                else:
+                    existing_terms[term.id] = term
+
         else:  # pragma: no cover
             raise NotImplementedError(f"Unsupported update mode: {update_mode}")
 
-        existing_terms.update(updated_terms)
-        self._update_constraint_with_terms(study, constraint, existing_terms)
+        sorted_terms = dict(sorted(existing_terms.items()))
+        self._update_constraint_with_terms(study, constraint, sorted_terms)
 
     def create_constraint_terms(
         self, study: StudyInterface, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTerm]
