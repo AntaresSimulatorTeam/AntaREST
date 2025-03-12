@@ -28,6 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_link import Create
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
+from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
 from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
@@ -49,14 +50,21 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
+from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
+    ReplaceXpansionCandidate,
+)
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
+from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
+from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
@@ -64,6 +72,7 @@ from antarest.study.storage.variantstudy.model.command.update_renewable_cluster 
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
+from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -78,6 +87,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_LINK.value: RemoveLink,
     CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
+    CommandName.UPDATE_BINDING_CONSTRAINTS.value: UpdateBindingConstraints,
     CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
     CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
@@ -89,6 +99,8 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
     CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
     CommandName.UPDATE_ST_STORAGE.value: UpdateSTStorage,
+    CommandName.UPDATE_HYDRO_PROPERTIES.value: UpdateHydroManagement,
+    CommandName.UPDATE_INFLOW_STRUCTURE.value: UpdateInflowStructure,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
     CommandName.UPDATE_CONFIG.value: UpdateConfig,
     CommandName.UPDATE_COMMENTS.value: UpdateComments,
@@ -99,12 +111,16 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value: GenerateThermalClusterTimeSeries,
     CommandName.CREATE_USER_RESOURCE.value: CreateUserResource,
     CommandName.REMOVE_USER_RESOURCE.value: RemoveUserResource,
+    CommandName.CREATE_XPANSION_CANDIDATE.value: CreateXpansionCandidate,
+    CommandName.REPLACE_XPANSION_CANDIDATE.value: ReplaceXpansionCandidate,
+    CommandName.REMOVE_XPANSION_CANDIDATE.value: RemoveXpansionCandidate,
     CommandName.REMOVE_XPANSION_CONFIGURATION.value: RemoveXpansionConfiguration,
     CommandName.CREATE_XPANSION_CONFIGURATION.value: CreateXpansionConfiguration,
     CommandName.REMOVE_XPANSION_RESOURCE.value: RemoveXpansionResource,
     CommandName.CREATE_XPANSION_CAPACITY.value: CreateXpansionCapacity,
     CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
     CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
+    CommandName.UPDATE_XPANSION_SETTINGS.value: UpdateXpansionSettings,
 }
 
 

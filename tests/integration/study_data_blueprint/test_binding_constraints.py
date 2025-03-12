@@ -144,9 +144,8 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 10
-        for cmd in json_result:
-            assert cmd["action"] == "update_binding_constraint"
+        assert len(json_result) == 1
+        assert json_result[0]["action"] == "update_binding_constraints"
         # create another variant from the parent study
         study_id = preparer.create_variant(study_id, name="var_1")
         # update 50 BCs
@@ -165,13 +164,12 @@ class TestBindingConstraints:
                 assert bc["comments"] == "New comment !"
             else:
                 assert bc["timeStep"] == "daily"
-        # asserts commands used are update_config and replace_matrix
+        # asserts commands used is update_binding_constraints
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 2
-        assert json_result[0]["action"] == "replace_matrix"
-        assert json_result[1]["action"] == "update_config"
+        assert len(json_result) == 1
+        assert json_result[0]["action"] == "update_binding_constraints"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
@@ -669,7 +667,9 @@ class TestBindingConstraints:
         # Create Areas, link and cluster
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
+        area3_id = preparer.create_area(study_id, name="Area 3")["id"]
         link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
+        link_2_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)["id"]
         cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
 
         # =============================
@@ -833,12 +833,37 @@ class TestBindingConstraints:
         # Asserts terms were updated
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
         assert res.status_code == 200, res.json()
-        binding_constraint = res.json()
-        constraint_terms = binding_constraint["terms"]
+        constraint_terms = res.json()["terms"]
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
                 "id": link_id,
+                "offset": 1,
+                "weight": 4.4,
+            },
+            {
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "id": f"{area1_id}.{cluster_id.lower()}",
+                "offset": None,
+                "weight": 5.1,
+            },
+        ]
+        assert constraint_terms == expected
+
+        # Rename term
+        # We're replacing area_1%area_2 by area_1%area_3
+        body = {"id": f"{area1_id}%{area2_id}", "data": {"area1": area1_id, "area2": area3_id}}
+        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/term", json=body)
+        assert res.status_code == 200, res.json()
+
+        # Asserts the term was renamed
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
+        assert res.status_code == 200, res.json()
+        constraint_terms = res.json()["terms"]
+        expected = [
+            {
+                "data": {"area1": area1_id, "area2": area3_id},
+                "id": link_2_id,
                 "offset": 1,
                 "weight": 4.4,
             },
