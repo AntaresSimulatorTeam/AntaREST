@@ -55,8 +55,8 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
-from antarest.study.business.model.hydro_model import HydroManagementUpdate, HydroManagement
-from antarest.study.business.model.inflow_model import InflowStructureUpdate, InflowStructure
+from antarest.study.business.model.hydro_model import HydroManagement, HydroManagementUpdate
+from antarest.study.business.model.inflow_model import InflowStructure, InflowStructureUpdate
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
