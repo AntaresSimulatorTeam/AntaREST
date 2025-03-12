@@ -16,8 +16,8 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import WorkspaceConfig
-from antarest.core.serde.ini_reader import IniReader
-from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.serde.ini_reader import read_ini_file
+from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.model import STUDY_VERSION_8_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -78,9 +78,9 @@ def test_update_antares_info_version(tmp_path: Path, version: str, expected_vers
     config = FileStudyTreeConfig(study_path=study_path, path=study_path, study_id="my-study", version=STUDY_VERSION_8_8)
     tree = FileStudyTree(context=Mock(), config=config)
     antares_study_path = study_path / "study.antares"
-    IniWriter().write({"antares": {"version": "700"}}, antares_study_path)
+    write_ini_file(antares_study_path, {"antares": {"version": "700"}})
 
     metadata = Study(name="my-study", version=version, created_at=datetime.now(), updated_at=datetime.now())
     update_antares_info(metadata, tree, update_author=False)
-    updated = IniReader().read(antares_study_path)
+    updated = read_ini_file(antares_study_path)
     assert str(updated["antares"]["version"]) == expected_version
