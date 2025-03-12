@@ -5,6 +5,7 @@ Revision ID: dae93f1d9110
 Revises: 3c70366b10ea
 Create Date: 2024-02-08 10:30:20.590919
 """
+
 import collections
 import itertools
 import secrets

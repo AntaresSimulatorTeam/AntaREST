@@ -13,18 +13,19 @@
  */
 
 import { Box, Tooltip } from "@mui/material";
-import { getFileType, getFileIcon, isFolder, type TreeData } from "../utils";
-import DebugContext from "../DebugContext";
 import { useContext } from "react";
 import TreeItemEnhanced from "../../../../../common/TreeItemEnhanced";
+import DebugContext from "../DebugContext";
+import { getFileIcon, getFileType, isFolder, type TreeData } from "../utils";
 
 interface Props {
   name: string;
   path: string;
   treeData: TreeData;
+  disabled?: boolean;
 }
 
-function FileTreeItem({ name, treeData, path }: Props) {
+function FileTreeItem({ name, treeData, path, disabled }: Props) {
   const { setSelectedFile } = useContext(DebugContext);
   const filePath = path ? `${path}/${name}` : name;
   const fileType = getFileType(treeData);
@@ -35,7 +36,9 @@ function FileTreeItem({ name, treeData, path }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleClick = () => {
-    setSelectedFile({ fileType, filename: name, filePath, treeData });
+    if (!disabled) {
+      setSelectedFile({ fileType, filename: name, filePath, treeData });
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -62,6 +65,7 @@ function FileTreeItem({ name, treeData, path }: Props) {
         </Tooltip>
       }
       onClick={handleClick}
+      disabled={disabled}
     >
       {isFolder(treeData) &&
         Object.keys(treeData).map((childName) => (
@@ -70,6 +74,7 @@ function FileTreeItem({ name, treeData, path }: Props) {
             name={childName}
             path={filePath}
             treeData={treeData[childName]}
+            disabled={disabled}
           />
         ))}
     </TreeItemEnhanced>
