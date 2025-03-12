@@ -12,7 +12,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Mapping, Optional, Sequence, TypeVar
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.core.model import JSON
@@ -51,7 +51,6 @@ logger = logging.getLogger(__name__)
 
 _ALL_AREAS_PATH = "input/areas"
 _THERMAL_AREAS_PATH = "input/thermal/areas"
-T = TypeVar("T")
 
 
 def _get_ui_info_map(file_study: FileStudy, area_ids: Sequence[str]) -> Dict[str, Any]:

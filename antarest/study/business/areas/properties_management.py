@@ -59,10 +59,10 @@ class AreaPropertiesManager:
         self,
         study: StudyInterface,
         area_id: str,
-        area_properties: AreaPropertiesUpdate,
+        properties: AreaPropertiesUpdate,
     ) -> None:
         command = UpdateAreasProperties(
-            properties={area_id: area_properties},
+            properties={area_id: properties},
             command_context=self._command_context,
             study_version=study.version,
         )
