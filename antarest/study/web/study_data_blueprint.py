@@ -30,7 +30,6 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
-from antarest.study.business.areas.hydro_management import InflowStructure, HydroManagement
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
     STStorageManager,
@@ -56,6 +55,8 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
+from antarest.study.business.model.hydro_model import HydroManagementUpdate, HydroManagement
+from antarest.study.business.model.inflow_model import InflowStructureUpdate, InflowStructure
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
