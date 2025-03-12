@@ -897,6 +897,15 @@ COMMANDS = [
         None,
         id="update_inflow_structure",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_XPANSION_SETTINGS.value,
+            args=[{"settings": {"master": "integer", "max_iteration": 44}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_xpansion_settings",
+    ),
 ]
 
 

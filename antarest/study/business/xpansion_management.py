@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import contextlib
 import logging
 from typing import List
 
@@ -22,7 +21,6 @@ from antarest.core.exceptions import (
     FileImportFailed,
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
-    XpansionFileNotFoundError,
 )
 from antarest.core.model import JSON
 from antarest.study.business.model.xpansion_model import (
@@ -48,7 +46,13 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
     checks_resource_deletion_is_allowed,
 )
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
-from antarest.study.storage.variantstudy.model.command.xpansion_common import assert_link_exist, get_resource_dir
+from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
+from antarest.study.storage.variantstudy.model.command.xpansion_common import (
+    assert_link_exist,
+    checks_settings_are_correct_and_returns_fields_to_exclude,
+    get_resource_dir,
+    get_xpansion_settings,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -72,59 +76,19 @@ class XpansionManager:
     def get_xpansion_settings(self, study: StudyInterface) -> GetXpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
         file_study = study.get_files()
-        config_obj = file_study.tree.get(["user", "expansion", "settings"])
-        with contextlib.suppress(ChildNotFoundError):
-            config_obj["sensitivity_config"] = file_study.tree.get(
-                ["user", "expansion", "sensitivity", "sensitivity_in"]
-            )
-        return GetXpansionSettings.from_config(config_obj)
+        return get_xpansion_settings(file_study)
 
     def update_xpansion_settings(
         self, study: StudyInterface, new_xpansion_settings: XpansionSettingsUpdate
     ) -> GetXpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
-
-        actual_settings = self.get_xpansion_settings(study)
-        settings_fields = new_xpansion_settings.model_dump(
-            mode="json", exclude_none=True, exclude={"sensitivity_config"}
-        )
-        updated_settings = actual_settings.model_copy(deep=True, update=settings_fields)
-
+        # Checks settings are correct
         file_study = study.get_files()
-
-        # Specific handling for yearly_weights and additional_constraints:
-        # - If the attributes are given, it means that the user wants to select a file.
-        #   It is therefore necessary to check that the file exists.
-        # - Else, it means the user want to deselect the additional constraints file,
-        #  but he does not want to delete it from the expansion configuration folder.
-        excludes = {"sensitivity_config"}
-        if constraints_file := new_xpansion_settings.additional_constraints:
-            try:
-                constraints_url = ["user", "expansion", "constraints", constraints_file]
-                file_study.tree.get(constraints_url)
-            except ChildNotFoundError:
-                msg = f"Additional constraints file '{constraints_file}' does not exist"
-                raise XpansionFileNotFoundError(msg) from None
-        else:
-            excludes.add("additional_constraints")
-
-        if weights_file := new_xpansion_settings.yearly_weights:
-            try:
-                weights_url = ["user", "expansion", "weights", weights_file]
-                file_study.tree.get(weights_url)
-            except ChildNotFoundError:
-                msg = f"Additional weights file '{weights_file}' does not exist"
-                raise XpansionFileNotFoundError(msg) from None
-        else:
-            excludes.add("yearly_weights")
-
-        config_obj = updated_settings.model_dump(mode="json", by_alias=True, exclude=excludes)
-        file_study.tree.save(config_obj, ["user", "expansion", "settings"])
-
-        if new_xpansion_settings.sensitivity_config:
-            sensitivity_obj = new_xpansion_settings.sensitivity_config.model_dump(mode="json", by_alias=True)
-            file_study.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
-
+        checks_settings_are_correct_and_returns_fields_to_exclude(new_xpansion_settings, file_study)
+        command = UpdateXpansionSettings(
+            settings=new_xpansion_settings, command_context=self._command_context, study_version=study.version
+        )
+        study.add_commands([command])
         return self.get_xpansion_settings(study)
 
     def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
