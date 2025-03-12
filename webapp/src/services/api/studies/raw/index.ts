@@ -14,6 +14,7 @@
 
 import client from "../../client";
 import type {
+  CreateFolderParams,
   DeleteFileParams,
   GetMatrixFileParams,
   GetRawFileParams,
@@ -77,8 +78,7 @@ export async function uploadFile(params: UploadFileParams) {
  * @param params.path - Path to the file to delete
  * @returns Promise that resolves when the deletion is complete
  */
-export async function deleteFile(params: DeleteFileParams) {
-  const { studyId, path } = params;
+export async function deleteFile({ studyId, path }: DeleteFileParams) {
   await client.delete(`/v1/studies/${studyId}/raw`, { params: { path } });
 }
 
@@ -90,9 +90,7 @@ export async function deleteFile(params: DeleteFileParams) {
  * @param params.path - Path to the file within the study
  * @returns Promise containing the file data and metadata
  */
-export async function getRawFile(params: GetRawFileParams) {
-  const { studyId, path } = params;
-
+export async function getRawFile({ studyId, path }: GetRawFileParams) {
   const { data, headers } = await client.get<File>(`/v1/studies/${studyId}/raw/original-file`, {
     params: {
       path,
@@ -115,5 +113,15 @@ export async function getRawFile(params: GetRawFileParams) {
   return new File([data], filename, {
     type: data.type, // Preserve the MIME type from the Blob
     lastModified: new Date().getTime(),
+  });
+}
+
+export async function createFolder({ studyId, path }: CreateFolderParams) {
+  await client.put(`/v1/studies/${studyId}/raw`, null, {
+    params: {
+      path,
+      create_missing: true,
+      resource_type: "folder",
+    },
   });
 }

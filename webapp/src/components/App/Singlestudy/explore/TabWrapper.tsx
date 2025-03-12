@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { Box, styled, Tab, Tabs, type SxProps, type Theme } from "@mui/material";
 import { useEffect, useState } from "react";
-import { styled, Tabs, Tab, Box, type SxProps, type Theme } from "@mui/material";
-import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
+import { matchPath, Outlet, useLocation, useNavigate } from "react-router-dom";
 import type { StudyMetadata } from "../../../../types/types";
 import { mergeSxProp } from "../../../../utils/muiUtils";
 
@@ -104,7 +104,9 @@ function TabWrapper({ study, tabList, border, tabStyle, sx }: Props) {
           ))}
         </StyledTabs>
       </Box>
-      <Outlet context={{ study }} />
+      <Box sx={{ flex: 1, position: "relative", overflow: "auto" }}>
+        <Outlet context={{ study }} />
+      </Box>
     </Box>
   );
 }

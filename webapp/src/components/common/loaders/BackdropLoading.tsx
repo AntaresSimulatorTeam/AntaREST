@@ -30,7 +30,7 @@ function BackdropLoading(props: BackdropLoadingProps) {
         zIndex: (theme) => theme.zIndex.drawer + 1,
       }}
     >
-      <CircularProgress color="inherit" />
+      <CircularProgress color="primary" />
     </Backdrop>
   );
 

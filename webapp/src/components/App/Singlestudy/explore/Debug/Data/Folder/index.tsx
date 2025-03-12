@@ -12,7 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import UploadFileButton from "@/components/common/buttons/UploadFileButton";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import EmptyView from "@/components/common/page/EmptyView";
+import useConfirm from "@/hooks/useConfirm";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { deleteFile } from "@/services/api/studies/raw";
+import type { StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
+import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import DeleteIcon from "@mui/icons-material/Delete";
+import FolderDeleteIcon from "@mui/icons-material/FolderDelete";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
+  Button,
   Divider,
   IconButton,
   List,
@@ -24,44 +37,34 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import FolderIcon from "@mui/icons-material/Folder";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Fragment, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import DebugContext from "../../DebugContext";
 import {
+  canEditFile,
+  type DataCompProps,
   getFileIcon,
   getFileType,
-  type TreeFolder,
-  type DataCompProps,
   isFolder,
-  canEditFile,
-} from "../utils";
-import { Fragment, useState } from "react";
-import EmptyView from "../../../../../common/page/EmptyView";
-import { useTranslation } from "react-i18next";
-import { Filename, Menubar } from "./styles";
-import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
-import ConfirmationDialog from "../../../../../common/dialogs/ConfirmationDialog";
-import useConfirm from "../../../../../../hooks/useConfirm";
-import { deleteFile } from "../../../../../../services/api/studies/raw";
-import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../../../../utils/fnUtils";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../types/types";
-import { useSnackbar } from "notistack";
+  type TreeFolder,
+} from "../../utils";
+import { Filename, Menubar } from "../styles";
+import CreateFolderDialog from "./CreateFolderDialog";
 
-function Folder(props: DataCompProps) {
-  const { filename, filePath, treeData, canEdit, setSelectedFile, reloadTreeData, studyId } = props;
-
+function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProps) {
+  const { setSelectedFile, reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const replaceAction = useConfirm();
-  const deleteAction = useConfirm();
-  const { enqueueSnackbar } = useSnackbar();
+  const deleteAction = useConfirm<{ isFolder: boolean }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [openCreateFolderDialog, setOpenCreateFolderDialog] = useState(false);
 
   const [menuData, setMenuData] = useState<null | {
     anchorEl: HTMLElement;
     filePath: string;
+    isFolder: boolean;
   }>(null);
 
   const treeFolder = treeData as TreeFolder;
@@ -93,13 +96,10 @@ function Folder(props: DataCompProps) {
       return;
     }
 
-    deleteAction.showConfirm().then((confirm) => {
+    deleteAction.showConfirm({ data: { isFolder: menuData.isFolder } }).then((confirm) => {
       if (confirm) {
         deleteFile({ studyId, path: menuData.filePath })
-          .then(() => {
-            enqueueSnackbar("wqed", { variant: "success" });
-            reloadTreeData();
-          })
+          .then(reloadTree)
           .catch((err) => {
             enqueueErrorSnackbar("Delete failed", toError(err));
           });
@@ -119,12 +119,22 @@ function Folder(props: DataCompProps) {
             <Menubar>
               <Filename>{filename}</Filename>
               {canEdit && (
-                <UploadFileButton
-                  studyId={studyId}
-                  path={(file) => `${filePath}/${file.name}`}
-                  onUploadSuccessful={reloadTreeData}
-                  validate={handleValidateUpload}
-                />
+                <>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setOpenCreateFolderDialog(true)}
+                    startIcon={<CreateNewFolderIcon />}
+                  >
+                    {t("study.debug.folder.new")}
+                  </Button>
+                  <UploadFileButton
+                    studyId={studyId}
+                    path={(file) => `${filePath}/${file.name}`}
+                    onUploadSuccessful={reloadTree}
+                    validate={handleValidateUpload}
+                  />
+                </>
               )}
             </Menubar>
           </ListSubheader>
@@ -157,6 +167,7 @@ function Folder(props: DataCompProps) {
                           setMenuData({
                             anchorEl: event.currentTarget,
                             filePath: path,
+                            isFolder: type === "folder",
                           });
                         }}
                       >
@@ -195,7 +206,7 @@ function Folder(props: DataCompProps) {
             );
           })
         ) : (
-          <EmptyView title={t("study.debug.folder.empty")} icon={FolderIcon} />
+          <EmptyView title={t("study.debug.folder.empty")} icon={getFileIcon("folder")} />
         )}
       </List>
       {/* Items menu */}
@@ -205,6 +216,12 @@ function Folder(props: DataCompProps) {
           {t("global.delete")}
         </MenuItem>
       </Menu>
+      <CreateFolderDialog
+        open={openCreateFolderDialog}
+        onCancel={() => setOpenCreateFolderDialog(false)}
+        studyId={studyId}
+        parentPath={filePath}
+      />
       {/* Confirm file replacement */}
       <ConfirmationDialog
         title={t("study.debug.folder.upload.replaceFileConfirm.title")}
@@ -217,10 +234,14 @@ function Folder(props: DataCompProps) {
       >
         {t("study.debug.folder.upload.replaceFileConfirm.message")}
       </ConfirmationDialog>
-      {/* Confirm file deletion */}
+      {/* Confirm file/folder deletion */}
       <ConfirmationDialog
-        title={t("study.debug.file.deleteConfirm.title")}
-        titleIcon={DeleteIcon}
+        title={
+          deleteAction.data?.isFolder
+            ? t("study.debug.folder.deleteConfirm.title")
+            : t("study.debug.file.deleteConfirm.title")
+        }
+        titleIcon={deleteAction.data?.isFolder ? FolderDeleteIcon : DeleteIcon}
         confirmButtonText={t("global.delete")}
         cancelButtonText={t("global.cancel")}
         maxWidth="xs"
@@ -228,7 +249,9 @@ function Folder(props: DataCompProps) {
         onConfirm={deleteAction.yes}
         onCancel={deleteAction.no}
       >
-        {t("study.debug.file.deleteConfirm.message")}
+        {deleteAction.data?.isFolder
+          ? t("study.debug.folder.deleteConfirm.message")
+          : t("study.debug.file.deleteConfirm.message")}
       </ConfirmationDialog>
     </>
   );
