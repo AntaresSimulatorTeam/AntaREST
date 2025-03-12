@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -163,8 +163,8 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
 
 # NOTE: In the following Union, it is important to place the older version first,
 # because otherwise, creating a short term storage always creates a v8.8 one.
-STStorageConfigType = STStorageConfig | STStorage880Config
-STStoragePropertiesType = STStorageProperties | STStorage880Properties
+STStorageConfigType: TypeAlias = STStorageConfig | STStorage880Config
+STStoragePropertiesType: TypeAlias = STStorageProperties | STStorage880Properties
 
 
 def create_st_storage_properties(study_version: StudyVersion, data: Dict[str, Any]) -> STStoragePropertiesType:

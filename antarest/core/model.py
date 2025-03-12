@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypeAlias, Union
 
 import typing_extensions as te
 from pydantic import StringConstraints
@@ -22,10 +22,10 @@ if TYPE_CHECKING:
     # These dependencies are only used for type checking with mypy.
     from antarest.study.model import Study, StudyMetadataDTO
 
-JSON = Dict[str, Any]
-ELEMENT = Union[str, int, float, bool, bytes]
-SUB_JSON = Union[ELEMENT, JSON, List[Any], None]
-LowerCaseStr = te.Annotated[str, StringConstraints(to_lower=True)]
+JSON: TypeAlias = Dict[str, Any]
+ELEMENT: TypeAlias = Union[str, int, float, bool, bytes]
+SUB_JSON: TypeAlias = Union[ELEMENT, JSON, List[Any], None]
+LowerCaseStr: TypeAlias = te.Annotated[str, StringConstraints(to_lower=True)]
 
 
 class PublicMode(enum.StrEnum):

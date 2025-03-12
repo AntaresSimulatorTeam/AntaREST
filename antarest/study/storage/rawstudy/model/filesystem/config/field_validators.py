@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, List, Mapping, MutableMapping
+from typing import Annotated, Any, List, Mapping, MutableMapping, TypeAlias
 
 from pydantic import BeforeValidator, Field
 
@@ -30,13 +30,13 @@ def _validate_item_name(name: Any) -> str:
 
 # Type to be used for item names, will raise an error if name
 # does not comply with antares-simulator limitations.
-ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
+ItemName: TypeAlias = Annotated[str, BeforeValidator(_validate_item_name)]
 
 # Type to be used for area identifiers. An ID is valid if it contains
 # only lower case alphanumeric characters, parenthesis, comma,
 # ampersand, spaces, underscores, or dashes, as defined by
 # antares-simulator.
-AreaId = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
+AreaId: TypeAlias = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
 
 
 def extract_filtering(v: Any) -> List[str]:

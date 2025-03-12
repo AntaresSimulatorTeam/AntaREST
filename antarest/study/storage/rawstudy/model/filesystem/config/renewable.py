@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Optional, Type, cast
+from typing import Any, Optional, Type, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -120,8 +120,8 @@ class RenewableConfig(RenewableProperties, IgnoreCaseIdentifier):
     """
 
 
-RenewableConfigType = RenewableConfig
-RenewablePropertiesType = RenewableProperties
+RenewableConfigType: TypeAlias = RenewableConfig
+RenewablePropertiesType: TypeAlias = RenewableProperties
 
 
 def get_renewable_config_cls(study_version: StudyVersion) -> Type[RenewableConfig]:

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import datetime
 import uuid
-from typing import List, MutableSequence, Optional, Tuple
+from typing import List, MutableSequence, Optional, Tuple, TypeAlias
 
 import typing_extensions as te
 
@@ -19,7 +19,7 @@ from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import StudyMetadataDTO, StudyVersionStr
 
-LegacyDetailsDTO = Tuple[str, bool, str]
+LegacyDetailsDTO: TypeAlias = Tuple[str, bool, str]
 """
 Legacy details DTO: triplet of name, output status and output message.
 """
@@ -42,7 +42,7 @@ class NewDetailsDTO(te.TypedDict):
     msg: str
 
 
-DetailsDTO = LegacyDetailsDTO | NewDetailsDTO
+DetailsDTO: TypeAlias = LegacyDetailsDTO | NewDetailsDTO
 
 
 class GenerationResultInfoDTO(AntaresBaseModel):
