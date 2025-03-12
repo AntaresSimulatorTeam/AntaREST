@@ -25,9 +25,18 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
 )
 
 FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
-THERMAL_PATH = ["input", "thermal", "areas"]
-OPTIMIZATION_PATH = ["input", "areas", "{area_id}", "optimization"]
-ADEQUACY_PATCH_PATH = ["input", "areas", "{area_id}", "adequacy_patch"]
+
+
+def get_thermal_path() -> List[str]:
+    return ["input", "thermal", "areas"]
+
+
+def get_optimization_path(area_id: str) -> List[str]:
+    return ["input", "areas", area_id, "optimization"]
+
+
+def get_adequacy_patch_path(area_id: str) -> List[str]:
+    return ["input", "areas", area_id, "adequacy_patch"]
 
 
 def sort_filter_options(options: Iterable[str]) -> List[str]:
@@ -72,12 +81,20 @@ class AreaProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, al
                 options = encode_filter(decode_filter(val))
                 if any(opt not in FILTER_OPTIONS for opt in options):
                     raise ValueError(f"Invalid value in '{filter_name}'")
-
         return values
 
 
 @all_optional_model
 class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    """
+    AreaPropertiesUpdate is a model used to update properties for areas in the
+    "properties" tab and the "table mode" tab of the interface.
+
+    The usage of `AliasChoices` enables the model to manage different alias names
+    for the same property, allowing compatibility between multiple representations
+    in the user interface and ensuring that updates remain consistent across both
+    tabs.
+    """
     energy_cost_unsupplied: float = Field(
         validation_alias=AliasChoices("averageUnsuppliedEnergyCost", "energyCostUnsupplied")
     )

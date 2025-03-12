@@ -14,11 +14,11 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import override
 
 from antarest.study.business.model.area_properties_model import (
-    ADEQUACY_PATCH_PATH,
-    OPTIMIZATION_PATH,
-    THERMAL_PATH,
     AreaPropertiesProperties,
     AreaPropertiesUpdate,
+    get_adequacy_patch_path,
+    get_optimization_path,
+    get_thermal_path,
 )
 from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
@@ -55,13 +55,19 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        current_properties: AreaPropertiesProperties = AreaPropertiesProperties(
+            thermal_properties=ThermalAreasProperties(),
+            optimization_properties=OptimizationProperties(),
+            adequacy_properties=AdequacyPathProperties(),
+        )
+
+        current_thermal_props = ThermalAreasProperties(**study_data.tree.get(get_thermal_path()))
+
         for area_id, area_properties in self.properties.items():
-            current_thermal_props, current_optim_properties, current_adequacy_patch = self.fetch_area_properties(
-                study_data, area_id
-            )
+            current_optim_properties, current_adequacy_patch = self.fetch_area_properties(study_data, area_id)
 
             current_properties = AreaPropertiesProperties(
-                thermal_properties=ThermalAreasProperties(**current_thermal_props),
+                thermal_properties=current_thermal_props,
                 optimization_properties=OptimizationProperties(**current_optim_properties),
                 adequacy_properties=AdequacyPathProperties(**current_adequacy_patch),
             )
@@ -72,7 +78,11 @@ class UpdateAreasProperties(ICommand):
 
             current_properties.set_area_properties(area_id, new_properties)
 
+            current_thermal_props = current_properties.thermal_properties
+
             self.save_area_properties(study_data, area_id, current_properties)
+
+        study_data.tree.save(current_properties.thermal_properties.model_dump(by_alias=True), get_thermal_path())
 
         output, _ = self._apply_config(study_data.config)
 
@@ -81,29 +91,23 @@ class UpdateAreasProperties(ICommand):
     def save_area_properties(
         self, study_data: FileStudy, area_id: str, current_properties: AreaPropertiesProperties
     ) -> None:
-        study_data.tree.save(current_properties.thermal_properties.model_dump(by_alias=True), THERMAL_PATH)
         study_data.tree.save(
             current_properties.optimization_properties.model_dump(by_alias=True),
-            [s.format(area_id=area_id) for s in OPTIMIZATION_PATH],
+            get_optimization_path(area_id),
         )
         if self.study_version >= STUDY_VERSION_8_3:
             study_data.tree.save(
                 current_properties.adequacy_properties.model_dump(),
-                [s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH],
+                get_adequacy_patch_path(area_id),
             )
 
-    def fetch_area_properties(
-        self, study_data: FileStudy, area_id: str
-    ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
-        current_thermal_props = study_data.tree.get(THERMAL_PATH)
-        current_optim_properties = study_data.tree.get([s.format(area_id=area_id) for s in OPTIMIZATION_PATH])
+    def fetch_area_properties(self, study_data: FileStudy, area_id: str) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        current_optim_properties = study_data.tree.get(get_optimization_path(area_id))
         current_adequacy_patch = (
-            study_data.tree.get([s.format(area_id=area_id) for s in ADEQUACY_PATCH_PATH])
-            if self.study_version >= STUDY_VERSION_8_3
-            else {}
+            study_data.tree.get(get_adequacy_patch_path(area_id)) if self.study_version >= STUDY_VERSION_8_3 else {}
         )
 
-        return current_thermal_props, current_optim_properties, current_adequacy_patch
+        return current_optim_properties, current_adequacy_patch
 
     @override
     def to_dto(self) -> CommandDTO:
