@@ -648,12 +648,13 @@ class LauncherService:
                 )
                 partition = slurm_config.partition
                 allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
-                return LauncherLoadDTO(
-                    allocated_cpu_rate=allocated_cpus,
-                    cluster_load_rate=cluster_load,
-                    nb_queued_jobs=queued_jobs,
-                    launcher_status="SUCCESS",
-                )
+                args = {
+                    "allocatedCpuRate": allocated_cpus,
+                    "clusterLoadRate": cluster_load,
+                    "nbQueuedJobs": queued_jobs,
+                    "launcherStatus": "SUCCESS",
+                }
+                return LauncherLoadDTO(**args)
             else:
                 raise KeyError("Default launcher is slurm but it is not registered in the config file")
 
@@ -666,12 +667,13 @@ class LauncherService:
         # The cluster load is approximated by the percentage of used CPUs.
         cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
 
-        return LauncherLoadDTO(
-            allocated_cpu_rate=cluster_load_approx,
-            cluster_load_rate=cluster_load_approx,
-            nb_queued_jobs=0,
-            launcher_status="SUCCESS",
-        )
+        args = {
+            "allocatedCpuRate": cluster_load_approx,
+            "clusterLoadRate": cluster_load_approx,
+            "nbQueuedJobs": 0,
+            "launcherStatus": "SUCCESS",
+        }
+        return LauncherLoadDTO(**args)
 
     def get_solver_versions(self, solver: str) -> List[str]:
         """
