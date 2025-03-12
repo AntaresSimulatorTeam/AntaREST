@@ -48,6 +48,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_9_0,
     MatrixIndex,
     Study,
     StudyDownloadLevelDTO,
@@ -80,7 +81,8 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_au
     study_data_info["antares"]["caption"] = metadata.name
     study_data_info["antares"]["created"] = metadata.created_at.timestamp()
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
-    study_data_info["antares"]["version"] = metadata.version
+    version = StudyVersion.parse(metadata.version)
+    study_data_info["antares"]["version"] = f"{version}:2d" if version >= STUDY_VERSION_9_0 else f"{version}:ddd"
     if update_author and metadata.additional_data:
         study_data_info["antares"]["author"] = metadata.additional_data.author
     study_tree.save(study_data_info, ["study"])

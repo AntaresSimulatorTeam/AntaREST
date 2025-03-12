@@ -60,6 +60,7 @@ STUDY_VERSION_8_5 = StudyVersion.parse("8.5")
 STUDY_VERSION_8_6 = StudyVersion.parse("8.6")
 STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
 STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 
