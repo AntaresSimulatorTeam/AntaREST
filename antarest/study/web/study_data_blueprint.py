@@ -30,7 +30,6 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
-from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
 from antarest.study.business.areas.properties_management import PropertiesFormFields
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
@@ -56,6 +55,8 @@ from antarest.study.business.correlation_management import (
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
+from antarest.study.business.model.hydro_model import HydroManagement, HydroManagementUpdate
+from antarest.study.business.model.inflow_model import InflowStructure, InflowStructureUpdate
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
@@ -441,14 +442,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/form",
         tags=[APITag.study_data],
         summary="Get Hydro config values for form",
-        response_model=ManagementOptionsFormFields,
+        response_model=HydroManagement,
         response_model_exclude_none=True,
     )
     def get_hydro_form_values(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ManagementOptionsFormFields:
+    ) -> HydroManagement:
         logger.info(
             msg=f"Getting Hydro management config for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
@@ -456,7 +457,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.hydro_manager.get_field_values(study_interface, area_id)
+        return study_service.hydro_manager.get_hydro_management(study_interface, area_id)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -466,9 +467,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_hydro_form_values(
         uuid: str,
         area_id: str,
-        data: ManagementOptionsFormFields,
+        data: HydroManagementUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             msg=f"Updating Hydro management config for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
@@ -476,13 +477,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
-        study_service.hydro_manager.set_field_values(study_interface, data, area_id)
+        study_service.hydro_manager.update_hydro_management(study_interface, data, area_id)
 
     # noinspection SpellCheckingInspection
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
-        summary="Get inflow structure values",
+        summary="Get inflow properties",
         response_model=InflowStructure,
     )
     def get_inflow_structure(
@@ -503,17 +504,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
-        summary="Update inflow structure values",
+        summary="Update inflow properties values",
     )
     def update_inflow_structure(
         uuid: str,
         area_id: str,
-        values: InflowStructure,
+        values: InflowStructureUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        """Update the configuration for the hydraulic inflow structure of the given area."""
+        """Update the configuration for the hydraulic inflow properties of the given area."""
         logger.info(
-            msg=f"Updating inflow structure values for area {area_id} of study {uuid}",
+            msg=f"Updating inflow properties values for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
