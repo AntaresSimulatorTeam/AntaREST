@@ -115,7 +115,7 @@ def checks_settings_are_correct_and_returns_fields_to_exclude(
     """
     excludes = {"sensitivity_config"}
     for field in ["additional_constraints", "yearly_weights"]:
-        if file := settings.__getattribute__(field):
+        if file := getattr(settings, field, None):
             file_type = field.split("_")[1]
             try:
                 constraints_url = ["user", "expansion", file_type, file]
