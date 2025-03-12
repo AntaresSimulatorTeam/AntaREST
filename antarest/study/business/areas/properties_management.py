@@ -49,13 +49,13 @@ class AreaPropertiesManager:
             else {}
         )
 
-        area_properties = AreaPropertiesProperties(
+        properties = AreaPropertiesProperties(
             thermal_properties=ThermalAreasProperties(**current_thermal_props),
             optimization_properties=OptimizationProperties(**current_optim_properties),
             adequacy_properties=AdequacyPathProperties(**current_adequacy_patch),
         )
 
-        return AreaProperties.model_validate(area_properties.get_area_properties(area_id))
+        return properties.get_area_properties(area_id)
 
     def update_area_properties(
         self,
