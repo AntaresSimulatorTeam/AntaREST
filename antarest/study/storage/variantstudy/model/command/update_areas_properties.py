@@ -82,7 +82,9 @@ class UpdateAreasProperties(ICommand):
 
             self.save_area_properties(study_data, area_id, current_properties)
 
-        study_data.tree.save(current_properties.thermal_properties.model_dump(by_alias=True), get_thermal_path())
+        study_data.tree.save(
+            current_properties.thermal_properties.model_dump(mode="json", by_alias=True), get_thermal_path()
+        )
 
         output, _ = self._apply_config(study_data.config)
 
@@ -92,12 +94,12 @@ class UpdateAreasProperties(ICommand):
         self, study_data: FileStudy, area_id: str, current_properties: AreaPropertiesProperties
     ) -> None:
         study_data.tree.save(
-            current_properties.optimization_properties.model_dump(by_alias=True),
+            current_properties.optimization_properties.model_dump(mode="json", by_alias=True),
             get_optimization_path(area_id),
         )
         if self.study_version >= STUDY_VERSION_8_3:
             study_data.tree.save(
-                current_properties.adequacy_properties.model_dump(),
+                current_properties.adequacy_properties.model_dump(mode="json"),
                 get_adequacy_patch_path(area_id),
             )
 
