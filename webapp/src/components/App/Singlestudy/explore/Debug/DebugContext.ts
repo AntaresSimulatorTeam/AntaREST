@@ -13,12 +13,13 @@
  */
 
 import { createContext } from "react";
-import type { FileInfo } from "./utils";
 import { voidFn } from "../../../../../utils/fnUtils";
+import type { FileInfo, getTreeData } from "./utils";
 
 const initialDebugContextValue = {
   setSelectedFile: voidFn<[FileInfo]>,
-  reloadTreeData: voidFn,
+  reloadTree: (): ReturnType<typeof getTreeData> => Promise.resolve({}),
+  isTreeLoading: false,
 };
 
 const DebugContext = createContext(initialDebugContextValue);
