@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, MutableMapping, Optional, Sequence
+from typing import Annotated, Any, Optional, Sequence
 
 from pydantic import BeforeValidator, Field, PlainSerializer, ValidationError, field_validator, model_validator
 
@@ -142,7 +142,7 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     sensitivity_config: Optional[XpansionSensitivitySettings] = None
 
     @model_validator(mode="before")
-    def validate_float_values(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
+    def validate_float_values(cls, values: dict[str, Any]) -> dict[str, Any]:
         if "relaxed-optimality-gap" in values:
             values["relaxed_optimality_gap"] = values.pop("relaxed-optimality-gap")
 
