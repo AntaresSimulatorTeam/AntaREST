@@ -97,18 +97,11 @@ function ResultDetails() {
 
   const maxYear = output?.nbyears ?? MAX_YEAR;
 
-  useEffect(
-    () => {
-      const isValidSelectedItem =
-        !!selectedItemId && filteredItems.find((item) => item.id === selectedItemId);
-
-      if (!isValidSelectedItem) {
-        setSelectedItemId(filteredItems.length > 0 ? filteredItems[0].id : "");
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filteredItems],
-  );
+  useEffect(() => {
+    if (!selectedItem) {
+      setSelectedItemId(filteredItems.length > 0 ? filteredItems[0].id : "");
+    }
+  }, [filteredItems, selectedItem]);
 
   const path = useMemo(() => {
     if (output && selectedItem && !isSynthesis) {
@@ -250,7 +243,11 @@ function ResultDetails() {
               >
                 <ToggleButton value={OutputItemType.Areas}>{t("study.areas")}</ToggleButton>
                 <ToggleButton value={OutputItemType.Links}>{t("study.links")}</ToggleButton>
-                <ToggleButton value={OutputItemType.Synthesis}>{t("study.synthesis")}</ToggleButton>
+                {output?.synthesis && (
+                  <ToggleButton value={OutputItemType.Synthesis}>
+                    {t("study.synthesis")}
+                  </ToggleButton>
+                )}
               </ToggleButtonGroup>
               <ListElement
                 list={filteredItems}
