@@ -374,19 +374,20 @@ function Results() {
                             )}
 
                             {row.job && <LaunchJobLogView job={row.job} logButton logErrorButton />}
-                            {row.job?.status === "success" && (
-                              <Tooltip title="Digest">
-                                <EqualizerIcon
-                                  onClick={() => {
-                                    setDialogState({
-                                      type: "digest",
-                                      data: row.job as LaunchJob,
-                                    });
-                                  }}
-                                  sx={iconStyle}
-                                />
-                              </Tooltip>
-                            )}
+                            {row.job?.status === "success" &&
+                              row.output?.settings?.output?.synthesis && (
+                                <Tooltip title="Digest">
+                                  <EqualizerIcon
+                                    onClick={() => {
+                                      setDialogState({
+                                        type: "digest",
+                                        data: row.job as LaunchJob,
+                                      });
+                                    }}
+                                    sx={iconStyle}
+                                  />
+                                </Tooltip>
+                              )}
                             <Box sx={{ height: "24px", margin: 0.5 }}>
                               <Tooltip title={t("global.delete") as string}>
                                 <DeleteForeverIcon
