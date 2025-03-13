@@ -240,7 +240,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             for i, command in enumerate(validated_commands)
         ]
         study.commands.extend(new_commands)
-        self.advance_variant(study)
+        self.on_variant_advance(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -281,7 +281,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             )
             for i, command in enumerate(validated_commands)
         ]
-        self.rebase_variant(study)
+        self.on_variant_rebase(study)
         return str(study.id)
 
     def move_command(
@@ -310,7 +310,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.insert(new_index, command)
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
-            self.rebase_variant(study)
+            self.on_variant_rebase(study)
 
     def remove_command(self, study_id: str, command_id: str, params: RequestParameters) -> None:
         """
@@ -329,7 +329,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             study.commands.pop(index)
             for idx, command in enumerate(study.commands):
                 command.index = idx
-            self.rebase_variant(study)
+            self.on_variant_rebase(study)
 
     def remove_all_commands(self, study_id: str, params: RequestParameters) -> None:
         """
@@ -343,7 +343,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._check_update_authorization(study)
 
         study.commands = []
-        self.rebase_variant(study)
+        self.on_variant_rebase(study)
 
     def update_command(
         self,
@@ -370,7 +370,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         if index >= 0:
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = to_json_string(validated_commands[0].args)
-            self.rebase_variant(study)
+            self.on_variant_rebase(study)
 
     def export_commands_matrices(self, study_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
         study = self._get_variant_study(study_id, params)
@@ -423,31 +423,37 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         assert_permission(params.user, study, StudyPermissionType.READ)
         return study
 
-    def advance_variant(self, study: VariantStudy) -> None:
+    def on_variant_advance(self, study: VariantStudy) -> None:
         """
-        Some study commands have been appended to this study,
-        it will need a snapshot generation (NOT from scratch),
-        and children need to be rebased.
+        Takes necessary actions when some study commands have been appended to this study.
+        It will need a snapshot generation (NOT from scratch),
+        and children need to be notified of their parent change.
         """
         self.repository.save(
             metadata=study,
             update_modification_date=True,
         )
-        self.rebase_children(study.id)
+        self.on_parent_change(study.id)
 
-    def rebase_variant(self, study: VariantStudy) -> None:
+    def get_children(self, parent_id: str) -> List[VariantStudy]:
+        return self.repository.get_children(parent_id=parent_id)
+
+    def on_variant_rebase(self, study: VariantStudy) -> None:
         """
         This variant has been "rebased" in the sense of git (history changed):
         it will need a generation from scratch, and children need
         to be rebased too.
         """
         self._invalidate_snapshot(study)
-        self.rebase_children(study.id)
+        self.on_parent_change(study.id)
 
-    def rebase_children(self, study_id: str) -> None:
+    def on_parent_change(self, study_id: str) -> None:
+        """
+        Takes all necessary actions on children when a study history has changed.
+        """
         # TODO: optimize to not perform one request per child
-        for child in self.repository.get_children(parent_id=study_id):
-            self.rebase_variant(child)
+        for child in self.get_children(parent_id=study_id):
+            self.on_variant_rebase(child)
 
     def _invalidate_snapshot(
         self,
@@ -483,7 +489,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             node=self.get_study_information(study),
             children=[],
         )
-        children = self.repository.get_children(parent_id=parent_id)
+        children = self.get_children(parent_id=parent_id)
         for child in children:
             try:
                 children_tree.children.append(self.get_all_variants_children(child.id, params))
@@ -505,7 +511,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             RequestParameters(DEFAULT_ADMIN_USER),
             raw_study_accepted=True,
         )
-        children = self.repository.get_children(parent_id=parent_id)
+        children = self.get_children(parent_id=parent_id)
         # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
         if not bottom_first:
             fun(study)
