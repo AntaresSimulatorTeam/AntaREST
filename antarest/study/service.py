@@ -89,6 +89,7 @@ from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
+from antarest.study.business.load_management import LoadManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
@@ -504,6 +505,7 @@ class StudyService:
         self.area_manager = AreaManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
+        self.load_manager = LoadManager(command_context)
         self.config_manager = ConfigManager(command_context)
         self.general_manager = GeneralManager(command_context)
         self.thematic_trimming_manager = ThematicTrimmingManager(command_context)

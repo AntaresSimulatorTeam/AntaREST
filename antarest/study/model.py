@@ -15,6 +15,7 @@ import enum
 import secrets
 import uuid
 from datetime import datetime, timedelta
+from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
@@ -537,6 +538,11 @@ class ExportFormat(enum.StrEnum):
             ExportFormat.JSON: ".json",
         }
         return mapping[self]
+
+
+class MatrixFormat(StrEnum):
+    JSON = "json"
+    ARROW = "arrow"
 
 
 class StudyDownloadDTO(AntaresBaseModel):
