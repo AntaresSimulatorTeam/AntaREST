@@ -26,6 +26,7 @@ from antarest.core.exceptions import (
     FileCurrentlyUsedInSettings,
     LinkNotFound,
     MatrixImportFailed,
+    XpansionFileNotFoundError,
 )
 from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
@@ -42,7 +43,6 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
-    XpansionFileNotFoundError,
     XpansionManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -451,10 +451,9 @@ def test_update_constraints(
     study = empty_study_810
     xpansion_manager.create_xpansion_configuration(study)
 
-    with pytest.raises(XpansionFileNotFoundError):
-        xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name="non_existent_file")
-
-    with pytest.raises(XpansionFileNotFoundError):
+    with pytest.raises(
+        XpansionFileNotFoundError, match="Additional constraints file 'non_existent_file' does not exist"
+    ):
         xpansion_manager.update_xpansion_constraints_settings(study=study, constraints_file_name="non_existent_file")
 
     study.get_files().tree.save({"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}})

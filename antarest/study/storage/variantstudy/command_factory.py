@@ -72,6 +72,7 @@ from antarest.study.storage.variantstudy.model.command.update_renewable_cluster 
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
+from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -119,6 +120,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_XPANSION_CAPACITY.value: CreateXpansionCapacity,
     CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
     CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
+    CommandName.UPDATE_XPANSION_SETTINGS.value: UpdateXpansionSettings,
 }
 
 

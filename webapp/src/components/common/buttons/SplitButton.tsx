@@ -118,11 +118,7 @@ export default function SplitButton<OptionValue extends string>(
         disabled={disabled || formattedOptions.length === 0}
         ref={anchorRef}
       >
-        <Button
-          variant={buttonGroupProps.variant || "outlined"} // `LoadingButton` doesn't inherit from `ButtonGroup`
-          {...ButtonProps}
-          onClick={handleButtonClick}
-        >
+        <Button {...ButtonProps} onClick={handleButtonClick}>
           {getButtonLabel(selectedIndex)}
         </Button>
         <Button onClick={handleToggle} disabled={disabled || !!ButtonProps?.loading}>
