@@ -145,3 +145,10 @@ class SimpleKeyValueWriter(IniWriter):
             for key, value in data.items():
                 if value is not None:
                     fp.write(f"{key}={value}\n")
+
+
+def write_ini_file(file: Path, data: JSON) -> None:
+    """
+    Writes the provided 2-levels dictionary as an INI file.
+    """
+    IniWriter().write(data, file)
