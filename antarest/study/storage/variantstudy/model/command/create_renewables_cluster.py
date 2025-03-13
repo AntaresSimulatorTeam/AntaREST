@@ -16,13 +16,13 @@ from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableProperties,
     create_renewable_config,
     create_renewable_properties,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand

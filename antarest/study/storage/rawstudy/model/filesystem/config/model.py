@@ -29,10 +29,10 @@ from .binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
+from .validation import extract_filtering
 
 
 class EnrModelling(EnumIgnoreCase):
