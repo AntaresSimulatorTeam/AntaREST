@@ -18,8 +18,8 @@ import contextlib
 import types
 import typing as t
 
-from sqlalchemy import event  # type: ignore
-from sqlalchemy.engine import Connection, Engine  # type: ignore
+from sqlalchemy import event 
+from sqlalchemy.engine import Connection, Engine 
 
 
 class DBStatementRecorder(contextlib.AbstractContextManager):  # type: ignore

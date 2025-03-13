@@ -14,8 +14,8 @@ import datetime
 import uuid
 from typing import Any, List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table 
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -23,7 +23,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import GroupDTO, Identity, UserInfo
 
 
-class Matrix(Base):  # type: ignore
+class Matrix(Base):
     """
     Represents a matrix object in the database.
 
@@ -37,10 +37,10 @@ class Matrix(Base):  # type: ignore
     # noinspection SpellCheckingInspection
     __tablename__ = "matrix"
 
-    id: str = Column(String(64), primary_key=True)
-    width: int = Column(Integer)
-    height: int = Column(Integer)
-    created_at: datetime.datetime = Column(DateTime)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -80,29 +80,29 @@ class MatrixDataSetDTO(AntaresBaseModel):
 groups_dataset_relation = Table(
     "matrix_dataset_group",
     Base.metadata,
-    Column("dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True),
-    Column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
+    mapped_column("dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True),
+    mapped_column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
 )
 
 
-class MatrixDataSetRelation(Base):  # type: ignore
+class MatrixDataSetRelation(Base):
     # noinspection SpellCheckingInspection
     __tablename__ = "dataset_matrices"
 
     # noinspection SpellCheckingInspection
-    dataset_id: str = Column(
+    dataset_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("dataset.id", name="fk_matrixdatasetrelation_dataset_id"),
         primary_key=True,
     )
     # noinspection SpellCheckingInspection
-    matrix_id: str = Column(
+    matrix_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("matrix.id", name="fk_matrixdatasetrelation_matrix_id"),
         primary_key=True,
     )
-    name: str = Column(String, primary_key=True)
-    matrix: Matrix = relationship(Matrix)
+    name: Mapped[str] = mapped_column(String, primary_key=True)
+    matrix: Mapped[Matrix] = relationship(Matrix)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -121,7 +121,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
         return res
 
 
-class MatrixDataSet(Base):  # type: ignore
+class MatrixDataSet(Base):
     """
     Represents a user dataset containing matrices in the database.
 
@@ -142,23 +142,23 @@ class MatrixDataSet(Base):  # type: ignore
     # noinspection SpellCheckingInspection
     __tablename__ = "dataset"
 
-    id: str = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name: str = Column(String)
+    name: Mapped[str] = mapped_column(String)
     # noinspection SpellCheckingInspection
-    owner_id: int = Column(
+    owner_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("identities.id", name="fk_matrixdataset_identities_id"),
     )
-    public: bool = Column(Boolean, default=False)
-    created_at: datetime.datetime = Column(DateTime)
-    updated_at: datetime.datetime = Column(DateTime)
+    public: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime)
 
-    owner: Identity = relationship(Identity)
+    owner: Mapped[Identity] = relationship(Identity)
     groups = relationship(
         "Group",
         secondary=lambda: groups_dataset_relation,

@@ -15,7 +15,7 @@ import typing as t
 from unittest.mock import Mock
 
 import pytest
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode

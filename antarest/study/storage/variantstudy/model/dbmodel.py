@@ -15,8 +15,8 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String 
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -25,20 +25,20 @@ from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class VariantStudySnapshot(Base):  # type: ignore
+class VariantStudySnapshot(Base):
     """
     Variant Study Snapshot based entity implementation.
     """
 
     __tablename__ = "variant_study_snapshot"
 
-    id: str = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: datetime.date = Column(DateTime)
-    last_executed_command: Optional[str] = Column(String(), nullable=True)
+    created_at: Mapped[datetime.date] = mapped_column(DateTime)
+    last_executed_command: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
@@ -49,27 +49,27 @@ class VariantStudySnapshot(Base):  # type: ignore
         return f"[Snapshot] id={self.id}, created_at={self.created_at}"
 
 
-class CommandBlock(Base):  # type: ignore
+class CommandBlock(Base):
     """
     Command Block based entity implementation.
     """
 
     __tablename__ = "commandblock"
 
-    id: str = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    study_id: str = Column(String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"))
-    index: int = Column(Integer)
-    command: str = Column(String(255))
-    version: int = Column(Integer)
-    args: str = Column(String())
-    study_version: str = Column(String(36))
-    user_id: int = Column(Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True)
-    updated_at: datetime.datetime = Column(DateTime, nullable=True)
+    study_id: Mapped[str] = mapped_column(String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"))
+    index: Mapped[int] = mapped_column(Integer)
+    command: Mapped[str] = mapped_column(String(255))
+    version: Mapped[int] = mapped_column(Integer)
+    args: Mapped[str] = mapped_column(String())
+    study_version: Mapped[str] = mapped_column(String(36))
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=True)
 
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
@@ -106,12 +106,12 @@ class VariantStudy(Study):
 
     __tablename__ = "variantstudy"
 
-    id: str = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    generation_task: Optional[str] = Column(String(), nullable=True)
+    generation_task: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",

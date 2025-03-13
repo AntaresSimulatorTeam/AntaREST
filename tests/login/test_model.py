@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import sessionmaker  # type: ignore
+from sqlalchemy.engine.base import Engine 
+from sqlalchemy.orm import sessionmaker 
 
 from antarest.login.model import (
     ADMIN_ID,

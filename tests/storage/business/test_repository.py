@@ -13,7 +13,7 @@
 import datetime
 from unittest.mock import Mock
 
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 
 from antarest.core.interfaces.cache import ICache
 from antarest.study.model import RawStudy

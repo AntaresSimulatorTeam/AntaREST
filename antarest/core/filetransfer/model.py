@@ -15,7 +15,8 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy.orm import mapped_column
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -53,23 +54,23 @@ class FileDownloadTaskDTO(AntaresBaseModel):
     task: str
 
 
-class FileDownload(Base):  # type: ignore
+class FileDownload(Base):
     __tablename__ = "file_download"
 
-    id = Column(
+    id = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    owner = Column(Integer)
-    name = Column(String)
-    filename = Column(String)
-    path = Column(String)
-    ready = Column(Boolean, default=False)
-    expiration_date = Column(DateTime)
-    failed = Column(Boolean, default=False)
-    error_message = Column(String)
+    owner = mapped_column(Integer)
+    name = mapped_column(String)
+    filename = mapped_column(String)
+    path = mapped_column(String)
+    ready = mapped_column(Boolean, default=False)
+    expiration_date = mapped_column(DateTime)
+    failed = mapped_column(Boolean, default=False)
+    error_message = mapped_column(String)
 
     def to_dto(self) -> FileDownloadDTO:
         return FileDownloadDTO(

@@ -15,7 +15,7 @@ import os
 from io import StringIO
 from pathlib import Path
 
-from sqlalchemy.orm import declarative_base  # type: ignore
+from sqlalchemy.orm import declarative_base, DeclarativeBase
 
 from alembic import command
 from alembic.config import Config
@@ -24,7 +24,8 @@ from antarest.core.utils.utils import get_local_path
 
 logger = logging.getLogger(__name__)
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 def upgrade_db(config_file: Path) -> None:

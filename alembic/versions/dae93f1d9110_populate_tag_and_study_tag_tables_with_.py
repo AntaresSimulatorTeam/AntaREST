@@ -13,7 +13,7 @@ import typing as t
 
 import sqlalchemy as sa  # type: ignore
 from alembic import op
-from sqlalchemy.engine import Connection  # type: ignore
+from sqlalchemy.engine import Connection 
 
 from antarest.study.css4_colors import COLOR_NAMES
 from antarest.core.serde.json import from_json, to_json

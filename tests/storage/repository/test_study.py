@@ -13,7 +13,7 @@
 import json
 from datetime import datetime
 
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.model import PublicMode

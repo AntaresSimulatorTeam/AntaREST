@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import pytest
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 
 from antarest.login.model import Bot, Group, Password, Role, RoleType, User, UserLdap
 from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository

@@ -22,7 +22,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
 from antares.study.version import StudyVersion
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 from starlette.responses import Response
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig

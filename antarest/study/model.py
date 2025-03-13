@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, c
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
-from sqlalchemy import (  # type: ignore
+from sqlalchemy import ( 
     Boolean,
     Column,
     DateTime,
@@ -30,7 +30,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import relationship, validates  # type: ignore
+from sqlalchemy.orm import relationship, validates, mapped_column, Mapped
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -83,7 +83,7 @@ STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
 }
 
 
-class StudyGroup(Base):  # type:ignore
+class StudyGroup(Base):
     """
     A table to manage the many-to-many relationship between `Study` and `Group`
 
@@ -95,8 +95,8 @@ class StudyGroup(Base):  # type:ignore
     __tablename__ = "group_metadata"
     __table_args__ = (PrimaryKeyConstraint("study_id", "group_id"),)
 
-    group_id: str = Column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
-    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    group_id: Mapped[str] = mapped_column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
+    study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -111,7 +111,7 @@ class StudyGroup(Base):  # type:ignore
         return f"{cls_name}({study_id=}, {group_id=})"
 
 
-class StudyTag(Base):  # type:ignore
+class StudyTag(Base):
     """
     A table to manage the many-to-many relationship between `Study` and `Tag`
 
@@ -123,8 +123,8 @@ class StudyTag(Base):  # type:ignore
     __tablename__ = "study_tag"
     __table_args__ = (PrimaryKeyConstraint("study_id", "tag_label"),)
 
-    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
-    tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
+    study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    tag_label: Mapped[str] = mapped_column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -139,7 +139,7 @@ class StudyTag(Base):  # type:ignore
         return f"{cls_name}({study_id=}, {tag=})"
 
 
-class Tag(Base):  # type:ignore
+class Tag(Base):
     """
     Represents a tag in the database.
 
@@ -152,10 +152,10 @@ class Tag(Base):  # type:ignore
 
     __tablename__ = "tag"
 
-    label = Column(String(40), primary_key=True, index=True)
-    color: str = Column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
+    label = mapped_column(String(40), primary_key=True, index=True)
+    color: Mapped[str] = mapped_column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
 
-    studies: List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
+    studies: Mapped[List["Study"]] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -179,21 +179,21 @@ class CommentsDto(AntaresBaseModel):
     comments: str
 
 
-class StudyAdditionalData(Base):  # type:ignore
+class StudyAdditionalData(Base):
     """
     Study additional data
     """
 
     __tablename__ = "study_additional_data"
 
-    study_id = Column(
+    study_id = mapped_column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    author = Column(String(255), default="Unknown")
-    horizon = Column(String)
-    patch = Column(String(), index=True, nullable=True)
+    author = mapped_column(String(255), default="Unknown")
+    horizon = mapped_column(String)
+    patch = mapped_column(String(), index=True, nullable=True)
 
     @override
     def __eq__(self, other: Any) -> bool:
@@ -204,34 +204,34 @@ class StudyAdditionalData(Base):  # type:ignore
         return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
 
 
-class Study(Base):  # type: ignore
+class Study(Base):
     """
     Standard Study entity
     """
 
     __tablename__ = "study"
 
-    id = Column(
+    id = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name = Column(String(255), index=True)
-    type = Column(String(50), index=True)
-    version = Column(String(255), index=True)
-    author = Column(String(255))
-    created_at = Column(DateTime, index=True)
-    updated_at = Column(DateTime, index=True)
-    last_access = Column(DateTime)
-    path = Column(String())
-    folder = Column(String, nullable=True, index=True)
-    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
-    public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
-    archived = Column(Boolean(), default=False, index=True)
+    name = mapped_column(String(255), index=True)
+    type = mapped_column(String(50), index=True)
+    version = mapped_column(String(255), index=True)
+    author = mapped_column(String(255))
+    created_at = mapped_column(DateTime, index=True)
+    updated_at = mapped_column(DateTime, index=True)
+    last_access = mapped_column(DateTime)
+    path = mapped_column(String())
+    folder = mapped_column(String, nullable=True, index=True)
+    parent_id = mapped_column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
+    public_mode = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
+    owner_id = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    archived = mapped_column(Boolean(), default=False, index=True)
 
-    tags: List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
+    tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     additional_data = relationship(
@@ -242,7 +242,7 @@ class Study(Base):  # type: ignore
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
-    jobs: List["TaskJob"] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
+    jobs: Mapped[List["TaskJob"]] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
@@ -282,7 +282,7 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
 
-    @validates("folder")  # type: ignore
+    @validates("folder")
     def validate_folder(self, key: str, folder: Optional[str]) -> Optional[str]:
         """
         We want to store the path in posix format in the database, even on windows.
@@ -307,14 +307,14 @@ class RawStudy(Study):
 
     __tablename__ = "rawstudy"
 
-    id: str = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status: StudyContentStatus = Column(Enum(StudyContentStatus))
-    workspace: str = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
-    missing = Column(DateTime, nullable=True, index=True)
+    content_status: Mapped[StudyContentStatus] = mapped_column(Enum(StudyContentStatus))
+    workspace: Mapped[str] = mapped_column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
+    missing = mapped_column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",

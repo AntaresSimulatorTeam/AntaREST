@@ -19,7 +19,7 @@ from http import HTTPStatus
 from typing import Awaitable, Callable, Dict, List, Optional
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 from typing_extensions import override
 
 from antarest.core.config import Config

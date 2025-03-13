@@ -13,7 +13,8 @@
 from enum import StrEnum
 from typing import Any, Optional
 
-from sqlalchemy import Column, Integer, String  # type: ignore
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import mapped_column
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -25,11 +26,11 @@ class ConfigDataDTO(AntaresBaseModel):
     value: Optional[str]
 
 
-class ConfigData(Base):  # type: ignore
+class ConfigData(Base):
     __tablename__ = "configdata"
-    owner = Column(Integer(), primary_key=True)
-    key = Column(String(), primary_key=True)
-    value = Column(String(), nullable=True)
+    owner = mapped_column(Integer(), primary_key=True)
+    key = mapped_column(String(), primary_key=True)
+    value = mapped_column(String(), nullable=True)
 
     @override
     def __eq__(self, other: Any) -> bool:

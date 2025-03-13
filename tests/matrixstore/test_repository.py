@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import typing as npt
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User

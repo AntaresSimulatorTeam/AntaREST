@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
