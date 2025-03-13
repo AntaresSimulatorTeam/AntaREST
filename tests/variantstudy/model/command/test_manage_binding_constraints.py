@@ -12,7 +12,7 @@
 
 import pytest
 
-from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_reader import read_ini
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -97,7 +97,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         assert link_path.exists(), f"Missing matrix link: {matrix_link!r}"
 
     cfg_path = study_path / "input/bindingconstraints/bindingconstraints.ini"
-    bd_config = IniReader().read(cfg_path)
+    bd_config = read_ini(cfg_path)
 
     expected_bd_1 = {
         "name": "BD 1",
@@ -154,7 +154,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
     ).apply(empty_study)
     assert output.status, output.message
 
-    bd_config = IniReader().read(cfg_path)
+    bd_config = read_ini(cfg_path)
     expected_bd_1 = {
         "name": "BD 1",
         "id": "bd 1",
@@ -197,7 +197,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         else:
             raise NotImplementedError(f"Unexpected matrix link: {matrix_link!r}")
 
-    bd_config = IniReader().read(cfg_path)
+    bd_config = read_ini(cfg_path)
     assert len(bd_config) == 1
     expected_bd_2 = {
         "name": "BD 2",

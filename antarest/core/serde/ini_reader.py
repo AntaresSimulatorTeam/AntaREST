@@ -379,15 +379,8 @@ class SimpleKeyValueReader(IniReader):
         return obj[self._section_name]
 
 
-def read_ini(content: TextIO) -> JSON:
+def read_ini(source: Path | TextIO) -> JSON:
     """
     Parses the provided content as a 2-levels dictionary.
     """
-    return IniReader().read(content)
-
-
-def read_ini_file(file: Path) -> JSON:
-    """
-    Parses the provided file as a 2-levels dictionary.
-    """
-    return IniReader().read(file)
+    return IniReader().read(source)

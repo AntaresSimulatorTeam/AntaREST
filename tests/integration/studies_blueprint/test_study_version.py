@@ -17,7 +17,7 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
-from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_reader import read_ini
 from tests.integration.assets import ASSETS_DIR
 
 
@@ -101,5 +101,5 @@ author = Unknown
         study_id = res.json()
 
         res = client.get(f"/v1/studies/{study_id}/raw/original-file?path=study")
-        study_antares_content = IniReader().read(io.StringIO(res.text))
+        study_antares_content = read_ini(io.StringIO(res.text))
         assert str(study_antares_content["antares"]["version"]) == "880"

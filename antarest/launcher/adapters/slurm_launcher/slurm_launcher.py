@@ -34,8 +34,8 @@ from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitCo
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.serde.ini_reader import IniReader
-from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.serde.ini_reader import read_ini
+from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -646,13 +646,13 @@ class SlurmLauncher(AbstractLauncher):
 
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:
     study_info_path = study_path / "study.antares"
-    study_info = IniReader().read(study_info_path)
+    study_info = read_ini(study_info_path)
     if "antares" in study_info:
         if version.major < 9:  # should be written as XYZ
             version_to_write = f"{version:ddd}"
         else:  # should be written as X.Y
             version_to_write = f"{version:2d}"
         study_info["antares"]["solver_version"] = version_to_write
-        IniWriter().write(study_info, study_info_path)
+        write_ini_file(study_info_path, study_info)
     else:
         logger.warning("Failed to find antares study info")
