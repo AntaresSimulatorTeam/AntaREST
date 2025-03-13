@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, Sequence, cast
+from typing import List, Optional, Sequence
 
 from sqlalchemy.orm import Session, joinedload
 from typing_extensions import override

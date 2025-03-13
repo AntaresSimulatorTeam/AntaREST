@@ -28,12 +28,16 @@ class ConfigDataRepository:
         return configdata
 
     def get(self, key: str, owner: Optional[int] = None) -> Optional[ConfigData]:
-        return db.session.query(ConfigData).filter(
+        return (
+            db.session.query(ConfigData)
+            .filter(
                 and_(
                     ConfigData.owner == (owner or DEFAULT_ADMIN_USER.id),
                     ConfigData.key == key,
                 )
-            ).first()
+            )
+            .first()
+        )
 
     def get_json(self, key: str, owner: Optional[int] = None) -> Optional[JSON]:
         configdata = self.get(key, owner)
