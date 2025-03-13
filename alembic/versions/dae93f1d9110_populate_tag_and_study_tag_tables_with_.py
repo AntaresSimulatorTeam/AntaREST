@@ -12,11 +12,11 @@ import secrets
 import typing as t
 
 import sqlalchemy as sa  # type: ignore
-from alembic import op
-from sqlalchemy.engine import Connection 
+from sqlalchemy.engine import Connection
 
-from antarest.study.css4_colors import COLOR_NAMES
+from alembic import op
 from antarest.core.serde.json import from_json, to_json
+from antarest.study.css4_colors import COLOR_NAMES
 
 # revision identifiers, used by Alembic.
 revision = "dae93f1d9110"

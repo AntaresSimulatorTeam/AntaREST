@@ -16,8 +16,8 @@ from typing import Any, Dict, List, MutableMapping, Optional
 
 from pydantic import Field
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String 
-from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -182,7 +182,9 @@ class JobResult(Base):
     output_id: Mapped[Optional[str]] = mapped_column(String())
     exit_code: Mapped[Optional[int]] = mapped_column(Integer)
     solver_stats: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
-    owner_id: Mapped[Optional[int]] = mapped_column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
+    owner_id: Mapped[Optional[int]] = mapped_column(
+        Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True
+    )
 
     # Define a many-to-one relationship between `JobResult` and `Identity`.
     # This relationship is required to display the owner of a job result in the UI.

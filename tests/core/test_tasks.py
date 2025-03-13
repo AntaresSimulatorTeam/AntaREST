@@ -20,9 +20,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from fastapi import HTTPException
-from sqlalchemy import create_engine 
-from sqlalchemy.engine.base import Engine 
-from sqlalchemy.orm import sessionmaker 
+from sqlalchemy import create_engine
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.orm import sessionmaker
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus

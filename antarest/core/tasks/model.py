@@ -15,9 +15,9 @@ from datetime import datetime
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String 
-from sqlalchemy.engine.base import Engine 
-from sqlalchemy.orm import relationship, sessionmaker, mapped_column, Mapped
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -167,7 +167,9 @@ class TaskJob(Base):
 
     # Define a one-to-many relationship between `TaskJob` and `TaskJobLog`.
     # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
-    logs: Mapped[List["TaskJobLog"]] = relationship("TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan")
+    logs: Mapped[List["TaskJobLog"]] = relationship(
+        "TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan"
+    )
 
     # Define a many-to-one relationship between `TaskJob` and `Identity`.
     # If the Identity is deleted, all attached TaskJob must be preserved.
@@ -257,3 +259,9 @@ def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> Non
         q = session.query(TaskJob).filter(TaskJob.status.in_(orphan_status))  # type: ignore
         q.update(updated_values, synchronize_session=False)
         session.commit()
+
+
+on.commit()
+
+
+on.commit()

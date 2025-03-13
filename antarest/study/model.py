@@ -20,9 +20,8 @@ from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, c
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
-from sqlalchemy import ( 
+from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     Enum,
     ForeignKey,
@@ -30,7 +29,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import relationship, validates, mapped_column, Mapped
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -95,8 +94,12 @@ class StudyGroup(Base):
     __tablename__ = "group_metadata"
     __table_args__ = (PrimaryKeyConstraint("study_id", "group_id"),)
 
-    group_id: Mapped[str] = mapped_column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
-    study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    group_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    study_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False
+    )
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -123,8 +126,12 @@ class StudyTag(Base):
     __tablename__ = "study_tag"
     __table_args__ = (PrimaryKeyConstraint("study_id", "tag_label"),)
 
-    study_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
-    tag_label: Mapped[str] = mapped_column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
+    study_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    tag_label: Mapped[str] = mapped_column(
+        String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False
+    )
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -242,7 +249,9 @@ class Study(Base):
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
-    jobs: Mapped[List["TaskJob"]] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
+    jobs: Mapped[List["TaskJob"]] = relationship(
+        "TaskJob", back_populates="study", cascade="all, delete, delete-orphan"
+    )
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 

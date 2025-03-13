@@ -15,7 +15,7 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import mapped_column
 from typing_extensions import override
 

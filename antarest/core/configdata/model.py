@@ -13,7 +13,7 @@
 from enum import StrEnum
 from typing import Any, Optional
 
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import mapped_column
 from typing_extensions import override
 

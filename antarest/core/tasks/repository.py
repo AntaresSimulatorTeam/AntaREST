@@ -16,7 +16,7 @@ from operator import and_
 from typing import List, Optional
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session 
+from sqlalchemy.orm import Session
 
 from antarest.core.tasks.model import TaskJob, TaskListFilter
 from antarest.core.utils.fastapi_sqlalchemy import db

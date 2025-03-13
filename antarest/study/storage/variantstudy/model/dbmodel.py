@@ -15,8 +15,8 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String 
-from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base

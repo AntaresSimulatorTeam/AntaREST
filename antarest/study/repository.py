@@ -15,8 +15,8 @@ import enum
 from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import and_, func, not_, or_, sql 
-from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic 
+from sqlalchemy import and_, func, not_, or_, sql
+from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser

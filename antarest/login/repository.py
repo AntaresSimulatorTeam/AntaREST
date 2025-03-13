@@ -13,8 +13,8 @@
 import logging
 from typing import List, Optional
 
-from sqlalchemy import exists 
-from sqlalchemy.orm import Session, joinedload 
+from sqlalchemy import exists
+from sqlalchemy.orm import Session, joinedload
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Bot, Group, Role, User, UserLdap

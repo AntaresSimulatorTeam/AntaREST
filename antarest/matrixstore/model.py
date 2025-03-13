@@ -14,8 +14,8 @@ import datetime
 import uuid
 from typing import Any, List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table 
-from sqlalchemy.orm import relationship, mapped_column, Mapped
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base
