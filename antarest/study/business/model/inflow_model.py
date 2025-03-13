@@ -42,7 +42,7 @@ class InflowStructureUpdate(AntaresBaseModel, extra="forbid", populate_by_name=T
 
 
 @all_optional_model
-class InflowStructureProperties(AntaresBaseModel, extra="forbid", populate_by_name=True):
+class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
     inter_monthly_correlation: float = Field(
         ge=0,
         le=1,
