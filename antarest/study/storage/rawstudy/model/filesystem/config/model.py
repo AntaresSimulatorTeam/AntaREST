@@ -340,5 +340,11 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
         )
 
 
-def validate_config(version: StudyVersion, data: Dict[str, Any]) -> FileStudyTreeConfigDTO:
-    return FileStudyTreeConfigDTO.model_validate(data, context=study_version_context(version))
+def validate_config(version: StudyVersion, data: Dict[str, Any]) -> FileStudyTreeConfig:
+    """
+    Parses the provided data, assuming the provided study version.
+
+    The instantiation of some of the config objects depend on the study version
+    (thermal clusters, etc).
+    """
+    return FileStudyTreeConfigDTO.model_validate(data, context=study_version_context(version)).to_build_config()
