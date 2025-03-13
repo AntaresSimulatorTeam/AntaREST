@@ -11,9 +11,7 @@
 # This file is part of the Antares project.
 import itertools
 import logging
-import shutil
 import uuid
-from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union, cast
 
 from antarest.core.utils.utils import StopWatch
@@ -50,7 +48,7 @@ class VariantCommandGenerator:
         commands: List[List[ICommand]],
         data: Union[FileStudy, FileStudyTreeConfig],
         applier: APPLY_CALLBACK,
-        metadata: Optional[VariantStudy] = None,
+        metadata: VariantStudy,
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
@@ -110,38 +108,27 @@ class VariantCommandGenerator:
     def generate(
         self,
         commands: List[List[ICommand]],
-        dest_path: Optional[Path] = None,
-        metadata: Optional[VariantStudy] = None,
-        delete_on_failure: bool = True,
-        study: Optional[FileStudy] = None,
+        metadata: VariantStudy,
+        study: FileStudy,
+        listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         # Build file study
         logger.info("Building study tree")
-        if not study:
-            if not dest_path:
-                raise AssertionError("Variant generation error: either dest_path or study must be provided.")
-            study = self.study_factory.create_from_fs(
-                dest_path, metadata.id if metadata else "", use_cache=metadata is not None
-            )
-        if metadata:
-            update_antares_info(metadata, study.tree, update_author=True)
+        update_antares_info(metadata, study.tree, update_author=True)
 
-        results = VariantCommandGenerator._generate(
+        return VariantCommandGenerator._generate(
             commands,
             study,
-            lambda command, data, listener: command.apply(cast(FileStudy, data), listener),
+            lambda command, data, _listener: command.apply(cast(FileStudy, data), _listener),
             metadata,
+            listener,
         )
-
-        if not results.success and delete_on_failure:
-            shutil.rmtree(study.config.study_path)
-        return results
 
     def generate_config(
         self,
         commands: List[List[ICommand]],
         config: FileStudyTreeConfig,
-        metadata: Optional[VariantStudy] = None,
+        metadata: VariantStudy,
     ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
         logger.info("Building config (light generation)")
         results = VariantCommandGenerator._generate(
