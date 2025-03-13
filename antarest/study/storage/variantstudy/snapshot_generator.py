@@ -122,7 +122,7 @@ class SnapshotGenerator:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
                 created_at=datetime.datetime.utcnow(),
-                last_executed_command=(variant_study.commands[-1].id if variant_study.commands else None),
+                last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
 
             logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
