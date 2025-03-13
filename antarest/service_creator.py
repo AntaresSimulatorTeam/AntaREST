@@ -85,7 +85,7 @@ def init_db_engine(
     else:
         connect_args["connect_timeout"] = config.db.db_connect_timeout
 
-    extra = {}
+    extra: Dict[str, Any] = {}
     if config.db.pool_use_null:
         extra["poolclass"] = NullPool
     elif not config.db.db_url.startswith("sqlite"):

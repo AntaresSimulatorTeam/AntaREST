@@ -136,13 +136,13 @@ class StudyTag(Base):
     @override
     def __str__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
-        return f"[{cls_name}] study_id={self.study_id}, tag={self.tag}"
+        return f"[{cls_name}] study_id={self.study_id}, tag={self.tag_label}"
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         study_id = self.study_id
-        tag = self.tag
+        tag = self.tag_label
         return f"{cls_name}({study_id=}, {tag=})"
 
 
@@ -218,30 +218,30 @@ class Study(Base):
 
     __tablename__ = "study"
 
-    id = mapped_column(
+    id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name = mapped_column(String(255), index=True)
-    type = mapped_column(String(50), index=True)
-    version = mapped_column(String(255), index=True)
-    author = mapped_column(String(255))
-    created_at = mapped_column(DateTime, index=True)
-    updated_at = mapped_column(DateTime, index=True)
-    last_access = mapped_column(DateTime)
-    path = mapped_column(String())
-    folder = mapped_column(String, nullable=True, index=True)
-    parent_id = mapped_column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
-    public_mode = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
-    archived = mapped_column(Boolean(), default=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
+    type: Mapped[str] = mapped_column(String(50), index=True)
+    version: Mapped[str] = mapped_column(String(255), index=True)
+    author: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    last_access: Mapped[datetime] = mapped_column(DateTime)
+    path: Mapped[str] = mapped_column(String())
+    folder: Mapped[str] = mapped_column(String, nullable=True, index=True)
+    parent_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
+    public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    archived: Mapped[bool] = mapped_column(Boolean(), default=False, index=True)
 
     tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
-    owner = relationship(Identity, uselist=False)
-    groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
-    additional_data = relationship(
+    owner: Mapped[Identity] = relationship(Identity, uselist=False)
+    groups: Mapped[List[Group]] = relationship(Group, secondary=StudyGroup.__table__, cascade="")
+    additional_data: Mapped[StudyAdditionalData] = relationship(
         StudyAdditionalData,
         uselist=False,
         cascade="all, delete, delete-orphan",

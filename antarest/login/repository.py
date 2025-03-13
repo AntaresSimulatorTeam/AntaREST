@@ -52,16 +52,13 @@ class GroupRepository:
         return group
 
     def get(self, id: str) -> Optional[Group]:
-        group: Group = self.session.query(Group).get(id)
-        return group
+        return self.session.get(Group, id)
 
-    def get_by_name(self, name: str) -> Group:
-        group: Group = self.session.query(Group).filter_by(name=name).first()
-        return group
+    def get_by_name(self, name: str) -> Optional[Group]:
+        return self.session.query(Group).filter_by(name=name).first()
 
     def get_all(self) -> List[Group]:
-        groups: List[Group] = self.session.query(Group).all()
-        return groups
+        return self.session.query(Group).all()
 
     def delete(self, id: str) -> None:
         g = self.session.query(Group).get(id)
@@ -101,22 +98,17 @@ class UserRepository:
         return user
 
     def get(self, id_number: int) -> Optional[User]:
-        user: User = self.session.query(User).get(id_number)
-        return user
+        return self.session.get(User, id_number)
 
     def get_by_name(self, name: str) -> Optional[User]:
-        user: User = self.session.query(User).filter_by(name=name).first()
-        return user
+        return self.session.query(User).filter_by(name=name).first()
 
     def get_all(self) -> List[User]:
-        users: List[User] = self.session.query(User).all()
-        return users
+        return self.session.query(User).all()
 
     def delete(self, id: int) -> None:
-        u: User = self.session.query(User).get(id)
-        self.session.delete(u)
+        self.session.query(User).filter(User.id == id).delete(synchronize_session=False)
         self.session.commit()
-
         logger.debug(f"User {id} deleted")
 
 
@@ -150,26 +142,21 @@ class UserLdapRepository:
         return user_ldap
 
     def get(self, id_number: int) -> Optional[UserLdap]:
-        user_ldap: Optional[UserLdap] = self.session.query(UserLdap).get(id_number)
-        return user_ldap
+        return self.session.query(UserLdap).get(id_number)
 
     def get_by_name(self, name: str) -> Optional[UserLdap]:
-        user: UserLdap = self.session.query(UserLdap).filter_by(name=name).first()
-        return user
+        return self.session.query(UserLdap).filter_by(name=name).first()
 
     def get_by_external_id(self, external_id: str) -> Optional[UserLdap]:
-        user: UserLdap = self.session.query(UserLdap).filter_by(external_id=external_id).first()
-        return user
+        return self.session.query(UserLdap).filter_by(external_id=external_id).first()
 
     def get_all(
         self,
     ) -> List[UserLdap]:
-        users_ldap: List[UserLdap] = self.session.query(UserLdap).all()
-        return users_ldap
+        return self.session.query(UserLdap).all()
 
     def delete(self, id_number: int) -> None:
-        u: UserLdap = self.session.query(UserLdap).get(id_number)
-        self.session.delete(u)
+        self.session.query(UserLdap).filter(UserLdap.id == id_number).delete(synchronize_session=False)
         self.session.commit()
 
         logger.debug(f"User LDAP {id_number} deleted")
@@ -205,33 +192,27 @@ class BotRepository:
         return bot
 
     def get(self, id_number: int) -> Optional[Bot]:
-        bot: Bot = self.session.query(Bot).get(id_number)
-        return bot
+        return self.session.query(Bot).get(id_number)
 
     def get_all(
         self,
     ) -> List[Bot]:
-        bots: List[Bot] = self.session.query(Bot).all()
-        return bots
+        return self.session.query(Bot).all()
 
     def delete(self, id_number: int) -> None:
-        u: Bot = self.session.query(Bot).get(id_number)
-        self.session.delete(u)
+        self.session.query(Bot).filter(Bot.id == id_number).delete(synchronize_session=False)
         self.session.commit()
 
         logger.debug(f"Bot {id_number} deleted")
 
     def get_all_by_owner(self, owner: int) -> List[Bot]:
-        bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
-        return bots
+        return self.session.query(Bot).filter_by(owner=owner).all()
 
     def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
-        bot: Bot = self.session.query(Bot).filter_by(owner=owner, name=name).first()
-        return bot
+        return self.session.query(Bot).filter_by(owner=owner, name=name).first()
 
     def exists(self, id_number: int) -> bool:
-        res: bool = self.session.query(exists().where(Bot.id == id_number)).scalar()
-        return res
+        return self.session.query(exists().where(Bot.id == id_number)).scalar() is not None
 
 
 class RoleRepository:
@@ -263,8 +244,7 @@ class RoleRepository:
         return role
 
     def get(self, user: int, group: str) -> Optional[Role]:
-        role: Role = self.session.query(Role).get((user, group))
-        return role
+        return self.session.query(Role).get((user, group))
 
     def get_all_by_user(self, /, user_id: int) -> List[Role]:
         """

@@ -198,7 +198,7 @@ class StudyMetadataRepository:
         #  see: antarest.study.service.StudyService.delete_study
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
-        study: Study = (
+        study = (
             self.session.query(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
@@ -225,8 +225,7 @@ class StudyMetadataRepository:
         return study
 
     def get_additional_data(self, study_id: str) -> Optional[StudyAdditionalData]:
-        study: StudyAdditionalData = self.session.query(StudyAdditionalData).get(study_id)
-        return study
+        return self.session.query(StudyAdditionalData).get(study_id)
 
     def get_all(
         self,
@@ -300,7 +299,7 @@ class StudyMetadataRepository:
     def _search_studies(
         self,
         study_filter: StudyFilter,
-    ) -> Query:
+    ) -> Query[Study]:
         """
         Build a `SQL Query` based on specified filters.
 
@@ -418,7 +417,7 @@ class StudyMetadataRepository:
         session.commit()
         # Delete any tag that is not associated with any study.
         # Note: If tags are to be associated with objects other than Study, this code must be updated.
-        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
+        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)
         session.commit()
 
     def list_duplicates(self) -> List[Tuple[str, str]]:

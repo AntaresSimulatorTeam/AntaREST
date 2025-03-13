@@ -65,8 +65,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
         q = q.order_by(Study.created_at.desc())
-        studies = cast(List[VariantStudy], q.all())
-        return studies
+        return q.all()
 
     def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
         """
@@ -122,7 +121,7 @@ class VariantStudyRepository(StudyMetadataRepository):
             .options(joinedload(VariantStudy.additional_data))
             .options(joinedload(VariantStudy.owner))
             .options(joinedload(VariantStudy.groups))
-            .filter(VariantStudy.id.in_(variant_ids))  # type: ignore
+            .filter(VariantStudy.id.in_(variant_ids))
         )
         index = {id_: i for i, id_ in enumerate(variant_ids)}
         return sorted(q, key=lambda v: index[v.id])
