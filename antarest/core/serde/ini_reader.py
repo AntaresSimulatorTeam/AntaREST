@@ -377,3 +377,10 @@ class SimpleKeyValueReader(IniReader):
         sections = super().read(path)
         obj = cast(Mapping[str, JSON], sections)
         return obj[self._section_name]
+
+
+def read_ini(source: Path | TextIO) -> JSON:
+    """
+    Parses the provided content as a 2-levels dictionary.
+    """
+    return IniReader().read(source)

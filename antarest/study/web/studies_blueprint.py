@@ -39,6 +39,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
+    StudyVersionStr,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
@@ -426,7 +427,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     )
     def create_study(
         name: str,
-        version: str = "",
+        version: StudyVersionStr | None = None,
         groups: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:

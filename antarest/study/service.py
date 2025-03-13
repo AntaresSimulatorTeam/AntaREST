@@ -936,7 +936,7 @@ class StudyService:
     def create_study(
         self,
         study_name: str,
-        version: Optional[str],
+        version: Optional[StudyVersion],
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
@@ -966,7 +966,7 @@ class StudyService:
             path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=version or f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
+            version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author),
         )
 

@@ -16,7 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
@@ -60,11 +60,12 @@ STUDY_VERSION_8_5 = StudyVersion.parse("8.5")
 STUDY_VERSION_8_6 = StudyVersion.parse("8.6")
 STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
 STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 
-StudyVersionStr = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
-StudyVersionInt = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
+StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
+StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
 
 
 STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
