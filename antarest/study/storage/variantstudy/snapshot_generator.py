@@ -99,7 +99,7 @@ class SnapshotGenerator:
 
         try:
             if search_result.force_regenerate or not snapshot_dir.exists():
-                self._invalidate_cache(variant_study_id)
+                remove_from_cache(self.cache, variant_study_id)
                 logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
                 shutil.rmtree(snapshot_dir, ignore_errors=True)
                 self._export_ref_study(snapshot_dir, ref_study)
@@ -132,7 +132,7 @@ class SnapshotGenerator:
             self._update_cache(file_study)
 
         except Exception:
-            self._invalidate_cache(variant_study_id)
+            remove_from_cache(self.cache, variant_study_id)
             shutil.rmtree(snapshot_dir, ignore_errors=True)
             raise
 
@@ -206,9 +206,6 @@ class SnapshotGenerator:
         assert isinstance(horizon, (str, int))
         study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
-
-    def _invalidate_cache(self, study_id: str) -> None:
-        remove_from_cache(self.cache, study_id)
 
     def _update_cache(self, file_study: FileStudy) -> None:
         # The study configuration is changed, so we update the cache.

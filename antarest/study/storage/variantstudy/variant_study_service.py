@@ -436,6 +436,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self.on_parent_change(study.id)
 
     def get_children(self, parent_id: str) -> List[VariantStudy]:
+        """
+        Get the direct children of the specified study (in chronological creation order).
+        """
         return self.repository.get_children(parent_id=parent_id)
 
     def on_variant_rebase(self, study: VariantStudy) -> None:

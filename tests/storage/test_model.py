@@ -31,7 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.validation import s
 
 
 @pytest.fixture
-def study_tree_config():
+def config() -> FileStudyTreeConfig:
     return FileStudyTreeConfig(
         study_path=Path("test"),
         path=Path("curr_path"),
@@ -76,8 +76,7 @@ def study_tree_config():
     )
 
 
-def test_file_study_tree_config_dto(study_tree_config):
-    config = study_tree_config
+def test_file_study_tree_config_dto(config: FileStudyTreeConfig):
     config_dto = FileStudyTreeConfigDTO.from_build_config(config)
     assert sorted(list(config_dto.model_dump()) + ["cache"]) == sorted(list(config.__dict__))
     assert config_dto.to_build_config() == config
@@ -89,15 +88,13 @@ def test_file_study_tree_config_dto(study_tree_config):
     assert parsed_config == config
 
 
-def test_file_study_tree_config_round_trip(study_tree_config):
-    config = study_tree_config
+def test_file_study_tree_config_round_trip(config: FileStudyTreeConfig):
     config_dict = FileStudyTreeConfigDTO.from_build_config(config).model_dump()
     parsed_config = validate_config(STUDY_VERSION_7_0, config_dict)
     assert parsed_config == config
 
 
-def test_file_study_tree_config_round_trip_fails_if_no_version_provided(study_tree_config):
-    config = study_tree_config
+def test_file_study_tree_config_round_trip_fails_if_no_version_provided(config: FileStudyTreeConfig):
     config_dict = FileStudyTreeConfigDTO.from_build_config(config).model_dump()
     with pytest.raises(ValidationError, match="version"):
         FileStudyTreeConfigDTO.model_validate(config_dict)
