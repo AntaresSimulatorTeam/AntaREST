@@ -178,24 +178,11 @@ class ConstraintTerm(AntaresBaseModel):
         return self.data.generate_id()
 
     def from_updated_term(self, updated_term: ConstraintTermUpdate) -> "ConstraintTerm":
-        """
-        2 possibilities are supported:
-        - Renaming a term
-        - Modifying its weight or offset
-        """
-
-        if updated_term.data and updated_term.data.generate_id() != self.data.generate_id():  # We're in the first case
-            self.data = updated_term.data
-            return self
-
-        # We're in the 2nd case
         if updated_term.weight:
             self.weight = updated_term.weight
+
         # IMPORTANT: If the user didn't give an offset it means he wants to remove it.
-        if updated_term.offset:
-            self.offset = updated_term.offset
-        else:
-            self.offset = None
+        self.offset = updated_term.offset
 
         return self
 
@@ -1076,8 +1063,15 @@ class BindingConstraintManager:
 
         # Updates existing terms
         for term in constraint_terms:
-            old_id = term.id
-            existing_terms[old_id] = existing_terms[old_id].from_updated_term(term)
+            existing_term = existing_terms.pop(term.id)
+            # We're only supporting 2 things:
+            # 1- Renaming a term
+            # 2- Modifying a term offset and/or weight
+            if term.data and term.data.generate_id() != existing_term.data.generate_id():  # We're in the first case
+                existing_terms[term.data.generate_id()] = existing_term
+            else:
+                new_term = existing_term.from_updated_term(term)
+                existing_terms[new_term.generate_id()] = new_term
 
         sorted_terms = dict(sorted(existing_terms.items()))
         self._update_constraint_with_terms(study, constraint, sorted_terms)
