@@ -81,7 +81,7 @@ def create_study_interface(tree: FileStudyTree) -> StudyInterface:
     file_study.tree = tree
     study = Mock(StudyInterface)
     study.get_files.return_value = file_study
-    study.version = 860
+    study.version = STUDY_VERSION_8_6
     return study
 
 

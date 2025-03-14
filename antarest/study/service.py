@@ -52,7 +52,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -417,7 +417,8 @@ class RawStudyInterface(StudyInterface):
             result = command.apply(file_study)
             if not result.status:
                 raise CommandApplicationError(result.message)
-        self._variant_study_service.invalidate_cache(study)
+        remove_from_cache(self._raw_study_service.cache, study.id)
+        self._variant_study_service.on_parent_change(study.id)
 
         if not is_managed(study):
             # In a previous version, de-normalization was performed asynchronously.
@@ -2914,7 +2915,7 @@ class StudyService:
             raise exception_class(e.detail) from e
 
         # update cache
-        cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
+        cache_id = study_raw_cache_key(study.id)
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
