@@ -22,6 +22,15 @@
         color: inherit;
     }
 
+    input {
+        color: #000;
+    }
+
+    /* A select for choosing a server is displayed in prod, but there is only one */
+    .scheme-container {
+        display: none;
+    }
+
     .info {
         margin: 0;
     }

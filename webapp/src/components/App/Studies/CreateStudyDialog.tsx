@@ -12,23 +12,23 @@
  * This file is part of the Antares project.
  */
 
+import type { AxiosError } from "axios";
 import debug from "debug";
 import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
-import type { AxiosError } from "axios";
-import { usePromise } from "react-use";
 import * as R from "ramda";
-import type { StudyPublicMode } from "../../../types/types";
+import { useTranslation } from "react-i18next";
+import { usePromise } from "react-use";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { createStudy } from "../../../redux/ducks/studies";
-import { getStudyVersionsFormatted, getGroups } from "../../../redux/selectors";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { getGroups, getStudyVersionsFormatted } from "../../../redux/selectors";
+import type { StudyPublicMode } from "../../../types/types";
 import FormDialog from "../../common/dialogs/FormDialog";
-import StringFE from "../../common/fieldEditors/StringFE";
-import SelectFE from "../../common/fieldEditors/SelectFE";
-import Fieldset from "../../common/Fieldset";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
+import SelectFE from "../../common/fieldEditors/SelectFE";
+import StringFE from "../../common/fieldEditors/StringFE";
+import Fieldset from "../../common/Fieldset";
 import type { SubmitHandlerPlus } from "../../common/Form/types";
 import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
 
@@ -110,27 +110,23 @@ function CreateStudyDialog(props: Props) {
     >
       {({ control }) => (
         <>
-          <StringFE
-            label={t("studies.studyName")}
-            name="name"
-            control={control}
-            rules={{ required: true }}
-            sx={{ mx: 0 }}
-            fullWidth
-          />
-
-          <SelectFE
-            label={t("global.version")}
-            options={versionList.map((ver) => ({
-              label: ver.name,
-              value: ver.id,
-            }))}
-            name="version"
-            control={control}
-            sx={{ mt: 1, mb: 5 }}
-            fullWidth
-          />
-
+          <Fieldset fullFieldWidth>
+            <StringFE
+              label={t("studies.studyName")}
+              name="name"
+              control={control}
+              rules={{ required: true }}
+            />
+            <SelectFE
+              label={t("global.version")}
+              options={versionList.map((ver) => ({
+                label: ver.name,
+                value: ver.id,
+              }))}
+              name="version"
+              control={control}
+            />
+          </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>
             <SelectFE
               label={t("study.publicMode")}
@@ -140,26 +136,20 @@ function CreateStudyDialog(props: Props) {
               }))}
               name="publicMode"
               control={control}
-              fullWidth
             />
-
             <SelectFE
               label={t("global.group")}
               options={groupList.map((group) => group.name)}
               name="groups"
               control={control}
               multiple
-              fullWidth
             />
           </Fieldset>
-
           <Fieldset legend="Metadata" fullFieldWidth>
             <CheckboxesTagsFE
               options={[]}
               label={t("studies.enterTag")}
               freeSolo
-              fullWidth
-              sx={{ px: 0 }}
               name="tags"
               control={control}
             />

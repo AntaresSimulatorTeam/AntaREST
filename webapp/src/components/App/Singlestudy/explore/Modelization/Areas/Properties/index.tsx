@@ -13,17 +13,17 @@
  */
 
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../types/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import Form from "../../../../../../common/Form";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import Fields from "./Fields";
 import {
   getPropertiesFormFields,
   setPropertiesFormFields,
   type PropertiesFormFields,
 } from "./utils";
-import Fields from "./Fields";
-import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 
 function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -50,7 +50,6 @@ function Properties() {
       }}
       onSubmit={handleSubmit}
       enableUndoRedo
-      sx={{ pt: 2 }}
     >
       <Fields />
     </Form>

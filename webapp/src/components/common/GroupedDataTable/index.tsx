@@ -14,32 +14,31 @@
 
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { Box, Button, Skeleton } from "@mui/material";
 import {
   MaterialReactTable,
   MRT_ToggleFiltersButton,
   MRT_ToggleGlobalFilterButton,
   useMaterialReactTable,
-  type MRT_RowSelectionState,
   type MRT_ColumnDef,
+  type MRT_RowSelectionState,
 } from "material-react-table";
-import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useRef, useState } from "react";
-import CreateDialog from "./CreateDialog";
-import ConfirmationDialog from "../dialogs/ConfirmationDialog";
-import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
-import DuplicateDialog from "./DuplicateDialog";
-import { translateWithColon } from "../../../utils/i18nUtils";
-import useUpdatedRef from "../../../hooks/useUpdatedRef";
-import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { PromiseAny } from "../../../utils/tsUtils";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../utils/fnUtils";
 import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
+import useUpdatedRef from "../../../hooks/useUpdatedRef";
+import { toError } from "../../../utils/fnUtils";
+import { translateWithColon } from "../../../utils/i18nUtils";
+import type { PromiseAny } from "../../../utils/tsUtils";
+import ConfirmationDialog from "../dialogs/ConfirmationDialog";
+import CreateDialog from "./CreateDialog";
+import DuplicateDialog from "./DuplicateDialog";
 import type { TRow } from "./types";
+import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
 
 export interface GroupedDataTableProps<
   TGroups extends string[],
@@ -207,9 +206,10 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
         sx: { cursor: isPending ? "wait" : "pointer" },
       };
     },
+    onRowSelectionChange: setRowSelection,
     // Toolbars
     renderTopToolbarCustomActions: ({ table }) => (
-      <Box sx={{ display: "flex", gap: 1 }}>
+      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
         {onCreate && (
           <Button
             startIcon={<AddCircleOutlineIcon />}
@@ -248,14 +248,25 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
         <MRT_ToggleFiltersButton table={table} />
       </>
     ),
-    onRowSelectionChange: setRowSelection,
+    positionToolbarDropZone: "none",
+    muiSearchTextFieldProps: { size: "extra-small" },
+    muiTopToolbarProps: {
+      sx: {
+        minHeight: "auto",
+        overflowX: "auto",
+        "> .MuiBox-root": {
+          alignItems: "center",
+          p: 0,
+          pb: 1,
+          "> .MuiBox-root": {
+            flexWrap: "nowrap", // Prevent the search field to be wrapped
+          },
+        },
+      },
+    },
     // Styles
     muiTablePaperProps: { sx: { display: "flex", flexDirection: "column" } }, // Allow to have scroll
-    ...R.mergeDeepRight(getTableOptionsForAlign("right"), {
-      muiTableBodyCellProps: {
-        sx: { borderBottom: "1px solid rgba(224, 224, 224, 0.3)" },
-      },
-    }),
+    ...getTableOptionsForAlign("right"),
   });
 
   const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);

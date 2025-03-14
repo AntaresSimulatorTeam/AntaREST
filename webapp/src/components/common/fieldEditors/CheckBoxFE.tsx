@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { mergeSxProp } from "@/utils/muiUtils";
 import {
   Checkbox,
   FormControl,
@@ -48,7 +49,7 @@ function CheckBoxFE(props: CheckBoxFEProps) {
   const fieldEditor = <Checkbox {...checkboxProps} checked={value} defaultChecked={defaultValue} />;
 
   return (
-    <FormControl className={className} sx={sx} error={error}>
+    <FormControl className={className} sx={mergeSxProp({ m: 0 }, sx)} error={error}>
       {label ? (
         <FormControlLabel control={fieldEditor} label={label} labelPlacement={labelPlacement} />
       ) : (

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Box, styled, Typography } from "@mui/material";
 import type { Theme } from "@glideapps/glide-data-grid";
+import { Box, styled, Typography } from "@mui/material";
 
 export const MatrixContainer = styled(Box)(({ theme }) => ({
   width: "100%",
@@ -21,15 +21,14 @@ export const MatrixContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   gap: theme.spacing(1),
-  overflow: "hidden",
 }));
 
-export const MatrixHeader = styled(Box)({
-  width: "100%",
+export const MatrixHeader = styled(Box)(({ theme }) => ({
   display: "flex",
+  gap: theme.spacing(1),
   flexWrap: "nowrap",
   alignItems: "center",
-});
+}));
 
 export const MatrixTitle = styled(Typography)({
   fontSize: 20,
@@ -37,6 +36,7 @@ export const MatrixTitle = styled(Typography)({
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  minWidth: 100,
   flex: 1,
 });
 
