@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { mergeSxProp } from "@/utils/muiUtils";
 import { Box, Divider, type BoxProps, type SxProps, type Theme } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import { mergeSxProp } from "@/utils/muiUtils";
 
 interface FieldsetProps {
   legend?: string | React.ReactNode;
@@ -36,7 +36,7 @@ function Fieldset(props: FieldsetProps) {
           border: "none",
           m: 0,
           p: 0,
-          pb: 4,
+          pb: 3,
           "> .MuiBox-root": {
             display: "flex",
             flexWrap: "wrap",

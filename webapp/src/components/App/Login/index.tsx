@@ -12,22 +12,23 @@
  * This file is part of the Antares project.
  */
 
+import Fieldset from "@/components/common/Fieldset";
+import LoginIcon from "@mui/icons-material/Login";
 import { Box, keyframes, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import LoginIcon from "@mui/icons-material/Login";
-import { login } from "../../../redux/ducks/auth";
-import { needAuth } from "../../../services/api/auth";
-import { getAuthUser } from "../../../redux/selectors";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { login } from "../../../redux/ducks/auth";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { getAuthUser } from "../../../redux/selectors";
+import { needAuth } from "../../../services/api/auth";
 import storage, { StorageKey } from "../../../services/utils/localStorage";
 import Form from "../../common/Form";
-import StringFE from "../../common/fieldEditors/StringFE";
-import PasswordFE from "../../common/fieldEditors/PasswordFE";
-import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import type { SubmitHandlerPlus } from "../../common/Form/types";
 import Logo from "../../common/Logo";
+import PasswordFE from "../../common/fieldEditors/PasswordFE";
+import StringFE from "../../common/fieldEditors/StringFE";
+import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import Wrapper from "./Wrapper";
 
 const blinkAnimation = keyframes`
@@ -163,16 +164,14 @@ function Login(props: Props) {
                 }}
               >
                 {({ control }) => (
-                  <>
+                  <Fieldset fullFieldWidth>
                     <StringFE
                       name="username"
                       label="NNI"
                       autoComplete="username"
                       id="username"
-                      sx={{ mb: 1.5 }}
                       control={control}
                       rules={{ required: t("form.field.required") }}
-                      fullWidth
                     />
                     <PasswordFE
                       name="password"
@@ -181,9 +180,8 @@ function Login(props: Props) {
                       id="current-password"
                       control={control}
                       rules={{ required: t("form.field.required") }}
-                      fullWidth
                     />
-                  </>
+                  </Fieldset>
                 )}
               </Form>
             </Box>

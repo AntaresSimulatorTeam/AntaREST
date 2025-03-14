@@ -12,17 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Divider } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { useEffect } from "react";
+import { Box, Button, Divider } from "@mui/material";
 import * as RA from "ramda-adjunct";
+import { useEffect } from "react";
 import type { Validate } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+import Fieldset from "../../../../../common/Fieldset";
+import { useFormContextPlus } from "../../../../../common/Form";
+import { FieldWithButton } from "./styles";
 import {
-  BuildingMode,
   BUILDING_MODE_OPTIONS,
+  BuildingMode,
   FIRST_JANUARY_OPTIONS,
   MODE_OPTIONS,
   WEEK_OPTIONS,
@@ -30,12 +36,6 @@ import {
   type GeneralFormFields,
   type SetDialogStateType,
 } from "./utils";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import { useFormContextPlus } from "../../../../../common/Form";
-import StringFE from "../../../../../common/fieldEditors/StringFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import Fieldset from "../../../../../common/Fieldset";
-import { FieldWithButton } from "./styles";
 
 interface Props {
   setDialog: React.Dispatch<React.SetStateAction<SetDialogStateType>>;
@@ -156,7 +156,7 @@ function Fields(props: Props) {
         <StringFE name="horizon" label="Horizon" control={control} />
         <SelectFE
           name="firstMonth"
-          label={t("study.configuration.general.year")}
+          label={t("global.year")}
           options={YEAR_OPTIONS}
           control={control}
         />

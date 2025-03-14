@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import type { SxProps, Theme } from "@mui/material";
 import type {
-  MatrixDataDTO,
   AggregateConfig,
+  MatrixDataDTO,
   RowCountSource,
 } from "../../../../../../common/Matrix/shared/types";
 import type { SplitViewProps } from "../../../../../../common/SplitView";
@@ -73,6 +74,7 @@ export interface HydroRoute {
     sizes: [number, number];
   };
   form?: React.ComponentType;
+  sx?: SxProps<Theme>;
 }
 
 export interface AreaCoefficientItem {
@@ -95,6 +97,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
       sizes: [50, 50],
     },
     form: InflowStructure,
+    sx: { display: "flex", flexDirection: "column", gap: 1 },
   },
   {
     path: "dailypower&energy",

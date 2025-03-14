@@ -12,20 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { useRef, useState } from "react";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import {
   Button,
   ButtonGroup,
   ClickAwayListener,
   Grow,
-  Paper,
-  Popper,
   MenuItem,
   MenuList,
+  Paper,
+  Popper,
   type ButtonGroupProps,
   type ButtonProps,
 } from "@mui/material";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import { useRef, useState } from "react";
 
 interface OptionObj<Value extends string = string> {
   value: Value;
@@ -125,13 +125,7 @@ export default function SplitButton<OptionValue extends string>(
           <ArrowDropDownIcon />
         </Button>
       </ButtonGroup>
-      <Popper
-        sx={{ zIndex: 1000 }}
-        open={open}
-        anchorEl={anchorRef.current}
-        transition
-        disablePortal
-      >
+      <Popper open={open} anchorEl={anchorRef.current} transition>
         {({ TransitionProps }) => (
           <Grow {...TransitionProps}>
             <Paper>
