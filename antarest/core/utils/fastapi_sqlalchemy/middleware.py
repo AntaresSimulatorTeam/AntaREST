@@ -14,7 +14,7 @@ from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
-_Session: Optional[sessionmaker] = None
+_Session: Optional[sessionmaker[Session]] = None
 _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
 
 
@@ -49,9 +49,9 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
         self.commit_on_exit = commit_on_exit
 
         session_args = session_args or {}
-        if not custom_engine and not db_url:
-            raise ValueError("You need to pass a db_url or a custom_engine parameter.")
         if not custom_engine:
+            if not db_url:
+                raise ValueError("You need to pass a db_url or a custom_engine parameter.")
             engine = create_engine(db_url, **engine_args)
         else:
             engine = custom_engine
