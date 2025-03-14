@@ -20,12 +20,12 @@ from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
+from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_color_rgb,
     validate_colors,
     validate_filtering,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 
 
 # noinspection SpellCheckingInspection
