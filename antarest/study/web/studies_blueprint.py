@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import collections
 import io
 import logging
 from http import HTTPStatus
@@ -52,9 +52,11 @@ QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
     """Split a comma-separated list of values into an ordered set of strings."""
-    if not value:
-        return list(default)
-    return list(dict.fromkeys(v.strip() for v in value.split(",")))
+    values = value.split(",") if value else default
+    # drop whitespace around values
+    values = [v.strip() for v in values]
+    # remove duplicates and preserve order (to have a deterministic result for unit tests).
+    return list(collections.OrderedDict.fromkeys(values))
 
 
 def create_study_routes(study_service: StudyService, ftm: FileTransferManager, config: Config) -> APIRouter:
