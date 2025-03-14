@@ -14,7 +14,7 @@ import re
 import typing as t
 import uuid
 
-from sqlalchemy.orm.session import Session  # type: ignore
+from sqlalchemy.orm.session import Session
 
 from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus, LogType
 from antarest.login.model import Identity

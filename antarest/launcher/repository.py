@@ -13,7 +13,7 @@
 import logging
 from typing import List, Optional
 
-from sqlalchemy import exists  # type: ignore
+from sqlalchemy import exists
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobResult
@@ -39,8 +39,7 @@ class JobResultRepository:
 
     def get(self, id: str) -> Optional[JobResult]:
         logger.debug(f"Retrieving JobResult {id}")
-        job: JobResult = db.session.query(JobResult).get(id)
-        return job
+        return db.session.query(JobResult).get(id)
 
     def get_all(self, filter_orphan: bool = False, latest: Optional[int] = None) -> List[JobResult]:
         logger.debug("Retrieving all JobResults")
