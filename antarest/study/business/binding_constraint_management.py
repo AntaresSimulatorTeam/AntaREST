@@ -275,13 +275,13 @@ class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
 
         if self.link_id:
             # The `link_id` filter is a case-insensitive exact match.
-            all_link_ids = [term.data.generate_id() for term in terms if isinstance(term.data, LinkTerm)]
+            all_link_ids = [term.generate_id() for term in terms if isinstance(term.data, LinkTerm)]
             if self.link_id.lower() not in all_link_ids:
                 return False
 
         if self.cluster_id:
             # The `cluster_id` filter is a case-insensitive exact match.
-            all_cluster_ids = [term.data.generate_id() for term in terms if isinstance(term.data, ClusterTerm)]
+            all_cluster_ids = [term.generate_id() for term in terms if isinstance(term.data, ClusterTerm)]
             if self.cluster_id.lower() not in all_cluster_ids:
                 return False
 
@@ -1064,10 +1064,10 @@ class BindingConstraintManager:
         # Updates existing terms
         for term in constraint_terms:
             existing_term = existing_terms.pop(term.id)
-            # We're only supporting 2 things:
+            # We only support 2 cases:
             # 1- Renaming a term
             # 2- Modifying a term offset and/or weight
-            if term.data and term.data.generate_id() != existing_term.data.generate_id():  # We're in the first case
+            if term.data and term.data.generate_id() != existing_term.data.generate_id():  # First case
                 existing_terms[term.data.generate_id()] = existing_term
             else:
                 new_term = existing_term.from_updated_term(term)
