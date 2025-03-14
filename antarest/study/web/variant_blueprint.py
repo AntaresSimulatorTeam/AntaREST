@@ -419,27 +419,6 @@ def create_study_variant_routes(
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.get_study_task(sanitized_uuid, request_params)
 
-    @bp.post(
-        "/studies/{uuid}/freeze",
-        tags=[APITag.study_variant_management],
-        summary="Generate a new raw study",
-        responses={
-            200: {
-                "description": "The id of the new study",
-            }
-        },
-    )
-    def create_from_variant(
-        uuid: str,
-        name: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
-        logger.info(
-            f"Creating new raw study {name} from variant study {uuid}",
-            extra={"user": current_user.id},
-        )
-        raise NotImplementedError()
-
     @bp.put(
         "/studies/variants/clear-snapshots",
         tags=[APITag.study_variant_management],

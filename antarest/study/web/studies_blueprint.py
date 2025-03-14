@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import collections
 import io
 import logging
 from http import HTTPStatus
@@ -53,11 +52,9 @@ QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
     """Split a comma-separated list of values into an ordered set of strings."""
-    values = value.split(",") if value else default
-    # drop whitespace around values
-    values = [v.strip() for v in values]
-    # remove duplicates and preserve order (to have a deterministic result for unit tests).
-    return list(collections.OrderedDict.fromkeys(values))
+    if not value:
+        return list(default)
+    return list(dict.fromkeys(v.strip() for v in value.split(",")))
 
 
 def create_study_routes(study_service: StudyService, ftm: FileTransferManager, config: Config) -> APIRouter:
@@ -382,16 +379,15 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             f"Copying study {uuid} into new study '{dest}'",
             extra={"user": current_user.id},
         )
-        source_uuid = uuid
         group_ids = _split_comma_separated_values(groups, default=[group.id for group in current_user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids]
-        source_uuid_sanitized = sanitize_uuid(source_uuid)
+        uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
 
         params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
-            src_uuid=source_uuid_sanitized,
+            src_uuid=uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
             with_outputs=with_outputs,
