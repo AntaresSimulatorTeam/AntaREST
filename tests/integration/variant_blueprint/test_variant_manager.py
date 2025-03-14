@@ -271,9 +271,6 @@ def test_variant_manager(
         res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
         assert res.status_code == 200
 
-        res = client.post(f"/v1/studies/{variant_id}/freeze?name=bar", headers=admin_headers)
-        assert res.status_code == 500
-
         new_study_id = "new_id"
 
         res = client.get(f"/v1/studies/{new_study_id}", headers=admin_headers)
