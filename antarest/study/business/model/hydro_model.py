@@ -60,7 +60,7 @@ class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=T
 
 
 @all_optional_model
-class HydroManagementProperties(AntaresBaseModel, extra="forbid", populate_by_name=True):
+class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
     inter_daily_breakdown: Dict[LowerCaseStr, float] = Field(alias="inter-daily-breakdown")
     intra_daily_modulation: Dict[LowerCaseStr, float] = Field(alias="intra-daily-modulation")
     inter_monthly_breakdown: Dict[LowerCaseStr, float] = Field(alias="inter-monthly-breakdown")

@@ -55,6 +55,15 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_AREAS_PROPERTIES.value,
+            args={"properties": {"fr": {"dispatch_hydro_power": True}}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_areas_properties",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.UPDATE_AREA_UI.value,
             args={
                 "area_id": "id",
