@@ -10,15 +10,17 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Type, TypeAlias
+from typing import Annotated, Any, Dict, Type, TypeAlias
 
 from antares.study.version import StudyVersion
-from pydantic import Field
+from pydantic import BeforeValidator, Field, TypeAdapter
+from pydantic_core.core_schema import ValidationInfo
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import LowerCaseIdentifier, transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_version, study_version_context
 
 
 class STStorageGroup(EnumIgnoreCase):
@@ -161,10 +163,41 @@ class STStorage880Config(STStorage880Properties, LowerCaseIdentifier):
     """
 
 
-# NOTE: In the following Union, it is important to place the older version first,
-# because otherwise, creating a short term storage always creates a v8.8 one.
-STStorageConfigType: TypeAlias = STStorageConfig | STStorage880Config
-STStoragePropertiesType: TypeAlias = STStorageProperties | STStorage880Properties
+def _validate_st_storage_config(data: Any, info: ValidationInfo) -> Any:
+    """
+    When instantiating thermal cluster data from a dictionary, we need the study version
+    to choose which version of the config we need to create.
+    """
+    if not isinstance(data, dict):
+        return data
+    return get_st_storage_config_cls(extract_version(info)).model_validate(data)
+
+
+def _validate_st_storage_properties(data: Any, info: ValidationInfo) -> Any:
+    """
+    When instantiating thermal cluster data from a dictionary, we need the study version
+    to choose which version of the config we need to create.
+    """
+    if not isinstance(data, dict):
+        return data
+    study_version = extract_version(info)
+    if study_version >= STUDY_VERSION_8_8:
+        return STStorage880Properties.model_validate(data)
+    elif study_version >= STUDY_VERSION_8_6:
+        return STStorageProperties.model_validate(data)
+    else:
+        raise ValueError(f"Unsupported study version: {study_version}")
+
+
+STStorageConfigType: TypeAlias = Annotated[
+    STStorageConfig | STStorage880Config, BeforeValidator(_validate_st_storage_config)
+]
+STStoragePropertiesType: TypeAlias = Annotated[
+    STStorageProperties | STStorage880Properties, BeforeValidator(_validate_st_storage_properties)
+]
+
+_CONFIG_ADAPTER: TypeAdapter[STStorageConfigType] = TypeAdapter(STStorageConfigType)
+_PROPERTIES_ADAPTER: TypeAdapter[STStoragePropertiesType] = TypeAdapter(STStoragePropertiesType)
 
 
 def create_st_storage_properties(study_version: StudyVersion, data: Dict[str, Any]) -> STStoragePropertiesType:
@@ -181,11 +214,7 @@ def create_st_storage_properties(study_version: StudyVersion, data: Dict[str, An
     Raises:
         ValueError: If the study version is not supported.
     """
-    if study_version >= STUDY_VERSION_8_8:
-        return STStorage880Properties.model_validate(data)
-    elif study_version >= STUDY_VERSION_8_6:
-        return STStorageProperties.model_validate(data)
-    raise ValueError(f"Unsupported study version: {study_version}")
+    return _PROPERTIES_ADAPTER.validate_python(data, context=study_version_context(study_version))
 
 
 def get_st_storage_config_cls(study_version: StudyVersion) -> Type[STStorageConfigType]:
@@ -219,5 +248,4 @@ def create_st_storage_config(study_version: StudyVersion, **kwargs: Any) -> STSt
     Raises:
         ValueError: If the study version is not supported.
     """
-    cls = get_st_storage_config_cls(study_version)
-    return cls(**kwargs)
+    return _CONFIG_ADAPTER.validate_strings(kwargs, context=study_version_context(study_version))

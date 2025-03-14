@@ -29,10 +29,10 @@ from .binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
+from .validation import extract_filtering, study_version_context
 
 
 class EnrModelling(EnumIgnoreCase):
@@ -338,3 +338,13 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             enr_modelling=self.enr_modelling,
             archive_path=self.archive_path,
         )
+
+
+def validate_config(version: StudyVersion, data: Dict[str, Any]) -> FileStudyTreeConfig:
+    """
+    Parses the provided data, assuming the provided study version.
+
+    The instantiation of some of the config objects depend on the study version
+    (thermal clusters, etc).
+    """
+    return FileStudyTreeConfigDTO.model_validate(data, context=study_version_context(version)).to_build_config()

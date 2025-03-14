@@ -20,7 +20,6 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
@@ -28,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     create_st_storage_config,
     create_st_storage_properties,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix

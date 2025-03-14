@@ -19,7 +19,7 @@ In the near future, this set of classes may be used for solar, wind and hydro cl
 from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import ItemName
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
 
 class ItemProperties(

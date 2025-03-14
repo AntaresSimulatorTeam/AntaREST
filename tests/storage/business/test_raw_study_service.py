@@ -427,6 +427,7 @@ def test_copy_study(
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_study),
         additional_data=StudyAdditionalData(),
+        version="700",
         groups=groups,
     )
     md = study_service.copy(src_md, "dst_name", groups)
