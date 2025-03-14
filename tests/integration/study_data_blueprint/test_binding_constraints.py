@@ -655,6 +655,7 @@ class TestBindingConstraints:
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
         area3_id = preparer.create_area(study_id, name="Area 3")["id"]
         link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
+        preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)
         cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
 
         # =============================
