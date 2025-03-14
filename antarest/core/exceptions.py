@@ -602,11 +602,16 @@ class InvalidConstraintTerm(HTTPException):
     Exception raised when a constraint term is not correctly specified (no term data).
     """
 
-    def __init__(self, binding_constraint_id: str, term_json: str) -> None:
-        message = (
-            f"Invalid constraint term for binding constraint '{binding_constraint_id}': {term_json},"
-            f" term 'data' is missing or empty"
-        )
+    def __init__(
+        self,
+        term_id: str,
+        reason: str,
+        binding_constraint_id: Optional[str] = None,
+    ) -> None:
+        message = f"Invalid constraint term {term_id}"
+        if binding_constraint_id:
+            message += f" for binding constraint '{binding_constraint_id}'"
+        message += f" {reason}"
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
     @override

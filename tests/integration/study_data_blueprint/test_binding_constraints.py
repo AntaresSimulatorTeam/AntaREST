@@ -82,14 +82,6 @@ class TestConstraintTerm:
         assert term.data is not None
         assert term.generate_id() == term.data.generate_id()
 
-    def test_constraint_id__other(self) -> None:
-        term = ConstraintTerm(
-            id="foo",
-            weight=3.14,
-            offset=123,
-        )
-        assert term.generate_id() == "foo"
-
 
 @pytest.mark.unit_test
 class TestBindingConstraints:
@@ -332,13 +324,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": 2,
                 "weight": 1.0,
             },
@@ -360,13 +350,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,  # updated
                 "weight": 3.0,  # updated
             },
@@ -378,12 +366,11 @@ class TestBindingConstraints:
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={"id": f"{area1_id}.!!invalid#cluster%%", "weight": 4},
         )
-        assert res.status_code == 404, res.json()
+        assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
-        assert exception == "ConstraintTermNotFound"
-        assert bc_id in description
-        assert f"{area1_id}.!!invalid#cluster%%" in description
+        assert exception == "InvalidConstraintTerm"
+        assert description == "Invalid constraint term area 1.!!invalid#cluster%% Your term id is not well-formatted"
 
         # Update constraint cluster term with empty data
         res = client.put(
@@ -409,7 +396,6 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,
                 "weight": 3.0,
             },
@@ -669,7 +655,6 @@ class TestBindingConstraints:
         area2_id = preparer.create_area(study_id, name="Area 2")["id"]
         area3_id = preparer.create_area(study_id, name="Area 3")["id"]
         link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
-        link_2_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)["id"]
         cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
 
         # =============================
@@ -774,10 +759,8 @@ class TestBindingConstraints:
         )
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
-        description = res.json()["description"]
-        assert exception == "InvalidConstraintTerm"
-        assert bc_id_w_group in description, "Error message should contain the binding constraint ID"
-        assert "term 'data' is missing" in description, "Error message should indicate the missing field"
+        assert res.json()["description"] == "Field required"
+        assert exception == "RequestValidationError"
 
         # Attempt to add a duplicate term
         res = client.post(
@@ -799,13 +782,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": 2,
                 "weight": 1.0,
             },
@@ -837,13 +818,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 1,
                 "weight": 4.4,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,
                 "weight": 5.1,
             },
@@ -863,13 +842,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area3_id},
-                "id": link_2_id,
                 "offset": 1,
                 "weight": 4.4,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,
                 "weight": 5.1,
             },

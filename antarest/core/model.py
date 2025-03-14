@@ -13,10 +13,11 @@
 import enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-import typing_extensions as te
-from pydantic import StringConstraints
+from pydantic import BeforeValidator, StringConstraints
+from typing_extensions import Annotated
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
     # These dependencies are only used for type checking with mypy.
@@ -25,7 +26,8 @@ if TYPE_CHECKING:
 JSON = Dict[str, Any]
 ELEMENT = Union[str, int, float, bool, bytes]
 SUB_JSON = Union[ELEMENT, JSON, List[Any], None]
-LowerCaseStr = te.Annotated[str, StringConstraints(to_lower=True)]
+LowerCaseStr = Annotated[str, StringConstraints(to_lower=True)]
+LowerCaseId = Annotated[str, BeforeValidator(lambda x: transform_name_to_id(x, lower=True))]
 
 
 class PublicMode(enum.StrEnum):
