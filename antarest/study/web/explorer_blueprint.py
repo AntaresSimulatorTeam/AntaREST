@@ -11,12 +11,14 @@
 # This file is part of the Antares project.
 
 import logging
+from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
 from antarest.login.auth import Auth
 from antarest.study.model import NonStudyFolderDTO, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
@@ -59,6 +61,18 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         """
         logger.info(f"Listing directory {path} in workspace {workspace}")
         return explorer.list_dir(workspace, path)
+
+    @bp.post(
+        "/explorer/external/open",
+        summary="For a given study path, import the study",
+        response_model=str,
+    )
+    def open_external_study(path: Path, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
+        """ """
+        logger.info(f"Open study under path {path}")
+        params = RequestParameters(user=current_user)
+        study_id = explorer.open_external_study(path, params)
+        return study_id
 
     @bp.get(
         "/explorer/_list_workspaces",

@@ -11,24 +11,35 @@
 # This file is part of the Antares project.
 
 import logging
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import List
 
 from antarest.core.config import Config
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, WorkspaceMetadata
+from antarest.core.requests import RequestParameters
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    NonStudyFolderDTO,
+    StudyFolder,
+    WorkspaceMetadata,
+)
+from antarest.study.repository import StudyFilter
+from antarest.study.service import StudyService
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
     has_non_study_folder,
     is_non_study_folder,
+    is_study_folder,
+    should_ignore_folder_for_scan,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class Explorer:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, study_service: StudyService):
         self.config = config
+        self.study_service = study_service
 
     def list_dir(
         self,
@@ -76,3 +87,33 @@ class Explorer:
             for workspace_name in self.config.storage.workspaces.keys()
             if workspace_name != DEFAULT_WORKSPACE_NAME
         ]
+
+    def open_external_study(self, path: Path, params: RequestParameters) -> str:
+        # check that desktop_mode is enabled in config
+        if not self.config.desktop_mode:
+            logger.warning("Called open api when desktop mode was off")
+            raise ValueError("Study mode is not enabled in the configuration")
+
+        # check path is a study folder and we have read permission
+        if not is_study_folder(path):
+            raise ValueError(f"Path {path} is not a study folder")
+
+        # check path is not in a filtered folder
+        if should_ignore_folder_for_scan(path, [".*"], []):
+            raise ValueError("Can't to open a file in a filtered folder")
+
+        # check study doens't already exist
+        study_count = self.study_service.count_studies(StudyFilter(folder=str(path)))
+        if study_count > 0:
+            raise ValueError(f"Study at {path} already exists in database")
+
+        # create a study object from the path
+        study_folder = StudyFolder(path=path, workspace="external", groups=[])
+        study_id = self.study_service.create_external_study(study_folder, params)
+        logger.info(
+            "Study at %s appears on disk and will be added as %s",
+            path,
+            study_id,
+        )
+
+        return study_id

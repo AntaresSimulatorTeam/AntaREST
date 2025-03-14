@@ -17,7 +17,7 @@ import http
 import logging
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
@@ -981,6 +981,54 @@ class StudyService:
         )
 
         logger.info("study %s created by user %s", raw.id, params.get_user_id())
+        return str(raw.id)
+
+    def create_external_study(
+        self,
+        study_folder: StudyFolder,
+        params: RequestParameters,
+    ) -> str:
+        """
+        Creates a study with the specified study name, version, group IDs, and user parameters.
+
+        Args:
+            study_name: The name of the study to create.
+            version: The version number of the study to choose the template for creation.
+            group_ids: A possibly empty list of user group IDs to associate with the study.
+            params:
+                The parameters of the HTTP request for creation, used to determine
+                the currently logged-in user (ID and name).
+
+        Returns:
+            str: The ID of the newly created study.
+        """
+
+        author = self.get_user_name(params)
+        now = datetime.now(timezone.utc)
+        raw = RawStudy(
+            id=str(uuid4()),
+            name=study_folder.path.name,
+            folder=str(study_folder.path),
+            workspace="external",
+            path=study_folder.path,
+            created_at=now,
+            updated_at=now,
+            owner=None,
+            groups=study_folder.groups,
+            public_mode=PublicMode.FULL if len(study_folder.groups) == 0 else PublicMode.NONE,
+            additional_data=StudyAdditionalData(author=author),
+        )
+        raw = self.storage_service.raw_study_service.create(raw)
+        self._save_study(raw)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_CREATED,
+                payload=raw.to_json_summary(),
+                permissions=PermissionInfo.from_study(raw),
+            )
+        )
+
+        logger.info("External study %s created by user %s", raw.id, params.get_user_id())
         return str(raw.id)
 
     def get_user_name(self, params: RequestParameters) -> str:

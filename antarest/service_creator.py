@@ -186,8 +186,8 @@ def create_watcher(
     return watcher
 
 
-def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Any:
-    explorer = Explorer(config=config)
+def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext], study_service: StudyService) -> Any:
+    explorer = Explorer(config=config, study_service=study_service)
     if app_ctxt:
         app_ctxt.api_root.include_router(create_explorer_routes(config=config, explorer=explorer))
 
@@ -254,7 +254,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=study_service)
     services["watcher"] = watcher
 
-    explorer_service = create_explorer(config=config, app_ctxt=app_ctxt)
+    explorer_service = create_explorer(config=config, app_ctxt=app_ctxt, study_service=study_service)
     services["explorer"] = explorer_service
 
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
