@@ -34,7 +34,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-OptionalMatrixData = List[List[MatrixData]] | str | None
+OptionalMatrixData: t.TypeAlias = List[List[MatrixData]] | str | None
 
 
 class CreateCluster(ICommand):

@@ -13,7 +13,7 @@
 import ast
 import configparser
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, TypeAlias
 
 from typing_extensions import override
 
@@ -21,7 +21,7 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
 
 # Value serializers may be used to customize the way INI options are serialized
-ValueSerializer = Callable[[str], PrimitiveType]
+ValueSerializer: TypeAlias = Callable[[str], PrimitiveType]
 
 
 def _lower_case(input: str) -> str:

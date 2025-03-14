@@ -12,7 +12,7 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -46,7 +46,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType = List[List[MatrixData]]
+MatrixType: TypeAlias = List[List[MatrixData]]
 
 EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.HOURLY: (8784, 3),
@@ -124,7 +124,7 @@ class BindingConstraintProperties870(BindingConstraintProperties830):
     group: LowerCaseStr = DEFAULT_GROUP
 
 
-BindingConstraintProperties = (
+BindingConstraintProperties: TypeAlias = (
     BindingConstraintPropertiesBase | BindingConstraintProperties830 | BindingConstraintProperties870
 )
 

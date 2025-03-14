@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Dict, Final, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Final, List, Optional, Tuple, TypeAlias, Union, cast
 
 import numpy as np
 from pydantic import Field, ValidationInfo, model_validator
@@ -48,7 +48,7 @@ _MATRIX_NAMES = (
 # Minimum required version.
 REQUIRED_VERSION = STUDY_VERSION_8_6
 
-MatrixType = List[List[MatrixData]]
+MatrixType: TypeAlias = List[List[MatrixData]]
 
 
 # noinspection SpellCheckingInspection

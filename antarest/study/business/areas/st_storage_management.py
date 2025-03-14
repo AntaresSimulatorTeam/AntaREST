@@ -12,7 +12,7 @@
 
 import collections
 import operator
-from typing import Any, List, Mapping, MutableMapping, Sequence
+from typing import Any, List, Mapping, MutableMapping, Sequence, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -144,7 +144,7 @@ class STStorageMatrices(AntaresBaseModel):
 
 
 # noinspection SpellCheckingInspection
-STStorageTimeSeries = Literal[
+STStorageTimeSeries: TypeAlias = Literal[
     "pmax_injection",
     "pmax_withdrawal",
     "lower_rule_curve",

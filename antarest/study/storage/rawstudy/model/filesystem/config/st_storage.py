@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Annotated, Any, Dict, Type
+from typing import Annotated, Any, Dict, Type, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, Field, TypeAdapter
@@ -189,8 +189,10 @@ def _validate_st_storage_properties(data: Any, info: ValidationInfo) -> Any:
         raise ValueError(f"Unsupported study version: {study_version}")
 
 
-STStorageConfigType = Annotated[STStorageConfig | STStorage880Config, BeforeValidator(_validate_st_storage_config)]
-STStoragePropertiesType = Annotated[
+STStorageConfigType: TypeAlias = Annotated[
+    STStorageConfig | STStorage880Config, BeforeValidator(_validate_st_storage_config)
+]
+STStoragePropertiesType: TypeAlias = Annotated[
     STStorageProperties | STStorage880Properties, BeforeValidator(_validate_st_storage_properties)
 ]
 
