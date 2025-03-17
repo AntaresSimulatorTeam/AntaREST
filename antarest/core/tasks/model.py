@@ -254,7 +254,7 @@ def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> Non
         TaskJob.completion_date: datetime.utcnow(),
     }
     orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
-    make_session = sessionmaker(bind=engine, **session_args)
+    make_session = sessionmaker(bind=engine, **session_args)  # type: ignore
     with make_session() as session:
         q = session.query(TaskJob).filter(TaskJob.status.in_(orphan_status))
         q.update(updated_values, synchronize_session=False)

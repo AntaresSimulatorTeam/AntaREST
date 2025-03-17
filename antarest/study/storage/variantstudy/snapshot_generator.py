@@ -18,7 +18,7 @@ import datetime
 import logging
 import shutil
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import List, NamedTuple, Optional, Sequence, Tuple, cast
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants, ICache
@@ -146,7 +146,7 @@ class SnapshotGenerator:
         ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
         descendant_ids = ancestor_ids[::-1]
         descendants = self.repository.find_variants(descendant_ids)
-        root_study = self.repository.one(descendant_ids[0])
+        root_study = cast(RawStudy, self.repository.one(descendant_ids[0]))
         return root_study, descendants
 
     def _export_ref_study(self, snapshot_dir: Path, ref_study: RawStudy | VariantStudy) -> None:

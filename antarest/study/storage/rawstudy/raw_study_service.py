@@ -99,7 +99,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             )
             if fallback_on_default is not None:
                 metadata.name = metadata.name or "unnamed"
-                metadata.version = metadata.version or 0
+                metadata.version = metadata.version or "0"
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if metadata.additional_data is None:
@@ -158,7 +158,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     @override
     def get_raw(
         self,
-        metadata: RawStudy,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -171,6 +171,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns: the config and study tree object
 
         """
+        if not isinstance(metadata, RawStudy):
+            raise ValueError("Raw study service used with wrong study type.")
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
@@ -418,7 +420,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
 
     @override
-    def get_study_path(self, metadata: Study) -> Path:
+    def get_study_path(self, metadata: RawStudy) -> Path:
         """
         Get study path
         Args:

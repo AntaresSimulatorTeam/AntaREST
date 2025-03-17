@@ -14,7 +14,7 @@ import datetime
 import uuid
 from typing import Any, List
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -80,8 +80,8 @@ class MatrixDataSetDTO(AntaresBaseModel):
 groups_dataset_relation = Table(
     "matrix_dataset_group",
     Base.metadata,
-    mapped_column("dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True),
-    mapped_column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
+    Column("dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True),
+    Column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
 )
 
 

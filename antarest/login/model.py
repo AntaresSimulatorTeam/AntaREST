@@ -148,9 +148,9 @@ class Identity(Base):
 
     __tablename__ = "identities"
 
-    id = mapped_column(Integer, Sequence("identity_id_seq"), primary_key=True)
-    name = mapped_column(String(255))
-    type = mapped_column(String(50))
+    id: Mapped[int] = mapped_column(Integer, Sequence("identity_id_seq"), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255))
+    type: Mapped[str] = mapped_column(String(50))
 
     # Define a one-to-many relationship with `JobResult`.
     # If an identity is deleted, all the associated job results are detached from the identity.
@@ -334,7 +334,7 @@ def init_admin_user(engine: Engine, session_args: Mapping[str, bool], admin_pass
         session_args: The session arguments (SQLAlchemy session arguments).
         admin_password: The admin password extracted from the configuration file.
     """
-    make_session = sessionmaker(bind=engine, **session_args)
+    make_session = sessionmaker(bind=engine, **session_args)  # type: ignore
     with make_session() as session:
         group = Group(id=GROUP_ID, name=GROUP_NAME)
         with contextlib.suppress(IntegrityError):

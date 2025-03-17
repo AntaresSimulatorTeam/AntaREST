@@ -51,6 +51,7 @@ from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
+from antarest.login.service import UserNotFoundError
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -113,8 +114,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             user_id: user id (user must exist)
         Returns: String representing the user's name
         """
-        user_obj: Identity = db.session.query(Identity).get(user_id)
-        return user_obj.name  # type: ignore  # `name` attribute is always a string
+        user_obj = db.session.get(Identity, user_id)
+        if not user_obj:
+            raise UserNotFoundError()
+        return user_obj.name
 
     def get_command(self, study_id: str, command_id: str, params: RequestParameters) -> CommandDTOAPI:
         """
@@ -158,7 +161,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def convert_commands(
         self, study_id: str, api_commands: List[CommandDTOAPI], params: RequestParameters
     ) -> List[CommandDTO]:
-        study = self._get_variant_study(study_id, params, raw_study_accepted=True)
+        study = self._get_study(study_id, params)
         return [
             CommandDTO.model_validate({"study_version": study.version, **command.model_dump(mode="json")})
             for command in api_commands
@@ -388,14 +391,38 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             list(matrices), f"{study.name}_{study.id}_matrices", params
         )
 
+    def _get_study(
+        self,
+        study_id: str,
+        params: RequestParameters,
+    ) -> Study:
+        """
+        Get variant study and check READ permissions.
+
+        Args:
+            study_id: The study identifier.
+            params: request parameters used for permission check.
+
+        Returns:
+            The variant study.
+
+        Raises:
+            StudyNotFoundError: If the study does not exist (HTTP status 404).
+            MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
+        """
+        study = self.repository.get(study_id)
+        if study is None:
+            raise StudyNotFoundError(study_id)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        return study
+
     def _get_variant_study(
         self,
         study_id: str,
         params: RequestParameters,
-        raw_study_accepted: bool = False,
     ) -> VariantStudy:
         """
-        Get variant study (or RAW study if `raw_study_accepted` is `True`), and check READ permissions.
+        Get variant study , and check READ permissions.
 
         Args:
             study_id: The study identifier.
@@ -409,15 +436,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
             StudyTypeUnsupported: If the study is not a variant study (HTTP status 422).
         """
-        study = self.repository.get(study_id)
-
-        if study is None:
-            raise StudyNotFoundError(study_id)
-
-        if not isinstance(study, VariantStudy) and not raw_study_accepted:
+        study = self._get_study(study_id, params)
+        if not isinstance(study, VariantStudy):
             raise StudyTypeUnsupported(study_id, study.type)
-
-        assert_permission(params.user, study, StudyPermissionType.READ)
         return study
 
     def invalidate_cache(
@@ -448,10 +469,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         parent_id: str,
         params: RequestParameters,
     ) -> VariantTreeDTO:
-        study = self._get_variant_study(parent_id, params, raw_study_accepted=True)
+        study = self._get_study(parent_id, params)
 
         children_tree = VariantTreeDTO(
-            node=self.get_study_information(study),
+            node=self._get_study_information(study),
             children=[],
         )
         children = self.repository.get_children(parent_id=parent_id)
@@ -468,13 +489,12 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     def walk_children(
         self,
         parent_id: str,
-        fun: Callable[[VariantStudy], None],
+        fun: Callable[[Study], None],
         bottom_first: bool,
     ) -> None:
-        study = self._get_variant_study(
+        study = self._get_study(
             parent_id,
             RequestParameters(DEFAULT_ADMIN_USER),
-            raw_study_accepted=True,
         )
         children = self.repository.get_children(parent_id=parent_id)
         # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
@@ -492,31 +512,24 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         return output_list
 
     def get_direct_parent(self, id: str, params: RequestParameters) -> Optional[StudyMetadataDTO]:
-        study = self._get_variant_study(id, params, raw_study_accepted=True)
+        study = self._get_study(id, params)
         if study.parent_id is not None:
-            parent = self._get_variant_study(study.parent_id, params, raw_study_accepted=True)
-            return (
-                self.get_study_information(
-                    parent,
-                )
-                if isinstance(parent, VariantStudy)
-                else self.raw_study_service.get_study_information(
-                    parent,
-                )
-            )
+            parent = self._get_study(study.parent_id, params)
+            return self._get_study_information(parent)
         return None
 
+    def _get_study_information(self, study: Study) -> StudyMetadataDTO:
+        match study:
+            case VariantStudy():
+                return self.get_study_information(study)
+            case RawStudy():
+                return self.raw_study_service.get_study_information(study)
+            case _:
+                raise ValueError("Unknown study type.")
+
     def _get_variants_parents(self, id: str, params: RequestParameters) -> List[StudyMetadataDTO]:
-        study = self._get_variant_study(id, params, raw_study_accepted=True)
-        metadata = (
-            self.get_study_information(
-                study,
-            )
-            if isinstance(study, VariantStudy)
-            else self.raw_study_service.get_study_information(
-                study,
-            )
-        )
+        study = self._get_variant_study(id, params)
+        metadata = self._get_study_information(study)
         output_list: List[StudyMetadataDTO] = [metadata]
         if study.parent_id is not None:
             output_list.extend(
@@ -766,7 +779,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
                 use_cache=False,
             )
             parent_config = study.config
-        else:
+        elif isinstance(parent_study, VariantStudy):
             res, parent_config = self._generate_study_config(original_study, parent_study, config)
             if res is not None and not res.success:
                 return res, parent_config
@@ -958,7 +971,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     @override
     def get_raw(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -970,6 +983,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             output_dir: optional output dir override
         Returns: the config and study tree object
         """
+        if not isinstance(metadata, VariantStudy):
+            raise ValueError("Variant study service used with wrong study type.")
         self._safe_generation(metadata)
 
         study_path = self.get_study_path(metadata)

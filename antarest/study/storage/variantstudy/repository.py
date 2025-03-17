@@ -82,14 +82,13 @@ class VariantStudyRepository(StudyMetadataRepository):
         # see: [Recursive Queries](https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE)
         top_q = self.session.query(Study.id, Study.parent_id)
         top_q = top_q.filter(Study.id == variant_id)
-        top_q = top_q.cte("study_cte", recursive=True)
+        top_q_cte = top_q.cte("study_cte", recursive=True)
 
         bot_q = self.session.query(Study.id, Study.parent_id)
-        bot_q = bot_q.join(top_q, Study.id == top_q.c.parent_id)
+        bot_q = bot_q.join(top_q_cte, Study.id == top_q_cte.c.parent_id)
 
         recursive_q = top_q.union_all(bot_q)
-        q = self.session.query(recursive_q)
-        return [r[0] for r in q]
+        return [r[0] for r in recursive_q]
 
     def get_all_command_blocks(self) -> List[CommandBlock]:
         """
@@ -98,8 +97,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         Returns:
             List of `CommandBlock` objects.
         """
-        cmd_blocks: List[CommandBlock] = self.session.query(CommandBlock).all()
-        return cmd_blocks
+        return self.session.query(CommandBlock).all()
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """

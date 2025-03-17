@@ -426,7 +426,7 @@ class StudyMetadataRepository:
         """
         session = self.session
         subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1).subquery()
-        query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
+        query = session.query(subquery.c.id, subquery.c.path)
         return cast(List[Tuple[str, str]], query.all())
 
     def has_children(self, uuid: str) -> bool:
