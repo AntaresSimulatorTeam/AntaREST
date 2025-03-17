@@ -411,7 +411,7 @@
   "study.configuration.optimization.simplexOptimizationRange": "Simplex optimization range",
   "study.configuration.adequacyPatch.tab.general": "Général",
   "study.configuration.adequacyPatch.tab.perimeter": "Périmètre",
-  "study.configuration.adequacyPatch.legend.operatingParameters": "",
+  "study.configuration.adequacyPatch.legend.operatingParameters": "Paramètres de fonctionnement",
   "study.configuration.adequacyPatch.legend.localMatchingRule": "Local Matching Rule",
   "study.configuration.adequacyPatch.legend.localMatchingRule.tooltip": "Règle de redispatching des flux",
   "study.configuration.adequacyPatch.legend.curtailmentSharing": "Curtailment Sharing Rule",

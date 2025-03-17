@@ -44,7 +44,11 @@ function Fields() {
       </Fieldset>
       <Fieldset
         legend={
-          <Tooltip title={t("study.configuration.adequacyPatch.legend.localMatchingRule.tooltip")}>
+          <Tooltip
+            title={t("study.configuration.adequacyPatch.legend.localMatchingRule.tooltip", {
+              defaultValue: "",
+            })}
+          >
             <span>{t("study.configuration.adequacyPatch.legend.localMatchingRule")}</span>
           </Tooltip>
         }
@@ -68,7 +72,9 @@ function Fields() {
           <Fieldset
             legend={
               <Tooltip
-                title={t("study.configuration.adequacyPatch.legend.curtailmentSharing.tooltip")}
+                title={t("study.configuration.adequacyPatch.legend.curtailmentSharing.tooltip", {
+                  defaultValue: "",
+                })}
               >
                 <span>{t("study.configuration.adequacyPatch.legend.curtailmentSharing")}</span>
               </Tooltip>
