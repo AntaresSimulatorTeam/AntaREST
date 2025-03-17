@@ -1747,6 +1747,30 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
     assert res["groups"] == []
     assert res["public_mode"] == "READ"
 
+def test_copy_variant_as_raw(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Copy a study with admin user who belongs to a group
+    copied = client.post(f"/v1/studies/{internal_study_id}/copy?dest=copied&use_task=false")
+    assert copied.status_code == 201
+    parent_id = copied.json()
+
+    # create a variant study
+    res = client.post(
+        f"/v1/studies/{parent_id}/variants",
+        params={"name": "variant"},
+    )
+    assert res.status_code == 200, res.json()
+    variant_id = res.json()
+
+    # copies a study
+    copied = client.post(
+        f"/v1/studies/{variant_id}/copy?dest=var_copied&use_task=false",
+    )
+    assert copied.status_code == 201
+    client.get(
+        f"/v1/studies",
+    ).json()
 
 def test_areas_deletion_with_binding_constraints(
     client: TestClient, user_access_token: str, internal_study_id: str

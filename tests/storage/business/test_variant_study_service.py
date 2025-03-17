@@ -23,7 +23,7 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.login.model import User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -239,25 +239,12 @@ def test_copy_study() -> None:
         event_bus=Mock(),
     )
 
-    src_id = "source"
-    commands = [
-        CommandBlock(
-            study_id=src_id,
-            command="Command",
-            args="",
-            index=0,
-            version=7,
-        )
-    ]
-    src_md = VariantStudy(
-        id=src_id,
+    src_study = VariantStudy(
+        id="source",
         path="path",
-        commands=commands,
-        additional_data=StudyAdditionalData(),
     )
 
-    md = study_service.copy(src_md, "dst_name", [])
-    assert len(src_md.commands) == len(md.commands)
+    study_service.copy(src_study, "dst_name", [])
 
 
 @pytest.mark.unit_test
