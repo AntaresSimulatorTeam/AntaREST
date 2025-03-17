@@ -820,12 +820,13 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
 
 def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
     dto = CommandDTO(
+        id="9f01931b-0f18-4477-9ef4-ac682c970d75",
         action=CommandName.CREATE_ST_STORAGE.value,
         version=1,
         args={
             "area_id": "area_name",
-            "cluster_name": "cluster_name",
             "parameters": {
+                "name": "battery storage_2 candidate",
                 "group": "Battery",
                 "injectionnominalcapacity": 0,
                 "withdrawalnominalcapacity": 0,
@@ -833,6 +834,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
                 "efficiency": 1,
                 "initiallevel": 0,
                 "initialleveloptim": False,
+                "enabled": True,
             },
             "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
             "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
@@ -847,8 +849,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
     command = commands[0]
     dto = command.to_dto()
     assert dto.version == 2
-    assert dto.args["parameters"]["name"] == "cluster_name"
-    assert "cluster_name" not in dto.args
+    assert dto.args["parameters"]["name"] == "battery storage_2 candidate"
 
 
 def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):

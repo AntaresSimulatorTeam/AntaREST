@@ -1,6 +1,13 @@
 Antares Web Changelog
 =====================
 
+v2.19.2 (2025-03-17)
+--------------------
+
+### Bug fixes
+
+* **commands**: fix create_st_storage v1 parsing [`2408`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2408)
+
 v2.19.1 (2025-03-11)
 --------------------
 
