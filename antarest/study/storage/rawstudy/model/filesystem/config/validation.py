@@ -9,9 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, List, Mapping, MutableMapping
 
+"""
+Contains various utilities for pydantic models validation.
+"""
+
+from typing import Annotated, Any, Dict, List, Mapping, MutableMapping, TypeAlias
+
+from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, Field
+from pydantic_core.core_schema import ValidationInfo
 
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
@@ -30,13 +37,13 @@ def _validate_item_name(name: Any) -> str:
 
 # Type to be used for item names, will raise an error if name
 # does not comply with antares-simulator limitations.
-ItemName = Annotated[str, BeforeValidator(_validate_item_name)]
+ItemName: TypeAlias = Annotated[str, BeforeValidator(_validate_item_name)]
 
 # Type to be used for area identifiers. An ID is valid if it contains
 # only lower case alphanumeric characters, parenthesis, comma,
 # ampersand, spaces, underscores, or dashes, as defined by
 # antares-simulator.
-AreaId = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
+AreaId: TypeAlias = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
 
 
 def extract_filtering(v: Any) -> List[str]:
@@ -111,3 +118,24 @@ def validate_color_rgb(v: Any) -> str:
         raise TypeError(f"Invalid type for 'color_rgb': {type(v)}")
 
     return f"#{r:02X}{g:02X}{b:02X}"
+
+
+STUDY_VERSION_KEY: str = "study_version"
+
+
+def study_version_context(study_version: StudyVersion) -> Dict[str, Any]:
+    """
+    Creates a context for pydantic validation, containing this study version.
+    """
+    return {STUDY_VERSION_KEY: study_version}
+
+
+def extract_version(info: ValidationInfo) -> StudyVersion:
+    """
+    Extract study version from pydantic validation context.
+    """
+    if info.context:
+        if study_version := info.context.get(STUDY_VERSION_KEY, None):
+            if isinstance(study_version, StudyVersion):
+                return study_version
+    raise ValueError("You must provide a study version to validate this model.")

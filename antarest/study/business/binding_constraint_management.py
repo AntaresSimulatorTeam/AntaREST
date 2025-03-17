@@ -12,7 +12,7 @@
 
 import collections
 import logging
-from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Tuple, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -374,7 +374,7 @@ class ConstraintOutput870(ConstraintOutput830):
 
 # WARNING: Do not change the order of the following line, it is used to determine
 # the type of the output constraint in the FastAPI endpoint.
-ConstraintOutput = ConstraintOutputBase | ConstraintOutput830 | ConstraintOutput870
+ConstraintOutput: TypeAlias = ConstraintOutputBase | ConstraintOutput830 | ConstraintOutput870
 
 
 def _get_references_by_widths(

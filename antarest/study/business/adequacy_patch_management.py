@@ -10,9 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List
+from typing import Annotated, Any, Dict, List, TypeAlias
 
-from pydantic.types import StrictBool, confloat, conint
+from pydantic import Field
+from pydantic.types import StrictBool
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -28,7 +29,7 @@ class PriceTakingOrder(EnumIgnoreCase):
     LOAD = "Load"
 
 
-ThresholdType = confloat(ge=0)
+ThresholdType: TypeAlias = Annotated[float, Field(ge=0)]
 
 
 @all_optional_model
@@ -41,9 +42,9 @@ class AdequacyPatchFormFields(FormFieldsBaseModel):
     price_taking_order: PriceTakingOrder
     include_hurdle_cost_csr: StrictBool
     check_csr_cost_function: StrictBool
-    threshold_initiate_curtailment_sharing_rule: ThresholdType  # type: ignore
-    threshold_display_local_matching_rule_violations: ThresholdType  # type: ignore
-    threshold_csr_variable_bounds_relaxation: conint(ge=0, strict=True)  # type: ignore
+    threshold_initiate_curtailment_sharing_rule: ThresholdType
+    threshold_display_local_matching_rule_violations: ThresholdType
+    threshold_csr_variable_bounds_relaxation: Annotated[int, Field(ge=0, strict=True)]
 
 
 ADEQUACY_PATCH_PATH = f"{GENERAL_DATA_PATH}/adequacy patch"

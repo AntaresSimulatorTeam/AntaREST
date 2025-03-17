@@ -16,7 +16,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Awaitable, Callable, Dict, List, Optional
+from typing import Awaitable, Callable, Dict, List, Optional, TypeAlias
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session  # type: ignore
@@ -60,7 +60,7 @@ class ITaskNotifier(ABC):
         raise NotImplementedError()
 
 
-Task = Callable[[ITaskNotifier], TaskResult]
+Task: TypeAlias = Callable[[ITaskNotifier], TaskResult]
 
 
 class ITaskService(ABC):

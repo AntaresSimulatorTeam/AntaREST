@@ -20,7 +20,7 @@ import os
 import shutil
 import stat
 from pathlib import Path
-from typing import Iterator, Mapping, Sequence, Tuple
+from typing import Iterator, Mapping, Sequence, Tuple, TypeAlias
 
 import typing_extensions as te
 from fastapi import APIRouter, Depends, HTTPException
@@ -32,8 +32,8 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
-FilesystemName = te.Annotated[str, Field(pattern=r"^\w+$", description="Filesystem name")]
-MountPointName = te.Annotated[str, Field(pattern=r"^\w+$", description="Mount point name")]
+FilesystemName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Filesystem name")]
+MountPointName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Mount point name")]
 
 
 class FilesystemDTO(

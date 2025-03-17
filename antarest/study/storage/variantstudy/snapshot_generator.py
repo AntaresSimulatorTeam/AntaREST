@@ -21,7 +21,11 @@ from pathlib import Path
 from typing import List, NamedTuple, Optional, Sequence, Tuple
 
 from antarest.core.exceptions import VariantGenerationError
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import (
+    ICache,
+    study_config_cache_key,
+    study_raw_cache_key,
+)
 from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
@@ -29,7 +33,7 @@ from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat
+from antarest.study.storage.utils import assert_permission_on_studies, export_study_flat, remove_from_cache
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -95,20 +99,20 @@ class SnapshotGenerator:
 
         try:
             if search_result.force_regenerate or not snapshot_dir.exists():
+                remove_from_cache(self.cache, variant_study_id)
                 logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
                 shutil.rmtree(snapshot_dir, ignore_errors=True)
                 self._export_ref_study(snapshot_dir, ref_study)
-
-            logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(snapshot_dir, variant_study, cmd_blocks, listener)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
             file_study = self.study_factory.create_from_fs(
                 snapshot_dir,
                 study_id=variant_study_id,
                 output_path=snapshot_dir / OUTPUT_RELATIVE_PATH,
-                use_cache=False,  # Avoid saving the study config in the cache
+                use_cache=True,
             )
+            logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
+            results = self._apply_commands(file_study, variant_study, cmd_blocks, listener)
             if denormalize:
                 logger.info(f"Denormalizing variant study {variant_study_id}")
                 file_study.tree.denormalize()
@@ -128,6 +132,7 @@ class SnapshotGenerator:
             self._update_cache(file_study)
 
         except Exception:
+            remove_from_cache(self.cache, variant_study_id)
             shutil.rmtree(snapshot_dir, ignore_errors=True)
             raise
 
@@ -171,20 +176,14 @@ class SnapshotGenerator:
 
     def _apply_commands(
         self,
-        snapshot_dir: Path,
+        file_study: FileStudy,
         variant_study: VariantStudy,
         cmd_blocks: Sequence[CommandBlock],
         listener: Optional[ICommandListener] = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         generator = VariantCommandGenerator(self.study_factory)
-        results = generator.generate(
-            commands,
-            snapshot_dir,
-            variant_study,
-            delete_on_failure=False,  # Not needed, because we are using a temporary directory
-            listener=listener,
-        )
+        results = generator.generate(commands, study=file_study, metadata=variant_study, listener=listener)
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
             if results.details:
@@ -210,9 +209,9 @@ class SnapshotGenerator:
 
     def _update_cache(self, file_study: FileStudy) -> None:
         # The study configuration is changed, so we update the cache.
-        self.cache.invalidate(f"{CacheConstants.RAW_STUDY}/{file_study.config.study_id}")
+        self.cache.invalidate(study_raw_cache_key(file_study.config.study_id))
         self.cache.put(
-            f"{CacheConstants.STUDY_FACTORY}/{file_study.config.study_id}",
+            study_config_cache_key(file_study.config.study_id),
             FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump(),
         )
 

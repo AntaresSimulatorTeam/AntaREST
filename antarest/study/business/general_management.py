@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Union, cast
+from typing import Annotated, Any, Dict, List, TypeAlias, Union, cast
 
-from pydantic import PositiveInt, StrictBool, ValidationInfo, conint, model_validator
+from pydantic import Field, PositiveInt, StrictBool, ValidationInfo, model_validator
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -60,14 +60,14 @@ class BuildingMode(EnumIgnoreCase):
     DERATED = "Derated"
 
 
-DayNumberType = conint(ge=1, le=366)
+DayNumberType: TypeAlias = Annotated[int, Field(ge=1, le=366)]
 
 
 @all_optional_model
 class GeneralFormFields(FormFieldsBaseModel):
     mode: Mode
-    first_day: DayNumberType  # type: ignore
-    last_day: DayNumberType  # type: ignore
+    first_day: DayNumberType
+    last_day: DayNumberType
     horizon: Union[str, int]
     first_month: Month
     first_week_day: WeekDay

@@ -52,7 +52,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -79,7 +79,7 @@ from antarest.study.business.aggregator_management import (
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.areas.properties_management import PropertiesManager
+from antarest.study.business.areas.properties_management import AreaPropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
@@ -417,7 +417,8 @@ class RawStudyInterface(StudyInterface):
             result = command.apply(file_study)
             if not result.status:
                 raise CommandApplicationError(result.message)
-        self._variant_study_service.invalidate_cache(study)
+        remove_from_cache(self._raw_study_service.cache, study.id)
+        self._variant_study_service.on_parent_change(study.id)
 
         if not is_managed(study):
             # In a previous version, de-normalization was performed asynchronously.
@@ -512,7 +513,7 @@ class StudyService:
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
-        self.properties_manager = PropertiesManager(command_context)
+        self.properties_manager = AreaPropertiesManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
         self.thermal_manager = ThermalManager(command_context)
         self.st_storage_manager = STStorageManager(command_context)
@@ -2914,7 +2915,7 @@ class StudyService:
             raise exception_class(e.detail) from e
 
         # update cache
-        cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
+        cache_id = study_raw_cache_key(study.id)
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 

@@ -12,7 +12,7 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -31,9 +31,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -46,7 +46,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType = List[List[MatrixData]]
+MatrixType: TypeAlias = List[List[MatrixData]]
 
 EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.HOURLY: (8784, 3),
@@ -124,7 +124,7 @@ class BindingConstraintProperties870(BindingConstraintProperties830):
     group: LowerCaseStr = DEFAULT_GROUP
 
 
-BindingConstraintProperties = (
+BindingConstraintProperties: TypeAlias = (
     BindingConstraintPropertiesBase | BindingConstraintProperties830 | BindingConstraintProperties870
 )
 

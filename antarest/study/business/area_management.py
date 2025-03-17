@@ -25,6 +25,9 @@ from antarest.study.business.model.area_model import (
     LayerInfoDTO,
     UpdateAreaUi,
 )
+from antarest.study.business.model.area_properties_model import (
+    AreaPropertiesUpdate,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
@@ -39,6 +42,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
+from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -153,73 +157,39 @@ class AreaManager:
 
     # noinspection SpellCheckingInspection
     def update_areas_props(
-        self, study: StudyInterface, update_areas_by_ids: Mapping[str, AreaOutput]
+        self, study: StudyInterface, properties: Mapping[str, AreaOutput]
     ) -> Mapping[str, AreaOutput]:
         """
         Update the properties of ares.
 
         Args:
             study: The raw study object.
-            update_areas_by_ids: A mapping of area IDs to area properties.
+            properties: A mapping of area IDs to area properties.
 
         Returns:
             A mapping of ALL area IDs to area properties.
         """
         old_areas_by_ids = self.get_all_area_props(study)
-        new_areas_by_ids = {k: v for k, v in old_areas_by_ids.items()}
+        new_areas_by_ids = dict(old_areas_by_ids)
 
-        # Prepare the commands to update the thermal clusters.
-        commands = []
-        command_context = self._command_context
+        areas_properties: Dict[str, AreaPropertiesUpdate] = {}
 
-        for area_id, update_area in update_areas_by_ids.items():
-            # Update the area properties.
+        for area_id, update_area in properties.items():
             old_area = old_areas_by_ids[area_id]
-            new_area = old_area.model_copy(update=update_area.model_dump(mode="json", exclude_none=True))
+            new_area = old_area.model_copy(update=update_area.model_dump(exclude_none=True))
             new_areas_by_ids[area_id] = new_area
 
-            # Convert the DTO to a configuration object and update the configuration file.
-            old_area_folder = old_area.area_folder
-            new_area_folder = new_area.area_folder
+            properties = update_area.model_dump(exclude_none=True, exclude_unset=True, by_alias=True)
+            area_properties = AreaPropertiesUpdate(**properties)
+            areas_properties.update({area_id: area_properties})
 
-            if old_area_folder.optimization != new_area_folder.optimization:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/areas/{area_id}/optimization",
-                        data=new_area_folder.optimization.to_config(),
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
-            if old_area_folder.adequacy_patch != new_area_folder.adequacy_patch and new_area_folder.adequacy_patch:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/areas/{area_id}/adequacy_patch",
-                        data=new_area_folder.adequacy_patch.to_config(),
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
-            if old_area.average_unsupplied_energy_cost != new_area.average_unsupplied_energy_cost:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/thermal/areas/unserverdenergycost/{area_id}",
-                        data=new_area.average_unsupplied_energy_cost,
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
-            if old_area.average_spilled_energy_cost != new_area.average_spilled_energy_cost:
-                commands.append(
-                    UpdateConfig(
-                        target=f"input/thermal/areas/spilledenergycost/{area_id}",
-                        data=new_area.average_spilled_energy_cost,
-                        command_context=command_context,
-                        study_version=study.version,
-                    )
-                )
+        command = UpdateAreasProperties(
+            properties=areas_properties,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
 
-        study.add_commands(commands)
+        study.add_commands([command])
 
         return new_areas_by_ids
 

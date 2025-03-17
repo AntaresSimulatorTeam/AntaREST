@@ -58,6 +58,7 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidat
     ReplaceXpansionCandidate,
 )
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
+from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
@@ -78,6 +79,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_AREA.value: CreateArea,
+    CommandName.UPDATE_AREAS_PROPERTIES.value: UpdateAreasProperties,
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
     CommandName.REMOVE_AREA.value: RemoveArea,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,

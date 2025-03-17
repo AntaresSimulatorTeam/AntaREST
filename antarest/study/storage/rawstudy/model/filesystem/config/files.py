@@ -36,7 +36,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -55,6 +54,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     create_st_storage_config,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)

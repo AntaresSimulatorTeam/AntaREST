@@ -104,6 +104,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
 
     study_interface = Mock(spec=StudyInterface)
     study_interface.get_files.return_value = FileStudy(config, file_tree_mock)
+    study_interface.version = config.version
     file_tree_mock.get.side_effect = [
         {
             "a": {

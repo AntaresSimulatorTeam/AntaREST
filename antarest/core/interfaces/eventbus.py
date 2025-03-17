@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Any, Awaitable, Callable, List, Optional
+from typing import Any, Awaitable, Callable, List, Optional, TypeAlias
 
 from typing_extensions import override
 
@@ -65,7 +65,7 @@ class Event(AntaresBaseModel):
     channel: str = ""
 
 
-EventListener = Callable[[Event], Awaitable[None]]
+EventListener: TypeAlias = Callable[[Event], Awaitable[None]]
 
 
 class IEventBus(ABC):

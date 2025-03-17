@@ -13,7 +13,7 @@
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
     HydroManagement,
-    HydroManagementProperties,
+    HydroManagementFileData,
     HydroManagementUpdate,
 )
 from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowStructure, InflowStructureUpdate
@@ -33,7 +33,7 @@ class HydroManager:
         """
         file_study = study.get_files()
 
-        hydro_properties = HydroManagementProperties(**file_study.tree.get(HYDRO_PATH))
+        hydro_properties = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
 
         return hydro_properties.get_hydro_management(area_id)
 
