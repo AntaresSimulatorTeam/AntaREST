@@ -232,6 +232,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             The newly created study.
         """
         self._check_study_exists(src_meta)
+
         if src_meta.additional_data is None:
             additional_data = StudyAdditionalData()
         else:
