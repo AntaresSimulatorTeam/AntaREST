@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
@@ -23,7 +23,6 @@ import { useFormContextPlus } from "../../../../../common/Form";
 import { PRICE_TAKING_ORDER_OPTIONS, type AdequacyPatchFormFields } from "./utils";
 import type { StudyMetadata } from "../../../../../../types/types";
 import { validateNumber } from "@/utils/validation/number";
-import {Tooltip} from "@mui/material";
 
 function Fields() {
   const { t } = useTranslation();
@@ -46,7 +45,7 @@ function Fields() {
       <Fieldset
         legend={
           <Tooltip title={t("study.configuration.adequacyPatch.legend.localMatchingRule.tooltip")}>
-              <span>{t("study.configuration.adequacyPatch.legend.localMatchingRule")}</span>
+            <span>{t("study.configuration.adequacyPatch.legend.localMatchingRule")}</span>
           </Tooltip>
         }
         fullFieldWidth
@@ -66,11 +65,15 @@ function Fields() {
       </Fieldset>
       {studyVersion >= 850 && (
         <>
-          <Fieldset legend={
-              <Tooltip title={t("study.configuration.adequacyPatch.legend.curtailmentSharing.tooltip")}>
+          <Fieldset
+            legend={
+              <Tooltip
+                title={t("study.configuration.adequacyPatch.legend.curtailmentSharing.tooltip")}
+              >
                 <span>{t("study.configuration.adequacyPatch.legend.curtailmentSharing")}</span>
               </Tooltip>
-          }>
+            }
+          >
             <SelectFE
               label={t("study.configuration.adequacyPatch.priceTakingOrder")}
               options={PRICE_TAKING_ORDER_OPTIONS}
@@ -78,13 +81,13 @@ function Fields() {
               control={control}
             />
             <Tooltip title={t("study.configuration.adequacyPatch.includeHurdleCostCsr.tooltip")}>
-                <span>
-                    <SwitchFE
-                      label={t("study.configuration.adequacyPatch.includeHurdleCostCsr")}
-                      name="includeHurdleCostCsr"
-                      control={control}
-                    />
-                </span>
+              <span>
+                <SwitchFE
+                  label={t("study.configuration.adequacyPatch.includeHurdleCostCsr")}
+                  name="includeHurdleCostCsr"
+                  control={control}
+                />
+              </span>
             </Tooltip>
           </Fieldset>
 
@@ -92,47 +95,63 @@ function Fields() {
             legend={t("study.configuration.adequacyPatch.legend.advanced")}
             fieldWidth={390}
           >
-              <Tooltip title={t("study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule.tooltip")}>
-                  <span>
-                    <NumberFE
-                      label={t("study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule")}
-                      name="thresholdInitiateCurtailmentSharingRule"
-                      control={control}
-                      rules={{
-                        validate: validateNumber({ min: 0 }),
-                      }}
-                    />
-                  </span>
-              </Tooltip>
-              <Tooltip title={t("study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations.tooltip")}>
-                  <span>
-                    <NumberFE
-                      label={t(
-                        "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations",
-                      )}
-                      name="thresholdDisplayLocalMatchingRuleViolations"
-                      control={control}
-                      rules={{
-                        validate: validateNumber({ min: 0 }),
-                      }}
-                    />
-                </span>
-               </Tooltip>
-              <Tooltip title={t("study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation.tooltip")}>
-                  <span>
-                    <NumberFE
-                      label={t("study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation")}
-                      name="thresholdCsrVariableBoundsRelaxation"
-                      control={control}
-                      rules={{
-                        validate: validateNumber({
-                          min: 0,
-                          integer: true,
-                        }),
-                      }}
-                    />
-                </span>
-              </Tooltip>
+            <Tooltip
+              title={t(
+                "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule.tooltip",
+              )}
+            >
+              <span>
+                <NumberFE
+                  label={t(
+                    "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule",
+                  )}
+                  name="thresholdInitiateCurtailmentSharingRule"
+                  control={control}
+                  rules={{
+                    validate: validateNumber({ min: 0 }),
+                  }}
+                />
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={t(
+                "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations.tooltip",
+              )}
+            >
+              <span>
+                <NumberFE
+                  label={t(
+                    "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations",
+                  )}
+                  name="thresholdDisplayLocalMatchingRuleViolations"
+                  control={control}
+                  rules={{
+                    validate: validateNumber({ min: 0 }),
+                  }}
+                />
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={t(
+                "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation.tooltip",
+              )}
+            >
+              <span>
+                <NumberFE
+                  label={t(
+                    "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation",
+                  )}
+                  name="thresholdCsrVariableBoundsRelaxation"
+                  control={control}
+                  rules={{
+                    validate: validateNumber({
+                      min: 0,
+                      integer: true,
+                    }),
+                  }}
+                />
+              </span>
+            </Tooltip>
             <Fieldset.Break />
             <SwitchFE
               label={t("study.configuration.adequacyPatch.checkCsrCostFunction")}
