@@ -12,14 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Box,
-  Skeleton,
-  ToggleButton,
-  ToggleButtonGroup,
-  type ToggleButtonGroupProps,
-} from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { Box, Skeleton, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import GridOffIcon from "@mui/icons-material/GridOff";
@@ -58,6 +52,8 @@ function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { isDarkMode } = useThemeColorScheme();
   const { outputId } = useParams();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const outputRes = useStudySynthesis({
     studyId: study.id,
@@ -76,9 +72,9 @@ function ResultDetails() {
   // when some columns are filtered out
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
+
   const isSynthesis = itemType === OutputItemType.Synthesis;
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const maxYear = output?.nbyears ?? MAX_YEAR;
 
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas ? getAreas(state, study.id) : getLinks(state, study.id),
@@ -94,8 +90,6 @@ function ResultDetails() {
     | (Area & { id: string })
     | LinkElement
     | undefined;
-
-  const maxYear = output?.nbyears ?? MAX_YEAR;
 
   useEffect(() => {
     if (!selectedItem) {
@@ -170,7 +164,7 @@ function ResultDetails() {
       return Promise.resolve(null);
     },
     {
-      deps: [study.id, outputId, selectedItem],
+      deps: [study.id, outputId, selectedItem, isSynthesis],
     },
   );
 
@@ -178,10 +172,13 @@ function ResultDetails() {
     deps: [study.id, path],
   });
 
-  const dateTime = dateTimeMetadata && generateDateTime(dateTimeMetadata);
+  const dateTime = useMemo(
+    () => dateTimeMetadata && generateDateTime(dateTimeMetadata),
+    [dateTimeMetadata],
+  );
 
   const resultColumns = useMemo(() => {
-    if (!matrixRes.data) {
+    if (!matrixRes.data || resultColHeaders.length === 0) {
       return [];
     }
 
@@ -197,25 +194,29 @@ function ResultDetails() {
       ],
       isDarkMode,
     );
-  }, [matrixRes.data, isDarkMode, resultColHeaders]);
+  }, [matrixRes.data, resultColHeaders, isDarkMode]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleItemTypeChange: ToggleButtonGroupProps["onChange"] = (
-    _,
-    newValue: OutputItemType,
-  ) => {
-    if (newValue && newValue !== itemType) {
-      setItemType(newValue);
-    }
-  };
+  const handleItemTypeChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newValue: OutputItemType) => {
+      if (newValue && newValue !== itemType) {
+        setItemType(newValue);
+      }
+    },
+    [itemType],
+  );
 
-  const handleColHeadersChange: SetResultColHeaders = (headers, indices) => {
+  const handleColHeadersChange = useCallback<SetResultColHeaders>((headers, indices) => {
     setResultColHeaders(headers);
     setHeaderIndices(indices);
-  };
+  }, []);
+
+  const handleSetSelectedItemId = useCallback((item: { id: string }) => {
+    setSelectedItemId(item.id);
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -253,7 +254,7 @@ function ResultDetails() {
                 list={filteredItems}
                 currentElement={selectedItemId}
                 currentElementKeyToTest="id"
-                setSelectedItem={(item) => setSelectedItemId(item.id)}
+                setSelectedItem={handleSetSelectedItemId}
               />
             </>
           }
