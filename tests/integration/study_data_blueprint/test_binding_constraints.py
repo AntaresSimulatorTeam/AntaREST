@@ -12,6 +12,7 @@
 
 import re
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -637,7 +638,7 @@ class TestBindingConstraints:
         assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str) -> None:
+    def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str, tmp_path: Path) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         # =============================
@@ -651,12 +652,12 @@ class TestBindingConstraints:
             study_id = preparer.create_variant(study_id, name="Variant 1")
 
         # Create Areas, link and cluster
-        area1_id = preparer.create_area(study_id, name="Area 1")["id"]
-        area2_id = preparer.create_area(study_id, name="Area 2")["id"]
+        area1_id = preparer.create_area(study_id, name="Area 1??")["id"]
+        area2_id = preparer.create_area(study_id, name="Area 2??")["id"]
         area3_id = preparer.create_area(study_id, name="Area 3")["id"]
         link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
         preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)
-        cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
+        cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1??", group="Nuclear")["id"]
 
         # =============================
         #  CREATION
@@ -743,12 +744,12 @@ class TestBindingConstraints:
         # CONSTRAINT TERM MANAGEMENT
         # =============================
 
-        # Add binding constraint terms
+        # Add binding constraint terms giving object names and not ids
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
             json=[
-                {"weight": 1, "offset": 2, "data": {"area1": area1_id, "area2": area2_id}},
-                {"weight": 1, "offset": 2, "data": {"area": area1_id, "cluster": cluster_id}},
+                {"weight": 1, "offset": 2, "data": {"area1": "Area 1??", "area2": "Area 2??"}},
+                {"weight": 1, "offset": 2, "data": {"area": "Area 1??", "cluster": "Cluster 1??"}},
             ],
         )
         assert res.status_code == 200, res.json()
@@ -776,6 +777,7 @@ class TestBindingConstraints:
         assert link_id in description, "Error message should contain the duplicate term ID"
 
         # Get binding constraints list to check added terms
+        # Asserts terms are returned with area/cluster ids
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
@@ -793,6 +795,15 @@ class TestBindingConstraints:
             },
         ]
         assert constraint_terms == expected
+
+        # Checks ini content
+        study_path = tmp_path / "internal_workspace" / study_id
+        if study_type == "variant":
+            study_path = study_path.joinpath("snapshot")
+        ini_path = study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
+        ini_content = ini_path.read_text().splitlines()
+        assert "area 1%area 2 = 1.0%2" in ini_content
+        assert "area 1.cluster 1 = 1.0%2" in ini_content
 
         # Update binding constraint terms
         res = client.put(
@@ -852,6 +863,23 @@ class TestBindingConstraints:
                 "weight": 5.1,
             },
         ]
+        assert constraint_terms == expected
+
+        # Write terms with area/cluster in upper case to ensure the endpoint returns them in lower case
+        with open(ini_path, "r") as f:
+            lines = f.readlines()
+            new_lines = lines
+            for k, line in enumerate(lines):
+                if line == "area 1%area 3 = 4.4%1\n":
+                    new_lines[k] = "Area 1%Area 3 = 4.4%1\n"
+                elif line == "area 1.cluster 1 = 5.1\n":
+                    new_lines[k] = "Area 1.CLUSTER 1 = 5.1"
+        with open(ini_path, "w") as f:
+            f.writelines(new_lines)
+
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
+        assert res.status_code == 200, res.json()
+        constraint_terms = res.json()["terms"]
         assert constraint_terms == expected
 
         # =============================
