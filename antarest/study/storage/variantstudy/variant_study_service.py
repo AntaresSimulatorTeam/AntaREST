@@ -52,14 +52,27 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
-from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    RawStudy,
+    Study,
+    StudyAdditionalData,
+    StudyMetadataDTO,
+    StudySimResultDTO,
+)
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission,
+    export_study_flat,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
+)
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -884,7 +897,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     @override
     def copy(
         self,
-        src_meta: VariantStudy,
+        src_study: VariantStudy,
         dest_name: str,
         groups: Sequence[str],
         with_outputs: bool = False,
@@ -893,7 +906,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Create a new variant study by copying a reference study.
 
         Args:
-            src_meta: The source study that you want to copy.
+            src_study: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
@@ -902,45 +915,42 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             The newly created study.
         """
         new_id = str(uuid4())
-        study_path = str(self.config.get_workspace_path() / new_id)
-        if src_meta.additional_data is None:
+
+        if src_study.additional_data is None:
             additional_data = StudyAdditionalData()
         else:
             additional_data = StudyAdditionalData(
-                horizon=src_meta.additional_data.horizon,
-                author=src_meta.additional_data.author,
-                patch=src_meta.additional_data.patch,
+                horizon=src_study.additional_data.horizon,
+                author=src_study.additional_data.author,
+                patch=src_study.additional_data.patch,
             )
-        dst_meta = VariantStudy(
+
+        dest_study = RawStudy(
             id=new_id,
             name=dest_name,
-            parent_id=src_meta.parent_id,
-            path=study_path,
+            path=str(self.config.get_workspace_path() / new_id),
+            workspace=DEFAULT_WORKSPACE_NAME,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=src_meta.version,
+            version=src_study.version,
             groups=groups,
-            snapshot=None,
             additional_data=additional_data,
         )
 
-        # noinspection PyArgumentList
-        dst_meta.commands = [
-            CommandBlock(
-                study_id=new_id,
-                command=command.command,
-                args=command.args,
-                index=command.index,
-                version=command.version,
-                study_version=str(command.study_version),
-                user_id=command.user_id,
-                updated_at=command.updated_at,
-            )
-            for command in src_meta.commands
-        ]
+        src_path = Path(src_study.path)
+        dest_path = Path(dest_study.path)
 
-        return dst_meta
+        shutil.copytree(src_path, dest_path)
+
+        output = dest_path / "output"
+        if not with_outputs and output.exists():
+            shutil.rmtree(output)
+
+        study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
+        update_antares_info(dest_study, study.tree, update_author=True)
+
+        return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
