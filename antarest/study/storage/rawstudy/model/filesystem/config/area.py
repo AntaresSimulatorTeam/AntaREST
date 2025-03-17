@@ -101,8 +101,8 @@ class OptimizationProperties(IniProperties):
         non_dispatchable_power: bool = Field(default=True, alias="non-dispatchable-power")
         dispatchable_hydro_power: bool = Field(default=True, alias="dispatchable-hydro-power")
         other_dispatchable_power: bool = Field(default=True, alias="other-dispatchable-power")
-        spread_unsupplied_energy_cost: float = Field(default=0.0, ge=0, alias="spread-unsupplied-energy-cost")
-        spread_spilled_energy_cost: float = Field(default=0.0, ge=0, alias="spread-spilled-energy-cost")
+        spread_unsupplied_energy_cost: float = Field(default=0.0, alias="spread-unsupplied-energy-cost")
+        spread_spilled_energy_cost: float = Field(default=0.0, alias="spread-spilled-energy-cost")
 
     filtering: FilteringSection = Field(
         default_factory=FilteringSection,

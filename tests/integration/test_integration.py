@@ -1185,7 +1185,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "adequacyPatchMode": "outside",
     }
 
-    client.put(
+    res = client.put(
         f"/v1/studies/{study_id}/areas/area 1/properties/form",
         json={
             "energyCostUnsupplied": 2.0,
@@ -1193,13 +1193,14 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "nonDispatchPower": False,
             "dispatchHydroPower": False,
             "otherDispatchPower": False,
-            "spreadUnsuppliedEnergyCost": 10.0,
+            "spreadUnsuppliedEnergyCost": -10.0,
             "spreadSpilledEnergyCost": 10.0,
             "filterSynthesis": ["monthly", "annual"],
             "filterByYear": ["hourly", "daily", "annual"],
             "adequacyPatchMode": "inside",
         },
     )
+    res.raise_for_status()
     res_properties_config = client.get(f"/v1/studies/{study_id}/areas/area 1/properties/form")
     res_properties_config_json = res_properties_config.json()
     res_properties_config_json["filterSynthesis"] = set(res_properties_config_json["filterSynthesis"])
@@ -1210,7 +1211,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "nonDispatchPower": False,
         "dispatchHydroPower": False,
         "otherDispatchPower": False,
-        "spreadUnsuppliedEnergyCost": 10.0,
+        "spreadUnsuppliedEnergyCost": -10.0,
         "spreadSpilledEnergyCost": 10.0,
         "filterSynthesis": {"monthly", "annual"},
         "filterByYear": {"hourly", "daily", "annual"},
