@@ -16,7 +16,8 @@ from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence
 
 import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import Field, field_validator, model_validator
+from pydantic import BeforeValidator, Field, model_validator
+from typing_extensions import Annotated
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -29,7 +30,7 @@ from antarest.core.exceptions import (
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
-from antarest.core.model import JSON, LowerCaseStr
+from antarest.core.model import JSON, LowerCaseId, LowerCaseStr
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
@@ -86,6 +87,25 @@ OPERATOR_CONFLICT_MAP = {
 }
 
 
+def validate_and_transform_term_id(term_id: str) -> str:
+    """
+    Used to validate the term id given by the user when updating an existing one
+    """
+    if not term_id:
+        raise InvalidConstraintTerm(term_id, "You should provide an id when updating an existing term")
+    try:
+        if "%" in term_id:
+            area_1, area_2 = sorted(term_id.split("%"))
+            return f"{transform_name_to_id(area_1)}%{transform_name_to_id(area_2)}"
+        elif "." in term_id:
+            area, cluster = term_id.split(".")
+            return f"{transform_name_to_id(area)}.{transform_name_to_id(cluster)}"
+        else:
+            raise InvalidConstraintTerm(term_id, "Your term id is not well-formatted")
+    except Exception:
+        raise InvalidConstraintTerm(term_id, "Your term id is not well-formatted")
+
+
 class LinkTerm(AntaresBaseModel):
     """
     DTO for a constraint term on a link between two areas.
@@ -95,13 +115,13 @@ class LinkTerm(AntaresBaseModel):
         area2: the second area ID
     """
 
-    area1: str
-    area2: str
+    area1: LowerCaseId
+    area2: LowerCaseId
 
     def generate_id(self) -> str:
         """Return the constraint term ID for this link, of the form "area1%area2"."""
         # Ensure IDs are in alphabetical order and lower case
-        ids = sorted((self.area1.lower(), self.area2.lower()))
+        ids = sorted((self.area1, self.area2))
         return "%".join(ids)
 
 
@@ -114,19 +134,18 @@ class ClusterTerm(AntaresBaseModel):
         cluster: the cluster ID
     """
 
-    area: str
-    cluster: str
+    area: LowerCaseId
+    cluster: LowerCaseId
 
     def generate_id(self) -> str:
         """Return the constraint term ID for this Area/cluster constraint, of the form "area.cluster"."""
         # Ensure IDs are in lower case
-        ids = [self.area.lower(), self.cluster.lower()]
-        return ".".join(ids)
+        return ".".join([self.area, self.cluster])
 
 
-class ConstraintTerm(AntaresBaseModel):
+class ConstraintTermUpdate(AntaresBaseModel):
     """
-    DTO for a constraint term.
+    DTO used to update an existing constraint term.
 
     Attributes:
         id: the constraint term ID, of the form "area1%area2" or "area.cluster".
@@ -135,23 +154,40 @@ class ConstraintTerm(AntaresBaseModel):
         data: the constraint term data (link or cluster), if any.
     """
 
-    id: Optional[str] = None
+    id: Annotated[str, BeforeValidator(validate_and_transform_term_id)]
     weight: Optional[float] = None
     offset: Optional[int] = None
     data: Optional[LinkTerm | ClusterTerm] = None
 
-    @field_validator("id")
-    def id_to_lower(cls, v: Optional[str]) -> Optional[str]:
-        """Ensure the ID is lower case."""
-        if v is None:
-            return None
-        return v.lower()
+
+class ConstraintTerm(AntaresBaseModel):
+    """
+    DTO for a constraint term.
+
+    Attributes:
+        weight: the constraint term weight
+        offset: the constraint term offset, if any.
+        data: the constraint term data (link or cluster)
+    """
+
+    weight: float
+    offset: Optional[int] = None
+    data: LinkTerm | ClusterTerm
 
     def generate_id(self) -> str:
-        """Return the constraint term ID for this term based on its data."""
-        if self.data is None:
-            return self.id or ""
         return self.data.generate_id()
+
+    def update_from(self, updated_term: ConstraintTermUpdate) -> "ConstraintTerm":
+        if updated_term.weight:
+            self.weight = updated_term.weight
+
+        if updated_term.data:
+            self.data = updated_term.data
+
+        # IMPORTANT: If the user didn't give an offset it means he wants to remove it.
+        self.offset = updated_term.offset
+
+        return self
 
 
 class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
@@ -242,13 +278,13 @@ class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
 
         if self.link_id:
             # The `link_id` filter is a case-insensitive exact match.
-            all_link_ids = [term.data.generate_id() for term in terms if isinstance(term.data, LinkTerm)]
+            all_link_ids = [term.generate_id() for term in terms if isinstance(term.data, LinkTerm)]
             if self.link_id.lower() not in all_link_ids:
                 return False
 
         if self.cluster_id:
             # The `cluster_id` filter is a case-insensitive exact match.
-            all_cluster_ids = [term.data.generate_id() for term in terms if isinstance(term.data, ClusterTerm)]
+            all_cluster_ids = [term.generate_id() for term in terms if isinstance(term.data, ClusterTerm)]
             if self.cluster_id.lower() not in all_cluster_ids:
                 return False
 
@@ -441,7 +477,6 @@ class BindingConstraintManager:
                 # Link term
                 adapted_constraint.terms.append(
                     ConstraintTerm(
-                        id=key,
                         weight=weight,
                         offset=offset,
                         data=LinkTerm.model_validate(
@@ -456,7 +491,6 @@ class BindingConstraintManager:
             else:
                 adapted_constraint.terms.append(
                     ConstraintTerm(
-                        id=key,
                         weight=weight,
                         offset=offset,
                         data=ClusterTerm.model_validate({"area": term_data[0], "cluster": term_data[1]}),
@@ -532,10 +566,11 @@ class BindingConstraintManager:
         """
         coeffs = {}
         for term in terms:
-            if term.id and term.weight is not None:
-                coeffs[term.id] = [term.weight]
+            term_id = term.generate_id()
+            if term_id and term.weight is not None:
+                coeffs[term_id] = [term.weight]
                 if term.offset:
-                    coeffs[term.id].append(term.offset)
+                    coeffs[term_id].append(term.offset)
         return coeffs
 
     def check_binding_constraints_exists(self, study: StudyInterface, bc_ids: List[str]) -> None:
@@ -986,64 +1021,7 @@ class BindingConstraintManager:
         command = UpdateBindingConstraint.model_validate(args)
         study.add_commands([command])
 
-    def update_constraint_terms(
-        self,
-        study: StudyInterface,
-        binding_constraint_id: str,
-        constraint_terms: Sequence[ConstraintTerm],
-        update_mode: str = "replace",
-    ) -> None:
-        """
-        Update or add the specified constraint terms.
-
-        Args:
-            study: The study from which to update the binding constraint.
-            binding_constraint_id: The ID of the binding constraint to update.
-            constraint_terms: The constraint terms to update.
-            update_mode: The update mode, either "replace" or "add".
-        """
-
-        constraint = self.get_binding_constraint(study, binding_constraint_id)
-        existing_terms = {term.generate_id(): term for term in constraint.terms}
-
-        if update_mode == "add":
-            new_terms = {}
-            for term in constraint_terms:
-                if term.data is None:
-                    raise InvalidConstraintTerm(binding_constraint_id, term.model_dump_json())
-                new_terms[term.generate_id()] = term
-
-            duplicate_terms = set(new_terms) & set(existing_terms)
-            if duplicate_terms:
-                raise DuplicateConstraintTerm(binding_constraint_id, *duplicate_terms)
-
-            existing_terms.update(new_terms)
-
-        elif update_mode == "replace":
-            ids_to_update = set()
-            for term in constraint_terms:
-                if not term.id:
-                    raise InvalidConstraintTerm(binding_constraint_id, term.model_dump_json())
-                ids_to_update.add(term.id)
-
-            missing_terms = ids_to_update - set(existing_terms)
-            if missing_terms:
-                raise ConstraintTermNotFound(binding_constraint_id, *missing_terms)
-
-            # We can either rename a term or just change its values
-            for term in constraint_terms:
-                if term.generate_id() != term.id:
-                    existing_terms[term.generate_id()] = existing_terms.pop(term.id)  # type: ignore
-                else:
-                    existing_terms[term.id] = term
-
-        else:  # pragma: no cover
-            raise NotImplementedError(f"Unsupported update mode: {update_mode}")
-
-        sorted_terms = dict(sorted(existing_terms.items()))
-        self._update_constraint_with_terms(study, constraint, sorted_terms)
-
-    def create_constraint_terms(
+    def add_constraint_terms(
         self, study: StudyInterface, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTerm]
     ) -> None:
         """
@@ -1054,7 +1032,45 @@ class BindingConstraintManager:
             binding_constraint_id: The ID of the binding constraint to update.
             constraint_terms: The constraint terms to add.
         """
-        return self.update_constraint_terms(study, binding_constraint_id, constraint_terms, update_mode="add")
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        existing_terms = {term.generate_id(): term for term in constraint.terms}
+
+        new_terms = {term.generate_id(): term for term in constraint_terms}
+        duplicate_terms = set(new_terms) & set(existing_terms)
+        if duplicate_terms:
+            raise DuplicateConstraintTerm(binding_constraint_id, *duplicate_terms)
+
+        existing_terms.update(new_terms)
+        sorted_terms = dict(sorted(existing_terms.items()))
+        self._update_constraint_with_terms(study, constraint, sorted_terms)
+
+    def update_constraint_terms(
+        self, study: StudyInterface, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTermUpdate]
+    ) -> None:
+        """
+        Update the specified constraint terms.
+
+        Args:
+            study: The study from which to update the binding constraint.
+            binding_constraint_id: The ID of the binding constraint to update.
+            constraint_terms: The constraint terms to update.
+        """
+
+        constraint = self.get_binding_constraint(study, binding_constraint_id)
+        existing_terms = {term.generate_id(): term for term in constraint.terms}
+
+        ids_to_update = {term.id for term in constraint_terms}
+        missing_terms = ids_to_update - set(existing_terms)
+        if missing_terms:
+            raise ConstraintTermNotFound(binding_constraint_id, *missing_terms)
+
+        # Updates existing terms
+        for term in constraint_terms:
+            new_term = existing_terms.pop(term.id).update_from(term)
+            existing_terms[new_term.generate_id()] = new_term
+
+        sorted_terms = dict(sorted(existing_terms.items()))
+        self._update_constraint_with_terms(study, constraint, sorted_terms)
 
     def remove_constraint_term(
         self,
