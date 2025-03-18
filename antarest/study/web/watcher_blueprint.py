@@ -72,15 +72,9 @@ def create_watcher_routes(
                     exc_info=e,
                 )
                 raise BadPathFormatError("Bad path format. Expected <workspace>/<path/to/folder>")
-            logger.info(
-                f"Scanning directory {relative_path} of worskpace {workspace}",
-                extra={"user": current_user.id},
-            )
+            logger.info(f"Scanning directory {relative_path} of worskpace {workspace}")
         else:
-            logger.info(
-                "Scanning all workspaces",
-                extra={"user": current_user.id},
-            )
+            logger.info("Scanning all workspaces")
             relative_path = None
             workspace = None
         return watcher.oneshot_scan(params=params, recursive=recursive, workspace=workspace, path=relative_path)
