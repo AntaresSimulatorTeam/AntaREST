@@ -97,6 +97,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
                     " - %(process)s"
                     " - %(name)s"
                     " - %(trace_id)s"
+                    " - %(task_id)s"
                     " - %(threadName)s"
                     " - %(ip)s"
                     " - %(user)s"
@@ -187,8 +188,10 @@ class ContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if request := _request.get():
             record.ip = request.scope.get("client", "undefined")[0]
-        record.trace_id = _request_id.get()
-        record.task_id = _task_id.get()
+        if request_id := _request_id.get():
+            record.trace_id = request_id
+        if task_id := _task_id.get():
+            record.task_id = task_id
         if current_user := get_current_user():
             record.user = {"id": current_user.id}
         return True
