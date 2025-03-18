@@ -843,7 +843,7 @@ class TestBindingConstraints:
 
         # Rename term
         # We're replacing area_1%area_2 by area_1%area_3
-        body = {"id": f"{area1_id}%{area2_id}", "data": {"area1": area1_id, "area2": area3_id}}
+        body = {"id": f"{area1_id}%{area2_id}", "data": {"area1": area1_id, "area2": area3_id}, "offset": 1}
         res = client.put(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/term", json=body)
         assert res.status_code == 200, res.json()
 
