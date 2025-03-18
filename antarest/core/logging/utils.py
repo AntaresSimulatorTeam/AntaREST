@@ -193,7 +193,7 @@ class ContextFilter(logging.Filter):
         if task_id := _task_id.get():
             record.task_id = task_id
         if current_user := get_current_user():
-            record.user = {"id": current_user.id}
+            record.user = current_user.id
         return True
 
 
