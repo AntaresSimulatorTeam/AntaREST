@@ -22,7 +22,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.model import JSON, PublicMode
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
@@ -33,15 +33,12 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
     Patch,
-    PatchOutputs,
     PatchStudy,
     StudyAdditionalData,
     StudyMetadataDTO,
-    StudyMetadataPatchDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -57,33 +54,11 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         self,
         config: Config,
         study_factory: StudyFactory,
-        patch_service: PatchService,
         cache: ICache,
     ):
         self.config: Config = config
         self.study_factory: StudyFactory = study_factory
-        self.patch_service = patch_service
         self.cache = cache
-
-    @override
-    def patch_update_study_metadata(
-        self,
-        study: T,
-        metadata: StudyMetadataPatchDTO,
-    ) -> StudyMetadataDTO:
-        old_patch = self.patch_service.get(study)
-        old_patch.study = PatchStudy(
-            scenario=metadata.scenario,
-            doc=metadata.doc,
-            status=metadata.status,
-            tags=metadata.tags,
-        )
-        self.patch_service.save(
-            study,
-            old_patch,
-        )
-        remove_from_cache(self.cache, study.id)
-        return self.get_study_information(study)
 
     @override
     def get_study_information(
@@ -159,7 +134,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         parts = [item for item in url.split("/") if item]
 
         if url == "" and depth == -1:
-            cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
+            cache_id = study_raw_cache_key(metadata.id)
             from_cache: Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
@@ -212,10 +187,8 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         Returns: study output data
         """
         study_data = self.get_raw(study)
-        patch_metadata = self.patch_service.get(study)
         results: List[StudySimResultDTO] = []
         if study_data.config.outputs is not None:
-            reference = (patch_metadata.outputs or PatchOutputs()).reference
             for output in study_data.config.outputs:
                 output_data: Simulation = study_data.config.outputs[output]
                 try:
@@ -237,8 +210,6 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
                             type=output_data.mode,
                             settings=settings,
                             completionDate="",
-                            referenceStatus=(reference == output),
-                            synchronized=False,
                             status="",
                             archived=output_data.archived,
                         )
@@ -364,8 +335,9 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         author = file_study.tree.get(url=["study", "antares", "author"])
-        patch = self.patch_service.get_from_filestudy(file_study)
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, patch=patch.model_dump_json())
+        assert isinstance(author, str)
+        assert isinstance(horizon, (str, int))
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
 
     @override

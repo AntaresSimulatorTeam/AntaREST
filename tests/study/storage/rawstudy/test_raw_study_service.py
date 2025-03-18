@@ -24,7 +24,6 @@ from antarest.login.model import Group, User
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageGroup,
     STStorageProperties,
@@ -77,7 +76,6 @@ class TestRawStudyService:
         raw_study_service: RawStudyService,
         simple_matrix_service: SimpleMatrixService,
         generator_matrix_constants: GeneratorMatrixConstants,
-        patch_service: PatchService,
         study_storage_service: StudyStorageService,
         # pytest parameters
         outputs: bool,
@@ -121,7 +119,6 @@ class TestRawStudyService:
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=simple_matrix_service,
-            patch_service=patch_service,
         )
 
         create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)

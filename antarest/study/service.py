@@ -14,20 +14,17 @@ import base64
 import collections
 import contextlib
 import http
-import io
 import logging
 import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, MutableSequence, Optional, Sequence, Tuple, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
 
-import numpy as np
-import numpy.typing as npt
 import pandas as pd
 from antares.study.version import StudyVersion
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from markupsafe import escape
 from starlette.responses import FileResponse, Response
 from typing_extensions import override
@@ -55,7 +52,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -82,7 +79,7 @@ from antarest.study.business.aggregator_management import (
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.areas.properties_management import PropertiesManager
+from antarest.study.business.areas.properties_management import AreaPropertiesManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
@@ -95,6 +92,11 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.xpansion_model import (
+    GetXpansionSettings,
+    XpansionCandidateDTO,
+    XpansionSettingsUpdate,
+)
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
@@ -104,9 +106,6 @@ from antarest.study.business.thematic_trimming_management import ThematicTrimmin
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
-    GetXpansionSettings,
-    UpdateXpansionSettings,
-    XpansionCandidateDTO,
     XpansionManager,
 )
 from antarest.study.model import (
@@ -116,9 +115,6 @@ from antarest.study.model import (
     CommentsDto,
     ExportFormat,
     MatrixIndex,
-    Patch,
-    PatchArea,
-    PatchCluster,
     RawStudy,
     Study,
     StudyAdditionalData,
@@ -138,13 +134,12 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -207,20 +202,6 @@ def get_disk_usage(path: str | Path) -> int:
                     elif entry.is_dir():
                         total_size += get_disk_usage(path=str(entry.path))
     return total_size
-
-
-def _imports_matrix_from_bytes(data: bytes) -> npt.NDArray[np.float64]:
-    """Tries to convert bytes to a numpy array when importing a matrix"""
-    str_data = data.decode("utf-8")
-    if not str_data:
-        return np.zeros(shape=(0, 0))
-    for delimiter in [",", ";", "\t"]:
-        with contextlib.suppress(Exception):
-            df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
-            df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
-            matrix = df.to_numpy(dtype=np.float64)
-            return matrix
-    raise MatrixImportFailed("Could not parse the given matrix")
 
 
 def _get_path_inside_user_folder(
@@ -403,12 +384,10 @@ class RawStudyInterface(StudyInterface):
         self,
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
-        patch_service: PatchService,
         study: RawStudy,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
-        self._patch_service = patch_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
@@ -438,7 +417,8 @@ class RawStudyInterface(StudyInterface):
             result = command.apply(file_study)
             if not result.status:
                 raise CommandApplicationError(result.message)
-        self._variant_study_service.invalidate_cache(study)
+        remove_from_cache(self._raw_study_service.cache, study.id)
+        self._variant_study_service.on_parent_change(study.id)
 
         if not is_managed(study):
             # In a previous version, de-normalization was performed asynchronously.
@@ -459,14 +439,6 @@ class RawStudyInterface(StudyInterface):
             # within the current process (not across multiple processes)...
             file_study.tree.denormalize()
 
-    @override
-    def get_patch_data(self) -> Patch:
-        return self._patch_service.get(self._study)
-
-    @override
-    def update_patch_data(self, patch_data: Patch) -> None:
-        self._patch_service.save(self._study, patch_data)
-
 
 class VariantStudyInterface(StudyInterface):
     """
@@ -476,9 +448,8 @@ class VariantStudyInterface(StudyInterface):
     to the variant.
     """
 
-    def __init__(self, variant_service: VariantStudyService, patch_service: PatchService, study: VariantStudy):
+    def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
         self._variant_service = variant_service
-        self._patch_service = patch_service
         self._study = study
         self._version = StudyVersion.parse(self._study.version)
 
@@ -505,14 +476,6 @@ class VariantStudyInterface(StudyInterface):
             transform_command_to_dto(commands, force_aggregate=True),
             RequestParameters(user=current_user),
         )
-
-    @override
-    def get_patch_data(self) -> Patch:
-        return self._patch_service.get(self._study)
-
-    @override
-    def update_patch_data(self, patch_data: Patch) -> None:
-        self._patch_service.save(self._study, patch_data)
 
 
 class StudyService:
@@ -550,7 +513,7 @@ class StudyService:
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
-        self.properties_manager = PropertiesManager(command_context)
+        self.properties_manager = AreaPropertiesManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
         self.thermal_manager = ThermalManager(command_context)
         self.st_storage_manager = STStorageManager(command_context)
@@ -915,8 +878,6 @@ class StudyService:
         if metadata_patch.tags:
             self.repository.update_tags(study, metadata_patch.tags)
 
-        new_metadata = self.storage_service.get_storage(study).patch_update_study_metadata(study, metadata_patch)
-
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -925,7 +886,8 @@ class StudyService:
             )
         )
 
-        return new_metadata
+        remove_from_cache(cache=self.cache_service, root_id=study.id)
+        return self.get_study_information(study.id, params)
 
     def check_study_access(
         self,
@@ -945,14 +907,12 @@ class StudyService:
         if isinstance(study, VariantStudy):
             return VariantStudyInterface(
                 self.storage_service.variant_study_service,
-                self.storage_service.variant_study_service.patch_service,
                 study,
             )
         elif isinstance(study, RawStudy):
             return RawStudyInterface(
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
-                self.storage_service.raw_study_service.patch_service,
                 study,
             )
         else:
@@ -977,7 +937,7 @@ class StudyService:
     def create_study(
         self,
         study_name: str,
-        version: Optional[str],
+        version: Optional[StudyVersion],
         group_ids: List[str],
         params: RequestParameters,
     ) -> str:
@@ -1007,7 +967,7 @@ class StudyService:
             path=str(study_path),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=version or f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
+            version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
             additional_data=StudyAdditionalData(author=author),
         )
 
@@ -1633,32 +1593,6 @@ class StudyService:
 
         return self.storage_service.get_storage(study).get_study_sim_result(study)
 
-    def set_sim_reference(
-        self,
-        study_id: str,
-        output_id: str,
-        status: bool,
-        params: RequestParameters,
-    ) -> None:
-        """
-        Set simulation as the reference output.
-
-        Args:
-            study_id: study ID.
-            output_id: The ID of the output to set as reference.
-            status: state of the reference status.
-            params: request parameters
-        """
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-
-        logger.info(
-            f"output {output_id} set by user {params.get_user_id()} as reference ({status}) for study {study_id}"
-        )
-
-        self.storage_service.get_storage(study).set_reference_output(study, output_id, status)
-
     def import_study(
         self,
         stream: BinaryIO,
@@ -1762,7 +1696,9 @@ class StudyService:
         elif isinstance(tree_node, InputSeriesMatrix):
             if isinstance(data, bytes):
                 # noinspection PyTypeChecker
-                matrix = _imports_matrix_from_bytes(data)
+                matrix = imports_matrix_from_bytes(data)
+                if matrix is None:
+                    raise MatrixImportFailed("Could not parse the given matrix")
                 matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
                 return ReplaceMatrix(
                     target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
@@ -2130,26 +2066,6 @@ class StudyService:
         )
         return updated_link
 
-    def update_area(
-        self,
-        uuid: str,
-        area_id: str,
-        area_patch_dto: PatchArea,
-        params: RequestParameters,
-    ) -> AreaInfoDTO:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        updated_area = self.area_manager.update_area_metadata(self.get_study_interface(study), area_id, area_patch_dto)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        return updated_area
-
     def update_area_ui(
         self,
         uuid: str,
@@ -2162,20 +2078,6 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
-
-    def update_thermal_cluster_metadata(
-        self,
-        uuid: str,
-        area_id: str,
-        clusters_metadata: Dict[str, PatchCluster],
-        params: RequestParameters,
-    ) -> AreaInfoDTO:
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
-        return self.area_manager.update_thermal_cluster_metadata(
-            self.get_study_interface(study), area_id, clusters_metadata
-        )
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
         """
@@ -2434,19 +2336,18 @@ class StudyService:
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions(params: RequestParameters) -> List[str]:
-        return [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
+        return sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])
 
     def create_xpansion_configuration(
         self,
         uuid: str,
-        zipped_config: Optional[UploadFile],
         params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        self.xpansion_manager.create_xpansion_configuration(study_interface, zipped_config)
+        self.xpansion_manager.create_xpansion_configuration(study_interface)
 
     def delete_xpansion_configuration(self, uuid: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
@@ -2464,7 +2365,7 @@ class StudyService:
     def update_xpansion_settings(
         self,
         uuid: str,
-        xpansion_settings_dto: UpdateXpansionSettings,
+        xpansion_settings_dto: XpansionSettingsUpdate,
         params: RequestParameters,
     ) -> GetXpansionSettings:
         study = self.get_study(uuid)
@@ -3014,7 +2915,7 @@ class StudyService:
             raise exception_class(e.detail) from e
 
         # update cache
-        cache_id = f"{CacheConstants.RAW_STUDY}/{study.id}"
+        cache_id = study_raw_cache_key(study.id)
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 

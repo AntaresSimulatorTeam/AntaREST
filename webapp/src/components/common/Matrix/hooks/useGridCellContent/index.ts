@@ -17,7 +17,7 @@ import { GridCellKind, type GridCell, type Item } from "@glideapps/glide-data-gr
 import type { EnhancedGridColumn, ColumnType, MatrixAggregates } from "../../shared/types";
 import { formatGridNumber } from "../../shared/utils";
 import { Column } from "../../shared/constants";
-import { type CellContentGenerator } from "./types";
+import type { CellContentGenerator } from "./types";
 
 /**
  * Map of cell content generators for each column type.

@@ -16,7 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Mapping, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
@@ -30,8 +30,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import relationship  # type: ignore
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import relationship, validates  # type: ignore
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -48,9 +47,6 @@ if TYPE_CHECKING:
 DEFAULT_WORKSPACE_NAME = "default"
 
 NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("8.8")
-STUDY_VERSION_6_0 = StudyVersion.parse("6.0")
-STUDY_VERSION_6_1 = StudyVersion.parse("6.1")
-STUDY_VERSION_6_4 = StudyVersion.parse("6.4")
 STUDY_VERSION_6_5 = StudyVersion.parse("6.5")
 STUDY_VERSION_7_0 = StudyVersion.parse("7.0")
 STUDY_VERSION_7_1 = StudyVersion.parse("7.1")
@@ -64,29 +60,27 @@ STUDY_VERSION_8_5 = StudyVersion.parse("8.5")
 STUDY_VERSION_8_6 = StudyVersion.parse("8.6")
 STUDY_VERSION_8_7 = StudyVersion.parse("8.7")
 STUDY_VERSION_8_8 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 
-StudyVersionStr = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
-StudyVersionInt = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
+StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
+StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
 
 
-STUDY_REFERENCE_TEMPLATES: Mapping[StudyVersion, str] = {
-    STUDY_VERSION_6_0: "empty_study_613.zip",
-    STUDY_VERSION_6_1: "empty_study_613.zip",
-    STUDY_VERSION_6_4: "empty_study_613.zip",
-    STUDY_VERSION_7_0: "empty_study_700.zip",
-    STUDY_VERSION_7_1: "empty_study_710.zip",
-    STUDY_VERSION_7_2: "empty_study_720.zip",
-    STUDY_VERSION_8: "empty_study_803.zip",
-    STUDY_VERSION_8_1: "empty_study_810.zip",
-    STUDY_VERSION_8_2: "empty_study_820.zip",
-    STUDY_VERSION_8_3: "empty_study_830.zip",
-    STUDY_VERSION_8_4: "empty_study_840.zip",
-    STUDY_VERSION_8_5: "empty_study_850.zip",
-    STUDY_VERSION_8_6: "empty_study_860.zip",
-    STUDY_VERSION_8_7: "empty_study_870.zip",
-    STUDY_VERSION_8_8: "empty_study_880.zip",
+STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
+    STUDY_VERSION_7_0,
+    STUDY_VERSION_7_1,
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_2,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
+    STUDY_VERSION_8_5,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_8_8,
 }
 
 
@@ -404,30 +398,8 @@ class PatchStudy(AntaresBaseModel):
     tags: List[str] = []
 
 
-class PatchArea(AntaresBaseModel):
-    country: Optional[str] = None
-    tags: List[str] = []
-
-
-class PatchCluster(AntaresBaseModel):
-    type: Optional[str] = None
-    code_oi: Optional[str] = None
-
-    class Config:
-        @classmethod
-        def alias_generator(cls, string: str) -> str:
-            return "-".join(string.split("_"))
-
-
-class PatchOutputs(AntaresBaseModel):
-    reference: Optional[str] = None
-
-
-class Patch(AntaresBaseModel):
+class Patch(AntaresBaseModel, extra="allow"):
     study: Optional[PatchStudy] = None
-    areas: Optional[Dict[str, PatchArea]] = None
-    thermal_clusters: Optional[Dict[str, PatchCluster]] = None
-    outputs: Optional[PatchOutputs] = None
 
 
 class OwnerInfo(AntaresBaseModel):
@@ -449,9 +421,6 @@ class StudyMetadataDTO(AntaresBaseModel):
     managed: bool
     archived: bool
     horizon: Optional[str] = None
-    scenario: Optional[str] = None
-    status: Optional[str] = None
-    doc: Optional[str] = None
     folder: Optional[str] = None
     tags: List[str] = []
 
@@ -465,9 +434,6 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
     name: Optional[str] = None
     author: Optional[str] = None
     horizon: Optional[str] = None
-    scenario: Optional[str] = None
-    status: Optional[str] = None
-    doc: Optional[str] = None
     tags: List[str] = []
 
     @field_validator("tags", mode="before")
@@ -500,8 +466,6 @@ class StudySimResultDTO(AntaresBaseModel):
     type: str
     settings: StudySimSettingsDTO
     completionDate: str
-    referenceStatus: bool
-    synchronized: bool
     status: str
     archived: bool
 

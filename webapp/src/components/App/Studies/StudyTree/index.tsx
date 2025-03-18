@@ -41,6 +41,9 @@ function StudyTree() {
   useUpdateEffect(() => {
     const nextStudiesTree = insertFoldersIfNotExist(initialStudiesTree, subFolders);
     setStudiesTree(nextStudiesTree);
+    // subFolders isn't a dependency because we don't want to trigger this code
+    // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStudiesTree]);
 
   /**
@@ -104,7 +107,7 @@ function StudyTree() {
     isExpanded: boolean,
   ) => {
     if (isExpanded) {
-      updateTree(itemId);
+      await updateTree(itemId);
     }
   };
 
@@ -120,15 +123,8 @@ function StudyTree() {
     <SimpleTreeView
       defaultExpandedItems={[...getParentPaths(folder), folder]}
       defaultSelectedItems={folder}
-      sx={{
-        flexGrow: 1,
-        height: 0,
-        width: 1,
-        py: 1,
-        overflowY: "auto",
-        overflowX: "hidden",
-      }}
       onItemExpansionToggle={handleItemExpansionToggle}
+      sx={{ p: 2, pt: 0 }}
     >
       <StudyTreeNodeComponent
         studyTreeNode={studiesTree}

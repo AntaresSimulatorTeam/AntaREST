@@ -56,6 +56,8 @@ class TestOutputSimulationSet:
         actual = node.build()
 
         # check the result
-        value: AreaOutputSeriesMatrix
-        actual_obj = {key: {"freq": value.freq} for key, value in actual.items()}
+        actual_obj: dict[str, dict[str, MatrixFrequency]] = {}
+        for key, value in actual.items():
+            assert isinstance(value, AreaOutputSeriesMatrix)
+            actual_obj[key] = {"freq": value.freq}
         assert actual_obj == expected

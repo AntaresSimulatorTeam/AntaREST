@@ -17,7 +17,7 @@ import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import {
   deleteStudyMapLink,
@@ -86,7 +86,6 @@ function DeleteAreaDialog(props: Props) {
       >
         <Button
           color="primary"
-          size="small"
           onClick={() => {
             dispatch(setCurrentArea(""));
             dispatch(setCurrentLink(""));

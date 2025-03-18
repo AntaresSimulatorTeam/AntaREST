@@ -10,10 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Optional, Type, Union, cast
+from typing import Annotated, Any, Dict, Optional, Type, TypeAlias, cast
 
 from antares.study.version import StudyVersion
-from pydantic import Field
+from pydantic import BeforeValidator, Field, TypeAdapter
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -22,6 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
     IgnoreCaseIdentifier,
     transform_name_to_id,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_version, study_version_context
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
@@ -410,10 +412,41 @@ class Thermal870Config(Thermal870Properties, IgnoreCaseIdentifier):
     """
 
 
-# NOTE: In the following Union, it is important to place the most specific type first,
-# because the type matching generally occurs sequentially from left to right within the union.
-ThermalConfigType = Thermal870Config | Thermal860Config | ThermalConfig
-ThermalPropertiesType = Thermal870Properties | Thermal860Properties | ThermalProperties
+def _validate_thermal_config(data: Any, info: ValidationInfo) -> Any:
+    """
+    When instantiating thermal cluster data from a dictionary, we need the study version
+    to choose which version of the config we need to create.
+    """
+    if not isinstance(data, dict):
+        return data
+    return get_thermal_config_cls(extract_version(info)).model_validate(data)
+
+
+def _validate_thermal_properties(data: Any, info: ValidationInfo) -> Any:
+    """
+    When instantiating thermal cluster data from a dictionary, we need the study version
+    to choose which version of the config we need to create.
+    """
+    if not isinstance(data, dict):
+        return data
+    study_version = extract_version(info)
+    if study_version >= 870:
+        return Thermal870Properties.model_validate(data)
+    elif study_version == 860:
+        return Thermal860Properties.model_validate(data)
+    else:
+        return ThermalProperties.model_validate(data)
+
+
+ThermalConfigType: TypeAlias = Annotated[
+    Thermal870Config | Thermal860Config | ThermalConfig, BeforeValidator(_validate_thermal_config)
+]
+ThermalPropertiesType: TypeAlias = Annotated[
+    Thermal870Properties | Thermal860Properties | ThermalProperties, BeforeValidator(_validate_thermal_properties)
+]
+
+_CONFIG_ADAPTER: TypeAdapter[ThermalConfigType] = TypeAdapter(ThermalConfigType)
+_PROPERTIES_ADAPTER: TypeAdapter[ThermalPropertiesType] = TypeAdapter(ThermalPropertiesType)
 
 
 def get_thermal_config_cls(study_version: StudyVersion) -> Type[ThermalConfigType]:
@@ -437,23 +470,8 @@ def get_thermal_config_cls(study_version: StudyVersion) -> Type[ThermalConfigTyp
 def create_thermal_properties(study_version: StudyVersion, data: Dict[str, Any]) -> ThermalPropertiesType:
     """
     Factory method to create thermal properties.
-
-    Args:
-        study_version: The version of the study.
-        data: The properties to be used to initialize the model.
-
-    Returns:
-        The thermal properties.
-
-    Raises:
-        ValueError: If the study version is not supported.
     """
-    if study_version >= 870:
-        return Thermal870Properties.model_validate(data)
-    elif study_version == 860:
-        return Thermal860Properties.model_validate(data)
-    else:
-        return ThermalProperties.model_validate(data)
+    return _PROPERTIES_ADAPTER.validate_strings(data, context=study_version_context(study_version))
 
 
 def create_thermal_config(study_version: StudyVersion, **kwargs: Any) -> ThermalConfigType:
@@ -470,5 +488,4 @@ def create_thermal_config(study_version: StudyVersion, **kwargs: Any) -> Thermal
     Raises:
         ValueError: If the study version is not supported.
     """
-    cls = get_thermal_config_cls(study_version)
-    return cls.model_validate(kwargs)
+    return _CONFIG_ADAPTER.validate_strings(kwargs, context=study_version_context(study_version))

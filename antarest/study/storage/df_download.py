@@ -23,6 +23,12 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
+try:
+    import tables  # type: ignore # noqa: F401
+    import xlsxwriter  # type: ignore # noqa: F401
+except ImportError:
+    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
+
 
 class TableExportFormat(EnumIgnoreCase):
     """Export format for tables."""

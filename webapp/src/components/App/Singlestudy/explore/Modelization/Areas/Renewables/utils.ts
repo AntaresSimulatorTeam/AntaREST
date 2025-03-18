@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { Area, Cluster, StudyMetadata } from "../../../../../../../common/types";
+import type { Area, Cluster, StudyMetadata } from "../../../../../../../types/types";
 import client from "../../../../../../../services/api/client";
 import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 import type { ClusterWithCapacity } from "../common/clustersUtils";

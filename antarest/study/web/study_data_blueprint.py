@@ -30,26 +30,13 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
-from antarest.study.business.areas.hydro_management import InflowStructure, ManagementOptionsFormFields
-from antarest.study.business.areas.properties_management import PropertiesFormFields
-from antarest.study.business.areas.renewable_management import (
-    RenewableClusterCreation,
-    RenewableClusterInput,
-    RenewableClusterOutput,
-    RenewableManager,
-)
+from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
-    STStorageCreation,
-    STStorageInput,
     STStorageManager,
     STStorageMatrix,
-    STStorageOutput,
     STStorageTimeSeries,
 )
 from antarest.study.business.areas.thermal_management import (
-    ThermalClusterCreation,
-    ThermalClusterInput,
-    ThermalClusterOutput,
     ThermalManager,
 )
 from antarest.study.business.binding_constraint_management import (
@@ -62,20 +49,32 @@ from antarest.study.business.binding_constraint_management import (
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
     CorrelationFormFields,
-    CorrelationManager,
     CorrelationMatrix,
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
+from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
+from antarest.study.business.model.hydro_model import HydroManagement, HydroManagementUpdate
+from antarest.study.business.model.inflow_model import InflowStructure, InflowStructureUpdate
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.renewable_cluster_model import (
+    RenewableClusterCreation,
+    RenewableClusterOutput,
+    RenewableClusterUpdate,
+)
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
+from antarest.study.business.model.thermal_cluster_model import (
+    ThermalClusterCreation,
+    ThermalClusterOutput,
+    ThermalClusterUpdate,
+)
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
-from antarest.study.model import PatchArea, PatchCluster
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -236,33 +235,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         params = RequestParameters(user=current_user)
         return study_service.update_area_ui(uuid, area_id, area_ui, layer, params)
-
-    @bp.put(
-        "/studies/{uuid}/areas/{area_id}",
-        tags=[APITag.study_data],
-        summary="Update area information",
-        response_model=AreaInfoDTO,
-    )
-    def update_area_info(
-        uuid: str,
-        area_id: str,
-        area_patch_dto: PatchArea | Dict[str, PatchCluster],
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Updating area {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
-        params = RequestParameters(user=current_user)
-        if isinstance(area_patch_dto, PatchArea):
-            return study_service.update_area(uuid, area_id, area_patch_dto, params)
-        else:
-            return study_service.update_thermal_cluster_metadata(
-                uuid,
-                area_id,
-                area_patch_dto,
-                params,
-            )
 
     @bp.delete(
         "/studies/{uuid}/areas/{area_id}",
@@ -470,14 +442,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/form",
         tags=[APITag.study_data],
         summary="Get Hydro config values for form",
-        response_model=ManagementOptionsFormFields,
+        response_model=HydroManagement,
         response_model_exclude_none=True,
     )
     def get_hydro_form_values(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ManagementOptionsFormFields:
+    ) -> HydroManagement:
         logger.info(
             msg=f"Getting Hydro management config for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
@@ -485,7 +457,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.hydro_manager.get_field_values(study_interface, area_id)
+        return study_service.hydro_manager.get_hydro_management(study_interface, area_id)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -495,9 +467,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_hydro_form_values(
         uuid: str,
         area_id: str,
-        data: ManagementOptionsFormFields,
+        data: HydroManagementUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> None:
         logger.info(
             msg=f"Updating Hydro management config for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
@@ -505,13 +477,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
-        study_service.hydro_manager.set_field_values(study_interface, data, area_id)
+        study_service.hydro_manager.update_hydro_management(study_interface, data, area_id)
 
     # noinspection SpellCheckingInspection
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
-        summary="Get inflow structure values",
+        summary="Get inflow properties",
         response_model=InflowStructure,
     )
     def get_inflow_structure(
@@ -532,17 +504,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         tags=[APITag.study_data],
-        summary="Update inflow structure values",
+        summary="Update inflow properties values",
     )
     def update_inflow_structure(
         uuid: str,
         area_id: str,
-        values: InflowStructure,
+        values: InflowStructureUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        """Update the configuration for the hydraulic inflow structure of the given area."""
+        """Update the configuration for the hydraulic inflow properties of the given area."""
         logger.info(
-            msg=f"Updating inflow structure values for area {area_id} of study {uuid}",
+            msg=f"Updating inflow properties values for area {area_id} of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
@@ -1901,14 +1873,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/properties/form",
         tags=[APITag.study_data],
         summary="Get properties for a given area",
-        response_model=PropertiesFormFields,
+        response_model=AreaProperties,
         response_model_exclude_none=True,
     )
     def get_properties_form_values(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> PropertiesFormFields:
+    ) -> AreaProperties:
         logger.info(
             "Getting properties form values for study %s and area %s",
             uuid,
@@ -1918,7 +1890,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.properties_manager.get_field_values(study_interface, area_id)
+        return study_service.properties_manager.get_area_properties(study_interface, area_id)
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/properties/form",
@@ -1928,7 +1900,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_properties_form_values(
         uuid: str,
         area_id: str,
-        form_fields: PropertiesFormFields,
+        form_fields: AreaPropertiesUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(
@@ -1940,7 +1912,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
-        study_service.properties_manager.set_field_values(study_interface, area_id, form_fields)
+        study_service.properties_manager.update_area_properties(study_interface, area_id, form_fields)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
@@ -2043,7 +2015,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterInput,
+        cluster_data: RenewableClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
         logger.info(
@@ -2066,7 +2038,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: RenewableClusterInput,
+        cluster_data: RenewableClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
@@ -2222,7 +2194,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: ThermalClusterInput,
+        cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
         """
@@ -2255,7 +2227,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         cluster_id: str,
-        cluster_data: ThermalClusterInput,
+        cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThermalClusterOutput:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
@@ -2574,7 +2546,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         area_id: str,
         storage_id: str,
-        form: STStorageInput,
+        form: STStorageUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> STStorageOutput:
         """

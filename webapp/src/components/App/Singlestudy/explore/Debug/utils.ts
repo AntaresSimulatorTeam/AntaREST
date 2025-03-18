@@ -12,15 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import DataObjectIcon from "@mui/icons-material/DataObject";
-import TextSnippetIcon from "@mui/icons-material/TextSnippet";
-import BlockIcon from "@mui/icons-material/Block";
-import FolderIcon from "@mui/icons-material/Folder";
-import DatasetIcon from "@mui/icons-material/Dataset";
-import type { SvgIconComponent } from "@mui/icons-material";
-import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../common/types";
 import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import { getStudyData } from "@/services/api/study";
+import type { SvgIconComponent } from "@mui/icons-material";
+import BlockIcon from "@mui/icons-material/Block";
+import DataObjectIcon from "@mui/icons-material/DataObject";
+import DatasetIcon from "@mui/icons-material/Dataset";
+import FolderIcon from "@mui/icons-material/Folder";
+import TextSnippetIcon from "@mui/icons-material/TextSnippet";
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
+import type { StudyMetadata } from "../../../../../types/types";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -46,8 +48,6 @@ export interface FileInfo {
 export interface DataCompProps extends FileInfo {
   studyId: string;
   canEdit: boolean;
-  setSelectedFile: (file: FileInfo) => void;
-  reloadTreeData: () => void;
 }
 
 interface ContentParsingOptions {
@@ -106,11 +106,13 @@ export function getFileType(treeData: TreeData): FileType {
   }
 
   if (typeof treeData === "string") {
-    if (URL_SCHEMES.MATRIX.some((scheme) => treeData.startsWith(scheme))) {
+    const filePath = treeData.toLowerCase();
+
+    if (URL_SCHEMES.MATRIX.some((scheme) => filePath.startsWith(scheme))) {
       return "matrix";
     }
 
-    if (treeData.startsWith(URL_SCHEMES.JSON)) {
+    if (filePath.startsWith(URL_SCHEMES.JSON)) {
       return "json";
     }
 
@@ -118,10 +120,18 @@ export function getFileType(treeData: TreeData): FileType {
     // All files except matrices and json-formatted content use this prefix
     // We filter to only allow extensions that can be properly displayed (.txt, .log, .csv, .tsv, .ini)
     // Other extensions (like .RDS or .xlsx) are marked as unsupported since they can't be shown in the UI
-    return treeData.startsWith(URL_SCHEMES.FILE) &&
-      SUPPORTED_EXTENSIONS.some((ext) => treeData.toLowerCase().endsWith(ext.toLowerCase()))
-      ? "text"
-      : "unsupported";
+    if (filePath.startsWith(URL_SCHEMES.FILE)) {
+      // !Special case: JSON files can come with either json:// or file:// prefix
+      // We need to check for .json extension to ensure proper rendering with the JSON component
+      if (filePath.endsWith(".json")) {
+        return "json";
+      }
+
+      // Check other supported text file extensions
+      return SUPPORTED_EXTENSIONS.some((ext) => filePath.endsWith(ext.toLowerCase()))
+        ? "text"
+        : "unsupported";
+    }
   }
 
   return "text";
@@ -165,6 +175,11 @@ export function isEmptyContent(text: string | string[]): boolean {
   }
 
   return typeof text === "string" && !text.trim();
+}
+
+export async function getTreeData(studyId: StudyMetadata["id"]) {
+  const treeData = await getStudyData<TreeFolder>(studyId, "", -1);
+  return R.omit(["Desktop", "study", "logs"], treeData);
 }
 
 /**

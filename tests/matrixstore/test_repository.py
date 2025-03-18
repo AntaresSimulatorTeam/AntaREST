@@ -173,10 +173,7 @@ class TestMatrixRepository:
             assert repo.get(m1.id) is not None
             assert (
                 # fmt: off
-                db_session
-                .query(MatrixDataSetRelation)
-                .filter(MatrixDataSetRelation.dataset_id == dataset.id)
-                .count()
+                db_session.query(MatrixDataSetRelation).filter(MatrixDataSetRelation.dataset_id == dataset.id).count()
                 # fmt: on
                 == 0
             )

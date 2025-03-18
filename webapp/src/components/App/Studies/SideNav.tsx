@@ -13,12 +13,15 @@
  */
 
 import { useNavigate } from "react-router";
-import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
+import { Box, List, ListItemText, ListItemButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { STUDIES_SIDE_NAV_WIDTH } from "../../../theme";
 import StudyTree from "@/components/App/Studies/StudyTree";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getFavoriteStudies } from "../../../redux/selectors";
+import { getFavoriteStudies } from "@/redux/selectors";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import FavoriteStudyToggle from "@/components/common/studies/FavoriteStudyToggle";
+import ListCollapse from "@/components/common/ListCollapse";
 
 function SideNav() {
   const favorites = useAppSelector(getFavoriteStudies);
@@ -26,40 +29,39 @@ function SideNav() {
   const { t } = useTranslation();
 
   return (
-    <Box
-      flex={`0 0 ${STUDIES_SIDE_NAV_WIDTH}px`}
-      height="100%"
-      display="flex"
-      flexDirection="column"
-      justifyContent="flex-start"
-      alignItems="flex-start"
-      boxSizing="border-box"
-      p={2}
-      sx={{ overflowX: "hidden", overflowY: "auto" }}
-    >
-      <Typography sx={{ color: "grey.400" }}>{t("studies.favorites")}</Typography>
-      <List sx={{ width: "100%" }}>
-        {favorites.map((fav) => (
-          <ListItem
-            key={fav.id}
-            onClick={() => navigate(`/studies/${fav.id}`)}
-            sx={{
-              width: "100%",
-              m: 0,
-              py: 0,
-              px: 1,
-              cursor: "pointer",
-              "&:hover": {
-                bgcolor: "primary.outlinedHoverBackground",
-              },
-            }}
-          >
-            <ListItemText primary={fav.name} />
-          </ListItem>
-        ))}
-      </List>
-      <Typography sx={{ color: "grey.400" }}>Exploration</Typography>
-      <StudyTree />
+    <Box sx={{ minWidth: 200, overflow: "auto" }}>
+      {favorites.length > 0 && (
+        <ListCollapse title={t("studies.favorites")} titleIcon={<StarBorderIcon />}>
+          <List disablePadding dense>
+            {favorites.map((fav) => (
+              <ListItemButton
+                key={fav.id}
+                onClick={() => navigate(`/studies/${fav.id}`)}
+                sx={{ pl: 4 }}
+              >
+                <Tooltip title={fav.name}>
+                  <ListItemText
+                    primary={fav.name}
+                    slotProps={{
+                      primary: {
+                        sx: {
+                          textWrap: "nowrap",
+                          textOverflow: "ellipsis",
+                          overflow: "hidden",
+                        },
+                      },
+                    }}
+                  />
+                </Tooltip>
+                <FavoriteStudyToggle studyId={fav.id} size="extra-small" />
+              </ListItemButton>
+            ))}
+          </List>
+        </ListCollapse>
+      )}
+      <ListCollapse title={t("studies.exploration")} titleIcon={<AccountTreeIcon />}>
+        <StudyTree />
+      </ListCollapse>
     </Box>
   );
 }

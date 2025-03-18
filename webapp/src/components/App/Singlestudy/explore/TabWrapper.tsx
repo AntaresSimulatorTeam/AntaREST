@@ -12,13 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { Box, styled, Tab, Tabs, type SxProps, type Theme } from "@mui/material";
 import { useEffect, useState } from "react";
-import { styled, type SxProps, type Theme } from "@mui/material";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
-import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
-import type { StudyMetadata } from "../../../../common/types";
+import { matchPath, Outlet, useLocation, useNavigate } from "react-router-dom";
+import type { StudyMetadata } from "../../../../types/types";
 import { mergeSxProp } from "../../../../utils/muiUtils";
 
 export const StyledTabs = styled(Tabs, {
@@ -107,7 +104,9 @@ function TabWrapper({ study, tabList, border, tabStyle, sx }: Props) {
           ))}
         </StyledTabs>
       </Box>
-      <Outlet context={{ study }} />
+      <Box sx={{ flex: 1, position: "relative", overflow: "auto" }}>
+        <Outlet context={{ study }} />
+      </Box>
     </Box>
   );
 }

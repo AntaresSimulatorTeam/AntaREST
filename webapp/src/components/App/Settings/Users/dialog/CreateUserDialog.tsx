@@ -22,7 +22,7 @@ import type {
   RoleType,
   UserDetailsDTO,
   UserDTO,
-} from "../../../../../common/types";
+} from "../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createRole, createUser } from "../../../../../services/api/user";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";

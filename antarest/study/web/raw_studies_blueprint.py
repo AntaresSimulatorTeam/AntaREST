@@ -41,12 +41,6 @@ from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
-try:
-    import tables  # type: ignore
-    import xlsxwriter  # type: ignore
-except ImportError:
-    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
-
 logger = logging.getLogger(__name__)
 
 
@@ -524,7 +518,7 @@ def create_raw_study_routes(
 
     @bp.post(
         "/studies/{uuid}/raw",
-        status_code=http.HTTPStatus.NO_CONTENT,
+        status_code=http.HTTPStatus.OK,
         tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
@@ -533,7 +527,7 @@ def create_raw_study_routes(
         path: PATH_TYPE = "/",
         data: SUB_JSON = Body(default=""),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    ) -> Any:
         """
         Updates raw data for a study by posting formatted data.
 
@@ -549,13 +543,13 @@ def create_raw_study_routes(
         logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
-        study_service.edit_study(uuid, path, data, params)
+        return study_service.edit_study(uuid, path, data, params)
 
     @bp.put(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
-        summary="Update data by posting a Raw file",
+        summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
         uuid: str,
@@ -569,7 +563,7 @@ def create_raw_study_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
-        Update raw data for a study by posting a raw file.
+        Update raw data for a study by posting a raw file or by creating folder(s).
 
         Parameters:
 

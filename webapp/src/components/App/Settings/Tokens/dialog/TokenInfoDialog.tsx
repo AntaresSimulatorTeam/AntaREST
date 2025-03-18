@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import InfoIcon from "@mui/icons-material/Info";
 import { useMemo } from "react";
 import type { FieldValues } from "react-hook-form";
-import type { BotDetailsDTO } from "../../../../../common/types";
+import type { BotDetailsDTO } from "../../../../../types/types";
 import OkDialog, { type OkDialogProps } from "../../../../common/dialogs/OkDialog";
 import TokenForm from "./TokenFormDialog/TokenForm";
 import Form from "../../../../common/Form";

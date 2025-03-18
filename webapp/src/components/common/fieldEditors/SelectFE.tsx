@@ -26,10 +26,12 @@ import * as RA from "ramda-adjunct";
 import startCase from "lodash/startCase";
 import type { O } from "ts-toolbelt";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
+import type { SvgIconComponent } from "@mui/icons-material";
 
 type OptionObj<T extends O.Object = O.Object> = {
   label: string;
   value: string | number;
+  icon?: SvgIconComponent;
 } & T;
 
 export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
@@ -49,12 +51,14 @@ function formatOptions(
   }));
 }
 
+// TODO: replace with TextField with `select` prop https://mui.com/material-ui/react-text-field/#select
+
 function SelectFE(props: SelectFEProps) {
   const {
     options,
     emptyValue,
     inputRef,
-    variant = "filled",
+    variant,
     helperText,
     error,
     label,
@@ -80,20 +84,20 @@ function SelectFE(props: SelectFEProps) {
       variant={variant}
       hiddenLabel={!label}
       error={error}
-      size={size}
       sx={sx}
       fullWidth={fullWidth}
     >
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} label={label} labelId={labelId}>
+      <Select {...selectProps} size={size} label={label} labelId={labelId}>
         {emptyValue && (
           <MenuItem value="">
             {/* TODO i18n */}
             <em>None</em>
           </MenuItem>
         )}
-        {optionsFormatted.map(({ id, value, label }) => (
+        {optionsFormatted.map(({ id, value, label, icon: Icon }) => (
           <MenuItem key={id} value={value}>
+            {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
             {label}
           </MenuItem>
         ))}

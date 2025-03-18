@@ -14,7 +14,6 @@
 This modules hosts technical components related to serializing and deserializing,
 for various formats: INI, JSON, ...
 """
-import typing as t
 
 import pydantic
 

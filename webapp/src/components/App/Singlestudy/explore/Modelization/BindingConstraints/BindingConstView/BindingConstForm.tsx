@@ -22,7 +22,7 @@ import { useFieldArray } from "react-hook-form";
 import { useSnackbar } from "notistack";
 import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
 import { generateTermId, type ConstraintTerm, type BindingConstraint } from "./utils";
-import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../common/types";
+import type { AllClustersAndLinks, StudyMetadata } from "../../../../../../../types/types";
 import ConstraintTermItem from "./ConstraintTerm";
 import { useFormContextPlus } from "../../../../../../common/Form";
 import {
@@ -116,7 +116,6 @@ function BindingConstForm({ study, options, constraintId }: Props) {
           >
             <Button
               variant="contained"
-              size="small"
               color="primary"
               startIcon={<AddCircleOutlineRoundedIcon />}
               onClick={() => setOpenConstraintTermDialog(true)}

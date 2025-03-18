@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, ClassVar, Dict, Final, List, Optional, Tuple
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from pydantic import Field, model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -20,13 +20,13 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalPropertiesType,
     create_thermal_config,
     create_thermal_properties,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -34,7 +34,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-OptionalMatrixData = List[List[MatrixData]] | str | None
+OptionalMatrixData: t.TypeAlias = List[List[MatrixData]] | str | None
 
 
 class CreateCluster(ICommand):

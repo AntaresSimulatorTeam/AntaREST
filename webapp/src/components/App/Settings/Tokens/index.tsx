@@ -34,7 +34,7 @@ import InfoIcon from "@mui/icons-material/Info";
 import TokenIcon from "@mui/icons-material/Token";
 import * as R from "ramda";
 import { useSnackbar } from "notistack";
-import type { BotDTO, BotDetailsDTO, UserDTO } from "../../../../common/types";
+import type { BotDTO, BotDetailsDTO, UserDTO } from "../../../../types/types";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
 import { deleteBot, getBots, getUser, getUsers } from "../../../../services/api/user";
 import { isUserAdmin, sortByProp } from "../../../../services/utils";

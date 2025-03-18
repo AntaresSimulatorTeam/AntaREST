@@ -12,12 +12,12 @@
 
 import collections
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, MutableMapping, MutableSequence, Optional, Sequence
+from typing import Any, List, Mapping, MutableMapping, MutableSequence, Sequence
 
 from antares.study.version import StudyVersion
-from pydantic import field_validator
 
 from antarest.core.exceptions import (
+    AreaNotFound,
     DuplicateThermalCluster,
     MatrixWidthMismatchError,
     ThermalClusterConfigNotFound,
@@ -25,13 +25,15 @@ from antarest.core.exceptions import (
     WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.business.model.thermal_cluster_model import (
+    ThermalClusterCreation,
+    ThermalClusterOutput,
+    ThermalClusterUpdate,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal870Config,
-    Thermal870Properties,
     ThermalPropertiesType,
     create_thermal_config,
     create_thermal_properties,
@@ -40,84 +42,12 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-__all__ = (
-    "ThermalClusterInput",
-    "ThermalClusterCreation",
-    "ThermalClusterOutput",
-    "ThermalManager",
-)
-
+from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
-
-
-@all_optional_model
-@camel_case_model
-class ThermalClusterInput(Thermal870Properties):
-    """
-    Model representing the data structure required to edit an existing thermal cluster within a study.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = ThermalClusterInput(
-                group="Gas",
-                name="Gas Cluster XY",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                gen_ts="use global",
-                co2=7.0,
-            ).model_dump(mode="json")
-
-
-@camel_case_model
-class ThermalClusterCreation(ThermalClusterInput):
-    """
-    Model representing the data structure required to create a new thermal cluster within a study.
-    """
-
-    # noinspection Pydantic
-    @field_validator("name", mode="before")
-    @classmethod
-    def validate_name(cls, name: Optional[str]) -> str:
-        """
-        Validator to check if the name is not empty.
-        """
-        if not name:
-            raise ValueError("name must not be empty")
-        return name
-
-    def to_properties(self, study_version: StudyVersion) -> ThermalPropertiesType:
-        values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
-        return create_thermal_properties(study_version=study_version, data=values)
-
-
-@all_optional_model
-@camel_case_model
-class ThermalClusterOutput(Thermal870Config):
-    """
-    Model representing the output data structure to display the details of a thermal cluster within a study.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = ThermalClusterOutput(
-                id="Gas cluster YZ",
-                group="Gas",
-                name="Gas Cluster YZ",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                gen_ts="use global",
-                co2=7.0,
-            ).model_dump(mode="json")
 
 
 def create_thermal_output(
@@ -233,7 +163,7 @@ class ThermalManager:
     def update_thermals_props(
         self,
         study: StudyInterface,
-        update_thermals_by_areas: Mapping[str, Mapping[str, ThermalClusterInput]],
+        update_thermals_by_areas: Mapping[str, Mapping[str, ThermalClusterUpdate]],
     ) -> Mapping[str, Mapping[str, ThermalClusterOutput]]:
         old_thermals_by_areas = self.get_all_thermals_props(study)
         new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}
@@ -308,7 +238,7 @@ class ThermalManager:
         study: StudyInterface,
         area_id: str,
         cluster_id: str,
-        cluster_data: ThermalClusterInput,
+        cluster_data: ThermalClusterUpdate,
     ) -> ThermalClusterOutput:
         """
         Update a cluster with the given `cluster_id` in the given area of the given study
@@ -330,36 +260,36 @@ class ThermalManager:
 
         file_study = study.get_files()
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
+
         try:
-            values = file_study.tree.get(path.split("/"), depth=1)
+            area = file_study.config.areas[area_id]
         except KeyError:
-            raise ThermalClusterNotFound(path, cluster_id) from None
-        else:
-            old_config = create_thermal_config(study.version, **values)
+            raise AreaNotFound(area_id)
 
-        # Use Python values to synchronize Config and Form values
-        new_values = cluster_data.model_dump(mode="json", exclude_none=True)
-        new_config = old_config.model_copy(update=new_values)
-        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
+        thermal_cluster = next((thermal for thermal in area.thermals if thermal.id == cluster_id), None)
+        if thermal_cluster is None:
+            raise ThermalClusterNotFound(path, cluster_id)
 
-        # create the dict containing the new values using aliases
-        data: Dict[str, Any] = {}
-        for field_name, field in new_config.model_fields.items():
-            if field_name in new_values:
-                name = field.alias if field.alias else field_name
-                data[name] = new_data[name]
+        versioned_thermal = create_thermal_properties(
+            study_version=study.version,
+            data=thermal_cluster.model_dump(exclude_unset=True, exclude_none=True, exclude={"id"}),
+        )
 
-        # create the update config commands with the modified data
-        commands = [
-            UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=self._command_context, study_version=study.version
-            )
-            for key, value in data.items()
-        ]
-        study.add_commands(commands)
+        updated_versioned_thermal = versioned_thermal.model_copy(
+            update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
+        )
 
-        values = {**new_config.model_dump(mode="json", exclude={"id"})}
-        return ThermalClusterOutput(**values, id=cluster_id)
+        command = UpdateThermalCluster(
+            area_id=area_id,
+            thermal_cluster_id=cluster_id,
+            properties=cluster_data,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        study.add_commands([command])
+
+        return ThermalClusterOutput(**updated_versioned_thermal.model_dump(), id=cluster_id)
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """

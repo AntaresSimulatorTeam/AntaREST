@@ -44,6 +44,7 @@ function HydroMatrix({ type }: Props) {
         showPercent={hydroMatrix.showPercent}
         fetchMatrixData={hydroMatrix.fetchFn}
         rowCountSource={hydroMatrix.rowCountSource}
+        isTimeSeries={hydroMatrix.isTimeSeries}
       />
     </Box>
   );

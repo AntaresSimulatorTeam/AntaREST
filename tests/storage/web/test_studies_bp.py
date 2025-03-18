@@ -37,6 +37,8 @@ from antarest.study.main import build_study_service
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_7_0,
+    STUDY_VERSION_8_8,
     MatrixAggregationResultDTO,
     MatrixIndex,
     OwnerInfo,
@@ -151,7 +153,20 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", "", [], PARAMS)
+    storage_service.create_study.assert_called_once_with("study2", None, [], PARAMS)
+    storage_service.create_study.reset_mock()
+
+    result_right = client.post("/v1/studies?name=study2&version=8.8")
+    assert result_right.status_code == HTTPStatus.CREATED
+    assert result_right.json() == "my-uuid"
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], PARAMS)
+    storage_service.create_study.reset_mock()
+
+    result_right = client.post("/v1/studies?name=study2&version=880")
+    assert result_right.status_code == HTTPStatus.CREATED
+    assert result_right.json() == "my-uuid"
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], PARAMS)
+    storage_service.create_study.reset_mock()
 
 
 @pytest.mark.unit_test
@@ -209,7 +224,7 @@ def test_list_studies(tmp_path: str) -> None:
         "study1": StudyMetadataDTO(
             id="a",
             name="study1",
-            version=700,
+            version=STUDY_VERSION_7_0,
             created=str(datetime.utcfromtimestamp(0)),
             updated=str(datetime.utcfromtimestamp(0)),
             type="RawStudy",
@@ -223,7 +238,7 @@ def test_list_studies(tmp_path: str) -> None:
         "study2": StudyMetadataDTO(
             id="b",
             name="study2",
-            version=700,
+            version=STUDY_VERSION_7_0,
             created=str(datetime.utcfromtimestamp(0)),
             updated=str(datetime.utcfromtimestamp(0)),
             type="RawStudy",
@@ -249,7 +264,7 @@ def test_study_metadata(tmp_path: str) -> None:
     study = StudyMetadataDTO(
         id="a",
         name="b",
-        version=700,
+        version=STUDY_VERSION_7_0,
         created=str(datetime.utcfromtimestamp(0)),
         updated=str(datetime.utcfromtimestamp(0)),
         type="RawStudy",
@@ -439,19 +454,6 @@ def test_output_whole_download(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_sim_reference() -> None:
-    mock_service = Mock()
-    study_id = str(uuid.uuid4())
-    output_id = "my-output-id"
-
-    client = create_test_client(mock_service, raise_server_exceptions=False)
-    res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
-    mock_service.set_sim_reference.assert_called_once_with(study_id, output_id, True, PARAMS)
-    assert res.status_code == HTTPStatus.OK
-    assert res.json() == ""
-
-
-@pytest.mark.unit_test
 def test_sim_result() -> None:
     mock_service = Mock()
     study_id = str(uuid.uuid4())
@@ -470,8 +472,6 @@ def test_sim_result() -> None:
             type="economy",
             settings=settings,
             completionDate="",
-            referenceStatus=True,
-            synchronized=False,
             status="",
             archived=False,
         )
@@ -530,4 +530,4 @@ def test_get_study_versions(tmp_path: Path) -> None:
     client = create_test_client(Mock(), raise_server_exceptions=False)
 
     result = client.get("/v1/studies/_versions")
-    assert result.json() == [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
+    assert result.json() == sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])

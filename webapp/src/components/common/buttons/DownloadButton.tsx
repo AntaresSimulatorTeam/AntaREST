@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import FileUploadIcon from "@mui/icons-material/FileUpload";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import SplitButton, { type SplitButtonProps } from "./SplitButton";
 import { useState } from "react";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { useTranslation } from "react-i18next";
 import type { PromiseAny } from "../../../utils/tsUtils";
-import { LoadingButton } from "@mui/lab";
 import { toError } from "../../../utils/fnUtils";
+import { Button } from "@mui/material";
 
 export type DownloadButtonProps<OptionValue extends string> = {
   children?: React.ReactNode;
@@ -48,7 +48,7 @@ function DownloadButton<OptionValue extends string>(props: DownloadButtonProps<O
   } as const;
 
   const loadingBtnProps = {
-    startIcon: <FileUploadIcon />,
+    startIcon: <FileDownloadIcon />,
     loadingPosition: "start",
     loading: isDownloading,
   } as const;
@@ -90,9 +90,9 @@ function DownloadButton<OptionValue extends string>(props: DownloadButtonProps<O
       {label}
     </SplitButton>
   ) : (
-    <LoadingButton {...btnProps} {...loadingBtnProps} onClick={() => handleDownload()}>
+    <Button {...btnProps} {...loadingBtnProps} onClick={() => handleDownload()}>
       {label}
-    </LoadingButton>
+    </Button>
   );
 }
 

@@ -24,6 +24,7 @@ import pytest
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -39,7 +40,7 @@ class TestInputSeriesMatrix:
             study_path=tmp_path,
             path=tmp_path / "input.txt",
             study_id="df0a8aa9-6c6f-4e8b-a84e-45de2fb29cd3",
-            version=800,
+            version=STUDY_VERSION_8,
         )
 
     def test_load(self, my_study_config: FileStudyTreeConfig) -> None:
@@ -69,11 +70,10 @@ class TestInputSeriesMatrix:
         # checks binary response
         # We cannot check the content as is as we're applying a transformation to the data
         df_binary = pd.DataFrame(data=expected["data"])
-        buffer = io.BytesIO()
-        np.savetxt(buffer, df_binary, delimiter="\t", fmt="%.6f")
-        expected_binary = buffer.getvalue()
+        buffer = io.StringIO()
+        df_binary.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
         actual_binary = node.load(formatted=False)
-        assert actual_binary == expected_binary
+        assert actual_binary == buffer.getvalue()
 
     @pytest.mark.parametrize("link", [True, False])
     def test_load_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
@@ -100,10 +100,9 @@ class TestInputSeriesMatrix:
 
         # checks binary response
         actual = node.load(formatted=False)
-        buffer = io.BytesIO()
-        np.savetxt(buffer, node.default_empty, delimiter="\t", fmt="%.6f")
-        expected = buffer.getvalue()
-        assert actual == expected
+        buffer = io.StringIO()
+        pd.DataFrame(default_matrix).to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        assert actual == buffer.getvalue()
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = InputSeriesMatrix(context=Mock(), config=my_study_config)

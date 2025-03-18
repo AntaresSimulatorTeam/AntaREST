@@ -42,6 +42,7 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    STUDY_VERSION_7_2,
     ExportFormat,
     MatrixAggregationResultDTO,
     MatrixIndex,
@@ -60,7 +61,6 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
-from antarest.study.storage.patch_service import PatchService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
@@ -402,7 +402,7 @@ def test_create_study() -> None:
     expected = RawStudy(
         id=str(uuid.uuid4()),
         name="new-study",
-        version="VERSION",
+        version="700",
         author="AUTHOR",
         created_at=datetime.utcfromtimestamp(1234),
         updated_at=datetime.utcfromtimestamp(9876),
@@ -433,14 +433,14 @@ def test_create_study() -> None:
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
             "new-study",
-            "720",
+            STUDY_VERSION_7_2,
             ["my-group"],
             RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         )
 
     service.create_study(
         "new-study",
-        "720",
+        STUDY_VERSION_7_2,
         ["my-group"],
         RequestParameters(
             JWTUser(
@@ -553,7 +553,7 @@ def test_download_output() -> None:
         study_path=Path(input_study.path),
         path=Path(input_study.path),
         study_id=str(uuid.uuid4()),
-        version=int(input_study.version),
+        version=StudyVersion.parse(input_study.version),
         areas={"east": area},
         sets={"north": DistrictSet()},
         outputs={"output-id": sim},
@@ -1085,13 +1085,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
         raw_study_service,
-        Mock(),
         Mock(),
         Mock(),
         variant_study_repository,
@@ -1170,13 +1169,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
 # noinspection PyArgumentList
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
         raw_study_service,
-        Mock(),
         Mock(),
         Mock(),
         variant_study_repository,
@@ -1333,7 +1331,6 @@ def test_create_command(
     command_context = CommandContext(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService, create=Mock(return_value=matrix_id)),
-        patch_service=Mock(spec=PatchService),
     )
 
     service = build_study_service(

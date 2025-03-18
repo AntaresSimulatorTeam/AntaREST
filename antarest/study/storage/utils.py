@@ -25,6 +25,7 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
+from antares.study.version.create_app import CreateApp
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
 
 from antarest.core.config import Config, WorkspaceConfig
@@ -35,7 +36,11 @@ from antarest.core.exceptions import (
     UnsupportedStudyVersion,
     WorkspaceNotFound,
 )
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import (
+    ICache,
+    study_config_cache_key,
+    study_raw_cache_key,
+)
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
@@ -47,6 +52,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_9_0,
     MatrixIndex,
     Study,
     StudyDownloadLevelDTO,
@@ -79,7 +85,8 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_au
     study_data_info["antares"]["caption"] = metadata.name
     study_data_info["antares"]["created"] = metadata.created_at.timestamp()
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
-    study_data_info["antares"]["version"] = metadata.version
+    version = StudyVersion.parse(metadata.version)
+    study_data_info["antares"]["version"] = f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
     if update_author and metadata.additional_data:
         study_data_info["antares"]["author"] = metadata.additional_data.author
     study_tree.save(study_data_info, ["study"])
@@ -179,22 +186,19 @@ def is_managed(study: Study) -> bool:
 def remove_from_cache(cache: ICache, root_id: str) -> None:
     cache.invalidate_all(
         [
-            f"{CacheConstants.RAW_STUDY}/{root_id}",
-            f"{CacheConstants.STUDY_FACTORY}/{root_id}",
+            study_raw_cache_key(root_id),
+            study_config_cache_key(root_id),
         ]
     )
 
 
-def create_new_empty_study(version: StudyVersion, path_study: Path, path_resources: Path) -> None:
-    version_template: Optional[str] = STUDY_REFERENCE_TEMPLATES.get(version, None)
-    if version_template is None:
-        msg = f"{version} is not a supported version, supported versions are: {list(STUDY_REFERENCE_TEMPLATES.keys())}"
+def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
+    if version not in STUDY_REFERENCE_TEMPLATES:
+        msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    empty_study_zip = path_resources / version_template
-
-    with ZipFile(empty_study_zip) as zip_output:
-        zip_output.extractall(path=path_study)
+    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
+    app()
 
 
 def study_matcher(

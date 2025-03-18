@@ -24,11 +24,14 @@ import type {
   DateTimeMetadataDTO,
   FormatGridNumberOptions,
   ResultColumnsOptions,
+  ResizeMatrixParams,
+  CalculateAggregatesParams,
 } from "./types";
 import { parseISO, type Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { getCurrentLanguage } from "@/utils/i18nUtils";
 import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
+import { groupHeaderTheme } from "../styles";
 
 /**
  * Formats a number for display in a grid cell by adding thousand separators and handling decimals.
@@ -57,7 +60,7 @@ export function formatGridNumber({ value, maxDecimals = 0 }: FormatGridNumberOpt
 
   const numValue = Number(value);
 
-  if (isNaN(numValue)) {
+  if (Number.isNaN(numValue)) {
     return "";
   }
 
@@ -75,8 +78,10 @@ export function formatGridNumber({ value, maxDecimals = 0 }: FormatGridNumberOpt
     .split("")
     .reverse()
     .reduce((acc, digit, index) => {
+      // Intentionally add space as thousand separator
+      // Example: "1234567" becomes "1 234 567"
       if (index > 0 && index % 3 === 0) {
-        return digit + " " + acc;
+        return `${digit} ${acc}`;
       }
       return digit + acc;
     }, "");
@@ -92,7 +97,7 @@ export function formatGridNumber({ value, maxDecimals = 0 }: FormatGridNumberOpt
  */
 export function getLocale(): Locale {
   const lang = getCurrentLanguage();
-  return lang && lang.startsWith("fr") ? fr : enUS;
+  return lang?.startsWith("fr") ? fr : enUS;
 }
 
 /**
@@ -166,7 +171,6 @@ export function generateTimeSeriesColumns({
  * @param customColumns - An array of strings representing the custom column titles.
  * @param customColumns.titles - The titles of the custom columns.
  * @param customColumns.width - The width of each column.
- 
  * @returns An array of EnhancedGridColumn objects representing the generated custom columns.
  */
 export function generateCustomColumns({
@@ -186,15 +190,14 @@ export function generateCustomColumns({
  * Generates an array of data columns for a matrix grid.
  *
  * @param config - Configuration object for generating columns
- * @param config.timeSeriesColumns - A boolean indicating whether to enable time series columns
+ * @param config.isTimeSeries - A boolean indicating whether to enable time series columns
  * @param config.count - The number of columns to generate
  * @param config.customColumns - An optional array of custom column titles
  * @param config.width - The width of each column
- *
  * @returns An array of EnhancedGridColumn objects representing the generated data columns
  */
 export function generateDataColumns({
-  timeSeriesColumns,
+  isTimeSeries,
   width,
   count,
   customColumns,
@@ -208,7 +211,7 @@ export function generateDataColumns({
   }
 
   // Else, generate time series columns if enabled
-  if (timeSeriesColumns) {
+  if (isTimeSeries) {
     return generateTimeSeriesColumns({
       count,
     });
@@ -239,44 +242,37 @@ export function getAggregateTypes(aggregateConfig: AggregateConfig): AggregateTy
   return [];
 }
 
-/**
- * Calculates matrix aggregates based on the provided matrix and aggregate types.
- *
- * @param matrix - The input matrix of numbers.
- * @param aggregateTypes - The types of aggregates to calculate.
- * @returns An object containing the calculated aggregates.
- */
-export function calculateMatrixAggregates(
-  matrix: number[][],
-  aggregateTypes: AggregateType[],
-): Partial<MatrixAggregates> {
+export function calculateMatrixAggregates({
+  matrix,
+  types,
+}: CalculateAggregatesParams): Partial<MatrixAggregates> {
   const aggregates: Partial<MatrixAggregates> = {};
 
-  matrix.forEach((row) => {
-    if (aggregateTypes.includes(Aggregate.Min)) {
-      aggregates.min = aggregates.min || [];
+  for (const row of matrix) {
+    if (types.includes(Aggregate.Min)) {
+      aggregates.min ??= [];
       aggregates.min.push(Math.min(...row));
     }
 
-    if (aggregateTypes.includes(Aggregate.Max)) {
-      aggregates.max = aggregates.max || [];
+    if (types.includes(Aggregate.Max)) {
+      aggregates.max ??= [];
       aggregates.max.push(Math.max(...row));
     }
 
-    if (aggregateTypes.includes(Aggregate.Avg) || aggregateTypes.includes(Aggregate.Total)) {
+    if (types.includes(Aggregate.Avg) || types.includes(Aggregate.Total)) {
       const sum = row.reduce((acc, num) => acc + num, 0);
 
-      if (aggregateTypes.includes(Aggregate.Avg)) {
-        aggregates.avg = aggregates.avg || [];
+      if (types.includes(Aggregate.Avg)) {
+        aggregates.avg ??= [];
         aggregates.avg.push(Number((sum / row.length).toFixed()));
       }
 
-      if (aggregateTypes.includes(Aggregate.Total)) {
-        aggregates.total = aggregates.total || [];
+      if (types.includes(Aggregate.Total)) {
+        aggregates.total ??= [];
         aggregates.total.push(Number(sum.toFixed()));
       }
     }
-  });
+  }
 
   return aggregates;
 }
@@ -308,8 +304,8 @@ export function calculateMatrixAggregates(
  * This makes the solution fragile to API changes.
  *
  * @param columns - Array of EnhancedGridColumn objects to be processed
+ * @param isDarkMode - Boolean flag based on the theme to switch columns group headers color
  * @returns Array of EnhancedGridColumn objects with grouping applied
- *
  * @example
  * ```typescript
  * // Input columns
@@ -320,9 +316,9 @@ export function calculateMatrixAggregates(
  * // Both columns will be grouped under "OV. COST (Euro)"
  * ```
  */
-
 export function groupResultColumns(
   columns: Array<EnhancedGridColumn | ResultColumn>,
+  isDarkMode: boolean,
 ): EnhancedGridColumn[] {
   return columns.map((column): EnhancedGridColumn => {
     const titles = Array.isArray(column.title) ? column.title : [String(column.title)];
@@ -351,10 +347,7 @@ export function groupResultColumns(
       ...column,
       group: title, // Group header title
       title: stat.toLowerCase(), // Sub columns title,
-
-      themeOverride: {
-        bgHeader: "#2D2E40", // Sub columns bg color
-      },
+      themeOverride: isDarkMode ? groupHeaderTheme.dark : groupHeaderTheme.light,
     };
   });
 }
@@ -372,7 +365,6 @@ export function groupResultColumns(
  *   - [2]: Statistic type (e.g., "MIN", "MAX", "STD")
  * @param width - The width of each column
  * @returns Array of ResultColumn objects ready for use in result matrices
- *
  * @see groupResultColumns - Use this function to apply grouping to the generated columns
  */
 
@@ -384,4 +376,35 @@ export function generateResultColumns({ titles, width }: ResultColumnsOptions): 
     width,
     editable: false,
   }));
+}
+
+/**
+ * Resizes each row of the given matrix to the specified number of columns.
+ *
+ * For each row in the matrix:
+ * - If the row has fewer columns than the target count, new columns are appended with the provided fill value.
+ * - If the row has more columns than the target count, the row is truncated to the target count.
+ *
+ * @param params - The parameters for resizing the matrix.
+ * @param params.matrix - The original matrix to resize, where each row is a non-empty array.
+ * @param params.newColumnCount - The desired number of columns for each row.
+ * @param [params.fillValue=0] - The value to fill in new columns if the row needs to be extended. Defaults to 0.
+ * @returns A new matrix where every row has exactly `newColumnCount` columns.
+ */
+export function resizeMatrix({ matrix, newColumnCount, fillValue = 0 }: ResizeMatrixParams) {
+  return matrix.map((row) => {
+    const currentColumnCount = row.length;
+
+    // Add new columns
+    if (newColumnCount > currentColumnCount) {
+      return row.concat(Array(newColumnCount - currentColumnCount).fill(fillValue));
+    }
+
+    // Otherwise remove the extra columns
+    if (newColumnCount < currentColumnCount) {
+      return row.slice(0, newColumnCount);
+    }
+
+    return row;
+  });
 }

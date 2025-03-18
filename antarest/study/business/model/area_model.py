@@ -11,13 +11,13 @@
 # This file is part of the Antares project.
 
 import enum
-import typing as t
+from typing import List, Mapping, Optional, Sequence
 
 from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.model import PatchArea, PatchCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterOutput
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPathProperties,
     AreaFolder,
@@ -33,44 +33,27 @@ class AreaType(enum.Enum):
 class AreaCreationDTO(AntaresBaseModel):
     name: str
     type: AreaType
-    metadata: t.Optional[PatchArea] = None
-    set: t.Optional[t.List[str]] = None
-
-
-class ClusterInfoDTO(PatchCluster):
-    id: str
-    name: str
-    enabled: bool = True
-    unitcount: int = 0
-    nominalcapacity: float = 0
-    group: t.Optional[str] = None
-    min_stable_power: t.Optional[float] = None
-    min_up_time: t.Optional[int] = None
-    min_down_time: t.Optional[int] = None
-    spinning: t.Optional[float] = None
-    marginal_cost: t.Optional[float] = None
-    spread_cost: t.Optional[float] = None
-    market_bid_cost: t.Optional[float] = None
+    set: Optional[List[str]] = None
 
 
 class AreaInfoDTO(AreaCreationDTO):
     id: str
-    thermals: t.Optional[t.List[ClusterInfoDTO]] = None
+    thermals: Optional[List[ThermalClusterOutput]] = None
 
 
 class LayerInfoDTO(AntaresBaseModel):
     id: str
     name: str
-    areas: t.List[str]
+    areas: List[str]
 
 
 class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
     x: int = Field(title="X position")
     y: int = Field(title="Y position")
-    color_rgb: t.Sequence[int] = Field(title="RGB color", alias="colorRgb")
-    layer_x: t.Mapping[int, int] = Field(default_factory=dict, title="X position of each layer", alias="layerX")
-    layer_y: t.Mapping[int, int] = Field(default_factory=dict, title="Y position of each layer", alias="layerY")
-    layer_color: t.Mapping[int, str] = Field(default_factory=dict, title="Color of each layer", alias="layerColor")
+    color_rgb: Sequence[int] = Field(title="RGB color", alias="colorRgb")
+    layer_x: Mapping[int, int] = Field(default_factory=dict, title="X position of each layer", alias="layerX")
+    layer_y: Mapping[int, int] = Field(default_factory=dict, title="Y position of each layer", alias="layerY")
+    layer_color: Mapping[int, str] = Field(default_factory=dict, title="Color of each layer", alias="layerColor")
 
 
 # noinspection SpellCheckingInspection
@@ -146,7 +129,7 @@ class AreaOutput(_BaseAreaDTO):
         args = {"filtering": filtering_section, "nodal_optimization": nodal_optimization_section}
         return OptimizationProperties.model_validate(args)
 
-    def _to_adequacy_patch(self) -> t.Optional[AdequacyPathProperties]:
+    def _to_adequacy_patch(self) -> Optional[AdequacyPathProperties]:
         obj = {name: getattr(self, name) for name in AdequacyPathProperties.AdequacyPathSection.model_fields}
         # If all fields are `None`, the object is empty.
         if all(value is None for value in obj.values()):

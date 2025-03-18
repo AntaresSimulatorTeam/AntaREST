@@ -39,6 +39,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudySimResultDTO,
+    StudyVersionStr,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
@@ -426,7 +427,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     )
     def create_study(
         name: str,
-        version: str = "",
+        version: StudyVersionStr | None = None,
         groups: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
@@ -854,27 +855,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         params = RequestParameters(user=current_user)
         content = study_service.get_study_sim_result(study_id, params)
         return content
-
-    @bp.put(
-        "/studies/{study_id}/outputs/{output_id}/reference",
-        summary="Set simulation as the reference output",
-        tags=[APITag.study_outputs],
-    )
-    def set_sim_reference(
-        study_id: str,
-        output_id: str,
-        status: bool = True,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(
-            f"Setting output {output_id} as reference simulation for study {study_id}",
-            extra={"user": current_user.id},
-        )
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        params = RequestParameters(user=current_user)
-        study_service.set_sim_reference(study_id, output_id, status, params)
-        return ""
 
     @bp.put(
         "/studies/{study_id}/archive",

@@ -93,12 +93,6 @@ function ColorPickerFE(props: ColorPickerFEProps) {
           ),
         }}
         onClick={() => setIsPickerOpen(true)}
-        sx={{
-          ".MuiInputAdornment-sizeMedium+.MuiOutlinedInput-input": {
-            paddingTop: "16.5px !important",
-            paddingBottom: "16.5px !important",
-          },
-        }}
       />
       {isPickerOpen && (
         <Box

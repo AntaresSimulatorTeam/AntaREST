@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import type { LinkElement } from "../../../../../../../common/types";
+import type { LinkElement } from "../../../../../../../types/types";
 import { setCurrentArea, setCurrentLink } from "../../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 

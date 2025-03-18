@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { UpdateAreaUi } from "../../common/types";
+import type { UpdateAreaUi } from "../../types/types";
 import {
   bindingConstraintModelAdapter,
   type BindingConstraint,

@@ -19,6 +19,7 @@ from typing import Union
 from unittest.mock import Mock
 
 import numpy as np
+import pandas as pd
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -171,8 +172,9 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
     )
 
 
-buffer = io.BytesIO()
-np.savetxt(buffer, np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760), delimiter="\t", fmt="%.6f")
+buffer = io.StringIO()
+df = pd.DataFrame(np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
+df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
 expected_min_gen_response = buffer.getvalue()
 
 
@@ -533,9 +535,6 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "managed": True,
             "archived": False,
             "horizon": "2030",
-            "scenario": None,
-            "status": None,
-            "doc": None,
             "folder": None,
             "tags": [],
         }

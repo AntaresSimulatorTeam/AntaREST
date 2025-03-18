@@ -10,10 +10,11 @@
 #
 # This file is part of the Antares project.
 
+
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId, ItemName
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId, ItemName
 
 
 def test_item_name_object_is_invalid():

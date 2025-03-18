@@ -51,7 +51,7 @@ nav:
           - 'Binding Constraints': 'user-guide/study/04-binding-constraints.md'
       - 'Simulation Configuration':
           'General Configuration': 'user-guide/simulation-configuration/all-configurations.md#general-configuration'
-          'TS management': 'user-guide/simulation-configuration/all-configurations.md#Time-series management'
+          'TS management': 'user-guide/simulation-configuration/all-configurations.md#time-series-management'
           'Optimization preferences': 'user-guide/simulation-configuration/all-configurations.md#optimization-preferences'
           'Adequacy Patch': 'user-guide/simulation-configuration/all-configurations.md#adequacy-patch'
           'Advanced parameters': 'user-guide/simulation-configuration/all-configurations.md#advanced-parameters'
@@ -75,9 +75,9 @@ nav:
           - 'Deployment': 'developer-guide/install/2-DEPLOY.md'
       - 'Architecture': 'developer-guide/architecture/0-introduction.md'
       - 'Database management': 'developer-guide/architecture/1-database.md'
-      - 'Add a new study version': 'developer-guide/2-add-new-antares-version.md'
+      - 'Add a new study version': 'developer-guide/1-add-new-antares-version.md'
       - 'Changelog': 'CHANGELOG.md'
-      - 'Roadmap': 'developer-guide/5-roadmap.md'
+      - 'Roadmap': 'developer-guide/2-roadmap.md'
   - 'External links' :
     - 'Antares ecosystem': 'https://antares-doc.readthedocs.io'
     - 'Antares website' : 'https://antares-simulator.org/'
@@ -102,7 +102,7 @@ markdown_extensions:
   - attr_list
   - toc:
       permalink: true
-      toc_depth: 3
+      toc_depth: 4
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg

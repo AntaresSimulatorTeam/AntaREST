@@ -55,20 +55,18 @@ function CheckboxesTagsFE<
   T,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined,
->(props: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
-  const {
-    label,
-    // Default value on MUI
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getOptionLabel = (option: any) => option?.label ?? option,
-    error,
-    helperText,
-    inputRef,
-    onChange,
-    name = "",
-    ...rest
-  } = props;
-
+>({
+  label,
+  // Default value on MUI
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getOptionLabel = (option: any) => option?.label ?? option,
+  error,
+  helperText,
+  inputRef,
+  onChange,
+  name = "",
+  ...rest
+}: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
   return (
     <Autocomplete
       {...rest}
@@ -85,11 +83,12 @@ function CheckboxesTagsFE<
           },
         });
       }}
-      renderOption={(props, option, { selected }) => (
-        <li {...props}>
+      renderOption={({ key, ...props }, option, { selected }) => (
+        <li key={key} {...props}>
           <Checkbox
-            icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
-            checkedIcon={<CheckBoxIcon fontSize="small" />}
+            size="extra-small"
+            icon={<CheckBoxOutlineBlankIcon />}
+            checkedIcon={<CheckBoxIcon />}
             style={{ marginRight: 8 }}
             checked={selected}
           />
@@ -98,9 +97,7 @@ function CheckboxesTagsFE<
       )}
       renderInput={(params) => (
         <TextField
-          sx={{ m: 0 }}
           name={name}
-          variant="filled"
           label={label}
           error={error}
           helperText={helperText}

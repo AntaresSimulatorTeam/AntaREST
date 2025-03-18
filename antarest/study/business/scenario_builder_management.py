@@ -192,7 +192,6 @@ class ScenarioBuilderManager:
         return rulesets
 
     def update_config(self, study: StudyInterface, rulesets: Rulesets) -> None:
-
         sections: _Sections = {}
         for ruleset_name, ruleset in rulesets.items():
             section = sections[ruleset_name] = {}

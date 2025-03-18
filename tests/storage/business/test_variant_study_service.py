@@ -70,7 +70,6 @@ def test_get(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         repository=Mock(),
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     metadata = VariantStudy(id="study2.py", path=str(path_study), generation_task="1")
@@ -123,7 +122,6 @@ def test_get_cache(tmp_path: str) -> None:
     path_study.mkdir()
     (path_study / "settings").mkdir()
     (path_study / "study.antares").touch()
-    path = path_study / "settings"
 
     data = {"titi": 43}
     study = Mock()
@@ -144,7 +142,6 @@ def test_get_cache(tmp_path: str) -> None:
         config=Mock(),
         repository=Mock(),
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     metadata = VariantStudy(id="study2.py", path=str(path_study))
@@ -185,7 +182,6 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         repository=Mock(),
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     metadata = VariantStudy(id=study_name, path=str(path_study2))
@@ -219,7 +215,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         config=build_config(path_to_studies),
         repository=Mock(),
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     metadata = VariantStudy(id=study_name, path=str(path_study2))
@@ -242,7 +237,6 @@ def test_copy_study() -> None:
         config=build_config(Path("")),
         repository=Mock(),
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     src_id = "source"
@@ -284,7 +278,6 @@ def test_delete_study(tmp_path: Path) -> None:
         config=build_config(tmp_path),
         repository=Mock(),
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     md = VariantStudy(id=name, path=str(study_path))
@@ -317,7 +310,6 @@ def test_get_variant_children(tmp_path: Path) -> None:
         config=build_config(tmp_path),
         repository=repo_mock,
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     parent = VariantStudy(
@@ -391,7 +383,6 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
         config=build_config(tmp_path),
         repository=Mock(spec=VariantStudyRepository),
         event_bus=Mock(),
-        patch_service=Mock(),
     )
 
     variant_study_service._read_additional_data_from_files = Mock(return_value=additional_data)

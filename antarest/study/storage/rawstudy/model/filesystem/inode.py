@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeAlias, TypeVar
 
 from antarest.core.exceptions import WritingInsideZippedFileException
 from antarest.core.utils.archives import extract_file_to_tmp_dir, read_original_file_in_archive
@@ -178,4 +178,4 @@ class INode(ABC, Generic[G, S, V]):
             raise WritingInsideZippedFileException("Trying to save inside a zipped file")
 
 
-TREE = Dict[str, INode[Any, Any, Any]]
+TREE: TypeAlias = Dict[str, INode[Any, Any, Any]]

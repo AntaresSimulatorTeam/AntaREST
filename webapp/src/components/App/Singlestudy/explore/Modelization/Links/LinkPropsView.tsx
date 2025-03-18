@@ -17,7 +17,7 @@ import PropertiesView from "../../../../../common/PropertiesView";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLinkId, getLinks } from "../../../../../../redux/selectors";
 import ListElement from "../../common/ListElement";
-import type { LinkElement } from "../../../../../../common/types";
+import type { LinkElement } from "../../../../../../types/types";
 
 interface PropsType {
   studyId: string;

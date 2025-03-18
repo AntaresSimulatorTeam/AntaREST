@@ -14,6 +14,7 @@
 Management of spatial correlations between the different generators.
 The generators are of the same category and can be hydraulic, wind, load or solar.
 """
+
 import collections
 from typing import Dict, List, Sequence, Union
 
