@@ -62,7 +62,8 @@ class CreateSTStorage(ICommand):
 
     command_name: CommandName = CommandName.CREATE_ST_STORAGE
 
-    # version 2: remove cluster_name and type parameters as STStoragePropertiesType
+    # version 2: parameters changed from STStorageConfigType to STStoragePropertiesType
+    #            This actually did not require a version increment, but was done by mistake.
     _SERIALIZATION_VERSION: Final[int] = 2
 
     # Command parameters
@@ -105,10 +106,7 @@ class CreateSTStorage(ICommand):
     @classmethod
     def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
         if isinstance(values["parameters"], dict):
-            parameters = values["parameters"]
-            if info.context and info.context.version == 1:
-                parameters["name"] = values.pop("cluster_name")
-            values["parameters"] = create_st_storage_properties(values["study_version"], parameters)
+            values["parameters"] = create_st_storage_properties(values["study_version"], data=values["parameters"])
         return values
 
     @staticmethod

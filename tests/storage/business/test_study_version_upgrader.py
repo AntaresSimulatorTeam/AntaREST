@@ -185,9 +185,9 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert adequacy_patch["price-taking-order"] == "DENS"
     assert adequacy_patch["include-hurdle-cost-csr"] is False
     assert adequacy_patch["check-csr-cost-function"] is False
-    assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 0.0
+    assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 1.0
     assert adequacy_patch["threshold-display-local-matching-rule-violations"] == 0.0
-    assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 3
+    assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 7
     assert not adequacy_patch["enable-first-step"]
 
 
