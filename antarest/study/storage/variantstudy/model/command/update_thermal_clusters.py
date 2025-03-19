@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from typing_extensions import override
 
@@ -89,8 +89,8 @@ class UpdateThermalClusters(ICommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        args = {}
-        for area_id, value in self.thermal_clusters.items():
+        args: dict[str, dict[str, Any]] = {}
+        for area_id, value in self.cluster_properties.items():
             for cluster_id, properties in value.items():
                 args.setdefault(area_id, {})[cluster_id] = properties.model_dump(mode="json", exclude_unset=True)
         return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
