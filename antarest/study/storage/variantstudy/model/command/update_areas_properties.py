@@ -97,7 +97,7 @@ class UpdateAreasProperties(ICommand):
         )
         if self.study_version >= STUDY_VERSION_8_3:
             study_data.tree.save(
-                current_properties.adequacy_properties.model_dump(mode="json"),
+                current_properties.adequacy_properties.model_dump(mode="json", by_alias=True),
                 get_adequacy_patch_path(area_id),
             )
 

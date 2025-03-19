@@ -12,51 +12,48 @@
  * This file is part of the Antares project.
  */
 
-import { memo, useMemo } from "react";
+import { useMemo } from "react";
 import * as R from "ramda";
 import type { StudyTreeNodeProps } from "./types";
 import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 import { t } from "i18next";
 
-export default memo(function StudyTreeNode({
+export default function StudyTreeNode({
   studyTreeNode,
   parentId,
+  itemsLoading,
   onNodeClick,
 }: StudyTreeNodeProps) {
-  const isLoadingFolder = studyTreeNode.hasChildren && studyTreeNode.children.length === 0;
   const id = parentId ? `${parentId}/${studyTreeNode.name}` : studyTreeNode.name;
-
+  const isLoadingFolder = itemsLoading.includes(id);
+  const hasUnloadedChildern = studyTreeNode.hasChildren && studyTreeNode.children.length === 0;
   const sortedChildren = useMemo(
-    () => R.sortBy(R.prop("name"), studyTreeNode.children),
+    () => R.sortBy(R.compose(R.toLower, R.prop("name")), studyTreeNode.children),
     [studyTreeNode.children],
   );
 
-  if (isLoadingFolder) {
+  // Either the user clicked on the folder and we need to show the folder is loading
+  // Or the explorer api says that this folder has children so we need to load at least one element
+  // so the arrow to explanse the element is displayed which indicate to the user that this is a folder
+  if (isLoadingFolder || hasUnloadedChildern) {
     return (
-      <TreeItemEnhanced
-        itemId={id}
-        label={studyTreeNode.name}
-        onClick={() => onNodeClick(id, studyTreeNode)}
-      >
+      <TreeItemEnhanced itemId={id} label={studyTreeNode.name}>
         <TreeItemEnhanced itemId={id + "loading"} label={t("studies.tree.fetchFolderLoading")} />
       </TreeItemEnhanced>
     );
   }
 
   return (
-    <TreeItemEnhanced
-      itemId={id}
-      label={studyTreeNode.name}
-      onClick={() => onNodeClick(id, studyTreeNode)}
-    >
+    <TreeItemEnhanced itemId={id} label={studyTreeNode.name} onClick={() => onNodeClick(id)}>
       {sortedChildren.map((child) => (
         <StudyTreeNode
           key={`${id}/${child.name}`}
           studyTreeNode={child}
           parentId={id}
+          itemsLoading={itemsLoading}
           onNodeClick={onNodeClick}
         />
       ))}
     </TreeItemEnhanced>
   );
-});
+}
