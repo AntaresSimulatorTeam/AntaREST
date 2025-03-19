@@ -90,8 +90,6 @@ def validate_and_transform_term_id(term_id: str) -> str:
     """
     Used to validate the term id given by the user when updating an existing one
     """
-    if not term_id:
-        raise InvalidConstraintTerm(term_id, "You should provide an id when updating an existing term")
     try:
         if "%" in term_id:
             area_1, area_2 = sorted(term_id.split("%"))
@@ -99,8 +97,7 @@ def validate_and_transform_term_id(term_id: str) -> str:
         elif "." in term_id:
             area, cluster = term_id.split(".")
             return f"{transform_name_to_id(area)}.{transform_name_to_id(cluster)}"
-        else:
-            raise InvalidConstraintTerm(term_id, "Your term id is not well-formatted")
+        raise InvalidConstraintTerm(term_id, "Your term id is not well-formatted")
     except Exception:
         raise InvalidConstraintTerm(term_id, "Your term id is not well-formatted")
 
@@ -160,21 +157,19 @@ class ConstraintTermUpdate(AntaresBaseModel):
 
     @model_validator(mode="before")
     def validate_term_id(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if "id" in values:
-            values["id"] = validate_and_transform_term_id(values["id"])
-            return values
+        if "id" not in values:
+            if "data" not in values:
+                raise InvalidConstraintTerm("", "You should provide an id or data when updating an existing term")
 
-        if "data" not in values:
-            raise InvalidConstraintTerm("", "You should provide an id or data when updating an existing term")
+            data = values["data"]
+            if "area1" in data:
+                values["id"] = "%".join((data["area1"], data["area2"]))
+            elif "cluster" in data:
+                values["id"] = ".".join([data["area"], data["cluster"]])
+            else:
+                raise InvalidConstraintTerm(str(data), "Your term data is not well-formatted")
 
-        data = values["data"]
-        if "area1" in data:
-            values["id"] = "%".join(sorted((data["area1"], data["area2"])))
-        elif "cluster" in data:
-            values["id"] = ".".join([data["area"], data["cluster"]])
-        else:
-            raise InvalidConstraintTerm(str(data), "Your term data is not well-formatted")
-
+        values["id"] = validate_and_transform_term_id(values["id"])
         return values
 
 
