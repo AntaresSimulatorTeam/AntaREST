@@ -13,6 +13,7 @@ from typing import Any, List, Optional
 
 from typing_extensions import override
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -27,6 +28,9 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 _THERMAL_CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{thermal_cluster_id}"
+AreaID = str
+ClusterID = str
+ThermalClusterUpdates = dict[AreaID, dict[ClusterID, ThermalClusterUpdate]]
 
 
 class UpdateThermalClusters(ICommand):
@@ -42,7 +46,7 @@ class UpdateThermalClusters(ICommand):
     # Command parameters
     # ==================
 
-    cluster_properties: dict[str, dict[str, ThermalClusterUpdate]]
+    cluster_properties: ThermalClusterUpdates
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -54,7 +58,7 @@ class UpdateThermalClusters(ICommand):
             for index, thermal in enumerate(study_data.areas[area_id].thermals):
                 thermal_mapping[thermal.id] = (index, thermal)
 
-            for cluster_id, properties in value.items():
+            for cluster_id in value:
                 if cluster_id not in thermal_mapping:
                     return (
                         CommandOutput(
@@ -72,7 +76,12 @@ class UpdateThermalClusters(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         for area_id, value in self.cluster_properties.items():
             ini_path = ["input", "thermal", "clusters", area_id, "list"]
-            all_clusters_for_area = study_data.tree.get(ini_path)
+
+            try:
+                all_clusters_for_area = study_data.tree.get(ini_path)
+            except ChildNotFoundError:
+                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
+
             for cluster_id, properties in value.items():
                 if cluster_id not in all_clusters_for_area:
                     return CommandOutput(
@@ -96,9 +105,11 @@ class UpdateThermalClusters(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         args: dict[str, dict[str, Any]] = {}
+
         for area_id, value in self.cluster_properties.items():
             for cluster_id, properties in value.items():
                 args.setdefault(area_id, {})[cluster_id] = properties.model_dump(mode="json", exclude_unset=True)
+
         return CommandDTO(
             action=self.command_name.value, args={"cluster_properties": args}, study_version=self.study_version
         )
