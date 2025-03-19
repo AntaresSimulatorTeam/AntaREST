@@ -86,7 +86,11 @@ function Fields() {
               name="priceTakingOrder"
               control={control}
             />
-            <Tooltip title={t("study.configuration.adequacyPatch.includeHurdleCostCsr.tooltip")}>
+            <Tooltip
+              title={t("study.configuration.adequacyPatch.includeHurdleCostCsr.tooltip", {
+                defaultValue: "",
+              })}
+            >
               <span>
                 <SwitchFE
                   label={t("study.configuration.adequacyPatch.includeHurdleCostCsr")}
@@ -104,6 +108,7 @@ function Fields() {
             <Tooltip
               title={t(
                 "study.configuration.adequacyPatch.thresholdInitiateCurtailmentSharingRule.tooltip",
+                { defaultValue: "" },
               )}
             >
               <span>

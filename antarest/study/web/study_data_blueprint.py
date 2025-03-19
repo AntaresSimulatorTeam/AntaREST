@@ -45,6 +45,7 @@ from antarest.study.business.binding_constraint_management import (
     ConstraintInput,
     ConstraintOutput,
     ConstraintTerm,
+    ConstraintTermUpdate,
 )
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
@@ -1267,11 +1268,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `binding_constraint_id`: The binding constraint ID.
         - `term`: The term to create.
         """
-        logger.info(f"Add constraint term {term.id} to {binding_constraint_id} for study {uuid}")
+        logger.info(f"Add constraint term {term.generate_id()} to {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.binding_constraint_manager.create_constraint_terms(
+        return study_service.binding_constraint_manager.add_constraint_terms(
             study_interface, binding_constraint_id, [term]
         )
 
@@ -1298,7 +1299,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.binding_constraint_manager.create_constraint_terms(
+        return study_service.binding_constraint_manager.add_constraint_terms(
             study_interface, binding_constraint_id, terms
         )
 
@@ -1310,7 +1311,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_constraint_term(
         uuid: str,
         binding_constraint_id: str,
-        term: ConstraintTerm,
+        term: ConstraintTermUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
@@ -1337,7 +1338,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_constraint_terms(
         uuid: str,
         binding_constraint_id: str,
-        terms: Sequence[ConstraintTerm],
+        terms: Sequence[ConstraintTermUpdate],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
