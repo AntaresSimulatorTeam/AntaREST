@@ -73,6 +73,7 @@ from antarest.study.storage.variantstudy.model.command.update_renewable_cluster 
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -95,6 +96,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
     CommandName.UPDATE_THERMAL_CLUSTER.value: UpdateThermalCluster,
+    CommandName.UPDATE_THERMAL_CLUSTERS.value: UpdateThermalClusters,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
     CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,

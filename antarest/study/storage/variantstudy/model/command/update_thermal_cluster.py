@@ -31,7 +31,7 @@ _THERMAL_CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{thermal_cluster_
 
 class UpdateThermalCluster(ICommand):
     """
-    Command used to update a short-term storage in an area.
+    Command used to update a thermal cluster in an area.
     """
 
     # Overloaded metadata
