@@ -14,11 +14,7 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.inflow_model import (
-    INFLOW_PATH,
-    InflowStructureFileData,
-    InflowStructureUpdate,
-)
+from antarest.study.business.model.hydro_model import INFLOW_PATH, InflowStructureFileData, InflowStructureUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput

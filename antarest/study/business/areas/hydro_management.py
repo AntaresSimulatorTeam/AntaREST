@@ -12,11 +12,13 @@
 
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
+    INFLOW_PATH,
     HydroManagement,
     HydroManagementFileData,
     HydroManagementUpdate,
+    InflowStructure,
+    InflowStructureUpdate,
 )
-from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowStructure, InflowStructureUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
