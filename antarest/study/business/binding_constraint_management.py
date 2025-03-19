@@ -16,8 +16,7 @@ from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence
 
 import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, Field, model_validator
-from typing_extensions import Annotated
+from pydantic import Field, model_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -154,10 +153,29 @@ class ConstraintTermUpdate(AntaresBaseModel):
         data: the constraint term data (link or cluster), if any.
     """
 
-    id: Annotated[str, BeforeValidator(validate_and_transform_term_id)]
+    id: str
     weight: Optional[float] = None
     offset: Optional[int] = None
     data: Optional[LinkTerm | ClusterTerm] = None
+
+    @model_validator(mode="before")
+    def validate_term_id(cls, values: dict[str, Any]) -> dict[str, Any]:
+        if "id" in values:
+            values["id"] = validate_and_transform_term_id(values["id"])
+            return values
+
+        if "data" not in values:
+            raise InvalidConstraintTerm("", "You should provide an id or data when updating an existing term")
+
+        data = values["data"]
+        if "area1" in data:
+            values["id"] = "%".join(sorted((data["area1"], data["area2"])))
+        elif "cluster" in data:
+            values["id"] = ".".join([data["area"], data["cluster"]])
+        else:
+            raise InvalidConstraintTerm(str(data), "Your term data is not well-formatted")
+
+        return values
 
 
 class ConstraintTerm(AntaresBaseModel):
