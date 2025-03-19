@@ -160,7 +160,7 @@ export function insertFoldersIfNotExist(
  * @param path - path of the subfolder to fetch, should sart with root, e.g. root/workspace/folder1
  * @returns list of subfolders under the given path
  */
-async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
+export async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
   if (path === "root") {
     console.error("this function should not be called with path 'root'", path);
     // Under root there're workspaces not subfolders
@@ -183,95 +183,4 @@ async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
   const workspace = pathParts[1];
   const subPath = pathParts.slice(2).join("/");
   return api.getFolders(workspace, subPath);
-}
-
-/**
- * Fetch and insert the subfolders under the given paths into the study tree.
- *
- * This function is used to fill the study tree when the user clicks on a folder.
- *
- * Subfolders are inserted only if they don't exist already in the tree.
- *
- * This function doesn't mutate the tree, it returns a new tree with the subfolders inserted
- *
- * @param paths - list of paths to fetch the subfolders for
- * @param studiesTree - study tree to insert the subfolders into
- * @returns a tuple with study tree with the subfolders inserted if they weren't already there and path for which
- * the fetch failed.
- */
-export async function fetchAndInsertSubfolders(
-  paths: string[],
-  studiesTree: StudyTreeNode,
-): Promise<[StudyTreeNode, string[]]> {
-  const results = await Promise.allSettled(paths.map((path) => fetchSubfolders(path)));
-  return results.reduce<[StudyTreeNode, string[]]>(
-    ([tree, failed], result, index) => {
-      if (result.status === "fulfilled") {
-        return [insertFoldersIfNotExist(tree, result.value), failed];
-      }
-      console.error("Failed to load path:", paths[index], result.reason);
-      return [tree, [...failed, paths[index]]];
-    },
-    [studiesTree, []],
-  );
-}
-
-/**
- * Insert a workspace into the study tree if it doesn't exist already.
- *
- * This function doesn't mutate the tree, it returns a new tree with the workspace inserted.
- *
- * @param workspace - key of the workspace
- * @param stydyTree - study tree to insert the workspace into
- * @returns study tree with the empty workspace inserted if it wasn't already there.
- */
-function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string): StudyTreeNode {
-  const emptyNode = {
-    name: workspace,
-    path: `/${workspace}`,
-    children: [],
-  };
-  if (stydyTree.children.some((child) => child.name === workspace)) {
-    return stydyTree;
-  }
-  return {
-    ...stydyTree,
-    children: [...stydyTree.children, emptyNode],
-  };
-}
-
-/**
- * Insert several workspaces into the study tree if they don't exist already in the tree.
- *
- * This function doesn't mutate the tree, it returns a new tree with the workspaces inserted.
- *
- * The workspaces are inserted in the order they are given.
- *
- * @param workspaces - workspaces to insert into the tree
- * @param stydyTree - study tree to insert the workspaces into
- * @returns study tree with the empty workspaces inserted if they weren't already there.
- */
-export function insertWorkspacesIfNotExist(
-  stydyTree: StudyTreeNode,
-  workspaces: string[],
-): StudyTreeNode {
-  return workspaces.reduce(
-    (acc, workspace) => insertWorkspaceIfNotExist(acc, workspace),
-    stydyTree,
-  );
-}
-
-/**
- * Fetch and insert the workspaces into the study tree.
- *
- * Workspaces are inserted only if they don't exist already in the tree.
- *
- * This function doesn't mutate the tree, it returns a new tree with the workspaces inserted.
- *
- * @param studyTree - study tree to insert the workspaces into
- * @returns study tree with the workspaces inserted if they weren't already there.
- */
-export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promise<StudyTreeNode> {
-  const workspaces = await api.getWorkspaces();
-  return insertWorkspacesIfNotExist(studyTree, workspaces);
 }
