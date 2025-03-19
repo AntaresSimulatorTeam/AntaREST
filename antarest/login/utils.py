@@ -58,5 +58,7 @@ def get_current_user() -> Optional[JWTUser]:
 @contextlib.contextmanager
 def current_user_context(token: Optional[JWTUser]) -> Iterator[JWTUser | None]:
     reset_token = _current_user.set(token)
-    yield _current_user.get()
-    _current_user.reset(reset_token)
+    try:
+        yield _current_user.get()
+    finally:
+        _current_user.reset(reset_token)

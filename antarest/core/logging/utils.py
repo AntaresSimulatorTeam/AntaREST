@@ -225,5 +225,7 @@ def task_context(task_id: str, user: Optional[JWTUser]) -> Iterator[None]:
     """
     with current_user_context(user):
         reset_token = _task_id.set(task_id)
-        yield
-        _task_id.reset(reset_token)
+        try:
+            yield
+        finally:
+            _task_id.reset(reset_token)
