@@ -41,8 +41,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
@@ -168,8 +167,14 @@ class ThermalManager:
         old_thermals_by_areas = self.get_all_thermals_props(study)
         new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}
 
-        # Prepare the commands to update the thermal clusters.
-        commands = []
+        # Create the command to update the thermal clusters.
+        command = UpdateThermalClusters(
+            cluster_properties=update_thermals_by_areas,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        # Prepare the return of the method
         for area_id, update_thermals_by_ids in update_thermals_by_areas.items():
             old_thermals_by_ids = old_thermals_by_areas[area_id]
             for thermal_id, update_cluster in update_thermals_by_ids.items():
@@ -178,21 +183,7 @@ class ThermalManager:
                 new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
-                # Convert the DTO to a configuration object and update the configuration file.
-                properties = create_thermal_config(
-                    study.version,
-                    **new_cluster.model_dump(mode="json", exclude_none=True),
-                )
-                path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
-                cmd = UpdateConfig(
-                    target=path,
-                    data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
-                    command_context=self._command_context,
-                    study_version=study.version,
-                )
-                commands.append(cmd)
-
-        study.add_commands(commands)
+        study.add_commands([command])
         return new_thermals_by_areas
 
     @staticmethod
@@ -279,10 +270,8 @@ class ThermalManager:
             update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
         )
 
-        command = UpdateThermalCluster(
-            area_id=area_id,
-            thermal_cluster_id=cluster_id,
-            properties=cluster_data,
+        command = UpdateThermalClusters(
+            cluster_properties={area_id: {cluster_id: cluster_data}},
             command_context=self._command_context,
             study_version=study.version,
         )
