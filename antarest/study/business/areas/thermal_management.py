@@ -41,7 +41,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -271,10 +270,8 @@ class ThermalManager:
             update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
         )
 
-        command = UpdateThermalCluster(
-            area_id=area_id,
-            thermal_cluster_id=cluster_id,
-            properties=cluster_data,
+        command = UpdateThermalClusters(
+            cluster_properties={area_id: {cluster_id: updated_versioned_thermal}},
             command_context=self._command_context,
             study_version=study.version,
         )

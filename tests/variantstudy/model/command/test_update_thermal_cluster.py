@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -71,10 +71,8 @@ class TestUpdateThermalCluster:
 
         properties = ThermalClusterUpdate(**args)
 
-        command = UpdateThermalCluster(
-            area_id=area_id,
-            thermal_cluster_id=thermal_cluster_id,
-            properties=properties,
+        command = UpdateThermalClusters(
+            cluster_properties={area_id: {thermal_cluster_id: properties}},
             command_context=command_context,
             study_version=empty_study.config.version,
         )
@@ -119,10 +117,8 @@ class TestUpdateThermalCluster:
 
         properties = ThermalClusterUpdate(**{})
 
-        command = UpdateThermalCluster(
-            area_id=area_id,
-            thermal_cluster_id=thermal_cluster_id,
-            properties=properties,
+        command = UpdateThermalClusters(
+            cluster_properties={area_id: {thermal_cluster_id: properties}},
             command_context=command_context,
             study_version=empty_study.config.version,
         )
