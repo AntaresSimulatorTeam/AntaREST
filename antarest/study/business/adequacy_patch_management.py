@@ -83,7 +83,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     },
     "threshold_initiate_curtailment_sharing_rule": {
         "path": f"{ADEQUACY_PATCH_PATH}/threshold-initiate-curtailment-sharing-rule",
-        "default_value": 0.0,
+        "default_value": 1.0,
         "start_version": STUDY_VERSION_8_5,
     },
     "threshold_display_local_matching_rule_violations": {
@@ -93,7 +93,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     },
     "threshold_csr_variable_bounds_relaxation": {
         "path": f"{ADEQUACY_PATCH_PATH}/threshold-csr-variable-bounds-relaxation",
-        "default_value": 3,
+        "default_value": 7,
         "start_version": STUDY_VERSION_8_5,
     },
 }

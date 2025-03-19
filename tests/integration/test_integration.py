@@ -811,9 +811,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "checkCsrCostFunction": False,
         "includeHurdleCostCsr": False,
         "priceTakingOrder": "DENS",
-        "thresholdInitiateCurtailmentSharingRule": 0.0,
+        "thresholdInitiateCurtailmentSharingRule": 1.0,
         "thresholdDisplayLocalMatchingRuleViolations": 0.0,
-        "thresholdCsrVariableBoundsRelaxation": 3,
+        "thresholdCsrVariableBoundsRelaxation": 7,
     }
 
     client.put(
@@ -833,9 +833,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "checkCsrCostFunction": False,
         "includeHurdleCostCsr": False,
         "priceTakingOrder": "Load",
-        "thresholdInitiateCurtailmentSharingRule": 0.0,
+        "thresholdInitiateCurtailmentSharingRule": 1.0,
         "thresholdDisplayLocalMatchingRuleViolations": 1.1,
-        "thresholdCsrVariableBoundsRelaxation": 3,
+        "thresholdCsrVariableBoundsRelaxation": 7,
     }
 
     # asserts csr field is an int
