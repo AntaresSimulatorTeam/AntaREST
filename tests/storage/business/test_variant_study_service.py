@@ -23,9 +23,9 @@ from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.login.model import User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData, RawStudy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
@@ -224,27 +224,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
     with pytest.raises(StudyNotFoundError):
         study_service._check_study_exists(metadata)
-
-
-@pytest.mark.unit_test
-def test_copy_study() -> None:
-    study_service = VariantStudyService(
-        raw_study_service=Mock(),
-        cache=Mock(),
-        task_service=Mock(),
-        command_factory=Mock(),
-        study_factory=Mock(),
-        config=build_config(Path("")),
-        repository=Mock(),
-        event_bus=Mock(),
-    )
-
-    src_study = VariantStudy(
-        id="source",
-        path="path",
-    )
-
-    study_service.copy(src_study, "dst_name", [])
 
 
 @pytest.mark.unit_test
