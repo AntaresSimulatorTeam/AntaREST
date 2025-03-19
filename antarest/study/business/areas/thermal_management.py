@@ -271,7 +271,7 @@ class ThermalManager:
         )
 
         command = UpdateThermalClusters(
-            cluster_properties={area_id: {cluster_id: updated_versioned_thermal}},
+            cluster_properties={area_id: {cluster_id: cluster_data}},
             command_context=self._command_context,
             study_version=study.version,
         )
