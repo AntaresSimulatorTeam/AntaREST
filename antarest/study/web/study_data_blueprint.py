@@ -453,17 +453,16 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_hydro_properties_by_area(
         uuid: str,
-        area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> HydroManagement:
+    ) -> dict[str, HydroProperties]:
         logger.info(
-            msg=f"Getting Hydro management config for area {area_id} of study {uuid}",
+            msg=f"Getting Hydro properties for each area of study {uuid}",
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
-        return study_service.hydro_manager.get_hydro_management(study_interface, area_id)
+        return study_service.hydro_manager.get_all_hydro_properties(study_interface)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",

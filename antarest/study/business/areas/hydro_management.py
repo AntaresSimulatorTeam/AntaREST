@@ -16,6 +16,7 @@ from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementFileData,
     HydroManagementUpdate,
+    HydroProperties,
     InflowStructure,
     InflowStructureUpdate,
 )
@@ -28,6 +29,9 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
+
+    def get_all_hydro_properties(self, study: StudyInterface) -> dict[str, HydroProperties]:
+        pass
 
     def get_hydro_management(self, study: StudyInterface, area_id: str) -> HydroManagement:
         """
