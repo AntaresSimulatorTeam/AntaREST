@@ -13,7 +13,17 @@
  */
 
 import CustomScrollbar from "@/components/common/CustomScrollbar";
-import { Box, Breadcrumbs, Button, IconButton, Link, Tooltip, Typography } from "@mui/material";
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  IconButton,
+  Link,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import FolderIcon from "@mui/icons-material/Folder";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
@@ -188,20 +198,24 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               </Tooltip>
             </>
           )}
-          {strictFolderFilter ? (
+          <ToggleButtonGroup
+            value={strictFolderFilter}
+            exclusive
+            onChange={toggleStrictFolder}
+            size="extra-small"
+            color="primary"
+          >
             <Tooltip title={t("studies.filters.strictfolder")}>
-              <IconButton onClick={toggleStrictFolder}>
-                <FolderIcon color="secondary" />
-              </IconButton>
+              <ToggleButton value={true}>
+                <FolderIcon />
+              </ToggleButton>
             </Tooltip>
-          ) : (
             <Tooltip title={t("studies.filters.showChildrens")}>
-              <IconButton onClick={toggleStrictFolder}>
-                <AccountTreeIcon color="secondary" />
-              </IconButton>
+              <ToggleButton value={false}>
+                <AccountTreeIcon />
+              </ToggleButton>
             </Tooltip>
-          )}
-
+          </ToggleButtonGroup>
           {!scanDisabled && (
             <Tooltip title={t("studies.scanFolder") as string}>
               <IconButton onClick={() => setConfirmFolderScan(true)} disabled={scanDisabled}>
