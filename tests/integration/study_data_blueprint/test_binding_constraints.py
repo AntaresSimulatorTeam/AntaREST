@@ -380,10 +380,35 @@ class TestBindingConstraints:
         )
         assert res.status_code == 422, res.json()
         assert res.json() == {
-            "body": {"data": {}, "id": f"{area1_id}.{cluster_id}"},
+            "body": {"data": {}, "id": f"{area1_id}.{cluster_id.lower()}"},
             "description": "Field required",
             "exception": "RequestValidationError",
         }
+
+        # Update constraint cluster term without giving an id. This is the behavior of the R scripts
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
+            json={"weight": 4, "data": {"area": area1_id, "cluster": cluster_id.lower()}},
+        )
+        assert res.status_code == 200, res.json()
+        # Checks updated terms
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
+        assert res.status_code == 200, res.json()
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["terms"]
+        expected_terms = [
+            {
+                "data": {"area1": area1_id, "area2": area2_id},
+                "offset": 2,
+                "weight": 1.0,
+            },
+            {
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "offset": None,
+                "weight": 4.0,  # updated
+            },
+        ]
+        assert constraint_terms == expected_terms
 
         # Remove Constraint term
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term/{link_id}")
@@ -398,7 +423,7 @@ class TestBindingConstraints:
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
                 "offset": None,
-                "weight": 3.0,
+                "weight": 4.0,
             },
         ]
         assert constraint_terms == expected

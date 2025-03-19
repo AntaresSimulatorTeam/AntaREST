@@ -403,31 +403,27 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
             args={
-                "area_id": "area_name",
-                "thermal_cluster_id": "cluster_name",
-                "properties": {"efficiency": 90},
+                "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
             },
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_thermal_cluster",
+        id="update_thermal_clusters",
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
             args=[
                 {
-                    "area_id": "area_name",
-                    "thermal_cluster_id": "cluster_name",
-                    "properties": {"efficiency": 90},
+                    "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
                 }
             ],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_thermal_cluster_list",
+        id="update_thermal_clusters_list",
     ),
     pytest.param(
         CommandDTO(
