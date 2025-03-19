@@ -50,13 +50,12 @@ class UpdateThermalClusters(ICommand):
             if area_id not in study_data.areas:
                 return CommandOutput(status=False, message=f"The area '{area_id}' is not found."), {}
 
+            thermal_mapping: dict[str, tuple[int, ThermalConfigType]] = {}
+            for index, thermal in enumerate(study_data.areas[area_id].thermals):
+                thermal_mapping[thermal.id] = (index, thermal)
+
             for cluster_id, properties in value.items():
-                cluster_exists = False
-                for index, thermal in enumerate(study_data.areas[area_id].thermals):
-                    if thermal.id == cluster_id:
-                        cluster_exists = True
-                        study_data.areas[area_id].thermals[index] = self.update_thermal_config(area_id, thermal)
-                if not cluster_exists:
+                if cluster_id not in thermal_mapping:
                     return (
                         CommandOutput(
                             status=False,
@@ -64,6 +63,8 @@ class UpdateThermalClusters(ICommand):
                         ),
                         {},
                     )
+                index, thermal = thermal_mapping[cluster_id]
+                study_data.areas[area_id].thermals[index] = self.update_thermal_config(area_id, thermal)
 
         return CommandOutput(status=True, message="The thermal clusters were successfully updated."), {}
 
