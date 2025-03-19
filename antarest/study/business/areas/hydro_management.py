@@ -31,7 +31,21 @@ class HydroManager:
         self._command_context = command_context
 
     def get_all_hydro_properties(self, study: StudyInterface) -> dict[str, HydroProperties]:
-        pass
+        all_hydro_properties: dict[str, HydroProperties] = {}
+
+        file_study = study.get_files()
+        hydro_management_file_data = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
+
+        all_areas = file_study.config.areas
+        for area_id in all_areas:
+            hydro_management = hydro_management_file_data.get_hydro_management(area_id)
+            inflow_structure = self.get_inflow_structure(study, area_id)
+            hydro_properties = HydroProperties.model_validate(
+                {"management_options": hydro_management, "inflow_structure": inflow_structure}
+            )
+            all_hydro_properties[area_id] = hydro_properties
+
+        return all_hydro_properties
 
     def get_hydro_management(self, study: StudyInterface, area_id: str) -> HydroManagement:
         """

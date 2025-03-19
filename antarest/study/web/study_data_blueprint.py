@@ -447,7 +447,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         "/studies/{uuid}/hydro",
         tags=[APITag.study_data],
-        summary="Get Hydro config for each area of the study",
+        summary="Get Hydro properties for each area of the study",
         response_model=dict[str, HydroProperties],
         response_model_exclude_none=True,
     )
