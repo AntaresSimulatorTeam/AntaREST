@@ -74,6 +74,11 @@ class UpdateThermalClusters(ICommand):
             ini_path = ["input", "thermal", "clusters", area_id, "list"]
             all_clusters_for_area = study_data.tree.get(ini_path)
             for cluster_id, properties in value.items():
+                if cluster_id not in all_clusters_for_area:
+                    return CommandOutput(
+                        status=False,
+                        message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
+                    )
                 # Performs the update
                 new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
                 current_properties_obj = create_thermal_properties(
@@ -94,7 +99,9 @@ class UpdateThermalClusters(ICommand):
         for area_id, value in self.cluster_properties.items():
             for cluster_id, properties in value.items():
                 args.setdefault(area_id, {})[cluster_id] = properties.model_dump(mode="json", exclude_unset=True)
-        return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
+        return CommandDTO(
+            action=self.command_name.value, args={"cluster_properties": args}, study_version=self.study_version
+        )
 
     @override
     def get_inner_matrices(self) -> List[str]:
