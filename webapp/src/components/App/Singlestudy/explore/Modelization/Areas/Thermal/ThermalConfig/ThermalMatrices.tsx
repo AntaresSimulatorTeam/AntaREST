@@ -41,6 +41,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
             <Matrix
               url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
               customColumns={COMMON_MATRIX_COLS}
+              isTimeSeries={false}
             />
           ),
         },
@@ -50,6 +51,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
             <Matrix
               url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
               customColumns={TS_GEN_MATRIX_COLS}
+              isTimeSeries={false}
             />
           ),
         },
