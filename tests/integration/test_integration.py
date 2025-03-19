@@ -1751,6 +1751,27 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
 def test_copy_variant_as_raw(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
+    raw = client.post("/v1/studies?name=raw")
+    assert raw.status_code == 201
+    parent_id = raw.json()
+
+    var = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant"})
+    assert var.status_code == 200
+    variant_id = var.json()
+
+    variant_study = client.get(f"/v1/studies/{variant_id}")
+    assert variant_study.status_code == 200
+
+    res = client.put(f"/v1/studies/{variant_id}/generate")
+    client.get(f"/v1/tasks/{res.json()}?wait_for_completion=True")
+
+    copy = client.post(f"/v1/studies/{variant_id}/copy?dest=copied&use_task=false")
+    client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
+
+    all_studies = client.get("/v1/studies")
+    assert variant_study.status_code == 200
+    assert len(all_studies.json()) == 4
+
 
 def test_areas_deletion_with_binding_constraints(
     client: TestClient, user_access_token: str, internal_study_id: str
