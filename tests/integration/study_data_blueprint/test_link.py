@@ -241,6 +241,18 @@ class TestLink:
         client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
         res.raise_for_status()
 
+        # Test get only one link
+
+        client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id})
+        res = client.get(f"/v1/studies/{study_id}/link", params={"link_id": f"{area1_id}-{area2_id}"})
+        assert res.status_code == 200, res.json()
+        client.delete(f"/v1/studies/{study_id}/links/{area1_id}/{area2_id}")
+
+        # Test get only one link error
+
+        res = client.get(f"/v1/studies/{study_id}/link", params={"link_id": f"{area1_id}-{area2_id}"})
+        assert res.status_code == 404
+
         # Test create link with same area
 
         res = client.post(f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area1_id})

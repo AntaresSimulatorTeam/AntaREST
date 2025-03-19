@@ -158,8 +158,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             extra={"user": current_user.id},
         )
         params = RequestParameters(user=current_user)
-        areas_list = study_service.get_all_links(uuid, params)
-        return areas_list
+        links = study_service.get_all_links(uuid, params)
+        return links
+
+    @bp.get(
+        "/studies/{uuid}/link",
+        tags=[APITag.study_data],
+        summary="Get one link",
+        response_model=LinkDTO,
+    )
+    def get_one_link(
+        uuid: str,
+        link_id: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> LinkDTO:
+        logger.info(
+            f"Fetching link {link_id} list for study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        return study_service.get_one_link(uuid, link_id, params)
 
     @bp.post(
         "/studies/{uuid}/areas",
@@ -278,7 +296,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_from = transform_name_to_id(area_from)
         area_to = transform_name_to_id(area_to)
         study_service.delete_link(uuid, area_from, area_to, params)
-        return f"{area_from}%{area_to}"
+        return f"{area_from}-{area_to}"
 
     @bp.get(
         "/studies/{uuid}/layers",

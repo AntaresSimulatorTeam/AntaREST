@@ -44,10 +44,19 @@ class LinkManager:
 
         return result
 
+    def get_one_link(self, study: StudyInterface, link_id: str) -> LinkDTO:
+        file_study = study.get_files()
+
+        area1, area2 = sorted(link_id.split("-"))
+
+        link = self._get_link_if_exists(file_study, area1, area2)
+
+        return LinkInternal.model_validate(link).to_dto()
+
     def get_link(self, study: StudyInterface, link: LinkInternal) -> LinkInternal:
         file_study = study.get_files()
 
-        link_properties = self._get_link_if_exists(file_study, link)
+        link_properties = self._get_link_if_exists(file_study, link.area1, link.area2)
 
         link_properties.update({"area1": link.area1, "area2": link.area2})
 
@@ -78,7 +87,7 @@ class LinkManager:
         file_study = study.get_files()
         link = link_dto.to_internal(study.version)
 
-        self._get_link_if_exists(file_study, link)
+        self._get_link_if_exists(file_study, link.area1, link.area2)
 
         command = UpdateLink(
             area1=link.area1,
@@ -134,11 +143,11 @@ class LinkManager:
         )
         study.add_commands([command])
 
-    def _get_link_if_exists(self, file_study: FileStudy, link: LinkInternal) -> dict[str, Any]:
+    def _get_link_if_exists(self, file_study: FileStudy, area1: str, area2: str) -> dict[str, Any]:
         try:
-            return file_study.tree.get(["input", "links", link.area1, "properties", link.area2])
+            return file_study.tree.get(["input", "links", area1, "properties", area2])
         except KeyError:
-            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
+            raise LinkNotFound(f"The link {area1} -> {area2} is not present in the study")
 
     @staticmethod
     def get_table_schema() -> JSON:

@@ -2005,6 +2005,16 @@ class StudyService:
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.links_manager.get_all_links(self.get_study_interface(study))
 
+    def get_one_link(
+        self,
+        uuid: str,
+        link_id: str,
+        params: RequestParameters,
+    ) -> LinkDTO:
+        study = self.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        return self.links_manager.get_one_link(self.get_study_interface(study), link_id)
+
     def create_area(
         self,
         uuid: str,
