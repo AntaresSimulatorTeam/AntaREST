@@ -14,7 +14,7 @@
 
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { type StudyMetadata } from "@/types/types";
+import type { StudyMetadata } from "@/types/types";
 import type { Storage } from "../utils";
 import SplitView from "../../../../../../../common/SplitView";
 import Matrix from "../../../../../../../common/Matrix";
@@ -26,6 +26,12 @@ interface Props {
   storageId: Storage["id"];
 }
 
+// !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
+// `customColumns={["TS 1"]}` as a temporary solution. These are actually
+// time series matrices, but the development for them has not been completed
+// on the simulator side yet. When that development is done, these properties
+// should be removed to restore the standard time series behavior with resize
+// functionality.
 function StorageMatrices({ areaId, storageId }: Props) {
   const { t } = useTranslation();
 
@@ -41,15 +47,21 @@ function StorageMatrices({ areaId, storageId }: Props) {
           content: () => (
             <SplitView id="storage-injectionModulation-withdrawalModulation" sizes={[50, 50]}>
               <Box sx={{ pr: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
                 <Matrix
                   title={t("study.modelization.storages.injectionModulation")}
                   url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
                 />
               </Box>
               <Box sx={{ pl: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
                 <Matrix
                   title={t("study.modelization.storages.withdrawalModulation")}
                   url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
                 />
               </Box>
             </SplitView>
@@ -60,15 +72,21 @@ function StorageMatrices({ areaId, storageId }: Props) {
           content: () => (
             <SplitView id="storage-lowerRuleCurve-upperRuleCurve" sizes={[50, 50]}>
               <Box sx={{ pr: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
                 <Matrix
                   title={t("study.modelization.storages.lowerRuleCurve")}
                   url={`input/st-storage/series/${areaId}/${storageId}/lower_rule_curve`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
                 />
               </Box>
               <Box sx={{ pl: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
                 <Matrix
                   title={t("study.modelization.storages.upperRuleCurve")}
                   url={`input/st-storage/series/${areaId}/${storageId}/upper_rule_curve`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
                 />
               </Box>
             </SplitView>

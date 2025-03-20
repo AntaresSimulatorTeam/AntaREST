@@ -116,6 +116,7 @@ function LinkMatrixView({ area1, area2 }: Props) {
                     url={content.matrix.url}
                     title={t(`study.modelization.links.matrix.${content.matrix.titleKey}`)}
                     customColumns={content.matrix.columnsNames}
+                    isTimeSeries={false}
                   />
                 )}
               </Box>
