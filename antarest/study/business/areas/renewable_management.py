@@ -305,12 +305,11 @@ class RenewableManager:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}
 
-        study_version = study.version
         # Prepare the command to update the renewable clusters.
         command = UpdateRenewablesClusters(
             cluster_properties=update_renewables_by_areas,
             command_context=self._command_context,
-            study_version=study_version,
+            study_version=study.version,
         )
 
         # Prepare the return of the method
