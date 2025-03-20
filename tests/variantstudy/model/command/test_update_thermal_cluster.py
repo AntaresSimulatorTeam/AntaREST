@@ -77,7 +77,7 @@ class TestUpdateThermalCluster:
         properties = ThermalClusterUpdate(**args)
 
         command = UpdateThermalClusters(
-            cluster_properties={area_id: {thermal_cluster_name: properties}},
+            cluster_properties={area_name: {thermal_cluster_name: properties}},
             command_context=command_context,
             study_version=empty_study.config.version,
         )
