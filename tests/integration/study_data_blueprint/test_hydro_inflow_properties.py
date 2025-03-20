@@ -17,7 +17,7 @@ from starlette.testclient import TestClient
 
 
 @pytest.mark.unit_test
-class TestHydroInflowStructure:
+class TestHydroInflowProperties:
     """
     Test the end points related to hydraulic inflow-structure.
 
@@ -25,7 +25,7 @@ class TestHydroInflowStructure:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    def test_get_inflow_structure(
+    def test_get_inflow_properties(
         self,
         client: TestClient,
         user_access_token: str,
@@ -130,11 +130,8 @@ class TestHydroInflowStructure:
         assert len(actual) == 2
         expected = {
             "id": ANY,
-            "action": "update_config",
-            "args": {
-                "target": "input/hydro/prepro/fr/prepro/prepro",
-                "data": {"intermonthly-correlation": 0.9},
-            },
+            "action": "update_inflow_structure",
+            "args": {"area_id": "fr", "properties": {"inter_monthly_correlation": 0.9}},
             "version": 1,
             "updated_at": ANY,
             "user_name": ANY,

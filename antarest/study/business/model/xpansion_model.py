@@ -9,11 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, MutableMapping, Optional, Sequence
+from typing import Annotated, Any, Optional, Sequence, TypeAlias
 
-from pydantic import Field, ValidationError, field_validator, model_validator
+from pydantic import BeforeValidator, Field, PlainSerializer, ValidationError, field_validator, model_validator
 
+from antarest.core.exceptions import (
+    BadCandidateFormatError,
+    CandidateNameIsEmpty,
+    IllegalCharacterInNameError,
+    WrongLinkFormatError,
+)
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
@@ -135,7 +142,7 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     sensitivity_config: Optional[XpansionSensitivitySettings] = None
 
     @model_validator(mode="before")
-    def validate_float_values(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
+    def validate_float_values(cls, values: dict[str, Any]) -> dict[str, Any]:
         if "relaxed-optimality-gap" in values:
             values["relaxed_optimality_gap"] = values.pop("relaxed-optimality-gap")
 
@@ -213,3 +220,80 @@ class XpansionSettingsUpdate(XpansionSettings):
         alias="additional-constraints",
         description="Additional constraints file",
     )
+
+
+class XpansionLink(AntaresBaseModel):
+    area_from: str
+    area_to: str
+
+    def serialize(self) -> str:
+        return f"{self.area_from} - {self.area_to}"
+
+
+def split_areas(x: str) -> dict[str, str]:
+    if " - " not in x:
+        raise WrongLinkFormatError(f"The link must be in the format 'area1 - area2'. Currently: {x}")
+    area_list = sorted(x.split(" - "))
+    return {"area_from": area_list[0], "area_to": area_list[1]}
+
+
+# link parsed and serialized as "area1 - area2"
+XpansionLinkStr: TypeAlias = Annotated[
+    XpansionLink,
+    BeforeValidator(lambda x: split_areas(x)),
+    PlainSerializer(lambda x: x.serialize()),
+]
+
+
+class XpansionCandidateBase(AntaresBaseModel, populate_by_name=True):
+    name: str
+    link: XpansionLinkStr
+    annual_cost_per_mw: float = Field(gt=0)
+    unit_size: Optional[float] = Field(default=None, ge=0)
+    max_units: Optional[int] = Field(default=None, ge=0)
+    max_investment: Optional[float] = Field(default=None, ge=0)
+    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
+    # this is obsolete (replaced by direct/indirect)
+    link_profile: Optional[str] = None
+    # this is obsolete (replaced by direct/indirect)
+    already_installed_link_profile: Optional[str] = None
+    direct_link_profile: Optional[str] = None
+    indirect_link_profile: Optional[str] = None
+    already_installed_direct_link_profile: Optional[str] = None
+    already_installed_indirect_link_profile: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_model(self) -> "XpansionCandidateBase":
+        possible_format_1 = self.max_investment is None and (self.max_units is not None and self.unit_size is not None)
+        possible_format_2 = self.max_investment is not None and (self.max_units is None and self.unit_size is None)
+
+        if not (possible_format_1 or possible_format_2):
+            raise BadCandidateFormatError(
+                "The candidate is not well formatted."
+                "\nIt should either contain max-investment or (max-units and unit-size)."
+            )
+
+        return self
+
+    @field_validator("name", mode="before")
+    def validate_name(cls, name: str) -> str:
+        # The name is written directly inside the ini file so a specific check is performed here
+        if name.strip() == "":
+            raise CandidateNameIsEmpty()
+
+        illegal_name_characters = [" ", "\n", "\t", "\r", "\f", "\v", "-", "+", "=", ":", "[", "]", "(", ")"]
+        for char in name:
+            if char in illegal_name_characters:
+                raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
+
+        return name
+
+
+class XpansionCandidate(XpansionCandidateBase, alias_generator=to_kebab_case):
+    pass
+
+
+class XpansionCandidateDTO(XpansionCandidateBase, alias_generator=to_kebab_case):
+    # todo: change the aliases for camel_case in the future
+    def to_internal_model(self) -> XpansionCandidate:
+        return XpansionCandidate.model_validate(self.model_dump(mode="json", by_alias=True))

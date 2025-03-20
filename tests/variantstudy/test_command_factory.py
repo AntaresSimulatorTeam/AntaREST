@@ -55,6 +55,15 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_AREAS_PROPERTIES.value,
+            args={"properties": {"fr": {"dispatch_hydro_power": True}}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_areas_properties",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.UPDATE_AREA_UI.value,
             args={
                 "area_id": "id",
@@ -271,6 +280,25 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
+            args=[
+                {
+                    "bc_props_by_id": {
+                        "id": {
+                            "enabled": True,
+                            "time_step": "hourly",
+                            "operator": "equal",
+                        }
+                    }
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="udpate_binding_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
             args={"id": "id"},
             study_version=STUDY_VERSION_8_8,
@@ -375,31 +403,27 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
             args={
-                "area_id": "area_name",
-                "thermal_cluster_id": "cluster_name",
-                "properties": {"efficiency": 90},
+                "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
             },
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_thermal_cluster",
+        id="update_thermal_clusters",
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
             args=[
                 {
-                    "area_id": "area_name",
-                    "thermal_cluster_id": "cluster_name",
-                    "properties": {"efficiency": 90},
+                    "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
                 }
             ],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_thermal_cluster_list",
+        id="update_thermal_clusters_list",
     ),
     pytest.param(
         CommandDTO(
@@ -492,6 +516,15 @@ COMMANDS = [
         ),
         None,
         id="remove_renewables_cluster_list",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_RENEWABLES_CLUSTERS.value,
+            args=[{"cluster_properties": {"area_name": {"cluster_name": {"unit_count": 10}}}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_renewable_clusters",
     ),
     pytest.param(
         CommandDTO(
@@ -780,6 +813,21 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_ST_STORAGE.value,
+            args={
+                "area_id": "area 1",
+                "st_storage_id": "storage 1",
+                "properties": {
+                    "enabled": False,
+                },
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_st_storage",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES.value,
             args=[{}],
             study_version=STUDY_VERSION_8_8,
@@ -813,6 +861,70 @@ COMMANDS = [
         ),
         None,
         id="remove_user_resource_list_file",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_XPANSION_CANDIDATE.value,
+            args=[{"candidate": {"name": "cdt_1", "link": "at - be", "annual-cost-per-mw": 12, "max-investment": 100}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="create_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_XPANSION_CANDIDATE.value,
+            args=[
+                {
+                    "candidate_name": "cdt_1",
+                    "properties": {
+                        "name": "cdt_1",
+                        "link": "at - be",
+                        "annual-cost-per-mw": 12,
+                        "max-investment": 100,
+                    },
+                }
+            ],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_XPANSION_CANDIDATE.value,
+            args=[{"candidate_name": "cdt_1"}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="remove_xpansion_candidate",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_HYDRO_PROPERTIES.value,
+            args={"area_id": "area_name", "properties": {"reservoir_capacity": 0.5}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_hydro_properties",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_INFLOW_STRUCTURE.value,
+            args={"area_id": "area_name", "properties": {"inter_monthly_correlation": 0.5}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_inflow_structure",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_XPANSION_SETTINGS.value,
+            args=[{"settings": {"master": "integer", "max_iteration": 44}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_xpansion_settings",
     ),
 ]
 
@@ -913,12 +1025,13 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
 
 def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
     dto = CommandDTO(
+        id="9f01931b-0f18-4477-9ef4-ac682c970d75",
         action=CommandName.CREATE_ST_STORAGE.value,
         version=1,
         args={
             "area_id": "area_name",
-            "cluster_name": "cluster_name",
             "parameters": {
+                "name": "battery storage_2 candidate",
                 "group": "Battery",
                 "injectionnominalcapacity": 0,
                 "withdrawalnominalcapacity": 0,
@@ -926,6 +1039,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
                 "efficiency": 1,
                 "initiallevel": 0,
                 "initialleveloptim": False,
+                "enabled": True,
             },
             "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
             "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
@@ -940,8 +1054,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory):
     command = commands[0]
     dto = command.to_dto()
     assert dto.version == 2
-    assert dto.args["parameters"]["name"] == "cluster_name"
-    assert "cluster_name" not in dto.args
+    assert dto.args["parameters"]["name"] == "battery storage_2 candidate"
 
 
 def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):

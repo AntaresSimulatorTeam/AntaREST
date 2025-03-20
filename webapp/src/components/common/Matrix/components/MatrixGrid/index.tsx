@@ -24,12 +24,17 @@ import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useState } from "react";
 import DataGrid from "@/components/common/DataGrid";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
-import type { EnhancedGridColumn, MatrixAggregates, GridUpdate } from "../../shared/types";
+import type {
+  EnhancedGridColumn,
+  MatrixAggregates,
+  GridUpdate,
+  NonEmptyMatrix,
+} from "../../shared/types";
 import MatrixStats from "../MatrixStats";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 
 export interface MatrixGridProps {
-  data: number[][];
+  data: NonEmptyMatrix;
   rows: number;
   columns: readonly EnhancedGridColumn[];
   dateTime?: string[];
@@ -152,7 +157,7 @@ function MatrixGrid({
         onCellsEdited={handleCellsEdited}
         keybindings={{ paste: false, copy: false }}
         getCellsForSelection // TODO handle large copy/paste using this
-        fillHandle
+        fillHandle={!readOnly}
         allowedFillDirections="any"
         rowMarkers="both"
         freezeColumns={1} // Make the first column sticky

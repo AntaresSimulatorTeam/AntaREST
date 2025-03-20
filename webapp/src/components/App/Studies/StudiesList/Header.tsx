@@ -46,6 +46,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
 
 const sortOptions = [
   {
@@ -94,6 +95,9 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const hasStudiesSelected = selectedStudyIds.length > 0;
+  const isInDefaultWorkspace = !!folder && folder.startsWith(DEFAULT_WORKSPACE_PREFIX);
+  const isRootFolder = folder === ROOT_FOLDER_NAME;
+  const scanDisabled: boolean = isInDefaultWorkspace || isRootFolder;
 
   useEffect(() => {
     setFolderList(folder.split("/"));
@@ -212,12 +216,31 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               </ToggleButton>
             </Tooltip>
           </ToggleButtonGroup>
-          {folder !== "root" && (
-            <Tooltip title={t("studies.scanFolder")}>
-              <IconButton onClick={() => setConfirmFolderScan(true)}>
+          {!scanDisabled && (
+            <Tooltip title={t("studies.scanFolder") as string}>
+              <IconButton onClick={() => setConfirmFolderScan(true)} disabled={scanDisabled}>
                 <RadarIcon />
               </IconButton>
             </Tooltip>
+          )}
+          {!isRootFolder && confirmFolderScan && (
+            <ConfirmationDialog
+              titleIcon={RadarIcon}
+              onCancel={() => {
+                setConfirmFolderScan(false);
+                setIsRecursiveScan(false);
+              }}
+              onConfirm={handleFolderScan}
+              alert="warning"
+              open
+            >
+              {`${t("studies.scanFolder")} ${folder}?`}
+              <CheckBoxFE
+                label={t("studies.recursiveScan")}
+                value={isRecursiveScan}
+                onChange={handleRecursiveScan}
+              />
+            </ConfirmationDialog>
           )}
           <RefreshButton mini />
           <SelectFE

@@ -12,14 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Box,
-  Skeleton,
-  ToggleButton,
-  ToggleButtonGroup,
-  type ToggleButtonGroupProps,
-} from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { Box, Skeleton, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import GridOffIcon from "@mui/icons-material/GridOff";
@@ -48,7 +42,7 @@ import ResultFilters from "./ResultFilters";
 import { toError } from "../../../../../../utils/fnUtils";
 import EmptyView from "../../../../../common/page/EmptyView";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
-import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import { isNonEmptyMatrix, type ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
 import DataGridViewer from "@/components/common/DataGridViewer";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 
@@ -58,6 +52,8 @@ function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { isDarkMode } = useThemeColorScheme();
   const { outputId } = useParams();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const outputRes = useStudySynthesis({
     studyId: study.id,
@@ -76,9 +72,9 @@ function ResultDetails() {
   // when some columns are filtered out
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
+
   const isSynthesis = itemType === OutputItemType.Synthesis;
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const maxYear = output?.nbyears ?? MAX_YEAR;
 
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas ? getAreas(state, study.id) : getLinks(state, study.id),
@@ -95,20 +91,11 @@ function ResultDetails() {
     | LinkElement
     | undefined;
 
-  const maxYear = output?.nbyears ?? MAX_YEAR;
-
-  useEffect(
-    () => {
-      const isValidSelectedItem =
-        !!selectedItemId && filteredItems.find((item) => item.id === selectedItemId);
-
-      if (!isValidSelectedItem) {
-        setSelectedItemId(filteredItems.length > 0 ? filteredItems[0].id : "");
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filteredItems],
-  );
+  useEffect(() => {
+    if (!selectedItem) {
+      setSelectedItemId(filteredItems.length > 0 ? filteredItems[0].id : "");
+    }
+  }, [filteredItems, selectedItem]);
 
   const path = useMemo(() => {
     if (output && selectedItem && !isSynthesis) {
@@ -177,7 +164,7 @@ function ResultDetails() {
       return Promise.resolve(null);
     },
     {
-      deps: [study.id, outputId, selectedItem],
+      deps: [study.id, outputId, selectedItem, isSynthesis],
     },
   );
 
@@ -185,10 +172,13 @@ function ResultDetails() {
     deps: [study.id, path],
   });
 
-  const dateTime = dateTimeMetadata && generateDateTime(dateTimeMetadata);
+  const dateTime = useMemo(
+    () => dateTimeMetadata && generateDateTime(dateTimeMetadata),
+    [dateTimeMetadata],
+  );
 
   const resultColumns = useMemo(() => {
-    if (!matrixRes.data) {
+    if (!matrixRes.data || resultColHeaders.length === 0) {
       return [];
     }
 
@@ -204,25 +194,29 @@ function ResultDetails() {
       ],
       isDarkMode,
     );
-  }, [matrixRes.data, isDarkMode, resultColHeaders]);
+  }, [matrixRes.data, resultColHeaders, isDarkMode]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleItemTypeChange: ToggleButtonGroupProps["onChange"] = (
-    _,
-    newValue: OutputItemType,
-  ) => {
-    if (newValue && newValue !== itemType) {
-      setItemType(newValue);
-    }
-  };
+  const handleItemTypeChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newValue: OutputItemType) => {
+      if (newValue && newValue !== itemType) {
+        setItemType(newValue);
+      }
+    },
+    [itemType],
+  );
 
-  const handleColHeadersChange: SetResultColHeaders = (headers, indices) => {
+  const handleColHeadersChange = useCallback<SetResultColHeaders>((headers, indices) => {
     setResultColHeaders(headers);
     setHeaderIndices(indices);
-  };
+  }, []);
+
+  const handleSetSelectedItemId = useCallback((item: { id: string }) => {
+    setSelectedItemId(item.id);
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -250,13 +244,17 @@ function ResultDetails() {
               >
                 <ToggleButton value={OutputItemType.Areas}>{t("study.areas")}</ToggleButton>
                 <ToggleButton value={OutputItemType.Links}>{t("study.links")}</ToggleButton>
-                <ToggleButton value={OutputItemType.Synthesis}>{t("study.synthesis")}</ToggleButton>
+                {output?.synthesis && (
+                  <ToggleButton value={OutputItemType.Synthesis}>
+                    {t("study.synthesis")}
+                  </ToggleButton>
+                )}
               </ToggleButtonGroup>
               <ListElement
                 list={filteredItems}
                 currentElement={selectedItemId}
                 currentElementKeyToTest="id"
-                setSelectedItem={(item) => setSelectedItemId(item.id)}
+                setSelectedItem={handleSetSelectedItemId}
               />
             </>
           }
@@ -305,22 +303,21 @@ function ResultDetails() {
               response={mergeResponses(outputRes, matrixRes)}
               ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
               ifFulfilled={([, matrix]) =>
-                matrix && (
-                  <>
-                    {resultColHeaders.length === 0 ? (
-                      <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
-                    ) : (
-                      <MatrixGrid
-                        key={`grid-${resultColHeaders.length}`}
-                        data={filteredData}
-                        rows={filteredData.length}
-                        columns={resultColumns}
-                        dateTime={dateTime}
-                        readOnly
-                      />
-                    )}
-                  </>
-                )
+                matrix &&
+                (resultColHeaders.length === 0 ? (
+                  <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
+                ) : (
+                  isNonEmptyMatrix(filteredData) && (
+                    <MatrixGrid
+                      key={`grid-${resultColHeaders.length}`}
+                      data={filteredData}
+                      rows={filteredData.length}
+                      columns={resultColumns}
+                      dateTime={dateTime}
+                      readOnly
+                    />
+                  )
+                ))
               }
               ifRejected={(err) => (
                 <EmptyView

@@ -48,18 +48,10 @@ class LinkManager:
 
         return link_creation_dto
 
-    def update_link(
-        self,
-        study: StudyInterface,
-        area_from: str,
-        area_to: str,
-        link_update_dto: LinkBaseDTO,
-    ) -> LinkDTO:
-        link_dto = LinkDTO(
-            area1=area_from,
-            area2=area_to,
-            **link_update_dto.model_dump(exclude_unset=True),
-        )
+    def _create_update_link_command(
+        self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO
+    ) -> tuple[UpdateLink, LinkInternal]:
+        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
 
         file_study = study.get_files()
         link = link_dto.to_internal(study.version)
@@ -77,6 +69,10 @@ class LinkManager:
             command_context=self._command_context,
             study_version=study.version,
         )
+        return command, link
+
+    def update_link(self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
+        command, link = self._create_update_link_command(study, area_from, area_to, link_update_dto)
 
         study.add_commands([command])
         return self.get_link(study, link)
@@ -85,11 +81,24 @@ class LinkManager:
         self,
         study: StudyInterface,
         update_links_by_ids: Mapping[Tuple[str, str], LinkBaseDTO],
-    ) -> Mapping[Tuple[str, str], LinkBaseDTO]:
-        new_links_by_ids = {}
+    ) -> Mapping[Tuple[str, str], LinkDTO]:
+        # Build all commands
+        commands = []
         for (area1, area2), update_link_dto in update_links_by_ids.items():
-            updated_link = self.update_link(study, area1, area2, update_link_dto)
-            new_links_by_ids[(area1, area2)] = updated_link
+            command = self._create_update_link_command(study, area1, area2, update_link_dto)[0]
+            commands.append(command)
+
+        study.add_commands(commands)
+
+        # Builds return
+        all_links = self.get_all_links(study)
+        new_links_by_ids = {}
+        for updated_link in all_links:
+            # We only return links that were updated
+            area_1 = updated_link.area1
+            area_2 = updated_link.area2
+            if (area_1, area_2) in update_links_by_ids or (area_2, area_1) in update_links_by_ids:
+                new_links_by_ids[(area_1, area_2)] = updated_link
 
         return new_links_by_ids
 

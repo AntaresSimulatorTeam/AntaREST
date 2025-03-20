@@ -82,7 +82,7 @@ describe("Matrix Utils", () => {
       "calculates $name correctly",
       ({ matrix, aggregates, expected }) => {
         const aggregatesTypes = getAggregateTypes(aggregates);
-        const result = calculateMatrixAggregates(matrix, aggregatesTypes);
+        const result = calculateMatrixAggregates({ matrix, types: aggregatesTypes });
         expect(result).toEqual(expected);
       },
     );

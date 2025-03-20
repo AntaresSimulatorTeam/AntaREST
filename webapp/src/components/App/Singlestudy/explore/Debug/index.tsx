@@ -12,88 +12,90 @@
  * This file is part of the Antares project.
  */
 
+import { Box, Skeleton } from "@mui/material";
+import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext, useSearchParams } from "react-router-dom";
-import { Box } from "@mui/material";
-import Tree from "./Tree";
-import Data from "./Data";
-import type { StudyMetadata } from "../../../../../types/types";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import { getStudyData } from "../../../../../services/api/study";
-import DebugContext from "./DebugContext";
-import { getFileType, type TreeData, type FileInfo, type TreeFolder } from "./utils";
-import * as R from "ramda";
-import SplitView from "../../../../common/SplitView";
 import { useUpdateEffect } from "react-use";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import type { StudyMetadata } from "../../../../../types/types";
+import SplitView from "../../../../common/SplitView";
+import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
+import Data from "./Data";
+import DebugContext from "./DebugContext";
+import Tree from "./Tree";
+import { getFileType, getTreeData, type FileInfo, type TreeData } from "./utils";
 
 function Debug() {
-  const [t] = useTranslation();
+  const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
-  // Allow to keep expanded items when the tree is reloaded with `reloadTreeData`
+  // Allow to keep expanded items when the tree is reloaded with `reloadTree`
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const path = searchParams.get("path");
 
-  const res = usePromiseWithSnackbarError(
-    async () => {
-      const treeData = await getStudyData<TreeFolder>(study.id, "", -1);
-      return R.omit(["Desktop", "study", "logs"], treeData);
-    },
-    {
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id],
-    },
-  );
+  const treeDataResponse = usePromiseWithSnackbarError(() => getTreeData(study.id), {
+    errorMessage: t("studies.error.retrieveData"),
+    deps: [study.id],
+  });
 
   const contextValue = useMemo(
     () => ({
       setSelectedFile,
-      reloadTreeData: res.reload,
+      reloadTree: treeDataResponse.reload,
+      isTreeLoading: treeDataResponse.isLoading,
     }),
-    [res.reload],
+    [treeDataResponse.reload, treeDataResponse.isLoading],
   );
 
+  // Update the selected file
   useUpdateEffect(() => {
-    const firstChildName = Object.keys(res.data ?? {})[0];
-    const firstChildTreeData = R.path<TreeData>([firstChildName], res.data);
-
     const pathSegments = path?.split("/");
     const filename = pathSegments ? R.last(pathSegments) : null;
-    const treeData = pathSegments ? R.path<TreeData>(pathSegments, res.data) : null;
+    const treeData = pathSegments ? R.path<TreeData>(pathSegments, treeDataResponse.data) : null;
 
-    let fileInfo: FileInfo | null = null;
-
+    // Select the file corresponding to the `path` URL parameter
     if (path && filename && treeData) {
-      fileInfo = {
+      setSelectedFile({
         fileType: getFileType(treeData),
         treeData,
         filename,
         filePath: path,
-      };
-    } else if (firstChildTreeData) {
-      fileInfo = {
+      });
+
+      return;
+    }
+
+    const firstChildName = Object.keys(treeDataResponse.data ?? {})[0];
+    const firstChildTreeData = R.path<TreeData>([firstChildName], treeDataResponse.data);
+
+    // Select the first child of the tree data
+    if (firstChildTreeData) {
+      setSelectedFile({
         fileType: getFileType(firstChildTreeData),
         treeData: firstChildTreeData,
         filename: firstChildName,
         filePath: firstChildName,
-      };
+      });
+
+      return;
     }
 
-    setSelectedFile(fileInfo);
-  }, [res.data, path]);
+    setSelectedFile(null);
+  }, [treeDataResponse.data, path]);
 
+  // Update the `path` URL parameter
   useUpdateEffect(() => {
     if (selectedFile?.filePath !== path) {
       setSearchParams({ path: selectedFile?.filePath || "" });
     }
   }, [selectedFile?.filePath]);
 
-  // TODO: to remove after ANT-2217 solved
+  // Solve a back issue when the archive status change (cf. ANT-2217)
   useUpdateEffect(() => {
-    contextValue.reloadTreeData();
+    contextValue.reloadTree();
   }, [study.archived]);
 
   ////////////////////////////////////////////////////////////////
@@ -101,33 +103,28 @@ function Debug() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView id="debug" sizes={[20, 80]}>
-      <Box sx={{ minWidth: 150, p: 1, overflow: "auto" }}>
-        <UsePromiseCond
-          response={res}
-          ifFulfilled={(data) => (
-            <DebugContext.Provider value={contextValue}>
+    <DebugContext.Provider value={contextValue}>
+      <SplitView id="debug" sizes={[20, 80]}>
+        <Box sx={{ minWidth: 150, p: 1, overflow: "auto", position: "relative" }}>
+          <UsePromiseCond
+            keepLastResolvedOnReload
+            response={treeDataResponse}
+            ifPending={() =>
+              Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} height={32} />)
+            }
+            ifFulfilled={(data) => (
               <Tree
                 data={data}
                 currentPath={selectedFile?.filePath || null}
                 expandedItems={expandedItems}
                 setExpandedItems={setExpandedItems}
               />
-            </DebugContext.Provider>
-          )}
-        />
-      </Box>
-      <Box>
-        {selectedFile && (
-          <Data
-            {...selectedFile}
-            setSelectedFile={setSelectedFile}
-            reloadTreeData={res.reload}
-            study={study}
+            )}
           />
-        )}
-      </Box>
-    </SplitView>
+        </Box>
+        <Box>{selectedFile && <Data {...selectedFile} study={study} />}</Box>
+      </SplitView>
+    </DebugContext.Provider>
   );
 }
 

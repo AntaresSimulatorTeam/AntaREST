@@ -30,5 +30,6 @@ export interface NonStudyFolderDTO {
 export interface StudyTreeNodeProps {
   studyTreeNode: StudyTreeNode;
   parentId: string;
-  onNodeClick: (id: string, node: StudyTreeNode) => void;
+  itemsLoading: string[];
+  onNodeClick: (id: string) => void;
 }

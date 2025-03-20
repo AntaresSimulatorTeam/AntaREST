@@ -23,6 +23,7 @@ from antarest.study.business.area_management import (
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
@@ -84,7 +85,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         study_path=Path("somepath"),
         path=Path("somepath"),
         study_id="",
-        version=-1,
+        version=STUDY_VERSION_7_0,
         areas={
             "a1": Area(
                 name="a1",

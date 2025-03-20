@@ -38,6 +38,7 @@ class FilteringOptions:
 
 class CommandName(Enum):
     CREATE_AREA = "create_area"
+    UPDATE_AREAS_PROPERTIES = "update_areas_properties"
     UPDATE_AREA_UI = "update_area_ui"
     REMOVE_AREA = "remove_area"
     CREATE_DISTRICT = "create_district"
@@ -48,16 +49,19 @@ class CommandName(Enum):
     CREATE_BINDING_CONSTRAINT = "create_binding_constraint"
     UPDATE_BINDING_CONSTRAINT = "update_binding_constraint"
     REMOVE_BINDING_CONSTRAINT = "remove_binding_constraint"
+    UPDATE_BINDING_CONSTRAINTS = "update_binding_constraints"
     REMOVE_MULTIPLE_BINDING_CONSTRAINTS = "remove_multiple_binding_constraints"
     CREATE_THERMAL_CLUSTER = "create_cluster"
     REMOVE_THERMAL_CLUSTER = "remove_cluster"
-    UPDATE_THERMAL_CLUSTER = "update_thermal_cluster"
+    UPDATE_THERMAL_CLUSTERS = "update_thermal_clusters"
     CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster"
     REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
-    UPDATE_RENEWABLE_CLUSTER = "update_renewable_cluster"
+    UPDATE_RENEWABLES_CLUSTERS = "update_renewables_clusters"
     CREATE_ST_STORAGE = "create_st_storage"
     REMOVE_ST_STORAGE = "remove_st_storage"
     UPDATE_ST_STORAGE = "update_st_storage"
+    UPDATE_HYDRO_PROPERTIES = "update_hydro_properties"
+    UPDATE_INFLOW_STRUCTURE = "update_inflow_structure"
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"
@@ -74,6 +78,10 @@ class CommandName(Enum):
     CREATE_XPANSION_CAPACITY = "create_xpansion_capacity"
     CREATE_XPANSION_WEIGHT = "create_xpansion_weight"
     CREATE_XPANSION_CONSTRAINT = "create_xpansion_constraint"
+    CREATE_XPANSION_CANDIDATE = "create_xpansion_candidate"
+    REMOVE_XPANSION_CANDIDATE = "remove_xpansion_candidate"
+    REPLACE_XPANSION_CANDIDATE = "replace_xpansion_candidate"
+    UPDATE_XPANSION_SETTINGS = "update_xpansion_settings"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:

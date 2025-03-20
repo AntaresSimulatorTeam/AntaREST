@@ -22,13 +22,21 @@ import {
 import type { DeepPartial } from "react-hook-form";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
-import { Box, Divider, IconButton, setRef, Tooltip, type SxProps, type Theme } from "@mui/material";
+import {
+  Box,
+  Divider,
+  IconButton,
+  setRef,
+  Tooltip,
+  type SxProps,
+  type Theme,
+  Button,
+} from "@mui/material";
 import useUndo, { type Actions } from "use-undo";
 import UndoIcon from "@mui/icons-material/Undo";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
 import { useTranslation } from "react-i18next";
-import { LoadingButton } from "@mui/lab";
 import { mergeSxProp } from "@/utils/muiUtils";
 import * as R from "ramda";
 import type { SubmitHandlerPlus } from "./Form/types";
@@ -181,7 +189,7 @@ function DataGridForm<TData extends Data>({
       const dataRow = data[rowName];
       const cellData = dataRow?.[columnName];
 
-      if (typeof cellData == "string") {
+      if (typeof cellData === "string") {
         return {
           kind: GridCellKind.Text,
           data: cellData,
@@ -190,7 +198,7 @@ function DataGridForm<TData extends Data>({
         };
       }
 
-      if (typeof cellData == "number") {
+      if (typeof cellData === "number") {
         return {
           kind: GridCellKind.Number,
           data: cellData,
@@ -201,7 +209,7 @@ function DataGridForm<TData extends Data>({
         };
       }
 
-      if (typeof cellData == "boolean") {
+      if (typeof cellData === "boolean") {
         return {
           kind: GridCellKind.Boolean,
           data: cellData,
@@ -307,7 +315,7 @@ function DataGridForm<TData extends Data>({
         }}
       >
         <Box sx={{ display: "flex" }}>
-          <LoadingButton
+          <Button
             type="submit"
             disabled={!isDirty}
             loading={isSubmitting}
@@ -316,7 +324,7 @@ function DataGridForm<TData extends Data>({
             startIcon={<SaveIcon />}
           >
             {t("global.save")}
-          </LoadingButton>
+          </Button>
           <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
           <Tooltip title={t("global.undo")}>
             <span>

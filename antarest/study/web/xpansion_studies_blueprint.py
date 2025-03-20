@@ -25,11 +25,9 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
+    XpansionCandidateDTO,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
-)
-from antarest.study.business.xpansion_management import (
-    XpansionCandidateDTO,
 )
 from antarest.study.service import StudyService
 
@@ -56,10 +54,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Creating Xpansion Configuration for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Creating Xpansion Configuration for study {uuid}")
         params = RequestParameters(user=current_user)
         study_service.create_xpansion_configuration(uuid=uuid, params=params)
 
@@ -72,10 +67,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Deleting Xpansion Configuration for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Deleting Xpansion Configuration for study {uuid}")
         params = RequestParameters(user=current_user)
         study_service.delete_xpansion_configuration(uuid=uuid, params=params)
 
@@ -88,10 +80,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GetXpansionSettings:
-        logger.info(
-            f"Fetching Xpansion Settings of the study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching Xpansion Settings of the study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.get_xpansion_settings(uuid=uuid, params=params)
 
@@ -105,10 +94,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         xpansion_settings: XpansionSettingsUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GetXpansionSettings:
-        logger.info(
-            f"Updating Xpansion Settings Of Study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating Xpansion Settings Of Study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.update_xpansion_settings(uuid, xpansion_settings, params)
 
@@ -122,10 +108,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         filename: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GetXpansionSettings:
-        logger.info(
-            f"Updating Xpansion Settings Of Study {uuid} with additional constraints {filename}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating Xpansion Settings Of Study {uuid} with additional constraints {filename}")
         params = RequestParameters(user=current_user)
         return study_service.update_xpansion_constraints_settings(uuid, filename, params)
 
@@ -139,10 +122,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         xpansion_candidate_dto: XpansionCandidateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> XpansionCandidateDTO:
-        logger.info(
-            f"Adding new candidate {xpansion_candidate_dto.model_dump(by_alias=True)} to study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Adding new candidate {xpansion_candidate_dto.model_dump(by_alias=True)} to study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.add_candidate(uuid, xpansion_candidate_dto, params)
 
@@ -156,7 +136,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         candidate_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> XpansionCandidateDTO:
-        logger.info("Fetching study list", extra={"user": current_user.id})
+        logger.info("Fetching study list")
         params = RequestParameters(user=current_user)
         return study_service.get_candidate(uuid, candidate_name, params)
 
@@ -169,7 +149,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Sequence[XpansionCandidateDTO]:
-        logger.info("Fetching study list", extra={"user": current_user.id})
+        logger.info("Fetching study list")
         params = RequestParameters(user=current_user)
         return study_service.get_candidates(uuid, params)
 
@@ -184,10 +164,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         xpansion_candidate_dto: XpansionCandidateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Updating xpansion candidate {xpansion_candidate_dto.name} of the study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating xpansion candidate {xpansion_candidate_dto.name} of the study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.update_xpansion_candidate(uuid, candidate_name, xpansion_candidate_dto, params)
 
@@ -201,10 +178,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         candidate_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Deleting candidate {candidate_name} of the study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Deleting candidate {candidate_name} of the study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.delete_xpansion_candidate(uuid, candidate_name, params)
 
@@ -219,10 +193,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Add xpansion {resource_type} files in the study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Add xpansion {resource_type} files in the study {uuid}")
         study = study_service.check_study_access(
             uuid,
             StudyPermissionType.WRITE,
@@ -242,10 +213,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Deleting xpansion {resource_type} file from the study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Deleting xpansion {resource_type} file from the study {uuid}")
         study = study_service.check_study_access(
             uuid,
             StudyPermissionType.WRITE,
@@ -265,10 +233,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         filename: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Getting xpansion {resource_type} file {filename} from the study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting xpansion {resource_type} file {filename} from the study {uuid}")
         study = study_service.check_study_access(
             uuid,
             StudyPermissionType.READ,
@@ -299,10 +264,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         resource_type: XpansionResourceFileType,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Getting xpansion {resource_type} resources files from the study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting xpansion {resource_type} resources files from the study {uuid}")
         study = study_service.check_study_access(
             uuid,
             StudyPermissionType.READ,

@@ -50,6 +50,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    STUDY_VERSION_7_2,
     ExportFormat,
     MatrixAggregationResultDTO,
     MatrixIndex,
@@ -425,7 +426,7 @@ def test_create_study() -> None:
     expected = RawStudy(
         id=str(uuid.uuid4()),
         name="new-study",
-        version="VERSION",
+        version="700",
         author="AUTHOR",
         created_at=datetime.utcfromtimestamp(1234),
         updated_at=datetime.utcfromtimestamp(9876),
@@ -456,14 +457,14 @@ def test_create_study() -> None:
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
             "new-study",
-            "720",
+            STUDY_VERSION_7_2,
             ["my-group"],
             RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         )
 
     service.create_study(
         "new-study",
-        "720",
+        STUDY_VERSION_7_2,
         ["my-group"],
         RequestParameters(
             JWTUser(
@@ -576,7 +577,7 @@ def test_download_output() -> None:
         study_path=Path(input_study.path),
         path=Path(input_study.path),
         study_id=str(uuid.uuid4()),
-        version=int(input_study.version),
+        version=StudyVersion.parse(input_study.version),
         areas={"east": area},
         sets={"north": DistrictSet()},
         outputs={"output-id": sim},

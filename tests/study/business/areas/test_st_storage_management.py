@@ -20,7 +20,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageMatrixNotFound, STStorageNotFound
-from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6
@@ -63,7 +63,7 @@ efficiency = 0.72
 initiallevel = 1
 """
 
-LIST_CFG = IniReader().read(io.StringIO(LIST_INI))
+LIST_CFG = read_ini(io.StringIO(LIST_INI))
 
 ALL_STORAGES = {
     "west": {"list": LIST_CFG},
@@ -81,7 +81,7 @@ def create_study_interface(tree: FileStudyTree) -> StudyInterface:
     file_study.tree = tree
     study = Mock(StudyInterface)
     study.get_files.return_value = file_study
-    study.version = 860
+    study.version = STUDY_VERSION_8_6
     return study
 
 

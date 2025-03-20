@@ -19,7 +19,7 @@ import OkDialog from "../OkDialog";
 import SimpleLoader from "../../loaders/SimpleLoader";
 import MatrixGrid from "@/components/common/Matrix/components/MatrixGrid";
 import { generateDataColumns } from "@/components/common/Matrix/shared/utils";
-import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import { isNonEmptyMatrix, type MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 interface Props {
   filename: string;
@@ -80,12 +80,12 @@ function DataViewerDialog({ filename, content, onClose, isMatrix, loading }: Pro
       {loading && !content && <SimpleLoader />}
       {content && (
         <>
-          {isMatrix && isMatrixData(content) && (
+          {isMatrix && isMatrixData(content) && isNonEmptyMatrix(content.data) && (
             <MatrixGrid
               data={content.data}
               rows={content.data.length}
               columns={generateDataColumns({
-                timeSeriesColumns: true,
+                isTimeSeries: true,
                 count: content.columns.length,
               })}
               readOnly

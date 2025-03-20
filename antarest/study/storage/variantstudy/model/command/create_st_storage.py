@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Dict, Final, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Final, List, Optional, Tuple, TypeAlias, Union, cast
 
 import numpy as np
 from pydantic import Field, ValidationInfo, model_validator
@@ -20,7 +20,6 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
 from antarest.study.model import STUDY_VERSION_8_6
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
@@ -28,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     create_st_storage_config,
     create_st_storage_properties,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -48,7 +48,7 @@ _MATRIX_NAMES = (
 # Minimum required version.
 REQUIRED_VERSION = STUDY_VERSION_8_6
 
-MatrixType = List[List[MatrixData]]
+MatrixType: TypeAlias = List[List[MatrixData]]
 
 
 # noinspection SpellCheckingInspection
@@ -62,7 +62,8 @@ class CreateSTStorage(ICommand):
 
     command_name: CommandName = CommandName.CREATE_ST_STORAGE
 
-    # version 2: remove cluster_name and type parameters as STStoragePropertiesType
+    # version 2: parameters changed from STStorageConfigType to STStoragePropertiesType
+    #            This actually did not require a version increment, but was done by mistake.
     _SERIALIZATION_VERSION: Final[int] = 2
 
     # Command parameters
@@ -105,10 +106,7 @@ class CreateSTStorage(ICommand):
     @classmethod
     def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
         if isinstance(values["parameters"], dict):
-            parameters = values["parameters"]
-            if info.context and info.context.version == 1:
-                parameters["name"] = values.pop("cluster_name")
-            values["parameters"] = create_st_storage_properties(values["study_version"], parameters)
+            values["parameters"] = create_st_storage_properties(values["study_version"], data=values["parameters"])
         return values
 
     @staticmethod

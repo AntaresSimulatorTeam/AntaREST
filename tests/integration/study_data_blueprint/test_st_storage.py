@@ -20,15 +20,16 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.areas.st_storage_management import create_storage_output
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from tests.integration.utils import wait_task_completion
 
-_ST_STORAGE_860_CONFIG = create_st_storage_config(860, name="dummy")
-_ST_STORAGE_880_CONFIG = create_st_storage_config(880, name="dummy")
+_ST_STORAGE_860_CONFIG = create_st_storage_config(STUDY_VERSION_8_6, name="dummy")
+_ST_STORAGE_880_CONFIG = create_st_storage_config(STUDY_VERSION_8_8, name="dummy")
 
-_ST_STORAGE_OUTPUT_860 = create_storage_output(860, cluster_id="dummy", config={"name": "dummy"})
-_ST_STORAGE_OUTPUT_880 = create_storage_output(880, cluster_id="dummy", config={"name": "dummy"})
+_ST_STORAGE_OUTPUT_860 = create_storage_output(STUDY_VERSION_8_6, cluster_id="dummy", config={"name": "dummy"})
+_ST_STORAGE_OUTPUT_880 = create_storage_output(STUDY_VERSION_8_8, cluster_id="dummy", config={"name": "dummy"})
 
 DEFAULT_CONFIG_860 = _ST_STORAGE_860_CONFIG.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
 DEFAULT_CONFIG_880 = _ST_STORAGE_880_CONFIG.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
@@ -896,7 +897,7 @@ class TestSTStorage:
         assert list(content.keys()) == ["tesla1"]
         content["Tesla1"] = content.pop("tesla1")
         res = client.post(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list", json=content)
-        assert res.status_code == 204, res.json()
+        assert res.status_code == 200, res.json()
         res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
         assert res.status_code == 200, res.json()
         assert list(res.json().keys()) == ["Tesla1"]
