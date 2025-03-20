@@ -49,7 +49,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[]),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info("Creating new matrix", extra={"user": current_user.id})
+        logger.info("Creating new matrix")
         if current_user.id is not None:
             return service.create(matrix)
         raise UserHasNotPermissionError()
@@ -65,14 +65,14 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         file: UploadFile = File(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info("Importing new matrix dataset", extra={"user": current_user.id})
+        logger.info("Importing new matrix dataset")
         if current_user.id is not None:
             return service.create_by_importation(file, is_json=json)
         raise UserHasNotPermissionError()
 
     @bp.get("/matrix/{id}", tags=[APITag.matrix], response_model=MatrixDTO)
     def get(id: str, user: JWTUser = Depends(auth.get_current_user)) -> Any:
-        logger.info("Fetching matrix", extra={"user": user.id})
+        logger.info("Fetching matrix")
         if user.id is not None:
             return service.get(id)
         raise UserHasNotPermissionError()
@@ -83,10 +83,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         matrices: List[MatrixInfoDTO] = Body(...),
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Creating new matrix dataset metadata {metadata.name}",
-            extra={"user": user.id},
-        )
+        logger.info(f"Creating new matrix dataset metadata {metadata.name}")
         request_params = RequestParameters(user=user)
         return service.create_dataset(metadata, matrices, request_params).to_dto()
 
@@ -100,7 +97,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         metadata: MatrixDataSetUpdateDTO,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Updating matrix dataset metadata {id}", extra={"user": user.id})
+        logger.info(f"Updating matrix dataset metadata {id}")
         request_params = RequestParameters(user=user)
         return service.update_dataset(id, metadata, request_params).to_dto()
 
@@ -114,7 +111,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         filter_own: bool = False,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info("Searching matrix dataset metadata", extra={"user": user.id})
+        logger.info("Searching matrix dataset metadata")
         request_params = RequestParameters(user=user)
         return service.list(name, filter_own, request_params)
 
@@ -127,10 +124,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         dataset_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Download {dataset_id} matrix dataset",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Download {dataset_id} matrix dataset")
         params = RequestParameters(user=current_user)
         return service.download_dataset(dataset_id, params)
 
@@ -144,10 +138,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Download {matrix_id} matrix",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Download {matrix_id} matrix")
         params = RequestParameters(user=current_user)
         service.download_matrix(matrix_id, tmp_export_file, params)
         return FileResponse(
@@ -161,7 +152,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         id: str,
         user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Removing matrix dataset metadata {id}", extra={"user": user.id})
+        logger.info(f"Removing matrix dataset metadata {id}")
         request_params = RequestParameters(user=user)
         service.delete_dataset(id, request_params)
 

@@ -9,13 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import contextlib
 import logging
 import logging.config
 import re
 import uuid
 from contextvars import ContextVar, Token
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Iterator, Optional, Type
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -23,9 +23,12 @@ from starlette.responses import Response
 from typing_extensions import override
 
 from antarest.core.config import Config
+from antarest.core.jwt import JWTUser
+from antarest.login.utils import current_user_context, get_current_user
 
 _request: ContextVar[Optional[Request]] = ContextVar("_request", default=None)
 _request_id: ContextVar[Optional[str]] = ContextVar("_request_id", default=None)
+_task_id: ContextVar[Optional[str]] = ContextVar("_task_id", default=None)
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +82,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
                 "format": (
                     "[%(asctime)s] [%(process)s] [%(name)s]"
                     " - %(trace_id)s"
+                    " - %(task_id)s"
                     " - %(threadName)s"
                     " - %(ip)s"
                     " - %(user)s"
@@ -93,6 +97,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
                     " - %(process)s"
                     " - %(name)s"
                     " - %(trace_id)s"
+                    " - %(task_id)s"
                     " - %(threadName)s"
                     " - %(ip)s"
                     " - %(user)s"
@@ -181,11 +186,14 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 class ContextFilter(logging.Filter):
     @override
     def filter(self, record: logging.LogRecord) -> bool:
-        request: Optional[Request] = _request.get()
-        request_id: Optional[str] = _request_id.get()
-        if request is not None:
+        if request := _request.get():
             record.ip = request.scope.get("client", "undefined")[0]
-        record.trace_id = request_id
+        if request_id := _request_id.get():
+            record.trace_id = request_id
+        if task_id := _task_id.get():
+            record.task_id = task_id
+        if current_user := get_current_user():
+            record.user = current_user.id
         return True
 
 
@@ -210,4 +218,14 @@ class RequestContext:
             _request_id.reset(self.request_id_token)
 
 
-context_filter = ContextFilter()
+@contextlib.contextmanager
+def task_context(task_id: str, user: Optional[JWTUser]) -> Iterator[None]:
+    """
+    Sets current user and task_id to specified values.
+    """
+    with current_user_context(user):
+        reset_token = _task_id.set(task_id)
+        try:
+            yield
+        finally:
+            _task_id.reset(reset_token)
