@@ -10,13 +10,13 @@
 #
 # This file is part of the Antares project.
 import pytest
-from core.serde.ini_writer import write_ini_file
-from study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
-from study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 
-from antarest.core.serde.ini_reader import IniReader, read_ini
+from antarest.core.serde.ini_reader import read_ini
+from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -93,10 +93,10 @@ class TestUpdateRenewableCluster:
 
         # Updates the ini file of DE to put the name as the key of the section
         expected_de_content["Storage_3??"] = expected_de_content.pop("storage_3")
-        write_ini_file(fr_ini, expected_de_content)
+        write_ini_file(de_ini, expected_de_content)
 
         # Update several properties
-        new_properties = {"fr": {"storage_1": {"efficiency": 0.8}}, "DE": {"Storage_3": {"initiallevel": 0.1}}}
+        new_properties = {"fr": {"storage_1": {"efficiency": 0.8}}, "DE": {"Storage_3": {"initial_level": 0.1}}}
         cmd = UpdateSTStorages(
             storage_properties=new_properties,
             command_context=command_context,
@@ -107,8 +107,8 @@ class TestUpdateRenewableCluster:
         assert output.message == "The short-term storages were successfully updated."
 
         # Checks updated properties
-        fr_content = IniReader().read(fr_ini)
-        de_content = IniReader().read(de_ini)
+        fr_content = read_ini(fr_ini)
+        de_content = read_ini(de_ini)
         expected_fr_content["storage_1"]["efficiency"] = 0.8
         expected_de_content = {
             "Storage_3??": {
