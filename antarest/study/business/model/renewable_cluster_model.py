@@ -12,6 +12,7 @@
 
 from antares.study.version import StudyVersion
 
+from antarest.core.model import ClusterId
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
@@ -19,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewablePropertiesType,
     create_renewable_properties,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 
 
 @all_optional_model
@@ -30,6 +32,9 @@ class RenewableClusterUpdate(RenewableProperties):
 
     class Config:
         populate_by_name = True
+
+
+RenewableClusterUpdates = dict[AreaId, dict[ClusterId, RenewableClusterUpdate]]
 
 
 @all_optional_model
