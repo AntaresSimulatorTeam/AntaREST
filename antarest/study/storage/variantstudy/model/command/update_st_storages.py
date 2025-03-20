@@ -14,22 +14,18 @@ from typing import Any, List, Optional
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.business.model.sts_model import STStorageUpdate
+from antarest.study.business.model.sts_model import STStorageUpdates
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
     create_st_storage_config,
     create_st_storage_properties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-StorageID = str
-STStorageUpdates = dict[AreaId, dict[StorageID, STStorageUpdate]]
 
 
 class UpdateSTStorages(ICommand):

@@ -30,7 +30,12 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
+from antarest.study.business.model.sts_model import (
+    STStorageCreation,
+    STStorageOutput,
+    STStorageUpdate,
+    STStorageUpdates,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -298,7 +303,7 @@ class STStorageManager:
     def update_storages_props(
         self,
         study: StudyInterface,
-        update_storages_by_areas: Mapping[str, Mapping[str, STStorageUpdate]],
+        update_storages_by_areas: STStorageUpdates,
     ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         old_storages_by_areas = self.get_all_storages_props(study)
         new_storages_by_areas = {area_id: dict(clusters) for area_id, clusters in old_storages_by_areas.items()}
