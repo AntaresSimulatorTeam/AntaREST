@@ -10,13 +10,13 @@
 #
 # This file is part of the Antares project.
 import pytest
-from core.serde.ini_reader import IniReader
-from study.storage.rawstudy.model.filesystem.factory import FileStudy
-from study.storage.variantstudy.model.command.create_area import CreateArea
-from study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
-from study.storage.variantstudy.model.command.update_config import UpdateConfig
-from study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
-from study.storage.variantstudy.model.command_context import CommandContext
+from antarest.core.serde.ini_reader import IniReader
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 class TestUpdateRenewableCluster:
