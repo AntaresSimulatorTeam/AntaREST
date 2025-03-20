@@ -14,12 +14,11 @@ from typing import Any, List, Optional
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    ThermalConfigType,
-    create_thermal_config,
-    create_thermal_properties,
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
+    RenewableConfig,
+    create_renewable_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -29,23 +28,23 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 ClusterID = str
-ThermalClusterUpdates = dict[AreaId, dict[ClusterID, ThermalClusterUpdate]]
+RenewableClusterUpdates = dict[AreaId, dict[ClusterID, RenewableClusterUpdate]]
 
 
-class UpdateThermalClusters(ICommand):
+class UpdateRenewablesClusters(ICommand):
     """
-    Command used to update several thermal clusters
+    Command used to update several renewable clusters
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_THERMAL_CLUSTERS
+    command_name: CommandName = CommandName.UPDATE_RENEWABLES_CLUSTERS
 
     # Command parameters
     # ==================
 
-    cluster_properties: ThermalClusterUpdates
+    cluster_properties: RenewableClusterUpdates
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
@@ -53,28 +52,34 @@ class UpdateThermalClusters(ICommand):
             if area_id not in study_data.areas:
                 return CommandOutput(status=False, message=f"The area '{area_id}' is not found."), {}
 
-            thermal_mapping: dict[str, tuple[int, ThermalConfigType]] = {}
-            for index, thermal in enumerate(study_data.areas[area_id].thermals):
-                thermal_mapping[thermal.id] = (index, thermal)
+            renewable_mapping: dict[str, tuple[int, RenewableConfig]] = {}
+            for index, renewable in enumerate(study_data.areas[area_id].renewables):
+                renewable_mapping[renewable.id] = (index, renewable)
 
             for cluster_id in value:
-                if cluster_id not in thermal_mapping:
+                if cluster_id not in renewable_mapping:
                     return (
                         CommandOutput(
                             status=False,
-                            message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
+                            message=f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.",
                         ),
                         {},
                     )
-                index, thermal = thermal_mapping[cluster_id]
-                study_data.areas[area_id].thermals[index] = self.update_thermal_config(area_id, thermal)
+                index, renewable = renewable_mapping[cluster_id]
+                current_properties = renewable.model_dump(mode="json")
+                current_properties.update(
+                    self.cluster_properties[area_id][renewable.id].model_dump(
+                        mode="json", exclude_unset=True, exclude_none=True
+                    )
+                )
+                study_data.areas[area_id].renewables[index] = RenewableConfig.model_validate(current_properties)
 
-        return CommandOutput(status=True, message="The thermal clusters were successfully updated."), {}
+        return CommandOutput(status=True, message="The renewable clusters were successfully updated."), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         for area_id, value in self.cluster_properties.items():
-            ini_path = ["input", "thermal", "clusters", area_id, "list"]
+            ini_path = ["input", "renewables", "clusters", area_id, "list"]
 
             try:
                 all_clusters_for_area = study_data.tree.get(ini_path)
@@ -85,11 +90,11 @@ class UpdateThermalClusters(ICommand):
                 if cluster_id not in all_clusters_for_area:
                     return CommandOutput(
                         status=False,
-                        message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
+                        message=f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.",
                     )
                 # Performs the update
                 new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
-                current_properties_obj = create_thermal_properties(
+                current_properties_obj = create_renewable_properties(
                     self.study_version, all_clusters_for_area[cluster_id]
                 )
                 updated_obj = current_properties_obj.model_copy(update=new_properties_dict)
@@ -116,19 +121,3 @@ class UpdateThermalClusters(ICommand):
     @override
     def get_inner_matrices(self) -> List[str]:
         return []
-
-    def update_thermal_config(self, area_id: str, thermal: ThermalConfigType) -> ThermalConfigType:
-        # Set the object to the correct version
-        versioned_thermal = create_thermal_config(
-            study_version=self.study_version, **thermal.model_dump(exclude_unset=True, exclude_none=True)
-        )
-        # Update the object with the new properties
-        updated_versioned_thermal = versioned_thermal.model_copy(
-            update=self.cluster_properties[area_id][thermal.id].model_dump(exclude_unset=True, exclude_none=True)
-        )
-        # Create the new object to be saved
-        thermal_cluster_config = create_thermal_config(
-            study_version=self.study_version,
-            **updated_versioned_thermal.model_dump(),
-        )
-        return thermal_cluster_config
