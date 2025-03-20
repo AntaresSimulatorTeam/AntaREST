@@ -15,9 +15,11 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.sts_model import STStorageUpdates
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
+    STStoragePropertiesType,
     create_st_storage_config,
     create_st_storage_properties,
 )
@@ -51,7 +53,7 @@ class UpdateSTStorages(ICommand):
 
             storage_mapping: dict[str, tuple[int, STStorageConfigType]] = {}
             for index, storage in enumerate(study_data.areas[area_id].st_storages):
-                storage_mapping[storage.id] = (index, storage)
+                storage_mapping[transform_name_to_id(storage.id)] = (index, storage)
 
             for storage_id in value:
                 if storage_id not in storage_mapping:
@@ -77,19 +79,25 @@ class UpdateSTStorages(ICommand):
             except ChildNotFoundError:
                 return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
 
+            # Validates the Ini file
+            storages_by_id: dict[str, tuple[str, STStoragePropertiesType]] = {
+                transform_name_to_id(k): (k, create_st_storage_properties(self.study_version, v))
+                for k, v in all_clusters_for_area.items()
+            }
+
             for storage_id, properties in value.items():
-                if storage_id not in all_clusters_for_area:
+                if storage_id not in storages_by_id:
                     return CommandOutput(
                         status=False,
                         message=f"The short-term storage '{storage_id}' in the area '{area_id}' is not found.",
                     )
                 # Performs the update
                 new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
-                current_properties_obj = create_st_storage_properties(
-                    self.study_version, all_clusters_for_area[storage_id]
-                )
+                current_properties_obj = storages_by_id[storage_id][1]
                 updated_obj = current_properties_obj.model_copy(update=new_properties_dict)
-                all_clusters_for_area[storage_id] = updated_obj.model_dump(mode="json", by_alias=True)
+                all_clusters_for_area[storages_by_id[storage_id][0]] = updated_obj.model_dump(
+                    mode="json", by_alias=True
+                )
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 
@@ -120,7 +128,9 @@ class UpdateSTStorages(ICommand):
         )
         # Update the object with the new properties
         updated_versioned_storage = versioned_storage.model_copy(
-            update=self.storage_properties[area_id][storage.id].model_dump(exclude_unset=True, exclude_none=True)
+            update=self.storage_properties[area_id][transform_name_to_id(storage.id)].model_dump(
+                exclude_unset=True, exclude_none=True
+            )
         )
         # Create the new object to be saved
         storage_config = create_st_storage_config(
