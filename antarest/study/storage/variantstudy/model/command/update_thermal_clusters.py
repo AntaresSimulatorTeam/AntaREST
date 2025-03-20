@@ -15,9 +15,11 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdates
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalConfigType,
+    ThermalPropertiesType,
     create_thermal_config,
     create_thermal_properties,
 )
@@ -51,7 +53,7 @@ class UpdateThermalClusters(ICommand):
 
             thermal_mapping: dict[str, tuple[int, ThermalConfigType]] = {}
             for index, thermal in enumerate(study_data.areas[area_id].thermals):
-                thermal_mapping[thermal.id] = (index, thermal)
+                thermal_mapping[transform_name_to_id(thermal.id)] = (index, thermal)
 
             for cluster_id in value:
                 if cluster_id not in thermal_mapping:
@@ -77,19 +79,25 @@ class UpdateThermalClusters(ICommand):
             except ChildNotFoundError:
                 return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
 
+            # Validates the Ini file
+            clusters_by_id: dict[str, tuple[str, ThermalPropertiesType]] = {
+                transform_name_to_id(k): (k, create_thermal_properties(self.study_version, v))
+                for k, v in all_clusters_for_area.items()
+            }
+
             for cluster_id, properties in value.items():
-                if cluster_id not in all_clusters_for_area:
+                if cluster_id not in clusters_by_id:
                     return CommandOutput(
                         status=False,
                         message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
                     )
                 # Performs the update
                 new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
-                current_properties_obj = create_thermal_properties(
-                    self.study_version, all_clusters_for_area[cluster_id]
-                )
+                current_properties_obj = clusters_by_id[cluster_id][1]
                 updated_obj = current_properties_obj.model_copy(update=new_properties_dict)
-                all_clusters_for_area[cluster_id] = updated_obj.model_dump(mode="json", by_alias=True)
+                all_clusters_for_area[clusters_by_id[cluster_id][0]] = updated_obj.model_dump(
+                    mode="json", by_alias=True
+                )
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 
@@ -120,7 +128,9 @@ class UpdateThermalClusters(ICommand):
         )
         # Update the object with the new properties
         updated_versioned_thermal = versioned_thermal.model_copy(
-            update=self.cluster_properties[area_id][thermal.id].model_dump(exclude_unset=True, exclude_none=True)
+            update=self.cluster_properties[area_id][transform_name_to_id(thermal.id)].model_dump(
+                exclude_unset=True, exclude_none=True
+            )
         )
         # Create the new object to be saved
         thermal_cluster_config = create_thermal_config(

@@ -14,7 +14,7 @@ from typing import Optional
 from antares.study.version import StudyVersion
 from pydantic import field_validator
 
-from antarest.core.model import ClusterId
+from antarest.core.model import LowerCaseId
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     Thermal870Config,
@@ -22,7 +22,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     ThermalPropertiesType,
     create_thermal_properties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 
 
 @all_optional_model
@@ -33,7 +32,7 @@ class ThermalClusterUpdate(Thermal870Properties):
     """
 
 
-ThermalClusterUpdates = dict[AreaId, dict[ClusterId, ThermalClusterUpdate]]
+ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
 
 
 @camel_case_model
