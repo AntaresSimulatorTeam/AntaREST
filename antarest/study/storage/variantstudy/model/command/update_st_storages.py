@@ -67,8 +67,7 @@ class UpdateSTStorages(ICommand):
                         {},
                     )
                 index, storage = storage_mapping[storage_id]
-                sts_config = self.update_st_storage(storage)
-                study_data.areas[area_id].st_storages[index] = sts_config
+                study_data.areas[area_id].st_storages[index] = self.update_st_storage_config(area_id, storage)
 
         return CommandOutput(status=True, message="The short-term storages were successfully updated."), {}
 
@@ -118,8 +117,18 @@ class UpdateSTStorages(ICommand):
     def get_inner_matrices(self) -> List[str]:
         return []
 
-    def update_st_storage(self, sts: STStorageConfigType) -> STStorageConfigType:
-        values = sts.model_dump()
-        values.update(self.properties.model_dump(exclude_unset=True, exclude_none=True))
-        sts_config = create_st_storage_config(study_version=self.study_version, **values)
-        return sts_config
+    def update_st_storage_config(self, area_id: str, storage: STStorageConfigType) -> STStorageConfigType:
+        # Set the object to the correct version
+        versioned_storage = create_st_storage_config(
+            study_version=self.study_version, **storage.model_dump(exclude_unset=True, exclude_none=True)
+        )
+        # Update the object with the new properties
+        updated_versioned_storage = versioned_storage.model_copy(
+            update=self.storage_properties[area_id][storage.id].model_dump(exclude_unset=True, exclude_none=True)
+        )
+        # Create the new object to be saved
+        storage_config = create_st_storage_config(
+            study_version=self.study_version,
+            **updated_versioned_storage.model_dump(),
+        )
+        return storage_config
