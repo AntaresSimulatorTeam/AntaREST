@@ -10,21 +10,52 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
 
+from pydantic import ConfigDict, Field, RootModel
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.link_model import (
+    DEFAULT_COLOR,
+    FILTER_VALUES,
+    AssetType,
+    CommaSeparatedFilterOptions,
     LinkDTO,
     LinkInternal,
     LinkProperties,
+    LinkStyle,
+    TransmissionCapacity,
 )
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
+
+
+class LinkPropertiesFileData(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+
+    hurdles_cost: bool = False
+    loop_flow: bool = False
+    use_phase_shifter: bool = False
+    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
+    asset_type: AssetType = AssetType.AC
+    display_comments: bool = True
+    comments: str = ""
+    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
+    link_width: float = 1
+    link_style: LinkStyle = LinkStyle.PLAIN
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = Field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = Field(default_factory=lambda: FILTER_VALUES)
+
+
+AreaLinksPropertiesFileData = RootModel[Dict[str, LinkPropertiesFileData]]
 
 
 class FileStudyLinkDao(LinkDao, ABC):
@@ -38,12 +69,13 @@ class FileStudyLinkDao(LinkDao, ABC):
         file_study = self.impl._file_study
         result: List[LinkDTO] = []
 
-        for area_id, area in file_study.config.areas.items():
-            links_config = file_study.tree.get(["input", "links", area_id, "properties"])
-
-            for link in area.links:
-                link_tree_config: Dict[str, Any] = links_config[link]
-                link_tree_config.update({"area1": area_id, "area2": link})
+        for area_from, area in file_study.config.areas.items():
+            area_links = AreaLinksPropertiesFileData.model_validate(
+                file_study.tree.get(["input", "links", area_from, "properties"])
+            ).root
+            for area_to, link_data in area_links.items():
+                link_tree_config = link_data.model_dump()
+                link_tree_config.update({"area1": area_from, "area2": area_to})
                 link_internal = LinkInternal.model_validate(link_tree_config)
                 result.append(link_internal.to_dto())
         return result
@@ -62,7 +94,9 @@ class FileStudyLinkDao(LinkDao, ABC):
     def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
         file_study = self.impl._file_study
         try:
-            props = file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
+            props = LinkPropertiesFileData.model_validate(
+                file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
+            ).model_dump()
         except KeyError:
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
         props.update({"area1": area1_id, "area2": area2_id})
