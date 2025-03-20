@@ -20,18 +20,18 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
     create_renewable_properties,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-AreaID = str
 ClusterID = str
-RenewableClusterUpdates = dict[AreaID, dict[ClusterID, RenewableClusterUpdate]]
+RenewableClusterUpdates = dict[AreaId, dict[ClusterID, RenewableClusterUpdate]]
 
 
-class UpdateRenewableClusters(ICommand):
+class UpdateRenewablesClusters(ICommand):
     """
     Command used to update several renewable clusters
     """
@@ -39,7 +39,7 @@ class UpdateRenewableClusters(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_RENEWABLE_CLUSTERS
+    command_name: CommandName = CommandName.UPDATE_RENEWABLES_CLUSTERS
 
     # Command parameters
     # ==================

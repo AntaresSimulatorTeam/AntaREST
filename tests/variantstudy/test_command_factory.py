@@ -519,7 +519,7 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_RENEWABLE_CLUSTERS.value,
+            action=CommandName.UPDATE_RENEWABLES_CLUSTERS.value,
             args=[{"cluster_properties": {"area_name": {"cluster_name": {"unit_count": 10}}}}],
             study_version=STUDY_VERSION_8_8,
         ),

@@ -615,7 +615,7 @@ class TestRenewable:
         assert actions == [
             "create_area",
             "create_renewables_cluster",
-            "update_renewable_clusters",
+            "update_renewables_clusters",
             "replace_matrix",
             "create_renewables_cluster",
             "replace_matrix",
@@ -635,7 +635,7 @@ class TestRenewable:
         # Creates 50 renewable clusters inside the same area
         body = {}
         for k in range(50):
-            cluster_id = f"th_{k}"
+            cluster_id = f"renewable_{k}"
             res = client.post(f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable", json={"name": cluster_id})
             res.raise_for_status()
             body[f"{area_id} / {cluster_id}"] = {"enabled": False}
@@ -668,13 +668,13 @@ class TestRenewable:
         # Asserts changes are effective
         res = client.get(f"/v1/studies/{study_id}/areas/{area_id}/clusters/renewable")
         assert res.status_code == 200
-        for thermal in res.json():
-            assert thermal["enabled"] is False
-            assert thermal["nominalCapacity"] == 14
+        for renewable in res.json():
+            assert renewable["enabled"] is False
+            assert renewable["nominalCapacity"] == 14
 
         # Asserts only one command is created, and it's update_renewable_clusters
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
         assert len(json_result) == 1
-        assert json_result[0]["action"] == "update_renewable_clusters"
+        assert json_result[0]["action"] == "update_renewables_clusters"
