@@ -69,7 +69,7 @@ from antarest.study.storage.variantstudy.model.command.update_inflow_structure i
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
-from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
+from antarest.study.storage.variantstudy.model.command.update_renewable_clusters import UpdateRenewableClusters
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
@@ -97,7 +97,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_THERMAL_CLUSTERS.value: UpdateThermalClusters,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
-    CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,
+    CommandName.UPDATE_RENEWABLE_CLUSTERS.value: UpdateRenewableClusters,
     CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
     CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
     CommandName.UPDATE_ST_STORAGE.value: UpdateSTStorage,

@@ -48,7 +48,7 @@ class CommandName(Enum):
     UPDATE_THERMAL_CLUSTERS = "update_thermal_clusters"
     CREATE_RENEWABLES_CLUSTER = "create_renewables_cluster"
     REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
-    UPDATE_RENEWABLE_CLUSTER = "update_renewable_cluster"
+    UPDATE_RENEWABLE_CLUSTERS = "update_renewable_clusters"
     CREATE_ST_STORAGE = "create_st_storage"
     REMOVE_ST_STORAGE = "remove_st_storage"
     UPDATE_ST_STORAGE = "update_st_storage"
