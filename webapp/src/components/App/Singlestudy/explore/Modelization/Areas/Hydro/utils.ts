@@ -159,7 +159,8 @@ export const MATRICES: Matrices = {
   [HydroMatrix.WaterValues]: {
     title: "Water Values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
-    // columns: generateColumns("%"), // TODO this causes Runtime error to be fixed
+    columns: generateColumns("%"),
+    isTimeSeries: false,
   },
   [HydroMatrix.HydroStorage]: {
     title: "Hydro Storage",
