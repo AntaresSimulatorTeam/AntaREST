@@ -16,8 +16,8 @@ from pydantic import field_validator
 
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Config,
-    STStorage880Properties,
+    STStorage920Config,
+    STStorage920Properties,
     STStoragePropertiesType,
     create_st_storage_properties,
 )
@@ -25,7 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 
 @all_optional_model
 @camel_case_model
-class STStorageUpdate(STStorage880Properties):
+class STStorageUpdate(STStorage920Properties):
     """
     Model representing the form used to EDIT an existing short-term storage.
     """
@@ -55,7 +55,7 @@ class STStorageCreation(STStorageUpdate):
 
 
 @camel_case_model
-class STStorageOutput(STStorage880Config):
+class STStorageOutput(STStorage920Config):
     """
     Model representing the form used to display the details of a short-term storage entry.
     """

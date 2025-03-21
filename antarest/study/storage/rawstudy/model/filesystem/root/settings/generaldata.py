@@ -25,7 +25,8 @@ from antarest.study.model import (
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
     STUDY_VERSION_8_5,
-    STUDY_VERSION_8_6, STUDY_VERSION_9_2,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer

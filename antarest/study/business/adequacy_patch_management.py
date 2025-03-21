@@ -65,7 +65,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{ADEQUACY_PATCH_PATH}/set-to-null-ntc-between-physical-out-for-first-step",
         "default_value": True,
         "start_version": STUDY_VERSION_8_3,
-        "end_version": STUDY_VERSION_9_2
+        "end_version": STUDY_VERSION_9_2,
     },
     "price_taking_order": {
         "path": f"{ADEQUACY_PATCH_PATH}/price-taking-order",
