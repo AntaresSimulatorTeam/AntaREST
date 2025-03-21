@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import math
 from typing import Annotated, Any, Dict, List, TypeAlias
 
 from pydantic import Field
@@ -115,7 +114,7 @@ class AdequacyPatchManager:
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
             start_version = field_info.get("start_version", 0)
-            end_version = field_info.get("end_version", math.inf)
+            end_version = field_info.get("end_version", 10000)
             target_name = path.split("/")[-1]
             is_in_version = study.version >= start_version and file_study.config.version < end_version
 

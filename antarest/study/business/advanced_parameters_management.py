@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import math
 from typing import Any, Dict, List
 
 from pydantic import field_validator
@@ -233,7 +232,7 @@ class AdvancedParamsManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             start_version = field_info.get("start_version", 0)
-            end_version = field_info.get("end_version", math.inf)
+            end_version = field_info.get("end_version", 10000)
             is_in_version = study.version >= start_version and file_study.config.version < end_version
             if not is_in_version:
                 return None
