@@ -13,7 +13,12 @@
 from typing import Any, Dict, List, Mapping, cast
 
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields, get_fields_info
+from antarest.study.business.thematic_trimming_field_infos import (
+    ThematicTrimmingFormFieldsType,
+    create_thematic_trimming_config,
+    get_fields_info,
+    get_thematic_trimming_cls,
+)
 from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -23,7 +28,7 @@ class ThematicTrimmingManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_field_values(self, study: StudyInterface) -> ThematicTrimmingFormFields:
+    def get_field_values(self, study: StudyInterface) -> ThematicTrimmingFormFieldsType:
         """
         Get Thematic Trimming field values for the webapp form
         """
@@ -42,13 +47,14 @@ class ThematicTrimmingManager:
 
         fields_info = get_fields_info(study.version)
         fields_values = {name: get_value(info) for name, info in fields_info.items()}
-        return ThematicTrimmingFormFields(**fields_values)
+        return create_thematic_trimming_config(study.version, **fields_values)
 
-    def set_field_values(self, study: StudyInterface, field_values: ThematicTrimmingFormFields) -> None:
+    def set_field_values(self, study: StudyInterface, field_values: ThematicTrimmingFormFieldsType) -> None:
         """
         Set Thematic Trimming config from the webapp form
         """
-        field_values_dict = field_values.model_dump(mode="json")
+        cls = get_thematic_trimming_cls(study.version)
+        field_values_dict = cls.model_validate(field_values).model_dump()
 
         keys_by_bool: Dict[bool, List[Any]] = {True: [], False: []}
         fields_info = get_fields_info(study.version)

@@ -8,23 +8,30 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 #
-# This file is part of the Antares project.
+# This file is part of the Antares projec
 
 """
 List of fields of the Thematic Trimming panel
 """
 
-from typing import Any, Mapping
+import math
+from typing import Any, Mapping, Type, Union
 
 from antares.study.version import StudyVersion
 
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.utils import FormFieldsBaseModel
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import (
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_1,
+)
 
 
 @all_optional_model
-class ThematicTrimmingFormFields(FormFieldsBaseModel):
+class ThematicTrimmingFormFieldsBase(FormFieldsBaseModel):
     """
     This class manages the configuration of result filtering in a simulation.
 
@@ -96,6 +103,10 @@ class ThematicTrimmingFormFields(FormFieldsBaseModel):
     # since v8.3
     dens: bool
     profit_by_plant: bool
+
+
+@all_optional_model
+class ThematicTrimmingFormFields860(ThematicTrimmingFormFieldsBase):
     # topic: Short-Term Storages
     # since v8.6
     sts_inj_by_plant: bool
@@ -130,6 +141,34 @@ class ThematicTrimmingFormFields(FormFieldsBaseModel):
     other5_injection: bool
     other5_withdrawal: bool
     other5_level: bool
+
+
+@all_optional_model
+class ThematicTrimmingFormFields910(ThematicTrimmingFormFieldsBase):
+    sts_inj_by_plant: bool
+    sts_withdrawal_by_plant: bool
+    sts_lvl_by_plant: bool
+    sts_cashflow_by_cluster: bool
+    sts_by_group: bool
+
+
+ThematicTrimmingFormFieldsType = Union[
+    ThematicTrimmingFormFields910, ThematicTrimmingFormFields860, ThematicTrimmingFormFieldsBase
+]
+
+
+def get_thematic_trimming_cls(study_version: StudyVersion) -> Type[ThematicTrimmingFormFieldsType]:
+    if study_version >= STUDY_VERSION_9_1:
+        return ThematicTrimmingFormFields910
+    elif study_version >= STUDY_VERSION_8_6:
+        return ThematicTrimmingFormFields860
+    else:
+        return ThematicTrimmingFormFieldsBase
+
+
+def create_thematic_trimming_config(study_version: StudyVersion, **kwargs: Any) -> ThematicTrimmingFormFieldsType:
+    cls = get_thematic_trimming_cls(study_version)
+    return cls.model_validate(kwargs)
 
 
 _GENERAL = "General"
@@ -193,7 +232,7 @@ FIELDS_INFO: Mapping[str, Mapping[str, Any]] = {
     "misc_dtg_4": {"topic": _GENERAL, "path": "MISC. DTG 4", "default_value": True, "start_version": STUDY_VERSION_8_1},
     "wind_offshore": {"topic": _GENERAL, "path": "WIND OFFSHORE", "default_value": True, "start_version": STUDY_VERSION_8_1},
     "wind_onshore": {"topic": _GENERAL, "path": "WIND ONSHORE", "default_value": True, "start_version": STUDY_VERSION_8_1},
-    "solar_concrt": {"topic": _GENERAL, "path": "SOLAR CONCRT.", "default_value": True, "start_version": STUDY_VERSION_8_1},
+    "solar_concrt": {"topic": _GENERAL, "path": "SOLAR CONCR", "default_value": True, "start_version": STUDY_VERSION_8_1},
     "solar_pv": {"topic": _GENERAL, "path": "SOLAR PV", "default_value": True, "start_version": STUDY_VERSION_8_1},
     "solar_rooft": {"topic": _GENERAL, "path": "SOLAR ROOFT", "default_value": True, "start_version": STUDY_VERSION_8_1},
     "renw_1": {"topic": _GENERAL, "path": "RENW. 1", "default_value": True, "start_version": STUDY_VERSION_8_1},
@@ -242,8 +281,11 @@ FIELDS_INFO: Mapping[str, Mapping[str, Any]] = {
 
 
 def get_fields_info(study_version: StudyVersion) -> Mapping[str, Mapping[str, Any]]:
+    highest_version = StudyVersion.parse(math.inf)
+    lowest_version = StudyVersion.parse(0)
     return {
         key: info
         for key, info in FIELDS_INFO.items()
-        if (info.get("start_version") or StudyVersion.parse(0)) <= study_version
+        if info.get("start_version", lowest_version) <= study_version
+        and info.get("end_version", highest_version) > study_version
     }
