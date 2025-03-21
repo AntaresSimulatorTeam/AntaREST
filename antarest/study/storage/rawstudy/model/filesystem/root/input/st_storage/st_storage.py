@@ -11,10 +11,8 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.clusters.clusters import (
     InputSTStorageClusters,
 )
@@ -31,16 +29,5 @@ class InputSTStorage(FolderNode):
             "clusters": InputSTStorageClusters(self.context, self.config.next_file("clusters")),
             "series": InputSTStorageSeries(self.context, self.config.next_file("series")),
         }
-
-        if self.config.version >= STUDY_VERSION_9_2:
-            children["cost_injection"] = InputSeriesMatrix(self.context, self.config.next_file("cost-injection.txt"))
-            children["cost_withdrawal"] = InputSeriesMatrix(self.context, self.config.next_file("cost-withdrawal.txt"))
-            children["cost_level"] = InputSeriesMatrix(self.context, self.config.next_file("cost-level.txt"))
-            children["cost_variation_injection"] = InputSeriesMatrix(
-                self.context, self.config.next_file("cost-variation-injection.txt")
-            )
-            children["cost_variation_withdrawal"] = InputSeriesMatrix(
-                self.context, self.config.next_file("cost-variation-withdrawal.txt")
-            )
 
         return children
