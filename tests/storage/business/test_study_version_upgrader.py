@@ -55,7 +55,7 @@ class TestFindNextVersion:
         "from_version, message",
         [
             ("3.14", "Version '3.14' isn't among supported versions"),
-            ("880", "Your study is already in the latest supported version: '880'"),
+            ("920", "Your study is already in the latest supported version: '920'"),
             ("900", "Version '900' isn't among supported versions"),
         ],
     )
