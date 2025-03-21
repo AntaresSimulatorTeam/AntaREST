@@ -8,7 +8,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 #
-# This file is part of the Antares projec
+# This file is part of the Antares project.
 
 """
 List of fields of the Thematic Trimming panel
