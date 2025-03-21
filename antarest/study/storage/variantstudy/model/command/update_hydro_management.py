@@ -59,7 +59,7 @@ class UpdateHydroManagement(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_hydro = HydroManagementFileData(**study_data.tree.get(HYDRO_PATH))
 
-        new_hydro = current_hydro.get_hydro_management(area_id=self.area_id).model_copy(
+        new_hydro = current_hydro.get_hydro_management(self.area_id, self.study_version).model_copy(
             update=self.properties.model_dump(exclude_none=True)
         )
 

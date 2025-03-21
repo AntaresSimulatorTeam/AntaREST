@@ -35,7 +35,7 @@ class HydroManager:
 
         hydro_properties = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
 
-        return hydro_properties.get_hydro_management(area_id)
+        return hydro_properties.get_hydro_management(area_id, study.version)
 
     def update_hydro_management(
         self,

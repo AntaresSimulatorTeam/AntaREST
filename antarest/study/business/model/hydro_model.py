@@ -11,12 +11,14 @@
 # This file is part of the Antares project.
 from typing import Dict, Optional
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.model import STUDY_VERSION_9_2
 
 HYDRO_PATH = ["input", "hydro", "hydro"]
 
@@ -82,11 +84,16 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
         default=None, alias="overflow spilled cost difference"
     )
 
-    def get_hydro_management(self, area_id: str) -> HydroManagement:
+    def get_hydro_management(self, area_id: str, study_version: StudyVersion) -> HydroManagement:
+        # Exclude fields that don't fit with the study version
+        excludes = set()
+        if study_version < STUDY_VERSION_9_2:
+            excludes.add("overflow_spilled_cost_difference")
+
         lower_area_id = area_id.lower()
         args = {
             key: values.get(lower_area_id)
-            for key, values in self.model_dump().items()
+            for key, values in self.model_dump(mode="json", exclude=excludes).items()
             if values and lower_area_id in values
         }
         return HydroManagement(**args)
