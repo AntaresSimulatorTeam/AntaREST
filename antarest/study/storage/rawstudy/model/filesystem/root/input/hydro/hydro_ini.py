@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from antarest.study.model import STUDY_VERSION_6_5
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -48,6 +48,8 @@ class InputHydroIni(IniFileNode):
                 "leeway up",
                 "pumping efficiency",
             ]
+        if config.version >= STUDY_VERSION_9_2:
+            sections.append("overflow spilled cost difference")
         section = {a: (int, float) for a in config.area_names()}
         types = {name: section for name in sections}
 
