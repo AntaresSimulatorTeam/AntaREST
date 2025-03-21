@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import math
 from typing import Annotated, Any, Dict, List, TypeAlias
 
 from pydantic import Field
@@ -19,7 +19,7 @@ from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_5
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_5, STUDY_VERSION_9_2
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -65,6 +65,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
         "path": f"{ADEQUACY_PATCH_PATH}/set-to-null-ntc-between-physical-out-for-first-step",
         "default_value": True,
         "start_version": STUDY_VERSION_8_3,
+        "end_version": STUDY_VERSION_9_2
     },
     "price_taking_order": {
         "path": f"{ADEQUACY_PATCH_PATH}/price-taking-order",
@@ -113,9 +114,10 @@ class AdequacyPatchManager:
 
         def get_value(field_info: FieldInfo) -> Any:
             path = field_info["path"]
-            start_version = field_info.get("start_version", -1)
+            start_version = field_info.get("start_version", 0)
+            end_version = field_info.get("end_version", math.inf)
             target_name = path.split("/")[-1]
-            is_in_version = study.version >= start_version
+            is_in_version = study.version >= start_version and file_study.config.version < end_version
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 

@@ -118,6 +118,17 @@ class STStorage880Properties(STStorageProperties):
     # - False: Ignored by the simulator.
     enabled: bool = Field(default=True, description="Activity status")
 
+class STStorage920Properties(STStorage880Properties):
+    """
+    Short term storage configuration model for 920 study.
+    """
+    """
+    section["efficiencywithdrawal"] = 1
+    section["penalize-variation-injection"] = False
+    section["penalize-variation-withdrawal"] = False
+    """
+
+
 
 # noinspection SpellCheckingInspection
 class STStorageConfig(STStorageProperties, LowerCaseIdentifier):

@@ -48,6 +48,7 @@ class PowerFluctuation(EnumIgnoreCase):
 
 class SheddingPolicy(EnumIgnoreCase):
     SHAVE_PEAKS = "shave peaks"
+    ACCURATE_SHAVE_PEAKS = "accurate shave peaks"
     MINIMIZE_DURATION = "minimize duration"
 
 
