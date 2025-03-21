@@ -124,6 +124,7 @@ class STStorage920Properties(STStorage880Properties):
     Short term storage configuration model for 920 study.
     """
 
+    group: str = Field(default="other1")  # Since the v9.2 the group is no longer fixed
     efficiency_withdrawal: float = Field(default=1, alias="efficiencywithdrawal")
     penalize_variation_injection: bool = Field(default=False, alias="penalize-variation-injection")
     penalize_variation_withdrawal: bool = Field(default=False, alias="penalize-variation-withdrawal")
