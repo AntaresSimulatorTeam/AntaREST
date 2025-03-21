@@ -37,6 +37,7 @@ class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, a
     leeway_low: Optional[float] = Field(default=1, ge=0)
     leeway_up: Optional[float] = Field(default=1, ge=0)
     pumping_efficiency: Optional[float] = Field(default=1, ge=0)
+    overflow_spilled_cost_difference: Optional[float] = Field(default=1)
 
 
 @all_optional_model
@@ -57,6 +58,7 @@ class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=T
     leeway_low: float = Field(ge=0)
     leeway_up: float = Field(ge=0)
     pumping_efficiency: float = Field(ge=0)
+    overflow_spilled_cost_difference: float
 
 
 @all_optional_model
@@ -76,6 +78,9 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
     leeway_low: Dict[LowerCaseStr, float] = Field(alias="leeway low")
     leeway_up: Dict[LowerCaseStr, float] = Field(alias="leeway up")
     pumping_efficiency: Dict[LowerCaseStr, float] = Field(alias="pumping efficiency")
+    overflow_spilled_cost_difference: Optional[Dict[LowerCaseStr, float]] = Field(
+        default=None, alias="overflow spilled cost difference"
+    )
 
     def get_hydro_management(self, area_id: str) -> HydroManagement:
         lower_area_id = area_id.lower()

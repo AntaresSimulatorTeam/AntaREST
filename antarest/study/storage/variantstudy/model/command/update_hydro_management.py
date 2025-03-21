@@ -12,6 +12,7 @@
 
 from typing import List, Optional
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
@@ -19,6 +20,7 @@ from antarest.study.business.model.hydro_model import (
     HydroManagementFileData,
     HydroManagementUpdate,
 )
+from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -42,6 +44,12 @@ class UpdateHydroManagement(ICommand):
 
     area_id: str
     properties: HydroManagementUpdate
+
+    @model_validator(mode="after")
+    def validate_properties_against_version(self) -> "UpdateHydroManagement":
+        if self.study_version < STUDY_VERSION_9_2 and self.properties.overflow_spilled_cost_difference is not None:
+            raise ValueError("You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2")
+        return self
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
