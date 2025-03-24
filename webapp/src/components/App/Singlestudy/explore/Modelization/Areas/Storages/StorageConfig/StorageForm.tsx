@@ -167,16 +167,17 @@ function StorageForm({ study, areaId, storageId }: Props) {
               }}
             />
             {studyVersion >= 920 && (
-                  <SwitchFE
-              label={t("study.modelization.storages.penalizeVariationInjection")}
-              name="penalizeVariationInjection"
-              control={control}
-              sx={{
+              <SwitchFE
+                label={t("study.modelization.storages.penalizeVariationInjection")}
+                name="penalizeVariationInjection"
+                control={control}
+                sx={{
                   alignItems: "center",
                   alignSelf: "center",
                 }}
-            />)}
-            </Fieldset>
+              />
+            )}
+          </Fieldset>
           <Fieldset legend={t("study.modelization.storages.withdrawalParameters")}>
             <Tooltip
               title={t("study.modelization.storages.withdrawalNominalCapacity.info")}
@@ -195,33 +196,34 @@ function StorageForm({ study, areaId, storageId }: Props) {
               </Box>
             </Tooltip>
             {studyVersion >= 920 && (
-                <>
-                  <Tooltip
-                    title={t("study.modelization.storages.efficiencyWithdrawal.info")}
-                    arrow
-                    placement="top"
-                  >
-                    <Box>
-                      <NumberFE
-                        label={t("study.modelization.storages.efficiencyWithdrawal")}
-                        name="efficiencyWithdrawal"
-                        control={control}
-                        rules={{
-                          validate: validateNumber({ min: 0, max: 100 }),
-                        }}
-                      />
-                    </Box>
-                  </Tooltip>
-                  <SwitchFE
-              label={t("study.modelization.storages.penalizeVariationWithdrawal")}
-              name="penalizeVariationWithdrawal"
-              control={control}
-              sx={{
-                  alignItems: "center",
-                  alignSelf: "center",
-                }}
-            />
-            </>)}
+              <>
+                <Tooltip
+                  title={t("study.modelization.storages.efficiencyWithdrawal.info")}
+                  arrow
+                  placement="top"
+                >
+                  <Box>
+                    <NumberFE
+                      label={t("study.modelization.storages.efficiencyWithdrawal")}
+                      name="efficiencyWithdrawal"
+                      control={control}
+                      rules={{
+                        validate: validateNumber({ min: 0, max: 100 }),
+                      }}
+                    />
+                  </Box>
+                </Tooltip>
+                <SwitchFE
+                  label={t("study.modelization.storages.penalizeVariationWithdrawal")}
+                  name="penalizeVariationWithdrawal"
+                  control={control}
+                  sx={{
+                    alignItems: "center",
+                    alignSelf: "center",
+                  }}
+                />
+              </>
+            )}
           </Fieldset>
         </>
       )}
