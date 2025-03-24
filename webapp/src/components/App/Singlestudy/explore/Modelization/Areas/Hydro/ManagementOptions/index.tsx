@@ -51,7 +51,7 @@ function ManagementOptions() {
       onSubmit={handleSubmit}
       enableUndoRedo
     >
-      <Fields study={study}/>
+      <Fields study={study} />
     </Form>
   );
 }

@@ -18,7 +18,7 @@ import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
-import type {StudyMetadata} from "@/types/types";
+import type { StudyMetadata } from "@/types/types";
 
 interface Props {
   study: StudyMetadata;
@@ -118,11 +118,11 @@ function Fields({ study }: Props) {
           disabled={!waterValuesDisabled || !leeWayDisabled}
         />
         {studyVersion >= 920 && (
-            <NumberFE
-                name="overflowSpilledCostDifference"
-                label="Overflow Spilled Cost Difference"
-                control={control}
-            />
+          <NumberFE
+            name="overflowSpilledCostDifference"
+            label="Overflow Spilled Cost Difference"
+            control={control}
+          />
         )}
       </Fieldset>
     </>
