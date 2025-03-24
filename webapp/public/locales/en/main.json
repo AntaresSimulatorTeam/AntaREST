@@ -490,6 +490,8 @@
   "study.modelization.hydro.allocation.viewMatrix": "View all allocations",
   "study.modelization.hydro.allocation.error.field.delete": "Error when deleting the allocation",
   "study.modelization.storages": "Storages",
+  "study.modelization.storages.injectionParameters": "Stored parameters",
+  "study.modelization.storages.withdrawalParameters": "Released parameters",
   "study.modelization.storages.modulation": "Stored / Released Modulation",
   "study.modelization.storages.ruleCurves": "Rule Curves",
   "study.modelization.storages.costs": "Costs",
