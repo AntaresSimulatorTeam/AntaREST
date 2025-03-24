@@ -26,10 +26,9 @@ import {
 } from "./utils";
 
 function ManagementOptions() {
-  const {
-    study: { id: studyId },
-  } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { id: studyId } = study;
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -52,7 +51,7 @@ function ManagementOptions() {
       onSubmit={handleSubmit}
       enableUndoRedo
     >
-      <Fields />
+      <Fields study={study}/>
     </Form>
   );
 }

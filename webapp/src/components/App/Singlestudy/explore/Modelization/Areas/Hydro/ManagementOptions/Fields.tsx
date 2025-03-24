@@ -18,8 +18,13 @@ import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
+import type {StudyMetadata} from "@/types/types";
 
-function Fields() {
+interface Props {
+  study: StudyMetadata;
+}
+
+function Fields({ study }: Props) {
   const { control, watch } = useFormContextPlus<HydroFormFields>();
   const [reservoirDisabled, waterValuesDisabled, heuristicDisabled, leeWayDisabled] = watch([
     "reservoir",
@@ -27,6 +32,7 @@ function Fields() {
     "useHeuristic",
     "useLeeway",
   ]);
+  const studyVersion = Number(study.version);
 
   return (
     <>
@@ -111,6 +117,13 @@ function Fields() {
           control={control}
           disabled={!waterValuesDisabled || !leeWayDisabled}
         />
+        {studyVersion >= 920 && (
+            <NumberFE
+                name="overFlowSpilledCostDifference"
+                label="Overflow Spilled Cost Difference"
+                control={control}
+            />
+        )}
       </Fieldset>
     </>
   );

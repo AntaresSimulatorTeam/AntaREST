@@ -65,6 +65,7 @@ export interface HydroFormFields {
   powerToLevel: boolean;
   leewayLow: number;
   leewayUp: number;
+  overFlowSpilledCostDifference: number;
 }
 
 ////////////////////////////////////////////////////////////////
