@@ -171,10 +171,6 @@ function StorageForm({ study, areaId, storageId }: Props) {
                 label={t("study.modelization.storages.penalizeVariationInjection")}
                 name="penalizeVariationInjection"
                 control={control}
-                sx={{
-                  alignItems: "center",
-                  alignSelf: "center",
-                }}
               />
             )}
           </Fieldset>
@@ -217,10 +213,6 @@ function StorageForm({ study, areaId, storageId }: Props) {
                   label={t("study.modelization.storages.penalizeVariationWithdrawal")}
                   name="penalizeVariationWithdrawal"
                   control={control}
-                  sx={{
-                    alignItems: "center",
-                    alignSelf: "center",
-                  }}
                 />
               </>
             )}
