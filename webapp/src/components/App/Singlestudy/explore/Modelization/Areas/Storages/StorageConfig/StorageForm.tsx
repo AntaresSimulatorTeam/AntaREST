@@ -45,6 +45,7 @@ function StorageForm({ study, areaId, storageId }: Props) {
       // Convert to percentage ([0-1] -> [0-100])
       efficiency: storage.efficiency * 100,
       initialLevel: storage.initialLevel * 100,
+      efficiencyWithdrawal: storage.efficiencyWithdrawal * 100,
     };
   }, []);
 
@@ -60,6 +61,9 @@ function StorageForm({ study, areaId, storageId }: Props) {
     }
     if (RA.isNumber(newValues.initialLevel)) {
       newValues.initialLevel /= 100;
+    }
+    if (RA.isNumber(newValues.efficiencyWithdrawal)) {
+      newValues.efficiencyWithdrawal /= 100;
     }
     return updateStorage(study.id, areaId, storageId, newValues);
   };
@@ -103,6 +107,44 @@ function StorageForm({ study, areaId, storageId }: Props) {
                   alignSelf: "center",
                 }}
               />
+            )}
+            {studyVersion >= 920 && (
+                <>
+                  <SwitchFE
+              label={t("study.modelization.storages.penalizeVariationInjection")}
+              name="penalizeVariationInjection"
+              control={control}
+              sx={{
+                  alignItems: "center",
+                  alignSelf: "center",
+                }}
+            />
+                  <SwitchFE
+              label={t("study.modelization.storages.penalizeVariationWithdrawal")}
+              name="penalizeVariationWithdrawal"
+              control={control}
+              sx={{
+                  alignItems: "center",
+                  alignSelf: "center",
+                }}
+            />
+            <Tooltip
+                    title={t("study.modelization.storages.efficiencyWithdrawal.info")}
+                    arrow
+                    placement="top"
+                  >
+                    <Box>
+                      <NumberFE
+                        label={t("study.modelization.storages.efficiencyWithdrawal")}
+                        name="efficiencyWithdrawal"
+                        control={control}
+                        rules={{
+                          validate: validateNumber({ min: 0, max: 100 }),
+                        }}
+                      />
+                    </Box>
+                  </Tooltip>
+            </>
             )}
             <Tooltip
               title={t("study.modelization.storages.injectionNominalCapacity.info")}

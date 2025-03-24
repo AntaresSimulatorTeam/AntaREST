@@ -125,7 +125,7 @@ class STStorage920Properties(STStorage880Properties):
     """
 
     group: str = Field(default="other1")  # type: ignore
-    efficiency_withdrawal: float = Field(default=1, alias="efficiencywithdrawal")
+    efficiency_withdrawal: float = Field(default=1, ge=0, le=1, alias="efficiencywithdrawal")
     penalize_variation_injection: bool = Field(default=False, alias="penalize-variation-injection")
     penalize_variation_withdrawal: bool = Field(default=False, alias="penalize-variation-withdrawal")
 
