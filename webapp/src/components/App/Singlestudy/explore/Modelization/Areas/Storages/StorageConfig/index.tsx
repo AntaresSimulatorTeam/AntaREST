@@ -30,6 +30,7 @@ function StorageConfig() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { storageId = "" } = useParams();
   const { t } = useTranslation();
+  const studyVersion = parseInt(study.version, 10);
 
   useNavigateOnCondition({
     deps: [areaId],
@@ -47,7 +48,7 @@ function StorageConfig() {
       <Divider sx={{ my: 2 }} variant="middle">
         <Chip label={t("global.matrices")} size="small" />
       </Divider>
-      <Matrix study={study} areaId={areaId} storageId={nameToId(storageId)} />
+      <Matrix study={study} areaId={areaId} storageId={nameToId(storageId)} studyVersion={studyVersion} />
     </>
   );
 }

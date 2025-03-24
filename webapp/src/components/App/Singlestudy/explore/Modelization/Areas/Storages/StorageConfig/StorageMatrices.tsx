@@ -24,25 +24,12 @@ interface Props {
   study: StudyMetadata;
   areaId: StudyMetadata["id"];
   storageId: Storage["id"];
+  studyVersion: number;
 }
 
-// !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
-// `customColumns={["TS 1"]}` as a temporary solution. These are actually
-// time series matrices, but the development for them has not been completed
-// on the simulator side yet. When that development is done, these properties
-// should be removed to restore the standard time series behavior with resize
-// functionality.
-function StorageMatrices({ areaId, storageId }: Props) {
-  const { t } = useTranslation();
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
-  return (
-    <TabsView
-      disableGutters
-      items={[
+function buildMatrices(areaId: string, storageId: string, studyVersion: number) {
+    const { t } = useTranslation();
+    return [
         {
           label: t("study.modelization.storages.modulation"),
           content: () => (
@@ -96,8 +83,25 @@ function StorageMatrices({ areaId, storageId }: Props) {
         {
           label: t("study.modelization.storages.inflows"),
           content: () => <Matrix url={`input/st-storage/series/${areaId}/${storageId}/inflows`} />,
-        },
-      ]}
+        }]
+}
+
+// !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
+// `customColumns={["TS 1"]}` as a temporary solution. These are actually
+// time series matrices, but the development for them has not been completed
+// on the simulator side yet. When that development is done, these properties
+// should be removed to restore the standard time series behavior with resize
+// functionality.
+function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <TabsView
+      disableGutters
+      items={buildMatrices(areaId, storageId, studyVersion)}
     />
   );
 }
