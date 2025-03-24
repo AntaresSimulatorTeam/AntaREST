@@ -61,6 +61,11 @@ ST_STORAGE_PMAX_WITHDRAWAL = ONES_SCENARIO_MATRIX
 ST_STORAGE_LOWER_RULE_CURVE = EMPTY_SCENARIO_MATRIX
 ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
+ST_STORAGE_COST_INJECTION = EMPTY_SCENARIO_MATRIX
+ST_STORAGE_COST_WITHDRAWAL = EMPTY_SCENARIO_MATRIX
+ST_STORAGE_COST_LEVEL = EMPTY_SCENARIO_MATRIX
+ST_STORAGE_COST_VARIATION_INJECTION = EMPTY_SCENARIO_MATRIX
+ST_STORAGE_COST_VARIATION_WITHDRAWAL = EMPTY_SCENARIO_MATRIX
 
 MATRIX_PROTOCOL_PREFIX = "matrix://"
 _LOCK_FILE_NAME = "matrix_constant_init.lock"
@@ -214,3 +219,23 @@ class GeneratorMatrixConstants:
     def get_st_storage_inflows(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
+
+    def get_st_storage_cost_injection(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_COST_INJECTION]
+
+    def get_st_storage_cost_withdrawal(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_COST_WITHDRAWAL]
+
+    def get_st_storage_cost_level(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_COST_LEVEL]
+
+    def get_st_storage_cost_variation_injection(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_COST_VARIATION_INJECTION]
+
+    def get_st_storage_cost_variation_withdrawal(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_COST_VARIATION_WITHDRAWAL]

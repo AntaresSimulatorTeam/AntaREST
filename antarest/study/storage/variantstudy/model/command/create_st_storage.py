@@ -156,6 +156,11 @@ class CreateSTStorage(ICommand):
                 "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
                 "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
                 "inflows": constants.get_st_storage_inflows,
+                "cost_injection": constants.get_st_storage_inflows,
+                "cost_withdrawal": constants.get_st_storage_inflows,
+                "cost_level": constants.get_st_storage_inflows,
+                "cost_variation_injection": constants.get_st_storage_inflows,
+                "cost_variation_withdrawal": constants.get_st_storage_inflows,
             }
             method = methods[field]
             return method()
