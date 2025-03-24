@@ -111,10 +111,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     )
     def get_progress(task_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Optional[int]:
         sanitized_task_id = sanitize_uuid(task_id)
-        logger.info(
-            f"Fetching task progress of task {sanitized_task_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching task progress of task {sanitized_task_id}")
         params = RequestParameters(user=current_user)
         return service.get_task_progress(sanitized_task_id, params)
 

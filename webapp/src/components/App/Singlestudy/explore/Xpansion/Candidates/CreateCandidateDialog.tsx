@@ -12,24 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo, useState } from "react";
-import { Button, ButtonGroup } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import type { Link } from "@/services/api/studies/links/types";
+import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { Button, ButtonGroup } from "@mui/material";
 import * as R from "ramda";
-import type { XpansionCandidate } from "../types";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../../common/Fieldset";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import { validateString } from "@/utils/validation/string";
-import type { LinkDTO } from "@/services/api/studies/links/types";
+import type { XpansionCandidate } from "../types";
 
 interface PropType {
   open: boolean;
-  links: LinkDTO[];
+  links: Link[];
   onClose: () => void;
   onSave: (candidate: XpansionCandidate) => void;
   candidates: XpansionCandidate[];

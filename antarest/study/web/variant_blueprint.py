@@ -73,10 +73,7 @@ def create_study_variant_routes(
         """
         sanitized_uuid = sanitize_uuid(uuid)
         params = RequestParameters(user=current_user)
-        logger.info(
-            f"Creating new variant '{name}' from study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Creating new variant '{name}' from study {uuid}")
         variant_study = variant_study_service.create_variant_study(uuid=sanitized_uuid, name=name, params=params)
 
         author = study_service.get_user_name(params)
@@ -115,10 +112,7 @@ def create_study_variant_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> VariantTreeDTO:
-        logger.info(
-            f"Fetching variant children of study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching variant children of study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.get_all_variants_children(sanitized_uuid, params)
@@ -139,10 +133,7 @@ def create_study_variant_routes(
         direct: Optional[bool] = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Union[List[StudyMetadataDTO], Optional[StudyMetadataDTO]]:
-        logger.info(
-            f"Fetching variant parents of study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching variant parents of study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return (
@@ -175,10 +166,7 @@ def create_study_variant_routes(
         Returns:
         - The list of variant commands
         """
-        logger.info(
-            f"Fetching command list of variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching command list of variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.get_commands(sanitized_uuid, params)
@@ -193,10 +181,7 @@ def create_study_variant_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileDownloadTaskDTO:
-        logger.info(
-            f"Exporting commands matrices for variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Exporting commands matrices for variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.export_commands_matrices(sanitized_uuid, params)
@@ -226,10 +211,7 @@ def create_study_variant_routes(
         Returns:
         - The list of the newly appended commands if the study is a variant, None otherwise.
         """
-        logger.info(
-            f"Appending new command to variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Appending new command to variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands, params)
@@ -250,10 +232,7 @@ def create_study_variant_routes(
         commands: List[CommandDTOAPI] = Body(...),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
-        logger.info(
-            f"Replacing all commands of variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Replacing all commands of variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands, params)
@@ -274,10 +253,7 @@ def create_study_variant_routes(
         command: CommandDTOAPI,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
-        logger.info(
-            f"Appending new command to variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Appending new command to variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         internal_command = variant_study_service.convert_commands(sanitized_uuid, [command], params)[0]
@@ -299,10 +275,7 @@ def create_study_variant_routes(
         cid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> CommandDTOAPI:
-        logger.info(
-            f"Fetching command {cid} info of variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching command {cid} info of variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -319,10 +292,7 @@ def create_study_variant_routes(
         index: int,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Moving command {cid} to index {index} for variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Moving command {cid} to index {index} for variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -339,10 +309,7 @@ def create_study_variant_routes(
         command: CommandDTOAPI,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Update command {cid} for variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Update command {cid} for variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -359,10 +326,7 @@ def create_study_variant_routes(
         cid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Removing command {cid} of variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Removing command {cid} of variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -377,10 +341,7 @@ def create_study_variant_routes(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Removing all commands from variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Removing all commands from variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         variant_study_service.remove_all_commands(sanitized_uuid, params)
@@ -397,10 +358,7 @@ def create_study_variant_routes(
         from_scratch: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
-        logger.info(
-            f"Generating snapshot for variant study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Generating snapshot for variant study {uuid}")
         params = RequestParameters(user=current_user)
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.generate(sanitized_uuid, denormalize, from_scratch, params)
@@ -441,10 +399,7 @@ def create_study_variant_routes(
         Returns: ID of the task running the snapshot clearing.
         """
         retention_hours = datetime.timedelta(hours=hours)
-        logger.info(
-            f"Delete all variant snapshots older than {humanize.precisedelta(retention_hours)}.",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Delete all variant snapshots older than {humanize.precisedelta(retention_hours)}.")
         params = RequestParameters(user=current_user)
         return variant_study_service.clear_all_snapshots(retention_hours, params)
 

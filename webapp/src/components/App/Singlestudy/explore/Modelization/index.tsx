@@ -77,7 +77,7 @@ function Modelization() {
     ];
   }, [areaId, areas, dispatch, links, navigate, study.id, t]);
 
-  return <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />;
+  return <TabWrapper study={study} tabList={tabList} disablePadding />;
 }
 
 export default Modelization;
