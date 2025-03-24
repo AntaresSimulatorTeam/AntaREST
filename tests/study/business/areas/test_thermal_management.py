@@ -24,12 +24,8 @@ from antarest.study.business.areas.thermal_management import (
     ThermalClusterUpdate,
     ThermalManager,
 )
+from antarest.study.business.model.thermal_model import LawOption, LocalTSGenerationBehavior, ThermalClusterGroup
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    LawOption,
-    LocalTSGenerationBehavior,
-    ThermalClusterGroup,
-)
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -367,7 +363,7 @@ class TestThermalManager:
         study_interface: StudyInterface,
     ):
         # When some properties of the cluster are updated
-        cluster_data = ThermalClusterUpdate(name="New name", nominalCapacity=2000)
+        cluster_data = ThermalClusterUpdate(nominal_capacity=2000)
         manager.update_cluster(
             study_interface, area_id="north", cluster_id="2 avail and must 1", cluster_data=cluster_data
         )
@@ -378,7 +374,7 @@ class TestThermalManager:
         expected = {
             "id": "2 avail and must 1",
             "group": ThermalClusterGroup.GAS,
-            "name": "New name",
+            "name": "2 avail and must 1",
             "enabled": False,
             "unitCount": 100,
             "nominalCapacity": 2000.0,

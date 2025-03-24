@@ -11,13 +11,15 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+from antarest.study.business.model.thermal_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalClusterGroup,
-    create_thermal_config,
+    ThermalClusterUpdate,
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
 )
+from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
@@ -25,7 +27,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateThermalCluster:
-    def _set_up(self, study: FileStudy, command_context: CommandContext, area_id: str, thermal_id: str) -> None:
+    def _set_up(self, study: FileStudy, command_context: CommandContext, area_id: str, thermal_name: str) -> None:
         CreateArea(area_name=area_id, command_context=command_context, study_version=study.config.version).apply(study)
         thermal = {
             "co2": 0.57,
@@ -41,7 +43,7 @@ class TestUpdateThermalCluster:
             "min_stable_power": 5.4984,
             "min_up_time": 5,
             "must_run": False,
-            "name": "FR_Gas conventional old 1",
+            "name": thermal_name,
             "nominal_capacity": 32.1,
             "spinning": 0.0,
             "spread_cost": 0.0,
@@ -50,17 +52,19 @@ class TestUpdateThermalCluster:
             "volatility_forced": 0.0,
             "volatility_planned": 0.0,
         }
-        study.tree.save(thermal, ["input", "thermal", "clusters", area_id, "list", thermal_id])
-        thermal.update({"id": thermal_id})
-        thermal_config = create_thermal_config(study_version=study.config.version, **thermal)
+        study.tree.save(thermal, ["input", "thermal", "clusters", area_id, "list", thermal_name])
+        thermal_config = parse_thermal_cluster(study_version=study.config.version, data=thermal)
         study.config.areas[area_id].thermals.append(thermal_config)
 
     @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
     def test_update_thermal(self, empty_study: FileStudy, command_context: CommandContext):
+        # TODO SL: have a name different from ID
+
         area_id = "fr"
+        thermal_cluster_name = "test"
         thermal_cluster_id = "test"
 
-        self._set_up(empty_study, command_context, area_id, thermal_cluster_id)
+        self._set_up(empty_study, command_context, area_id, thermal_cluster_name)
 
         args = {
             "co2": 0.60,
@@ -94,7 +98,7 @@ class TestUpdateThermalCluster:
             "min-stable-power": 5.4984,
             "min-up-time": 10,
             "must-run": False,
-            "name": "FR_Gas conventional old 1",
+            "name": "test",
             "nominalcapacity": 32.1,
             "spinning": 0.0,
             "spread-cost": 0.0,
@@ -104,9 +108,9 @@ class TestUpdateThermalCluster:
             "volatility.planned": 0.0,
         }
 
-        thermal = empty_study.tree.get(["input", "thermal", "clusters", area_id, "list", thermal_cluster_id])
+        thermal = empty_study.tree.get(["input", "thermal", "clusters", area_id, "list", thermal_cluster_name])
         assert thermal == expected
-        assert empty_study.config.areas[area_id].thermals[0].model_dump(exclude={"id"}, by_alias=True) == expected
+        assert serialize_thermal_cluster(STUDY_VERSION_8_1, empty_study.config.areas[area_id].thermals[0]) == expected
 
     @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
     def test_update_thermal_cluster_does_not_exist(self, empty_study: FileStudy, command_context: CommandContext):

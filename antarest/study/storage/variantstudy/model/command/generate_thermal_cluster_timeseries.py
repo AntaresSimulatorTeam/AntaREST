@@ -23,8 +23,8 @@ from antares.tsgen.random_generator import MersenneTwisterRNG
 from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluster, TimeseriesGenerator
 from typing_extensions import override
 
+from antarest.study.business.model.thermal_model import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import LocalTSGenerationBehavior
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe

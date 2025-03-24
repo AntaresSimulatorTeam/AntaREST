@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.model.thermal_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links_filtering,
@@ -38,12 +39,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal860Config,
-    Thermal870Config,
-    ThermalConfig,
-    ThermalCostGeneration,
-)
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -366,9 +361,9 @@ def test_parse_thermal(study_path: Path) -> None:
     ini_path.write_text(THERMAL_LIST_INI)
     actual = _parse_thermal(study_path, "fr")
     expected = [
-        ThermalConfig(id="t1", name="t1", enabled=True),
-        ThermalConfig(id="t2", name="UPPER2", enabled=False),
-        ThermalConfig(id="UPPER3", name="UPPER3", enabled=True, nominal_capacity=456.5),
+        ThermalCluster(name="t1", enabled=True),
+        ThermalCluster(name="UPPER2", enabled=False),
+        ThermalCluster(name="UPPER3", enabled=True, nominal_capacity=456.5),
     ]
     assert actual == expected
 
@@ -395,27 +390,85 @@ def test_parse_thermal_860(study_path: Path, version, caplog) -> None:
         actual = _parse_thermal(study_path, "fr")
     if version == 860:
         expected = [
-            Thermal860Config(id="t1", name="t1"),
-            Thermal860Config(id="t2", name="t2", co2=156, nh3=456),
+            ThermalCluster(
+                name="t1",
+                co2=0,
+                nh3=0,
+                so2=0,
+                nox=0,
+                pm2_5=0,
+                pm5=0,
+                pm10=0,
+                nmvoc=0,
+                op1=0,
+                op2=0,
+                op3=0,
+                op4=0,
+                op5=0,
+            ),
+            ThermalCluster(
+                name="t2",
+                co2=156,
+                nh3=456,
+                so2=0,
+                nox=0,
+                pm2_5=0,
+                pm5=0,
+                pm10=0,
+                nmvoc=0,
+                op1=0,
+                op2=0,
+                op3=0,
+                op4=0,
+                op5=0,
+            ),
         ]
         assert not caplog.text
     elif version == 870:
         expected = [
-            Thermal870Config(id="t1", name="t1"),
-            Thermal870Config(
-                id="t2",
+            ThermalCluster(
+                name="t1",
+                co2=0,
+                nh3=0,
+                so2=0,
+                nox=0,
+                pm2_5=0,
+                pm5=0,
+                pm10=0,
+                nmvoc=0,
+                op1=0,
+                op2=0,
+                op3=0,
+                op4=0,
+                op5=0,
+                cost_generation=ThermalCostGeneration.SET_MANUALLY,
+                efficiency=100,
+                variable_o_m_cost=0,
+            ),
+            ThermalCluster(
                 name="t2",
                 co2=156,
                 nh3=456,
+                so2=0,
+                nox=0,
+                pm2_5=0,
+                pm5=0,
+                pm10=0,
+                nmvoc=0,
+                op1=0,
+                op2=0,
+                op3=0,
+                op4=0,
+                op5=0,
                 cost_generation=ThermalCostGeneration.SET_MANUALLY,
-                efficiency=100.0,
+                efficiency=100,
                 variable_o_m_cost=0,
             ),
         ]
         assert not caplog.text
     else:
-        expected = [ThermalConfig(id="t1", name="t1")]
-        assert "Extra inputs are not permitted" in caplog.text
+        expected = [ThermalCluster(name="t1")]
+        assert "Field nh3 is not a valid field for study version 8.5" in caplog.text
     assert actual == expected
 
 

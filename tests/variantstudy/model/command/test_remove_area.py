@@ -14,6 +14,7 @@ import pytest
 from checksumdir import dirhash
 
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
+from antarest.study.business.model.thermal_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -21,7 +22,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup, RenewableProperties
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalClusterGroup, ThermalProperties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -147,7 +147,7 @@ class TestRemoveArea:
         thermal_id = transform_name_to_id(thermal_name)
         output = CreateCluster(
             area_id=area_id2,
-            parameters=ThermalProperties(
+            parameters=ThermalClusterCreation(
                 name=thermal_name,
                 group=ThermalClusterGroup.OTHER1,
                 unit_count=1,

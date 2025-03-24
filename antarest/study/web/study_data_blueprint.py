@@ -65,11 +65,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
-from antarest.study.business.model.thermal_cluster_model import (
-    ThermalClusterCreation,
-    ThermalClusterOutput,
-    ThermalClusterUpdate,
-)
+from antarest.study.business.model.thermal_model import ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
@@ -1873,13 +1869,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
         summary="Get thermal clusters for a given area",
-        response_model=Sequence[ThermalClusterOutput],
     )
     def get_thermal_clusters(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Sequence[ThermalClusterOutput]:
+    ) -> Sequence[ThermalCluster]:
         """
         Retrieve the list of thermal clusters for a specified area.
 
@@ -1899,14 +1894,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
         tags=[APITag.study_data],
         summary="Get thermal configuration for a given cluster",
-        response_model=ThermalClusterOutput,
     )
     def get_thermal_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         """
         Retrieve the thermal clusters for a specified area.
 
@@ -1941,14 +1935,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
         summary="Create a new thermal cluster for a given area",
-        response_model=ThermalClusterOutput,
     )
     def create_thermal_cluster(
         uuid: str,
         area_id: str,
         cluster_data: ThermalClusterCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         """
         Create a new thermal cluster for a specified area.
 
@@ -1970,7 +1963,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
         tags=[APITag.study_data],
         summary="Update thermal cluster for a given area",
-        response_model=ThermalClusterOutput,
     )
     def update_thermal_cluster(
         uuid: str,
@@ -1978,7 +1970,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_id: str,
         cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         """
         Update the properties of a thermal cluster for a specified area.
 
@@ -1999,7 +1991,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
         tags=[APITag.study_data],
         summary="Get thermal configuration for a given cluster (deprecated)",
-        response_model=ThermalClusterOutput,
         deprecated=True,
     )
     def redirect_update_thermal_cluster(
@@ -2008,7 +1999,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_id: str,
         cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
         return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data, current_user=current_user)
 
@@ -2383,7 +2374,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         source_cluster_id: str,
         new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageOutput | ThermalClusterOutput | RenewableClusterOutput:
+    ) -> STStorageOutput | ThermalCluster | RenewableClusterOutput:
         logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)

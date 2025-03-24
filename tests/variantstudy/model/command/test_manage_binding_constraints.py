@@ -13,12 +13,12 @@
 import pytest
 
 from antarest.core.serde.ini_reader import read_ini
+from antarest.study.business.model.thermal_model import ThermalClusterCreation
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_870,
@@ -55,7 +55,7 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
     )
     CreateCluster(
         area_id=area1,
-        parameters=ThermalProperties(name=cluster),
+        parameters=ThermalClusterCreation(name=cluster),
         command_context=command_context,
         study_version=study_version,
     ).apply(empty_study)
@@ -333,7 +333,7 @@ def test__update_matrices_names(
     )
     CreateCluster(
         area_id=area1,
-        parameters=ThermalProperties(name=cluster),
+        parameters=ThermalClusterCreation(name=cluster),
         command_context=command_context,
         study_version=study_version,
     ).apply(empty_study)

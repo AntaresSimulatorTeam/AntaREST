@@ -13,8 +13,8 @@
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
 
+from antarest.study.business.model.thermal_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -26,7 +26,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
     validate_config,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import study_version_context
 
 
@@ -42,7 +41,7 @@ def config() -> FileStudyTreeConfig:
             "a": Area(
                 name="a",
                 links={},
-                thermals=[ThermalConfig(name="cluster")],
+                thermals=[ThermalCluster(name="cluster")],
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
@@ -92,9 +91,3 @@ def test_file_study_tree_config_round_trip(config: FileStudyTreeConfig):
     config_dict = FileStudyTreeConfigDTO.from_build_config(config).model_dump()
     parsed_config = validate_config(STUDY_VERSION_7_0, config_dict)
     assert parsed_config == config
-
-
-def test_file_study_tree_config_round_trip_fails_if_no_version_provided(config: FileStudyTreeConfig):
-    config_dict = FileStudyTreeConfigDTO.from_build_config(config).model_dump()
-    with pytest.raises(ValidationError, match="version"):
-        FileStudyTreeConfigDTO.model_validate(config_dict)

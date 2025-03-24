@@ -26,6 +26,7 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
+from antarest.study.business.model.thermal_model import ThermalCluster, parse_thermal_cluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -53,7 +54,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
     create_st_storage_config,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
@@ -429,7 +429,7 @@ def parse_area(root: Path, area: str) -> "Area":
     )
 
 
-def _parse_thermal(root: Path, area: str) -> List[ThermalConfigType]:
+def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
     """
     Parse the thermal INI file, return an empty list if missing.
     """
@@ -441,7 +441,7 @@ def _parse_thermal(root: Path, area: str) -> List[ThermalConfigType]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(create_thermal_config(version, **values, id=section))
+            config_list.append(parse_thermal_cluster(version, values))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid thermal configuration: '{section}' in '{config_path}'", exc_info=exc)
