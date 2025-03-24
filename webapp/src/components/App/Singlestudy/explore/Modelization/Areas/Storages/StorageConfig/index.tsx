@@ -48,7 +48,12 @@ function StorageConfig() {
       <Divider sx={{ my: 2 }} variant="middle">
         <Chip label={t("global.matrices")} size="small" />
       </Divider>
-      <Matrix study={study} areaId={areaId} storageId={nameToId(storageId)} studyVersion={studyVersion} />
+      <Matrix
+        study={study}
+        areaId={areaId}
+        storageId={nameToId(storageId)}
+        studyVersion={studyVersion}
+      />
     </>
   );
 }

@@ -137,8 +137,9 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
           </SplitView>
         ),
       },
-    )}
-    return matrices;
+    );
+  }
+  return matrices;
 }
 
 // !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
