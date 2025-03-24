@@ -83,11 +83,11 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
     {
       label: t("study.modelization.storages.inflows"),
       content: () => <Matrix url={`input/st-storage/series/${areaId}/${storageId}/inflows`} />,
-    }
-  ]
+    },
+  ];
   if (studyVersion >= 920) {
     matrices.push(
-        {
+      {
         label: t("study.modelization.storages.costs"),
         content: () => (
           <SplitView id="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
@@ -136,8 +136,8 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
             </Box>
           </SplitView>
         ),
-      })
-    }
+      },
+    )}
     return matrices;
 }
 
@@ -148,17 +148,11 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
 // should be removed to restore the standard time series behavior with resize
 // functionality.
 function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <TabsView
-      disableGutters
-      items={buildMatrices(areaId, storageId, studyVersion)}
-    />
-  );
+  return <TabsView disableGutters items={buildMatrices(areaId, storageId, studyVersion)} />;
 }
 
 export default StorageMatrices;
