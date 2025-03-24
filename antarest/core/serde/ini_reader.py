@@ -13,14 +13,14 @@ import dataclasses
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Sequence, TextIO, cast
+from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Sequence, TextIO, TypeAlias, cast
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
 
-ValueParser = Callable[[str], PrimitiveType]
+ValueParser: TypeAlias = Callable[[str], PrimitiveType]
 
 
 def _lower_case(input: str) -> str:
@@ -377,3 +377,10 @@ class SimpleKeyValueReader(IniReader):
         sections = super().read(path)
         obj = cast(Mapping[str, JSON], sections)
         return obj[self._section_name]
+
+
+def read_ini(source: Path | TextIO) -> JSON:
+    """
+    Parses the provided content as a 2-levels dictionary.
+    """
+    return IniReader().read(source)

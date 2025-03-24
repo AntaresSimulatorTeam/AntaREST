@@ -204,9 +204,9 @@ class TestSearchRefStudy:
                 id=str(uuid.uuid4()),
                 study_id=variant3.id,
                 index=0,
-                command="update_thermal_cluster",
+                command="update_thermal_clusters",
                 version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "capacity": 1500}',
+                args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
             ),
         ]
 
@@ -500,9 +500,9 @@ class TestSearchRefStudy:
                 id=str(uuid.uuid4()),
                 study_id=variant1.id,
                 index=2,
-                command="update_thermal_cluster",
+                command="update_thermal_clusters",
                 version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "capacity": 1500}',
+                args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
             ),
         ]
 
@@ -559,9 +559,9 @@ class TestSearchRefStudy:
                 id=str(uuid.uuid4()),
                 study_id=variant1.id,
                 index=2,
-                command="update_thermal_cluster",
+                command="update_thermal_clusters",
                 version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "capacity": 1500}',
+                args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
             ),
         ]
 
@@ -614,9 +614,9 @@ class TestSearchRefStudy:
                 id=str(uuid.uuid4()),
                 study_id=variant1.id,
                 index=2,
-                command="update_thermal_cluster",
+                command="update_thermal_clusters",
                 version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "capacity": 1500}',
+                args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
             ),
         ]
 
@@ -669,9 +669,9 @@ class TestSearchRefStudy:
                 id=str(uuid.uuid4()),
                 study_id=variant1.id,
                 index=2,
-                command="update_thermal_cluster",
+                command="update_thermal_clusters",
                 version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "capacity": 1500}',
+                args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
             ),
         ]
 

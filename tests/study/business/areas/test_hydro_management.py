@@ -15,7 +15,8 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.areas.hydro_management import HydroManager, ManagementOptionsFormFields
+from antarest.study.business.areas.hydro_management import HydroManager
+from antarest.study.business.model.hydro_model import HydroManagementUpdate
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -76,13 +77,13 @@ def study_interface_fixture(tmp_path: Path) -> FileStudyInterface:
 
 class TestHydroManagement:
     @pytest.mark.unit_test
-    def test_get_field_values(self, hydro_manager: HydroManager, study: FileStudyInterface) -> None:
+    def test_get_hydro_management_options(self, hydro_manager: HydroManager, study: FileStudyInterface) -> None:
         """
         Set up:
             Retrieve a study service and a study interface
             Create some areas with different letter cases
         Test:
-            Check if `get_field_values` returns the right values
+            Check if `get_hydro_management_options` returns the right values
         """
         # add som areas
         areas = ["AreaTest1", "AREATEST2", "area_test_3"]
@@ -90,13 +91,13 @@ class TestHydroManagement:
         # gather initial data of the area
         for area in areas:
             # get actual value
-            data_area_raw = hydro_manager.get_field_values(study, area).model_dump()
+            data_area_raw = hydro_manager.get_hydro_management(study, area).model_dump()
 
             # get values if area_id is in lower case
-            data_area_lower = hydro_manager.get_field_values(study, area.lower()).model_dump()
+            data_area_lower = hydro_manager.get_hydro_management(study, area.lower()).model_dump()
 
             # get values if area_id is in upper case
-            data_area_upper = hydro_manager.get_field_values(study, area.upper()).model_dump()
+            data_area_upper = hydro_manager.get_hydro_management(study, area.upper()).model_dump()
 
             # check if the area is retrieved regardless of the letters case
             assert data_area_raw == data_area_lower
@@ -118,8 +119,8 @@ class TestHydroManagement:
         areas = ["AreaTest1", "AREATEST2", "area_test_3"]
 
         for area in areas:
-            # get initial values with get_field_values
-            initial_data = hydro_manager.get_field_values(study, area).model_dump()
+            # get initial values with get_hydro_management_options
+            initial_data = hydro_manager.get_hydro_management(study, area).model_dump()
 
             # simulate changes on area_id case with another tool
             hydro_ini_path = tmp_path.joinpath(f"tmp/{study.id}/input/hydro/hydro.ini")
@@ -130,17 +131,17 @@ class TestHydroManagement:
             with open(hydro_ini_path, "w") as f:
                 f.write(file_content)
 
-            # make sure that `get_field_values` retrieve same data as before
-            new_data = hydro_manager.get_field_values(study, area).model_dump()
+            # make sure that `get_hydro_management_options` retrieve same data as before
+            new_data = hydro_manager.get_hydro_management(study, area).model_dump()
             assert initial_data == new_data
 
             # simulate regular usage by modifying some values
             modified_data = dict(initial_data)
             modified_data["intra_daily_modulation"] = 5.0
-            hydro_manager.set_field_values(study, ManagementOptionsFormFields(**modified_data), area)
+            hydro_manager.update_hydro_management(study, HydroManagementUpdate(**modified_data), area)
 
             # retrieve edited
-            new_data = hydro_manager.get_field_values(study, area).model_dump()
+            new_data = hydro_manager.get_hydro_management(study, area).model_dump()
 
             # check if the intra daily modulation was modified
             for field, value in new_data.items():

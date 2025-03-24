@@ -1,6 +1,34 @@
 Antares Web Changelog
 =====================
 
+v2.19.2 (2025-03-17)
+--------------------
+
+### Bug fixes
+
+* **commands**: fix create_st_storage v1 parsing [`2408`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2408)
+
+v2.19.1 (2025-03-11)
+--------------------
+
+## What's Changed
+
+### Bug fixes
+
+* **commands**: add missing index on commands table, for performances [`2373`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2373)
+* **bc**: allow term modification [`2372`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2372)
+* **groups**: groups in lowercase [`2377`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2377)
+* **ini**: ignore case when performing update and delete of ini files [`2378`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2378)
+* **commands**: remove command notifications [`2379`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2379)
+* **hydro**: case insensitive read and write in hydro.ini [`2387`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2387)
+* **debug**: ensure .json files with prefix file:// proper rendering [`2390`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2390)
+
+### Perfs
+
+* **links**: improve drastically perfs for links inside table-mode [`2384`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2384)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.19.0...v2.19.1
+
 v2.19.0 (2025-02-10)
 --------------------
 

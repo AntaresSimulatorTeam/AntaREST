@@ -12,7 +12,7 @@
 
 import datetime
 import uuid
-from typing import Any, List
+from typing import Any, List, TypeAlias
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -213,7 +213,7 @@ class MatrixDataSet(Base):  # type: ignore
 # Reverting to only float because Any cause problem retrieving data from a node
 # will have pandas forcing all to float anyway...
 # this cause matrix dump on disk (and then hash id) to be different for basically the same matrices
-MatrixData = float
+MatrixData: TypeAlias = float
 
 
 class MatrixDTO(AntaresBaseModel):

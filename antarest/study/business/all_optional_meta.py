@@ -14,8 +14,7 @@ import copy
 from typing import Optional, Type, TypeVar, cast
 
 from pydantic import BaseModel, create_model
-
-from antarest.core.utils.string import to_camel_case
+from pydantic.alias_generators import to_camel
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 
@@ -54,7 +53,7 @@ def camel_case_model(model: Type[BaseModel]) -> Type[BaseModel]:
     for field_name, field in model.model_fields.items():
         new_field = copy.deepcopy(field)
         new_field.default = None
-        new_alias = to_camel_case(field_name)
+        new_alias = to_camel(field_name)
         new_field.alias = new_alias
         new_field.validation_alias = new_alias
         new_field.serialization_alias = new_alias
@@ -66,6 +65,6 @@ def camel_case_model(model: Type[BaseModel]) -> Type[BaseModel]:
         **new_fields,
     )  # type: ignore
 
-    new_model.model_config["alias_generator"] = to_camel_case
+    new_model.model_config["alias_generator"] = to_camel
 
     return cast(Type[BaseModel], new_model)

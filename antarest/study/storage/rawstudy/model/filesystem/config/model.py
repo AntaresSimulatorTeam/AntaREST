@@ -29,10 +29,10 @@ from .binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from .field_validators import extract_filtering
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .thermal import ThermalConfigType
+from .validation import extract_filtering, study_version_context
 
 
 class EnrModelling(EnumIgnoreCase):
@@ -176,7 +176,6 @@ class FileStudyTreeConfig(DTO):
         store_new_set: bool = False,
         archive_input_series: Optional[List[str]] = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
-        cache: Optional[Dict[str, List[str]]] = None,
         archive_path: Optional[Path] = None,
     ):
         self.study_path = study_path
@@ -191,7 +190,6 @@ class FileStudyTreeConfig(DTO):
         self.store_new_set = store_new_set
         self.archive_input_series = archive_input_series or []
         self.enr_modelling = enr_modelling
-        self.cache = cache or {}
         self.archive_path = archive_path
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
@@ -213,7 +211,6 @@ class FileStudyTreeConfig(DTO):
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
-            cache=self.cache,
             archive_path=archive_path,
         )
 
@@ -231,37 +228,33 @@ class FileStudyTreeConfig(DTO):
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
-            cache=self.cache,
         )
 
     def area_names(self) -> List[str]:
-        return self.cache.get("%areas", list(self.areas))
+        return list(self.areas)
 
     def set_names(self, only_output: bool = True) -> List[str]:
-        return self.cache.get(
-            f"%districts%{only_output}",
-            [k for k, v in self.sets.items() if v.output or not only_output],
-        )
+        return [k for k, v in self.sets.items() if v.output or not only_output]
 
     def get_thermal_ids(self, area: str) -> List[str]:
         """
         Returns a list of thermal cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
-        return self.cache.get(f"%thermal%{area}%{area}", [th.id for th in self.areas[area].thermals])
+        return [th.id for th in self.areas[area].thermals]
 
     def get_renewable_ids(self, area: str) -> List[str]:
         """
         Returns a list of renewable cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
-        return self.cache.get(f"%renewable%{area}", [r.id for r in self.areas[area].renewables])
+        return [r.id for r in self.areas[area].renewables]
 
     def get_st_storage_ids(self, area: str) -> List[str]:
-        return self.cache.get(f"%st-storage%{area}", [s.id for s in self.areas[area].st_storages])
+        return [s.id for s in self.areas[area].st_storages]
 
     def get_links(self, area: str) -> List[str]:
-        return self.cache.get(f"%links%{area}", list(self.areas[area].links))
+        return list(self.areas[area].links)
 
     def get_binding_constraint_groups(self) -> List[str]:
         """
@@ -270,7 +263,7 @@ class FileStudyTreeConfig(DTO):
         Note that groups are stored in lower case in the binding constraints file.
         """
         lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
-        return self.cache.get("%binding-constraints", [grp for _, grp in sorted(lower_groups.items())])
+        return [grp for _, grp in sorted(lower_groups.items())]
 
     def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
         if link:
@@ -338,3 +331,13 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             enr_modelling=self.enr_modelling,
             archive_path=self.archive_path,
         )
+
+
+def validate_config(version: StudyVersion, data: Dict[str, Any]) -> FileStudyTreeConfig:
+    """
+    Parses the provided data, assuming the provided study version.
+
+    The instantiation of some of the config objects depend on the study version
+    (thermal clusters, etc).
+    """
+    return FileStudyTreeConfigDTO.model_validate(data, context=study_version_context(version)).to_build_config()

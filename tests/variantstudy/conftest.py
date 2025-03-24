@@ -20,6 +20,7 @@ from unittest.mock import Mock
 import numpy as np
 import numpy.typing as npt
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import StudyValidationError
 
@@ -174,7 +175,7 @@ def empty_study_fixture(request: "SubRequest", tmp_path: Path, matrix_service: M
         study_path=empty_study_destination_path,
         path=empty_study_destination_path,
         study_id="",
-        version=int(version),
+        version=StudyVersion.parse(version),
         areas={},
         sets={},
     )

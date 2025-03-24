@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, MutableMapping, Optional, Sequence
+from typing import Annotated, Any, Optional, Sequence, TypeAlias
 
 from pydantic import BeforeValidator, Field, PlainSerializer, ValidationError, field_validator, model_validator
 
@@ -142,7 +142,7 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     sensitivity_config: Optional[XpansionSensitivitySettings] = None
 
     @model_validator(mode="before")
-    def validate_float_values(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
+    def validate_float_values(cls, values: dict[str, Any]) -> dict[str, Any]:
         if "relaxed-optimality-gap" in values:
             values["relaxed_optimality_gap"] = values.pop("relaxed-optimality-gap")
 
@@ -237,7 +237,8 @@ def split_areas(x: str) -> dict[str, str]:
     return {"area_from": area_list[0], "area_to": area_list[1]}
 
 
-xpansion_link = Annotated[
+# link parsed and serialized as "area1 - area2"
+XpansionLinkStr: TypeAlias = Annotated[
     XpansionLink,
     BeforeValidator(lambda x: split_areas(x)),
     PlainSerializer(lambda x: x.serialize()),
@@ -246,7 +247,7 @@ xpansion_link = Annotated[
 
 class XpansionCandidateBase(AntaresBaseModel, populate_by_name=True):
     name: str
-    link: xpansion_link
+    link: XpansionLinkStr
     annual_cost_per_mw: float = Field(gt=0)
     unit_size: Optional[float] = Field(default=None, ge=0)
     max_units: Optional[int] = Field(default=None, ge=0)

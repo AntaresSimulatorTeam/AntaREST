@@ -55,7 +55,7 @@ class VariantStudyRepository(StudyMetadataRepository):
 
     def get_children(self, parent_id: str) -> List[VariantStudy]:
         """
-        Get the children of a variant study in chronological order.
+        Get the direct children of a variant study in chronological order.
 
         Args:
             parent_id: Identifier of the parent study.

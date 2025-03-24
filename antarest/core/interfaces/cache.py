@@ -37,6 +37,20 @@ class CacheConstants(Enum):
     STUDY_FACTORY = "STUDY_FACTORY"
 
 
+def study_config_cache_key(study_id: str) -> str:
+    """
+    The key of study config object in cache
+    """
+    return f"{CacheConstants.STUDY_FACTORY}/{study_id}"
+
+
+def study_raw_cache_key(study_id: str) -> str:
+    """
+    The key of study "raw data" in cache
+    """
+    return f"{CacheConstants.RAW_STUDY}/{study_id}"
+
+
 class ICache:
     @abstractmethod
     def start(self) -> None:

@@ -24,6 +24,7 @@ import pytest
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -39,7 +40,7 @@ class TestInputSeriesMatrix:
             study_path=tmp_path,
             path=tmp_path / "input.txt",
             study_id="df0a8aa9-6c6f-4e8b-a84e-45de2fb29cd3",
-            version=800,
+            version=STUDY_VERSION_8,
         )
 
     def test_load(self, my_study_config: FileStudyTreeConfig) -> None:

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import collections
-from typing import Any, Mapping, MutableMapping, Optional, Sequence, cast
+from typing import Any, Mapping, MutableMapping, Optional, Sequence, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ from antarest.study.model import STUDY_VERSION_8_2
 _TableIndex = str  # row name
 _TableColumn = str  # column name
 _CellValue = Any  # cell value (str, int, float, bool, enum, etc.)
-TableDataDTO = Mapping[_TableIndex, Mapping[_TableColumn, _CellValue]]
+TableDataDTO: TypeAlias = Mapping[_TableIndex, Mapping[_TableColumn, _CellValue]]
 
 
 class TableModeType(EnumIgnoreCase):

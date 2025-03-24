@@ -55,7 +55,7 @@ from antarest.launcher.model import (
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.auth import Auth
 from antarest.login.model import Identity
-from antarest.study.model import OwnerInfo, PublicMode, Study, StudyMetadataDTO
+from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 
@@ -76,7 +76,7 @@ class TestLauncherService:
             owner=OwnerInfo(id=0, name="author"),
             groups=[],
             public_mode=PublicMode.NONE,
-            version=42,
+            version=STUDY_VERSION_8_8,
             workspace="default",
             managed=True,
             archived=False,
@@ -914,10 +914,10 @@ class TestLauncherService:
             pytest.param(
                 [],
                 {
-                    "allocated_cpu_rate": 0.0,
-                    "cluster_load_rate": 0.0,
-                    "nb_queued_jobs": 0,
-                    "launcher_status": "SUCCESS",
+                    "allocatedCpuRate": 0.0,
+                    "clusterLoadRate": 0.0,
+                    "nbQueuedJobs": 0,
+                    "launcherStatus": "SUCCESS",
                 },
                 "local",
                 id="local_no_running_job",
@@ -936,10 +936,10 @@ class TestLauncherService:
                     ),
                 ],
                 {
-                    "allocated_cpu_rate": min(100.0, 800 / (os.cpu_count() or 1)),
-                    "cluster_load_rate": min(100.0, 800 / (os.cpu_count() or 1)),
-                    "nb_queued_jobs": 0,
-                    "launcher_status": "SUCCESS",
+                    "allocatedCpuRate": min(100.0, 800 / (os.cpu_count() or 1)),
+                    "clusterLoadRate": min(100.0, 800 / (os.cpu_count() or 1)),
+                    "nbQueuedJobs": 0,
+                    "launcherStatus": "SUCCESS",
                 },
                 "local",
                 id="local_with_running_jobs",
@@ -947,10 +947,10 @@ class TestLauncherService:
             pytest.param(
                 [],
                 {
-                    "allocated_cpu_rate": 0.0,
-                    "cluster_load_rate": 0.0,
-                    "nb_queued_jobs": 0,
-                    "launcher_status": "SUCCESS",
+                    "allocatedCpuRate": 0.0,
+                    "clusterLoadRate": 0.0,
+                    "nbQueuedJobs": 0,
+                    "launcherStatus": "SUCCESS",
                 },
                 "slurm",
                 id="slurm launcher with no config",

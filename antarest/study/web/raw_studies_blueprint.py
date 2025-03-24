@@ -129,10 +129,7 @@ def create_raw_study_routes(
         Returns the fetched data: a JSON object (in most cases), a plain text file
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
-        logger.info(
-            f"📘 Fetching data at {path} (depth={depth}) from study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
         parameters = RequestParameters(user=current_user)
         output = study_service.get(uuid, path, depth=depth, formatted=formatted, params=parameters)
 
@@ -204,10 +201,7 @@ def create_raw_study_routes(
 
         Returns the fetched file in its original format.
         """
-        logger.info(
-            f"📘 Fetching file at {path} from study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"📘 Fetching file at {path} from study {uuid}")
         parameters = RequestParameters(user=current_user)
         original_file = study_service.get_file(uuid, path, params=parameters)
         filename = original_file.filename
@@ -241,7 +235,7 @@ def create_raw_study_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         uuid = sanitize_uuid(uuid)
-        logger.info(f"Deleting path {path} inside study {uuid}", extra={"user": current_user.id})
+        logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path, current_user)
 
     @bp.get(
@@ -280,8 +274,7 @@ def create_raw_study_routes(
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'",
-            extra={"user": current_user.id},
+            f"from files '{query_file}-{frequency}.txt'"
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
@@ -349,8 +342,7 @@ def create_raw_study_routes(
         """
         logger.info(
             f"Aggregating links output data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'",
-            extra={"user": current_user.id},
+            f"from files '{query_file}-{frequency}.txt'"
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
@@ -417,8 +409,7 @@ def create_raw_study_routes(
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'",
-            extra={"user": current_user.id},
+            f"from files '{query_file}-{frequency}.txt'"
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
@@ -483,8 +474,7 @@ def create_raw_study_routes(
         """
         logger.info(
             f"Aggregating links mc-all data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'",
-            extra={"user": current_user.id},
+            f"from files '{query_file}-{frequency}.txt'"
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
@@ -540,7 +530,7 @@ def create_raw_study_routes(
         - `data`: The formatted data to be posted. Could be a JSON object, or a string. Defaults to an empty string.
 
         """
-        logger.info(f"Editing data at {path} for study {uuid}", extra={"user": current_user.id})
+        logger.info(f"Editing data at {path} for study {uuid}")
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
         return study_service.edit_study(uuid, path, data, params)
@@ -549,7 +539,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw",
         status_code=http.HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
-        summary="Update data by posting a Raw file",
+        summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
         uuid: str,
@@ -563,7 +553,7 @@ def create_raw_study_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
-        Update raw data for a study by posting a raw file.
+        Update raw data for a study by posting a raw file or by creating folder(s).
 
         Parameters:
 
@@ -582,10 +572,10 @@ def create_raw_study_routes(
         path = sanitize_string(path)
         params = RequestParameters(user=current_user)
         if resource_type == ResourceType.FOLDER and create_missing:  # type: ignore
-            logger.info(f"Creating folder {path} for study {uuid}", extra={"user": current_user.id})
+            logger.info(f"Creating folder {path} for study {uuid}")
             study_service.create_user_folder(uuid, path, current_user)
         else:
-            logger.info(f"Uploading new data file at {path} for study {uuid}", extra={"user": current_user.id})
+            logger.info(f"Uploading new data file at {path} for study {uuid}")
             study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
 
     @bp.get(
@@ -609,10 +599,7 @@ def create_raw_study_routes(
         - A list of strings indicating validation errors (if any) for the study's raw data.
           The list is empty if no errors were found.
         """
-        logger.info(
-            f"Validating data for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Validating data for study {uuid}")
         return study_service.check_errors(uuid)
 
     @bp.get(
@@ -648,10 +635,7 @@ def create_raw_study_routes(
         Returns:
             FileResponse that corresponds to the matrix file in the requested format.
         """
-        logger.info(
-            f"Exporting matrix '{matrix_path}' to {export_format} format for study '{uuid}'",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Exporting matrix '{matrix_path}' to {export_format} format for study '{uuid}'")
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)

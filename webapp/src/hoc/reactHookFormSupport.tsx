@@ -13,7 +13,10 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Skeleton } from "@mui/material";
 import hoistNonReactStatics from "hoist-non-react-statics";
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 import { useContext, useMemo } from "react";
 import {
   Controller,
@@ -23,13 +26,10 @@ import {
   type FieldValues,
   type Validate,
 } from "react-hook-form";
-import * as R from "ramda";
-import * as RA from "ramda-adjunct";
-import { Skeleton } from "@mui/material";
-import { getComponentDisplayName } from "../utils/reactUtils";
-import type { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
-import type { ControlPlus, RegisterOptionsPlus } from "../components/common/Form/types";
 import FormContext from "../components/common/Form/FormContext";
+import type { ControlPlus, RegisterOptionsPlus } from "../components/common/Form/types";
+import type { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
+import { getComponentDisplayName } from "../utils/reactUtils";
 
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
@@ -47,9 +47,9 @@ interface FieldEditorProps<TValue> {
   onBlur?: EventHandler;
   name?: string;
   disabled?: boolean;
+  helperText?: React.ReactNode;
   // inputRef?: any;
   // error?: boolean;
-  // helperText?: string;
 }
 
 export type ReactHookFormSupportProps<
@@ -219,7 +219,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
                 onBlur={handleBlur(onBlur)}
                 inputRef={ref}
                 error={!!error}
-                helperText={error?.message}
+                helperText={error?.message || feProps.helperText}
                 disabled={
                   (control._formState.isSubmitting && !isAutoSubmitEnabled) ||
                   fieldProps.disabled ||

@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import type { Cluster, StudyMetadata } from "@/types/types";
-import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../utils";
-import Matrix from "../../../../../../../common/Matrix";
 import TabsView from "@/components/common/TabsView";
+import type { Cluster, StudyMetadata } from "@/types/types";
+import { useTranslation } from "react-i18next";
+import Matrix from "../../../../../../../common/Matrix";
+import { COMMON_MATRIX_COLS, TS_GEN_MATRIX_COLS } from "../utils";
 
 interface Props {
   study: StudyMetadata;
@@ -34,6 +34,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
 
   return (
     <TabsView
+      disableGutters
       items={[
         {
           label: t("study.modelization.clusters.matrix.common"),
@@ -41,6 +42,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
             <Matrix
               url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
               customColumns={COMMON_MATRIX_COLS}
+              isTimeSeries={false}
             />
           ),
         },
@@ -50,6 +52,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
             <Matrix
               url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
               customColumns={TS_GEN_MATRIX_COLS}
+              isTimeSeries={false}
             />
           ),
         },

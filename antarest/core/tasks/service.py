@@ -16,7 +16,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Awaitable, Callable, Dict, List, Optional
+from typing import Awaitable, Callable, Dict, List, Optional, TypeAlias
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session  # type: ignore
@@ -25,6 +25,7 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import JWTUser
+from antarest.core.logging.utils import task_context
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
 from antarest.core.tasks.model import (
@@ -41,7 +42,6 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import retry
-from antarest.login.utils import current_user_context
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class ITaskNotifier(ABC):
         raise NotImplementedError()
 
 
-Task = Callable[[ITaskNotifier], TaskResult]
+Task: TypeAlias = Callable[[ITaskNotifier], TaskResult]
 
 
 class ITaskService(ABC):
@@ -408,7 +408,7 @@ class TaskJobService(ITaskService):
         # to not die
         try:
             # attention: this function is executed in a thread, not in the main process
-            with current_user_context(token=jwt_user):
+            with task_context(task_id=task_id, user=jwt_user):
                 with db():
                     # Important to keep this retry for now,
                     # in case commit is not visible (read from replica ...)

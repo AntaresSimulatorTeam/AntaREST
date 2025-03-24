@@ -25,7 +25,7 @@ export interface ViewWrapperProps {
   disablePadding?: boolean;
 }
 
-function ViewWrapper({ children, flex = false, disablePadding }: ViewWrapperProps) {
+function ViewWrapper({ children, flex = false, disablePadding = false }: ViewWrapperProps) {
   const flexObj = typeof flex === "boolean" ? {} : flex;
   const flexValues = { flexDirection: flexObj.direction || "column", gap: flexObj.gap };
 
@@ -36,19 +36,17 @@ function ViewWrapper({ children, flex = false, disablePadding }: ViewWrapperProp
         {
           width: 1,
           height: 1,
-          p: disablePadding ? 0 : 2,
-          ":has(.TabsView:first-of-type), :has(.TabWrapper:first-of-type)": {
-            pt: 0,
-            ".TabsView:first-of-type > .MuiBox-root": {
-              ml: -2,
-              mr: -2,
-            },
+          p: 2,
+          // <TabsView> and <TabWrapper> have their own padding
+          ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
+            p: 0,
           },
           overflow: "auto",
           position: "relative",
           borderRadius: 0,
         },
         flex && { display: "flex", ...flexValues },
+        disablePadding && { p: 0 },
       ]}
     >
       {children}

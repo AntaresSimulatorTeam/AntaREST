@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from dataclasses import field
-from typing import Annotated, List, Optional, Self, Type
+from typing import Annotated, List, Optional, Self, Type, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
@@ -123,7 +123,7 @@ def join_with_comma(values: List[FilterOption]) -> str:
     return ", ".join(value.name.lower() for value in values)
 
 
-comma_separated_enum_list = Annotated[
+CommaSeparatedFilterOptions: TypeAlias = Annotated[
     List[FilterOption],
     BeforeValidator(lambda x: validate_filters(x, FilterOption)),
     PlainSerializer(lambda x: join_with_comma(x)),
@@ -154,8 +154,8 @@ class LinkBaseDTO(AntaresBaseModel):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
-    filter_year_by_year: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
 
 
 class Area(AntaresBaseModel):
@@ -203,8 +203,8 @@ class LinkInternal(AntaresBaseModel):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
-    filter_year_by_year: Optional[comma_separated_enum_list] = field(default_factory=lambda: FILTER_VALUES)
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
 
     def to_dto(self) -> LinkDTO:
         data = self.model_dump()

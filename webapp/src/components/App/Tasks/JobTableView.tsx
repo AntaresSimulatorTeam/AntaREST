@@ -12,41 +12,36 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import moment from "moment";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import {
+  Box,
+  IconButton,
   Paper,
-  TableContainer,
+  Skeleton,
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Tooltip,
-  Button,
-  Checkbox,
-  FormControlLabel,
   Typography,
-  Skeleton,
-  colors,
   type SelectChangeEvent,
 } from "@mui/material";
+import moment from "moment";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import type { TaskView } from "../../../types/types";
+import { useInterval } from "react-use";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
 import { getLauncherMetrics } from "../../../services/api/study";
+import { TaskType } from "../../../services/api/tasks/constants";
+import type { TaskView } from "../../../types/types";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
-import { useInterval } from "react-use";
-import { TaskType } from "../../../services/api/tasks/constants";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -94,7 +89,7 @@ function JobTableView(props: PropType) {
     [filterType, filterRunningStatus],
   );
 
-  const handleChange = (event: SelectChangeEvent) => {
+  const handleChange = (event: SelectChangeEvent<unknown>) => {
     setFilterType(event.target.value as FilterListType | "");
   };
 
@@ -110,28 +105,21 @@ function JobTableView(props: PropType) {
   useInterval(launcherMetrics.reload, 60_000);
 
   return (
-    <Box
-      sx={{
-        flexGrow: 1,
-        mx: 1,
-        my: 2,
-        overflowX: "hidden",
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <>
+      {/* Header */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          ml: 2,
+          gap: 1,
+          px: 1,
+          overflowX: "auto",
+          overflowY: "hidden",
         }}
       >
         <Box
           sx={{
-            width: "60%",
             display: "flex",
             alignContent: "center",
             alignSelf: "center",
@@ -143,19 +131,23 @@ function JobTableView(props: PropType) {
             keepLastResolvedOnReload
             ifFulfilled={(data) => (
               <>
-                <Typography>{t("study.allocatedCpuRate")}</Typography>
+                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                  {t("study.allocatedCpuRate")}
+                </Typography>
                 <LinearProgressWithLabel
                   value={Math.floor(data.allocatedCpuRate)}
                   tooltip={t("study.allocatedCpuRate")}
-                  sx={{ width: "20%" }}
+                  sx={{ width: 100 }}
                 />
-                <Typography>{t("study.clusterLoadRate")}</Typography>
+                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                  {t("study.clusterLoadRate")}
+                </Typography>
                 <LinearProgressWithLabel
                   value={Math.floor(data.clusterLoadRate)}
                   tooltip={t("study.clusterLoadRate")}
-                  sx={{ width: "20%" }}
+                  sx={{ width: 100 }}
                 />
-                <Typography>
+                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
                   {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}
                 </Typography>
               </>
@@ -163,56 +155,43 @@ function JobTableView(props: PropType) {
             ifPending={() => <Skeleton width={300} />}
           />
         </Box>
-        <Box display="flex" alignItems="center">
-          <Tooltip title={t("tasks.refresh") as string} sx={{ mr: 4 }}>
-            <Button
-              color="primary"
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Tooltip title={t("tasks.refresh")}>
+            <IconButton
               onClick={() => {
                 refresh();
                 launcherMetrics.reload();
               }}
-              variant="outlined"
             >
               <RefreshIcon />
-            </Button>
+            </IconButton>
           </Tooltip>
-          <FormControlLabel
-            control={<Checkbox checked={filterRunningStatus} onChange={handleFilterStatusChange} />}
-            label={t("tasks.runningTasks") as string}
+          <CheckBoxFE
+            label={t("tasks.runningTasks")}
+            value={filterRunningStatus}
+            onChange={handleFilterStatusChange}
+            sx={{ textWrap: "nowrap" }}
           />
-          <FormControl variant="outlined" sx={{ m: 1, mr: 3, minWidth: 160 }}>
-            <InputLabel id="jobsView-select-outlined-label">{t("tasks.typeFilter")}</InputLabel>
-            <Select
-              labelId="jobsView-select-outlined-label"
-              id="jobsView-select-outlined"
-              value={filterType}
-              onChange={handleChange}
-              label={t("tasks.typeFilter")}
-            >
-              <MenuItem value="">
-                <em>{t("global.none")}</em>
-              </MenuItem>
-              {FILTER_LIST.map((item) => (
-                <MenuItem value={item} key={item}>
-                  {t(`tasks.type.${item}`)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <SelectFE
+            label={t("tasks.typeFilter")}
+            value={filterType}
+            onChange={handleChange}
+            emptyValue
+            options={FILTER_LIST.map((item) => ({
+              value: item,
+              label: t(`tasks.type.${item}`),
+            }))}
+            size="extra-small"
+            margin="dense"
+            sx={{ minWidth: 160 }}
+          />
         </Box>
       </Box>
-      <TableContainer component={Paper}>
-        <Table sx={{ width: "100%", height: "90%" }} aria-label="simple table">
+      {/* List */}
+      <TableContainer component={Paper} elevation={2}>
+        <Table stickyHeader>
           <TableHead>
-            <TableRow
-              sx={{
-                "& td, & th": {
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                  color: colors.grey[500],
-                },
-              }}
-            >
+            <TableRow>
               <TableCell>{t("global.jobs")}</TableCell>
               <TableCell align="right">{t("study.type")}</TableCell>
               <TableCell align="right">
@@ -251,17 +230,7 @@ function JobTableView(props: PropType) {
                 return moment(a.date).isAfter(moment(b.date)) ? 1 : -1;
               })
               .map((row) => (
-                <TableRow
-                  key={`job-${row.id}`}
-                  sx={{
-                    "& td, & th": {
-                      borderColor: "divider",
-                    },
-                    "&:last-child > td, &:last-child > th": {
-                      border: 0,
-                    },
-                  }}
-                >
+                <TableRow key={row.id}>
                   <TableCell component="th" scope="row">
                     {row.name}
                   </TableCell>
@@ -273,7 +242,7 @@ function JobTableView(props: PropType) {
           </TableBody>
         </Table>
       </TableContainer>
-    </Box>
+    </>
   );
 }
 

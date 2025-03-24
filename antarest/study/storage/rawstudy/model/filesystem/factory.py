@@ -18,12 +18,17 @@ from pathlib import Path
 from typing import NamedTuple, Optional
 
 import filelock
+from antares.study.version import StudyVersion
 
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache, study_config_cache_key
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+    FileStudyTreeConfigDTO,
+    validate_config,
+)
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
@@ -99,12 +104,13 @@ class StudyFactory:
         output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> FileStudy:
-        cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
+        cache_id = study_config_cache_key(study_id)
         if study_id and use_cache:
             from_cache = self.cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
-                config = FileStudyTreeConfigDTO.model_validate(from_cache).to_build_config()
+                version = StudyVersion.parse(from_cache["version"])
+                config = validate_config(version, from_cache)
                 if output_path:
                     config.output_path = output_path
                     config.outputs = parse_outputs(output_path)

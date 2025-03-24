@@ -12,15 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
+import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { useTranslation } from "react-i18next";
+import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
+import { getAreas } from "../../../../../../redux/selectors";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getAreas } from "../../../../../../redux/selectors";
-import Fieldset from "../../../../../common/Fieldset";
-import { validateString } from "@/utils/validation/string";
 
 interface Props {
   studyId: string;
@@ -56,7 +55,7 @@ function CreateAreaDialog(props: Props) {
     <FormDialog
       title={t("study.modelization.map.newArea")}
       titleIcon={AddCircleIcon}
-      maxWidth="sm"
+      maxWidth="xs"
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
@@ -65,17 +64,16 @@ function CreateAreaDialog(props: Props) {
       }}
     >
       {({ control }) => (
-        <Fieldset fullFieldWidth>
-          <StringFE
-            label={t("global.name")}
-            name="name"
-            control={control}
-            fullWidth
-            rules={{
-              validate: (v) => validateString(v, { existingValues: existingAreas }),
-            }}
-          />
-        </Fieldset>
+        <StringFE
+          label={t("global.name")}
+          name="name"
+          control={control}
+          fullWidth
+          rules={{
+            validate: (v) => validateString(v, { existingValues: existingAreas }),
+          }}
+          margin="dense"
+        />
       )}
     </FormDialog>
   );

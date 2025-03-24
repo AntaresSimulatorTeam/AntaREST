@@ -13,8 +13,8 @@
  */
 
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
-import type { UserInfo } from "../../types/types";
 import storage, { StorageKey } from "../../services/utils/localStorage";
+import type { UserInfo } from "../../types/types";
 import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
@@ -35,8 +35,7 @@ localStorageMiddleware.startListening({
   effect: (action, { dispatch }) => {
     const user = action.payload as UserInfo;
     if (user) {
-      const { expirationDate, ...toSave } = user;
-      storage.setItem(StorageKey.AuthUser, toSave);
+      storage.setItem(StorageKey.AuthUser, user);
     } else {
       storage.removeItem(StorageKey.AuthUser);
     }

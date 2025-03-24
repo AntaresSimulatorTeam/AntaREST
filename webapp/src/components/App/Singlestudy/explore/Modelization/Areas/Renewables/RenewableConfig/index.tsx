@@ -12,18 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { Chip, Divider } from "@mui/material";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import BackButton from "@/components/common/buttons/BackButton";
+import { getCurrentAreaId } from "@/redux/selectors";
+import { nameToId } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
+import { Chip, Divider } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import useNavigateOnCondition from "../../../../../../../../hooks/useNavigateOnCondition";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import RenewableForm from "./RenewableForm";
 import RenewableMatrix from "./RenewableMatrix";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "@/redux/selectors";
-import useNavigateOnCondition from "../../../../../../../../hooks/useNavigateOnCondition";
-import { nameToId } from "@/services/utils";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
-import BackButton from "@/components/common/buttons/BackButton";
-import { useTranslation } from "react-i18next";
 
 function RenewableConfig() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -42,14 +41,14 @@ function RenewableConfig() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ViewWrapper>
+    <>
       <BackButton onClick={() => navigate("../renewables")} />
-      <RenewableForm study={study} areaId={areaId} clusterId={nameToId(clusterId)} />
-      <Divider sx={{ mt: 1 }} variant="middle">
+      <RenewableForm study={study} areaId={areaId} clusterId={clusterId} />
+      <Divider sx={{ my: 2 }} variant="middle">
         <Chip label={t("global.matrix")} size="small" />
       </Divider>
       <RenewableMatrix areaId={areaId} clusterId={nameToId(clusterId)} />
-    </ViewWrapper>
+    </>
   );
 }
 

@@ -22,7 +22,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
-from antarest.core.interfaces.cache import CacheConstants, ICache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.model import JSON, PublicMode
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
@@ -134,7 +134,7 @@ class AbstractStorageService(IStudyStorageService[T], ABC):
         parts = [item for item in url.split("/") if item]
 
         if url == "" and depth == -1:
-            cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
+            cache_id = study_raw_cache_key(metadata.id)
             from_cache: Optional[JSON] = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)

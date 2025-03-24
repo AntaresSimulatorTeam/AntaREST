@@ -41,4 +41,8 @@ declare module "@mui/material" {
   interface SvgIconPropsSizeOverrides {
     "extra-small": true;
   }
+
+  interface TabsOwnProps {
+    size?: "extra-small" | "small" | "medium";
+  }
 }

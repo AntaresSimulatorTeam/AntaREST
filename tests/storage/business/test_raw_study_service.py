@@ -359,7 +359,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     )
     assert (
         re.search(
-            "^threshold-initiate-curtailment-sharing-rule = 0.0",
+            "^threshold-initiate-curtailment-sharing-rule = 1.0",
             general_data,
             flags=re.MULTILINE,
         )
@@ -375,7 +375,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     )
     assert (
         re.search(
-            "^threshold-csr-variable-bounds-relaxation = 3",
+            "^threshold-csr-variable-bounds-relaxation = 7",
             general_data,
             flags=re.MULTILINE,
         )
@@ -427,6 +427,7 @@ def test_copy_study(
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_study),
         additional_data=StudyAdditionalData(),
+        version="700",
         groups=groups,
     )
     md = study_service.copy(src_md, "dst_name", groups)

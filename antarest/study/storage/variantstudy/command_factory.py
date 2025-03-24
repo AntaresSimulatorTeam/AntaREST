@@ -58,23 +58,28 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidat
     ReplaceXpansionCandidate,
 )
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
+from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
+from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
-from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
+from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
-from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
+from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_AREA.value: CreateArea,
+    CommandName.UPDATE_AREAS_PROPERTIES.value: UpdateAreasProperties,
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
     CommandName.REMOVE_AREA.value: RemoveArea,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
@@ -89,13 +94,15 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
-    CommandName.UPDATE_THERMAL_CLUSTER.value: UpdateThermalCluster,
+    CommandName.UPDATE_THERMAL_CLUSTERS.value: UpdateThermalClusters,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
-    CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,
+    CommandName.UPDATE_RENEWABLES_CLUSTERS.value: UpdateRenewablesClusters,
     CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
     CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
     CommandName.UPDATE_ST_STORAGE.value: UpdateSTStorage,
+    CommandName.UPDATE_HYDRO_PROPERTIES.value: UpdateHydroManagement,
+    CommandName.UPDATE_INFLOW_STRUCTURE.value: UpdateInflowStructure,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
     CommandName.UPDATE_CONFIG.value: UpdateConfig,
     CommandName.UPDATE_COMMENTS.value: UpdateComments,
@@ -115,6 +122,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_XPANSION_CAPACITY.value: CreateXpansionCapacity,
     CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
     CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
+    CommandName.UPDATE_XPANSION_SETTINGS.value: UpdateXpansionSettings,
 }
 
 
