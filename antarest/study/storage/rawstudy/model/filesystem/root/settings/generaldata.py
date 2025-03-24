@@ -166,7 +166,7 @@ class GeneralData(IniFileNode):
             adequacy["threshold-csr-variable-bounds-relaxation"] = int
 
         if study_version >= STUDY_VERSION_8_6:
-            types["adequacy patch"]["enable-first-step "] = bool
+            types["adequacy patch"]["enable-first-step"] = bool
 
         if study_version >= STUDY_VERSION_9_2:
             adequacy = types["adequacy patch"]
