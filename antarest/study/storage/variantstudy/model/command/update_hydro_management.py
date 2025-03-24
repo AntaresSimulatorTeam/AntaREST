@@ -65,7 +65,7 @@ class UpdateHydroManagement(ICommand):
 
         current_hydro.set_hydro_management(self.area_id, new_hydro)
 
-        study_data.tree.save(current_hydro.model_dump(by_alias=True), HYDRO_PATH)
+        study_data.tree.save(current_hydro.model_dump(by_alias=True, exclude_none=True), HYDRO_PATH)
 
         output, _ = self._apply_config(study_data.config)
 

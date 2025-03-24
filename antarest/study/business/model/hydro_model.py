@@ -39,7 +39,7 @@ class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, a
     leeway_low: Optional[float] = Field(default=1, ge=0)
     leeway_up: Optional[float] = Field(default=1, ge=0)
     pumping_efficiency: Optional[float] = Field(default=1, ge=0)
-    overflow_spilled_cost_difference: Optional[float] = Field(default=1)
+    overflow_spilled_cost_difference: Optional[float] = None
 
 
 @all_optional_model
