@@ -85,7 +85,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         try:
             raw_meta = study.tree.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
-            metadata.version = raw_meta["version"]
+            metadata.version = str(raw_meta["version"])
             metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
             metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 

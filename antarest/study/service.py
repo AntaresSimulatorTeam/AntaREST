@@ -2950,4 +2950,4 @@ class StudyService:
             if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
                 hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
                 if hydro_pmax_value == "hourly":
-                    raise StudyImportFailed("AntaresWeb doesn't support the value hourly for the flag hydro-pmax")
+                    raise StudyImportFailed("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
