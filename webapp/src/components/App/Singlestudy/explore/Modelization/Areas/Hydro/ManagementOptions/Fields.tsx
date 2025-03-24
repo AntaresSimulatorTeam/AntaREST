@@ -119,7 +119,7 @@ function Fields({ study }: Props) {
         />
         {studyVersion >= 920 && (
             <NumberFE
-                name="overFlowSpilledCostDifference"
+                name="overflowSpilledCostDifference"
                 label="Overflow Spilled Cost Difference"
                 control={control}
             />
