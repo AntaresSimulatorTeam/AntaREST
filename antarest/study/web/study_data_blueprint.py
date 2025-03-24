@@ -135,10 +135,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         ui: bool = False,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[AreaInfoDTO] | Dict[str, Any]:
-        logger.info(
-            f"Fetching area list (type={type}) for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching area list (type={type}) for study {uuid}")
         params = RequestParameters(user=current_user)
         areas_list = study_service.get_all_areas(uuid, type, ui, params)
         return areas_list
@@ -153,10 +150,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[LinkDTO]:
-        logger.info(
-            f"Fetching link list for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching link list for study {uuid}")
         params = RequestParameters(user=current_user)
         links = study_service.get_all_links(uuid, params)
         return links
@@ -190,10 +184,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_creation_info: AreaCreationDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Creating new area for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Creating new area for study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.create_area(uuid, area_creation_info, params)
 
@@ -208,10 +199,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         link_creation_info: LinkDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> LinkDTO:
-        logger.info(
-            f"Creating new link for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Creating new link for study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.create_link(uuid, link_creation_info, params)
 
@@ -228,10 +216,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         link_update_dto: LinkBaseDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Updating link {area_from} -> {area_to} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating link {area_from} -> {area_to} for study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.update_link(uuid, area_from, area_to, link_update_dto, params)
 
@@ -248,10 +233,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         layer: str = "0",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Updating area ui {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating area ui {area_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         return study_service.update_area_ui(uuid, area_id, area_ui, layer, params)
 
@@ -266,10 +248,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Removing area {area_id} in study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Removing area {area_id} in study {uuid}")
         params = RequestParameters(user=current_user)
         uuid = sanitize_uuid(uuid)
         area_id = transform_name_to_id(area_id)
@@ -288,10 +267,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_to: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Removing link {area_from}%{area_to} in study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Removing link {area_from}%{area_to} in study {uuid}")
         params = RequestParameters(user=current_user)
         area_from = transform_name_to_id(area_from)
         area_to = transform_name_to_id(area_to)
@@ -308,10 +284,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[LayerInfoDTO]:
-        logger.info(
-            f"Fetching layer list for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching layer list for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         return study_service.area_manager.get_layers(study_service.get_study_interface(study))
@@ -327,10 +300,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
-        logger.info(
-            f"Create layer {name} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Create layer {name} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.area_manager.create_layer(study_service.get_study_interface(study), name)
@@ -347,10 +317,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         areas: Optional[List[str]] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating layer {layer_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating layer {layer_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -371,10 +338,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         layer_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Remove layer {layer_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Remove layer {layer_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_service.area_manager.remove_layer(study_service.get_study_interface(study), layer_id)
@@ -389,10 +353,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> List[DistrictInfoDTO]:
-        logger.info(
-            f"Fetching districts list for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching districts list for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -409,10 +370,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         dto: DistrictCreationDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> DistrictInfoDTO:
-        logger.info(
-            f"Create district {dto.name} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Create district {dto.name} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -429,10 +387,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         dto: DistrictUpdateDTO,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating district {district_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating district {district_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -448,10 +403,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         district_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Remove district {district_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Remove district {district_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -469,10 +421,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> HydroManagement:
-        logger.info(
-            msg=f"Getting Hydro management config for area {area_id} of study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Getting Hydro management config for area {area_id} of study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -489,10 +438,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         data: HydroManagementUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            msg=f"Updating Hydro management config for area {area_id} of study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Updating Hydro management config for area {area_id} of study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -511,10 +457,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> InflowStructure:
         """Get the configuration for the hydraulic inflow structure of the given area."""
-        logger.info(
-            msg=f"Getting inflow structure values for area {area_id} of study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Getting inflow structure values for area {area_id} of study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -532,10 +475,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """Update the configuration for the hydraulic inflow properties of the given area."""
-        logger.info(
-            msg=f"Updating inflow properties values for area {area_id} of study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Updating inflow properties values for area {area_id} of study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -578,10 +518,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ThematicTrimmingFormFields:
-        logger.info(
-            f"Fetching thematic trimming config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching thematic trimming config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -597,10 +534,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         field_values: ThematicTrimmingFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating thematic trimming config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating thematic trimming config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -617,10 +551,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Dict[int, PlaylistColumns]:
-        logger.info(
-            f"Getting MC Scenario playlist data for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -636,10 +567,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         data: Dict[int, PlaylistColumns],
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating MC Scenario playlist table data for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -655,10 +583,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Optional[Dict[int, float]]:
-        logger.info(
-            f"Fetching playlist config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching playlist config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -677,10 +602,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         weights: Optional[Dict[int, int]] = Body(default=None),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Updating playlist config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating playlist config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -696,10 +618,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Rulesets:
-        logger.info(
-            f"Getting MC Scenario builder config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting MC Scenario builder config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -778,10 +697,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         }
         ```
         """
-        logger.info(
-            f"Getting MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -798,10 +714,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         data: Rulesets,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating MC Scenario builder config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating MC Scenario builder config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -842,10 +755,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns:
         - The updated scenario matrix.
         """
-        logger.info(
-            f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -866,10 +776,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> GeneralFormFields:
-        logger.info(
-            msg=f"Getting General management config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Getting General management config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -885,10 +792,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         field_values: GeneralFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating General management config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating General management config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -905,10 +809,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> OptimizationFormFields:
-        logger.info(
-            msg=f"Getting optimization config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Getting optimization config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -924,10 +825,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         field_values: OptimizationFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating optimization config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating optimization config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -944,10 +842,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AdequacyPatchFormFields:
-        logger.info(
-            msg=f"Getting adequacy patch config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Getting adequacy patch config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -963,10 +858,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         field_values: AdequacyPatchFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating adequacy patch config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating adequacy patch config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -983,10 +875,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> TimeSeriesConfigDTO:
-        logger.info(
-            msg=f"Getting Time-Series generation config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Getting Time-Series generation config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1000,10 +889,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_ts_generation_config(
         uuid: str, field_values: TimeSeriesConfigDTO, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> None:
-        logger.info(
-            f"Updating Time-Series generation config for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating Time-Series generation config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1024,7 +910,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Args:
         - `table_type`: The type of table to get the schema for.
         """
-        logger.info("Getting table schema", extra={"user": current_user.id})
+        logger.info("Getting table schema")
         model_schema = study_service.table_mode_manager.get_table_schema(table_type)
         return model_schema
 
@@ -1046,10 +932,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - uuid: The UUID of the study.
         - table_type: The type of table to get the data for.
         """
-        logger.info(
-            f"Getting table data for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting table data for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1092,10 +975,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - table_type: The type of table to update.
         - data: The table data to update.
         """
-        logger.info(
-            f"Updating table data for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating table data for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1152,10 +1032,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         ),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Sequence[ConstraintOutput]:
-        logger.info(
-            f"Fetching binding constraint list for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching binding constraint list for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1183,10 +1060,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         binding_constraint_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ConstraintOutput:
-        logger.info(
-            f"Fetching binding constraint {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching binding constraint {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1203,10 +1077,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         data: ConstraintInput,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ConstraintOutput:
-        logger.info(
-            f"Update binding constraint {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1232,10 +1103,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns:
         - The list of binding constraints for each group.
         """
-        logger.info(
-            f"Fetching binding constraint groups for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching binding constraint groups for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1266,10 +1134,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Raises:
         - HTTPException(422) if any group is invalid.
         """
-        logger.info(
-            f"Validating all binding constraint groups for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Validating all binding constraint groups for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1298,10 +1163,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Raises:
         - HTTPException(404) if the group does not exist.
         """
-        logger.info(
-            f"Fetching binding constraint group '{group}' for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching binding constraint group '{group}' for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1334,10 +1196,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - HTTPException(404) if the group does not exist.
         - HTTPException(422) if the group is invalid.
         """
-        logger.info(
-            f"Validating binding constraint group '{group}' for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Validating binding constraint group '{group}' for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1349,10 +1208,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         data: ConstraintCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ConstraintOutput:
-        logger.info(
-            f"Creating a new binding constraint for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Creating a new binding constraint for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1369,10 +1225,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         new_constraint_name: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> ConstraintOutput:
-        logger.info(
-            f"Duplicates constraint {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Duplicates constraint {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1389,10 +1242,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def delete_binding_constraint(
         uuid: str, binding_constraint_id: str, current_user: JWTUser = Depends(auth.get_current_user)
     ) -> None:
-        logger.info(
-            f"Deleting the binding constraint {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Deleting the binding constraint {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1409,10 +1259,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def delete_multiple_binding_constraints(
         uuid: str, binding_constraints_ids: List[str], current_user: JWTUser = Depends(auth.get_current_user)
     ) -> None:
-        logger.info(
-            f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1439,10 +1286,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `binding_constraint_id`: The binding constraint ID.
         - `term`: The term to create.
         """
-        logger.info(
-            f"Add constraint term {term.generate_id()} to {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Add constraint term {term.generate_id()} to {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1469,10 +1313,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `binding_constraint_id`: The binding constraint ID.
         - `terms`: The list of terms to create.
         """
-        logger.info(
-            f"Adding constraint terms to {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Adding constraint terms to {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1499,10 +1340,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `binding_constraint_id`: The binding constraint ID.
         - `term`: The term to update.
         """
-        logger.info(
-            f"Update constraint term {term.id} from {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Update constraint term {term.id} from {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1529,10 +1367,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `binding_constraint_id`: The binding constraint ID.
         - `terms`: The list of terms to update.
         """
-        logger.info(
-            f"Updating constraint terms from {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating constraint terms from {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1551,10 +1386,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         term_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Remove constraint term {term_id} from {binding_constraint_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Remove constraint term {term_id} from {binding_constraint_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1836,10 +1668,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AdvancedParamsFormFields:
-        logger.info(
-            msg=f"Getting Advanced Parameters for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(msg=f"Getting Advanced Parameters for study {uuid}")
 
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
@@ -1856,10 +1685,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         field_values: AdvancedParamsFormFields,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            f"Updating Advanced parameters values for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating Advanced parameters values for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -1880,10 +1706,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Args:
         - `uuid`: The UUID of the study.
         """
-        logger.info(
-            f"Generating timeseries for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Generating timeseries for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         return study_service.generate_timeseries(study, params)
@@ -1900,12 +1723,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> AreaProperties:
-        logger.info(
-            "Getting properties form values for study %s and area %s",
-            uuid,
-            area_id,
-            extra={"user": current_user.id},
-        )
+        logger.info("Getting properties form values for study %s and area %s", uuid, area_id)
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1922,12 +1740,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         form_fields: AreaPropertiesUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
-        logger.info(
-            "Setting properties form values for study %s and area %s",
-            uuid,
-            area_id,
-            extra={"user": current_user.id},
-        )
+        logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
@@ -1944,12 +1757,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Sequence[RenewableClusterOutput]:
-        logger.info(
-            "Getting renewable clusters for study %s and area %s",
-            uuid,
-            area_id,
-            extra={"user": current_user.id},
-        )
+        logger.info("Getting renewable clusters for study %s and area %s", uuid, area_id)
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -1967,12 +1775,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
-        logger.info(
-            "Getting renewable cluster values for study %s and cluster %s",
-            uuid,
-            cluster_id,
-            extra={"user": current_user.id},
-        )
+        logger.info("Getting renewable cluster values for study %s and cluster %s", uuid, cluster_id)
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2015,10 +1818,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Returns: The properties of the newly-created renewable cluster.
         """
-        logger.info(
-            f"Creating renewable cluster for study '{uuid}' and area '{area_id}'",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Creating renewable cluster for study '{uuid}' and area '{area_id}'")
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
@@ -2037,10 +1837,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_data: RenewableClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> RenewableClusterOutput:
-        logger.info(
-            f"Updating renewable cluster for study '{uuid}' and cluster '{cluster_id}'",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating renewable cluster for study '{uuid}' and cluster '{cluster_id}'")
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
@@ -2084,10 +1881,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `area_id`: the area ID.
         - `cluster_ids`: list of IDs to remove.
         """
-        logger.info(
-            f"Deleting renewable clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Deleting renewable clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'")
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
@@ -2113,12 +1907,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Returns: The list thermal clusters.
         """
-        logger.info(
-            "Getting thermal clusters for study %s and area %s",
-            uuid,
-            area_id,
-            extra={"user": current_user.id},
-        )
+        logger.info("Getting thermal clusters for study %s and area %s", uuid, area_id)
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2146,12 +1935,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Returns: The properties of the thermal clusters.
         """
-        logger.info(
-            "Getting thermal cluster values for study %s and cluster %s",
-            uuid,
-            cluster_id,
-            extra={"user": current_user.id},
-        )
+        logger.info("Getting thermal cluster values for study %s and cluster %s", uuid, cluster_id)
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2194,10 +1978,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Returns: The properties of the newly-created thermal cluster.
         """
-        logger.info(
-            f"Creating thermal cluster for study '{uuid}' and area '{area_id}'",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Creating thermal cluster for study '{uuid}' and area '{area_id}'")
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
@@ -2226,10 +2007,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         Returns: The properties of the updated thermal clusters.
         """
-        logger.info(
-            f"Updating thermal cluster for study '{uuid}' and cluster '{cluster_id}'",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Updating thermal cluster for study '{uuid}' and cluster '{cluster_id}'")
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
@@ -2274,10 +2052,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Permissions:
         - User must have READ permission on the study.
         """
-        logger.info(
-            f"Validating thermal series values for study {uuid} and cluster {cluster_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Validating thermal series values for study {uuid} and cluster {cluster_id}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2305,10 +2080,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `area_id`: the area ID.
         - `cluster_ids`: list of thermal cluster IDs to remove.
         """
-        logger.info(
-            f"Deleting thermal clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Deleting thermal clusters {cluster_ids!r} for study '{uuid}' and area '{area_id}'")
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
@@ -2349,10 +2121,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Permissions:
           The user must have READ permission on the study.
         """
-        logger.info(
-            f"Getting values for study {uuid} and short term storage {storage_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting values for study {uuid} and short term storage {storage_id}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2390,10 +2159,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Permissions:
           The user must have READ permission on the study.
         """
-        logger.info(
-            f"Getting storages for study {uuid} in a given area {area_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Getting storages for study {uuid} in a given area {area_id}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2429,10 +2195,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Permissions:
         - User must have READ permission on the study.
         """
-        logger.info(
-            f"Retrieving time series for study {uuid} and short-term storage {storage_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Retrieving time series for study {uuid} and short-term storage {storage_id}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2464,10 +2227,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Permissions:
         - User must have WRITE permission on the study.
         """
-        logger.info(
-            f"Update time series for study {uuid} and short-term storage {storage_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Update time series for study {uuid} and short-term storage {storage_id}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -2495,10 +2255,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Permissions:
         - User must have READ permission on the study.
         """
-        logger.info(
-            f"Validating time series for study {uuid} and short-term storage {storage_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Validating time series for study {uuid} and short-term storage {storage_id}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
         study_interface = study_service.get_study_interface(study)
@@ -2547,10 +2304,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - User must have READ/WRITE permission on the study.
         """
 
-        logger.info(
-            f"Create short-term storage from {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Create short-term storage from {area_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -2600,10 +2354,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - User must have READ/WRITE permission on the study.
         """
 
-        logger.info(
-            f"Update short-term storage {storage_id} from {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Update short-term storage {storage_id} from {area_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -2632,10 +2383,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Permissions:
         - User must have DELETED permission on the study.
         """
-        logger.info(
-            f"Delete short-term storage ID's {storage_ids} from {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Delete short-term storage ID's {storage_ids} from {area_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
@@ -2654,10 +2402,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> STStorageOutput | ThermalClusterOutput | RenewableClusterOutput:
-        logger.info(
-            f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
 

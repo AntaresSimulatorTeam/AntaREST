@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Typography, Grid } from "@mui/material";
+import { validateNumber } from "@/utils/validation/number";
+import { Grid, Typography } from "@mui/material";
 import type { FieldArrayWithId } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import type { CorrelationFormFields } from "./utils";
-import { useFormContextPlus } from "../../../../../../../common/Form";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentArea } from "../../../../../../../../redux/selectors";
-import { validateNumber } from "@/utils/validation/number";
+import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
+import { useFormContextPlus } from "../../../../../../../common/Form";
+import type { CorrelationFormFields } from "./utils";
 
 interface Props {
   field: FieldArrayWithId<CorrelationFormFields, "correlation">;
@@ -59,6 +59,7 @@ function CorrelationField({ field, index, label }: Props) {
           control={control}
           rules={{ validate: validateNumber({ min: -100, max: 100 }) }}
           disabled={field.areaId === currentArea?.id}
+          margin="dense"
         />
       </Grid>
     </>

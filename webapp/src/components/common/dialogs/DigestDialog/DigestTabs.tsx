@@ -12,16 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
 import TabsView from "@/components/common/TabsView";
-import type { DigestData } from "./types";
 import DigestMatrix from "./DigestMatrix";
+import type { DigestData } from "./types";
 
 interface DigestTabsProps {
   matrices: DigestData;
 }
 
-export function DigestTabs({ matrices }: DigestTabsProps) {
+function DigestTabs({ matrices }: DigestTabsProps) {
   const tabItems = [
     {
       label: "Area",
@@ -45,9 +44,7 @@ export function DigestTabs({ matrices }: DigestTabsProps) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <Box sx={{ height: 1, display: "flex", flexDirection: "column" }}>
-      <TabsView items={tabItems} divider />
-    </Box>
-  );
+  return <TabsView items={tabItems} divider disablePadding />;
 }
+
+export default DigestTabs;

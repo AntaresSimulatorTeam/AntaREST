@@ -17,13 +17,12 @@ import {
   generateResultColumns,
   groupResultColumns,
 } from "@/components/common/Matrix/shared/utils";
-import { Box } from "@mui/material";
-import type { DigestMatrixData } from "./types";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import { GridOff } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
-import EmptyView from "../../page/EmptyView";
 import DataGridViewer from "../../DataGridViewer";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import EmptyView from "../../page/EmptyView";
+import type { DigestMatrixData } from "./types";
 
 const isGroupedColumns = (columns: string[] | string[][]): columns is string[][] => {
   return Array.isArray(columns[0]);
@@ -56,15 +55,13 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Box sx={{ width: 1, height: "calc(100vh - 350px)" }}>
-        {!matrix.data[0]?.length ? (
-          <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOff} />
-        ) : (
-          <DataGridViewer data={matrix.data} columns={columns} />
-        )}
-      </Box>
-    </Box>
+    <>
+      {!matrix.data[0]?.length ? (
+        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOff} />
+      ) : (
+        <DataGridViewer data={matrix.data} columns={columns} />
+      )}
+    </>
   );
 }
 

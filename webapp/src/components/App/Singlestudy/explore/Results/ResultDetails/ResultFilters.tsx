@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { Box, IconButton } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { DataType, matchesSearchTerm, Timestep } from "./utils";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import * as R from "ramda";
-import { useState, useMemo, useEffect } from "react";
-import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
+import FilterListOffIcon from "@mui/icons-material/FilterListOff";
+import { Box, IconButton } from "@mui/material";
+import startCase from "lodash/startCase";
+import * as R from "ramda";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
+import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
+import NumberFE from "../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../common/fieldEditors/SelectFE";
+import { DataType, matchesSearchTerm, Timestep } from "./utils";
 
 interface ColumnHeader {
   variable: string;
@@ -185,48 +187,31 @@ function ResultFilters({
   const COLUMN_FILTERS = [
     {
       id: "search",
-      label: "",
       field: (
         <SearchFE
           value={filters.search}
           size="extra-small"
-          onChange={(e) => handleSearchChange(e.target.value)}
-          sx={{ width: 150, mr: 1 }}
+          onSearchValueChange={handleSearchChange}
+          sx={{ maxWidth: 150 }}
         />
       ),
     },
-    {
-      id: "exp",
-      label: "Exp",
-      field: <CheckBoxFE value={filters.exp} onChange={() => handleStatFilterChange("exp")} />,
-    },
-    {
-      id: "min",
-      label: "Min",
-      field: <CheckBoxFE value={filters.min} onChange={() => handleStatFilterChange("min")} />,
-    },
-    {
-      id: "max",
-      label: "Max",
-      field: <CheckBoxFE value={filters.max} onChange={() => handleStatFilterChange("max")} />,
-    },
-    {
-      id: "std",
-      label: "Std",
-      field: <CheckBoxFE value={filters.std} onChange={() => handleStatFilterChange("std")} />,
-    },
-    {
-      id: "values",
-      label: "Values",
+    ...(["exp", "min", "max", "std", "values"] as const).map((col) => ({
+      id: col,
       field: (
-        <CheckBoxFE value={filters.values} onChange={() => handleStatFilterChange("values")} />
+        <CheckBoxFE
+          key={col}
+          label={startCase(col)}
+          labelPlacement="start"
+          value={filters[col]}
+          onChange={() => handleStatFilterChange(col)}
+        />
       ),
-    },
+    })),
     {
       id: "reset",
-      label: "",
       field: (
-        <IconButton color="primary" onClick={handleReset} disabled={!filtersApplied} sx={{ ml: 1 }}>
+        <IconButton sx={{ ml: 1 }} onClick={handleReset} disabled={!filtersApplied}>
           <FilterListOffIcon />
         </IconButton>
       ),
@@ -236,37 +221,42 @@ function ResultFilters({
   // Data filters (requiring API calls, refetch new result)
   const RESULT_FILTERS = [
     {
-      label: `${t("study.results.mc")}:`,
+      id: "mc",
       field: (
-        <>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <BooleanFE
+            label={t("study.results.mc")}
             value={year <= 0}
             trueText="Synthesis"
             falseText="Year by year"
-            variant="outlined"
             size="extra-small"
+            margin="dense"
             onChange={(event) => setYear(event?.target.value ? -1 : 1)}
           />
           {localYear > 0 && (
             <NumberFE
-              variant="outlined"
+              label={t("global.year")}
               size="extra-small"
               value={localYear}
-              sx={{ m: 0, ml: 1, width: 80 }}
-              inputProps={{
-                min: 1,
-                max: maxYear,
+              slotProps={{
+                htmlInput: {
+                  min: 1,
+                  max: maxYear,
+                },
               }}
               onChange={handleYearChange}
+              margin="dense"
+              sx={{ minWidth: 65 }}
             />
           )}
-        </>
+        </Box>
       ),
     },
     {
-      label: `${t("study.results.display")}:`,
+      id: "display",
       field: (
         <SelectFE
+          label={t("study.results.display")}
           value={dataType}
           options={[
             { value: DataType.General, label: "General values" },
@@ -275,16 +265,18 @@ function ResultFilters({
             { value: DataType.Record, label: "RecordYears" },
             { value: DataType.STStorage, label: "ST Storages" },
           ]}
-          variant="outlined"
           size="extra-small"
           onChange={(event) => setDataType(event?.target.value as DataType)}
+          margin="dense"
+          sx={{ minWidth: 80 }}
         />
       ),
     },
     {
-      label: `${t("study.results.temporality")}:`,
+      id: "temporality",
       field: (
         <SelectFE
+          label={t("study.results.temporality")}
           value={timestep}
           options={[
             { value: Timestep.Hourly, label: "Hourly" },
@@ -293,9 +285,10 @@ function ResultFilters({
             { value: Timestep.Monthly, label: "Monthly" },
             { value: Timestep.Annual, label: "Annual" },
           ]}
-          variant="outlined"
           size="extra-small"
           onChange={(event) => setTimestep(event?.target.value as Timestep)}
+          margin="dense"
+          sx={{ minWidth: 93 }}
         />
       ),
     },
@@ -309,55 +302,50 @@ function ResultFilters({
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        py: 1,
+        flexDirection: "column",
+        gap: 1,
+        pb: 1,
       }}
     >
-      {/* Column Filters Group */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        {COLUMN_FILTERS.map(({ id, label, field }) => (
+      <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+        <Box
+          sx={{
+            width: 1,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          {/* Column Filters Group */}
           <Box
-            key={id}
             sx={{
               display: "flex",
               alignItems: "center",
+              gap: 1,
+              flex: 1,
             }}
           >
-            <Box sx={{ opacity: 0.7 }}>{label}</Box>
-            {field}
+            {COLUMN_FILTERS.map(({ id, field }) => (
+              <Fragment key={id}>{field}</Fragment>
+            ))}
           </Box>
-        ))}
-      </Box>
+          <DownloadMatrixButton studyId={studyId} path={path} />
+        </Box>
+      </CustomScrollbar>
 
-      {/* Result Filters Group with Download Button */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        {RESULT_FILTERS.map(({ label, field }) => (
-          <Box
-            key={label}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              mr: 1,
-            }}
-          >
-            <Box sx={{ opacity: 0.7, mr: 1 }}>{label}</Box>
-            {field}
-          </Box>
-        ))}
-        <DownloadMatrixButton studyId={studyId} path={path} />
-      </Box>
+      {/* Result Filters Group */}
+      <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          {RESULT_FILTERS.map(({ id, field }) => (
+            <Fragment key={id}>{field}</Fragment>
+          ))}
+        </Box>
+      </CustomScrollbar>
     </Box>
   );
 }
