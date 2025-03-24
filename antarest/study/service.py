@@ -44,6 +44,7 @@ from antarest.core.exceptions import (
     ReferencedObjectDeletionNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
+    StudyImportFailed,
     StudyNotFoundError,
     StudyTypeUnsupported,
     StudyVariantUpgradeError,
@@ -57,6 +58,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.json import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
@@ -112,6 +114,7 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_9_2,
     CommentsDto,
     ExportFormat,
     MatrixIndex,
@@ -1624,6 +1627,9 @@ class StudyService:
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+
+        self.checks_antares_web_compatibility(study)
+
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, params.user, group_ids)
@@ -2930,3 +2936,18 @@ class StudyService:
         digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
         assert isinstance(digest_node, DigestSynthesis)
         return digest_node.get_ui()
+
+    def checks_antares_web_compatibility(self, study: Study) -> None:
+        """
+        A new compatibility section has been introduced with the Simulator version 9.2
+        For now AntaresWeb doesn't support the field `hydro-pmax` when it's set at `hourly`.
+        If we find this value, we want to raise an Exception
+        """
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_9_2:
+            general_data_path = Path(study.path) / "settings" / "generaldata.ini"
+            ini_content = read_ini(general_data_path)
+            # The section is optional and AntaresWeb supports the default Simulator value
+            if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
+                hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
+                if hydro_pmax_value == "hourly":
+                    raise StudyImportFailed("AntaresWeb doesn't support the value hourly for the flag hydro-pmax")
