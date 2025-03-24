@@ -29,7 +29,7 @@ interface Props {
 
 function buildMatrices(areaId: string, storageId: string, studyVersion: number) {
     const { t } = useTranslation();
-    return [
+    const matrices = [
         {
           label: t("study.modelization.storages.modulation"),
           content: () => (
@@ -84,6 +84,58 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
           label: t("study.modelization.storages.inflows"),
           content: () => <Matrix url={`input/st-storage/series/${areaId}/${storageId}/inflows`} />,
         }]
+    if (studyVersion >= 920) {
+      matrices.push({
+          label: t("study.modelization.storages.costs"),
+          content: () => (
+            <SplitView id="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
+              <Box sx={{ pr: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
+                <Matrix
+                  title={t("study.modelization.storages.injectionCost")}
+                  url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
+                />
+              </Box>
+              <Box sx={{ pl: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
+                <Matrix
+                  title={t("study.modelization.storages.withdrawalCost")}
+                  url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
+                />
+              </Box>
+            </SplitView>
+          ),
+        },{
+          label: t("study.modelization.storages.costs"),
+          content: () => (
+            <SplitView id="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
+              <Box sx={{ pr: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
+                <Matrix
+                  title={t("study.modelization.storages.injectionCost")}
+                  url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
+                />
+              </Box>
+              <Box sx={{ pl: 2 }}>
+                {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
+                <Matrix
+                  title={t("study.modelization.storages.withdrawalCost")}
+                  url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}
+                  isTimeSeries={false}
+                  customColumns={["TS 1"]}
+                />
+              </Box>
+            </SplitView>
+          ),
+        })
+    }
+    return matrices;
 }
 
 // !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
