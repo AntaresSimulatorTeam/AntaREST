@@ -188,7 +188,7 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Matrix values cannot contain NaN"
         assert "pmax_injection" in raised_error["input"]
 
-    def test_init__invalid_matrix_type(self, command_context: CommandContext):
+    def test_init__invalid_matrix_format(self, command_context: CommandContext):
         with pytest.raises(ValidationError) as ctx:
             CreateSTStorage(
                 command_context=command_context,
@@ -202,6 +202,23 @@ class TestCreateSTStorage:
         assert raised_error["type"] == "value_error"
         assert raised_error["msg"] == "Value error, Invalid matrix shape (3, 1), expected (8760, 1)"
         assert "pmax_injection" in raised_error["input"]
+
+    def test_init__invalid_matrix_for_version(self, command_context: CommandContext):
+        with pytest.raises(ValidationError) as ctx:
+            CreateSTStorage(
+                command_context=command_context,
+                area_id="area_fr",
+                parameters=STStorageProperties(**PARAMETERS),
+                cost_injection=[[1], [2], [3]],
+                study_version=STUDY_VERSION_8_8,
+            )
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == (
+            "Value error, You gave a 9.2 matrix: 'cost_injection' for a study in version 8.8"
+        )
+        assert "cost_injection" in raised_error["input"]
 
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
