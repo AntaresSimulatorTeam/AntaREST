@@ -803,5 +803,6 @@ class FileAlreadyExistsError(HTTPException):
 
 
 class StudyImportFailed(HTTPException):
-    def __init__(self, message: str) -> None:
+    def __init__(self, study_name: str, reason: str) -> None:
+        message = f"Study '{study_name}' could not be imported: {reason}"
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)

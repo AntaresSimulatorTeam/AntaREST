@@ -23,7 +23,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import StudyDeletionNotAllowed, StudyImportFailed, StudyNotFoundError
+from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
@@ -693,6 +693,6 @@ def test_checks_study_compatibility(tmp_path: Path) -> None:
 
     # The new flag isn't supported, the check should fail
     with pytest.raises(
-        StudyImportFailed, match="AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
+        NotImplementedError, match="AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
     ):
         study_service.checks_antares_web_compatibility(raw_study)

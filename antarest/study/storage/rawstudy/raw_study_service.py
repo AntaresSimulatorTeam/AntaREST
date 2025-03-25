@@ -23,7 +23,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyDeletionNotAllowed, StudyImportFailed
+from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
@@ -499,4 +499,4 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
                 hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
                 if hydro_pmax_value == "hourly":
-                    raise StudyImportFailed("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
+                    raise NotImplementedError("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
