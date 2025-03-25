@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.business.model.thermal_model import ThermalClusterCreation, ThermalClusterGroup
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

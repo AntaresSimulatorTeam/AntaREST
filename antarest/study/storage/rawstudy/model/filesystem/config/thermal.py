@@ -16,7 +16,7 @@ from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
-from antarest.study.business.model.thermal_model import (
+from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalCluster,

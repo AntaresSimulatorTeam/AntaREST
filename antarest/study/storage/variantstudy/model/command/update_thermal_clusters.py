@@ -14,7 +14,7 @@ from typing import Any, List, Optional
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.business.model.thermal_model import (
+from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterUpdate,
     update_thermal_cluster,

@@ -14,7 +14,7 @@ import pytest
 from checksumdir import dirhash
 
 from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
-from antarest.study.business.model.thermal_model import ThermalClusterCreation, ThermalClusterGroup
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,

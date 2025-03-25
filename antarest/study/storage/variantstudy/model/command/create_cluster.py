@@ -20,7 +20,7 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.thermal_model import (
+from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     create_thermal_cluster,

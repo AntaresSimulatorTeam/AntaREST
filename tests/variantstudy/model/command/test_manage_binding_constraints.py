@@ -13,7 +13,7 @@
 import pytest
 
 from antarest.core.serde.ini_reader import read_ini
-from antarest.study.business.model.thermal_model import ThermalClusterCreation
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,

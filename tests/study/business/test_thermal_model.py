@@ -15,7 +15,7 @@ import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.study.business.model.thermal_model import (
+from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalCluster,

@@ -27,7 +27,7 @@ from antarest.study.business.model.area_model import (
 from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
 )
-from antarest.study.business.model.thermal_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaFolder,

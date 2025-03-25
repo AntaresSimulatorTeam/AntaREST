@@ -18,7 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.business.model.thermal_model import ThermalCluster, ThermalCostGeneration
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_links_filtering,

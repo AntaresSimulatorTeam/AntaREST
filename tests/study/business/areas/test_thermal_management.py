@@ -24,7 +24,11 @@ from antarest.study.business.areas.thermal_management import (
     ThermalClusterUpdate,
     ThermalManager,
 )
-from antarest.study.business.model.thermal_model import LawOption, LocalTSGenerationBehavior, ThermalClusterGroup
+from antarest.study.business.model.thermal_cluster_model import (
+    LawOption,
+    LocalTSGenerationBehavior,
+    ThermalClusterGroup,
+)
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

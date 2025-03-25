@@ -65,7 +65,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
-from antarest.study.business.model.thermal_model import (
+from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterUpdate,

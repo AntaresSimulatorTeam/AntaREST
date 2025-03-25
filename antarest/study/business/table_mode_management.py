@@ -30,7 +30,7 @@ from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.link_model import LinkBaseDTO
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate
 from antarest.study.business.model.sts_model import STStorageUpdate
-from antarest.study.business.model.thermal_model import ThermalClusterUpdate
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_2
 

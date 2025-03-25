@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from checksumdir import dirhash
 
-from antarest.study.business.model.thermal_model import ThermalClusterCreation, ThermalClusterGroup
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,

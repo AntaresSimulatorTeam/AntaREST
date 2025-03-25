@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.study.business.model.thermal_model import (
+from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalClusterGroup,

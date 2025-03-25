@@ -20,7 +20,7 @@ from typing_extensions import override
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.thermal_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import StudyVersionInt
 
 from .binding_constraint import (

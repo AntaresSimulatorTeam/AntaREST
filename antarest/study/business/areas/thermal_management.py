@@ -25,7 +25,7 @@ from antarest.core.exceptions import (
     WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
-from antarest.study.business.model.thermal_model import (
+from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterUpdate,

@@ -17,7 +17,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
-from antarest.study.business.model.thermal_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
