@@ -27,7 +27,7 @@ interface Props {
   studyVersion: number;
 }
 
-function buildMatrices(areaId: string, storageId: string, studyVersion: number) {
+function BuildMatrices(areaId: string, storageId: string, studyVersion: number) {
   const { t } = useTranslation();
   const matrices = [
     {
@@ -137,17 +137,17 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
           </SplitView>
         ),
       },
-        {
+      {
         label: t("study.modelization.storages.levelCost"),
         content: () => (
           <Matrix
-                title={t("study.modelization.storages.levelCost")}
-                url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
-                isTimeSeries={false}
-                customColumns={["TS 1"]}
-              />
+            title={t("study.modelization.storages.levelCost")}
+            url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
+            isTimeSeries={false}
+            customColumns={["TS 1"]}
+          />
         ),
-      }
+      },
     );
   }
   return matrices;
@@ -164,7 +164,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <TabsView disableGutters items={buildMatrices(areaId, storageId, studyVersion)} />;
+  return <TabsView disableGutters items={BuildMatrices(areaId, storageId, studyVersion)} />;
 }
 
 export default StorageMatrices;
