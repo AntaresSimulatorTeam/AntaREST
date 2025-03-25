@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -88,10 +88,7 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
     )
 
     def get_hydro_management(self, area_id: str, study_version: StudyVersion) -> HydroManagement:
-        # Exclude fields that don't fit with the study version
-        excludes = set()
-        if study_version < STUDY_VERSION_9_2:
-            excludes.add("overflow_spilled_cost_difference")
+        excludes = self.get_fields_to_exclude(study_version)
 
         lower_area_id = area_id.lower()
         args = {
@@ -99,7 +96,21 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
             for key, values in self.model_dump(mode="json", exclude=excludes).items()
             if values and lower_area_id in values
         }
+        args = self.add_default_values(args, study_version)
         return HydroManagement(**args)
+
+    @staticmethod
+    def get_fields_to_exclude(study_version: StudyVersion) -> set[str]:
+        excludes = set()
+        if study_version < STUDY_VERSION_9_2:
+            excludes.add("overflow_spilled_cost_difference")
+        return excludes
+
+    @staticmethod
+    def add_default_values(data: dict[str, Any], study_version: StudyVersion) -> dict[str, Any]:
+        if study_version >= STUDY_VERSION_9_2 and "overflow_spilled_cost_difference" not in data:
+            data["overflow_spilled_cost_difference"] = 1
+        return data
 
     def set_hydro_management(self, area_id: str, properties: HydroManagement) -> None:
         lower_area_id = area_id.lower()
