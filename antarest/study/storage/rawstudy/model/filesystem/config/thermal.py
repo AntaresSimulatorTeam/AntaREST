@@ -35,48 +35,48 @@ class ThermalClusterFileData(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
     name: str
-    unit_count: int = Field(default=1, ge=1, alias="unitcount")
-    nominal_capacity: float = Field(default=0, ge=0, alias="nominalcapacity")
-    enabled: bool = True
-    group: ThermalClusterGroup = ThermalClusterGroup.OTHER1
-    gen_ts: LocalTSGenerationBehavior = Field(default=LocalTSGenerationBehavior.USE_GLOBAL)
-    min_stable_power: float = Field(default=0)
-    min_up_time: int = Field(default=1, ge=1, le=168)
-    min_down_time: int = Field(default=1, ge=1, le=168)
-    must_run: bool = Field(default=False)
-    spinning: float = Field(default=0, ge=0, le=100)
-    volatility_forced: float = Field(default=0, ge=0, le=1, alias="volatility.forced")
-    volatility_planned: float = Field(default=0, ge=0, le=1, alias="volatility.planned")
-    law_forced: LawOption = Field(default=LawOption.UNIFORM, alias="law.forced")
-    law_planned: LawOption = Field(default=LawOption.UNIFORM, alias="law.planned")
-    marginal_cost: float = Field(default=0, ge=0)
-    spread_cost: float = Field(default=0, ge=0)
-    fixed_cost: float = Field(default=0, ge=0)
-    startup_cost: float = Field(default=0, ge=0)
-    market_bid_cost: float = Field(default=0, ge=0)
-    co2: float = Field(default=0, ge=0)
+    unit_count: Optional[int] = Field(default=None, alias="unitcount")
+    nominal_capacity: Optional[float] = Field(default=None, alias="nominalcapacity")
+    enabled: Optional[bool] = None
+    group: Optional[ThermalClusterGroup] = None
+    gen_ts: Optional[LocalTSGenerationBehavior] = None
+    min_stable_power: Optional[float] = None
+    min_up_time: Optional[int] = None
+    min_down_time: Optional[int] = None
+    must_run: Optional[bool] = None
+    spinning: Optional[float] = None
+    volatility_forced: Optional[float] = Field(default=None, alias="volatility.forced")
+    volatility_planned: Optional[float] = Field(default=None, alias="volatility.planned")
+    law_forced: Optional[LawOption] = Field(default=None, alias="law.forced")
+    law_planned: Optional[LawOption] = Field(default=None, alias="law.planned")
+    marginal_cost: Optional[float] = None
+    spread_cost: Optional[float] = None
+    fixed_cost: Optional[float] = None
+    startup_cost: Optional[float] = None
+    market_bid_cost: Optional[float] = None
+    co2: Optional[float] = None
 
     # Added in 8.6
-    nh3: Optional[float] = Field(default=None, ge=0)
-    so2: Optional[float] = Field(default=None, ge=0)
-    nox: Optional[float] = Field(default=None, ge=0)
-    pm2_5: Optional[float] = Field(default=None, ge=0, alias="pm2_5")
-    pm5: Optional[float] = Field(default=None, ge=0)
-    pm10: Optional[float] = Field(default=None, ge=0)
-    nmvoc: Optional[float] = Field(default=None, ge=0)
-    op1: Optional[float] = Field(default=None, ge=0)
-    op2: Optional[float] = Field(default=None, ge=0)
-    op3: Optional[float] = Field(default=None, ge=0)
-    op4: Optional[float] = Field(default=None, ge=0)
-    op5: Optional[float] = Field(default=None, ge=0)
+    nh3: Optional[float] = None
+    so2: Optional[float] = None
+    nox: Optional[float] = None
+    pm2_5: Optional[float] = Field(default=None, alias="pm2_5")
+    pm5: Optional[float] = None
+    pm10: Optional[float] = None
+    nmvoc: Optional[float] = None
+    op1: Optional[float] = None
+    op2: Optional[float] = None
+    op3: Optional[float] = None
+    op4: Optional[float] = None
+    op5: Optional[float] = None
 
     # Added in 8.7
     cost_generation: Optional[ThermalCostGeneration] = Field(default=None, alias="costgeneration")
-    efficiency: Optional[float] = Field(default=None, ge=0)
-    variable_o_m_cost: Optional[float] = Field(default=None, ge=0, alias="variableomcost")
+    efficiency: Optional[float] = None
+    variable_o_m_cost: Optional[float] = Field(default=None, alias="variableomcost")
 
     def to_model(self) -> ThermalCluster:
-        return ThermalCluster.model_validate(self.model_dump())
+        return ThermalCluster.model_validate(self.model_dump(exclude_none=True))
 
     @classmethod
     def from_model(cls, study_version: StudyVersion, cluster: ThermalCluster) -> "ThermalClusterFileData":
