@@ -97,7 +97,7 @@ class TestCreateSTStorage:
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
-        assert cmd.parameters == STStorageProperties(**expected_parameters)
+        assert cmd.parameters == STStorage880Properties(**expected_parameters)
 
         # check the matrices links
 
@@ -223,21 +223,17 @@ class TestCreateSTStorage:
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
-        create_st_storage = CreateSTStorage(
-            command_context=command_context,
-            area_id="foo",
-            parameters=STStorageProperties(**PARAMETERS),
-            study_version=empty_study.config.version,
-        )
-        command_output = create_st_storage.apply_config(empty_study.config)
-
-        # Then, the output should be an error
-        assert command_output.status is False
-        assert re.search(
-            rf"Invalid.*version {empty_study.config.version}",
-            command_output.message,
-            flags=re.IGNORECASE,
-        )
+        with pytest.raises(ValidationError) as ctx:
+            CreateSTStorage(
+                command_context=command_context,
+                area_id="foo",
+                parameters=STStorageProperties(**PARAMETERS),
+                study_version=empty_study.config.version,
+            )
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "value_error"
+        assert raised_error["msg"] == "Value error, Unsupported study version: 7.2"
 
     def test_apply_config__missing_area(self, recent_study: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
@@ -372,23 +368,6 @@ class TestCreateSTStorage:
         }
         assert config == expected
 
-    def test_apply__invalid_apply_config(self, empty_study: FileStudy, command_context: CommandContext):
-        # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context, study_version=empty_study.config.version
-        )
-        create_area.apply(empty_study)
-
-        # Then, apply the command to create a new ST Storage
-        cmd = CreateSTStorage(
-            command_context=command_context,
-            area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageProperties(**PARAMETERS),
-            study_version=empty_study.config.version,
-        )
-        command_output = cmd.apply(empty_study)
-        assert not command_output.status  # invalid study (too old)
-
     # noinspection SpellCheckingInspection
     def test_to_dto(self, command_context: CommandContext):
         cmd = CreateSTStorage(
@@ -404,6 +383,7 @@ class TestCreateSTStorage:
         # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
         expected_parameters["initiallevel"] = 0.5
         expected_parameters["group"] = "battery"
+        expected_parameters["enabled"] = True
         constants = command_context.generator_matrix_constants
 
         assert actual == CommandDTO(
