@@ -133,6 +133,12 @@ function Storages() {
         filterVariant: "checkbox",
         Cell: BooleanCell,
       }),
+      studyVersion >= 920 &&
+        columnHelper.accessor("efficiencyWithdrawal", {
+          header: t("study.modelization.storages.efficiencyWithdrawal"),
+          size: 50,
+          Cell: ({ cell }) => `${Math.round(cell.getValue() * 100)}`,
+        }),
     ].filter(Boolean);
   }, [studyVersion, t, totals]);
 
