@@ -12,12 +12,17 @@
 
 import io
 import os
+import zipfile
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import ANY
 
+from antares.study.version import StudyVersion
+from antares.study.version.create_app import CreateApp
+from core.serde.ini_writer import write_ini_file
 from starlette.testclient import TestClient
 
+from antarest.core.serde.ini_reader import read_ini
 from antarest.launcher.model import LauncherLoadDTO
 from antarest.study.business.area_management import LayerInfoDTO
 from antarest.study.business.general_management import Mode
@@ -1599,7 +1604,7 @@ def test_maintenance(client: TestClient, admin_access_token: str) -> None:
     assert res.json() == message
 
 
-def test_import(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
+def test_import(client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     zip_path = ASSETS_DIR / "STA-mini.zip"
@@ -1666,10 +1671,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     assert res["public_mode"] == "NONE"
 
     # Study importer works for 7z files
-    res = client.post(
-        "/v1/studies/_import",
-        files={"study": io.BytesIO(seven_zip_path.read_bytes())},
-    )
+    res = client.post("/v1/studies/_import", files={"study": io.BytesIO(seven_zip_path.read_bytes())})
     assert res.status_code == 201
 
     # tests outputs import for .zip
@@ -1719,6 +1721,43 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
         assert len(result) == 2
         assert result[0]["name"] == "fr.txt"
         assert result[1]["name"] == "it.txt"
+
+    # Creates a v9.2 study
+    study_path = tmp_path / "test"
+    app = CreateApp(study_dir=study_path, caption="A", version=StudyVersion.parse("9.2"), author="Unknown")
+    app()
+
+    def zip_study(src_path: Path, dest_path: Path) -> None:
+        with zipfile.ZipFile(dest_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
+            len_dir_path = len(str(src_path))
+            for root, _, files in os.walk(src_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    zipf.write(file_path, file_path[len_dir_path:])
+
+    # Zip it
+    archive_path = tmp_path / "test.zip"
+    zip_study(study_path, archive_path)
+    # Asserts the import succeeds
+    res = client.post("/v1/studies/_import", files={"study": io.BytesIO(archive_path.read_bytes())})
+    assert res.status_code == 201
+
+    # Modify the compatibility flag
+    ini_path = study_path / "settings" / "generaldata.ini"
+    ini_content = read_ini(ini_path)
+    ini_content["compatibility"]["hydro-pmax"] = "hourly"
+    write_ini_file(ini_path, ini_content)
+    # Zip it again
+    archive_path = tmp_path / "test2.zip"
+    zip_study(study_path, archive_path)
+    # Asserts the import fails
+    res = client.post("/v1/studies/_import", files={"study": io.BytesIO(archive_path.read_bytes())})
+    assert res.status_code == 422
+    assert res.json()["exception"] == "StudyImportFailed"
+    assert (
+        res.json()["description"]
+        == "Study 'A' could not be imported: AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
+    )
 
 
 def test_copy(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
