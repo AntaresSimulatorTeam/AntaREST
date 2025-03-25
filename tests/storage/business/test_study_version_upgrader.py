@@ -13,7 +13,6 @@
 import filecmp
 import glob
 import os
-import re
 import shutil
 import zipfile
 from pathlib import Path
@@ -108,7 +107,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_areas_values = get_old_area_values(study_dir)
     old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "880"
+    target_version = "9.2"
     study_upgrader = StudyUpgrader(study_dir, target_version)
     study_upgrader.upgrade()
     assert_study_antares_file_is_updated(study_dir, target_version)
@@ -158,8 +157,8 @@ def test_fallback_if_study_input_broken(tmp_path):
 
 
 def assert_study_antares_file_is_updated(tmp_path: Path, target_version: str) -> None:
-    lines = (tmp_path / "study.antares").read_text(encoding="utf-8")
-    assert re.search(r"version\s*=\s*(\d+)", lines)[1] == target_version
+    version_line = (tmp_path / "study.antares").read_text(encoding="utf-8").splitlines()[1]
+    assert version_line == f"version = {target_version}"
 
 
 def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
@@ -178,7 +177,6 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert other_preferences["hydro-heuristic-policy"] == "accommodate rule curves"
     assert other_preferences["renewable-generation-modelling"] == "aggregated"
     assert adequacy_patch["include-adq-patch"] is False
-    assert adequacy_patch["set-to-null-ntc-between-physical-out-for-first-step"]
     assert adequacy_patch["set-to-null-ntc-from-physical-out-to-physical-in-for-first-step"]
     assert optimization["transmission-capacities"] == MAPPING_TRANSMISSION_CAPACITIES[old_values[2]]
     assert "include-split-exported-mps" not in optimization
@@ -188,7 +186,11 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert adequacy_patch["threshold-initiate-curtailment-sharing-rule"] == 1.0
     assert adequacy_patch["threshold-display-local-matching-rule-violations"] == 0.0
     assert adequacy_patch["threshold-csr-variable-bounds-relaxation"] == 7
-    assert not adequacy_patch["enable-first-step"]
+    assert "enable-first-step" not in adequacy_patch
+    assert "set-to-null-ntc-between-physical-out-for-first-step" not in adequacy_patch
+    assert "initial-reservoir-levels" not in other_preferences
+    compatibility = data["compatibility"]
+    assert compatibility == {"hydro-pmax": "daily"}
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:
