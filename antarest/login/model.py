@@ -12,7 +12,7 @@
 
 import contextlib
 import uuid
-from typing import TYPE_CHECKING, List, Mapping, Optional
+from typing import List, Mapping, Optional
 
 import bcrypt
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
@@ -25,11 +25,6 @@ from typing_extensions import override
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
 from antarest.core.serde import AntaresBaseModel
-
-if TYPE_CHECKING:
-    # avoid circular import
-    pass
-
 
 GROUP_ID = "admin"
 """Unique ID of the administrator group."""
