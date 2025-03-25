@@ -61,11 +61,13 @@ function Fields() {
           name="ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
           control={control}
         />
-        <SwitchFE
-          label={t("study.configuration.adequacyPatch.ntcBetweenPhysicalAreasOutAdequacyPatch")}
-          name="ntcBetweenPhysicalAreasOutAdequacyPatch"
-          control={control}
-        />
+        {studyVersion < 920 && (
+          <SwitchFE
+            label={t("study.configuration.adequacyPatch.ntcBetweenPhysicalAreasOutAdequacyPatch")}
+            name="ntcBetweenPhysicalAreasOutAdequacyPatch"
+            control={control}
+          />
+        )}
       </Fieldset>
       {studyVersion >= 850 && (
         <>
