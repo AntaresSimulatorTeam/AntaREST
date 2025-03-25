@@ -10,7 +10,20 @@
 #
 # This file is part of the Antares project.
 
+from sqlalchemy.orm import relationship  # type: ignore
+
 # noinspection PyUnresolvedReferences
 from antarest.core.persistence import Base as PersistenceBase
+from antarest.core.tasks.model import TaskJob
+from antarest.launcher.model import JobResult
+from antarest.login.model import Identity
 
 Base = PersistenceBase
+
+# Define a one-to-many relationship with `JobResult`.
+# If an identity is deleted, all the associated job results are detached from the identity.
+Identity.job_results = relationship(JobResult, back_populates="owner", cascade="save-update, merge")
+
+# Define a one-to-many relationship with `TaskJob`.
+# If an identity is deleted, all the associated task jobs are detached from the identity.
+Identity.owned_jobs = relationship(TaskJob, back_populates="owner", cascade="save-update, merge")
