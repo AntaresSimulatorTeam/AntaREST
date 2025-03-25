@@ -23,7 +23,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
+from antarest.core.exceptions import StudyDeletionNotAllowed, StudyImportFailed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
@@ -657,3 +657,42 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
     assert study_service.update_name_and_version_from_raw_meta(raw_study)
     assert raw_study.name == "new_name"
     assert raw_study.version == "800"
+
+
+@pytest.mark.unit_test
+def test_checks_study_compatibility(tmp_path: Path) -> None:
+    name = "my-study"
+    study_path = tmp_path / name
+    settings_path = study_path / "settings"
+    settings_path.mkdir(parents=True)
+
+    raw_study = RawStudy(id=name, name=name, version="880", workspace="foo", path=str(study_path))
+    study_service = RawStudyService(config=Mock(), cache=Mock(), study_factory=Mock())
+
+    # With a version prior to v9.2 the check should succeed
+    study_service.checks_antares_web_compatibility(raw_study)
+
+    # Change study version to 9.2
+    raw_study.version = "9.2"
+
+    # If the general data doesn't have the compatibility flag, the check should succeed
+    study_service.checks_antares_web_compatibility(raw_study)
+
+    # Use the legacy flag
+    general_data = settings_path / "generaldata.ini"
+    with open(general_data, "w") as f:
+        f.writelines(["[compatibility]\n", "hydro-pmax = daily"])
+
+    # The legacy flag is supported, the check should succeed
+    study_service.checks_antares_web_compatibility(raw_study)
+
+    # Use the new flag
+    general_data = settings_path / "generaldata.ini"
+    with open(general_data, "w") as f:
+        f.writelines(["[compatibility]\n", "hydro-pmax = hourly"])
+
+    # The new flag isn't supported, the check should fail
+    with pytest.raises(
+        StudyImportFailed, match="AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
+    ):
+        study_service.checks_antares_web_compatibility(raw_study)
