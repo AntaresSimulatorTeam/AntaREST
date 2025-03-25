@@ -285,13 +285,26 @@ def test_sync_studies_from_disk() -> None:
     fc = StudyFolder(path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
     fe = StudyFolder(path=Path("e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
     ff = StudyFolder(path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    fg = StudyFolder(path=Path("g"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(Mock(), repository, config)
+    raw_service = Mock(spec=RawStudyService)
+    service = build_study_service(raw_service, repository, config)
 
-    service.sync_studies_on_disk([fa, fc, fe, ff])
+    def fake_compatibility_check(study: Study):
+        if not hasattr(fake_compatibility_check, "call_count"):
+            fake_compatibility_check.call_count = 0
+
+        fake_compatibility_check.call_count += 1
+
+        if fake_compatibility_check.call_count >= 3:
+            raise Exception("fail")
+
+    service.storage_service.raw_study_service.checks_antares_web_compatibility.side_effect = fake_compatibility_check
+
+    service.sync_studies_on_disk([fa, fc, fe, ff, fg])
 
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_has_calls(
@@ -310,6 +323,22 @@ def test_sync_studies_from_disk() -> None:
             ),
         ]
     )
+    # Asserts the scanner didn't scan the last study as the method `checks_antares_web_compatibility` failed
+    with pytest.raises(AssertionError):
+        repository.save.assert_has_calls(
+            [
+                call(
+                    RawStudy(
+                        id=ANY,
+                        path="g",
+                        workspace=DEFAULT_WORKSPACE_NAME,
+                        name="g",
+                        folder="g",
+                        public_mode=PublicMode.FULL,
+                    )
+                )
+            ]
+        )
 
 
 # noinspection PyArgumentList
