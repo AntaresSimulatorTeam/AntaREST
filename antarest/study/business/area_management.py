@@ -27,7 +27,7 @@ from antarest.study.business.model.area_model import (
 from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
 )
-from antarest.study.business.model.thermal_model import ThermalCluster, parse_thermal_cluster
+from antarest.study.business.model.thermal_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaFolder,
@@ -36,6 +36,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand

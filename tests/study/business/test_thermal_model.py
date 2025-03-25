@@ -14,6 +14,7 @@ from typing import Any, List
 import pytest
 from antares.study.version import StudyVersion
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.thermal_model import (
     LawOption,
     LocalTSGenerationBehavior,
@@ -24,7 +25,7 @@ from antarest.study.business.model.thermal_model import (
     ThermalCostGeneration,
     create_thermal_cluster,
     update_thermal_cluster,
-    validate_against_version,
+    validate_thermal_cluster_against_version,
 )
 from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7
 
@@ -176,7 +177,7 @@ def test_thermal_cluster_creation_default_values():
 )
 def test_thermal_cluster_creation_invalid_fields(versions: List[StudyVersion], fields: dict[str, Any]):
     for version in versions:
-        with pytest.raises(ValueError, match="not supported in version"):
+        with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
             create_thermal_cluster(ThermalClusterCreation(name="Cluster @", **fields), version=version)
 
 
@@ -296,10 +297,10 @@ def test_thermal_cluster_version_validation(
     """
     cluster = ThermalCluster(name="my cluster", unit_count=100, nominal_capacity=1000.0, enabled=True, **fields)
     for version in invalid_versions:
-        with pytest.raises(ValueError, match="not supported in version"):
-            validate_against_version(version, cluster)
+        with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
+            validate_thermal_cluster_against_version(version, cluster)
     for version in valid_versions:
-        validate_against_version(version, cluster)
+        validate_thermal_cluster_against_version(version, cluster)
 
 
 def test_thermal_cluster_update():

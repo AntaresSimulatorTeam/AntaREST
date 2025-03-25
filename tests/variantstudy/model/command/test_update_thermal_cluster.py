@@ -16,10 +16,12 @@ from antarest.study.business.model.thermal_model import (
     LocalTSGenerationBehavior,
     ThermalClusterGroup,
     ThermalClusterUpdate,
+)
+from antarest.study.model import STUDY_VERSION_8_1
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
     serialize_thermal_cluster,
 )
-from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters

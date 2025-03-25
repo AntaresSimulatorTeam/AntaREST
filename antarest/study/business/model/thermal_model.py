@@ -9,35 +9,38 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+"""
+Defines business models for thermal clusters and corresponding operations (creation, update).
+
+Design notes:
+the 3 models defined here share a lot of attributes: that duplication is made on purpose.
+The 3 classes model different things or operations, and have actually discrepancies in particular in
+the optionality of their attributes.
+Also, they should not be used interchangeably in functionalities, which rules out inheritance between them.
+
+However, some functions may accept any of those 3 models, like for example the validation
+against a study version.
+For that purpose, it's important to keep consistency between the naming of the attributes.
+
+The default values of the business model are carried by the main `ThermalCluster` model,
+not the creation model, which will rely on the former one. This makes it possible to rely
+on those default values in other parts of the code: parsers, tests ...
+
+"""
+
 from typing import Any, MutableMapping, Optional, cast
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
-from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
-    ItemName,
-    extract_version,
-)
-
-
-def validate_min_version(min_version: StudyVersion, default_value: Any, data: Any, info: ValidationInfo) -> Any:
-    study_version = extract_version(info)
-    if study_version < min_version:
-        if data is not None:
-            raise ValueError(f"Field {info.field_name} is not a valid field for study version {study_version}")
-        return None
-    if data is None:
-        return default_value
-    else:
-        return data
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
 
 class LocalTSGenerationBehavior(EnumIgnoreCase):
@@ -122,64 +125,6 @@ class ThermalCostGeneration(EnumIgnoreCase):
     USE_COST_TIME_SERIES = "useCostTimeseries"
 
 
-class ThermalClusterFileData(AntaresBaseModel):
-    """
-    Thermal cluster data parsed from INI file.
-
-    TODO SL: should be in a DAO layer, not with business models
-    """
-
-    model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
-
-    name: str
-    unit_count: int = Field(default=1, ge=1, alias="unitcount")
-    nominal_capacity: float = Field(default=0, ge=0, alias="nominalcapacity")
-    enabled: bool = True
-    group: ThermalClusterGroup = ThermalClusterGroup.OTHER1
-    gen_ts: LocalTSGenerationBehavior = Field(default=LocalTSGenerationBehavior.USE_GLOBAL)
-    min_stable_power: float = Field(default=0)
-    min_up_time: int = Field(default=1, ge=1, le=168)
-    min_down_time: int = Field(default=1, ge=1, le=168)
-    must_run: bool = Field(default=False)
-    spinning: float = Field(default=0, ge=0, le=100)
-    volatility_forced: float = Field(default=0, ge=0, le=1, alias="volatility.forced")
-    volatility_planned: float = Field(default=0, ge=0, le=1, alias="volatility.planned")
-    law_forced: LawOption = Field(default=LawOption.UNIFORM, alias="law.forced")
-    law_planned: LawOption = Field(default=LawOption.UNIFORM, alias="law.planned")
-    marginal_cost: float = Field(default=0, ge=0)
-    spread_cost: float = Field(default=0, ge=0)
-    fixed_cost: float = Field(default=0, ge=0)
-    startup_cost: float = Field(default=0, ge=0)
-    market_bid_cost: float = Field(default=0, ge=0)
-    co2: float = Field(default=0, ge=0)
-
-    # Added in 8.6
-    nh3: Optional[float] = Field(default=None, ge=0)
-    so2: Optional[float] = Field(default=None, ge=0)
-    nox: Optional[float] = Field(default=None, ge=0)
-    pm2_5: Optional[float] = Field(default=None, ge=0, alias="pm2_5")
-    pm5: Optional[float] = Field(default=None, ge=0)
-    pm10: Optional[float] = Field(default=None, ge=0)
-    nmvoc: Optional[float] = Field(default=None, ge=0)
-    op1: Optional[float] = Field(default=None, ge=0)
-    op2: Optional[float] = Field(default=None, ge=0)
-    op3: Optional[float] = Field(default=None, ge=0)
-    op4: Optional[float] = Field(default=None, ge=0)
-    op5: Optional[float] = Field(default=None, ge=0)
-
-    # Added in 8.7
-    cost_generation: Optional[ThermalCostGeneration] = Field(default=None, alias="costgeneration")
-    efficiency: Optional[float] = Field(default=None, ge=0)
-    variable_o_m_cost: Optional[float] = Field(default=None, ge=0, alias="variableomcost")
-
-    def to_model(self) -> "ThermalCluster":
-        return ThermalCluster.model_validate(self.model_dump())
-
-    @classmethod
-    def from_model(cls, study_version: StudyVersion, cluster: "ThermalCluster") -> "ThermalClusterFileData":
-        return cls.model_validate(cluster.model_dump(exclude={"id"}))
-
-
 class ThermalCluster(AntaresBaseModel):
     """
     Thermal cluster model.
@@ -238,17 +183,14 @@ class ThermalCluster(AntaresBaseModel):
     variable_o_m_cost: Optional[float] = Field(default=None, ge=0)
 
 
-def parse_thermal_cluster(study_version: StudyVersion, data: Any) -> ThermalCluster:
-    cluster = ThermalClusterFileData.model_validate(data).to_model()
-    validate_against_version(study_version, cluster)
-    return cluster
-
-
-def serialize_thermal_cluster(study_version: StudyVersion, cluster: ThermalCluster) -> dict[str, Any]:
-    return ThermalClusterFileData.from_model(study_version, cluster).model_dump(by_alias=True, exclude_none=True)
-
-
 class ThermalClusterCreation(AntaresBaseModel):
+    """
+    Represents a creation request for a thermal cluster.
+
+    Most fields are optional: at creation time, default values of the thermal cluster
+    model will be used.
+    """
+
     class Config:
         alias_generator = to_camel
         extra = "forbid"
@@ -305,10 +247,19 @@ class ThermalClusterCreation(AntaresBaseModel):
 
     @classmethod
     def from_cluster(cls, cluster: ThermalCluster) -> "ThermalClusterCreation":
+        """
+        Conversion to creation request, can be useful for duplicating clusters.
+        """
         return ThermalClusterCreation.model_validate(cluster.model_dump(mode="json", exclude={"id"}, exclude_none=True))
 
 
 class ThermalClusterUpdate(AntaresBaseModel):
+    """
+    Represents an update of a thermal cluster.
+
+    Only not-None fields will be used to update the thermal cluster.
+    """
+
     class Config:
         alias_generator = to_camel
         extra = "forbid"
@@ -364,27 +315,30 @@ class ThermalClusterUpdate(AntaresBaseModel):
     variable_o_m_cost: Optional[float] = None
 
 
-def check_min_version(data: Any, field: str, version: StudyVersion) -> None:
+def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
     if getattr(data, field) is not None:
-        raise ValueError(f"Field {field} is not supported in version {version}")
+        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
 
 
 # TODO SL: we could centralize fields definitions so that min version and default values are defined in one place
-
-
-# TODO SL: we could defined and use a protocol here, for better type checking
+# TODO SL: we could define and use a protocol here, for better type checking
 #          But adds some boiler plate again
-def validate_against_version(
+def validate_thermal_cluster_against_version(
     version: StudyVersion,
-    cluster_data: ThermalCluster | ThermalClusterCreation | ThermalClusterFileData | ThermalClusterUpdate,
+    cluster_data: ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate,
 ) -> None:
+    """
+    Validates input thermal cluster data against the provided study versions
+
+    Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
+    """
     if version < STUDY_VERSION_8_6:
         for field in ["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
-            check_min_version(cluster_data, field, version)
+            _check_min_version(cluster_data, field, version)
 
     if version < STUDY_VERSION_8_7:
         for field in ["cost_generation", "efficiency", "variable_o_m_cost"]:
-            check_min_version(cluster_data, field, version)
+            _check_min_version(cluster_data, field, version)
 
 
 def _initialize_field_default(cluster: ThermalCluster, field: str, default_value: Any) -> None:
@@ -408,13 +362,16 @@ def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -
 
 def create_thermal_cluster(cluster_data: ThermalClusterCreation, version: StudyVersion) -> ThermalCluster:
     """
-    Creates a thermal cluster from the creation request.
+    Creates a thermal cluster from a creation request, checking and initializing it against the specified study version.
     """
     cluster = ThermalCluster.model_validate(cluster_data.model_dump(exclude_none=True))
-    validate_against_version(version, cluster_data)
+    validate_thermal_cluster_against_version(version, cluster_data)
     initialize_thermal_cluster(cluster, version)
     return cluster
 
 
 def update_thermal_cluster(cluster: ThermalCluster, data: ThermalClusterUpdate) -> ThermalCluster:
+    """
+    Updates a cluster according to the provided update data.
+    """
     return cluster.model_copy(update=data.model_dump(exclude_none=True))

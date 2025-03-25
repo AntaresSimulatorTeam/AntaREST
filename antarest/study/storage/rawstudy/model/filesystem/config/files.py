@@ -22,11 +22,12 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from antares.study.version import StudyVersion
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
-from antarest.study.business.model.thermal_model import ThermalCluster, parse_thermal_cluster
+from antarest.study.business.model.thermal_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -54,6 +55,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
     create_st_storage_config,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
@@ -442,7 +444,7 @@ def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
     for section, values in config_dict.items():
         try:
             config_list.append(parse_thermal_cluster(version, values))
-        except ValueError as exc:
+        except (ValueError, InvalidFieldForVersionError) as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid thermal configuration: '{section}' in '{config_path}'", exc_info=exc)
     return config_list

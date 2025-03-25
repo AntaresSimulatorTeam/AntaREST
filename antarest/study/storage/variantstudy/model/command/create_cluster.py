@@ -24,11 +24,13 @@ from antarest.study.business.model.thermal_model import (
     ThermalCluster,
     ThermalClusterCreation,
     create_thermal_cluster,
-    parse_thermal_cluster,
-    serialize_thermal_cluster,
 )
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix

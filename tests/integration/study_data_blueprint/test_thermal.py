@@ -530,8 +530,7 @@ class TestThermal:
         if version >= STUDY_VERSION_8_6:
             assert res.status_code == 200, res.json()
         else:
-            # TODO SL: should have a 4** instead
-            assert res.status_code == 500, res.json()
+            assert res.status_code == 422, res.json()
 
         # Update with the field `efficiency`. Should succeed even with versions prior to v8.7
         res = client.patch(
@@ -541,8 +540,7 @@ class TestThermal:
         if version >= STUDY_VERSION_8_7:
             assert res.status_code == 200, res.json()
         else:
-            # TODO SL: should have a 4** instead
-            assert res.status_code == 500, res.json()
+            assert res.status_code == 422, res.json()
 
         # =============================
         #  THERMAL CLUSTER DUPLICATION

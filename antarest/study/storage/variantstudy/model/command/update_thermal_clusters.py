@@ -17,11 +17,13 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_model import (
     ThermalCluster,
     ThermalClusterUpdate,
-    parse_thermal_cluster,
-    serialize_thermal_cluster,
     update_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
