@@ -194,13 +194,13 @@ class TestCreateSTStorage:
                 command_context=command_context,
                 area_id="area_fr",
                 parameters=STStorageProperties(**PARAMETERS),
-                pmax_injection=[1, 2, 3],
+                pmax_injection=[[1], [2], [3]],
                 study_version=STUDY_VERSION_8_8,
             )
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
         assert raised_error["type"] == "value_error"
-        assert raised_error["msg"] == "Value error, Invalid matrix shape (3,), expected (8760, 1)"
+        assert raised_error["msg"] == "Value error, Invalid matrix shape (3, 1), expected (8760, 1)"
         assert "pmax_injection" in raised_error["input"]
 
     def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
