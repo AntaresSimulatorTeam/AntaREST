@@ -19,10 +19,10 @@ from unittest.mock import ANY
 
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
-from core.serde.ini_writer import write_ini_file
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
+from antarest.core.serde.ini_writer import write_ini_file
 from antarest.launcher.model import LauncherLoadDTO
 from antarest.study.business.area_management import LayerInfoDTO
 from antarest.study.business.general_management import Mode
