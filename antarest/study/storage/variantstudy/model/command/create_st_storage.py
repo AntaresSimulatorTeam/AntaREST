@@ -14,6 +14,7 @@
 from typing import Any, Dict, Final, List, Optional, Tuple, TypeAlias, cast
 
 import numpy as np
+from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
 from typing_extensions import override
 
@@ -120,7 +121,8 @@ class CreateSTStorage(ICommand):
             properties_as_dict = values["parameters"]
         else:
             properties_as_dict = values["parameters"].model_dump(mode="json", exclude_unset=True)
-        values["parameters"] = create_st_storage_properties(values["study_version"], data=properties_as_dict)
+        study_version = StudyVersion.parse(values["study_version"])
+        values["parameters"] = create_st_storage_properties(study_version, data=properties_as_dict)
         return values
 
     def validate_field(self, v: MatrixType, field: str) -> MatrixType:
