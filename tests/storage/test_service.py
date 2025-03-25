@@ -258,38 +258,7 @@ def test_study_listing(db_session: Session) -> None:
 
 # noinspection PyArgumentList
 @pytest.mark.unit_test
-def test_sync_studies_from_disk(tmp_path: Path, raw_study_service) -> None:
-    path_f = tmp_path / "f"
-    path_g = tmp_path / "g"
-    path_h = tmp_path / "h"
-    # Create parsable studies
-    for path in [path_f, path_g, path_h]:
-        settings_path = path / "settings"
-        settings_path.mkdir(parents=True)
-        with open(settings_path / "generaldata.ini", "w") as f:
-            lines = ["[general]\n", "horizon = 2019\n"]
-            if path == path_f:
-                f.writelines(lines)  # No compatibility flag, it's supported we should scan it
-            elif path == path_g:
-                lines.extend(["[compatibility]\n", "hydro-pmax = daily"])
-                f.writelines(lines)  # Legacy value, it's supported we should scan it
-            else:
-                lines.extend(["[compatibility]\n", "hydro-pmax = hourly"])
-                f.writelines(lines)  # New value, it's not supported we should not scan it
-
-        study_antares = path / "study.antares"
-        with open(study_antares, "w") as f:
-            f.writelines(
-                [
-                    "[antares]\n",
-                    "caption = test\n",
-                    "version = 9.2\n",
-                    "created = 1740067244\n",
-                    "lastsave = 1740067244\n",
-                    "author = Unknown",
-                ]
-            )
-
+def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
     ma = RawStudy(id="a", path="a", workspace="workspace1")
     fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
@@ -311,37 +280,34 @@ def test_sync_studies_from_disk(tmp_path: Path, raw_study_service) -> None:
         id="e",
         path="e",
         created_at=now,
-        version="880",
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
     fe = StudyFolder(path=Path("e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    ff = StudyFolder(path=path_f, workspace="workspace_f", groups=[])
-    fg = StudyFolder(path=path_g, workspace="workspace_g", groups=[])
-    fh = StudyFolder(path=path_h, workspace="workspace_h", groups=[])
+    ff = StudyFolder(path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(
-        storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(),
-                "workspace_f": WorkspaceConfig(path=path_f),
-                "workspace_g": WorkspaceConfig(path=path_g),
-                "workspace_h": WorkspaceConfig(path=path_h),
-            }
-        )
-    )
-    service = build_study_service(raw_study_service, repository, config)
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(Mock(), repository, config)
 
-    service.sync_studies_on_disk([fa, fc, fe, ff, fg, fh])
+    service.sync_studies_on_disk([fa, fc, fe, ff])
 
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_has_calls(
         [
             call(RawStudy(id="b", path="b", missing=ANY)),
-            call(RawStudy(id="e", path="e", created_at=now, version="880", missing=None)),
-            # todo: add 2 studies f and g
+            call(RawStudy(id="e", path="e", created_at=now, missing=None)),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    workspace=DEFAULT_WORKSPACE_NAME,
+                    name="f",
+                    folder="f",
+                    public_mode=PublicMode.FULL,
+                )
+            ),
         ]
     )
 

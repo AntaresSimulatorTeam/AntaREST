@@ -23,12 +23,13 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyDeletionNotAllowed
+from antarest.core.exceptions import StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
+from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -483,3 +484,19 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)
+
+    @staticmethod
+    def checks_antares_web_compatibility(study: Study) -> None:
+        """
+        A new compatibility section has been introduced with the Simulator version 9.2
+        For now AntaresWeb doesn't support the field `hydro-pmax` when it's set at `hourly`.
+        If we find this value, we want to raise an Exception
+        """
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_9_2:
+            general_data_path = Path(study.path) / "settings" / "generaldata.ini"
+            ini_content = read_ini(general_data_path)
+            # The section is optional and AntaresWeb supports the default Simulator value
+            if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
+                hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
+                if hydro_pmax_value == "hourly":
+                    raise StudyImportFailed("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
