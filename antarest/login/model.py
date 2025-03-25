@@ -12,7 +12,7 @@
 
 import contextlib
 import uuid
-from typing import List, Mapping, Optional
+from typing import TYPE_CHECKING, List, Mapping, Optional
 
 import bcrypt
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
@@ -25,6 +25,11 @@ from typing_extensions import override
 from antarest.core.persistence import Base
 from antarest.core.roles import RoleType
 from antarest.core.serde import AntaresBaseModel
+
+if TYPE_CHECKING:
+    # avoid circular import
+    from antarest.core.tasks.model import TaskJob
+    from antarest.launcher.model import JobResult
 
 GROUP_ID = "admin"
 """Unique ID of the administrator group."""
@@ -145,6 +150,14 @@ class Identity(Base):  # type: ignore
     id = Column(Integer, Sequence("identity_id_seq"), primary_key=True)
     name = Column(String(255))
     type = Column(String(50))
+
+    # Define a one-to-many relationship with `JobResult`.
+    # If an identity is deleted, all the associated job results are detached from the identity.
+    job_results: List["JobResult"] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
+
+    # Define a one-to-many relationship with `TaskJob`.
+    # If an identity is deleted, all the associated task jobs are detached from the identity.
+    owned_jobs: List["TaskJob"] = relationship("TaskJob", back_populates="owner", cascade="save-update, merge")
 
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)
