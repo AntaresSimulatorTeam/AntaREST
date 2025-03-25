@@ -85,16 +85,28 @@ function StorageForm({ study, areaId, storageId }: Props) {
         <>
           <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
             <StringFE label={t("global.name")} name="name" control={control} disabled />
-            <SelectFE
-              label={t("global.group")}
-              name="group"
-              control={control}
-              options={STORAGE_GROUPS}
-              startCaseLabel={false}
-              sx={{
-                alignSelf: "center",
-              }}
-            />
+            {studyVersion < 920 && (
+              <SelectFE
+                label={t("global.group")}
+                name="group"
+                control={control}
+                options={STORAGE_GROUPS}
+                startCaseLabel={false}
+                sx={{
+                  alignSelf: "center",
+                }}
+              />
+            )}
+            {studyVersion >= 920 && (
+              <StringFE
+                label={t("global.group")}
+                name="group"
+                control={control}
+                sx={{
+                  alignSelf: "center",
+                }}
+              />
+            )}
             {studyVersion >= 880 && (
               <SwitchFE
                 label={t("global.enabled")}
