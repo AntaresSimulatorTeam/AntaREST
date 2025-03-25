@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from antarest.core.tasks.model import TaskJob
     from antarest.launcher.model import JobResult
 
+
 GROUP_ID = "admin"
 """Unique ID of the administrator group."""
 
