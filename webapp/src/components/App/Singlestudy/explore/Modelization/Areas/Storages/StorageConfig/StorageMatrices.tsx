@@ -113,14 +113,14 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
         ),
       },
       {
-        label: t("study.modelization.storages.costs"),
+        label: t("study.modelization.storages.variationCosts"),
         content: () => (
-          <SplitView id="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
+          <SplitView id="storage-variationInjectionCost-variationWithdrawalCost" sizes={[50, 50]}>
             <Box sx={{ pr: 2 }}>
               {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
               <Matrix
-                title={t("study.modelization.storages.injectionCost")}
-                url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
+                title={t("study.modelization.storages.injectionVariationCost")}
+                url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_injection`}
                 isTimeSeries={false}
                 customColumns={["TS 1"]}
               />
@@ -128,8 +128,8 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
             <Box sx={{ pl: 2 }}>
               {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
               <Matrix
-                title={t("study.modelization.storages.withdrawalCost")}
-                url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}
+                title={t("study.modelization.storages.withdrawalVariationCost")}
+                url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_withdrawal`}
                 isTimeSeries={false}
                 customColumns={["TS 1"]}
               />
@@ -137,6 +137,17 @@ function buildMatrices(areaId: string, storageId: string, studyVersion: number) 
           </SplitView>
         ),
       },
+        {
+        label: t("study.modelization.storages.levelCost"),
+        content: () => (
+          <Matrix
+                title={t("study.modelization.storages.levelCost")}
+                url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
+                isTimeSeries={false}
+                customColumns={["TS 1"]}
+              />
+        ),
+      }
     );
   }
   return matrices;
