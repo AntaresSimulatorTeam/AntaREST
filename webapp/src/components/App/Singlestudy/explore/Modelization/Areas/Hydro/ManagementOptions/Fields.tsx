@@ -86,6 +86,14 @@ function Fields({ study }: Props) {
           disabled={!reservoirDisabled}
           sx={{ alignSelf: "center" }}
         />
+        {studyVersion >= 920 && (
+          <NumberFE
+            name="overflowSpilledCostDifference"
+            label="Overflow Spilled Cost Difference"
+            control={control}
+            disabled={!reservoirDisabled}
+          />
+        )}
       </Fieldset>
       <Fieldset legend="Water values">
         <SwitchFE name="useWater" label="Use water values" control={control} />
@@ -117,13 +125,6 @@ function Fields({ study }: Props) {
           control={control}
           disabled={!waterValuesDisabled || !leeWayDisabled}
         />
-        {studyVersion >= 920 && (
-          <NumberFE
-            name="overflowSpilledCostDifference"
-            label="Overflow Spilled Cost Difference"
-            control={control}
-          />
-        )}
       </Fieldset>
     </>
   );
