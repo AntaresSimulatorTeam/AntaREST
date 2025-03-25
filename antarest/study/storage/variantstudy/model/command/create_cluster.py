@@ -23,6 +23,7 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.thermal_model import (
     ThermalCluster,
     ThermalClusterCreation,
+    create_thermal_cluster,
     parse_thermal_cluster,
     serialize_thermal_cluster,
 )
@@ -37,10 +38,6 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 OptionalMatrixData: t.TypeAlias = List[List[MatrixData]] | str | None
-
-
-def _to_cluster(cluster_creation: ThermalClusterCreation) -> ThermalCluster:
-    return ThermalCluster.model_validate(cluster_creation.model_dump(exclude_none=True))
 
 
 class CreateCluster(ICommand):
@@ -142,8 +139,8 @@ class CreateCluster(ICommand):
 
         cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
-        cluster = _to_cluster(self.parameters)
-        config[cluster_id] = serialize_thermal_cluster(study_data.config.version, cluster)
+        cluster = create_thermal_cluster(self.parameters, version)
+        config[cluster_id] = serialize_thermal_cluster(version, cluster)
 
         # Series identifiers are in lower case.
         series_id = cluster_id.lower()

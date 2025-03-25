@@ -19,6 +19,7 @@ from antarest.study.business.model.thermal_model import (
     ThermalClusterUpdate,
     parse_thermal_cluster,
     serialize_thermal_cluster,
+    update_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
@@ -57,7 +58,7 @@ class UpdateThermalClusters(ICommand):
             for index, thermal in enumerate(study_data.areas[area_id].thermals):
                 thermal_mapping[thermal.id] = (index, thermal)
 
-            for cluster_id in value:
+            for cluster_id, update in value.items():
                 if cluster_id not in thermal_mapping:
                     return (
                         CommandOutput(
@@ -67,7 +68,7 @@ class UpdateThermalClusters(ICommand):
                         {},
                     )
                 index, thermal = thermal_mapping[cluster_id]
-                study_data.areas[area_id].thermals[index] = self.update_thermal_cluster(area_id, thermal)
+                study_data.areas[area_id].thermals[index] = update_thermal_cluster(thermal, update)
 
         return CommandOutput(status=True, message="The thermal clusters were successfully updated."), {}
 
@@ -81,7 +82,7 @@ class UpdateThermalClusters(ICommand):
             except ChildNotFoundError:
                 return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
 
-            for cluster_id, properties in value.items():
+            for cluster_id, update in value.items():
                 if cluster_id not in all_clusters_for_area:
                     return CommandOutput(
                         status=False,
@@ -89,9 +90,8 @@ class UpdateThermalClusters(ICommand):
                     )
 
                 # Performs the update
-                new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_none=True)
                 cluster = parse_thermal_cluster(study_data.config.version, all_clusters_for_area[cluster_id])
-                updated_cluster = cluster.model_copy(update=new_properties_dict)
+                updated_cluster = update_thermal_cluster(cluster, update)
                 all_clusters_for_area[cluster_id] = serialize_thermal_cluster(
                     study_data.config.version, updated_cluster
                 )
@@ -117,8 +117,3 @@ class UpdateThermalClusters(ICommand):
     @override
     def get_inner_matrices(self) -> List[str]:
         return []
-
-    def update_thermal_cluster(self, area_id: str, thermal: ThermalCluster) -> ThermalCluster:
-        return thermal.model_copy(
-            update=self.cluster_properties[area_id][thermal.id].model_dump(exclude_unset=True, exclude_none=True)
-        )
