@@ -16,6 +16,7 @@ from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, Field, TypeAdapter
 from pydantic_core.core_schema import ValidationInfo
 
+from antarest.core.model import LowerCaseStr
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.cluster import ItemProperties
@@ -124,7 +125,7 @@ class STStorage920Properties(STStorage880Properties):
     Short term storage configuration model for 920 study.
     """
 
-    group: str = Field(default="other1")  # type: ignore
+    group: LowerCaseStr = Field(default="other1")  # type: ignore
     efficiency_withdrawal: float = Field(default=1, ge=0, le=1, alias="efficiencywithdrawal")
     penalize_variation_injection: bool = Field(default=False, alias="penalize-variation-injection")
     penalize_variation_withdrawal: bool = Field(default=False, alias="penalize-variation-withdrawal")
