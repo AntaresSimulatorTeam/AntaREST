@@ -16,6 +16,7 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
+from antarest.core.serde.ini_reader import read_ini
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
@@ -202,6 +203,20 @@ class TestCreateSTStorage:
             "Value error, You gave a 9.2 matrix: 'cost_injection' for a study in version 8.8"
         )
         assert "cost_injection" in raised_error["input"]
+
+    def test_init__invalid_parameters_for_version(self, command_context: CommandContext):
+        with pytest.raises(ValidationError) as ctx:
+            CreateSTStorage(
+                command_context=command_context,
+                area_id="area_fr",
+                parameters={"name": "test", "efficiency_withdrawal": 0.45},
+                study_version=STUDY_VERSION_8_8,
+            )
+        assert ctx.value.error_count() == 1
+        raised_error = ctx.value.errors()[0]
+        assert raised_error["type"] == "extra_forbidden"
+        assert raised_error["msg"] == "Extra inputs are not permitted"
+        assert "efficiency_withdrawal" in raised_error["loc"]
 
     def test_apply_config__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
         empty_study = empty_study_720
@@ -404,3 +419,63 @@ class TestCreateSTStorage:
             strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
             strip_matrix_protocol(constants.get_st_storage_inflows()),
         ]
+
+    def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
+        study = empty_study_920
+        study_version = study.config.version
+        cmd = CreateArea(area_name="Area be", command_context=command_context, study_version=study_version)
+        cmd.apply(study)
+        cmd = CreateArea(area_name="Area FR", command_context=command_context, study_version=study_version)
+        cmd.apply(study)
+
+        # Create a basic storage
+        cmd = CreateSTStorage(
+            command_context=command_context,
+            area_id="area fr",
+            parameters=STStorageProperties(**PARAMETERS),
+            study_version=study_version,
+        )
+        output = cmd.apply(study)
+        assert output.status is True
+        assert output.message == "Short-term st_storage 'Storage1' successfully added to area 'area fr'."
+        # Checks ini content
+        ini_path = study.config.study_path / "input" / "st-storage" / "clusters" / "area fr" / "list.ini"
+        ini_content = read_ini(ini_path)
+        expected_content = {
+            "storage1": {
+                "name": "Storage1",
+                "group": "battery",
+                "injectionnominalcapacity": 1500.0,
+                "withdrawalnominalcapacity": 1500.0,
+                "reservoircapacity": 20000.0,
+                "efficiency": 0.94,
+                "initiallevel": 0.5,
+                "initialleveloptim": True,
+                "enabled": True,
+                # Ensure v9.2 fields are written with default values
+                "efficiencywithdrawal": 1.0,
+                "penalize-variation-injection": False,
+                "penalize-variation-withdrawal": False,
+            }
+        }
+        assert ini_content == expected_content
+
+        # Create new st storage by specifying 9.2 properties
+        parameters_9_2 = copy.deepcopy(PARAMETERS)
+        parameters_9_2["efficiency_withdrawal"] = 0.55
+        parameters_9_2["penalize_variation_injection"] = True
+        cmd = CreateSTStorage(
+            command_context=command_context,
+            area_id="area be",
+            parameters=parameters_9_2,
+            study_version=study_version,
+        )
+        output = cmd.apply(study)
+        assert output.status is True
+        assert output.message == "Short-term st_storage 'Storage1' successfully added to area 'area be'."
+        # Checks ini content
+        ini_path = study.config.study_path / "input" / "st-storage" / "clusters" / "area be" / "list.ini"
+        ini_content = read_ini(ini_path)
+        expected_content["storage1"]["efficiencywithdrawal"] = 0.55
+        expected_content["storage1"]["penalize-variation-injection"] = True
+        assert ini_content == expected_content
