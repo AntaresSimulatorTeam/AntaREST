@@ -1754,6 +1754,14 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str, intern
     raw = client.post("/v1/studies?name=raw")
     assert raw.status_code == 201
     parent_id = raw.json()
+    client.post(
+        f"/v1/studies/{parent_id}/areas",
+        json={"name": "area1", "type": "AREA"},
+    )
+    client.post(
+        f"/v1/studies/{parent_id}/areas",
+        json={"name": "area2", "type": "AREA"},
+    )
 
     var = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant"})
     assert var.status_code == 200
@@ -1768,6 +1776,13 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str, intern
     all_studies = client.get("/v1/studies")
     assert variant_study.status_code == 200
     assert len(all_studies.json()) == 4
+
+    copied_study = client.get("/v1/studies?name=copied")
+    assert copied_study.status_code == 200
+    copied_id = next(iter(copied_study.json()))
+
+    copied_areas = client.get(f"/v1/studies/{copied_id}/areas")
+    assert copied_areas.json() == client.get(f"/v1/studies/{parent_id}/areas").json()
 
 
 def test_areas_deletion_with_binding_constraints(
