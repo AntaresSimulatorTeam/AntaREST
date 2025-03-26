@@ -17,7 +17,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Properties,
@@ -404,21 +404,33 @@ class TestCreateSTStorage:
         )
 
     def test_get_inner_matrices(self, command_context: CommandContext):
-        cmd = CreateSTStorage(
-            command_context=command_context,
-            area_id="area_fr",
-            parameters=STStorageProperties(**PARAMETERS),
-            study_version=STUDY_VERSION_8_8,
-        )
-        actual = cmd.get_inner_matrices()
-        constants = command_context.generator_matrix_constants
-        assert actual == [
-            strip_matrix_protocol(constants.get_st_storage_pmax_injection()),
-            strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
-            strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
-            strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
-            strip_matrix_protocol(constants.get_st_storage_inflows()),
-        ]
+        for study_version in (STUDY_VERSION_8_8, STUDY_VERSION_9_2):
+            cmd = CreateSTStorage(
+                command_context=command_context,
+                area_id="area_fr",
+                parameters=STStorageProperties(**PARAMETERS),
+                study_version=study_version,
+            )
+            actual = cmd.get_inner_matrices()
+            constants = command_context.generator_matrix_constants
+            expected_matrices = [
+                strip_matrix_protocol(constants.get_st_storage_pmax_injection()),
+                strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
+                strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
+                strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
+                strip_matrix_protocol(constants.get_st_storage_inflows()),
+            ]
+            if study_version == STUDY_VERSION_9_2:
+                expected_matrices.extend(
+                    [
+                        strip_matrix_protocol(constants.get_st_storage_cost_injection()),
+                        strip_matrix_protocol(constants.get_st_storage_cost_withdrawal()),
+                        strip_matrix_protocol(constants.get_st_storage_cost_level()),
+                        strip_matrix_protocol(constants.get_st_storage_cost_variation_injection()),
+                        strip_matrix_protocol(constants.get_st_storage_cost_variation_withdrawal()),
+                    ]
+                )
+            assert actual == expected_matrices
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920
@@ -473,9 +485,12 @@ class TestCreateSTStorage:
         output = cmd.apply(study)
         assert output.status is True
         assert output.message == "Short-term st_storage 'Storage1' successfully added to area 'area be'."
+
         # Checks ini content
         ini_path = study.config.study_path / "input" / "st-storage" / "clusters" / "area be" / "list.ini"
         ini_content = read_ini(ini_path)
         expected_content["storage1"]["efficiencywithdrawal"] = 0.55
         expected_content["storage1"]["penalize-variation-injection"] = True
         assert ini_content == expected_content
+
+        # Checks matrices were created
