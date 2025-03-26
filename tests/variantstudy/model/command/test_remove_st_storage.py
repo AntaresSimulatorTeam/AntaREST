@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 @pytest.fixture(name="recent_study")
-def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
+def recent_study_fixture(empty_study_720: FileStudy) -> FileStudy:
     """
     Fixture for creating a recent version of the FileStudy object.
 
@@ -38,9 +38,9 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
     Returns:
         FileStudy: The FileStudy object upgraded to the required version.
     """
-    StudyUpgrader(empty_study.config.study_path, str(REQUIRED_VERSION)).upgrade()
-    empty_study.config.version = REQUIRED_VERSION
-    return empty_study
+    StudyUpgrader(empty_study_720.config.study_path, str(REQUIRED_VERSION)).upgrade()
+    empty_study_720.config.version = REQUIRED_VERSION
+    return empty_study_720
 
 
 # The parameter names to be used are those in the INI file.
