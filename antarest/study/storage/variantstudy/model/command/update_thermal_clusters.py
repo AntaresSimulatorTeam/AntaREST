@@ -93,11 +93,9 @@ class UpdateThermalClusters(ICommand):
                     )
                 # Performs the update
                 new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
-                current_properties_obj = clusters_by_id[cluster_id][1]
+                cluster_key, current_properties_obj = clusters_by_id[cluster_id]
                 updated_obj = current_properties_obj.model_copy(update=new_properties_dict)
-                all_clusters_for_area[clusters_by_id[cluster_id][0]] = updated_obj.model_dump(
-                    mode="json", by_alias=True
-                )
+                all_clusters_for_area[cluster_key] = updated_obj.model_dump(mode="json", by_alias=True)
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 
