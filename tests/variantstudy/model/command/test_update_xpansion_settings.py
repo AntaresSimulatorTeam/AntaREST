@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 
 from antarest.study.business.model.xpansion_model import XpansionSettingsUpdate
 from antarest.study.model import STUDY_VERSION_8_7
@@ -52,8 +51,8 @@ class TestUpdateXpansionSettings:
         (xpansion_path / "capa" / "capa1.txt").touch()
         (xpansion_path / "weights" / "weights1.txt").touch()
 
-    @pytest.mark.parametrize("empty_study", STUDY_VERSION_8_7, indirect=True)
-    def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
 
         # Add yearly_weights
@@ -86,8 +85,8 @@ class TestUpdateXpansionSettings:
         assert "optimality_gap=12.0" in settings_path.read_text()
         assert "yearly-weights" not in settings_path.read_text()
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_error_cases(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
 
         # Try to update with a non-existing weight
