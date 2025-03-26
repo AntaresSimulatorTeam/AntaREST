@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from study.business.model.hydro_model import HydroManagementUpdate
+import pytest
+from pydantic import ValidationError
 from study.storage.rawstudy.model.filesystem.factory import FileStudy
 from study.storage.variantstudy.model.command.create_area import CreateArea
 from study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
@@ -44,7 +45,40 @@ class TestUpdateHydroManagement:
         }
 
         # Update several properties
-        new_properties = HydroManagementUpdate(**{"inter_daily_breakdown": 3.1, "reservoir": True})
-        # new_properties = {"inter_daily_breakdown": 3.1, "reservoir": True}
-        cmd = UpdateHydroManagement(area_id="fr",properties=new_properties, command_context=command_context, study_version=study_version)
-        cmd.apply(study)
+        new_properties = {"inter_daily_breakdown": 3.1, "reservoir": True}
+        cmd = UpdateHydroManagement(
+            area_id="fr", properties=new_properties, command_context=command_context, study_version=study_version
+        )
+        output = cmd.apply(study)
+        assert output.status is True
+        assert output.message == "Hydro properties in 'fr' updated."
+
+        # Checks updated properties
+        ini_content = read_ini(hydro_ini)
+        assert ini_content == {
+            "initialize reservoir date": {"be": 0, "fr": 0},
+            "inter-daily-breakdown": {"be": 1.0, "fr": 3.1},  # the field has been updated
+            "inter-monthly-breakdown": {"be": 1.0, "fr": 1.0},
+            "intra-daily-modulation": {"be": 24.0, "fr": 24.0},
+            "leeway low": {"be": 1.0, "fr": 1.0},
+            "leeway up": {"be": 1.0, "fr": 1.0},
+            "power to level": {"fr": False},
+            "pumping efficiency": {"be": 1.0, "fr": 1.0},
+            # Default fields are not present at the creation but are written by the command
+            "reservoir": {"fr": True},  # the field has been written with the given value
+            "reservoir capacity": {"fr": 0},
+            "use heuristic": {"fr": True},
+            "use leeway": {"fr": False},
+            "use water": {"fr": False},
+            "follow load": {"fr": True},
+            "hard bounds": {"fr": False},
+        }
+
+        # Ensures we can't give a 9.2 parameter inside a v8.8 command
+        new_properties = {"overflow_spilled_cost_difference": 1.4}
+        with pytest.raises(
+            ValidationError, match="You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2"
+        ):
+            UpdateHydroManagement(
+                area_id="fr", properties=new_properties, command_context=command_context, study_version=study_version
+            )
