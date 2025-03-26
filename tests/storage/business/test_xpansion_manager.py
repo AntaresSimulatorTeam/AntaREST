@@ -61,13 +61,13 @@ def test_create_configuration(
     """
     Test the creation of a configuration.
     """
-    empty_study = FileStudyInterface(empty_study_810)
+    study = FileStudyInterface(empty_study_810)
     with pytest.raises(ChildNotFoundError):
-        empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
+        study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
-    xpansion_manager.create_xpansion_configuration(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
 
-    actual = empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
+    actual = study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
     assert actual == {
         "candidates": {},
         "capa": {},
@@ -97,18 +97,18 @@ def test_delete_xpansion_configuration(
     """
     Test the deletion of a configuration.
     """
-    empty_study = FileStudyInterface(empty_study_810)
+    study = FileStudyInterface(empty_study_810)
     with pytest.raises(ChildNotFoundError):
-        empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
+        study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
-    xpansion_manager.create_xpansion_configuration(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
 
-    assert empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
+    assert study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
-    xpansion_manager.delete_xpansion_configuration(empty_study)
+    xpansion_manager.delete_xpansion_configuration(study)
 
     with pytest.raises(ChildNotFoundError):
-        empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
+        study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
 
 @pytest.mark.unit_test
@@ -116,10 +116,10 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, tmp_path: Path
     """
     Test the retrieval of the xpansion settings.
     """
-    empty_study = FileStudyInterface(empty_study_810)
-    xpansion_manager.create_xpansion_configuration(empty_study)
+    study = FileStudyInterface(empty_study_810)
+    xpansion_manager.create_xpansion_configuration(study)
 
-    actual = xpansion_manager.get_xpansion_settings(empty_study)
+    actual = xpansion_manager.get_xpansion_settings(study)
     assert actual.model_dump(by_alias=True) == {
         "master": Master.INTEGER,
         "uc_type": UcType.EXPANSION_FAST,
