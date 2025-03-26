@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
 
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -55,8 +54,8 @@ class TestUpdateThermalCluster:
         thermal_config = create_thermal_config(study_version=study.config.version, **thermal)
         study.config.areas[area_id].thermals.append(thermal_config)
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
-    def test_update_thermal(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_update_thermal(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
         area_id = "fr"
         thermal_cluster_id = "test"
 
@@ -108,8 +107,8 @@ class TestUpdateThermalCluster:
         assert thermal == expected
         assert empty_study.config.areas[area_id].thermals[0].model_dump(exclude={"id"}, by_alias=True) == expected
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
-    def test_update_thermal_cluster_does_not_exist(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_update_thermal_cluster_does_not_exist(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
         area_id = "fr"
         thermal_cluster_id = "no"
 
