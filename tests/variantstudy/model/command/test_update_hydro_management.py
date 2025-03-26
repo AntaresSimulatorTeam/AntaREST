@@ -9,8 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from study.business.model.hydro_model import HydroManagementUpdate
 from study.storage.rawstudy.model.filesystem.factory import FileStudy
 from study.storage.variantstudy.model.command.create_area import CreateArea
+from study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from study.storage.variantstudy.model.command_context import CommandContext
 
 from antarest.core.serde.ini_reader import read_ini
@@ -21,8 +23,9 @@ class TestUpdateHydroManagement:
         CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
         CreateArea(area_name="be", command_context=command_context, study_version=study.config.version).apply(study)
 
-    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext):
+    def test_version_880(self, empty_study_880: FileStudy, command_context: CommandContext):
         study = empty_study_880
+        study_version = study.config.version
         self._set_up(study, command_context)
         # study_version = empty_study.config.version
         study_path = study.config.study_path
@@ -39,3 +42,9 @@ class TestUpdateHydroManagement:
             "leeway up": {"fr": 1, "be": 1},
             "pumping efficiency": {"fr": 1, "be": 1},
         }
+
+        # Update several properties
+        new_properties = HydroManagementUpdate(**{"inter_daily_breakdown": 3.1, "reservoir": True})
+        # new_properties = {"inter_daily_breakdown": 3.1, "reservoir": True}
+        cmd = UpdateHydroManagement(area_id="fr",properties=new_properties, command_context=command_context, study_version=study_version)
+        cmd.apply(study)
