@@ -25,17 +25,17 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestCreateLink:
-    def test_validation(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_validation(self, empty_study_880: FileStudy, command_context: CommandContext):
         area1 = "Area1"
         area2 = "Area2"
 
         CreateArea.model_validate(
             {"area_name": area1, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
-        ).apply(empty_study)
+        ).apply(empty_study_880)
 
         CreateArea.model_validate(
             {"area_name": area2, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
-        ).apply(empty_study)
+        ).apply(empty_study_880)
 
         with pytest.raises(ValidationError):
             CreateLink(
@@ -47,7 +47,8 @@ class TestCreateLink:
                 study_version=STUDY_VERSION_8_8,
             )
 
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
         study_version = empty_study.config.version
         study_path = empty_study.config.study_path
         area1 = "Area1"
