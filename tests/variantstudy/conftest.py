@@ -165,7 +165,7 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service_2: MatrixSer
     Returns:
         FileStudy: The empty FileStudy object.
     """
-    study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9"
+    study_id = f"study_id_{study_version}"
     study_path: Path = tmp_path / study_id
     app = CreateApp(study_dir=study_path, caption="empty_study", version=study_version, author="Unknown")
     app()
