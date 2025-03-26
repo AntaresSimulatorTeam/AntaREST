@@ -24,31 +24,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_st_storage import REQUIRED_VERSION, CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 GEN = np.random.default_rng(1000)
-
-
-@pytest.fixture(name="recent_study")
-def recent_study_fixture(empty_study_720: FileStudy) -> FileStudy:
-    """
-    Fixture for creating a recent version of the FileStudy object.
-
-    Args:
-        empty_study: The empty FileStudy object used as model.
-
-    Returns:
-        FileStudy: The FileStudy object upgraded to the required version.
-    """
-    StudyUpgrader(empty_study_720.config.study_path, str(REQUIRED_VERSION)).upgrade()
-    empty_study_720.config.version = REQUIRED_VERSION
-    return empty_study_720
 
 
 # The parameter names to be used are those in the INI file.
@@ -120,7 +103,7 @@ class TestCreateSTStorage:
         )
         assert cmd.parameters.group == STStorageGroup.BATTERY
 
-    def test_init__invalid_storage_name(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_init__invalid_storage_name(self, empty_study_860: FileStudy, command_context: CommandContext):
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             parameters = {**PARAMETERS, "name": "?%$$"}  # bad name
@@ -236,16 +219,16 @@ class TestCreateSTStorage:
         assert raised_error["type"] == "value_error"
         assert raised_error["msg"] == "Value error, Unsupported study version: 7.2"
 
-    def test_apply_config__missing_area(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_apply_config__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
             parameters=STStorageProperties(**PARAMETERS),
-            study_version=recent_study.config.version,
+            study_version=empty_study_860.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply_config(empty_study_860.config)
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -255,7 +238,8 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__duplicate_storage(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_apply_config__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext):
+        recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
@@ -290,7 +274,8 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_apply_config__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext):
+        recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
@@ -315,7 +300,8 @@ class TestCreateSTStorage:
         )
 
     # noinspection SpellCheckingInspection
-    def test_apply__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_apply__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext):
+        recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version

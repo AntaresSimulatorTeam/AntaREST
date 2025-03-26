@@ -24,6 +24,7 @@ from antarest.study.model import (
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_4,
+    STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
@@ -122,6 +123,11 @@ def empty_study_fixture_810(matrix_service: MatrixService, tmp_path: Path) -> Fi
 @pytest.fixture(name="empty_study_840")
 def empty_study_fixture_840(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
     return empty_study_fixture(STUDY_VERSION_8_4, matrix_service, tmp_path)
+
+
+@pytest.fixture(name="empty_study_860")
+def empty_study_fixture_860(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
+    return empty_study_fixture(STUDY_VERSION_8_6, matrix_service, tmp_path)
 
 
 @pytest.fixture(name="empty_study_870")
