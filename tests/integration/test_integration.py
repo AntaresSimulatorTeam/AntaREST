@@ -1762,9 +1762,6 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str, intern
     variant_study = client.get(f"/v1/studies/{variant_id}")
     assert variant_study.status_code == 200
 
-    res = client.put(f"/v1/studies/{variant_id}/generate")
-    client.get(f"/v1/tasks/{res.json()}?wait_for_completion=True")
-
     copy = client.post(f"/v1/studies/{variant_id}/copy?dest=copied&use_task=false")
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 

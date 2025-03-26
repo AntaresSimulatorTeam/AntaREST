@@ -914,6 +914,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns:
             The newly created study.
         """
+
+        self._safe_generation(src_study)
+
         new_id = str(uuid4())
 
         if src_study.additional_data is None:
