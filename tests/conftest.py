@@ -16,8 +16,8 @@ from typing import Callable
 import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
-from matrixstore.in_memory import InMemorySimpleMatrixService
 
+from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import MatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import (
