@@ -19,11 +19,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
-    RenewablePropertiesType,
     create_renewable_properties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, IdMapping
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -85,24 +84,19 @@ class UpdateRenewablesClusters(ICommand):
                 return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
 
             # Validates the Ini file
-            clusters_by_id: dict[str, tuple[str, RenewablePropertiesType]] = {
-                transform_name_to_id(k): (k, create_renewable_properties(self.study_version, v))
-                for k, v in all_clusters_for_area.items()
-            }
+            id_mapping = IdMapping(create_renewable_properties, all_clusters_for_area, self.study_version)
 
             for cluster_id, properties in value.items():
-                if cluster_id not in clusters_by_id:
+                if not id_mapping.asserts_id_exists(cluster_id):
                     return CommandOutput(
                         status=False,
                         message=f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.",
                     )
                 # Performs the update
                 new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
-                current_properties_obj = clusters_by_id[cluster_id][1]
+                cluster_key, current_properties_obj = id_mapping.get_key_and_properties(cluster_id)
                 updated_obj = current_properties_obj.model_copy(update=new_properties_dict)
-                all_clusters_for_area[clusters_by_id[cluster_id][0]] = updated_obj.model_dump(
-                    mode="json", by_alias=True
-                )
+                all_clusters_for_area[cluster_key] = updated_obj.model_dump(mode="json", by_alias=True)
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 
