@@ -12,25 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useCallback, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Box, Divider } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import type { StudyMetadata, VariantTree } from "../../../types/types";
-import { getStudyMetadata } from "../../../services/api/study";
-import NavHeader from "./NavHeader";
-import { getVariantChildren, getVariantParents } from "../../../services/api/variant";
-import TabWrapper from "./explore/TabWrapper";
-import HomeView from "./HomeView";
-import { fetchStudyVersions, setCurrentStudy } from "../../../redux/ducks/studies";
-import { findNodeInTree } from "../../../services/utils";
-import CommandDrawer from "./Commands";
-import { addWsEventListener } from "../../../services/webSocket/ws";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import FreezeStudy from "./FreezeStudy";
-import type { WsEvent } from "@/services/webSocket/types";
 import { WsEventType } from "@/services/webSocket/constants";
+import type { WsEvent } from "@/services/webSocket/types";
+import { Box, Divider } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
+import { fetchStudyVersions, setCurrentStudy } from "../../../redux/ducks/studies";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import { getStudyMetadata } from "../../../services/api/study";
+import { getVariantChildren, getVariantParents } from "../../../services/api/variant";
+import { findNodeInTree } from "../../../services/utils";
+import { addWsEventListener } from "../../../services/webSocket/ws";
+import type { StudyMetadata, VariantTree } from "../../../types/types";
+import SimpleLoader from "../../common/loaders/SimpleLoader";
+import CommandDrawer from "./Commands";
+import TabWrapper from "./explore/TabWrapper";
+import FreezeStudy from "./FreezeStudy";
+import HomeView from "./HomeView";
+import NavHeader from "./NavHeader";
 
 interface Props {
   isExplorer?: boolean;
@@ -171,7 +171,7 @@ function SingleStudy(props: Props) {
         position="relative"
       >
         {isExplorer === true ? (
-          <TabWrapper study={study} border tabList={tabList} />
+          <TabWrapper study={study} divider tabList={tabList} disablePadding />
         ) : (
           <HomeView study={study} tree={tree} />
         )}

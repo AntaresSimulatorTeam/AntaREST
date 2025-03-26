@@ -11,8 +11,6 @@
 # This file is part of the Antares project.
 
 
-import pytest
-
 from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
     get_adequacy_patch_path,
@@ -25,8 +23,8 @@ from antarest.study.storage.variantstudy.model.command.update_areas_properties i
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-def test_update_areas_properties(empty_study: FileStudy, command_context: CommandContext):
+def test_update_areas_properties(empty_study_870: FileStudy, command_context: CommandContext):
+    empty_study = empty_study_870
     area_id = "area_test"
     CreateArea(area_name=area_id, command_context=command_context, study_version=empty_study.config.version).apply(
         empty_study

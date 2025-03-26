@@ -12,22 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Skeleton, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import DataGridViewer from "@/components/common/DataGridViewer";
+import { Column } from "@/components/common/Matrix/shared/constants";
+import { isNonEmptyMatrix, type ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { Box, Skeleton, Tab, Tabs } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
-import GridOffIcon from "@mui/icons-material/GridOff";
-import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/types";
 import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getAreas, getLinks, getStudyOutput } from "../../../../../../redux/selectors";
-import { getStudyData } from "../../../../../../services/api/study";
-import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import PropertiesView from "../../../../../common/PropertiesView";
-import ListElement from "../../common/ListElement";
-import { createPath, DataType, MAX_YEAR, OutputItemType, SYNTHESIS_ITEMS, Timestep } from "./utils";
-import UsePromiseCond, { mergeResponses } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { getAreas, getLinks, getStudyOutput } from "../../../../../../redux/selectors";
+import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
+import { getStudyData } from "../../../../../../services/api/study";
+import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/types";
+import { toError } from "../../../../../../utils/fnUtils";
+import { isSearchMatching } from "../../../../../../utils/stringUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
 import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index";
 import {
@@ -36,15 +39,13 @@ import {
   generateResultColumns,
   groupResultColumns,
 } from "../../../../../common/Matrix/shared/utils";
-import { Column } from "@/components/common/Matrix/shared/constants";
-import SplitView from "../../../../../common/SplitView/index";
-import ResultFilters from "./ResultFilters";
-import { toError } from "../../../../../../utils/fnUtils";
 import EmptyView from "../../../../../common/page/EmptyView";
-import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
-import { isNonEmptyMatrix, type ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
-import DataGridViewer from "@/components/common/DataGridViewer";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import PropertiesView from "../../../../../common/PropertiesView";
+import SplitView from "../../../../../common/SplitView/index";
+import UsePromiseCond, { mergeResponses } from "../../../../../common/utils/UsePromiseCond";
+import ListElement from "../../common/ListElement";
+import ResultFilters from "./ResultFilters";
+import { createPath, DataType, MAX_YEAR, OutputItemType, SYNTHESIS_ITEMS, Timestep } from "./utils";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
@@ -201,7 +202,7 @@ function ResultDetails() {
   ////////////////////////////////////////////////////////////////
 
   const handleItemTypeChange = useCallback(
-    (_event: React.MouseEvent<HTMLElement>, newValue: OutputItemType) => {
+    (_event: React.SyntheticEvent, newValue: OutputItemType) => {
       if (newValue && newValue !== itemType) {
         setItemType(newValue);
       }
@@ -234,22 +235,18 @@ function ResultDetails() {
           }
           mainContent={
             <>
-              <ToggleButtonGroup
-                sx={{ p: 1 }}
+              <Tabs
                 value={itemType}
-                exclusive
-                orientation="vertical"
-                fullWidth
                 onChange={handleItemTypeChange}
+                size="extra-small"
+                variant="fullWidth"
               >
-                <ToggleButton value={OutputItemType.Areas}>{t("study.areas")}</ToggleButton>
-                <ToggleButton value={OutputItemType.Links}>{t("study.links")}</ToggleButton>
+                <Tab label={t("study.areas")} value={OutputItemType.Areas} />
+                <Tab label={t("study.links")} value={OutputItemType.Links} />
                 {output?.synthesis && (
-                  <ToggleButton value={OutputItemType.Synthesis}>
-                    {t("study.synthesis")}
-                  </ToggleButton>
+                  <Tab label={t("study.synthesis")} value={OutputItemType.Synthesis} />
                 )}
-              </ToggleButtonGroup>
+              </Tabs>
               <ListElement
                 list={filteredItems}
                 currentElement={selectedItemId}
@@ -262,13 +259,7 @@ function ResultDetails() {
         />
       </Box>
       {/* Right */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 1,
-        }}
-      >
+      <ViewWrapper flex>
         {isSynthesis ? (
           <UsePromiseCond
             response={synthesisRes}
@@ -332,7 +323,7 @@ function ResultDetails() {
             />
           </>
         )}
-      </Box>
+      </ViewWrapper>
     </SplitView>
   );
 }

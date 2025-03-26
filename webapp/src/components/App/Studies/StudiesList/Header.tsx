@@ -12,7 +12,27 @@
  * This file is part of the Antares project.
  */
 
+import RefreshButton from "@/components/App/Studies/RefreshButton";
 import CustomScrollbar from "@/components/common/CustomScrollbar";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { updateStudiesSortConf, updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesSortConf, getStudyFilters } from "@/redux/selectors";
+import { scanFolder } from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
+import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import BoltIcon from "@mui/icons-material/Bolt";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import FolderIcon from "@mui/icons-material/Folder";
+import HomeIcon from "@mui/icons-material/Home";
+import RadarIcon from "@mui/icons-material/Radar";
 import {
   Box,
   Breadcrumbs,
@@ -24,29 +44,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import HomeIcon from "@mui/icons-material/Home";
-import FolderIcon from "@mui/icons-material/Folder";
-import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import RadarIcon from "@mui/icons-material/Radar";
-import RefreshButton from "@/components/App/Studies/RefreshButton";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import { updateStudiesSortConf, updateStudyFilters } from "@/redux/ducks/studies";
-import { useCallback, useEffect, useState } from "react";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudiesSortConf, getStudyFilters } from "@/redux/selectors";
-import type { StudyMetadata } from "@/types/types";
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import { scanFolder } from "@/services/api/study";
 import type { AxiosError } from "axios";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import BoltIcon from "@mui/icons-material/Bolt";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
 
 const sortOptions = [
   {
@@ -95,9 +95,9 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const hasStudiesSelected = selectedStudyIds.length > 0;
-  const isInDefaultWorkspace = !!folder && folder.startsWith(DEFAULT_WORKSPACE_PREFIX);
+  const isInDefaultWorkspace = folder.startsWith(DEFAULT_WORKSPACE_PREFIX);
   const isRootFolder = folder === ROOT_FOLDER_NAME;
-  const scanDisabled: boolean = isInDefaultWorkspace || isRootFolder;
+  const canScan = !isInDefaultWorkspace && !isRootFolder;
 
   useEffect(() => {
     setFolderList(folder.split("/"));
@@ -216,14 +216,14 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               </ToggleButton>
             </Tooltip>
           </ToggleButtonGroup>
-          {!scanDisabled && (
-            <Tooltip title={t("studies.scanFolder") as string}>
-              <IconButton onClick={() => setConfirmFolderScan(true)} disabled={scanDisabled}>
+          {canScan && (
+            <Tooltip title={t("studies.scanFolder")}>
+              <IconButton onClick={() => setConfirmFolderScan(true)}>
                 <RadarIcon />
               </IconButton>
             </Tooltip>
           )}
-          {!isRootFolder && confirmFolderScan && (
+          {confirmFolderScan && (
             <ConfirmationDialog
               titleIcon={RadarIcon}
               onCancel={() => {
@@ -255,6 +255,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               ...rest,
             }))}
             sx={{ minWidth: 90 }}
+            margin="dense"
           />
         </Box>
       </CustomScrollbar>

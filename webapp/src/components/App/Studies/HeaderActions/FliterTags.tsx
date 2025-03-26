@@ -12,33 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Chip, colors } from "@mui/material";
-import { displayVersionName } from "@/services/utils";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getGroups, getStudyFilters, getUsers } from "@/redux/selectors";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 import { type StudyFilters, updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getGroups, getStudyFilters, getUsers } from "@/redux/selectors";
+import { displayVersionName } from "@/services/utils";
+import { Box, Chip, colors } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { GroupDTO, UserDTO } from "@/types/types";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 function FilterTags() {
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
   const filters = useAppSelector(getStudyFilters);
-
-  const users = useAppSelector((state) => {
-    return getUsers(state)
-      .filter((user) => filters.users.includes(user.id))
-      .map((user) => ({ id: user.id, name: user.name }) as UserDTO);
-  });
-
-  const groups = useAppSelector((state) => {
-    return getGroups(state)
-      .filter((group) => filters.groups.includes(group.id))
-      .map((group) => ({ id: group.id, name: group.name }) as GroupDTO);
-  });
+  const users = useAppSelector(getUsers);
+  const groups = useAppSelector(getGroups);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -94,28 +83,28 @@ function FilterTags() {
             }}
           />
         ))}
-        {users.map((user, _) => (
+        {filters.users.map((userId) => (
           <Chip
-            key={user.id}
-            label={user.name}
+            key={userId}
+            label={users.find(({ id }) => id === userId)?.name}
             onDelete={() => {
               setFilterValue(
                 "users",
-                filters.users.filter((u) => u !== user.id),
+                filters.users.filter((id) => id !== userId),
               );
             }}
             sx={{ bgcolor: colors.purple[500] }}
           />
         ))}
-        {groups.map((group, _) => (
+        {filters.groups.map((groupId) => (
           <Chip
-            key={group.id}
-            label={group.name}
+            key={groupId}
+            label={groups.find(({ id }) => id === groupId)?.name}
             color="success"
             onDelete={() => {
               setFilterValue(
                 "groups",
-                filters.groups.filter((gp) => gp !== group.id),
+                filters.groups.filter((id) => id !== groupId),
               );
             }}
           />

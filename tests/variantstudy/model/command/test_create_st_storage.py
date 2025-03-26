@@ -36,7 +36,7 @@ GEN = np.random.default_rng(1000)
 
 
 @pytest.fixture(name="recent_study")
-def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
+def recent_study_fixture(empty_study_720: FileStudy) -> FileStudy:
     """
     Fixture for creating a recent version of the FileStudy object.
 
@@ -46,9 +46,9 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
     Returns:
         FileStudy: The FileStudy object upgraded to the required version.
     """
-    StudyUpgrader(empty_study.config.study_path, str(REQUIRED_VERSION)).upgrade()
-    empty_study.config.version = REQUIRED_VERSION
-    return empty_study
+    StudyUpgrader(empty_study_720.config.study_path, str(REQUIRED_VERSION)).upgrade()
+    empty_study_720.config.version = REQUIRED_VERSION
+    return empty_study_720
 
 
 # The parameter names to be used are those in the INI file.
@@ -203,7 +203,8 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Invalid matrix shape (3,), expected (8760, 1)"
         assert "pmax_injection" in raised_error["input"]
 
-    def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply_config__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_720
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -355,7 +356,8 @@ class TestCreateSTStorage:
         }
         assert config == expected
 
-    def test_apply__invalid_apply_config(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply__invalid_apply_config(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=empty_study.config.version

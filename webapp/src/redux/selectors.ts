@@ -12,8 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { createLinkId } from "@/services/api/studies/links/utils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import * as R from "ramda";
+import { F } from "ts-toolbelt";
+import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
+import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import type {
   AllClustersAndLinks,
   Area,
@@ -24,23 +28,19 @@ import type {
   UserDetailsDTO,
 } from "../types/types";
 import { filterStudies, sortStudies } from "../utils/studiesUtils";
-import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import type { AppState } from "./ducks";
 import type { AuthState } from "./ducks/auth";
 import type { GroupsState } from "./ducks/groups";
 import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
-import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
-import type { UIState } from "./ducks/ui";
-import type { UsersState } from "./ducks/users";
 import {
-  type StudyMapNode,
   type StudyMapLink,
+  type StudyMapNode,
   studyMapsAdapter,
   type StudyMapsState,
 } from "./ducks/studyMaps";
-import { makeLinkId } from "./utils";
-import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
-import { F } from "ts-toolbelt";
+import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
+import type { UIState } from "./ducks/ui";
+import type { UsersState } from "./ducks/users";
 
 // TODO resultEqualityCheck
 
@@ -255,11 +255,11 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
       const area1 = { id: id1, ...synthesis.areas[id1] };
       Object.keys(area1.links).forEach((id2) => {
         const area2 = { id: id2, ...synthesis.areas[id2] };
-        const id = makeLinkId(area1.id, area2.id);
+        const id = createLinkId(area1.id, area2.id);
         links.push({
           id,
           name: id,
-          label: makeLinkId(area1.name, area2.name),
+          label: `${area1.name} / ${area2.name}`,
           area1: area1.id,
           area2: area2.id,
         });
@@ -439,12 +439,12 @@ export const getStudyMapLinks = createSelector(
           linkAreas2.forEach((areaId) => {
             if (linksUI) {
               const area2 = { id: areaId, ...synthesis.areas[areaId] };
-              const id = makeLinkId(area1.id, area2.id);
+              const id = createLinkId(area1.id, area2.id);
               studyMapLinks.push({
                 ...linksUI[id],
                 id,
                 name: id,
-                label: makeLinkId(area1.name, area2.name),
+                label: `${area1.name} / ${area2.name}`,
                 area1: area1.id,
                 area2: area2.id,
               });
