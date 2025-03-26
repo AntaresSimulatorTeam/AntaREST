@@ -21,7 +21,12 @@ import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
-from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_1, STUDY_VERSION_8_4, STUDY_VERSION_8_7
+from antarest.study.model import (
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_4,
+    STUDY_VERSION_8_7,
+)
 
 if t.TYPE_CHECKING:
     # noinspection PyPackageRequirements
