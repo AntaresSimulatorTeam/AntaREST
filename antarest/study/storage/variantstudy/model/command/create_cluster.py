@@ -177,7 +177,7 @@ class CreateCluster(ICommand):
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
                 "prepro": strip_matrix_protocol(self.prepro),
                 "modulation": strip_matrix_protocol(self.modulation),
             },
