@@ -494,3 +494,17 @@ class TestCreateSTStorage:
         assert ini_content == expected_content
 
         # Checks matrices were created
+        sts_matrices = list(study.tree.get(["input", "st-storage", "series", "area be", "storage1"]).keys())
+        assert sts_matrices == [
+            "pmax_injection",
+            "pmax_withdrawal",
+            "inflows",
+            "lower_rule_curve",
+            "upper_rule_curve",
+            # v9.2 matrices
+            "cost_injection",
+            "cost_withdrawal",
+            "cost_level",
+            "cost_variation_injection",
+            "cost_variation_withdrawal",
+        ]
