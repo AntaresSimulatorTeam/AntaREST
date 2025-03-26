@@ -29,7 +29,7 @@ class TestCreateXpansionResource:
             {"user": {"expansion": {"capa": {}, "weights": {}, "constraints": {}, "settings": {}, "candidates": {}}}}
         )
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+    @pytest.mark.parametrize("empty_study", STUDY_VERSION_8_7, indirect=True)
     def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
         self.set_up(empty_study)
 

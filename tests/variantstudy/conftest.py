@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import hashlib
-import re
 import typing as t
 from pathlib import Path
 from unittest.mock import Mock
@@ -21,8 +20,6 @@ import numpy.typing as npt
 import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
-
-from antarest.core.exceptions import StudyValidationError
 
 if t.TYPE_CHECKING:
     # noinspection PyPackageRequirements
@@ -38,7 +35,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.variantstudy.assets import ASSETS_DIR
 
 
 @pytest.fixture(name="matrix_service")
@@ -150,20 +146,20 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
 
 
 @pytest.fixture(name="empty_study")
-def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService) -> FileStudy:
+def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
     """
     Fixture for creating an empty FileStudy object.
 
     Args:
-        request: pytest's request object.
-        tmp_path: The temporary path for extracting the empty study.
+        study_version: Version of the study to create
         matrix_service: The MatrixService object.
+        tmp_path: The temporary path for extracting the empty study.
 
     Returns:
         FileStudy: The empty FileStudy object.
     """
     study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9"
-    study_path: Path = ASSETS_DIR / study_id
+    study_path: Path = tmp_path / study_id
     app = CreateApp(study_dir=study_path, caption="empty_study", version=study_version, author="Unknown")
     app()
 
@@ -187,16 +183,3 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         ),
     )
     return file_study
-
-
-def _get_current_version(study_path: Path) -> str:
-    antares_path = study_path / "study.antares"
-    pattern = r"version\s*=\s*([\w.-]+)\s*"
-    with antares_path.open(encoding="utf-8") as lines:
-        for line in lines:
-            if match := re.fullmatch(pattern, line):
-                return match[1].rstrip()
-    raise StudyValidationError(
-        f"File parsing error: the version number is not found in '{antares_path}'"
-        f" or does not match the expected '{pattern}' format."
-    )
