@@ -916,7 +916,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         self._safe_generation(src_study)
 
         output_path = str(src_study.path + "/output")
-
         src_study.path += "/snapshot"
 
         dest_study = self.raw_study_service.copy(src_study, dest_name, groups, with_outputs)
