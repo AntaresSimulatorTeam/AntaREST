@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
 
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     LawOption,
     LocalTSGenerationBehavior,
@@ -25,8 +25,11 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateThermalCluster:
-    def _set_up(self, study: FileStudy, command_context: CommandContext, area_id: str, thermal_id: str) -> None:
-        CreateArea(area_name=area_id, command_context=command_context, study_version=study.config.version).apply(study)
+    def _set_up(self, study: FileStudy, command_context: CommandContext, area_name: str, thermal_id: str) -> None:
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(
+            study
+        )
+        area_id = transform_name_to_id(area_name)
         thermal = {
             "co2": 0.57,
             "enabled": True,
@@ -55,12 +58,13 @@ class TestUpdateThermalCluster:
         thermal_config = create_thermal_config(study_version=study.config.version, **thermal)
         study.config.areas[area_id].thermals.append(thermal_config)
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
-    def test_update_thermal(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_update_thermal(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
+        area_name = "FR"
         area_id = "fr"
-        thermal_cluster_id = "test"
+        thermal_cluster_name = "TEST"
 
-        self._set_up(empty_study, command_context, area_id, thermal_cluster_id)
+        self._set_up(empty_study, command_context, area_name, thermal_cluster_name)
 
         args = {
             "co2": 0.60,
@@ -72,7 +76,7 @@ class TestUpdateThermalCluster:
         properties = ThermalClusterUpdate(**args)
 
         command = UpdateThermalClusters(
-            cluster_properties={area_id: {thermal_cluster_id: properties}},
+            cluster_properties={area_name: {thermal_cluster_name: properties}},
             command_context=command_context,
             study_version=empty_study.config.version,
         )
@@ -104,12 +108,12 @@ class TestUpdateThermalCluster:
             "volatility.planned": 0.0,
         }
 
-        thermal = empty_study.tree.get(["input", "thermal", "clusters", area_id, "list", thermal_cluster_id])
+        thermal = empty_study.tree.get(["input", "thermal", "clusters", area_id, "list", thermal_cluster_name])
         assert thermal == expected
         assert empty_study.config.areas[area_id].thermals[0].model_dump(exclude={"id"}, by_alias=True) == expected
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
-    def test_update_thermal_cluster_does_not_exist(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_update_thermal_cluster_does_not_exist(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
         area_id = "fr"
         thermal_cluster_id = "no"
 

@@ -12,20 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import { createLinkId } from "@/services/api/studies/links/utils";
 import type { AxiosError } from "axios";
 import type { DebouncedFunc } from "lodash";
 import { useEffect, useState } from "react";
 import { Graph, type GraphLink, type GraphNode } from "react-d3-graph";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
-import type { LinkProperties, StudyMetadata } from "../../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import { createStudyMapLink, type StudyMapNode } from "../../../../../../redux/ducks/studyMaps";
 import { setCurrentArea, setCurrentLink } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getCurrentLayer } from "../../../../../../redux/selectors";
-import { makeLinkId } from "../../../../../../redux/utils";
+import type { LinkProperties, StudyMetadata } from "../../../../../../types/types";
 import Node from "./Node";
 import { INITIAL_ZOOM, useRenderNodes } from "./utils";
 
@@ -121,7 +121,7 @@ function MapGraph({
 
     if (!isTempLink) {
       dispatch(setCurrentArea(""));
-      dispatch(setCurrentLink(makeLinkId(source, target)));
+      dispatch(setCurrentLink(createLinkId(source, target)));
     }
   };
 

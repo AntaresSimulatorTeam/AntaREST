@@ -14,10 +14,10 @@
 
 import { useMemo } from "react";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import TabWrapper from "../../../TabWrapper";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../types/types";
+import TabWrapper from "../../../TabWrapper";
 
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -48,7 +48,7 @@ function Hydro() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <TabWrapper study={study} tabList={tabList} tabStyle="withoutBorder" />;
+  return <TabWrapper study={study} tabList={tabList} />;
 }
 
 export default Hydro;

@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import TabsView from "@/components/common/TabsView";
+import { type StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "@/types/types";
-import type { Storage } from "../utils";
-import SplitView from "../../../../../../../common/SplitView";
 import Matrix from "../../../../../../../common/Matrix";
-import TabsView from "@/components/common/TabsView";
+import SplitView from "../../../../../../../common/SplitView";
+import type { Storage } from "../utils";
 
 interface Props {
   study: StudyMetadata;
@@ -41,6 +41,7 @@ function StorageMatrices({ areaId, storageId }: Props) {
 
   return (
     <TabsView
+      disableGutters
       items={[
         {
           label: t("study.modelization.storages.modulation"),

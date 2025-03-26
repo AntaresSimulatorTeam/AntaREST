@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
+import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { useOutletContext } from "react-router";
 import type { AxiosError } from "axios";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
+import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../types/types";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import type { StudyMetadata } from "../../../../../../../../types/types";
-import { createStudyMapLayer } from "../../../../../../../../redux/ducks/studyMaps";
-import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
-import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;
@@ -88,6 +88,7 @@ function CreateLayerDialog(props: Props) {
           rules={{
             validate: (v) => validateString(v, { existingValues: existingLayers }),
           }}
+          margin="dense"
         />
       )}
     </FormDialog>

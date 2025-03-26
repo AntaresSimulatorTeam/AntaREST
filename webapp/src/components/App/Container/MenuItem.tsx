@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
 import LaunchIcon from "@mui/icons-material/Launch";
+import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from "@mui/material";
+import { Link, useLocation } from "react-router-dom";
 
 interface Props {
   title: string;
@@ -25,20 +25,21 @@ interface Props {
 }
 
 function MenuItem({ title, isMenuOpen, icon, onClick, link }: Props) {
-  const navigate = useNavigate();
   const location = useLocation();
   const isExternalLink = link?.startsWith("http");
   const isSelected = link === location.pathname;
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
+  // Utils
   ////////////////////////////////////////////////////////////////
 
-  const handleClick = () => {
+  const getButtonActionProps = () => {
     if (link) {
-      return isExternalLink ? window.open(link, "_blank", "noopener,noreferrer") : navigate(link);
+      return isExternalLink
+        ? { href: link, target: "_blank", rel: "noopener noreferrer" }
+        : { component: Link, to: link };
     }
-    onClick?.();
+    return { onClick };
   };
 
   ////////////////////////////////////////////////////////////////
@@ -47,17 +48,16 @@ function MenuItem({ title, isMenuOpen, icon, onClick, link }: Props) {
 
   return (
     <Tooltip title={isMenuOpen ? "" : title} placement="right-end">
-      <ListItem disablePadding onClick={handleClick}>
+      <ListItem disablePadding>
         <ListItemButton
           sx={{ minHeight: 48, px: 2.5, justifyContent: isMenuOpen ? "initial" : "center" }}
           selected={isSelected}
+          {...getButtonActionProps()}
         >
-          <ListItemIcon
-            sx={[{ minWidth: 0, justifyContent: "center", mr: isMenuOpen ? 3 : "auto" }]}
-          >
+          <ListItemIcon sx={{ minWidth: 0, justifyContent: "center", mr: isMenuOpen ? 3 : "auto" }}>
             {icon}
           </ListItemIcon>
-          <ListItemText primary={title} sx={[{ opacity: isMenuOpen ? 1 : 0 }]} />
+          <ListItemText primary={title} sx={{ opacity: isMenuOpen ? 1 : 0 }} />
           {isExternalLink && (
             <LaunchIcon
               fontSize="extra-small"

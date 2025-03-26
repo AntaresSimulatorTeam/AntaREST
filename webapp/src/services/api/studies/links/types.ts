@@ -12,16 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import type { O } from "ts-toolbelt";
-import type { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
 import type { StudyMetadata } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
+import type { O } from "ts-toolbelt";
+import type { AssetType, LinkStyle, TransmissionCapacity } from "./constants";
 
 export type TransmissionCapacityValue = O.UnionOf<typeof TransmissionCapacity>;
 
 export type AssetTypeValue = O.UnionOf<typeof AssetType>;
 
 export type LinkStyleValue = O.UnionOf<typeof LinkStyle>;
+
+export type FilterLink = Array<"hourly" | "daily" | "weekly" | "monthly" | "annual">;
 
 export interface LinkDTO {
   hurdlesCost: boolean;
@@ -42,12 +44,33 @@ export interface LinkDTO {
   filterYearByYear?: string;
 }
 
+export interface Link extends Omit<LinkDTO, "filterSynthesis" | "filterYearByYear"> {
+  id: string;
+  // Since v8.2
+  filterSynthesis?: FilterLink;
+  filterYearByYear?: FilterLink;
+}
+
+export interface GetLinksParams {
+  studyId: StudyMetadata["id"];
+}
+
+export interface GetLinkParams {
+  studyId: StudyMetadata["id"];
+  linkId: Link["id"];
+}
+
+export interface UpdateLinkParams {
+  studyId: StudyMetadata["id"];
+  linkId: Link["id"];
+  config: Partial<Omit<Link, "id" | "area1" | "area2">>;
+}
+
 export interface CreateLinkParams extends PartialExceptFor<LinkDTO, "area1" | "area2"> {
   studyId: StudyMetadata["id"];
 }
 
 export interface DeleteLinkParams {
   studyId: StudyMetadata["id"];
-  areaFrom: string;
-  areaTo: string;
+  linkId: Link["id"];
 }

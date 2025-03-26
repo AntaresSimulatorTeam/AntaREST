@@ -20,19 +20,28 @@ interface TabsViewProps {
   items: Array<{
     label: string;
     content: React.FunctionComponent;
+    disabled?: boolean;
   }>;
   onChange?: TabListProps["onChange"];
   divider?: boolean;
+  disablePadding?: boolean;
+  disableGutters?: boolean;
 }
 
-function TabsView({ items, onChange, divider }: TabsViewProps) {
-  const [value, setValue] = useState("0");
+function TabsView({
+  items,
+  onChange,
+  divider,
+  disablePadding = false,
+  disableGutters = false,
+}: TabsViewProps) {
+  const [value, setValue] = useState(0);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
     onChange?.(event, newValue);
   };
@@ -47,23 +56,35 @@ function TabsView({ items, onChange, divider }: TabsViewProps) {
       sx={{
         display: "flex",
         flexDirection: "column",
+        width: 1,
         height: 1,
       }}
     >
       <TabContext value={value}>
-        {/* Don't set divider to `TabList`, this causes issue with `variant="scrollable"` */}
         <Box sx={divider ? { borderBottom: 1, borderColor: "divider" } : null}>
-          <TabList variant="scrollable" onChange={handleChange}>
-            {items.map(({ label }, index) => (
-              <Tab key={index} label={label} value={index.toString()} wrapped />
+          <TabList onChange={handleChange}>
+            {items.map(({ label, disabled }, index) => (
+              <Tab key={label + index} label={label} value={index} disabled={disabled} />
             ))}
           </TabList>
         </Box>
-        {items.map(({ content: Content }, index) => (
+        {items.map(({ content: Content, label }, index) => (
           <TabPanel
-            key={index}
-            value={index.toString()}
-            sx={{ px: 0, pb: 0, pt: 2, height: 1, overflow: "auto" }}
+            key={label + index}
+            value={index}
+            sx={[
+              {
+                flex: 1,
+                p: 2,
+                position: "relative",
+                overflow: "auto",
+                ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
+                  p: 0,
+                },
+              },
+              disablePadding && { p: 0 },
+              disableGutters && { px: 0 },
+            ]}
           >
             <Content />
           </TabPanel>
