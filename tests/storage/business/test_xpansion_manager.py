@@ -36,11 +36,12 @@ from antarest.study.business.model.xpansion_model import (
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:
@@ -80,12 +81,12 @@ def test_create_configuration(
     xpansion_manager: XpansionManager,
     tmp_path: Path,
     expected_output: JSON,
-    empty_study_810: StudyInterface,
+    empty_study_810: FileStudy,
 ) -> None:
     """
     Test the creation of a configuration.
     """
-    empty_study = empty_study_810
+    empty_study = FileStudyInterface(empty_study_810)
     with pytest.raises(ChildNotFoundError):
         empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
