@@ -227,12 +227,12 @@ def test_manage_binding_constraint(empty_study: FileStudy, command_context: Comm
         assert rulesets == {"Default Ruleset": {}}
 
 
-@pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-def test_scenario_builder(empty_study: FileStudy, command_context: CommandContext):
+def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandContext):
     """
     Test that the scenario builder is updated when a binding constraint group is renamed or removed
     """
     # This test requires a study with version >= 870, which support "scenarised" binding constraints.
+    empty_study = empty_study_870
     study_version = empty_study.config.version
     assert study_version >= 870
 
@@ -305,13 +305,13 @@ def test_scenario_builder(empty_study: FileStudy, command_context: CommandContex
         (BindingConstraintOperator.EQUAL, BindingConstraintOperator.EQUAL),
     ],
 )
-@pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
 def test__update_matrices_names(
-    empty_study: FileStudy,
+    empty_study_870: FileStudy,
     command_context: CommandContext,
     existing_operator: BindingConstraintOperator,
     new_operator: BindingConstraintOperator,
 ):
+    empty_study = empty_study_870
     study_path = empty_study.config.study_path
     study_version = empty_study.config.version
 
