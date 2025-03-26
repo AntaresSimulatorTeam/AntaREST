@@ -9,22 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Dict, Optional
+from typing import Optional
 
 from pydantic import Field
+from pydantic.alias_generators import to_camel
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_camel_case
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 
-INFLOW_PATH = ["input", "hydro", "prepro", "{area_id}", "prepro", "prepro"]
+
+def get_inflow_path(area_id: str) -> list[str]:
+    return ["input", "hydro", "prepro", area_id, "prepro", "prepro"]
 
 
 HYDRO_PATH = ["input", "hydro", "hydro"]
 
 
-class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
+class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     inter_daily_breakdown: Optional[float] = Field(default=1, ge=0)
     intra_daily_modulation: Optional[float] = Field(default=24, ge=1)
     inter_monthly_breakdown: Optional[float] = Field(default=1, ge=0)
@@ -42,43 +43,42 @@ class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, a
     pumping_efficiency: Optional[float] = Field(default=1, ge=0)
 
 
-@all_optional_model
-@camel_case_model
-class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    inter_daily_breakdown: float = Field(ge=0)
-    intra_daily_modulation: float = Field(ge=1)
-    inter_monthly_breakdown: float = Field(ge=0)
-    reservoir: bool
-    reservoir_capacity: float = Field(ge=0)
-    follow_load: bool
-    use_water: bool
-    hard_bounds: bool
-    initialize_reservoir_date: int = Field(ge=0, le=11)
-    use_heuristic: bool
-    power_to_level: bool
-    use_leeway: bool
-    leeway_low: float = Field(ge=0)
-    leeway_up: float = Field(ge=0)
-    pumping_efficiency: float = Field(ge=0)
+class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    inter_daily_breakdown: Optional[float] = Field(default=None, ge=0)
+    intra_daily_modulation: Optional[float] = Field(default=None, ge=1)
+    inter_monthly_breakdown: Optional[float] = Field(default=None, ge=0)
+    reservoir: Optional[bool] = None
+    reservoir_capacity: Optional[float] = Field(default=None, ge=0)
+    follow_load: Optional[bool] = None
+    use_water: Optional[bool] = None
+    hard_bounds: Optional[bool] = None
+    initialize_reservoir_date: Optional[int] = Field(default=None, ge=0, le=11)
+    use_heuristic: Optional[bool] = None
+    power_to_level: Optional[bool] = None
+    use_leeway: Optional[bool] = None
+    leeway_low: Optional[float] = Field(default=None, ge=0)
+    leeway_up: Optional[float] = Field(default=None, ge=0)
+    pumping_efficiency: Optional[float] = Field(default=None, ge=0)
 
 
-@all_optional_model
 class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    inter_daily_breakdown: Dict[LowerCaseStr, float] = Field(alias="inter-daily-breakdown")
-    intra_daily_modulation: Dict[LowerCaseStr, float] = Field(alias="intra-daily-modulation")
-    inter_monthly_breakdown: Dict[LowerCaseStr, float] = Field(alias="inter-monthly-breakdown")
-    reservoir: Dict[LowerCaseStr, bool]
-    reservoir_capacity: Dict[LowerCaseStr, float] = Field(alias="reservoir capacity")
-    follow_load: Dict[LowerCaseStr, bool] = Field(alias="follow load")
-    use_water: Dict[LowerCaseStr, bool] = Field(alias="use water")
-    hard_bounds: Dict[LowerCaseStr, bool] = Field(alias="hard bounds")
-    initialize_reservoir_date: Dict[LowerCaseStr, int] = Field(alias="initialize reservoir date")
-    use_heuristic: Dict[LowerCaseStr, bool] = Field(alias="use heuristic")
-    power_to_level: Dict[LowerCaseStr, bool] = Field(alias="power to level")
-    use_leeway: Dict[LowerCaseStr, float] = Field(alias="use leeway")
-    leeway_low: Dict[LowerCaseStr, float] = Field(alias="leeway low")
-    leeway_up: Dict[LowerCaseStr, float] = Field(alias="leeway up")
-    pumping_efficiency: Dict[LowerCaseStr, float] = Field(alias="pumping efficiency")
+    inter_daily_breakdown: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="inter-daily-breakdown")
+    intra_daily_modulation: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="intra-daily-modulation")
+    inter_monthly_breakdown: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="inter-monthly-breakdown")
+    reservoir: Optional[dict[LowerCaseStr, bool]] = None
+    reservoir_capacity: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="reservoir capacity")
+    follow_load: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="follow load")
+    use_water: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="use water")
+    hard_bounds: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="hard bounds")
+    initialize_reservoir_date: Optional[dict[LowerCaseStr, int]] = Field(
+        default=None, alias="initialize reservoir date"
+    )
+    use_heuristic: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="use heuristic")
+    power_to_level: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="power to level")
+    use_leeway: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="use leeway")
+    leeway_low: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="leeway low")
+    leeway_up: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="leeway up")
+    pumping_efficiency: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="pumping efficiency")
 
     def get_hydro_management(self, area_id: str) -> HydroManagement:
         lower_area_id = area_id.lower()
@@ -103,7 +103,7 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
             setattr(self, prop_key, current_dict)
 
 
-class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
+class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     """Represents the inflow structure in the hydraulic configuration."""
 
     inter_monthly_correlation: float = Field(
@@ -115,10 +115,9 @@ class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, a
     )
 
 
-@all_optional_model
-@camel_case_model
-class InflowStructureUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    inter_monthly_correlation: float = Field(
+class InflowStructureUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    inter_monthly_correlation: Optional[float] = Field(
+        default=None,
         ge=0,
         le=1,
         description="Average correlation between the energy of a month and that of the next month",
@@ -126,15 +125,15 @@ class InflowStructureUpdate(AntaresBaseModel, extra="forbid", populate_by_name=T
     )
 
 
-@all_optional_model
 class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    inter_monthly_correlation: float = Field(
+    inter_monthly_correlation: Optional[float] = Field(
+        default=None,
         ge=0,
         le=1,
         alias="intermonthly-correlation",
     )
 
 
-class HydroProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel_case):
+class HydroProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     management_options: HydroManagement
     inflow_structure: InflowStructure

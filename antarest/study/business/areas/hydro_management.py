@@ -12,13 +12,13 @@
 
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
-    INFLOW_PATH,
     HydroManagement,
     HydroManagementFileData,
     HydroManagementUpdate,
     HydroProperties,
     InflowStructure,
     InflowStructureUpdate,
+    get_inflow_path,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
@@ -36,8 +36,7 @@ class HydroManager:
         file_study = study.get_files()
         hydro_management_file_data = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
 
-        all_areas = file_study.config.areas
-        for area_id in all_areas:
+        for area_id in file_study.config.areas:
             hydro_management = hydro_management_file_data.get_hydro_management(area_id)
             inflow_structure = self.get_inflow_structure(study, area_id)
             hydro_properties = HydroProperties.model_validate(
@@ -82,7 +81,7 @@ class HydroManager:
             InflowStructure: The inflow structure values.
         """
 
-        path = [s.format(area_id=area_id) for s in INFLOW_PATH]
+        path = get_inflow_path(area_id)
         file_study = study.get_files()
         inter_monthly_correlation = file_study.tree.get(path).get("intermonthly-correlation", 0.5)
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
