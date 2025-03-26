@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -50,11 +49,11 @@ class TestUpdateRenewableCluster:
             study_version=study.config.version,
         ).apply(study)
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
-        self._set_up(empty_study, command_context)
-        study_version = empty_study.config.version
-        study_path = empty_study.config.study_path
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+        study = empty_study_870
+        self._set_up(study, command_context)
+        study_version = study.config.version
+        study_path = study.config.study_path
 
         # Check existing properties
         fr_ini = study_path / "input" / "renewables" / "clusters" / "fr" / "list.ini"
@@ -99,7 +98,7 @@ class TestUpdateRenewableCluster:
             command_context=command_context,
             study_version=study_version,
         )
-        output = cmd.apply(empty_study)
+        output = cmd.apply(study)
         assert output.status is True
         assert output.message == "The renewable clusters were successfully updated."
 
@@ -111,10 +110,10 @@ class TestUpdateRenewableCluster:
         assert fr_content == expected_fr_content
         assert de_content == expected_de_content
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_error_cases(self, empty_study: FileStudy, command_context: CommandContext):
-        self._set_up(empty_study, command_context)
-        study_version = empty_study.config.version
+    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
+        study = empty_study_880
+        self._set_up(study, command_context)
+        study_version = study.config.version
 
         # Fake area
         cmd = UpdateRenewablesClusters(
@@ -122,7 +121,7 @@ class TestUpdateRenewableCluster:
             command_context=command_context,
             study_version=study_version,
         )
-        output = cmd.apply(empty_study)
+        output = cmd.apply(study)
         assert output.status is False
         assert output.message == "The area 'fake_area' is not found."
 
@@ -132,6 +131,6 @@ class TestUpdateRenewableCluster:
             command_context=command_context,
             study_version=study_version,
         )
-        output = cmd.apply(empty_study)
+        output = cmd.apply(study)
         assert output.status is False
         assert output.message == "The renewable cluster 'fake_cluster' in the area 'fr' is not found."
