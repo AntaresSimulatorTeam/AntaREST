@@ -54,39 +54,38 @@ def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "version, expected_output",
-    [
-        (
-            810,
-            {
-                "candidates": {},
-                "capa": {},
-                "constraints": {},
-                "sensitivity": {"sensitivity_in": {}},
-                "settings": {
-                    "master": "integer",
-                    "uc_type": "expansion_fast",
-                    "optimality_gap": 1,
-                    "relative_gap": 1e-06,
-                    "relaxed_optimality_gap": 1e-05,
-                    "max_iteration": 1000,
-                    "solver": "Xpress",
-                    "log_level": 0,
-                    "separation_parameter": 0.5,
-                    "batch_size": 96,
-                    "timelimit": int(1e12),
-                },
-                "weights": {},
-            },
-        ),
-    ],
+    "expected_output",
+    {
+        "candidates": {},
+        "capa": {},
+        "constraints": {},
+        "sensitivity": {"sensitivity_in": {}},
+        "settings": {
+            "master": "integer",
+            "uc_type": "expansion_fast",
+            "optimality_gap": 1,
+            "relative_gap": 1e-06,
+            "relaxed_optimality_gap": 1e-05,
+            "max_iteration": 1000,
+            "solver": "Xpress",
+            "log_level": 0,
+            "separation_parameter": 0.5,
+            "batch_size": 96,
+            "timelimit": int(1e12),
+        },
+        "weights": {},
+    },
 )
 def test_create_configuration(
-    xpansion_manager: XpansionManager, tmp_path: Path, version: int, expected_output: JSON, empty_study: StudyInterface
+    xpansion_manager: XpansionManager,
+    tmp_path: Path,
+    expected_output: JSON,
+    empty_study_810: StudyInterface,
 ) -> None:
     """
     Test the creation of a configuration.
     """
+    empty_study = empty_study_810
     with pytest.raises(ChildNotFoundError):
         empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
@@ -98,11 +97,12 @@ def test_create_configuration(
 
 @pytest.mark.unit_test
 def test_delete_xpansion_configuration(
-    xpansion_manager: XpansionManager, tmp_path: Path, empty_study: StudyInterface
+    xpansion_manager: XpansionManager, tmp_path: Path, empty_study_810: StudyInterface
 ) -> None:
     """
     Test the deletion of a configuration.
     """
+    empty_study = empty_study_810
     with pytest.raises(ChildNotFoundError):
         empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
@@ -118,10 +118,9 @@ def test_delete_xpansion_configuration(
 
 @pytest.mark.unit_test
 @pytest.mark.parametrize(
-    "version, expected_output",
+    "expected_output",
     [
         (
-            810,
             {
                 "master": Master.INTEGER,
                 "uc_type": UcType.EXPANSION_FAST,
@@ -143,14 +142,14 @@ def test_delete_xpansion_configuration(
 )
 @pytest.mark.unit_test
 def test_get_xpansion_settings(
-    xpansion_manager: XpansionManager, tmp_path: Path, version: int, expected_output: JSON, empty_study: StudyInterface
+    xpansion_manager: XpansionManager, tmp_path: Path, expected_output: JSON, empty_study_810: StudyInterface
 ) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
-    xpansion_manager.create_xpansion_configuration(empty_study)
+    xpansion_manager.create_xpansion_configuration(empty_study_810)
 
-    actual = xpansion_manager.get_xpansion_settings(empty_study)
+    actual = xpansion_manager.get_xpansion_settings(empty_study_810)
     assert actual.model_dump(by_alias=True) == expected_output
 
 
