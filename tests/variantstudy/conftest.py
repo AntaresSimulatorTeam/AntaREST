@@ -26,6 +26,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_4,
     STUDY_VERSION_8_7,
+    STUDY_VERSION_8_8,
 )
 
 if t.TYPE_CHECKING:
@@ -209,3 +210,8 @@ def empty_study_fixture_840(matrix_service: MatrixService, tmp_path: Path) -> Fi
 @pytest.fixture(name="empty_study_870")
 def empty_study_fixture_870(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
     return empty_study_fixture(STUDY_VERSION_8_7, matrix_service, tmp_path)
+
+
+@pytest.fixture(name="empty_study_880")
+def empty_study_fixture_880(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
+    return empty_study_fixture(STUDY_VERSION_8_8, matrix_service, tmp_path)
