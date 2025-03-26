@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
 from study.storage.rawstudy.model.filesystem.factory import FileStudy
 from study.storage.variantstudy.model.command.create_area import CreateArea
 from study.storage.variantstudy.model.command_context import CommandContext
@@ -22,11 +21,11 @@ class TestUpdateHydroManagement:
         CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
         CreateArea(area_name="be", command_context=command_context, study_version=study.config.version).apply(study)
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
-        self._set_up(empty_study, command_context)
+    def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext):
+        study = empty_study_880
+        self._set_up(study, command_context)
         # study_version = empty_study.config.version
-        study_path = empty_study.config.study_path
+        study_path = study.config.study_path
 
         # Check existing file
         hydro_ini = study_path / "input" / "hydro" / "hydro.ini"
