@@ -476,10 +476,12 @@ class TestCreateSTStorage:
         parameters_9_2 = copy.deepcopy(PARAMETERS)
         parameters_9_2["efficiency_withdrawal"] = 0.55
         parameters_9_2["penalize_variation_injection"] = True
+        cost_injection_matrix = GEN.uniform(0, 1000, size=(8760, 1)).tolist()
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area be",
             parameters=parameters_9_2,
+            cost_injection=cost_injection_matrix,
             study_version=study_version,
         )
         output = cmd.apply(study)
@@ -494,7 +496,8 @@ class TestCreateSTStorage:
         assert ini_content == expected_content
 
         # Checks matrices were created
-        sts_matrices = list(study.tree.get(["input", "st-storage", "series", "area be", "storage1"]).keys())
+        series_path = ["input", "st-storage", "series", "area be", "storage1"]
+        sts_matrices = list(study.tree.get(series_path).keys())
         assert sts_matrices == [
             "pmax_injection",
             "pmax_withdrawal",
@@ -508,3 +511,6 @@ class TestCreateSTStorage:
             "cost_variation_injection",
             "cost_variation_withdrawal",
         ]
+        # Checks more specifically the cost_injection matrix as it was given inside the command
+        cost_injection = study.tree.get(series_path + ["cost_injection"])
+        assert cost_injection["data"] == cost_injection_matrix
