@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Skeleton } from "@mui/material";
-import OkDialog, { type OkDialogProps } from "../OkDialog";
-import UsePromiseCond from "../../utils/UsePromiseCond";
-import type { LaunchJob } from "../../../../types/types";
-import { useTranslation } from "react-i18next";
-import { DigestTabs } from "./DigestTabs";
-import client from "@/services/api/client";
-import type { DigestData } from "./types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import client from "@/services/api/client";
+import { Skeleton } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import type { LaunchJob } from "../../../../types/types";
+import UsePromiseCond from "../../utils/UsePromiseCond";
+import OkDialog, { type OkDialogProps } from "../OkDialog";
+import DigestTabs from "./DigestTabs";
+import type { DigestData } from "./types";
 
 interface DigestDialogProps extends Pick<OkDialogProps, "open" | "onOk" | "onClose"> {
   studyId: LaunchJob["studyId"];

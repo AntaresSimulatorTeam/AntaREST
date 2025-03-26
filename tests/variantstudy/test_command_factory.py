@@ -403,31 +403,27 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
             args={
-                "area_id": "area_name",
-                "thermal_cluster_id": "cluster_name",
-                "properties": {"efficiency": 90},
+                "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
             },
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_thermal_cluster",
+        id="update_thermal_clusters",
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_THERMAL_CLUSTER.value,
+            action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
             args=[
                 {
-                    "area_id": "area_name",
-                    "thermal_cluster_id": "cluster_name",
-                    "properties": {"efficiency": 90},
+                    "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
                 }
             ],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_thermal_cluster_list",
+        id="update_thermal_clusters_list",
     ),
     pytest.param(
         CommandDTO(
@@ -523,12 +519,12 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_RENEWABLE_CLUSTER.value,
-            args=[{"area_id": "area_name", "cluster_id": "cluster_name", "properties": {"unit_count": 10}}],
+            action=CommandName.UPDATE_RENEWABLES_CLUSTERS.value,
+            args=[{"cluster_properties": {"area_name": {"cluster_name": {"unit_count": 10}}}}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_renewable_cluster",
+        id="update_renewable_clusters",
     ),
     pytest.param(
         CommandDTO(
@@ -817,18 +813,12 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_ST_STORAGE.value,
-            args={
-                "area_id": "area 1",
-                "st_storage_id": "storage 1",
-                "properties": {
-                    "enabled": False,
-                },
-            },
+            action=CommandName.UPDATE_ST_STORAGES.value,
+            args={"storage_properties": {"area 1": {"sts_1": {"enabled": False}}}},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_st_storage",
+        id="update_st_storages",
     ),
     pytest.param(
         CommandDTO(

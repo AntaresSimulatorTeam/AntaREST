@@ -69,10 +69,10 @@ from antarest.study.storage.variantstudy.model.command.update_inflow_structure i
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
-from antarest.study.storage.variantstudy.model.command.update_renewable_cluster import UpdateRenewableCluster
+from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
-from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
-from antarest.study.storage.variantstudy.model.command.update_thermal_cluster import UpdateThermalCluster
+from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -94,13 +94,13 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
-    CommandName.UPDATE_THERMAL_CLUSTER.value: UpdateThermalCluster,
+    CommandName.UPDATE_THERMAL_CLUSTERS.value: UpdateThermalClusters,
     CommandName.CREATE_RENEWABLES_CLUSTER.value: CreateRenewablesCluster,
     CommandName.REMOVE_RENEWABLES_CLUSTER.value: RemoveRenewablesCluster,
-    CommandName.UPDATE_RENEWABLE_CLUSTER.value: UpdateRenewableCluster,
+    CommandName.UPDATE_RENEWABLES_CLUSTERS.value: UpdateRenewablesClusters,
     CommandName.CREATE_ST_STORAGE.value: CreateSTStorage,
     CommandName.REMOVE_ST_STORAGE.value: RemoveSTStorage,
-    CommandName.UPDATE_ST_STORAGE.value: UpdateSTStorage,
+    CommandName.UPDATE_ST_STORAGES.value: UpdateSTStorages,
     CommandName.UPDATE_HYDRO_PROPERTIES.value: UpdateHydroManagement,
     CommandName.UPDATE_INFLOW_STRUCTURE.value: UpdateInflowStructure,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,

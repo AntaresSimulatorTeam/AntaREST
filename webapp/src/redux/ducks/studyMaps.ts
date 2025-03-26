@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { LinkStyleValue } from "@/services/api/studies/links/types";
+import { createLinkId, parseLinkId } from "@/services/api/studies/links/utils";
 import {
   createAction,
   createAsyncThunk,
@@ -20,6 +22,16 @@ import {
   type EntityState,
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
+import tinycolor from "tinycolor2";
+import type { AppState } from ".";
+import {
+  getNodeWidth,
+  NODE_COLOR,
+  NODE_HEIGHT,
+} from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
+import * as linksApi from "../../services/api/studies/links";
+import * as studyApi from "../../services/api/study";
+import * as studyDataApi from "../../services/api/studydata";
 import type {
   Area,
   AreaLayerColor,
@@ -29,15 +41,6 @@ import type {
   StudyMetadata,
   UpdateAreaUi,
 } from "../../types/types";
-import type { AppAsyncThunkConfig, AppDispatch } from "../store";
-import { makeActionName, makeLinkId, parseLinkId } from "../utils";
-import * as studyApi from "../../services/api/study";
-import {
-  getNodeWidth,
-  NODE_COLOR,
-  NODE_HEIGHT,
-} from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
-import type { AppState } from ".";
 import {
   getArea,
   getCurrentLayer,
@@ -45,11 +48,9 @@ import {
   getStudyMapLayersById,
   getStudySynthesis,
 } from "../selectors";
-import * as studyDataApi from "../../services/api/studydata";
-import * as linksApi from "../../services/api/studies/links";
+import type { AppAsyncThunkConfig, AppDispatch } from "../store";
+import { makeActionName } from "../utils";
 import { createStudyLink, deleteStudyLink, setCurrentArea } from "./studySyntheses";
-import type { LinkStyleValue } from "@/services/api/studies/links/types";
-import tinycolor from "tinycolor2";
 
 export interface StudyMapNode {
   id: string;
@@ -211,9 +212,8 @@ async function getLinks(studyId: StudyMap["studyId"]): Promise<StudyMap["links"]
   return links.reduce(
     (acc, link) => {
       const [style, linecap] = makeLinkStyle(link.linkStyle);
-      const id = makeLinkId(link.area1, link.area2);
-      acc[id] = {
-        id,
+      acc[link.id] = {
+        id: link.id,
         color: tinycolor({
           r: link.colorr,
           g: link.colorg,
@@ -362,7 +362,7 @@ export const createStudyMapLink = createAsyncThunk<
   AppAsyncThunkConfig
 >(n("CREATE_STUDY_MAP_LINK"), async (data, { dispatch, rejectWithValue }) => {
   const { studyId, area1, area2 } = data;
-  const linkId = makeLinkId(area1, area2);
+  const linkId = createLinkId(area1, area2);
 
   dispatch(createStudyLink({ studyId, area1, area2 }));
 
@@ -404,11 +404,7 @@ export const deleteStudyMapLink = createAsyncThunk<
     dispatch(deleteStudyLink({ studyId, area1, area2 }));
 
     try {
-      await linksApi.deleteLink({
-        studyId,
-        areaFrom: area1,
-        areaTo: area2,
-      });
+      await linksApi.deleteLink({ studyId, linkId });
     } catch (err) {
       dispatch(createStudyLink({ ...link, studyId, area1, area2 }));
 
