@@ -39,9 +39,7 @@ class HydroManager:
         for area_id in file_study.config.areas:
             hydro_management = hydro_management_file_data.get_hydro_management(area_id)
             inflow_structure = self.get_inflow_structure(study, area_id)
-            hydro_properties = HydroProperties.model_validate(
-                {"management_options": hydro_management, "inflow_structure": inflow_structure}
-            )
+            hydro_properties = HydroProperties(management_options=hydro_management, inflow_structure=inflow_structure)
             all_hydro_properties[area_id] = hydro_properties
 
         return all_hydro_properties
