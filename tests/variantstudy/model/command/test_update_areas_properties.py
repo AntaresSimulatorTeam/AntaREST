@@ -19,13 +19,14 @@ from antarest.study.business.model.area_properties_model import (
     get_optimization_path,
     get_thermal_path,
 )
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+@pytest.mark.parametrize("empty_study", STUDY_VERSION_8_7, indirect=True)
 def test_update_areas_properties(empty_study: FileStudy, command_context: CommandContext):
     area_id = "area_test"
     CreateArea(area_name=area_id, command_context=command_context, study_version=empty_study.config.version).apply(

@@ -49,7 +49,7 @@ class TestXpansionCandidate:
         (xpansion_path / "capa" / "capa3.txt").touch()
         (xpansion_path / "capa" / "capa4.txt").touch()
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+    @pytest.mark.parametrize("empty_study", STUDY_VERSION_8_7, indirect=True)
     def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
         self.set_up(empty_study, command_context)
 
@@ -141,7 +141,7 @@ max-units = 7
 """
         )
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+    @pytest.mark.parametrize("empty_study", [STUDY_VERSION_8_7], indirect=True)
     def test_error_cases(self, empty_study: FileStudy, command_context: CommandContext):
         self.set_up(empty_study, command_context)
 

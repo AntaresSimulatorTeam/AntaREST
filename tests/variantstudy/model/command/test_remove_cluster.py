@@ -14,6 +14,7 @@ import numpy as np
 import pytest
 from checksumdir import dirhash
 
+from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -34,7 +35,7 @@ from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveCluster:
-    @pytest.mark.parametrize("empty_study", ["empty_study_720.zip", "empty_study_870.zip"], indirect=True)
+    @pytest.mark.parametrize("empty_study", [STUDY_VERSION_7_2, STUDY_VERSION_8_7], indirect=True)
     def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
         area_name = "Area_name"
         area_id = transform_name_to_id(area_name)

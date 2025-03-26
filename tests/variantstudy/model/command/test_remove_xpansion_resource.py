@@ -37,7 +37,7 @@ class TestRemoveXpansionResource:
         (xpansion_path / "constraints" / "constraints1.ini").touch()
         (xpansion_path / "constraints" / "constraints2.txt").touch()
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+    @pytest.mark.parametrize("empty_study", STUDY_VERSION_8_7, indirect=True)
     def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
         self.set_up(empty_study)
 
@@ -80,7 +80,7 @@ class TestRemoveXpansionResource:
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / file_name
             assert not resource_path.exists()
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+    @pytest.mark.parametrize("empty_study", STUDY_VERSION_8_7, indirect=True)
     def test_error_case_for_constraint(self, empty_study: FileStudy, command_context: CommandContext):
         self.set_up(empty_study)
         file_name = "constraints1"

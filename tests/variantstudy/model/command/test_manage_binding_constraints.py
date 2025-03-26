@@ -13,6 +13,7 @@
 import pytest
 
 from antarest.core.serde.ini_reader import read_ini
+from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -40,7 +41,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 # noinspection SpellCheckingInspection
-@pytest.mark.parametrize("empty_study", ["empty_study_720.zip", "empty_study_870.zip"], indirect=True)
+@pytest.mark.parametrize("empty_study", [STUDY_VERSION_7_2, STUDY_VERSION_8_7], indirect=True)
 def test_manage_binding_constraint(empty_study: FileStudy, command_context: CommandContext):
     study_path = empty_study.config.study_path
     study_version = empty_study.config.version

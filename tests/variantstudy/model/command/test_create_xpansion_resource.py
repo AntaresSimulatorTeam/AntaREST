@@ -82,7 +82,7 @@ class TestCreateXpansionResource:
             content = empty_study.tree.get(["user", "expansion", "capa", file_name])
             assert content == {"columns": ["0", "1"], "data": data, "index": ["0", "1"]}
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
+    @pytest.mark.parametrize("empty_study", STUDY_VERSION_8_7, indirect=True)
     def test_error_cases(self, empty_study: FileStudy, command_context: CommandContext):
         self.set_up(empty_study)
 
