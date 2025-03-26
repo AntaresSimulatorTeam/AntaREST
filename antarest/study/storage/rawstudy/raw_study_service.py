@@ -41,6 +41,7 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     update_antares_info,
 )
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -214,7 +215,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     @override
     def copy(
         self,
-        src_meta: RawStudy,
+        src_meta: RawStudy | VariantStudy,
         dest_name: str,
         groups: Sequence[str],
         with_outputs: bool = False,
@@ -231,7 +232,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns:
             The newly created study.
         """
-        self._check_study_exists(src_meta)
+        if isinstance(src_meta, RawStudy):
+            self._check_study_exists(src_meta)
 
         if src_meta.additional_data is None:
             additional_data = StudyAdditionalData()

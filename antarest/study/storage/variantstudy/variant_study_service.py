@@ -43,7 +43,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
@@ -53,7 +53,6 @@ from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
     RawStudy,
     Study,
     StudyAdditionalData,
@@ -71,7 +70,6 @@ from antarest.study.storage.utils import (
     export_study_flat,
     is_managed,
     remove_from_cache,
-    update_antares_info,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -917,41 +915,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         self._safe_generation(src_study)
 
-        new_id = str(uuid4())
+        output_path = str(src_study.path + "/output")
 
-        if src_study.additional_data is None:
-            additional_data = StudyAdditionalData()
-        else:
-            additional_data = StudyAdditionalData(
-                horizon=src_study.additional_data.horizon,
-                author=src_study.additional_data.author,
-                patch=src_study.additional_data.patch,
-            )
+        src_study.path += "/snapshot"
 
-        dest_study = RawStudy(
-            id=new_id,
-            name=dest_name,
-            path=str(self.config.get_workspace_path() / new_id),
-            workspace=DEFAULT_WORKSPACE_NAME,
-            public_mode=PublicMode.NONE if groups else PublicMode.READ,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            version=src_study.version,
-            groups=groups,
-            additional_data=additional_data,
-        )
+        dest_study = self.raw_study_service.copy(src_study, dest_name, groups, with_outputs)
 
-        src_path = self.get_study_path(src_study)
         dest_path = Path(dest_study.path)
 
-        shutil.copytree(src_path, dest_path)
-
-        output = dest_path / "output"
-        if not with_outputs and output.exists():
-            shutil.rmtree(output)
-
-        study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
-        update_antares_info(dest_study, study.tree, update_author=True)
+        if with_outputs:
+            shutil.copytree(output_path, dest_path / "output")
 
         return dest_study
 
