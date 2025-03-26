@@ -97,4 +97,5 @@ class TestHydroManagement:
 
     @pytest.mark.unit_test
     def test_get_all_hydro_properties(self, hydro_manager: HydroManager, empty_study_880: FileStudy) -> None:
-        pass
+        study = FileStudyInterface(empty_study_880)
+        print(hydro_manager.get_all_hydro_properties(study))
