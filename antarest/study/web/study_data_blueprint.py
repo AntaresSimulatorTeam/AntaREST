@@ -69,7 +69,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterUpdate,
-    validate_thermal_cluster_against_version,
 )
 from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
@@ -1990,7 +1989,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         request_params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, request_params)
         study_interface = study_service.get_study_interface(study)
-        validate_thermal_cluster_against_version(study_interface.version, cluster_data)
         return study_service.thermal_manager.update_cluster(study_interface, area_id, cluster_id, cluster_data)
 
     @bp.put(

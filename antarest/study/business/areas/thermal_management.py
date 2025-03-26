@@ -29,6 +29,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterUpdate,
+    validate_thermal_cluster_against_version,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_7
@@ -230,6 +231,7 @@ class ThermalManager:
             ThermalClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
             in the provided cluster_data.
         """
+        validate_thermal_cluster_against_version(study.version, cluster_data)
 
         file_study = study.get_files()
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)

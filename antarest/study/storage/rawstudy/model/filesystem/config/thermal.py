@@ -79,7 +79,7 @@ class ThermalClusterFileData(AntaresBaseModel):
         return ThermalCluster.model_validate(self.model_dump(exclude_none=True))
 
     @classmethod
-    def from_model(cls, study_version: StudyVersion, cluster: ThermalCluster) -> "ThermalClusterFileData":
+    def from_model(cls, cluster: ThermalCluster) -> "ThermalClusterFileData":
         return cls.model_validate(cluster.model_dump(exclude={"id"}))
 
 
@@ -91,4 +91,5 @@ def parse_thermal_cluster(study_version: StudyVersion, data: Any) -> ThermalClus
 
 
 def serialize_thermal_cluster(study_version: StudyVersion, cluster: ThermalCluster) -> dict[str, Any]:
-    return ThermalClusterFileData.from_model(study_version, cluster).model_dump(by_alias=True, exclude_none=True)
+    validate_thermal_cluster_against_version(study_version, cluster)
+    return ThermalClusterFileData.from_model(cluster).model_dump(by_alias=True, exclude_none=True)
