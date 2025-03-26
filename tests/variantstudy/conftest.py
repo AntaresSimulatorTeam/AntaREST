@@ -21,6 +21,8 @@ import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
+from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_7
+
 if t.TYPE_CHECKING:
     # noinspection PyPackageRequirements
     pass
@@ -145,8 +147,7 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
     )
 
 
-@pytest.fixture(name="empty_study")
-def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
+def empty_study_fixture(study_version: StudyVersion, matrix_service_2: MatrixService, tmp_path: Path) -> FileStudy:
     """
     Fixture for creating an empty FileStudy object.
 
@@ -176,10 +177,20 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         config=config,
         tree=FileStudyTree(
             context=ContextServer(
-                matrix=matrix_service,
-                resolver=UriResolverService(matrix_service=matrix_service),
+                matrix=matrix_service_2,
+                resolver=UriResolverService(matrix_service=matrix_service_2),
             ),
             config=config,
         ),
     )
     return file_study
+
+
+@pytest.fixture(name="empty_study_720")
+def empty_study_fixture_720(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
+    return empty_study_fixture(STUDY_VERSION_7_2, matrix_service, tmp_path)
+
+
+@pytest.fixture(name="empty_study_870")
+def empty_study_fixture_870(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
+    return empty_study_fixture(STUDY_VERSION_8_7, matrix_service, tmp_path)
