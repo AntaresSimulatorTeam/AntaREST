@@ -13,7 +13,6 @@
 import hashlib
 import re
 import typing as t
-import zipfile
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -21,12 +20,13 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 from antares.study.version import StudyVersion
+from antares.study.version.create_app import CreateApp
 
 from antarest.core.exceptions import StudyValidationError
 
 if t.TYPE_CHECKING:
     # noinspection PyPackageRequirements
-    from _pytest.fixtures import SubRequest
+    pass
 
 from antarest.matrixstore.model import MatrixDTO
 from antarest.matrixstore.service import MatrixService
@@ -150,7 +150,7 @@ def command_factory_fixture(matrix_service: MatrixService) -> CommandFactory:
 
 
 @pytest.fixture(name="empty_study")
-def empty_study_fixture(request: "SubRequest", tmp_path: Path, matrix_service: MatrixService) -> FileStudy:
+def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService) -> FileStudy:
     """
     Fixture for creating an empty FileStudy object.
 
@@ -162,20 +162,16 @@ def empty_study_fixture(request: "SubRequest", tmp_path: Path, matrix_service: M
     Returns:
         FileStudy: The empty FileStudy object.
     """
-    zip_name = getattr(request, "param", "empty_study_720.zip")
-    empty_study_path: Path = ASSETS_DIR / zip_name
-    empty_study_destination_path = tmp_path.joinpath("empty-study")
-    with zipfile.ZipFile(empty_study_path, "r") as zip_empty_study:
-        zip_empty_study.extractall(empty_study_destination_path)
-
-    # Detect the version of the study from `study.antares` file.
-    version = _get_current_version(empty_study_destination_path)
+    study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9"
+    study_path: Path = ASSETS_DIR / study_id
+    app = CreateApp(study_dir=study_path, caption="empty_study", version=study_version, author="Unknown")
+    app()
 
     config = FileStudyTreeConfig(
-        study_path=empty_study_destination_path,
-        path=empty_study_destination_path,
+        study_path=study_path,
+        path=study_path,
         study_id="",
-        version=StudyVersion.parse(version),
+        version=study_version,
         areas={},
         sets={},
     )
