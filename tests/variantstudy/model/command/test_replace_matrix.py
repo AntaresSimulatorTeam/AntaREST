@@ -21,7 +21,8 @@ class TestReplaceMatrix:
     def test_validation(self, empty_study: FileStudy):
         pass
 
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
         study_path = empty_study.config.study_path
         study_version = empty_study.config.version
         area1 = "Area1"

@@ -91,14 +91,14 @@ class TestRemoveSTStorage:
             }
         ]
 
-    def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply_config__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
-        study_version = empty_study.config.version
+        study_version = empty_study_720.config.version
         # When we apply the config to add a new ST Storage
         remove_st_storage = RemoveSTStorage(
             command_context=command_context, area_id="foo", storage_id="bar", study_version=study_version
         )
-        command_output = remove_st_storage.apply_config(empty_study.config)
+        command_output = remove_st_storage.apply_config(empty_study_720.config)
 
         # Then, the output should be an error
         assert command_output.status is False
