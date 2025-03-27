@@ -15,8 +15,11 @@ from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementFileData,
     HydroManagementUpdate,
+    HydroProperties,
+    InflowStructure,
+    InflowStructureUpdate,
+    get_inflow_path,
 )
-from antarest.study.business.model.inflow_model import INFLOW_PATH, InflowStructure, InflowStructureUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
@@ -26,6 +29,20 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
+
+    def get_all_hydro_properties(self, study: StudyInterface) -> dict[str, HydroProperties]:
+        all_hydro_properties = {}
+
+        file_study = study.get_files()
+        hydro_management_file_data = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
+
+        for area_id in file_study.config.areas:
+            hydro_management = hydro_management_file_data.get_hydro_management(area_id)
+            inflow_structure = self.get_inflow_structure(study, area_id)
+            hydro_properties = HydroProperties(management_options=hydro_management, inflow_structure=inflow_structure)
+            all_hydro_properties[area_id] = hydro_properties
+
+        return all_hydro_properties
 
     def get_hydro_management(self, study: StudyInterface, area_id: str) -> HydroManagement:
         """
@@ -62,7 +79,7 @@ class HydroManager:
             InflowStructure: The inflow structure values.
         """
 
-        path = [s.format(area_id=area_id) for s in INFLOW_PATH]
+        path = get_inflow_path(area_id)
         file_study = study.get_files()
         inter_monthly_correlation = file_study.tree.get(path).get("intermonthly-correlation", 0.5)
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
