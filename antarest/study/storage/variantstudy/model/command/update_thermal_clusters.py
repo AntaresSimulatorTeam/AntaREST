@@ -23,6 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
+    serialize_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, IdMapping
@@ -92,7 +93,10 @@ class UpdateThermalClusters(ICommand):
 
                 # Performs the update
                 cluster_key, cluster = clusters_by_id.get_key_and_properties(cluster_id)
-                all_clusters_for_area[cluster_key] = update_thermal_cluster(cluster, update)
+                updated_cluster = update_thermal_cluster(cluster, update)
+                all_clusters_for_area[cluster_key] = serialize_thermal_cluster(
+                    study_data.config.version, updated_cluster
+                )
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 

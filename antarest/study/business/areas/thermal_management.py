@@ -30,6 +30,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
     ThermalClusterUpdates,
+    update_thermal_cluster,
     validate_thermal_cluster_against_version,
 )
 from antarest.study.business.study_interface import StudyInterface
@@ -246,9 +247,7 @@ class ThermalManager:
         if thermal_cluster is None:
             raise ThermalClusterNotFound(path, cluster_id)
 
-        updated_thermal_cluster = thermal_cluster.model_copy(
-            update=cluster_data.model_dump(exclude_unset=True, exclude_none=True)
-        )
+        updated_thermal_cluster = update_thermal_cluster(thermal_cluster, cluster_data)
 
         command = UpdateThermalClusters(
             cluster_properties={area_id: {cluster_id: cluster_data}},

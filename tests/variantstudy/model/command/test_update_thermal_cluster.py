@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pytest
 
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
 from antarest.study.model import STUDY_VERSION_8_1
@@ -60,7 +59,6 @@ class TestUpdateThermalCluster:
         thermal_config = parse_thermal_cluster(study_version=study.config.version, data=thermal)
         study.config.areas[area_id].thermals.append(thermal_config)
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_810.zip"], indirect=True)
     def test_update_thermal(self, empty_study_810: FileStudy, command_context: CommandContext):
         # TODO SL: have a name different from ID
         empty_study = empty_study_810
