@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
@@ -131,7 +133,7 @@ class TestUpdateShortTermSorage:
 
         # Fake area
         cmd = UpdateSTStorages(
-            storage_properties={"fake_area": {"a": {"enabled": False}}},
+            storage_properties={"fake_area": {"a": {"initial_level": 0.4}}},
             command_context=command_context,
             study_version=study_version,
         )
@@ -141,7 +143,7 @@ class TestUpdateShortTermSorage:
 
         # Fake cluster
         cmd = UpdateSTStorages(
-            storage_properties={"FR": {"fake_storage": {"enabled": False}}},
+            storage_properties={"FR": {"fake_storage": {"initial_level": 0.1}}},
             command_context=command_context,
             study_version=study_version,
         )
@@ -150,11 +152,9 @@ class TestUpdateShortTermSorage:
         assert output.message == "The short-term storage 'fake_storage' in the area 'fr' is not found."
 
         # Try to give a parameter that only exist since v9.2
-        cmd = UpdateSTStorages(
-            storage_properties={"fr": {"storage_1": {"efficiencyWithdrawal": 0.8}}},
-            command_context=command_context,
-            study_version=study_version,
-        )
-        output = cmd.apply(study)
-        assert output.status is False
-        assert output.message == "The short-term storage 'fake_storage' in the area 'fr' is not found."
+        with pytest.raises(ValidationError, match="You gave a v9.2 field but your study is in version 8.7"):
+            UpdateSTStorages(
+                storage_properties={"fr": {"storage_1": {"efficiencyWithdrawal": 0.8}}},
+                command_context=command_context,
+                study_version=study_version,
+            )
