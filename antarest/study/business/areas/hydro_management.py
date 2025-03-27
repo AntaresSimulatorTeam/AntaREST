@@ -37,7 +37,7 @@ class HydroManager:
         hydro_management_file_data = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
 
         for area_id in file_study.config.areas:
-            hydro_management = hydro_management_file_data.get_hydro_management(area_id)
+            hydro_management = hydro_management_file_data.get_hydro_management(area_id, study.version)
             inflow_structure = self.get_inflow_structure(study, area_id)
             hydro_properties = HydroProperties(management_options=hydro_management, inflow_structure=inflow_structure)
             all_hydro_properties[area_id] = hydro_properties

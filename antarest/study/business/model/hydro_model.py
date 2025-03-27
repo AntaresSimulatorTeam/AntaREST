@@ -17,14 +17,12 @@ from pydantic.alias_generators import to_camel
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
+from antarest.study.model import STUDY_VERSION_9_2
 
 
 def get_inflow_path(area_id: str) -> list[str]:
     return ["input", "hydro", "prepro", area_id, "prepro", "prepro"]
 
-from antarest.core.utils.string import to_camel_case
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.model import STUDY_VERSION_9_2
 
 HYDRO_PATH = ["input", "hydro", "hydro"]
 
