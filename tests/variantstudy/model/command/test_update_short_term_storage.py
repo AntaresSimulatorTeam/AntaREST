@@ -14,6 +14,7 @@ from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -44,87 +45,114 @@ class TestUpdateShortTermSorage:
             study_version=study.config.version,
         ).apply(study)
 
-    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
-        study = empty_study_870
-        self._set_up(study, command_context)
-        study_version = study.config.version
-        study_path = study.config.study_path
+    def test_nominal_case(
+        self, empty_study_880: FileStudy, empty_study_920: FileStudy, command_context: CommandContext
+    ):
+        for study in [empty_study_880, empty_study_920]:
+            self._set_up(study, command_context)
+            study_version = study.config.version
+            study_path = study.config.study_path
 
-        # Check existing properties
-        fr_ini = study_path / "input" / "st-storage" / "clusters" / "fr" / "list.ini"
-        de_ini = study_path / "input" / "st-storage" / "clusters" / "de" / "list.ini"
-        fr_content = read_ini(fr_ini)
-        de_content = read_ini(de_ini)
-        expected_fr_content = {
-            "storage_1": {
-                "efficiency": 1.0,
-                "group": "other1",
-                "initiallevel": 0.5,
-                "initialleveloptim": False,
-                "injectionnominalcapacity": 0.0,
-                "name": "STORAGE_1",
-                "reservoircapacity": 0.0,
-                "withdrawalnominalcapacity": 0.0,
-            },
-            "storage_2": {
-                "efficiency": 1.0,
-                "group": "other1",
-                "initiallevel": 0.5,
-                "initialleveloptim": False,
-                "injectionnominalcapacity": 0.0,
-                "name": "storage_2",
-                "reservoircapacity": 0.0,
-                "withdrawalnominalcapacity": 0.0,
-            },
-        }
-        assert fr_content == expected_fr_content
-        expected_de_content = {
-            "storage_3": {
-                "efficiency": 1.0,
-                "group": "other1",
-                "initiallevel": 0.5,
-                "initialleveloptim": False,
-                "injectionnominalcapacity": 0.0,
-                "name": "Storage_3??",
-                "reservoircapacity": 0.0,
-                "withdrawalnominalcapacity": 0.0,
+            # Check existing `fr` properties
+            fr_ini = study_path / "input" / "st-storage" / "clusters" / "fr" / "list.ini"
+            fr_content = read_ini(fr_ini)
+            expected_fr_content = {
+                "storage_1": {
+                    "efficiency": 1.0,
+                    "group": "other1",
+                    "initiallevel": 0.5,
+                    "initialleveloptim": False,
+                    "injectionnominalcapacity": 0.0,
+                    "name": "STORAGE_1",
+                    "reservoircapacity": 0.0,
+                    "withdrawalnominalcapacity": 0.0,
+                    "enabled": True,
+                },
+                "storage_2": {
+                    "efficiency": 1.0,
+                    "group": "other1",
+                    "initiallevel": 0.5,
+                    "initialleveloptim": False,
+                    "injectionnominalcapacity": 0.0,
+                    "name": "storage_2",
+                    "reservoircapacity": 0.0,
+                    "withdrawalnominalcapacity": 0.0,
+                    "enabled": True,
+                },
             }
-        }
-        assert de_content == expected_de_content
+            if study_version == STUDY_VERSION_9_2:
+                for storage in ["storage_1", "storage_2"]:
+                    expected_fr_content[storage]["efficiencywithdrawal"] = 1
+                    expected_fr_content[storage]["penalize-variation-injection"] = False
+                    expected_fr_content[storage]["penalize-variation-withdrawal"] = False
+            assert fr_content == expected_fr_content
 
-        # Updates the ini file of DE to put the name as the key of the section
-        expected_de_content["Storage_3??"] = expected_de_content.pop("storage_3")
-        write_ini_file(de_ini, expected_de_content)
-
-        # Update several properties
-        new_properties = {"fr": {"storage_1": {"efficiency": 0.8}}, "DE": {"Storage_3": {"initial_level": 0.1}}}
-        cmd = UpdateSTStorages(
-            storage_properties=new_properties,
-            command_context=command_context,
-            study_version=study_version,
-        )
-        output = cmd.apply(study)
-        assert output.status is True
-        assert output.message == "The short-term storages were successfully updated."
-
-        # Checks updated properties
-        fr_content = read_ini(fr_ini)
-        de_content = read_ini(de_ini)
-        expected_fr_content["storage_1"]["efficiency"] = 0.8
-        expected_de_content = {
-            "Storage_3??": {
-                "efficiency": 1.0,
-                "group": "other1",
-                "initiallevel": 0.1,
-                "initialleveloptim": False,
-                "injectionnominalcapacity": 0.0,
-                "name": "Storage_3??",
-                "reservoircapacity": 0.0,
-                "withdrawalnominalcapacity": 0.0,
+            # Check existing `de` properties
+            de_ini = study_path / "input" / "st-storage" / "clusters" / "de" / "list.ini"
+            de_content = read_ini(de_ini)
+            expected_de_content = {
+                "storage_3": {
+                    "efficiency": 1.0,
+                    "group": "other1",
+                    "initiallevel": 0.5,
+                    "initialleveloptim": False,
+                    "injectionnominalcapacity": 0.0,
+                    "name": "Storage_3??",
+                    "reservoircapacity": 0.0,
+                    "withdrawalnominalcapacity": 0.0,
+                    "enabled": True,
+                }
             }
-        }
-        assert fr_content == expected_fr_content
-        assert de_content == expected_de_content
+            if study_version == STUDY_VERSION_9_2:
+                expected_de_content["storage_3"]["efficiencywithdrawal"] = 1
+                expected_de_content["storage_3"]["penalize-variation-injection"] = False
+                expected_de_content["storage_3"]["penalize-variation-withdrawal"] = False
+            assert de_content == expected_de_content
+
+            # Updates the ini file of DE to put the name as the key of the section
+            expected_de_content["Storage_3??"] = expected_de_content.pop("storage_3")
+            write_ini_file(de_ini, expected_de_content)
+
+            # Update several properties
+            new_properties = {"fr": {"storage_1": {"efficiency": 0.8}}, "DE": {"Storage_3": {"initial_level": 0.1}}}
+            if study_version >= STUDY_VERSION_9_2:
+                new_properties["fr"]["storage_1"]["efficiency_withdrawal"] = 0.3
+                new_properties["DE"]["Storage_3"]["penalize_variation_injection"] = True
+            cmd = UpdateSTStorages(
+                storage_properties=new_properties,
+                command_context=command_context,
+                study_version=study_version,
+            )
+            output = cmd.apply(study)
+            assert output.status is True
+            assert output.message == "The short-term storages were successfully updated."
+
+            # Checks updated properties
+            fr_content = read_ini(fr_ini)
+            expected_fr_content["storage_1"]["efficiency"] = 0.8
+            if study_version >= STUDY_VERSION_9_2:
+                expected_fr_content["storage_1"]["efficiencywithdrawal"] = 0.3
+            assert fr_content == expected_fr_content
+
+            de_content = read_ini(de_ini)
+            expected_de_content = {
+                "Storage_3??": {
+                    "efficiency": 1.0,
+                    "group": "other1",
+                    "initiallevel": 0.1,
+                    "initialleveloptim": False,
+                    "injectionnominalcapacity": 0.0,
+                    "name": "Storage_3??",
+                    "reservoircapacity": 0.0,
+                    "withdrawalnominalcapacity": 0.0,
+                    "enabled": True,
+                }
+            }
+            if study_version >= STUDY_VERSION_9_2:
+                expected_de_content["Storage_3??"]["efficiencywithdrawal"] = 1
+                expected_de_content["Storage_3??"]["penalize-variation-withdrawal"] = False
+                expected_de_content["Storage_3??"]["penalize-variation-injection"] = True
+            assert de_content == expected_de_content
 
     def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
         study = empty_study_870
