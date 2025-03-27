@@ -30,8 +30,8 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_hydro_properties(self, study: StudyInterface) -> dict[str, HydroProperties]:
-        all_hydro_properties: dict[str, HydroProperties] = {}
+    def get_all_hydro_properties(self, study: StudyInterface) -> list[HydroProperties]:
+        all_hydro_properties = []
 
         file_study = study.get_files()
         hydro_management_file_data = HydroManagementFileData(**file_study.tree.get(HYDRO_PATH))
@@ -39,9 +39,12 @@ class HydroManager:
         for area_id in file_study.config.areas:
             hydro_management = hydro_management_file_data.get_hydro_management(area_id)
             inflow_structure = self.get_inflow_structure(study, area_id)
-            hydro_properties = HydroProperties(management_options=hydro_management, inflow_structure=inflow_structure)
-            all_hydro_properties[area_id] = hydro_properties
+            hydro_properties = HydroProperties(
+                area_id=area_id, management_options=hydro_management, inflow_structure=inflow_structure
+            )
+            all_hydro_properties.append(hydro_properties)
 
+        all_hydro_properties.sort(key=lambda props: props.area_id)  # sort by area_id for reproducibility
         return all_hydro_properties
 
     def get_hydro_management(self, study: StudyInterface, area_id: str) -> HydroManagement:

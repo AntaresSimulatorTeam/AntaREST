@@ -400,13 +400,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/hydro",
         tags=[APITag.study_data],
         summary="Get Hydro properties for each area of the study",
-        response_model=dict[str, HydroProperties],
+        response_model=list[HydroProperties],
         response_model_exclude_none=True,
     )
     def get_hydro_properties_by_area(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> dict[str, HydroProperties]:
+    ) -> list[HydroProperties]:
         logger.info(
             msg=f"Getting Hydro properties for each area of study {uuid}",
             extra={"user": current_user.id},

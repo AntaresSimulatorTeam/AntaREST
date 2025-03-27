@@ -135,5 +135,6 @@ class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name
 
 
 class HydroProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+    area_id: str
     management_options: HydroManagement
     inflow_structure: InflowStructure
