@@ -9,11 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import copy
 
 import pytest
 
 from antarest.study.business.areas.hydro_management import HydroManager
-from antarest.study.business.model.hydro_model import HydroManagementUpdate
+from antarest.study.business.model.hydro_model import (
+    HydroManagement,
+    HydroManagementUpdate,
+    HydroProperties,
+    InflowStructure,
+    InflowStructureUpdate,
+)
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -133,4 +140,40 @@ class TestHydroManagement:
         cmd = CreateArea(area_name="be", command_context=command_context, study_version=study_version)
         cmd.apply(empty_study_880)
 
-        print(hydro_manager.get_all_hydro_properties(study))
+        # Checks default values
+        default_properties = HydroProperties(
+            management_options=HydroManagement(
+                inter_daily_breakdown=1.0,
+                intra_daily_modulation=24.0,
+                inter_monthly_breakdown=1.0,
+                reservoir=False,
+                reservoir_capacity=0,
+                follow_load=True,
+                use_water=False,
+                hard_bounds=False,
+                initialize_reservoir_date=0,
+                use_heuristic=True,
+                power_to_level=False,
+                use_leeway=False,
+                leeway_low=1.0,
+                leeway_up=1.0,
+                pumping_efficiency=1.0,
+            ),
+            inflow_structure=InflowStructure(inter_monthly_correlation=0.5),
+        )
+
+        assert hydro_manager.get_all_hydro_properties(study) == {"fr": default_properties, "be": default_properties}
+
+        # Update properties
+        new_properties = HydroManagementUpdate(follow_load=False, intra_daily_modulation=4.1)
+        hydro_manager.update_hydro_management(study, new_properties, "fr")
+
+        new_inflow = InflowStructureUpdate(inter_monthly_correlation=0.2)
+        hydro_manager.update_inflow_structure(study, "fr", new_inflow)
+
+        # Checks properties were updated
+        new_fr_properties = copy.deepcopy(default_properties)
+        new_fr_properties.management_options.follow_load = False
+        new_fr_properties.management_options.intra_daily_modulation = 4.1
+        new_fr_properties.inflow_structure.inter_monthly_correlation = 0.2
+        assert hydro_manager.get_all_hydro_properties(study) == {"fr": new_fr_properties, "be": default_properties}
