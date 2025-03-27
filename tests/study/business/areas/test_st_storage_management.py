@@ -121,7 +121,6 @@ class TestSTStorageManager:
             "west": [
                 {
                     "id": "storage1",
-                    "enabled": None,
                     "group": STStorageGroup.BATTERY,
                     "name": "Storage1",
                     "injectionNominalCapacity": 1500.0,
@@ -130,10 +129,15 @@ class TestSTStorageManager:
                     "efficiency": 0.94,
                     "initialLevel": 0.5,
                     "initialLevelOptim": True,
+                    # v8.8 field
+                    "enabled": None,
+                    # v9.2 fields
+                    "efficiencyWithdrawal": None,
+                    "penalizeVariationInjection": None,
+                    "penalizeVariationWithdrawal": None,
                 },
                 {
                     "id": "storage2",
-                    "enabled": None,
                     "group": STStorageGroup.PSP_CLOSED,
                     "name": "Storage2",
                     "injectionNominalCapacity": 2000.0,
@@ -142,10 +146,15 @@ class TestSTStorageManager:
                     "efficiency": 0.78,
                     "initialLevel": 0.5,
                     "initialLevelOptim": False,
+                    # v8.8 field
+                    "enabled": None,
+                    # v9.2 fields
+                    "efficiencyWithdrawal": None,
+                    "penalizeVariationInjection": None,
+                    "penalizeVariationWithdrawal": None,
                 },
                 {
                     "id": "storage3",
-                    "enabled": None,
                     "group": STStorageGroup.PSP_CLOSED,
                     "name": "Storage3",
                     "injectionNominalCapacity": 1500.0,
@@ -154,6 +163,12 @@ class TestSTStorageManager:
                     "efficiency": 0.72,
                     "initialLevel": 1.0,
                     "initialLevelOptim": False,
+                    # v8.8 field
+                    "enabled": None,
+                    # v9.2 fields
+                    "efficiencyWithdrawal": None,
+                    "penalizeVariationInjection": None,
+                    "penalizeVariationWithdrawal": None,
                 },
             ],
         }
@@ -211,7 +226,12 @@ class TestSTStorageManager:
                 "name": "Storage1",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                # v8.8 field
                 "enabled": None,
+                # v9.2 fields
+                "efficiencyWithdrawal": None,
+                "penalizeVariationInjection": None,
+                "penalizeVariationWithdrawal": None,
             },
             {
                 "efficiency": 0.78,
@@ -223,7 +243,12 @@ class TestSTStorageManager:
                 "name": "Storage2",
                 "reservoirCapacity": 20000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                # v8.8 field
                 "enabled": None,
+                # v9.2 fields
+                "efficiencyWithdrawal": None,
+                "penalizeVariationInjection": None,
+                "penalizeVariationWithdrawal": None,
             },
             {
                 "efficiency": 0.72,
@@ -235,7 +260,12 @@ class TestSTStorageManager:
                 "name": "Storage3",
                 "reservoirCapacity": 21000.0,
                 "withdrawalNominalCapacity": 1500.0,
+                # v8.8 field
                 "enabled": None,
+                # v9.2 fields
+                "efficiencyWithdrawal": None,
+                "penalizeVariationInjection": None,
+                "penalizeVariationWithdrawal": None,
             },
         ]
         assert actual == expected
@@ -295,7 +325,12 @@ class TestSTStorageManager:
             "name": "Storage1",
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
+            # v8.8 field
             "enabled": None,
+            # v9.2 fields
+            "efficiencyWithdrawal": None,
+            "penalizeVariationInjection": None,
+            "penalizeVariationWithdrawal": None,
         }
         assert actual == expected
 
