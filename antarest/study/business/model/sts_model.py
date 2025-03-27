@@ -16,6 +16,7 @@ from pydantic import field_validator
 
 from antarest.core.model import LowerCaseId
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage920Config,
     STStorage920Properties,
@@ -33,6 +34,16 @@ class STStorageUpdate(STStorage920Properties):
 
     class Config:
         populate_by_name = True
+
+    def verify_model_against_version(self, study_version: StudyVersion) -> None:
+        if study_version < STUDY_VERSION_9_2 and (
+            self.efficiency_withdrawal is not None
+            or self.penalize_variation_withdrawal is not None
+            or self.penalize_variation_injection is not None
+        ):
+            raise ValueError(f"You gave a v9.2 field but your study is in version {study_version}")
+        if study_version < STUDY_VERSION_8_8 and self.enabled is not None:
+            raise ValueError(f"You gave a v8.8 field but your study is in version {study_version}")
 
 
 STStorageUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageUpdate]]

@@ -19,7 +19,7 @@ from antarest.study.storage.variantstudy.model.command.update_st_storages import
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-class TestUpdateRenewableCluster:
+class TestUpdateShortTermSorage:
     def _set_up(self, study: FileStudy, command_context: CommandContext):
         CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
         CreateArea(area_name="de", command_context=command_context, study_version=study.config.version).apply(study)
@@ -142,6 +142,16 @@ class TestUpdateRenewableCluster:
         # Fake cluster
         cmd = UpdateSTStorages(
             storage_properties={"FR": {"fake_storage": {"enabled": False}}},
+            command_context=command_context,
+            study_version=study_version,
+        )
+        output = cmd.apply(study)
+        assert output.status is False
+        assert output.message == "The short-term storage 'fake_storage' in the area 'fr' is not found."
+
+        # Try to give a parameter that only exist since v9.2
+        cmd = UpdateSTStorages(
+            storage_properties={"fr": {"storage_1": {"efficiencyWithdrawal": 0.8}}},
             command_context=command_context,
             study_version=study_version,
         )

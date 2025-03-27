@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any, List, Optional
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -43,6 +44,13 @@ class UpdateSTStorages(ICommand):
     # ==================
 
     storage_properties: STStorageUpdates
+
+    @model_validator(mode="after")
+    def validate_properties_against_version(self) -> "UpdateSTStorages":
+        for value in self.storage_properties.values():
+            for properties in value.values():
+                properties.verify_model_against_version(self.study_version)
+        return self
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
