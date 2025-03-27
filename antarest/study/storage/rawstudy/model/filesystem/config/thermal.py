@@ -135,7 +135,7 @@ class ThermalProperties(ClusterProperties):
     )
     min_up_time: int = Field(
         default=1,
-        ge=1,
+        ge=0,
         le=168,
         description="Min. Up time (h)",
         alias="min-up-time",
@@ -143,7 +143,7 @@ class ThermalProperties(ClusterProperties):
     )
     min_down_time: int = Field(
         default=1,
-        ge=1,
+        ge=0,
         le=168,
         description="Min. Down time (h)",
         alias="min-down-time",
