@@ -49,7 +49,7 @@ class UpdateSTStorages(ICommand):
     def validate_properties_against_version(self) -> "UpdateSTStorages":
         for value in self.storage_properties.values():
             for properties in value.values():
-                properties.verify_model_against_version(self.study_version)
+                properties.validate_model_against_version(self.study_version)
         return self
 
     @override

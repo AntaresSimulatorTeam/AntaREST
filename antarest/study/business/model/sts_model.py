@@ -35,7 +35,7 @@ class STStorageUpdate(STStorage920Properties):
     class Config:
         populate_by_name = True
 
-    def verify_model_against_version(self, study_version: StudyVersion) -> None:
+    def validate_model_against_version(self, study_version: StudyVersion) -> None:
         if study_version < STUDY_VERSION_9_2 and (
             self.efficiency_withdrawal is not None
             or self.penalize_variation_withdrawal is not None

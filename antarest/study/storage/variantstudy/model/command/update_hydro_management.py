@@ -20,7 +20,6 @@ from antarest.study.business.model.hydro_model import (
     HydroManagementFileData,
     HydroManagementUpdate,
 )
-from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -47,8 +46,7 @@ class UpdateHydroManagement(ICommand):
 
     @model_validator(mode="after")
     def validate_properties_against_version(self) -> "UpdateHydroManagement":
-        if self.study_version < STUDY_VERSION_9_2 and self.properties.overflow_spilled_cost_difference is not None:
-            raise ValueError("You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2")
+        self.properties.validate_model_against_version(self.study_version)
         return self
 
     @override

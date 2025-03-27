@@ -66,6 +66,10 @@ class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=T
     # v9.2 field
     overflow_spilled_cost_difference: Optional[float] = None
 
+    def validate_model_against_version(self, study_version: StudyVersion) -> None:
+        if study_version < STUDY_VERSION_9_2 and self.overflow_spilled_cost_difference is not None:
+            raise ValueError("You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2")
+
 
 class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
     inter_daily_breakdown: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="inter-daily-breakdown")
