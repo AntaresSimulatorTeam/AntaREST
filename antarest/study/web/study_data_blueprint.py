@@ -56,8 +56,13 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
-from antarest.study.business.model.hydro_model import HydroManagement, HydroManagementUpdate
-from antarest.study.business.model.inflow_model import InflowStructure, InflowStructureUpdate
+from antarest.study.business.model.hydro_model import (
+    HydroManagement,
+    HydroManagementUpdate,
+    HydroProperties,
+    InflowStructure,
+    InflowStructureUpdate,
+)
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
@@ -390,6 +395,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
         study_service.district_manager.remove_district(study_interface, district_id)
+
+    @bp.get(
+        "/studies/{uuid}/hydro",
+        tags=[APITag.study_data],
+        summary="Get Hydro properties for each area of the study",
+        response_model=dict[str, HydroProperties],
+        response_model_exclude_none=True,
+    )
+    def get_hydro_properties_by_area(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> dict[str, HydroProperties]:
+        logger.info(
+            msg=f"Getting Hydro properties for each area of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.hydro_manager.get_all_hydro_properties(study_interface)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
