@@ -16,6 +16,28 @@ from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.model.hydro_model import HydroManagementUpdate
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+
+hydro_ini_content = {
+    "input": {
+        "hydro": {
+            "hydro": {
+                "inter-daily-breakdown": {"AreaTest1": 2, "AREATEST2": 3, "area_test_3": 4},
+                "intra-daily-modulation": {"AreaTest1": 25, "AREATEST2": 26, "area_test_3": 27},
+                "inter-monthly-breakdown": {"AreaTest1": 1, "AREATEST2": 1, "area_test_3": 1},
+                "initialize reservoir date": {"AreaTest1": 0, "AREATEST2": 1, "area_test_3": 2},
+                "pumping efficiency": {"AreaTest1": 1, "AREATEST2": 1, "area_test_3": 1},
+                "use leeway": {
+                    "AreaTest1": True,
+                },
+                "leeway low": {
+                    "AreaTest1": 1,
+                },
+            }
+        }
+    }
+}
 
 
 class TestHydroManagement:
@@ -29,6 +51,7 @@ class TestHydroManagement:
             Check if `get_hydro_management_options` returns the right values
         """
         study = FileStudyInterface(empty_study_880)
+        study.file_study.tree.save(hydro_ini_content)
         # add som areas
         areas = ["AreaTest1", "AREATEST2", "area_test_3"]
 
@@ -60,6 +83,7 @@ class TestHydroManagement:
             Check if the field was successfully edited for each area without duplicates
         """
         study = FileStudyInterface(empty_study_880)
+        study.file_study.tree.save(hydro_ini_content)
         # store the area ids
         areas = ["AreaTest1", "AREATEST2", "area_test_3"]
 
@@ -96,6 +120,17 @@ class TestHydroManagement:
                     assert initial_data[field] == new_data[field]
 
     @pytest.mark.unit_test
-    def test_get_all_hydro_properties(self, hydro_manager: HydroManager, empty_study_880: FileStudy) -> None:
+    def test_get_all_hydro_properties(
+        self, hydro_manager: HydroManager, empty_study_880: FileStudy, command_context: CommandContext
+    ) -> None:
         study = FileStudyInterface(empty_study_880)
+        study_version = empty_study_880.config.version
+        assert hydro_manager.get_all_hydro_properties(study) == {}  # no areas
+
+        # Create 2 areas
+        cmd = CreateArea(area_name="FR", command_context=command_context, study_version=study_version)
+        cmd.apply(empty_study_880)
+        cmd = CreateArea(area_name="be", command_context=command_context, study_version=study_version)
+        cmd.apply(empty_study_880)
+
         print(hydro_manager.get_all_hydro_properties(study))

@@ -159,7 +159,7 @@ class TestHydroInflowProperties:
                 "useWater": False,
             },
         }
-        assert res.json() == [{"areaId": "be", **default_properties}, {"areaId": "fr", **default_properties}]
+        assert res.json() == {"be": default_properties, "fr": default_properties}
 
         # Update inflow structure values
         obj = {"interMonthlyCorrelation": 0.8}
@@ -177,4 +177,4 @@ class TestHydroInflowProperties:
         new_fr_properties = copy.deepcopy(default_properties)
         new_fr_properties["managementOptions"]["reservoirCapacity"] = 15
         new_fr_properties["inflowStructure"]["interMonthlyCorrelation"] = 0.8
-        assert res.json() == [{"areaId": "be", **default_properties}, {"areaId": "fr", **new_fr_properties}]
+        assert res.json() == {"be": default_properties, "fr": new_fr_properties}
