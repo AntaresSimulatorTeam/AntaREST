@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+from pydantic import ValidationError
 
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
 from antarest.study.model import STUDY_VERSION_8_1
@@ -131,3 +133,12 @@ class TestUpdateThermalCluster:
         output = command.apply(study_data=empty_study)
         assert not output.status
         assert output.message == "The thermal cluster 'no' in the area 'fr' is not found."
+
+    def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext):
+        update_data = ThermalClusterUpdate(nox=12.0)
+        with pytest.raises(ValidationError):
+            UpdateThermalClusters(
+                cluster_properties={"fr": {"cluster": update_data}},
+                command_context=command_context,
+                study_version=STUDY_VERSION_8_1,
+            )

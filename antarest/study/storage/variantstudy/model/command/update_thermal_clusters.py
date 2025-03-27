@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Self
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -18,6 +19,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterUpdates,
     update_thermal_cluster,
+    validate_thermal_cluster_against_version,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -46,6 +48,13 @@ class UpdateThermalClusters(ICommand):
     # ==================
 
     cluster_properties: ThermalClusterUpdates
+
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        for clusters in self.cluster_properties.values():
+            for cluster in clusters.values():
+                validate_thermal_cluster_against_version(self.study_version, cluster)
+        return self
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:

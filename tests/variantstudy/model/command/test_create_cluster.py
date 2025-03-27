@@ -18,7 +18,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
@@ -207,3 +207,13 @@ class TestCreateCluster:
             "user_id": None,
             "version": 3,
         }
+
+    def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext):
+        creation_data = ThermalClusterCreation(name="cluster", nox=12.0)
+        with pytest.raises(ValidationError):
+            CreateCluster(
+                area_id="foo",
+                parameters=creation_data,
+                command_context=command_context,
+                study_version=STUDY_VERSION_8_1,
+            )

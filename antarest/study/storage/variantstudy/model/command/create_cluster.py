@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, Dict, Final, List, Optional, Tuple
+from typing import Any, Dict, Final, List, Optional, Self, Tuple
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -24,6 +24,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     create_thermal_cluster,
+    validate_thermal_cluster_against_version,
 )
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
@@ -70,7 +71,7 @@ class CreateCluster(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: Dict[str, t.Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model(cls, values: Dict[str, t.Any], info: ValidationInfo) -> Dict[str, Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
             study_version = StudyVersion.parse(values["study_version"])
@@ -96,6 +97,11 @@ class CreateCluster(ICommand):
             values["modulation"] = values["command_context"].generator_matrix_constants.get_thermal_prepro_modulation()
 
         return values
+
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        validate_thermal_cluster_against_version(self.study_version, self.parameters)
+        return self
 
     @override
     def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
