@@ -12,6 +12,7 @@
 import copy
 
 import pytest
+from pydantic import ValidationError
 
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.model.hydro_model import (
@@ -126,6 +127,15 @@ class TestHydroManagement:
                     assert initial_data[field] != new_data[field]
                 else:
                     assert initial_data[field] == new_data[field]
+
+            # Ensures updating with a v9.2 field fails
+            with pytest.raises(
+                ValidationError,
+                match="You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2",
+            ):
+                hydro_manager.update_hydro_management(
+                    study, HydroManagementUpdate(overflow_spilled_cost_difference=0.3), area
+                )
 
     @pytest.mark.unit_test
     def test_get_all_hydro_properties(
