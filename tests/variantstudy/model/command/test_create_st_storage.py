@@ -413,24 +413,14 @@ class TestCreateSTStorage:
             )
             actual = cmd.get_inner_matrices()
             constants = command_context.generator_matrix_constants
-            expected_matrices = [
+            # Ensures with the v9.2 we don't create default cost matrices
+            assert actual == [
                 strip_matrix_protocol(constants.get_st_storage_pmax_injection()),
                 strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
                 strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
                 strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
                 strip_matrix_protocol(constants.get_st_storage_inflows()),
             ]
-            if study_version == STUDY_VERSION_9_2:
-                expected_matrices.extend(
-                    [
-                        strip_matrix_protocol(constants.get_st_storage_cost_injection()),
-                        strip_matrix_protocol(constants.get_st_storage_cost_withdrawal()),
-                        strip_matrix_protocol(constants.get_st_storage_cost_level()),
-                        strip_matrix_protocol(constants.get_st_storage_cost_variation_injection()),
-                        strip_matrix_protocol(constants.get_st_storage_cost_variation_withdrawal()),
-                    ]
-                )
-            assert actual == expected_matrices
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920

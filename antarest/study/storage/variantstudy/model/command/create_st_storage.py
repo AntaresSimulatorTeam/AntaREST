@@ -161,13 +161,8 @@ class CreateSTStorage(ICommand):
                 "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
                 "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
                 "inflows": constants.get_st_storage_inflows,
-                "cost_injection": constants.get_st_storage_inflows,
-                "cost_withdrawal": constants.get_st_storage_inflows,
-                "cost_level": constants.get_st_storage_inflows,
-                "cost_variation_injection": constants.get_st_storage_inflows,
-                "cost_variation_withdrawal": constants.get_st_storage_inflows,
             }
-            method = methods[field]
+            method = methods.get(field, lambda: None)
             return method()
         if isinstance(v, str):
             # Check the matrix link
@@ -312,7 +307,7 @@ class CreateSTStorage(ICommand):
                 "st-storage": {
                     "clusters": {self.area_id: {"list": config}},
                     "series": {
-                        self.area_id: {storage_id: {attr: getattr(self, attr) for attr, _ in self.get_matrices()}}
+                        self.area_id: {storage_id: {attr: getattr(self, attr) or {} for attr, _ in self.get_matrices()}}
                     },
                 }
             }
@@ -330,14 +325,14 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
+        args = {"area_id": self.area_id, "parameters": self.parameters.model_dump(mode="json", by_alias=True)}
+        for attr, _ in self.get_matrices():
+            if getattr(self, attr) is not None:
+                args[attr] = strip_matrix_protocol(getattr(self, attr))
         return CommandDTO(
             action=self.command_name.value,
             version=self._SERIALIZATION_VERSION,
-            args={
-                "area_id": self.area_id,
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
-                **{attr: strip_matrix_protocol(getattr(self, attr)) for attr, _ in self.get_matrices()},
-            },
+            args=args,
             study_version=self.study_version,
         )
 
@@ -346,5 +341,8 @@ class CreateSTStorage(ICommand):
         """
         Retrieves the list of matrix IDs.
         """
-        matrices: List[str] = [strip_matrix_protocol(getattr(self, attr)) for attr, _ in self.get_matrices()]
+        matrices: List[str] = []
+        for attr, _ in self.get_matrices():
+            if getattr(self, attr) is not None:
+                matrices.append(strip_matrix_protocol(getattr(self, attr)))
         return matrices
