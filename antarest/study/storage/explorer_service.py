@@ -15,14 +15,16 @@ from pathlib import Path, PurePosixPath
 from typing import List
 
 from antarest.core.config import Config
+from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NonStudyFolderDTO,
     StudyFolder,
     WorkspaceMetadata,
 )
-from antarest.study.repository import StudyFilter
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
@@ -103,7 +105,9 @@ class Explorer:
             raise ValueError("Can't to open a file in a filtered folder")
 
         # check study doens't already exist
-        study_count = self.study_service.count_studies(StudyFilter(folder=str(path)))
+        study_count = self.study_service.count_studies(
+            StudyFilter(folder=str(path), access_permissions=AccessPermissions.from_params(params))
+        )
         if study_count > 0:
             raise ValueError(f"Study at {path} already exists in database")
 
@@ -117,3 +121,19 @@ class Explorer:
         )
 
         return study_id
+
+    def close_external_study(self, uuid: str, params: RequestParameters) -> None:
+        # check that desktop_mode is enabled in config
+        if not self.config.desktop_mode:
+            logger.warning("Called open api when desktop mode was off")
+            raise ValueError("Study mode is not enabled in the configuration")
+
+        sanitized_uuid = sanitize_uuid(uuid)
+
+        # create a study object from the path
+        logger.info(
+            "Study %s at %s is will be deleted",
+            sanitized_uuid,
+        )
+        study = self.study_service.check_study_access(sanitized_uuid, StudyPermissionType.WRITE, params)
+        self.study_service.delete_external_study(study)

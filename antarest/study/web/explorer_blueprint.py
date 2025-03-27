@@ -63,7 +63,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         return explorer.list_dir(workspace, path)
 
     @bp.post(
-        "/explorer/external/open",
+        "/explorer/external/_open",
         summary="For a given study path, import the study",
         response_model=str,
     )
@@ -73,6 +73,18 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         params = RequestParameters(user=current_user)
         study_id = explorer.open_external_study(path, params)
         return study_id
+
+    @bp.delete(
+        "/explorer/external/_close/{uuid}",
+        summary="For a given study path, import the study",
+        response_model=str,
+    )
+    def close_external_study(uuid: str, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
+        """ """
+        logger.info(f"Deleting study {uuid}")
+        params = RequestParameters(user=current_user)
+        explorer.close_external_study(uuid, params)
+        return ""
 
     @bp.get(
         "/explorer/_list_workspaces",

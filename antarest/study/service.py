@@ -1006,21 +1006,24 @@ class StudyService:
 
         author = self.get_user_name(params)
         now = datetime.now(timezone.utc)
+        path = str(study_folder.path)
         raw = RawStudy(
             id=str(uuid4()),
             name=study_folder.path.name,
-            folder=str(study_folder.path),
+            folder=path,
             workspace="external",
-            path=study_folder.path,
+            path=path,
             created_at=now,
             updated_at=now,
             owner=None,
             groups=study_folder.groups,
             public_mode=PublicMode.FULL if len(study_folder.groups) == 0 else PublicMode.NONE,
             additional_data=StudyAdditionalData(author=author),
+            version=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
         )
-        raw = self.storage_service.raw_study_service.create(raw)
-        self._save_study(raw)
+
+        self.storage_service.raw_study_service.update_from_raw_meta(raw, fallback_on_default=True)
+        self._save_study(raw, params.user)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1031,6 +1034,16 @@ class StudyService:
 
         logger.info("External study %s created by user %s", raw.id, params.get_user_id())
         return str(raw.id)
+
+    def delete_external_study(self, study: Study) -> None:
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DELETED,
+                payload=study.to_json_summary(),
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
+        self.repository.delete(study.id)
 
     def get_user_name(self, params: RequestParameters) -> str:
         """
