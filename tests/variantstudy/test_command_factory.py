@@ -783,18 +783,12 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_ST_STORAGE.value,
-            args={
-                "area_id": "area 1",
-                "st_storage_id": "storage 1",
-                "properties": {
-                    "enabled": False,
-                },
-            },
+            action=CommandName.UPDATE_ST_STORAGES.value,
+            args={"storage_properties": {"area 1": {"sts_1": {"enabled": False}}}},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_st_storage",
+        id="update_st_storages",
     ),
     pytest.param(
         CommandDTO(

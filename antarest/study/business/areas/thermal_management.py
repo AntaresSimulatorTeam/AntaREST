@@ -29,6 +29,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterUpdate,
+    ThermalClusterUpdates,
     validate_thermal_cluster_against_version,
 )
 from antarest.study.business.study_interface import StudyInterface
@@ -148,7 +149,7 @@ class ThermalManager:
     def update_thermals_props(
         self,
         study: StudyInterface,
-        update_thermals_by_areas: Mapping[str, Mapping[str, ThermalClusterUpdate]],
+        update_thermals_by_areas: ThermalClusterUpdates,
     ) -> Mapping[str, Mapping[str, ThermalCluster]]:
         old_thermals_by_areas = self.get_all_thermals_props(study)
         new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}

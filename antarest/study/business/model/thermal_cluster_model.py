@@ -36,6 +36,7 @@ from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.core.model import LowerCaseId
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
@@ -313,6 +314,9 @@ class ThermalClusterUpdate(AntaresBaseModel):
     cost_generation: Optional[ThermalCostGeneration] = None
     efficiency: Optional[float] = None
     variable_o_m_cost: Optional[float] = None
+
+
+ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:

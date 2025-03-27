@@ -22,7 +22,8 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_manage_district(empty_study: FileStudy, command_context: CommandContext):
+def test_manage_district(empty_study_810: FileStudy, command_context: CommandContext):
+    empty_study = empty_study_810
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 

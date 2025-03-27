@@ -16,23 +16,19 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
-    ThermalClusterUpdate,
+    ThermalClusterUpdates,
     update_thermal_cluster,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
-    serialize_thermal_cluster,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, IdMapping
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-ClusterID = str
-ThermalClusterUpdates = dict[AreaId, dict[ClusterID, ThermalClusterUpdate]]
 
 
 class UpdateThermalClusters(ICommand):
@@ -58,7 +54,7 @@ class UpdateThermalClusters(ICommand):
 
             thermal_mapping: dict[str, tuple[int, ThermalCluster]] = {}
             for index, thermal in enumerate(study_data.areas[area_id].thermals):
-                thermal_mapping[thermal.id] = (index, thermal)
+                thermal_mapping[transform_name_to_id(thermal.id)] = (index, thermal)
 
             for cluster_id, update in value.items():
                 if cluster_id not in thermal_mapping:
@@ -84,19 +80,19 @@ class UpdateThermalClusters(ICommand):
             except ChildNotFoundError:
                 return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
 
+            # Validates the Ini file
+            clusters_by_id = IdMapping(parse_thermal_cluster, all_clusters_for_area, self.study_version)
+
             for cluster_id, update in value.items():
-                if cluster_id not in all_clusters_for_area:
+                if not clusters_by_id.asserts_id_exists(cluster_id):
                     return CommandOutput(
                         status=False,
                         message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
                     )
 
                 # Performs the update
-                cluster = parse_thermal_cluster(study_data.config.version, all_clusters_for_area[cluster_id])
-                updated_cluster = update_thermal_cluster(cluster, update)
-                all_clusters_for_area[cluster_id] = serialize_thermal_cluster(
-                    study_data.config.version, updated_cluster
-                )
+                cluster_key, cluster = clusters_by_id.get_key_and_properties(cluster_id)
+                all_clusters_for_area[cluster_key] = update_thermal_cluster(cluster, update)
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 

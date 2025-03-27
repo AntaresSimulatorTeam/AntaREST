@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 @pytest.fixture(name="recent_study")
-def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
+def recent_study_fixture(empty_study_720: FileStudy) -> FileStudy:
     """
     Fixture for creating a recent version of the FileStudy object.
 
@@ -38,9 +38,9 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
     Returns:
         FileStudy: The FileStudy object upgraded to the required version.
     """
-    StudyUpgrader(empty_study.config.study_path, str(REQUIRED_VERSION)).upgrade()
-    empty_study.config.version = REQUIRED_VERSION
-    return empty_study
+    StudyUpgrader(empty_study_720.config.study_path, str(REQUIRED_VERSION)).upgrade()
+    empty_study_720.config.version = REQUIRED_VERSION
+    return empty_study_720
 
 
 # The parameter names to be used are those in the INI file.
@@ -91,14 +91,14 @@ class TestRemoveSTStorage:
             }
         ]
 
-    def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply_config__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
         # Given an old study in version 720
-        study_version = empty_study.config.version
+        study_version = empty_study_720.config.version
         # When we apply the config to add a new ST Storage
         remove_st_storage = RemoveSTStorage(
             command_context=command_context, area_id="foo", storage_id="bar", study_version=study_version
         )
-        command_output = remove_st_storage.apply_config(empty_study.config)
+        command_output = remove_st_storage.apply_config(empty_study_720.config)
 
         # Then, the output should be an error
         assert command_output.status is False

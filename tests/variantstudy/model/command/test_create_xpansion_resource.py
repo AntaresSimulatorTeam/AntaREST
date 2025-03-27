@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -29,8 +28,8 @@ class TestCreateXpansionResource:
             {"user": {"expansion": {"capa": {}, "weights": {}, "constraints": {}, "settings": {}, "candidates": {}}}}
         )
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
 
         # Constraints
@@ -82,8 +81,8 @@ class TestCreateXpansionResource:
             content = empty_study.tree.get(["user", "expansion", "capa", file_name])
             assert content == {"columns": ["0", "1"], "data": data, "index": ["0", "1"]}
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_error_cases(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
 
         # Constraints

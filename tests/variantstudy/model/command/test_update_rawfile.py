@@ -20,7 +20,8 @@ from antarest.study.storage.variantstudy.model.command.update_raw_file import Up
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_update_rawfile(empty_study: FileStudy, command_context: CommandContext) -> None:
+def test_update_rawfile(empty_study_880: FileStudy, command_context: CommandContext) -> None:
+    empty_study = empty_study_880
     data_path = Path(os.path.dirname(__file__)) / "data.png"
     data = base64.b64encode(data_path.read_bytes()).decode("utf-8")
 

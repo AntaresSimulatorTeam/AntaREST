@@ -87,7 +87,8 @@ class TestCreateCluster:
         )
         assert cl.modulation == command_context.generator_matrix_constants.get_thermal_prepro_modulation()
 
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         study_path = empty_study.config.study_path
         area_name = "DE"
         area_id = transform_name_to_id(area_name, lower=True)
